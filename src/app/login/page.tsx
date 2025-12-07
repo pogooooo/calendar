@@ -5,8 +5,8 @@ import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import theme from '@/styles/theme'
 import Link from 'next/link';
-import Input from '@/components/celestial/input'
-import DefaultButton from "@/components/celestial/default_button";
+import Input from '@/components/celestial/input/input'
+import DefaultButton from "@/components/celestial/button/default_button";
 import CrescentMoon from "@/components/crescentMoon";
 import styled, { ThemeProvider } from 'styled-components';
 

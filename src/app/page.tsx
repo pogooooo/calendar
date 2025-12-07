@@ -30,6 +30,7 @@ export default function Home() {
         return (
             <ThemeProvider theme={theme}>
                 <h1>환영합니다, {session.user?.name || session.user?.email}님!</h1>
+                <pre>{JSON.stringify(session, null, 2)}</pre>
                 <button onClick={() => signOut()}>로그아웃</button>
             </ThemeProvider>
         );
