@@ -4,13 +4,10 @@ import { useState, useEffect } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import theme from '@/styles/theme'
-import Link from 'next/link';
 import Input from '@/components/celestial/input/input'
 import DefaultButton from "@/components/celestial/button/default_button";
-import CrescentMoon from "@/components/crescentMoon";
 import styled, { ThemeProvider } from 'styled-components';
 
-// --- Icon Components ---
 const EyeIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
         <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z"/>
@@ -34,9 +31,182 @@ const GoogleIcon = () => (
     </svg>
 );
 
-// --- Styled Components ---
+export default function AuthPage() {
+    const [isRegistering, setIsRegistering] = useState(false);
+
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const [registerName, setRegisterName] = useState('');
+    const [registerEmail, setRegisterEmail] = useState('');
+    const [registerPassword, setRegisterPassword] = useState('');
+    const [showRegisterPassword, setShowRegisterPassword] = useState(false);
+    const [registerError, setRegisterError] = useState<string | null>(null);
+
+    const router = useRouter();
+    const searchParams = useSearchParams();
+
+    useEffect(() => {
+        const errorParam = searchParams.get('error');
+        if (errorParam) {
+            setError('이메일 또는 비밀번호가 일치하지 않습니다.');
+        }
+    }, [searchParams]);
+
+    const handleEmailLogin = async () => {
+        setError(null);
+        const result = await signIn('credentials', {
+            redirect: false,
+            email,
+            password,
+        });
+
+        if (result?.error) {
+            setError('이메일 또는 비밀번호가 일치하지 않습니다.');
+        } else if (result?.ok) {
+            router.push('/');
+        }
+    };
+
+    const handleRegister = async () => {
+        setRegisterError(null);
+        if (!registerName || !registerEmail || !registerPassword) {
+            setRegisterError('모든 필드를 입력해주세요.');
+            return;
+        }
+
+        try {
+            const res = await fetch('/api/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: registerName, email: registerEmail, password: registerPassword }),
+            });
+
+            if (res.ok) {
+                alert('회원가입에 성공했습니다! 로그인 화면으로 돌아갑니다.');
+                setIsRegistering(false);
+                setRegisterName('');
+                setRegisterEmail('');
+                setRegisterPassword('');
+            } else {
+                const errorData = await res.json();
+                setRegisterError(errorData.message || '회원가입 중 오류가 발생했습니다.');
+            }
+        } catch (err) {
+            setRegisterError('네트워크 오류가 발생했습니다.');
+            console.error('Registration failed:', err);
+        }
+    };
+
+    return (
+        <ThemeProvider theme={theme}>
+            <AuthDiv>
+                <InputCard>
+                    {isRegistering ? (
+                        <>
+                            <h2>회원가입</h2>
+                            <Input
+                                type="text"
+                                $width={300}
+                                $height={40}
+                                label="이름"
+                                value={registerName}
+                                onChange={(e) => setRegisterName(e.target.value)}
+                            />
+                            <Input
+                                type="text"
+                                $width={300}
+                                $height={40}
+                                label="이메일"
+                                value={registerEmail}
+                                onChange={(e) => setRegisterEmail(e.target.value)}
+                            />
+                            <PasswordInputWrapper>
+                                <Input
+                                    type={showRegisterPassword ? "text" : "password"}
+                                    $width={300}
+                                    $height={40}
+                                    label="비밀번호"
+                                    value={registerPassword}
+                                    onChange={(e) => setRegisterPassword(e.target.value)}
+                                />
+                                <PasswordToggleButton type="button" onClick={() => setShowRegisterPassword(!showRegisterPassword)}>
+                                    {showRegisterPassword ? <EyeSlashIcon /> : <EyeIcon />}
+                                </PasswordToggleButton>
+                            </PasswordInputWrapper>
+                            <DefaultButton
+                                onClick={handleRegister}
+                                $width={300}
+                                $height={40}
+                                label="회원가입"
+                            />
+                            {registerError && <ErrorMessage>{registerError}</ErrorMessage>}
+                            <SwitchAuthModeLink>
+                                이미 계정이 있으신가요? <span onClick={() => setIsRegistering(false)}>로그인</span>
+                            </SwitchAuthModeLink>
+                        </>
+                    ) : (
+                        <>
+                            <h2>로그인</h2>
+                            <DefaultButton
+                                onClick={() => signIn('google', { callbackUrl: '/' })}
+                                $width={300}
+                                $height={40}
+                                label="구글로 계속하기"
+                            >
+                                <GoogleIcon />
+                            </DefaultButton>
+
+                            <Separator>또는</Separator>
+
+                            <Input
+                                type="text"
+                                $width={300}
+                                $height={40}
+                                label="이메일"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                            />
+
+                            <PasswordInputWrapper>
+                                <Input
+                                    type={showPassword ? "text" : "password"}
+                                    $width={300}
+                                    $height={40}
+                                    label="비밀번호"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                />
+                                <PasswordToggleButton type="button" onClick={() => setShowPassword(!showPassword)}>
+                                    {showPassword ? <EyeSlashIcon /> : <EyeIcon />}
+                                </PasswordToggleButton>
+                            </PasswordInputWrapper>
+
+                            <DefaultButton
+                                onClick={handleEmailLogin}
+                                $width={300}
+                                $height={40}
+                                label="이메일로 로그인"
+                            />
+
+                            {error && <ErrorMessage>{error}</ErrorMessage>}
+
+                            <SwitchAuthModeLink>
+                                계정이 없으신가요? <span onClick={() => setIsRegistering(true)}>회원가입</span>
+                            </SwitchAuthModeLink>
+                        </>
+                    )}
+                </InputCard>
+            </AuthDiv>
+        </ThemeProvider>
+    );
+}
+
 const AuthDiv = styled.div`
     background-color: ${(props) => props.theme.celestial.surface};
+    //background-color: aqua;
     width: 100vw;
     height: 100vh;
     display: flex;
@@ -103,7 +273,7 @@ const ErrorMessage = styled.p`
     color: #ef4444;
     font-size: 0.875rem;
     text-align: center;
-    min-height: 1.25rem; // 에러 메시지 공간 확보
+    min-height: 1.25rem;
 `;
 
 const SwitchAuthModeLink = styled.p`
@@ -121,184 +291,3 @@ const SwitchAuthModeLink = styled.p`
         }
     }
 `;
-
-
-// --- Auth Page Component ---
-export default function AuthPage() {
-    const [isRegistering, setIsRegistering] = useState(false);
-
-    // Login States
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [showPassword, setShowPassword] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-
-    // Register States
-    const [registerName, setRegisterName] = useState('');
-    const [registerEmail, setRegisterEmail] = useState('');
-    const [registerPassword, setRegisterPassword] = useState('');
-    const [showRegisterPassword, setShowRegisterPassword] = useState(false);
-    const [registerError, setRegisterError] = useState<string | null>(null);
-
-    const router = useRouter();
-    const searchParams = useSearchParams();
-
-    useEffect(() => {
-        const errorParam = searchParams.get('error');
-        if (errorParam) {
-            setError('이메일 또는 비밀번호가 일치하지 않습니다.');
-        }
-    }, [searchParams]);
-
-    const handleEmailLogin = async () => {
-        setError(null);
-        const result = await signIn('credentials', {
-            redirect: false,
-            email,
-            password,
-        });
-
-        if (result?.error) {
-            setError('이메일 또는 비밀번호가 일치하지 않습니다.');
-        } else if (result?.ok) {
-            router.push('/');
-        }
-    };
-
-    const handleRegister = async () => {
-        setRegisterError(null);
-        if (!registerName || !registerEmail || !registerPassword) {
-            setRegisterError('모든 필드를 입력해주세요.');
-            return;
-        }
-
-        try {
-            const res = await fetch('/api/register', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: registerName, email: registerEmail, password: registerPassword }),
-            });
-
-            if (res.ok) {
-                alert('회원가입에 성공했습니다! 로그인 화면으로 돌아갑니다.');
-                setIsRegistering(false);
-                setRegisterName('');
-                setRegisterEmail('');
-                setRegisterPassword('');
-            } else {
-                const errorData = await res.json();
-                setRegisterError(errorData.message || '회원가입 중 오류가 발생했습니다.');
-            }
-        } catch (err) {
-            setRegisterError('네트워크 오류가 발생했습니다.');
-            console.error('Registration failed:', err);
-        }
-    };
-
-    return (
-        <ThemeProvider theme={theme}>
-            <AuthDiv>
-                {/*<CrescentMoon />*/}
-                <InputCard>
-                    {isRegistering ? (
-                        // --- 회원가입 뷰 ---
-                        <>
-                            <h2>회원가입</h2>
-                            <Input
-                                type="text"
-                                $width={300}
-                                $height={40}
-                                label="이름"
-                                value={registerName}
-                                onChange={(e) => setRegisterName(e.target.value)}
-                            />
-                            <Input
-                                type="text"
-                                $width={300}
-                                $height={40}
-                                label="이메일"
-                                value={registerEmail}
-                                onChange={(e) => setRegisterEmail(e.target.value)}
-                            />
-                            <PasswordInputWrapper>
-                                <Input
-                                    type={showRegisterPassword ? "text" : "password"}
-                                    $width={300}
-                                    $height={40}
-                                    label="비밀번호"
-                                    value={registerPassword}
-                                    onChange={(e) => setRegisterPassword(e.target.value)}
-                                />
-                                <PasswordToggleButton type="button" onClick={() => setShowRegisterPassword(!showRegisterPassword)}>
-                                    {showRegisterPassword ? <EyeSlashIcon /> : <EyeIcon />}
-                                </PasswordToggleButton>
-                            </PasswordInputWrapper>
-                            <DefaultButton
-                                onClick={handleRegister}
-                                $width={300}
-                                $height={40}
-                                label="회원가입"
-                            />
-                            {registerError && <ErrorMessage>{registerError}</ErrorMessage>}
-                            <SwitchAuthModeLink>
-                                이미 계정이 있으신가요? <span onClick={() => setIsRegistering(false)}>로그인</span>
-                            </SwitchAuthModeLink>
-                        </>
-                    ) : (
-                        // --- 로그인 뷰 ---
-                        <>
-                            <h2>로그인</h2>
-                            <DefaultButton
-                                onClick={() => signIn('google', { callbackUrl: '/' })}
-                                $width={300}
-                                $height={40}
-                                label="구글로 계속하기"
-                            >
-                                <GoogleIcon />
-                            </DefaultButton>
-
-                            <Separator>또는</Separator>
-
-                            <Input
-                                type="text"
-                                $width={300}
-                                $height={40}
-                                label="이메일"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                            />
-
-                            <PasswordInputWrapper>
-                                <Input
-                                    type={showPassword ? "text" : "password"}
-                                    $width={300}
-                                    $height={40}
-                                    label="비밀번호"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                />
-                                <PasswordToggleButton type="button" onClick={() => setShowPassword(!showPassword)}>
-                                    {showPassword ? <EyeSlashIcon /> : <EyeIcon />}
-                                </PasswordToggleButton>
-                            </PasswordInputWrapper>
-
-                            <DefaultButton
-                                onClick={handleEmailLogin}
-                                $width={300}
-                                $height={40}
-                                label="이메일로 로그인"
-                            />
-
-                            {error && <ErrorMessage>{error}</ErrorMessage>}
-
-                            <SwitchAuthModeLink>
-                                계정이 없으신가요? <span onClick={() => setIsRegistering(true)}>회원가입</span>
-                            </SwitchAuthModeLink>
-                        </>
-                    )}
-                </InputCard>
-            </AuthDiv>
-        </ThemeProvider>
-    );
-}
-
