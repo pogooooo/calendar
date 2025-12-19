@@ -3,24 +3,12 @@
 import { useState, useEffect } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import theme from '@/styles/theme'
+import {themes} from '@/styles/theme'
 import Input from '@/components/celestial/input/input'
 import DefaultButton from "@/components/celestial/button/default_button";
 import styled, { ThemeProvider } from 'styled-components';
-
-const EyeIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
-        <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z"/>
-        <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8zm8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"/>
-    </svg>
-);
-
-const EyeSlashIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
-        <path d="m10.79 12.912-1.614-1.615a3.5 3.5 0 0 1-4.474-4.474l-2.06-2.06C.938 6.278 0 8 0 8s3 5.5 8 5.5a7.029 7.029 0 0 0 2.79-.588zM5.21 3.088A7.028 7.028 0 0 1 8 2.5c5 0 8 5.5 8 5.5s-.939 1.721-2.641 3.238l-2.062-2.062a3.5 3.5 0 0 0-4.474-4.474L5.21 3.089z"/>
-        <path d="M5.525 7.646a2.5 2.5 0 0 0 2.829 2.829l-2.83-2.829zm4.95.708-2.829-2.83a2.5 2.5 0 0 1 2.829 2.829zm3.171 6-12-12 .708-.708 12 12-.708.708z"/>
-    </svg>
-);
+import {EyeIcon, EyeSlashIcon} from "../../components/svg/EyeIcon"
+import { GoogleOAuthProvider, useGoogleLogin } from '@react-oauth/google';
 
 const GoogleIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">
@@ -45,6 +33,8 @@ export default function AuthPage() {
     const [showRegisterPassword, setShowRegisterPassword] = useState(false);
     const [registerError, setRegisterError] = useState<string | null>(null);
 
+    const [theme, setTheme] = useState(themes.celestial);
+
     const router = useRouter();
     const searchParams = useSearchParams();
 
@@ -57,18 +47,71 @@ export default function AuthPage() {
 
     const handleEmailLogin = async () => {
         setError(null);
-        const result = await signIn('credentials', {
-            redirect: false,
-            email,
-            password,
-        });
 
-        if (result?.error) {
-            setError('이메일 또는 비밀번호가 일치하지 않습니다.');
-        } else if (result?.ok) {
+        try {
+            const res = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password }),
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                throw new Error(data.message || '로그인에 실패했습니다.');
+            }
+
+            localStorage.setItem('accessToken', data.accessToken);
+            localStorage.setItem('refreshToken', data.refreshToken);
+            localStorage.setItem('user', JSON.stringify(data.user));
+
+            console.log('로그인 성공:', data.user);
+
             router.push('/');
+
+        } catch (err: any) {
+            setError(err.message);
         }
     };
+
+    const googleLogin = useGoogleLogin({
+        onSuccess: async (tokenResponse) => {
+            try {
+                const userInfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                    headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+                });
+                const userInfo = await userInfoRes.json();
+
+                const res = await fetch('/api/auth/google', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: userInfo.email,
+                        name: userInfo.name,
+                        googleId: userInfo.sub,
+                        image: userInfo.picture
+                    }),
+                });
+
+                const data = await res.json();
+
+                if (!res.ok) {
+                    throw new Error(data.message || '구글 로그인 실패');
+                }
+
+                localStorage.setItem('accessToken', data.accessToken);
+                localStorage.setItem('refreshToken', data.refreshToken);
+                router.push('/');
+
+            } catch (err: any) {
+                console.error("Google Login Error:", err);
+                setError("구글 로그인 중 오류가 발생했습니다.");
+            }
+        },
+        onError: () => {
+            setError("구글 로그인 창이 닫혔거나 오류가 발생했습니다.");
+        },
+    });
 
     const handleRegister = async () => {
         setRegisterError(null);
@@ -132,8 +175,9 @@ export default function AuthPage() {
                                     value={registerPassword}
                                     onChange={(e) => setRegisterPassword(e.target.value)}
                                 />
-                                <PasswordToggleButton type="button" onClick={() => setShowRegisterPassword(!showRegisterPassword)}>
-                                    {showRegisterPassword ? <EyeSlashIcon /> : <EyeIcon />}
+                                <PasswordToggleButton type="button"
+                                                      onClick={() => setShowRegisterPassword(!showRegisterPassword)}>
+                                    {showRegisterPassword ? <EyeSlashIcon/> : <EyeIcon/>}
                                 </PasswordToggleButton>
                             </PasswordInputWrapper>
                             <DefaultButton
@@ -151,12 +195,12 @@ export default function AuthPage() {
                         <>
                             <h2>로그인</h2>
                             <DefaultButton
-                                onClick={() => signIn('google', { callbackUrl: '/' })}
+                                onClick={() => googleLogin()}
                                 $width={300}
                                 $height={40}
                                 label="구글로 계속하기"
                             >
-                                <GoogleIcon />
+                                <GoogleIcon/>
                             </DefaultButton>
 
                             <Separator>또는</Separator>
@@ -180,7 +224,7 @@ export default function AuthPage() {
                                     onChange={(e) => setPassword(e.target.value)}
                                 />
                                 <PasswordToggleButton type="button" onClick={() => setShowPassword(!showPassword)}>
-                                    {showPassword ? <EyeSlashIcon /> : <EyeIcon />}
+                                    {showPassword ? <EyeSlashIcon/> : <EyeIcon/>}
                                 </PasswordToggleButton>
                             </PasswordInputWrapper>
 
@@ -205,8 +249,7 @@ export default function AuthPage() {
 }
 
 const AuthDiv = styled.div`
-    background-color: ${(props) => props.theme.celestial.surface};
-    //background-color: aqua;
+    background-color: ${(props) => props.theme.colors.surface};
     width: 100vw;
     height: 100vh;
     display: flex;
@@ -237,12 +280,12 @@ const PasswordToggleButton = styled.button`
     background: none;
     border: none;
     cursor: pointer;
-    color: ${(props) => props.theme.celestial.border};
+    color: ${(props) => props.theme.colors.border};
     display: flex;
     align-items: center;
 
     &:hover {
-        color: ${(props) => props.theme.celestial.primary};
+        color: ${(props) => props.theme.colors.primary};
     }
 `;
 
@@ -251,13 +294,13 @@ const Separator = styled.div`
     display: flex;
     align-items: center;
     text-align: center;
-    color: ${(props) => props.theme.celestial.text};
+    color: ${(props) => props.theme.colors.text};
     font-size: 0.8rem;
 
     &::before, &::after {
         content: '';
         flex: 1;
-        border-bottom: 1px solid ${(props) => props.theme.celestial.border};
+        border-bottom: 1px solid ${(props) => props.theme.colors.border};
     }
 
     &:not(:empty)::before {
@@ -270,20 +313,20 @@ const Separator = styled.div`
 `;
 
 const ErrorMessage = styled.p`
-    color: #ef4444;
+    color: ${(props) => props.theme.colors.error};
     font-size: 0.875rem;
     text-align: center;
     min-height: 1.25rem;
 `;
 
 const SwitchAuthModeLink = styled.p`
-    color: ${(props) => props.theme.celestial.text};
+    color: ${(props) => props.theme.colors.text};
     font-size: 0.875rem;
     text-align: center;
     margin-top: 1rem;
 
     span {
-        color: ${(props) => props.theme.celestial.primary};
+        color: ${(props) => props.theme.colors.primary};
         cursor: pointer;
         font-weight: 500;
         &:hover {

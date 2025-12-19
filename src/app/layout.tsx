@@ -1,9 +1,8 @@
-import AuthSessionProvider from "./AuthSessionProvider";
 import "./globals.css";
-import Link from "next/link";
 import {Orbit} from "next/font/google";
 import StyledComponentsRegistry from "@/lib/StyledComponentsRegistry";
 import {Metadata} from "next";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 
 const orbit = Orbit({
     subsets: ["latin"],
@@ -24,9 +23,11 @@ export default function RootLayout({
     return (
         <html lang="en" className={orbit.variable}>
         <body className="relative">
-            <StyledComponentsRegistry>
-                <AuthSessionProvider>{children}</AuthSessionProvider>
-            </StyledComponentsRegistry>
+            <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!}>
+                <StyledComponentsRegistry>
+                    {children}
+                </StyledComponentsRegistry>
+            </GoogleOAuthProvider>
         </body>
         </html>
     );

@@ -2,11 +2,9 @@ import 'styled-components';
 
 declare module 'styled-components' {
     export interface DefaultTheme {
-        // 테마 구분을 위한 이름
         name: string;
 
-        // Celestial 테마 색상
-        celestial: {
+        colors: {
             background: string;
             primary: string;
             accent: string;
@@ -18,7 +16,6 @@ declare module 'styled-components' {
             error: string;
         };
 
-        // 폰트 크기
         fontSizes: {
             h1: string;
             h2: string;
@@ -29,7 +26,6 @@ declare module 'styled-components' {
             label: string;
         };
 
-        // 폰트 굵기
         fontWeights: {
             light: number;
             regular: number;
@@ -37,13 +33,11 @@ declare module 'styled-components' {
             bold: number;
         };
 
-        // 줄 높이
         lineHeights: {
             body: number;
             heading: number;
         };
 
-        // 폰트 종류
         fonts: {
             celestial_heading: string;
             body: string;

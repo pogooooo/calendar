@@ -1,34 +1,69 @@
 "use client";
 
-import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
-import {ThemeProvider} from "styled-components";
-import theme from "@/styles/theme";
+import { useEffect, useState } from "react";
+import { ThemeProvider } from "styled-components";
+import { themes } from "@/styles/theme";
 
 export default function Home() {
-    const { data: session, status } = useSession();
+    const [isLoading, setIsLoading] = useState(true);
+    const [userInfo, setUserInfo] = useState<{ name?: string; email?: string } | null>(null);
+
     const router = useRouter();
 
+    const [theme, setTheme] = useState(themes.celestial);
+    const toggleTheme = () => {
+        setTheme(prev => prev.name === 'celestial' ? themes.light : themes.celestial);
+    };
+
     useEffect(() => {
-        if (status === "unauthenticated") {
+        const token = localStorage.getItem("accessToken");
+
+        if (!token) {
+            router.push("/login");
+        } else {
+            const storedUser = localStorage.getItem("user");
+            if (storedUser) {
+                try {
+                    const parsedUser = JSON.parse(storedUser);
+                    setUserInfo(parsedUser);
+                } catch (e) {
+                    console.error("User info parsing error", e);
+                }
+            }
+            setIsLoading(false);
+        }
+    }, [router]);
+
+    const handleLogout = async () => {
+        try {
+            const refreshToken = localStorage.getItem("refreshToken");
+            if (refreshToken) {
+                await fetch("/api/auth/logout", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ refreshToken }),
+                });
+            }
+        } catch (error) {
+            console.error("Logout failed", error);
+        } finally {
+            localStorage.removeItem("accessToken");
+            localStorage.removeItem("refreshToken");
+            localStorage.removeItem("user");
+
             router.push("/login");
         }
-    }, [status, router]);
+    };
 
-    if (status === "loading") {
+    if (isLoading) {
         return <div>로딩 중...</div>;
     }
 
-    if (status === "authenticated") {
-        return (
-            <ThemeProvider theme={theme}>
-                <h1>환영합니다, {session.user?.name || session.user?.email}님!</h1>
-                <pre>{JSON.stringify(session, null, 2)}</pre>
-                <button onClick={() => signOut()}>로그아웃</button>
-            </ThemeProvider>
-        );
-    }
-
-    return null;
+    return (
+        <ThemeProvider theme={theme}>
+            <h1>환영합니다, {userInfo?.name || userInfo?.email || "사용자"}님!</h1>
+            <button onClick={handleLogout}>로그아웃</button>
+        </ThemeProvider>
+    );
 }

@@ -17,13 +17,13 @@ const ButtonWrapper = styled.button<ButtonProps>`
     padding: 0 10px 0 10px;
     width: 300px;
     height: 40px;
-    border: 1px solid ${(props) => props.theme.celestial.border};
+    border: 1px solid ${(props) => props.theme.colors.border};
     border-radius: 5px;
 
     &:hover {
-        border: 1px solid ${(props) => props.theme.celestial.accent};
+        border: 1px solid ${(props) => props.theme.colors.accent};
         cursor: pointer;
-        box-shadow: 0 0 5px 1px ${(props) => props.theme.celestial.accent};
+        box-shadow: 0 0 5px 1px ${(props) => props.theme.colors.accent};
     }
 `
 

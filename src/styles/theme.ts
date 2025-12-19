@@ -29,7 +29,7 @@ const commonStyles = {
 const celestial: DefaultTheme = {
     name: 'celestial',
     ...commonStyles,
-    celestial: {
+    colors: {
         background: '#FFFFFF',
         primary: '#D4AF37',
         accent: '#FAE7B5',
@@ -45,7 +45,7 @@ const celestial: DefaultTheme = {
 const light: DefaultTheme = {
     name: 'light',
     ...commonStyles,
-    celestial: {
+    colors: {
         background: '#ffffff',
         primary: '#007bff',
         accent: '#0056b3',

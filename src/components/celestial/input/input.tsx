@@ -21,8 +21,8 @@ const StyledLabel = styled.div`
     transition: all 0.2s ease-in-out;
     font-size: ${(props) => props.theme.fontSizes.body};
     z-index: 1;
-    background-color: ${(props) => props.theme.celestial.surface};
-    color: ${(props) => props.theme.celestial.textSecondary};
+    background-color: ${(props) => props.theme.colors.surface};
+    color: ${(props) => props.theme.colors.textSecondary};
     
     pointer-events: none;
 `
@@ -34,7 +34,7 @@ const StyledInput = styled.input<InputProps>`
     
     font-size: ${(props) => props.theme.fontSizes.body};
     
-    border: 1px solid ${(props) => props.theme.celestial.primary};
+    border: 1px solid ${(props) => props.theme.colors.primary};
     outline: none;
     border-radius: 5px;
     transition: box-shadow 0.3s ease;
@@ -43,11 +43,11 @@ const StyledInput = styled.input<InputProps>`
         top: 0;
         transform: translateY(-50%);
         font-size: ${(props) => props.theme.fontSizes.label};
-        color: ${(props) => props.theme.celestial.text};
+        color: ${(props) => props.theme.colors.text};
     }
     
     &:focus {
-        box-shadow: 0 0 10px 3px ${(props) => props.theme.celestial.accent};
+        box-shadow: 0 0 10px 3px ${(props) => props.theme.colors.accent};
     }
 `
 
