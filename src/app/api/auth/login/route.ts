@@ -2,6 +2,7 @@ import { NextResponse, NextRequest } from "next/server";
 import bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
 import { generateAccessToken, generateRefreshToken } from "@/lib/jwt";
+import {cookies} from "next/headers";
 
 export async function POST(request: NextRequest) {
     try {
@@ -36,6 +37,7 @@ export async function POST(request: NextRequest) {
         const expiresAt = new Date();
         expiresAt.setDate(expiresAt.getDate() + 7);
 
+        await prisma.session.deleteMany({ where: { userId: user.id } });
         await prisma.session.create({
             data: {
                 userId: user.id,
@@ -44,9 +46,19 @@ export async function POST(request: NextRequest) {
             },
         });
 
+        const cookieStore = await cookies();
+        cookieStore.set({
+            name: 'refreshToken',
+            value: refreshToken,
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            maxAge: 7 * 24 * 60 * 60,
+            path: '/',
+        });
+
         return NextResponse.json({
             accessToken,
-            refreshToken,
             user: {
                 id: user.id,
                 email: user.email,

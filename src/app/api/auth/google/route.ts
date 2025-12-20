@@ -1,6 +1,7 @@
 import { NextResponse, NextRequest } from "next/server";
 import prisma from "@/lib/prisma";
 import { generateAccessToken, generateRefreshToken } from "@/lib/jwt";
+import {cookies} from "next/headers";
 
 export async function POST(request: NextRequest) {
     try {
@@ -60,9 +61,19 @@ export async function POST(request: NextRequest) {
             },
         });
 
+        const cookieStore = await cookies();
+        cookieStore.set({
+            name: 'refreshToken',
+            value: refreshToken,
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            maxAge: 7 * 24 * 60 * 60,
+            path: '/',
+        });
+
         return NextResponse.json({
             accessToken,
-            refreshToken,
             user: {
                 id: user.id,
                 email: user.email,

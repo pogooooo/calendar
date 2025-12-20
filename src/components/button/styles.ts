@@ -2,12 +2,12 @@ import { css } from 'styled-components';
 
 export const celestialButtonStyles = css`
   background-color: transparent;
-  border: 1px solid ${(props) => props.theme.celestial.border};
-  color: ${(props) => props.theme.celestial.text};
+  border: 1px solid ${(props) => props.theme.colors.border};
+  color: ${(props) => props.theme.colors.text};
   
   &:hover {
-    border-color: ${(props) => props.theme.celestial.accent};
-    box-shadow: 0 0 5px 1px ${(props) => props.theme.celestial.accent};
+    border-color: ${(props) => props.theme.colors.accent};
+    box-shadow: 0 0 5px 1px ${(props) => props.theme.colors.accent};
   }
 `;
 

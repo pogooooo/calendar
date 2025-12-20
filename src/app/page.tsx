@@ -37,19 +37,13 @@ export default function Home() {
 
     const handleLogout = async () => {
         try {
-            const refreshToken = localStorage.getItem("refreshToken");
-            if (refreshToken) {
-                await fetch("/api/auth/logout", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ refreshToken }),
-                });
-            }
+            await fetch("/api/auth/logout", {
+                method: "POST",
+            });
         } catch (error) {
             console.error("Logout failed", error);
         } finally {
             localStorage.removeItem("accessToken");
-            localStorage.removeItem("refreshToken");
             localStorage.removeItem("user");
 
             router.push("/login");

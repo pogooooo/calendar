@@ -58,11 +58,10 @@ export default function AuthPage() {
             const data = await res.json();
 
             if (!res.ok) {
-                throw new Error(data.message || '로그인에 실패했습니다.');
+                setError(data.message || '로그인에 실패했습니다.');
             }
 
             localStorage.setItem('accessToken', data.accessToken);
-            localStorage.setItem('refreshToken', data.refreshToken);
             localStorage.setItem('user', JSON.stringify(data.user));
 
             console.log('로그인 성공:', data.user);
@@ -100,7 +99,6 @@ export default function AuthPage() {
                 }
 
                 localStorage.setItem('accessToken', data.accessToken);
-                localStorage.setItem('refreshToken', data.refreshToken);
                 router.push('/');
 
             } catch (err: any) {
@@ -121,7 +119,7 @@ export default function AuthPage() {
         }
 
         try {
-            const res = await fetch('/api/register', {
+            const res = await fetch('/api/auth/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name: registerName, email: registerEmail, password: registerPassword }),
