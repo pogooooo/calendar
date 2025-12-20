@@ -3,28 +3,14 @@
 import { ThemeProvider } from 'styled-components';
 import { themes } from '@/styles/theme';
 import { useEffect, useState } from 'react';
+import useSettingStore from "@/store/setting/useSettingStore";
 
 export default function ThemeProviderWrapper({ children }: { children: React.ReactNode }) {
-    const [currentTheme, setCurrentTheme] = useState(themes.celestial);
-    const [isLoaded, setIsLoaded] = useState(false);
-
-    useEffect(() => {
-        const savedTheme = localStorage.getItem('user-theme');
-        if (savedTheme && themes.celestial) {
-            setCurrentTheme(themes.celestial);
-        }
-        setIsLoaded(true);
-    }, []);
-
-    const toggleTheme = (themeName: 'celestial' | 'light') => {
-        setCurrentTheme(themes[themeName]);
-        localStorage.setItem('user-theme', themeName);
-    };
-
-    if (!isLoaded) return <div style={{ visibility: 'hidden' }}>{children}</div>;
+    const themeName = useSettingStore((state:any) => state.theme);
+    const theme = themes[themeName as keyof typeof themes] || themes.celestial;
 
     return (
-        <ThemeProvider theme={currentTheme}>
+        <ThemeProvider theme={theme}>
             {children}
         </ThemeProvider>
     );

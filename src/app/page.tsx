@@ -2,62 +2,55 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ThemeProvider } from "styled-components";
-import { themes } from "@/styles/theme";
+import useAuthStore from "@/store/auth/useAuthStore";
 
 export default function Home() {
-    const [isLoading, setIsLoading] = useState(true);
-    const [userInfo, setUserInfo] = useState<{ name?: string; email?: string } | null>(null);
+    const accessToken = useAuthStore((state:any) => state.accessToken);
+    const user = useAuthStore((state:any) => state.user)
+    const logout = useAuthStore((state:any) => state.logout);
 
+    const [isMounted, setIsMounted] = useState(false);
     const router = useRouter();
 
-    const [theme, setTheme] = useState(themes.celestial);
-    const toggleTheme = () => {
-        setTheme(prev => prev.name === 'celestial' ? themes.light : themes.celestial);
-    };
+    useEffect(() => {
+        setIsMounted(true);
+        console.log(user)
+    }, []);
 
     useEffect(() => {
-        const token = localStorage.getItem("accessToken");
-
-        if (!token) {
-            router.push("/login");
-        } else {
-            const storedUser = localStorage.getItem("user");
-            if (storedUser) {
-                try {
-                    const parsedUser = JSON.parse(storedUser);
-                    setUserInfo(parsedUser);
-                } catch (e) {
-                    console.error("User info parsing error", e);
-                }
-            }
-            setIsLoading(false);
+        if (isMounted && !accessToken) {
+            router.push("/signIn");
         }
-    }, [router]);
+    }, [isMounted, accessToken, router]);
 
     const handleLogout = async () => {
-        try {
-            await fetch("/api/auth/logout", {
-                method: "POST",
-            });
-        } catch (error) {
-            console.error("Logout failed", error);
-        } finally {
-            localStorage.removeItem("accessToken");
-            localStorage.removeItem("user");
+        await logout();
 
-            router.push("/login");
-        }
+        router.push("/signIn");
     };
 
-    if (isLoading) {
+    if (!isMounted) {
         return <div>로딩 중...</div>;
     }
 
     return (
-        <ThemeProvider theme={theme}>
-            <h1>환영합니다, {userInfo?.name || userInfo?.email || "사용자"}님!</h1>
+        <div>
+            <h1>환영합니다, {user?.name || user?.email || "사용자"}님!</h1>
             <button onClick={handleLogout}>로그아웃</button>
-        </ThemeProvider>
+
+            <div style={{background: "#f0f0f0", padding: "10px", borderRadius: "5px"}}>
+                <h3>[Debug Info]</h3>
+
+                <p><strong>Access Token:</strong></p>
+                <p style={{wordBreak: "break-all", fontSize: "12px", color: "blue"}}>
+                    {accessToken || "없음"}
+                </p>
+
+                <p><strong>User Object:</strong></p>
+                <pre style={{fontSize: "12px", color: "green"}}>
+                    {JSON.stringify(user, null, 2)}
+                </pre>
+            </div>
+        </div>
     );
 }
