@@ -10,7 +10,10 @@ export async function POST(request: NextRequest) {
         const { email, password } = body;
 
         if (!email || !password) {
-            return new NextResponse("이메일과 비밀번호가 필요합니다.", { status: 400 });
+            return NextResponse.json(
+                {message: "이메일과 비밀번호가 필요합니다."},
+                { status: 400 }
+            );
         }
 
         const user = await prisma.user.findUnique({
@@ -19,12 +22,18 @@ export async function POST(request: NextRequest) {
         });
 
         if (!user || !user.password) {
-            return new NextResponse("사용자를 찾을 수 없습니다.", { status: 401 });
+            return NextResponse.json(
+                {message: "사용자를 찾을 수 없습니다."},
+                { status: 401 }
+            );
         }
 
         const isPasswordCorrect = await bcrypt.compare(password, user.password);
         if (!isPasswordCorrect) {
-            return new NextResponse("비밀번호가 일치하지 않습니다.", { status: 401 });
+            return NextResponse.json(
+                {message: "비밀번호가 일치하지 않습니다."},
+                { status: 401 }
+            );
         }
 
         if (!user.settings) {

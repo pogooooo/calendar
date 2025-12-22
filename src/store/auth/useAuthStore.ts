@@ -1,7 +1,22 @@
 import {persist} from "zustand/middleware";
 import {create} from "zustand/react";
 
-const useAuthStore = create(
+export interface User {
+    id: string;
+    email: string;
+    name: string;
+    theme: string;
+}
+
+interface AuthStore {
+    accessToken: string;
+    user: User | null;
+    setAccessToken: (token: string) => void;
+    setUser: (user: User | null) => void;
+    logout: () => Promise<void>;
+}
+
+const useAuthStore = create<AuthStore>()(
     persist(
         (set) => ({
             accessToken: "",

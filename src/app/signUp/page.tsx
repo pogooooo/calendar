@@ -1,9 +1,9 @@
 "use client"
 
 import styled from "styled-components";
-import Input from "@/components/celestial/input/input";
+import SingleInput from "@/components/input/single/singleInput";
+import SecondaryButton from "@/components/button/secondary/secondaryButton"
 import {EyeIcon, EyeSlashIcon} from "@/components/svg/EyeIcon";
-import DefaultButton from "@/components/celestial/button/default_button";
 import {useState} from "react";
 import {useRouter} from "next/navigation";
 
@@ -49,7 +49,7 @@ const SignUp = () => {
         <AuthDiv>
             <InputCard>
                 <h2>회원가입</h2>
-                <Input
+                <SingleInput
                     type="text"
                     $width={300}
                     $height={40}
@@ -57,7 +57,7 @@ const SignUp = () => {
                     value={registerName}
                     onChange={(e) => setRegisterName(e.target.value)}
                 />
-                <Input
+                <SingleInput
                     type="text"
                     $width={300}
                     $height={40}
@@ -66,7 +66,7 @@ const SignUp = () => {
                     onChange={(e) => setRegisterEmail(e.target.value)}
                 />
                 <PasswordInputWrapper>
-                    <Input
+                    <SingleInput
                         type={showRegisterPassword ? "text" : "password"}
                         $width={300}
                         $height={40}
@@ -79,12 +79,11 @@ const SignUp = () => {
                         {showRegisterPassword ? <EyeSlashIcon/> : <EyeIcon/>}
                     </PasswordToggleButton>
                 </PasswordInputWrapper>
-                <DefaultButton
+                <SecondaryButton
                     onClick={handleRegister}
                     $width={300}
                     $height={40}
-                    label="회원가입"
-                />
+                >회원가입</SecondaryButton>
                 {registerError && <ErrorMessage>{registerError}</ErrorMessage>}
                 <SwitchAuthModeLink>
                     이미 계정이 있으신가요? <span onClick={() => {router.push("/signIn")}}>로그인</span>

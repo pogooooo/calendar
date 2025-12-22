@@ -1,21 +1,21 @@
 "use client";
 
 import styled from "styled-components";
-import DefaultButton from "@/components/celestial/button/default_button";
-import Input from "@/components/celestial/input/input";
+import SecondaryButton from "@/components/button/secondary/secondaryButton"
+import SingleInput from "@/components/input/single/singleInput";
 import {EyeIcon, EyeSlashIcon} from "@/components/svg/EyeIcon";
 import {useGoogleLogin} from "@react-oauth/google";
 import {useState} from "react";
 import {useRouter} from "next/navigation";
 import useSettingStore from "@/store/setting/useSettingStore";
-import useAuthStore from "@/store/auth/useAuthStore";
+import useAuthStore from "@/store/auth/useAuthStore"
 
 const SignIn = () => {
     const router = useRouter();
-    const setTheme = useSettingStore((state:any) => state.setTheme)
+    const setTheme = useSettingStore((state) => state.setTheme)
 
-    const setAccessToken = useAuthStore((state:any) => state.setAccessToken)
-    const setUser = useAuthStore((state:any) => state.setUser)
+    const setAccessToken = useAuthStore((state) => state.setAccessToken)
+    const setUser = useAuthStore((state) => state.setUser)
 
     const [error, setError] = useState<string | null>(null);
     const [email, setEmail] = useState('');
@@ -50,7 +50,7 @@ const SignIn = () => {
                 localStorage.setItem('accessToken', data.accessToken);
                 router.push('/');
 
-            } catch (err: any) {
+            } catch (err: unknown) {
                 console.error("Google Login Error:", err);
                 setError("구글 로그인 중 오류가 발생했습니다.");
             }
@@ -74,22 +74,19 @@ const SignIn = () => {
 
             if (!res.ok) {
                 setError(data.message || '로그인에 실패했습니다.');
+                return
             }
-
-            localStorage.setItem('accessToken', data.accessToken);
-            localStorage.setItem('user', JSON.stringify(data.user));
 
             setTheme(data.user.theme);
             setAccessToken(data.accessToken)
             setUser(data.user);
 
-            console.log(JSON.stringify(data.user))
-
             router.push('/');
 
-        } catch (err: any) {
-            setError(err.message);
-            console.log(err)
+        } catch (err: unknown) {
+            const errorMessage = err instanceof Error ? err.message : "로그인 중 오류 발생";
+            setError(errorMessage);
+            console.log(err);
         }
     };
 
@@ -97,17 +94,13 @@ const SignIn = () => {
         <AuthDiv>
             <InputCard>
                 <h2>로그인</h2>
-                <DefaultButton
-                    onClick={() => googleLogin()}
-                    $width={300}
-                    $height={40}
-                    label="구글로 계속하기"
-                >
-                </DefaultButton>
+                <SecondaryButton onClick={() => googleLogin()} $width={300} $height={40}>
+                    구글로 계속하기
+                </SecondaryButton>
 
                 <Separator>또는</Separator>
 
-                <Input
+                <SingleInput
                     type="text"
                     $width={300}
                     $height={40}
@@ -117,7 +110,7 @@ const SignIn = () => {
                 />
 
                 <PasswordInputWrapper>
-                    <Input
+                    <SingleInput
                         type={showPassword ? "text" : "password"}
                         $width={300}
                         $height={40}
@@ -130,12 +123,9 @@ const SignIn = () => {
                     </PasswordToggleButton>
                 </PasswordInputWrapper>
 
-                <DefaultButton
-                    onClick={handleEmailLogin}
-                    $width={300}
-                    $height={40}
-                    label="이메일로 로그인"
-                />
+                <SecondaryButton onClick={handleEmailLogin} $width={300} $height={40}>
+                    이메일로 로그인
+                </SecondaryButton>
 
                 {error && <ErrorMessage>{error}</ErrorMessage>}
 

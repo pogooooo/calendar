@@ -1,7 +1,12 @@
 import {persist} from "zustand/middleware";
 import {create} from "zustand/react";
 
-const useSettingStore = create(
+interface SettingState {
+    theme: string;
+    setTheme: (inputTheme: string) => void;
+}
+
+const useSettingStore = create<SettingState>()(
     persist(
         (set) => ({
             theme: 'celestial',
