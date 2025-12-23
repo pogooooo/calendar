@@ -68,22 +68,18 @@ model VerificationToken {
 
 model Category {
   id         String  @id @default(cuid())
-  name       String  // 이름
-  color      String  // 색상 (e.g., "#FFFFFF")
-  isDefault  Boolean @default(false) // 기본 카테고리 여부
+  name       String
+  color      String
+  isDefault  Boolean @default(false)
 
-  // 생성자 (User와 1:N 관계)
   creator    User    @relation("CreatedCategories", fields: [creatorId], references: [id])
-  creatorId  String  // 생성자 ID
+  creatorId  String
 
-  // 참가자 (User와 N:M 관계)
   participants User[] @relation("CategoryParticipants")
 
-  // 카테고리에 속한 할 일 목록
   todos Todo[]
 }
 
-// 할 일 모델
 model Todo {
   id        String    @id @default(cuid())
   title     String    // 제목
@@ -92,7 +88,7 @@ model Todo {
   endAt     DateTime? // 종료일 및 시간 (선택)
   isAllDay  Boolean   @default(false) // 하루 종일 일정 여부
   location  String?   // 장소 (선택)
-  repeat    RepeatCycle @default(NONE) // 반복 주기 (선택)
+  repeat    Int @default(0) // 반복 주기 (선택)
 
   // 카테고리 (Category와 1:N 관계)
   category   Category @relation(fields: [categoryId], references: [id])
@@ -105,7 +101,6 @@ model Todo {
   updatedAt DateTime @updatedAt
 }
 
-// 체크리스트 아이템 모델
 model ChecklistItem {
   id        String  @id @default(cuid())
   text      String  // 내용
@@ -114,13 +109,4 @@ model ChecklistItem {
   // 할 일 (Todo와 1:N 관계)
   todo   Todo   @relation(fields: [todoId], references: [id])
   todoId String
-}
-
-// 반복 주기
-enum RepeatCycle {
-  NONE
-  DAILY
-  WEEKLY
-  MONTHLY
-  YEARLY
 }

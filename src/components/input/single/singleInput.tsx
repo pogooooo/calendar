@@ -5,7 +5,7 @@ import styled, { useTheme } from 'styled-components';
 import { Slot } from "@radix-ui/react-slot";
 import CelestialSingleInput from './celestial_singleInput';
 
-interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
+export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
     asChild?: boolean;
     $width?: string | number;
     $height?: string | number;

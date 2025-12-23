@@ -3,18 +3,21 @@ import bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
 import { generateAccessToken, generateRefreshToken } from "@/lib/jwt";
 import {cookies} from "next/headers";
+import { LoginSchema } from "@/lib/schema";
 
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        const { email, password } = body;
 
-        if (!email || !password) {
+        const validation = LoginSchema.safeParse(body);
+        if (!validation.success) {
             return NextResponse.json(
-                {message: "이메일과 비밀번호가 필요합니다."},
+                { message: validation.error.message },
                 { status: 400 }
             );
         }
+
+        const { email, password } = validation.data;
 
         const user = await prisma.user.findUnique({
             where: { email },
@@ -23,7 +26,7 @@ export async function POST(request: NextRequest) {
 
         if (!user || !user.password) {
             return NextResponse.json(
-                {message: "사용자를 찾을 수 없습니다."},
+                {message: "이메일 또는 비밀번호가 올바르지 않습니다."},
                 { status: 401 }
             );
         }
@@ -31,7 +34,7 @@ export async function POST(request: NextRequest) {
         const isPasswordCorrect = await bcrypt.compare(password, user.password);
         if (!isPasswordCorrect) {
             return NextResponse.json(
-                {message: "비밀번호가 일치하지 않습니다."},
+                {message: "이메일 또는 비밀번호가 올바르지 않습니다."},
                 { status: 401 }
             );
         }

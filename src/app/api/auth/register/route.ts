@@ -1,20 +1,23 @@
 import { NextResponse, NextRequest } from "next/server";
 import bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
+import {RegisterSchema} from "@/lib/schema";
 
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        const { name, email, password } = body;
 
-        if (!name || !email || !password) {
-            return new NextResponse("필수 정보가 누락되었습니다.", { status: 400 });
+        const validation = RegisterSchema.safeParse(body);
+        if (!validation.success) {
+            return NextResponse.json(
+                { message: validation.error.message },
+                { status: 400 }
+            );
         }
 
-        const existingUser = await prisma.user.findUnique({
-            where: { email: email }
-        });
+        const { name, email, password } = body;
 
+        const existingUser = await prisma.user.findUnique({where: { email: email }});
         if(existingUser) {
             return NextResponse.json({ message: "이미 사용 중인 이메일입니다." }, { status: 409 });
         }
@@ -28,6 +31,20 @@ export async function POST(request: NextRequest) {
                 password: hashedPassword,
             },
         });
+
+        await prisma.userSettings.create({ data: { userId: user.id } });
+
+        await prisma.category.create({
+            data: {
+                name: "할 일",
+                color: "#808080",
+                isDefault: true,
+                creatorId: user.id,
+                participants: {
+                    connect: {id: user.id}
+                }
+            }
+        })
 
         return NextResponse.json(user);
     } catch (error) {
