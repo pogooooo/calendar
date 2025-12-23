@@ -52,11 +52,11 @@ export async function POST(request: NextRequest) {
         const accessToken = generateAccessToken({ userId: user.id, email: user.email });
         const refreshToken = generateRefreshToken({ userId: user.id });
 
-        await prisma.session.deleteMany({ where: { userId: user.id } });
-        await prisma.session.create({
+        await prisma.refreshToken.deleteMany({ where: { userId: user.id } });
+        await prisma.refreshToken.create({
             data: {
                 userId: user.id,
-                sessionToken: refreshToken,
+                Token: refreshToken,
                 expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
             },
         });

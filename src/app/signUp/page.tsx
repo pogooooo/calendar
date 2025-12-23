@@ -3,6 +3,7 @@
 import styled from "styled-components";
 import SingleInput from "@/components/input/single/singleInput";
 import SecondaryButton from "@/components/button/secondary/secondaryButton"
+import TertiaryButton from "@/components/button/tertiary/teritaryButton";
 import {EyeIcon, EyeSlashIcon} from "@/components/svg/EyeIcon";
 import {useState} from "react";
 import {useRouter} from "next/navigation";
@@ -48,7 +49,6 @@ const SignUp = () => {
     return(
         <AuthDiv>
             <InputCard>
-                <h2>회원가입</h2>
                 <SingleInput
                     type="text"
                     $width={300}
@@ -74,19 +74,19 @@ const SignUp = () => {
                         value={registerPassword}
                         onChange={(e) => setRegisterPassword(e.target.value)}
                     />
-                    <PasswordToggleButton type="button"
-                                          onClick={() => setShowRegisterPassword(!showRegisterPassword)}>
+                    <PasswordToggleButton type="button" onClick={() => setShowRegisterPassword(!showRegisterPassword)}>
                         {showRegisterPassword ? <EyeSlashIcon/> : <EyeIcon/>}
                     </PasswordToggleButton>
                 </PasswordInputWrapper>
-                <SecondaryButton
-                    onClick={handleRegister}
-                    $width={300}
-                    $height={40}
-                >회원가입</SecondaryButton>
+
+                <SecondaryButton onClick={handleRegister} $width={300} $height={40}>
+                    회원가입
+                </SecondaryButton>
+
                 {registerError && <ErrorMessage>{registerError}</ErrorMessage>}
+
                 <SwitchAuthModeLink>
-                    이미 계정이 있으신가요? <span onClick={() => {router.push("/signIn")}}>로그인</span>
+                    이미 계정이 있으신가요? <TertiaryButton onClick={() => {router.push("/signIn")}}>로그인</TertiaryButton>
                 </SwitchAuthModeLink>
             </InputCard>
         </AuthDiv>
@@ -146,16 +146,6 @@ const SwitchAuthModeLink = styled.p`
     font-size: 0.875rem;
     text-align: center;
     margin-top: 1rem;
-
-    span {
-        color: ${(props) => props.theme.colors.primary};
-        cursor: pointer;
-        font-weight: 500;
-
-        &:hover {
-            text-decoration: underline;
-        }
-    }
 `;
 
 export default SignUp

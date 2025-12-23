@@ -32,9 +32,9 @@ const CelestialSingleInput = forwardRef<HTMLInputElement, InputProps>(({ asChild
     if (asChild) {
         return (
             <CelestialWrapper>
-                <Slot ref={ref} {...props}>
+                <CelestialInput as={Slot} ref={ref} {...props}>
                     {props.children}
-                </Slot>
+                </CelestialInput>
                 {label && <CelestialLabel className="input-label">{label}</CelestialLabel>}
             </CelestialWrapper>
         );

@@ -3,6 +3,7 @@
 import styled from "styled-components";
 import SecondaryButton from "@/components/button/secondary/secondaryButton"
 import SingleInput from "@/components/input/single/singleInput";
+import TertiaryButton from "@/components/button/tertiary/teritaryButton";
 import {EyeIcon, EyeSlashIcon} from "@/components/svg/EyeIcon";
 import {useGoogleLogin} from "@react-oauth/google";
 import {useState} from "react";
@@ -93,31 +94,16 @@ const SignIn = () => {
     return(
         <AuthDiv>
             <InputCard>
-                <h2>로그인</h2>
                 <SecondaryButton onClick={() => googleLogin()} $width={300} $height={40}>
                     구글로 계속하기
                 </SecondaryButton>
 
                 <Separator>또는</Separator>
 
-                <SingleInput
-                    type="text"
-                    $width={300}
-                    $height={40}
-                    label="이메일"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                />
+                <SingleInput type="text" $width={300} $height={40} label="이메일" value={email} onChange={(e) => setEmail(e.target.value)}/>
 
                 <PasswordInputWrapper>
-                    <SingleInput
-                        type={showPassword ? "text" : "password"}
-                        $width={300}
-                        $height={40}
-                        label="비밀번호"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                    />
+                    <SingleInput type={showPassword ? "text" : "password"} $width={300} $height={40} label="비밀번호" value={password} onChange={(e) => setPassword(e.target.value)}/>
                     <PasswordToggleButton type="button" onClick={() => setShowPassword(!showPassword)}>
                         {showPassword ? <EyeSlashIcon/> : <EyeIcon/>}
                     </PasswordToggleButton>
@@ -130,7 +116,7 @@ const SignIn = () => {
                 {error && <ErrorMessage>{error}</ErrorMessage>}
 
                 <SwitchAuthModeLink>
-                    계정이 없으신가요? <span onClick={() => {router.push("/signUp")}}>회원가입</span>
+                    계정이 없으신가요? <TertiaryButton asChild><a href={'/signUp'}>회원가입</a></TertiaryButton>
                 </SwitchAuthModeLink>
             </InputCard>
         </AuthDiv>
@@ -143,8 +129,7 @@ const AuthDiv = styled.div`
     height: 100vh;
     display: flex;
     align-items: center;
-    justify-content: center;
-    font-family: ${(props) => props.theme.fonts.celestial_heading};
+    justify-content: center
 `;
 
 const InputCard = styled.div`
@@ -213,15 +198,6 @@ const SwitchAuthModeLink = styled.p`
     font-size: 0.875rem;
     text-align: center;
     margin-top: 1rem;
-
-    span {
-        color: ${(props) => props.theme.colors.primary};
-        cursor: pointer;
-        font-weight: 500;
-        &:hover {
-            text-decoration: underline;
-        }
-    }
 `;
 
 export default SignIn

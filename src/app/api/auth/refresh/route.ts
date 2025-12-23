@@ -15,8 +15,8 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const session = await prisma.session.findUnique({
-            where: { sessionToken: refreshToken },
+        const session = await prisma.refreshToken.findUnique({
+            where: { Token: refreshToken },
             include: { user: true },
         });
 
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
         }
 
         if (new Date() > session.expires) {
-            await prisma.session.delete({ where: { id: session.id } });
+            await prisma.refreshToken.delete({ where: { id: session.id } });
             return new NextResponse(
                 JSON.stringify({ message: "만료된 토큰입니다. 다시 로그인해주세요." }),
                 { status: 403 }

@@ -1,6 +1,6 @@
 import {css} from "styled-components";
 
-export const celestial_defaultButton = css`
+export const celestial_secondaryButton = css`
     border: 1px solid ${(props) => props.theme.colors.border};
     color: ${(props) => props.theme.colors.text};
     border-radius: 5px;
@@ -49,5 +49,14 @@ export const celestial_defaultInput_input = css`
     
     &:focus {
         box-shadow: 0 0 10px 3px ${(props) => props.theme.colors.accent};
+    }
+`
+
+export const celestial_tertiaryButton = css`
+    color: ${(props) => props.theme.colors.primary};
+    cursor: pointer;
+    font-weight: 500;
+    &:hover {
+        text-decoration: underline;
     }
 `

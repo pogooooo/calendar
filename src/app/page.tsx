@@ -5,9 +5,9 @@ import { useEffect, useState } from "react";
 import useAuthStore from "@/store/auth/useAuthStore";
 
 export default function Home() {
-    const accessToken = useAuthStore((state:any) => state.accessToken);
-    const user = useAuthStore((state:any) => state.user)
-    const logout = useAuthStore((state:any) => state.logout);
+    const accessToken = useAuthStore((state) => state.accessToken);
+    const user = useAuthStore((state) => state.user)
+    const logout = useAuthStore((state) => state.logout);
 
     const [isMounted, setIsMounted] = useState(false);
     const router = useRouter();

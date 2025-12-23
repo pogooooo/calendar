@@ -8,8 +8,8 @@ export async function POST(request: NextRequest) {
         const refreshToken = cookieStore.get("refreshToken")?.value;
 
         if (refreshToken) {
-            await prisma.session.deleteMany({
-                where: { sessionToken: refreshToken },
+            await prisma.refreshToken.deleteMany({
+                where: { Token: refreshToken },
             });
         }
 

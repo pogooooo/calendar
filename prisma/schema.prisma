@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
   output   = "../src/generated/prisma"
@@ -14,7 +8,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// user account
 model User {
   id            String          @id @default(cuid())
   name          String?
@@ -23,11 +16,9 @@ model User {
   password      String?
   image         String?
   accounts      Account[]
-  sessions      Session[]
+  refreshToken  RefreshToken[]
 
-  // 사용자가 생성한 카테고리 목록
   createdCategories Category[] @relation("CreatedCategories")
-  // 사용자가 참여하는 카테고리 목록
   participatingCategories Category[] @relation("CategoryParticipants")
   settings                UserSettings?
 }
@@ -55,14 +46,13 @@ model UserSettings {
   id    String @id @default(cuid())
   theme String @default("celestial")
 
-  // User 모델과 1:1 관계를 설정합니다.
   user   User   @relation(fields: [userId], references: [id])
-  userId String @unique // userId를 unique로 설정하여 1:1 관계를 강제합니다.
+  userId String @unique
 }
 
-model Session {
+model RefreshToken {
   id           String   @id @default(cuid())
-  sessionToken String   @unique
+  Token        String   @unique
   userId       String
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)

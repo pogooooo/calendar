@@ -3,7 +3,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import { Slot } from "@radix-ui/react-slot";
-import { celestial_defaultButton } from "@/styles/celestial_theme";
+import { celestial_secondaryButton } from "@/styles/celestial_theme";
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     asChild?: boolean;
@@ -17,15 +17,22 @@ const SecondaryButton = styled.button<ButtonProps>`
 
     ${({ theme }) => {
         switch (theme.name) {
-            case 'celestial': return celestial_defaultButton
-            default: return celestial_defaultButton;
+            case 'celestial': return celestial_secondaryButton
+            default: return celestial_secondaryButton;
         }
     }}
 `;
 
 const CelestialSecondaryButton = React.forwardRef<HTMLButtonElement, ButtonProps>(({ asChild, ...props }, ref) => {
-    const Comp = asChild ? Slot : SecondaryButton;
-    return <Comp ref={ref} {...props} />;
+    if (asChild) {
+        return (
+            <SecondaryButton as={Slot} ref={ref} {...props}>
+                {props.children}
+            </SecondaryButton>
+        );
+    }
+
+    return <SecondaryButton ref={ref} {...props} />;
 });
 
 CelestialSecondaryButton.displayName = 'CelestialSingleInput';
