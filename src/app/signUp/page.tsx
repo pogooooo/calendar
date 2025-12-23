@@ -9,12 +9,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 
 import {RegisterSchema} from "@/lib/schema";
 
-import SingleInput from "@/components/input/single/singleInput";
-import SecondaryButton from "@/components/button/secondary/secondaryButton"
-import TertiaryButton from "@/components/button/tertiary/teritaryButton";
-import PasswordInput from "@/components/input/password/passwordInput";
-import GlobalError from "@/components/error/globalError/globalError";
-import InlineError from "@/components/error/globalError/globalError";
+import SingleInput from "@/components/input/single/SingleInput";
+import SecondaryButton from "@/components/button/secondary/SecondaryButton"
+import TertiaryButton from "@/components/button/tertiary/TeritaryButton";
+import PasswordInput from "@/components/input/password/PasswordInput";
+import GlobalError from "@/components/error/globalError/GlobalError";
+import InlineError from "@/components/error/inlineError/InlineError";
 
 type RegisterFormData = z.infer<typeof RegisterSchema>;
 

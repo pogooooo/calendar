@@ -12,12 +12,12 @@ import useSettingStore from "@/store/setting/useSettingStore";
 import useAuthStore from "@/store/auth/useAuthStore"
 import {LoginSchema} from "@/lib/schema";
 
-import SecondaryButton from "@/components/button/secondary/secondaryButton"
-import SingleInput from "@/components/input/single/singleInput";
-import TertiaryButton from "@/components/button/tertiary/teritaryButton";
-import InlineError from "@/components/error/inlineError/inlineError";
-import GlobalError from "@/components/error/globalError/globalError";
-import PasswordInput from "@/components/input/password/passwordInput";
+import SecondaryButton from "@/components/button/secondary/SecondaryButton"
+import SingleInput from "@/components/input/single/SingleInput";
+import TertiaryButton from "@/components/button/tertiary/TeritaryButton";
+import InlineError from "@/components/error/inlineError/InlineError";
+import GlobalError from "@/components/error/globalError/GlobalError";
+import PasswordInput from "@/components/input/password/PasswordInput";
 
 type LoginFormData = z.infer<typeof LoginSchema>;
 
@@ -146,11 +146,12 @@ const SignIn = () => {
 }
 
 const AuthDiv = styled.div`
-background-color: ${
-    (props) => props.theme.colors.surface
-};
-width: 100vw;
-height: 100vh;
+    background-color: ${
+        (props) => props.theme.colors.surface
+    };
+    width: 100%;
+    height: 100%;
+    flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;

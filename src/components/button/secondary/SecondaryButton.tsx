@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import {useTheme} from 'styled-components';
-import CelestialSecondaryButton, { ButtonProps } from "./celestial_secondaryButton";
+import CelestialSecondaryButton, { ButtonProps } from "./Celestial_SecondaryButton";
 
 const SecondaryButton = React.forwardRef<HTMLButtonElement, ButtonProps>(({ asChild = false, ...props }, ref) => {
     const theme = useTheme();

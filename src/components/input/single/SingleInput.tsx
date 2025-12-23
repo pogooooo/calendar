@@ -3,7 +3,7 @@
 import React, { forwardRef, InputHTMLAttributes } from 'react';
 import styled, { useTheme } from 'styled-components';
 import { Slot } from "@radix-ui/react-slot";
-import CelestialSingleInput from './celestial_singleInput';
+import CelestialSingleInput from './Celestial_SingleInput';
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
     asChild?: boolean;
