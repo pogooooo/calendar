@@ -13,13 +13,13 @@ export const celestial_secondaryButton = css`
     }
 `;
 
-export const celestial_defaultInput_wrapper = css`
+export const celestial_singleInput_wrapper = css`
     position: relative;
     display: flex;
     align-items: center;
 `
 
-export const celestial_defaultInput_label = css`
+export const celestial_singleInput_label = css`
     position: absolute;
     left: 5px;
     transition: all 0.2s ease-in-out;
@@ -31,7 +31,7 @@ export const celestial_defaultInput_label = css`
     pointer-events: none;
 `
 
-export const celestial_defaultInput_input = css`
+export const celestial_singleInput_input = css`
     padding: 5px;
     
     font-size: ${(props) => props.theme.fontSizes.body};

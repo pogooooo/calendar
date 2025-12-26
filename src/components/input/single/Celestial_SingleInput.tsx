@@ -4,9 +4,9 @@ import React, { forwardRef, InputHTMLAttributes } from 'react';
 import styled from 'styled-components';
 import { Slot } from "@radix-ui/react-slot";
 import {
-    celestial_defaultInput_input,
-    celestial_defaultInput_label,
-    celestial_defaultInput_wrapper
+    celestial_singleInput_input,
+    celestial_singleInput_label,
+    celestial_singleInput_wrapper
 } from "@/styles/celestial_theme";
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
@@ -17,15 +17,15 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 }
 
 const CelestialWrapper = styled.div`
-    ${celestial_defaultInput_wrapper}
+    ${celestial_singleInput_wrapper}
 `
 const CelestialLabel = styled.div`
-    ${celestial_defaultInput_label}
+    ${celestial_singleInput_label}
 `
 const CelestialInput = styled.input<InputProps>`
     width: ${({ $width }) => (typeof $width === 'number' ? `${$width}px` : $width || '100%')};
     height: ${({ $height }) => (typeof $height === 'number' ? `${$height}px` : $height || 'auto')};
-    ${celestial_defaultInput_input}
+    ${celestial_singleInput_input}
 `
 
 const CelestialSingleInput = forwardRef<HTMLInputElement, InputProps>(({ asChild, label, ...props }, ref) => {
