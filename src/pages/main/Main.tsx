@@ -19,7 +19,7 @@ const Main = () => {
     };
 
     return(
-        <div style={{ display: "flex", flexDirection: "row", height: "100vh" }}>
+        <div style={{ display: "flex", flexDirection: "row", height: "100vh", backgroundColor: "#F9F9F9" }}>
             <Sidebar></Sidebar>
             <div>
                 <h1>환영합니다, {user?.name || user?.email || "사용자"}님!</h1>

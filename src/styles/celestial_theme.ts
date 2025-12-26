@@ -4,7 +4,8 @@ export const celestial_secondaryButton = css`
     border: 1px solid ${(props) => props.theme.colors.border};
     color: ${(props) => props.theme.colors.text};
     border-radius: 5px;
-    transition: all 0.2s ease-in-out;
+    transition: box-shadow 0.2s ease-in-out, border-color 0.2s ease-in-out;
+    font-size: ${(props) => props.theme.fontSizes.body};
     
     &:hover {
     border-color: ${(props) => props.theme.colors.primary};

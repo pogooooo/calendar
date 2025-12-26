@@ -1,14 +1,18 @@
 import styled from "styled-components";
 import {useRouter} from "next/navigation";
 import CelestialSidebarDesign from "@/components/svg/CelestialSidebarDesign";
-import {useEffect, useState} from "react";
+import {useCallback, useEffect, useState} from "react";
 import useAuthStore from "@/store/auth/useAuthStore";
+import DefaultProfile from "@/components/svg/DefaultProfile";
+import SecondaryButton from "@/components/button/secondary/SecondaryButton";
 
 const Celestial_SideBar = () => {
     const router = useRouter();
     const [screenHeight, setScreenHeight] = useState(0);
-
     const user = useAuthStore((state) => state.user)
+
+    const [width, setWidth] = useState(200);
+    const [isResizing, setIsResizing] = useState(false);
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -17,38 +21,96 @@ const Celestial_SideBar = () => {
         }
     }, []);
 
+    const startResizing = useCallback((e: React.MouseEvent) => {
+        e.preventDefault();
+        setIsResizing(true);
+    }, []);
+
+    const stopResizing = useCallback(() => {
+        setIsResizing(false);
+    }, []);
+
+    const resize = useCallback(
+        (mouseMoveEvent: MouseEvent) => {
+            if (isResizing) {
+                const newWidth = mouseMoveEvent.clientX;
+                if (newWidth > 200 && newWidth < 600) {
+                    setWidth(newWidth);
+                }
+            }
+        },
+        [isResizing]
+    );
+
+    useEffect(() => {
+        if (isResizing) {
+            window.addEventListener("mousemove", resize);
+            window.addEventListener("mouseup", stopResizing);
+        } else {
+            window.removeEventListener("mousemove", resize);
+            window.removeEventListener("mouseup", stopResizing);
+        }
+        return () => {
+            window.removeEventListener("mousemove", resize);
+            window.removeEventListener("mouseup", stopResizing);
+        };
+    }, [isResizing, resize, stopResizing]);
+
 
     return(
-        <SideBarWrapper>
+        <SideBarWrapper $width={width} $isResizing={isResizing}>
             <Content>
                 <Profile>
                     <Logo onClick={() => {router.push("/")}}>CRONOS</Logo>
                     <UserWrapper>
-                        {/*Todo: 유저 프로필 사진 출력*/}
+                        {user?.image ? (
+                            <ProfileImage src={user.image} alt="프로필 이미지" />
+                        ) : (
+                            <DefaultProfile width={30} />
+                        )}
                         <UserName>{user?.name}님</UserName>
                     </UserWrapper>
+                    <SecondaryButton $height={30} $width={width-40}>설정</SecondaryButton>
+                    <SecondaryButton $height={30} $width={width-40}>홈</SecondaryButton>
                 </Profile>
             </Content>
-            <SidebarContour $height={screenHeight}>
+
+            <SidebarContour $height={screenHeight} onMouseDown={startResizing}>
                 <CelestialSidebarDesign></CelestialSidebarDesign>
             </SidebarContour>
         </SideBarWrapper>
     )
 }
 
-const SideBarWrapper = styled.div`
+const SideBarWrapper = styled.div<{ $width: number, $isResizing: boolean }>`
     background-color: ${(props) => props.theme.colors.surface};
     display: flex;
     flex-shrink: 0;
-    min-width: 160px;
-    overflow-y: hidden;
-    margin-left: 20px;
+
+    width: ${(props) => props.$width}px;
+    transition: ${(props) => props.$isResizing ? 'none' : 'all 0.3s ease'};
+    
+    overflow: visible;
+    padding: 0 20px 0 20px;
+    margin-right: 50px;
     cursor: default;
+    color: ${(props) => props.theme.colors.text};
+    
+    position: relative;
 `
 
-const Content = styled.div``
+const Content = styled.div`
+    z-index: 1;
+`
 
-const Profile = styled.div``
+const Profile = styled.div`
+    & > * {
+        margin-top: 10px;
+    }
+    
+    display: flex;
+    flex-direction: column;
+`
 
 const Logo = styled.div`
     color: ${(props) => props.theme.colors.primary};
@@ -61,15 +123,30 @@ const Logo = styled.div`
 `
 
 const UserWrapper = styled.div`
-        margin-top: 20px;
-`
+    margin: 20px 0 0 0;
+    display: flex;
+    font-size: ${(props) => props.theme.fontSizes.body};
+    align-items: center;`
 
-const UserName = styled.div``
+const ProfileImage = styled.img``
+
+const UserName = styled.div`
+    margin-left: 10px;
+`
 
 const SidebarContour = styled.div<{ $height: number }>`
     height: ${(props) => props.$height ? `${props.$height}px` : '100vh'};
-    display: flex;
-    flex-direction: column;
+    position: absolute;
+    right: -60px;
+    
+    cursor: col-resize;
+    transition: filter 0.2s ease-in-out;
+    &:hover {
+        stroke: ${(props) => props.theme.colors.accent};
+        filter: drop-shadow(0 0 5px ${(props) => props.theme.colors.primary});
+    }
+
+    user-select: none;
 `
 
 
