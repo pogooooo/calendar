@@ -43,6 +43,7 @@ const SideBarWrapper = styled.div`
     min-width: 160px;
     overflow-y: hidden;
     margin-left: 20px;
+    cursor: default;
 `
 
 const Content = styled.div``

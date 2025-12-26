@@ -3,7 +3,7 @@
 import {useTheme} from "styled-components";
 import Celestial_SideBar from "@/components/sideBar/Celestial_SideBar";
 
-const Header = () => {
+const Sidebar = () => {
     const theme = useTheme();
     const themeName = theme?.name || 'celestial';
 
@@ -12,4 +12,4 @@ const Header = () => {
     }
 }
 
-export default Header
+export default Sidebar

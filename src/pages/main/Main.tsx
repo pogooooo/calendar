@@ -2,10 +2,12 @@ import useAuthStore from "@/store/auth/useAuthStore";
 import {useRouter} from "next/navigation";
 import Header from "@/components/header/Header";
 import Sidebar from "@/components/sideBar/SideBar";
+import useSettingStore from "@/store/setting/useSettingStore";
 
 const Main = () => {
     const accessToken = useAuthStore((state) => state.accessToken);
     const user = useAuthStore((state) => state.user)
+    const theme = useSettingStore(state => state.theme)
     const logout = useAuthStore((state) => state.logout);
 
     const router = useRouter();
@@ -34,7 +36,11 @@ const Main = () => {
                     <p><strong>User Object:</strong></p>
                     <pre style={{fontSize: "12px", color: "green"}}>
                     {JSON.stringify(user, null, 2)}
-                </pre>
+                    </pre>
+
+                    <div>
+                        {theme}
+                    </div>
                 </div>
             </div>
         </div>

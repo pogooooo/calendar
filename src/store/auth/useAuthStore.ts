@@ -6,6 +6,7 @@ export interface User {
     email: string;
     name: string;
     theme: string;
+    image: string;
 }
 
 interface AuthStore {
@@ -23,7 +24,7 @@ const useAuthStore = create<AuthStore>()(
             user: null,
 
             setAccessToken: (token: string) => set({ accessToken: token }),
-            setUser: (user: any) => set({ user }),
+            setUser: (user: User | null) => set({ user }),
 
             logout: async () => {
                 try{
