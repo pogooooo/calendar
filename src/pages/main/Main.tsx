@@ -1,6 +1,7 @@
 import useAuthStore from "@/store/auth/useAuthStore";
 import {useRouter} from "next/navigation";
 import Header from "@/components/header/Header";
+import Sidebar from "@/components/sideBar/SideBar";
 
 const Main = () => {
     const accessToken = useAuthStore((state) => state.accessToken);
@@ -16,7 +17,8 @@ const Main = () => {
     };
 
     return(
-        <div>
+        <div style={{ display: "flex", flexDirection: "row", height: "100vh" }}>
+            <Sidebar></Sidebar>
             <div>
                 <h1>환영합니다, {user?.name || user?.email || "사용자"}님!</h1>
                 <button onClick={handleLogout}>로그아웃</button>

@@ -27,6 +27,18 @@ export async function POST(request: NextRequest) {
                 },
                 include: { settings: true }
             });
+
+            await prisma.category.create({
+                data: {
+                    name: "할 일",
+                    color: "#808080",
+                    isDefault: true,
+                    creatorId: user.id,
+                    participants: {
+                        connect: {id: user.id}
+                    }
+                }
+            })
         }
 
         const existingAccount = await prisma.account.findUnique({

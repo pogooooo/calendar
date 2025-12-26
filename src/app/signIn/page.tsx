@@ -146,9 +146,7 @@ const SignIn = () => {
 }
 
 const AuthDiv = styled.div`
-    background-color: ${
-        (props) => props.theme.colors.surface
-    };
+    background-color: ${(props) => props.theme.colors.surface};
     width: 100%;
     height: 100%;
     flex: 1;

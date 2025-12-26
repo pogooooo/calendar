@@ -25,7 +25,7 @@ export default function RootLayout({children,}: Readonly<{ children: React.React
             <ThemeProviderWrapper>
                 <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!}>
                     <StyledComponentsRegistry>
-                        <Header />
+                        {/*<Header />*/}
                         {children}
                     </StyledComponentsRegistry>
                 </GoogleOAuthProvider>
