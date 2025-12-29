@@ -13,6 +13,31 @@ export const celestial_secondaryButton = css`
     }
 `;
 
+export const celestial_tertiaryButton = css`
+    color: ${(props) => props.theme.colors.primary};
+    cursor: pointer;
+    font-weight: 500;
+    &:hover {
+        text-decoration: underline;
+    }
+`
+
+export const celestial_sidebar_menuButton = css`
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    transition: box-shadow 0.2s ease-in-out, background-color 0.2s ease-in-out;
+    
+    & > span {
+        margin-left: 5px;
+    }
+    
+    &:hover {
+        background-color: ${(props) => props.theme.colors.border};
+    }
+`;
+
 export const celestial_singleInput_wrapper = css`
     position: relative;
     display: flex;
@@ -50,14 +75,5 @@ export const celestial_singleInput_input = css`
     
     &:focus {
         box-shadow: 0 0 10px 3px ${(props) => props.theme.colors.accent};
-    }
-`
-
-export const celestial_tertiaryButton = css`
-    color: ${(props) => props.theme.colors.primary};
-    cursor: pointer;
-    font-weight: 500;
-    &:hover {
-        text-decoration: underline;
     }
 `

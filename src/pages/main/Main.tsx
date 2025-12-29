@@ -3,6 +3,7 @@ import {useRouter} from "next/navigation";
 import Header from "@/components/header/Header";
 import Sidebar from "@/components/sideBar/SideBar";
 import useSettingStore from "@/store/setting/useSettingStore";
+import styled from "styled-components";
 
 const Main = () => {
     const accessToken = useAuthStore((state) => state.accessToken);
@@ -19,7 +20,7 @@ const Main = () => {
     };
 
     return(
-        <div style={{ display: "flex", flexDirection: "row", height: "100vh", backgroundColor: "#F9F9F9" }}>
+        <MainWrapper>
             <Sidebar></Sidebar>
             <div>
                 <h1>환영합니다, {user?.name || user?.email || "사용자"}님!</h1>
@@ -43,8 +44,13 @@ const Main = () => {
                     </div>
                 </div>
             </div>
-        </div>
+        </MainWrapper>
     )
 }
+
+const MainWrapper = styled.div`
+    display: flex;
+    height: 100vh;
+`
 
 export default Main

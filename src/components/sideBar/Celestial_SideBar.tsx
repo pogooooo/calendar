@@ -4,7 +4,13 @@ import CelestialSidebarDesign from "@/components/svg/CelestialSidebarDesign";
 import {useCallback, useEffect, useState} from "react";
 import useAuthStore from "@/store/auth/useAuthStore";
 import DefaultProfile from "@/components/svg/DefaultProfile";
-import SecondaryButton from "@/components/button/secondary/SecondaryButton";
+import SidebarMenuButton from "@/components/button/sidebarMenu/SidebarMenuButton";
+import Home from "@/components/svg/Home"
+import Setting from "@/components/svg/Setting";
+import Category from "@/components/svg/Category";
+import Todo from "@/components/svg/Todo";
+import Project from "@/components/svg/Project";
+import LoadMap from "@/components/svg/LoadMap";
 
 const Celestial_SideBar = () => {
     const router = useRouter();
@@ -70,9 +76,16 @@ const Celestial_SideBar = () => {
                         )}
                         <UserName>{user?.name}님</UserName>
                     </UserWrapper>
-                    <SecondaryButton $height={30} $width={width-40}>설정</SecondaryButton>
-                    <SecondaryButton $height={30} $width={width-40}>홈</SecondaryButton>
+                    <SidebarMenuButton $height={30} $width={width-40} label="설정"><Setting width={26}/></SidebarMenuButton>
+                    <SidebarMenuButton $height={30} $width={width-40} label="홈"><Home width={26} /></SidebarMenuButton>
                 </Profile>
+
+                <Menu>
+                    <SidebarMenuButton $height={30} $width={width-40} label="카테고리"><Category width={26}/></SidebarMenuButton>
+                    <SidebarMenuButton $height={30} $width={width-40} label="일정"><Todo width={26}/></SidebarMenuButton>
+                    <SidebarMenuButton $height={30} $width={width-40} label="프로젝트"><Project width={26}/></SidebarMenuButton>
+                    <SidebarMenuButton $height={30} $width={width-40} label="로드맵"><LoadMap width={26}/></SidebarMenuButton>
+                </Menu>
             </Content>
 
             <SidebarContour $height={screenHeight} onMouseDown={startResizing}>
@@ -90,7 +103,7 @@ const SideBarWrapper = styled.div<{ $width: number, $isResizing: boolean }>`
     width: ${(props) => props.$width}px;
     transition: ${(props) => props.$isResizing ? 'none' : 'all 0.3s ease'};
     
-    overflow: visible;
+    overflow-y: clip;
     padding: 0 20px 0 20px;
     margin-right: 50px;
     cursor: default;
@@ -110,12 +123,14 @@ const Profile = styled.div`
     
     display: flex;
     flex-direction: column;
+    margin-bottom: 100px;
 `
 
 const Logo = styled.div`
     color: ${(props) => props.theme.colors.primary};
     font-family: ${(props) => props.theme.fonts.celestial_heading};
     font-size: ${(props) => props.theme.fontSizes.h3};
+    font-weight: bold;
     
     margin-top: 30px;
     
@@ -123,7 +138,7 @@ const Logo = styled.div`
 `
 
 const UserWrapper = styled.div`
-    margin: 20px 0 0 0;
+    margin: 20px 0 10px 0;
     display: flex;
     font-size: ${(props) => props.theme.fontSizes.body};
     align-items: center;`
@@ -149,5 +164,10 @@ const SidebarContour = styled.div<{ $height: number }>`
     user-select: none;
 `
 
+const Menu = styled.div`
+    & > * {
+        margin-top: 10px;
+    }
+`
 
 export default Celestial_SideBar
