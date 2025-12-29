@@ -76,15 +76,27 @@ const Celestial_SideBar = () => {
                         )}
                         <UserName>{user?.name}님</UserName>
                     </UserWrapper>
+
                     <SidebarMenuButton $height={30} $width={width-40} label="설정"><Setting width={26}/></SidebarMenuButton>
-                    <SidebarMenuButton $height={30} $width={width-40} label="홈"><Home width={26} /></SidebarMenuButton>
+
+                    <SidebarMenuButton $height={30} $width={width-40} label="홈" onClick={() => {router.push("/")}}>
+                        <Home width={26} />
+                    </SidebarMenuButton>
                 </Profile>
 
                 <Menu>
-                    <SidebarMenuButton $height={30} $width={width-40} label="카테고리"><Category width={26}/></SidebarMenuButton>
-                    <SidebarMenuButton $height={30} $width={width-40} label="일정"><Todo width={26}/></SidebarMenuButton>
-                    <SidebarMenuButton $height={30} $width={width-40} label="프로젝트"><Project width={26}/></SidebarMenuButton>
-                    <SidebarMenuButton $height={30} $width={width-40} label="로드맵"><LoadMap width={26}/></SidebarMenuButton>
+                    <SidebarMenuButton $height={30} $width={width-40} label="카테고리" onClick={() => {router.push("/category")}}>
+                        <Category width={26}/>
+                    </SidebarMenuButton>
+                    <SidebarMenuButton $height={30} $width={width-40} label="일정">
+                        <Todo width={26}/>
+                    </SidebarMenuButton>
+                    <SidebarMenuButton $height={30} $width={width-40} label="프로젝트">
+                        <Project width={26}/>
+                    </SidebarMenuButton>
+                    <SidebarMenuButton $height={30} $width={width-40} label="로드맵">
+                        <LoadMap width={26}/>
+                    </SidebarMenuButton>
                 </Menu>
             </Content>
 

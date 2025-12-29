@@ -4,7 +4,6 @@ import StyledComponentsRegistry from "@/lib/StyledComponentsRegistry";
 import {Metadata} from "next";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import ThemeProviderWrapper from "@/components/ThemeProviderWrapper";
-import Header from "@/components/header/Header";
 
 const orbit = Orbit({
     subsets: ["latin"],
@@ -25,7 +24,6 @@ export default function RootLayout({children,}: Readonly<{ children: React.React
             <ThemeProviderWrapper>
                 <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!}>
                     <StyledComponentsRegistry>
-                        {/*<Header />*/}
                         {children}
                     </StyledComponentsRegistry>
                 </GoogleOAuthProvider>

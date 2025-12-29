@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import useSettingStore from "@/store/setting/useSettingStore";
 
 export default function ThemeProviderWrapper({ children }: { children: React.ReactNode }) {
-    const themeName = useSettingStore((state:any) => state.theme);
+    const themeName = useSettingStore((state) => state.theme);
     const theme = themes[themeName as keyof typeof themes] || themes.celestial;
 
     return (
