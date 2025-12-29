@@ -1,16 +1,16 @@
 import styled from "styled-components";
 import {useRouter} from "next/navigation";
-import CelestialSidebarDesign from "@/components/svg/CelestialSidebarDesign";
+import CelestialSidebarDesign from "@/assets/sidebarDesign/CelestialSidebarDesign";
 import {useCallback, useEffect, useState} from "react";
 import useAuthStore from "@/store/auth/useAuthStore";
-import DefaultProfile from "@/components/svg/DefaultProfile";
+import DefaultProfile from "@/assets/icons/DefaultProfile";
 import SidebarMenuButton from "@/components/button/sidebarMenu/SidebarMenuButton";
-import Home from "@/components/svg/Home"
-import Setting from "@/components/svg/Setting";
-import Category from "@/components/svg/Category";
-import Todo from "@/components/svg/Todo";
-import Project from "@/components/svg/Project";
-import LoadMap from "@/components/svg/LoadMap";
+import Home from "@/assets/icons/Home"
+import Setting from "@/assets/icons/Setting";
+import Category from "@/assets/icons/Category";
+import Todo from "@/assets/icons/Todo";
+import Project from "@/assets/icons/Project";
+import LoadMap from "@/assets/icons/LoadMap";
 
 const Celestial_SideBar = () => {
     const router = useRouter();
@@ -142,7 +142,6 @@ const Logo = styled.div`
     color: ${(props) => props.theme.colors.primary};
     font-family: ${(props) => props.theme.fonts.celestial_heading};
     font-size: ${(props) => props.theme.fontSizes.h3};
-    font-weight: bold;
     
     margin-top: 30px;
     

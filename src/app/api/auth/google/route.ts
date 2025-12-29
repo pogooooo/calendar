@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
             });
         }
 
-        const accessToken = generateAccessToken({ userId: user.id, email: user.email });
+        const accessToken = generateAccessToken({userId: user.id, email: user.email});
         const refreshToken = generateRefreshToken({ userId: user.id });
 
         await prisma.refreshToken.deleteMany({ where: { userId: user.id } });

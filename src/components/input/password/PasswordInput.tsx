@@ -2,7 +2,7 @@
 
 import React, { useState, forwardRef } from 'react';
 import styled from 'styled-components';
-import { EyeIcon, EyeSlashIcon } from '@/components/svg/EyeIcon';
+import { EyeIcon, EyeSlashIcon } from '@/assets/icons/EyeIcon';
 import SingleInput, { InputProps } from '../single/SingleInput';
 
 const Wrapper = styled.div`
