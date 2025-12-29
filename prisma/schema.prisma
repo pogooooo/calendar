@@ -10,7 +10,7 @@ datasource db {
 
 model User {
   id            String          @id @default(cuid())
-  name          String?
+  name          String
   email         String?         @unique
   emailVerified DateTime?
   password      String?
@@ -67,14 +67,16 @@ model VerificationToken {
 }
 
 model Category {
-  id         String  @id @default(cuid())
-  name       String
-  color      String
+  id            String  @id @default(cuid())
+  name          String
+  color         String
+  description   String?
 
-  creator    User    @relation("CreatedCategories", fields: [creatorId], references: [id])
-  creatorId  String
+  creator       User    @relation("CreatedCategories", fields: [creatorId], references: [id])
+  creatorId     String
+  creatorName   String
 
-  participants User[] @relation("CategoryParticipants")
+  participants  User[] @relation("CategoryParticipants")
 
   todos Todo[]
 }

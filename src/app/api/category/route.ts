@@ -60,8 +60,23 @@ export const POST = async (request: NextRequest) => {
         }
 
         if (id) {
-            const existingCategory = await prisma.category.findUnique({ where: { id } });
-            if (!existingCategory || existingCategory.creatorId !== userId) {
+            const existingCategory = await prisma.category.findUnique({
+                where: { id },
+                include: {
+                    participants: {
+                        select: { id: true }
+                    }
+                }
+            });
+
+            if (!existingCategory) {
+                return NextResponse.json({ message: "카테고리를 찾을 수 없습니다." }, { status: 404 });
+            }
+
+            const isCreator = existingCategory.creatorId === userId;
+            const isParticipant = existingCategory.participants.some(p => p.id === userId);
+
+            if (!isCreator && !isParticipant) {
                 return NextResponse.json({ message: "수정 권한이 없습니다." }, { status: 403 });
             }
 
@@ -75,11 +90,21 @@ export const POST = async (request: NextRequest) => {
 
             return NextResponse.json(updatedCategory);
         } else {
+            const user = await prisma.user.findUnique({
+                where: { id: userId },
+                select: { name: true }
+            });
+
+            if (!user) {
+                return NextResponse.json({ message: "사용자 정보를 찾을 수 없습니다." }, { status: 404 });
+            }
+
             const newCategory = await prisma.category.create({
                 data: {
                     name,
                     color: color || "#808080",
                     creatorId: userId,
+                    creatorName: user.name,
                     participants: {
                         connect: { id: userId }
                     }
@@ -109,12 +134,23 @@ export const DELETE = async (request: NextRequest) => {
             return NextResponse.json({ message: "삭제할 카테고리 ID가 필요합니다." }, { status: 400 });
         }
 
-        const existingCategory = await prisma.category.findUnique({ where: { id } });
+        const existingCategory = await prisma.category.findUnique({
+            where: { id },
+            include: {
+                participants: {
+                    select: { id: true }
+                }
+            }
+        });
+
         if (!existingCategory) {
             return NextResponse.json({ message: "카테고리를 찾을 수 없습니다." }, { status: 404 });
         }
 
-        if (existingCategory.creatorId !== userId) {
+        const isCreator = existingCategory.creatorId === userId;
+        const isParticipant = existingCategory.participants.some(p => p.id === userId);
+
+        if (!isCreator && !isParticipant) {
             return NextResponse.json({ message: "삭제 권한이 없습니다." }, { status: 403 });
         }
 

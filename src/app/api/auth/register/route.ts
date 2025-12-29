@@ -39,8 +39,8 @@ export async function POST(request: NextRequest) {
                 name: "할 일",
                 color: "#808080",
                 creatorId: user.id,
+                creatorName: user.name,
                 participants: {
-                    connect: {id: user.id}
                 }
             }
         })
