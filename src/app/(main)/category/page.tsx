@@ -2,6 +2,7 @@
 
 import useAuthStore from "@/store/auth/useAuthStore";
 import {useState} from "react";
+import { useAuthFetch } from '@/hooks/AuthFetch';
 
 interface CategoryType {
     id: string;
@@ -13,6 +14,8 @@ interface CategoryType {
 const Category = () => {
     const accessToken = useAuthStore((state) => state.accessToken)
 
+    const authFetch = useAuthFetch();
+
     // const [categories, setCategories] = useState<CategoryType[]>([]);
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState<boolean>(false)
@@ -22,8 +25,7 @@ const Category = () => {
         if (!accessToken) return;
         setLoading(true);
         try {
-            const res = await fetch('/api/category', {
-                headers: { Authorization: `Bearer ${accessToken}` },
+            const res = await authFetch('/api/category', {
                 cache: 'no-store',
             });
             if (!res.ok) throw new Error("로드 실패");
@@ -40,7 +42,6 @@ const Category = () => {
     return(
         <div>
             <button onClick={fetchCategories}>불러오기</button>
-            {JSON.stringify(categories, null, 2)}
         </div>
     )
 }
