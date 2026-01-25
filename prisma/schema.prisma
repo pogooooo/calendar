@@ -83,13 +83,13 @@ model Category {
 
 model Todo {
   id        String    @id @default(cuid())
-  title     String    // 제목
-  memo      String?   // 메모 (선택)
-  startAt   DateTime? // 시작일 및 시간 (선택)
-  endAt     DateTime? // 종료일 및 시간 (선택)
-  isAllDay  Boolean   @default(false) // 하루 종일 일정 여부
-  location  String?   // 장소 (선택)
-  repeat    Int @default(0) // 반복 주기 (선택)
+  title     String
+  memo      String?
+  startAt   DateTime?
+  endAt     DateTime?
+  isAllDay  Boolean   @default(false)
+  location  String?
+  repeat    Int @default(0)
 
   // 카테고리 (Category와 1:N 관계)
   category   Category @relation(fields: [categoryId], references: [id])

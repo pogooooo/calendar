@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
         const isPasswordCorrect = await bcrypt.compare(password, user.password);
         if (!isPasswordCorrect) {
             return NextResponse.json(
-                {message: "이메일 또는 비밀번호가 올바르지 않습니다."},
+                { message: "이메일 또는 비밀번호가 올바르지 않습니다." },
                 { status: 401 }
             );
         }
@@ -82,6 +82,9 @@ export async function POST(request: NextRequest) {
 
     } catch (error) {
         console.error("LOGIN_ERROR", error);
-        return new NextResponse("Internal Server Error", { status: 500 });
+        return NextResponse.json(
+            {message:`Internal Server Error : ${error}`},
+            { status: 500 }
+        );
     }
 }

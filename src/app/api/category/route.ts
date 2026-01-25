@@ -26,6 +26,31 @@ export const GET = async (request: NextRequest) => {
             return NextResponse.json({ message: "인증되지 않은 사용자입니다." }, { status: 401 });
         }
 
+        const { searchParams } = new URL(request.url);
+        const id = searchParams.get("id");
+
+        if (id) {
+            const category = await prisma.category.findUnique({
+                where: { id },
+                include: {
+                    participants: true,
+                },
+            });
+
+            if (!category) {
+                return NextResponse.json({ message: "카테고리를 찾을 수 없습니다." }, { status: 404 });
+            }
+
+            const isCreator = category.creatorId === userId;
+            const isParticipant = category.participants.some(p => p.id === userId);
+
+            if (!isCreator && !isParticipant) {
+                return NextResponse.json({ message: "조회 권한이 없습니다." }, { status: 403 });
+            }
+
+            return NextResponse.json(category);
+        }
+
         const categories = await prisma.category.findMany({
             where: {
                 OR: [

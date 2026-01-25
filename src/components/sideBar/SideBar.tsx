@@ -1,7 +1,7 @@
 "use client"
 
 import {useTheme} from "styled-components";
-import Celestial_SideBar from "@/components/sideBar/Celestial_SideBar";
+import Celestial_SideBar from "@/components/sideBar/celestial/Celestial_SideBar";
 
 const Sidebar = () => {
     const theme = useTheme();
