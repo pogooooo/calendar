@@ -20,7 +20,7 @@ const Menu = (props: {width:number, categories: Category[]}) => {
     const router = useRouter();
 
     const [isCategoryOpen, setIsCategoryOpen] = useState(false);
-    
+
     return(
         <MenuWrapper>
             <SidebarMenuButton $height={30} $width={props.width-40} label="카테고리"
@@ -102,7 +102,7 @@ const CategoryItem = styled.div`
     transition: background-color 0.2s ease;
 
     &:hover ${CategoryName} {
-        border-bottom-color: ${(props) => props.theme.colors.text};
+        border-bottom-color: ${(props) => props.theme.colors.textSecondary};
     }
 `;
 
