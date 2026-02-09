@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import useAuthStore from "@/store/auth/useAuthStore";
 import useSettingStore from "@/store/setting/useSettingStore";
 import styled from "styled-components";
+import WeekCalendar from "@/components/calendar/weekCalendar/WeekCalender";
 
 export default function Home() {
     const accessToken = useAuthStore((state) => state.accessToken);
@@ -41,6 +42,8 @@ export default function Home() {
             <div style={{ marginTop: "20px" }}>
                 <button onClick={handleLogout}>로그아웃</button>
             </div>
+
+            <WeekCalendar></WeekCalendar>
 
             <div style={{ background: "#f0f0f0", padding: "10px", borderRadius: "5px", marginTop: "20px" }}>
                 <h3>[Debug Info]</h3>
