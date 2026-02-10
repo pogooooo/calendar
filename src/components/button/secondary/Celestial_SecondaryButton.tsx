@@ -3,7 +3,6 @@
 import React from 'react';
 import styled from 'styled-components';
 import { Slot } from "@radix-ui/react-slot";
-import { celestial_secondaryButton } from "@/styles/celestial_theme";
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     asChild?: boolean;
@@ -15,12 +14,16 @@ const SecondaryButton = styled.button<ButtonProps>`
     width: ${({ $width }) => (typeof $width === 'number' ? `${$width}px` : $width || '100%')};
     height: ${({ $height }) => (typeof $height === 'number' ? `${$height}px` : $height || '40px')};
 
-    ${({ theme }) => {
-        switch (theme.name) {
-            case 'celestial': return celestial_secondaryButton
-            default: return celestial_secondaryButton;
-        }
-    }}
+    border: 1px solid ${(props) => props.theme.colors.border};
+    color: ${(props) => props.theme.colors.text};
+    border-radius: 5px;
+    transition: box-shadow 0.2s ease-in-out, border-color 0.2s ease-in-out;
+    font-size: ${(props) => props.theme.fontSizes.body};
+    
+    &:hover {
+    border-color: ${(props) => props.theme.colors.primary};
+    box-shadow: 0 0 10px 3px ${(props) => props.theme.colors.accent};
+    }
 `;
 
 const CelestialSecondaryButton = React.forwardRef<HTMLButtonElement, ButtonProps>(({ asChild, ...props }, ref) => {

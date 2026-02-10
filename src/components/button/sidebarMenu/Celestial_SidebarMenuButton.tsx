@@ -24,6 +24,7 @@ const IconContainer = styled.div`
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    margin-left: 5px;
 `;
 
 const MainIcon = styled.div`
@@ -86,12 +87,8 @@ const SidebarButton = styled.button<ButtonProps>`
 `;
 
 const CelestialSidebarMenuButton = React.forwardRef<HTMLButtonElement, ButtonProps>(({ asChild, ...props }, ref) => {
-    const handleArrowClick = (e: React.MouseEvent) => {
-        e.stopPropagation();
-        if (props.$onArrowClick) {
-            props.$onArrowClick(e);
-        }
-    };
+
+    const Component = asChild ? Slot : 'button';
 
     const IconSection = (
         <IconContainer>
@@ -102,7 +99,7 @@ const CelestialSidebarMenuButton = React.forwardRef<HTMLButtonElement, ButtonPro
             {props.$isDropdown && (
                 <ArrowIconWrapper
                     $isOpen={props.$isOpen}
-                    onClick={props.$onArrowClick ? handleArrowClick : undefined}
+                    onClick={props.$onArrowClick}
                 >
                     <ChevronRight size={16} />
                 </ArrowIconWrapper>
@@ -110,17 +107,8 @@ const CelestialSidebarMenuButton = React.forwardRef<HTMLButtonElement, ButtonPro
         </IconContainer>
     );
 
-    if (asChild) {
-        return (
-            <SidebarButton as={Slot} ref={ref} {...props}>
-                {IconSection}
-                <span>{props.label}</span>
-            </SidebarButton>
-        );
-    }
-
     return (
-        <SidebarButton ref={ref} {...props} >
+        <SidebarButton as={Component} ref={ref} {...props} >
             {IconSection}
             <span>{props.label}</span>
         </SidebarButton>

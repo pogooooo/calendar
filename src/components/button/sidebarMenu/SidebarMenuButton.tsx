@@ -8,6 +8,18 @@ const Sidebar_MenuButton = React.forwardRef<HTMLButtonElement, ButtonProps>(({ a
     const theme = useTheme();
     const themeName = theme?.name || 'celestial';
 
+    const handleArrowClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (props.$onArrowClick) {
+            props.$onArrowClick(e);
+        }
+    };
+
+    const extendedProps = {
+        ...props,
+        $onArrowClick: props.$onArrowClick ? handleArrowClick : undefined
+    };
+
     if (themeName === 'celestial') {
         return <CelestialSidebarMenuButton ref={ref} {...props} />;
     }
