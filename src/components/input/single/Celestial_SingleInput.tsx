@@ -29,19 +29,18 @@ const CelestialInput = styled.input<InputProps>`
 `
 
 const CelestialSingleInput = forwardRef<HTMLInputElement, InputProps>(({ asChild, label, ...props }, ref) => {
-    if (asChild) {
-        return (
-            <CelestialWrapper>
-                <CelestialInput as={Slot} ref={ref} {...props}>
-                    {props.children}
-                </CelestialInput>
-                {label && <CelestialLabel className="input-label">{label}</CelestialLabel>}
-            </CelestialWrapper>
-        );
-    }
+    const Component = asChild ? Slot : CelestialInput;
+
     return (
         <CelestialWrapper>
-            <CelestialInput ref={ref} {...props} placeholder=" " />
+            <CelestialInput
+                as={Component}
+                ref={ref}
+                placeholder=" "
+                {...props}
+            >
+                {asChild ? props.children : null}
+            </CelestialInput>
             {label && <CelestialLabel className="input-label">{label}</CelestialLabel>}
         </CelestialWrapper>
     );

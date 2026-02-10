@@ -38,6 +38,6 @@ const CelestialSecondaryButton = React.forwardRef<HTMLButtonElement, ButtonProps
     return <SecondaryButton ref={ref} {...props} />;
 });
 
-CelestialSecondaryButton.displayName = 'CelestialSingleInput';
+CelestialSecondaryButton.displayName = 'CelestialSecondaryInput';
 
 export default CelestialSecondaryButton;

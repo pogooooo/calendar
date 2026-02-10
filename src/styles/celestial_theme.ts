@@ -1,14 +1,5 @@
 import {css} from "styled-components";
 
-export const celestial_tertiaryButton = css`
-    color: ${(props) => props.theme.colors.primary};
-    cursor: pointer;
-    font-weight: 500;
-    &:hover {
-        text-decoration: underline;
-    }
-`
-
 export const celestial_sidebar_menuButton = css`
     border-radius: 5px;
     display: flex;
