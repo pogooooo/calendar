@@ -21,7 +21,7 @@ const commonStyles = {
         heading: 1.2,
     },
     fonts: {
-        celestial_heading: "'Orbit', serif",
+        celestial: "'Orbit', serif",
         body: "'Inter', sans-serif",
     },
 };

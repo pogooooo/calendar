@@ -43,7 +43,7 @@ const ProfileWrapper = styled.div`
 
 const Logo = styled.div`
     color: ${(props) => props.theme.colors.primary};
-    font-family: ${(props) => props.theme.fonts.celestial_heading};
+    font-family: ${(props) => props.theme.fonts.celestial};
     font-size: ${(props) => props.theme.fontSizes.h3};
     
     margin-top: 30px;

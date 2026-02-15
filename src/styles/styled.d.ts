@@ -39,7 +39,7 @@ declare module 'styled-components' {
         };
 
         fonts: {
-            celestial_heading: string;
+            celestial: string;
             body: string;
         };
     }
