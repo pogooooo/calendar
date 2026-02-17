@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useTheme } from "styled-components";
-import CelestialWeekCalendar from "./CelestialWeekCalendar";
+import CelestialWeekCalendar from "./celestial/CelestialWeekCalendar";
 
 export interface TodoType {
     id: string;

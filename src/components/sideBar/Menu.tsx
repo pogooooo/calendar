@@ -6,17 +6,9 @@ import LoadMap from "@/assets/icons/LoadMap";
 import {useRouter} from "next/navigation";
 import {useState} from "react";
 import CategoryIcon from "@/assets/icons/Category"
+import {CategoryType} from "@/store/category/useCategoryStore";
 
-interface Category {
-    id: string,
-    name: string,
-    color: string,
-    description: string,
-    creatorId: string,
-    creatorName: string,
-}
-
-const Menu = (props: {width:number, categories: Category[]}) => {
+const Menu = (props: {width:number, categories: CategoryType[]}) => {
     const router = useRouter();
 
     const [isCategoryOpen, setIsCategoryOpen] = useState(false);
