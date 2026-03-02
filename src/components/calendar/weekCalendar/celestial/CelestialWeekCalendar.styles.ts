@@ -1,4 +1,4 @@
-import styled from "styled-components";
+import styled, {css} from "styled-components";
 
 export const CelestialCalendarWrapper = styled.div`
     display: flex;
@@ -27,18 +27,23 @@ export const DateRangeDisplay = styled.div`
     & > span { white-space: nowrap; }
 `;
 
-export const HeaderWrapper = styled.div`
+export const SliderWrapper = styled.div`
     display: flex;
-    align-items: center;
-    & > svg {
-        margin: 0 5px;
-        transition: all 0.2s ease;
-        &:hover {
-            stroke: ${(props) => props.theme.colors.accent};
-            filter: drop-shadow(0 0 5px ${(props) => props.theme.colors.primary});
-            cursor: pointer;
-        }
-    }
+    align-items: flex-start;
+    justify-content: center;
+    gap: 10px;
+`;
+
+export const CalendarWindow = styled.div`
+    width: 49vw;
+    min-width: 600px;
+    overflow: hidden; 
+    position: relative;
+
+    padding-top: 15px;
+    padding-bottom: 15px;
+    margin-top: -15px;
+    margin-bottom: -15px;
 `;
 
 export const Header = styled.div`
@@ -47,8 +52,8 @@ export const Header = styled.div`
     grid-template-columns: repeat(7, 1fr);
     border: 1px solid ${(props) => props.theme.colors.primary};
     position: relative;
-    width: 50vw;
-    min-width: 600px;
+
+    width: 100%; /* 수정: 49vw -> 100% */
     box-sizing: border-box;
 
     &::after {
@@ -61,33 +66,47 @@ export const Header = styled.div`
     }
 `;
 
-export const DayNameBox = styled.div`
+export const DayNameBox = styled.div<{ $isToday?: boolean }>`
     display: flex;
     justify-content: center;
     align-items: center;
     height: 50px;
     position: relative;
     box-sizing: border-box;
-    border-right: 1px solid ${(props) => props.theme.colors.surface};
+    border-right: 1px solid ${(props) => props.theme.colors.primary};
+    
     &:last-child { border-right: none; }
-    .day-name { font-size: ${(props) => props.theme.fontSizes.h4}; }
-`;
+    
+    .day-name { 
+        font-size: ${(props) => props.theme.fontSizes.h4};
+    }
 
-export const TwinklePositioner = styled.div`
-    position: absolute;
-    right: -8px;
-    top: 0; bottom: 0;
-    display: flex;
-    align-items: center;
-    z-index: 2;
-    pointer-events: none;
+    ${(props) => props.$isToday && css`
+        &::before {
+            content: "";
+            position: absolute;
+            
+            width: calc(100% + 2px);
+            height: calc(100% + 123px);
+            
+            top: -1px;
+            left: -1px;
+            
+            border: 1px solid ${(props) => props.theme.colors.primary};
+            box-shadow: 0 0 5px 0.5px ${(props) => props.theme.colors.primary};
+            
+            pointer-events: none;
+            z-index: 10;
+        }
+    `}
+    
 `;
 
 export const BarContainer = styled.div`
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    width: 50vw;
-    min-width: 600px;
+
+    width: 100%;
     box-sizing: border-box;
     border: 1px solid ${(props) => props.theme.colors.primary};
     border-top: none;
@@ -97,9 +116,14 @@ export const DaySlot = styled.div<{ $isToday: boolean }>`
     display: flex;
     flex-direction: column;
     min-height: 120px;
+    min-width: 0;
     position: relative;
+    top: 0;
     border-right: 1px solid ${(props) => props.theme.colors.primary};
-    &:last-child { border-right: none; }
+
+    &:last-child {
+        border-right: none;
+    }
 `;
 
 export const TodoBarList = styled.div`
