@@ -3,26 +3,7 @@
 import * as React from "react";
 import { useTheme } from "styled-components";
 import CelestialWeekCalendar from "./celestial/CelestialWeekCalendar";
-
-export interface TodoType {
-    id: string;
-    title: string;
-    categoryId: string;
-    check: "done" | "none";
-    memo?: string | null;
-    startAt?: string | number | Date | null;
-    endAt?: string | number | Date | null;
-    isAllDay: boolean;
-    location?: string | null;
-    repeat: number;
-}
-
-export interface CategoryType {
-    id: string;
-    name: string;
-    color: string;
-    description?: string | null;
-}
+import { CategoryType, TodoType } from "@/types/calendar";
 
 export interface WeekProps extends React.HTMLAttributes<HTMLDivElement> {
     asChild?: boolean;
