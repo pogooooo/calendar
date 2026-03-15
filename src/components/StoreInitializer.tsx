@@ -33,7 +33,7 @@ export default function StoreInitializer({ children }: { children: React.ReactNo
     useEffect(() => {
         if (!isMounted) return;
 
-        const publicRoutes = ["/signIn", "/signup"];
+        const publicRoutes = ["/signIn", "/signUp"];
         const isPublicRoute = publicRoutes.includes(pathname);
 
         if (!accessToken && !isPublicRoute) {

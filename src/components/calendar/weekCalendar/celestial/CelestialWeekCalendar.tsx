@@ -4,6 +4,7 @@ import * as React from "react";
 import { useTheme } from "styled-components";
 import { Slot } from "@radix-ui/react-slot";
 import { motion, AnimatePresence } from "framer-motion";
+import { Settings2 } from 'lucide-react';
 
 import { WeekProps, TodoType } from "../WeekCalendar";
 import Arrow from "@/assets/celestial/Arrow";
@@ -48,10 +49,23 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
 
         const [currentDate, setCurrentDate] = React.useState(new Date());
         const [direction, setDirection] = React.useState(0);
+        const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
+        const [selectedCategoryIds, setSelectedCategoryIds] = React.useState<string[]>([]);
+
         const weekDates = React.useMemo(() => getWeekDates(currentDate), [currentDate]);
         const todayStr = React.useMemo(() => new Date().toDateString(), []);
 
-        const { todoLevels, maxLevel } = useTodoLevels(todos, weekDates);
+        React.useEffect(() => {
+            if (categories.length > 0 && selectedCategoryIds.length === 0) {
+                setSelectedCategoryIds(categories.map(c => c.id));
+            }
+        }, [categories]);
+
+        const filteredTodos = React.useMemo(() => {
+            return (todos as TodoType[]).filter(todo => selectedCategoryIds.includes(todo.categoryId));
+        }, [todos, selectedCategoryIds]);
+
+        const { todoLevels, maxLevel } = useTodoLevels(filteredTodos, weekDates);
 
         const dateRangeText = React.useMemo(() => {
             return `${formatDate(weekDates[0])} - ${formatDate(weekDates[6])}`;
@@ -75,28 +89,76 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
             });
         };
 
+        const toggleCategory = (categoryId: string) => {
+            setSelectedCategoryIds(prev =>
+                prev.includes(categoryId)
+                    ? prev.filter(id => id !== categoryId)
+                    : [...prev, categoryId]
+            );
+        };
+
         return (
             <S.CelestialCalendarWrapper as={Component} ref={ref} {...props}>
 
                 <S.DateRangeDisplay>
-                    <div style={{ display: 'flex', alignItems: 'center', height: '1.5em', overflow: 'hidden' }}>
+                    <S.DateTextContainer>
                         {dateRangeText.split('').map((char, index) => (
-                            <span key={index} style={{position: 'relative', display: 'inline-flex', justifyContent: 'center', width: char === ' ' || char === '.' || char === '-' ? 'auto' : '0.65em'}}>
+                            <S.DateCharWrapper key={index} $char={char}>
                                 <AnimatePresence mode="popLayout" initial={false} custom={direction}>
                                     <motion.span key={char} custom={direction} variants={textVariants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.3, ease: "easeInOut" }} style={{ whiteSpace: 'pre' }}>
                                         {char}
                                     </motion.span>
                                 </AnimatePresence>
-                            </span>
+                            </S.DateCharWrapper>
                         ))}
-                    </div>
+                    </S.DateTextContainer>
+
                     <hr/>
+
+                    <S.SettingsContainer>
+                        <S.SetCategoryButton onClick={() => setIsSettingsOpen(!isSettingsOpen)}>
+                            <Settings2 strokeWidth={1.5} size={24} />
+                        </S.SetCategoryButton>
+
+                        <AnimatePresence>
+                            {isSettingsOpen && (
+                                <>
+                                    <S.SettingsBackdrop onClick={() => setIsSettingsOpen(false)} />
+
+                                    <S.SettingsPopover
+                                        as={motion.div}
+                                        initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                                        exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                                        transition={{ duration: 0.15, ease: "easeOut" }}
+                                    >
+                                        <div className="popover-content">
+                                            {categories.map((cat) => {
+                                                const isSelected = selectedCategoryIds.includes(cat.id);
+                                                return (
+                                                    <div
+                                                        key={cat.id}
+                                                        className="menu-item"
+                                                        onClick={() => toggleCategory(cat.id)}
+                                                        style={{ display: 'flex', alignItems: 'center', opacity: isSelected ? 1 : 0.4, textDecoration: isSelected ? 'none' : 'line-through' }}
+                                                    >
+                                                        <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: cat.color, marginRight: '8px' }} />
+                                                        {cat.name}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </S.SettingsPopover>
+                                </>
+                            )}
+                        </AnimatePresence>
+                    </S.SettingsContainer>
                 </S.DateRangeDisplay>
 
                 <S.SliderWrapper>
-                    <div onClick={handlePrevWeek} style={{ cursor: 'pointer', display: 'flex', marginTop: '10px' }}>
+                    <S.ArrowWrapper onClick={handlePrevWeek}>
                         <Arrow width={80} height={30} isRight={false} stroke={theme.colors.primary}/>
-                    </div>
+                    </S.ArrowWrapper>
 
                     <S.CalendarWindow>
                         <AnimatePresence initial={false} custom={direction} mode="popLayout">
@@ -126,27 +188,32 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
                                 <S.BarContainer>
                                     {weekDates.map((date, idx) => {
                                         const isToday = date.toDateString() === todayStr;
-                                        const dayTodos = (todos as TodoType[]).filter(todo => isBetween(date, todo.startAt, todo.endAt));
+                                        const dayTodos = filteredTodos.filter(todo => isBetween(date, todo.startAt, todo.endAt));
 
                                         return (
                                             <S.DaySlot key={idx} $isToday={isToday}>
                                                 <S.TodoBarList>
                                                     {Array.from({ length: maxLevel }).map((_, levelIndex) => {
-                                                        const todoAtThisLevel = dayTodos.find(t => todoLevels[t.id] === levelIndex);
+                                                            const todoAtThisLevel = dayTodos.find(t => todoLevels[t.id] === levelIndex);
 
-                                                        if (todoAtThisLevel) {
-                                                            const isStart = isSameDay(date, new Date(todoAtThisLevel.startAt!));
-                                                            const isEnd = isSameDay(date, new Date(todoAtThisLevel.endAt!));
-                                                            const color = categories.find(c => c.id === todoAtThisLevel.categoryId)?.color;
+                                                            if (todoAtThisLevel) {
+                                                                const isStart = isSameDay(date, new Date(todoAtThisLevel.startAt!));
+                                                                const isEnd = isSameDay(date, new Date(todoAtThisLevel.endAt!));
+                                                                const color = categories.find(c => c.id === todoAtThisLevel.categoryId)?.color;
+                                                                const isDone = todoAtThisLevel.check === "done";
 
-                                                            return (
-                                                                <S.TodoBarItem key={todoAtThisLevel.id} $isStart={isStart} $isEnd={isEnd} $color={color}>
-                                                                    {(isStart || idx === 0) && <span className="todo-title">{todoAtThisLevel.title}</span>}
-                                                                </S.TodoBarItem>
-                                                            );
-                                                        }
-                                                        return <S.TodoBarSpacer key={`spacer-${levelIndex}`} />;
-                                                    })}
+                                                                return (
+                                                                    <S.TodoBarItem key={todoAtThisLevel.id}
+                                                                                   $isStart={isStart}
+                                                                                   $isEnd={isEnd}
+                                                                                   $color={color}
+                                                                                   $isDone={isDone}>
+                                                                        {(isStart || idx === 0) && <span className="todo-title">{todoAtThisLevel.title}</span>}
+                                                                    </S.TodoBarItem>
+                                                                );
+                                                            }
+                                                            return <S.TodoBarSpacer key={`spacer-${levelIndex}`} />;
+                                                        })}
                                                 </S.TodoBarList>
                                                 {isToday && <S.TodayIndicator />}
                                             </S.DaySlot>
@@ -157,9 +224,9 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
                         </AnimatePresence>
                     </S.CalendarWindow>
 
-                    <div onClick={handleNextWeek} style={{ cursor: 'pointer', display: 'flex', marginTop: '10px' }}>
+                    <S.ArrowWrapper onClick={handleNextWeek}>
                         <Arrow width={80} height={30} isRight={true} stroke={theme.colors.primary}/>
-                    </div>
+                    </S.ArrowWrapper>
                 </S.SliderWrapper>
             </S.CelestialCalendarWrapper>
         );

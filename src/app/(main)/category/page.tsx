@@ -1,15 +1,16 @@
 "use client"
 
 import useAuthStore from "@/store/auth/useAuthStore";
-import {useEffect, useState} from "react";
+import { useEffect, useState } from "react";
 import { useAuthFetch } from '@/hooks/AuthFetch';
 import styled from "styled-components";
 
+// 🌟 1. description 타입을 string(선택)으로 변경
 interface CategoryType {
     id: string;
     name: string;
     color: string;
-    description: boolean;
+    description?: string;
 }
 
 const Category = () => {
@@ -28,8 +29,9 @@ const Category = () => {
             const res = await authFetch('/api/category', {
                 cache: 'no-store',
             });
-            if (!res.ok) new Error("로드 실패");
-            setCategories(await res.json());
+            if (!res.ok) throw new Error("로드 실패");
+            const data = await res.json();
+            setCategories(data);
         } catch (err) {
             console.error(err);
         } finally {
@@ -38,10 +40,10 @@ const Category = () => {
     };
 
     useEffect(() => {
-        fetchCategories().then();
+        fetchCategories();
     }, [accessToken]);
 
-    //카테고리 추가
+    // 카테고리 추가
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newName.trim()) return;
@@ -50,12 +52,19 @@ const Category = () => {
             const res = await authFetch('/api/category', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: newName }),
+                // 🌟 2. 필수값인 color를 임의의 기본 색상으로 함께 전송
+                body: JSON.stringify({
+                    name: newName,
+                    color: "#FF5733"
+                }),
             });
 
             if (res.ok) {
                 setNewName("");
                 fetchCategories();
+            } else {
+                const errorData = await res.json();
+                alert(`생성 실패: ${errorData.message}`);
             }
         } catch (err) {
             console.error("생성 실패", err);
@@ -81,33 +90,37 @@ const Category = () => {
         }
     };
 
+    // 로컬 상태만 먼저 업데이트 (UI 빠른 반응용)
     const handleChange = (id: string, data: Partial<CategoryType>) => {
         setCategories((prev) => prev.map(cat => cat.id === id ? { ...cat, ...data } : cat));
     };
 
+    // 서버에 수정 요청 전송
     const handleSave = async (id: string, updates: Partial<CategoryType>) => {
         const currentCategory = categories.find(c => c.id === id);
         if (!currentCategory) return;
 
         const payload = {
             id,
-            name: updates.name || currentCategory.name,
-            color: updates.color || currentCategory.color,
+            name: updates.name ?? currentCategory.name,
+            color: updates.color ?? currentCategory.color,
         };
 
         try {
             const res = await authFetch('/api/category', {
-                method: 'POST',
+                // 🌟 3. 수정 요청이므로 POST가 아닌 PATCH 사용
+                method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
             });
 
             if (!res.ok) {
+                // 서버 업데이트 실패 시 원래 데이터로 롤백
                 fetchCategories();
             }
         } catch (err) {
             console.error("수정 실패", err);
-            fetchCategories();
+            fetchCategories(); // 에러 시 롤백
         }
     };
 
@@ -133,12 +146,18 @@ const Category = () => {
             <List>
                 {categories.map((item: CategoryType) => (
                     <ListItem key={item.id}>
-                        <ColorPicker type="color" value={item.color}
-                                     onChange={(e) => handleChange(item.id, { color: e.target.value })}
-                                     onBlur={(e) => handleSave(item.id, { color: e.target.value })} />
-                        <NameInput value={item.name} placeholder="카테고리 이름"
-                                   onChange={(e) => handleChange(item.id, { name: e.target.value })}
-                                   onBlur={(e) => handleSave(item.id, { name: e.target.value })} />
+                        <ColorPicker
+                            type="color"
+                            value={item.color}
+                            onChange={(e) => handleChange(item.id, { color: e.target.value })}
+                            onBlur={(e) => handleSave(item.id, { color: e.target.value })}
+                        />
+                        <NameInput
+                            value={item.name}
+                            placeholder="카테고리 이름"
+                            onChange={(e) => handleChange(item.id, { name: e.target.value })}
+                            onBlur={(e) => handleSave(item.id, { name: e.target.value })}
+                        />
                         <DeleteButton onClick={() => handleDelete(item.id)}>삭제</DeleteButton>
                     </ListItem>
                 ))}
@@ -151,6 +170,7 @@ const Category = () => {
     )
 }
 
+// --- 아래 Styled Components 코드는 기존과 동일하게 유지하시면 됩니다 ---
 const Container = styled.div`
     padding: 2rem;
     max-width: 600px;
@@ -170,7 +190,7 @@ const Header = styled.div`
     h2 {
         font-size: ${(props) => props.theme.fontSizes.h3};
         font-weight: 600;
-        font-family: ${(props) => props.theme.fonts?.celestial_heading};
+        font-family: ${(props) => props.theme.fonts?.celestial};
     }
 `;
 
@@ -218,11 +238,11 @@ const ColorPicker = styled.input`
     background: none;
     cursor: pointer;
     padding: 0;
-    
+
     &::-webkit-color-swatch-wrapper { padding: 0; }
-    &::-webkit-color-swatch { 
-        border: 1px solid ${(props) => props.theme.colors.border}; 
-        border-radius: 50%; 
+    &::-webkit-color-swatch {
+        border: 1px solid ${(props) => props.theme.colors.border};
+        border-radius: 50%;
     }
 `;
 
@@ -279,7 +299,7 @@ const CreateInput = styled.input`
     background: transparent;
     color: ${(props) => props.theme.colors.text};
     transition: border 0.2s;
-    
+
     &:focus {
         border-color: ${(props) => props.theme.colors.primary};
         outline: none;
@@ -294,10 +314,10 @@ const CreateButton = styled.button`
     border-radius: 5px;
     cursor: pointer;
     transition: opacity 0.2s;
-    
-    &:hover { 
+
+    &:hover {
         border: 1px solid ${(props) => props.theme.colors.primary}
     }
 `;
 
-export default Category
+export default Category;

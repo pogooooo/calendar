@@ -94,7 +94,7 @@ const AuthDiv = styled.div`
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: ${(props) => props.theme.fonts.celestial_heading};
+    font-family: ${(props) => props.theme.fonts.celestial};
 `;
 
 const InputCard = styled.div`
