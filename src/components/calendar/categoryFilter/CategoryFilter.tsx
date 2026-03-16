@@ -33,28 +33,18 @@ export default function CategoryFilter({ categories, selectedCategoryIds, onTogg
                             exit={{ opacity: 0, y: -10, scale: 0.95 }}
                             transition={{ duration: 0.15, ease: "easeOut" }}
                         >
-                            <div className="popover-header">출력할 카테고리 선택</div>
                             <div className="popover-content">
                                 {categories.map((cat) => {
                                     const isSelected = selectedCategoryIds.includes(cat.id);
                                     return (
-                                        <div
+                                        <S.MenuItem
                                             key={cat.id}
-                                            className="menu-item"
                                             onClick={() => onToggle(cat.id)}
-                                            style={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                opacity: isSelected ? 1 : 0.4,
-                                                textDecoration: isSelected ? 'none' : 'line-through'
-                                            }}
+                                            $isSelected={isSelected}
                                         >
-                                            <div style={{
-                                                width: '12px', height: '12px', borderRadius: '50%',
-                                                backgroundColor: cat.color, marginRight: '8px'
-                                            }} />
+                                            <S.CategoryColorDot $color={cat.color} $isSelected={isSelected} />
                                             {cat.name}
-                                        </div>
+                                        </S.MenuItem>
                                     );
                                 })}
                             </div>

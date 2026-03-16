@@ -4,13 +4,15 @@ import * as React from "react";
 import { useTheme } from "styled-components";
 import { Slot } from "@radix-ui/react-slot";
 import { motion, AnimatePresence } from "framer-motion";
-import { Settings2 } from 'lucide-react';
 
-import { WeekProps, TodoType } from "../WeekCalendar";
+import { WeekProps } from "../WeekCalendar";
+import { TodoType } from "@/types/calendar";
 import Arrow from "@/assets/celestial/Arrow";
 import { formatDate, isSameDay, isBetween, getWeekDates } from "@/utils/DateUtils";
 import { useTodoLevels } from "@/hooks/useTodoLevels";
 import * as S from "./CelestialWeekCalendar.styles";
+import CategoryFilter from "../../categoryFilter/CategoryFilter";
+import AnimatedDateText from "@/components/calendar/animatedDateText/AnimatedDateText";
 
 const slideVariants = {
     enter: (direction: number) => ({
@@ -27,21 +29,6 @@ const slideVariants = {
     }),
 };
 
-const textVariants = {
-    enter: (direction: number) => ({
-        y: direction > 0 ? 20 : -20,
-        opacity: 0,
-    }),
-    center: {
-        y: 0,
-        opacity: 1,
-    },
-    exit: (direction: number) => ({
-        y: direction > 0 ? -20 : 20,
-        opacity: 0,
-    }),
-};
-
 const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
     ({ asChild, todos = [], categories = [], ...props }, ref) => {
         const Component = asChild ? Slot : 'div';
@@ -49,7 +36,6 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
 
         const [currentDate, setCurrentDate] = React.useState(new Date());
         const [direction, setDirection] = React.useState(0);
-        const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
         const [selectedCategoryIds, setSelectedCategoryIds] = React.useState<string[]>([]);
 
         const weekDates = React.useMemo(() => getWeekDates(currentDate), [currentDate]);
@@ -101,58 +87,15 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
             <S.CelestialCalendarWrapper as={Component} ref={ref} {...props}>
 
                 <S.DateRangeDisplay>
-                    <S.DateTextContainer>
-                        {dateRangeText.split('').map((char, index) => (
-                            <S.DateCharWrapper key={index} $char={char}>
-                                <AnimatePresence mode="popLayout" initial={false} custom={direction}>
-                                    <motion.span key={char} custom={direction} variants={textVariants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.3, ease: "easeInOut" }} style={{ whiteSpace: 'pre' }}>
-                                        {char}
-                                    </motion.span>
-                                </AnimatePresence>
-                            </S.DateCharWrapper>
-                        ))}
-                    </S.DateTextContainer>
+                    <AnimatedDateText text={dateRangeText} direction={direction} />
 
                     <hr/>
 
-                    <S.SettingsContainer>
-                        <S.SetCategoryButton onClick={() => setIsSettingsOpen(!isSettingsOpen)}>
-                            <Settings2 strokeWidth={1.5} size={24} />
-                        </S.SetCategoryButton>
-
-                        <AnimatePresence>
-                            {isSettingsOpen && (
-                                <>
-                                    <S.SettingsBackdrop onClick={() => setIsSettingsOpen(false)} />
-
-                                    <S.SettingsPopover
-                                        as={motion.div}
-                                        initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                                        exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                                        transition={{ duration: 0.15, ease: "easeOut" }}
-                                    >
-                                        <div className="popover-content">
-                                            {categories.map((cat) => {
-                                                const isSelected = selectedCategoryIds.includes(cat.id);
-                                                return (
-                                                    <div
-                                                        key={cat.id}
-                                                        className="menu-item"
-                                                        onClick={() => toggleCategory(cat.id)}
-                                                        style={{ display: 'flex', alignItems: 'center', opacity: isSelected ? 1 : 0.4, textDecoration: isSelected ? 'none' : 'line-through' }}
-                                                    >
-                                                        <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: cat.color, marginRight: '8px' }} />
-                                                        {cat.name}
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    </S.SettingsPopover>
-                                </>
-                            )}
-                        </AnimatePresence>
-                    </S.SettingsContainer>
+                    <CategoryFilter
+                        categories={categories}
+                        selectedCategoryIds={selectedCategoryIds}
+                        onToggle={toggleCategory}
+                    />
                 </S.DateRangeDisplay>
 
                 <S.SliderWrapper>
