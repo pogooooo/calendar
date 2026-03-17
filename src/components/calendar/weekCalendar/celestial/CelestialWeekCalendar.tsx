@@ -4,6 +4,7 @@ import * as React from "react";
 import { useTheme } from "styled-components";
 import { Slot } from "@radix-ui/react-slot";
 import { motion, AnimatePresence } from "framer-motion";
+import { Plus } from 'lucide-react';
 
 import { WeekProps } from "../WeekCalendar";
 import { TodoType } from "@/types/calendar";
@@ -13,6 +14,10 @@ import { useTodoLevels } from "@/hooks/useTodoLevels";
 import * as S from "./CelestialWeekCalendar.styles";
 import CategoryFilter from "../../categoryFilter/CategoryFilter";
 import AnimatedDateText from "@/components/calendar/animatedDateText/AnimatedDateText";
+import TodoModal from "@/components/modal/todoModal/TodoModal";
+import TodoContextMenu from "../../contextMenu/TodoContextMenu";
+import useTodoStore from "@/store/todo/useTodoStore";
+import useAuthStore from "@/store/auth/useAuthStore";
 
 const slideVariants = {
     enter: (direction: number) => ({
@@ -38,6 +43,18 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
         const [direction, setDirection] = React.useState(0);
         const [selectedCategoryIds, setSelectedCategoryIds] = React.useState<string[]>([]);
 
+        const [isModalOpen, setIsModalOpen] = React.useState(false);
+        const [modalTodo, setModalTodo] = React.useState<TodoType | null>(null);
+        const [selectedDateForModal, setSelectedDateForModal] = React.useState<Date | undefined>(undefined);
+
+        const [contextMenu, setContextMenu] = React.useState<{ x: number, y: number, todo: TodoType } | null>(null);
+        const { deleteTodo, toggleTodo } = useTodoStore();
+        const accessToken = useAuthStore((state) => state.accessToken);
+
+        const authFetch = React.useCallback(async (url: string, init?: RequestInit) => {
+            return fetch(url, { ...init, headers: { ...init?.headers, Authorization: `Bearer ${accessToken}` } });
+        }, [accessToken]);
+        
         const weekDates = React.useMemo(() => getWeekDates(currentDate), [currentDate]);
         const todayStr = React.useMemo(() => new Date().toDateString(), []);
 
@@ -81,6 +98,35 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
                     ? prev.filter(id => id !== categoryId)
                     : [...prev, categoryId]
             );
+        };
+
+        const handleContextMenu = (e: React.MouseEvent, todo: TodoType) => {
+            e.preventDefault();
+            setContextMenu({ x: e.clientX, y: e.clientY, todo });
+        };
+
+        const handleQuickEdit = (todo: TodoType) => {
+            setModalTodo(todo);
+            setIsModalOpen(true);
+            setContextMenu(null);
+        };
+
+        const handleQuickDelete = async (todo: TodoType) => {
+            if (window.confirm("정말 삭제하시겠습니까?")) {
+                await deleteTodo(authFetch, todo.id);
+            }
+            setContextMenu(null);
+        };
+
+        const handleQuickToggle = async (todo: TodoType) => {
+            await toggleTodo(authFetch, todo.id);
+            setContextMenu(null);
+        };
+
+        const handleCreateTodo = (date: Date) => {
+            setModalTodo(null);
+            setSelectedDateForModal(date);
+            setIsModalOpen(true);
         };
 
         return (
@@ -135,6 +181,10 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
 
                                         return (
                                             <S.DaySlot key={idx} $isToday={isToday}>
+                                                <S.AddTodoButton className="add-btn" onClick={() => handleCreateTodo(date)}>
+                                                    <Plus size={16} strokeWidth={3} />
+                                                </S.AddTodoButton>
+
                                                 <S.TodoBarList>
                                                     {Array.from({ length: maxLevel }).map((_, levelIndex) => {
                                                             const todoAtThisLevel = dayTodos.find(t => todoLevels[t.id] === levelIndex);
@@ -150,7 +200,8 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
                                                                                    $isStart={isStart}
                                                                                    $isEnd={isEnd}
                                                                                    $color={color}
-                                                                                   $isDone={isDone}>
+                                                                                   $isDone={isDone}
+                                                                                   onContextMenu={(e) => handleContextMenu(e, todoAtThisLevel)}>
                                                                         {(isStart || idx === 0) && <span className="todo-title">{todoAtThisLevel.title}</span>}
                                                                     </S.TodoBarItem>
                                                                 );
@@ -171,6 +222,23 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
                         <Arrow width={80} height={30} isRight={true} stroke={theme.colors.primary}/>
                     </S.ArrowWrapper>
                 </S.SliderWrapper>
+
+                <TodoContextMenu
+                    menuState={contextMenu}
+                    onClose={() => setContextMenu(null)}
+                    onToggle={handleQuickToggle}
+                    onEdit={handleQuickEdit}
+                    onDelete={handleQuickDelete}
+                />
+
+                <TodoModal
+                    isOpen={isModalOpen}
+                    onClose={() => setIsModalOpen(false)}
+                    todo={modalTodo}
+                    categories={categories}
+                    selectedDate={selectedDateForModal}
+                />
+
             </S.CelestialCalendarWrapper>
         );
     }

@@ -27,20 +27,6 @@ export const DateRangeDisplay = styled.div`
     & > span { white-space: nowrap; }
 `;
 
-export const DateCharWrapper = styled.span<{ $char: string }>`
-    position: relative;
-    display: inline-flex;
-    justify-content: center;
-    width: ${(props) => [' ', '.', '-'].includes(props.$char) ? 'auto' : '0.65em'};
-`;
-
-export const DateTextContainer = styled.div`
-    display: flex;
-    align-items: center;
-    height: 1.5em;
-    overflow: hidden;
-`;
-
 export const SliderWrapper = styled.div`
     display: flex;
     align-items: flex-start;
@@ -136,6 +122,29 @@ export const BarContainer = styled.div`
     border-top: none;
 `;
 
+export const AddTodoButton = styled.button`
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    width: 24px;
+    height: 24px;
+    border-radius: 20%;
+    background-color: ${(props) => props.theme.colors.surface};
+    color: ${(props) => props.theme.colors.primary};
+    border: 1px solid ${(props) => props.theme.colors.primary};
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s ease, transform 0.1s ease;
+    z-index: 10;
+
+    &:hover {
+        transform: scale(1.1);
+    }
+`;
+
 export const DaySlot = styled.div<{ $isToday: boolean }>`
     display: flex;
     flex-direction: column;
@@ -147,6 +156,10 @@ export const DaySlot = styled.div<{ $isToday: boolean }>`
 
     &:last-child {
         border-right: none;
+    }
+
+    &:hover .add-btn {
+        opacity: 0.8;
     }
 `;
 
@@ -197,3 +210,4 @@ export const TodoBarSpacer = styled.div` height: 25px; width: 100%; `;
 export const TodayIndicator = styled.div`
     position: absolute;
 `;
+
