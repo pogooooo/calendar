@@ -1,61 +1,72 @@
 "use client";
 
 import * as React from "react";
-import styled from "styled-components";
 import { TodoModalProps } from "../TodoModal";
 import useTodoStore from "@/store/todo/useTodoStore";
-import useAuthStore from "@/store/auth/useAuthStore";
+import { useAuthFetch } from "@/hooks/useAuthFetch";
+import * as S from "./CelestialTodoModal.styles";
+import { X, ChevronDown, ChevronUp } from 'lucide-react';
+import SecondaryButton from "@/components/button/secondary/SecondaryButton";
+
+const getLocalDatetimeString = (date: Date) => {
+    const tzOffset = date.getTimezoneOffset() * 60000;
+    return new Date(date.getTime() - tzOffset).toISOString().slice(0, 16);
+};
 
 export default function CelestialTodoModal({ isOpen, onClose, todo, categories, selectedDate }: TodoModalProps) {
     const { addTodo, updateTodo, deleteTodo } = useTodoStore();
-    const accessToken = useAuthStore((state) => state.accessToken);
+    const authFetch = useAuthFetch();
 
-    // Store에서 요구하는 authFetch 헬퍼 함수 구성
-    const authFetch = React.useCallback(async (url: string, init?: RequestInit) => {
-        return fetch(url, {
-            ...init,
-            headers: {
-                ...init?.headers,
-                Authorization: `Bearer ${accessToken}`,
-            },
-        });
-    }, [accessToken]);
-
-    // 폼 상태 관리
     const [title, setTitle] = React.useState("");
     const [categoryId, setCategoryId] = React.useState("");
     const [memo, setMemo] = React.useState("");
     const [startAt, setStartAt] = React.useState("");
     const [endAt, setEndAt] = React.useState("");
+    const [isAllDay, setIsAllDay] = React.useState(false);
+    const [isCategoryOpen, setIsCategoryOpen] = React.useState(false);
 
-    // 모달이 열리거나 todo/카테고리가 바뀔 때 초기값 세팅
+    const selectedCategory = categories.find(c => c.id === categoryId);
+
     React.useEffect(() => {
         if (isOpen) {
             if (todo) {
-                // 수정 모드
                 setTitle(todo.title);
                 setCategoryId(todo.categoryId);
                 setMemo(todo.memo || "");
-                setStartAt(todo.startAt ? new Date(todo.startAt).toISOString().slice(0, 16) : "");
-                setEndAt(todo.endAt ? new Date(todo.endAt).toISOString().slice(0, 16) : "");
+                setIsAllDay(todo.isAllDay || false);
+
+                setStartAt(todo.startAt ? getLocalDatetimeString(new Date(todo.startAt)) : "");
+                setEndAt(todo.endAt ? getLocalDatetimeString(new Date(todo.endAt)) : "");
             } else {
-                // 생성 모드
                 setTitle("");
                 setCategoryId(categories.length > 0 ? categories[0].id : "");
                 setMemo("");
-                const defaultDate = selectedDate ? new Date(selectedDate) : new Date();
-                setStartAt(defaultDate.toISOString().slice(0, 16));
+                setIsAllDay(false);
 
-                // 기본 종료시간은 시작시간 + 1시간으로 세팅
-                const defaultEndDate = new Date(defaultDate);
-                defaultEndDate.setHours(defaultEndDate.getHours() + 1);
-                setEndAt(defaultEndDate.toISOString().slice(0, 16));
+                const defaultDate = selectedDate ? new Date(selectedDate) : new Date();
+                setStartAt(getLocalDatetimeString(defaultDate));
+
+                const defaultEndDate = new Date(defaultDate.getTime() + 60 * 60 * 1000);
+                setEndAt(getLocalDatetimeString(defaultEndDate));
             }
         }
     }, [isOpen, todo, categories, selectedDate]);
 
+    React.useEffect(() => {
+        const closeDropdown = () => setIsCategoryOpen(false);
+        if (isCategoryOpen) {
+            window.addEventListener('click', closeDropdown);
+        }
+        return () => window.removeEventListener('click', closeDropdown);
+    }, [isCategoryOpen]);
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (!categoryId) {
+            alert("카테고리를 선택해주세요.");
+            return;
+        }
 
         const todoData = {
             title,
@@ -63,14 +74,12 @@ export default function CelestialTodoModal({ isOpen, onClose, todo, categories, 
             memo,
             startAt: new Date(startAt).toISOString(),
             endAt: new Date(endAt).toISOString(),
-            isAllDay: false, // 필요시 UI에 추가
+            isAllDay,
         };
 
         if (todo) {
-            // 수정
             await updateTodo(authFetch, todo.id, todoData);
         } else {
-            // 생성
             await addTodo(authFetch, todoData);
         }
 
@@ -84,107 +93,119 @@ export default function CelestialTodoModal({ isOpen, onClose, todo, categories, 
         }
     };
 
+    // ✨ 날짜 입력 핸들러 (종일 모드일 때 기존 시간을 유지하면서 날짜만 바꾸는 로직)
+    const handleDateChange = (setter: React.Dispatch<React.SetStateAction<string>>, currentValue: string, newValue: string) => {
+        if (isAllDay) {
+            // 종일일 경우 yyyy-mm-dd만 들어오므로, 뒤에 기존 시간(Thh:mm)을 붙여줌
+            setter(`${newValue}T${currentValue.slice(11, 16) || "00:00"}`);
+        } else {
+            setter(newValue);
+        }
+    };
+
     return (
         <S.Overlay onClick={onClose}>
             <S.Container onClick={(e) => e.stopPropagation()}>
-                <S.Header>
-                    <h2>{todo ? "할 일 수정" : "새 할 일"}</h2>
-                    <button type="button" onClick={onClose}>X</button>
-                </S.Header>
+                <form onSubmit={handleSubmit}>
+                    <S.Header>
+                        <input
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                            placeholder={todo?.title || "새 할 일"}
+                            required
+                            className="title-input"
+                        />
+                        <button type="button" className="close-btn" onClick={onClose}>
+                            <X size={30} />
+                        </button>
+                    </S.Header>
 
-                <S.Form onSubmit={handleSubmit}>
-                    <div className="input-group">
-                        <label>제목</label>
-                        <input value={title} onChange={(e) => setTitle(e.target.value)} required />
-                    </div>
+                    {/* ✨ 커스텀 카테고리 셀렉트 */}
+                    <S.CategorySelect onClick={(e) => e.stopPropagation()}>
+                        <S.SelectedCategory onClick={() => setIsCategoryOpen(!isCategoryOpen)}>
+                            <div>
+                                <S.ColorDot $color={selectedCategory?.color || "#e0e0e0"} />
+                                <span className={!selectedCategory ? "placeholder" : ""}>
+                                {selectedCategory ? selectedCategory.name : "카테고리를 선택해주세요"}
+                                </span>
+                            </div>
+                            {isCategoryOpen ? (
+                                <ChevronUp size={30} color="#888" />
+                            ) : (
+                                <ChevronDown size={30} color="#888" />
+                            )}
 
-                    <div className="input-group">
-                        <label>카테고리</label>
-                        <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} required>
-                            <option value="">선택해주세요</option>
-                            {categories.map((cat) => (
-                                <option key={cat.id} value={cat.id}>{cat.name}</option>
-                            ))}
-                        </select>
-                    </div>
+                        </S.SelectedCategory>
 
-                    <div className="input-group">
+                        {/* 드롭다운 메뉴 */}
+                        {isCategoryOpen && (
+                            <S.CategoryList>
+                                {categories.map((cat) => (
+                                    <S.CategoryItem
+                                        key={cat.id}
+                                        className="option-item"
+                                        onClick={() => {
+                                            setCategoryId(cat.id);
+                                            setIsCategoryOpen(false);
+                                        }}
+                                    >
+                                        <S.ColorDot $color={cat.color} />
+                                        <span>{cat.name}</span>
+                                    </S.CategoryItem>
+                                ))}
+                            </S.CategoryList>
+                        )}
+                    </S.CategorySelect>
+
+                    <S.AllDay>
+                        <span>하루 종일</span>
+
+                        <S.ToggleSwitch>
+                            <input
+                                type="checkbox"
+                                checked={isAllDay}
+                                onChange={(e) => setIsAllDay(e.target.checked)}
+                            />
+                            <span className="slider"></span>
+                        </S.ToggleSwitch>
+                    </S.AllDay>
+
+                    <S.DateRow>
                         <label>시작</label>
-                        <input type="datetime-local" value={startAt} onChange={(e) => setStartAt(e.target.value)} />
-                    </div>
+                        <input
+                            type={isAllDay ? "date" : "datetime-local"}
+                            value={isAllDay ? startAt.slice(0, 10) : startAt}
+                            onChange={(e) => handleDateChange(setStartAt, startAt, e.target.value)}
+                        />
+                    </S.DateRow>
 
-                    <div className="input-group">
+                    <S.DateRow>
                         <label>종료</label>
-                        <input type="datetime-local" value={endAt} onChange={(e) => setEndAt(e.target.value)} />
-                    </div>
+                        <input
+                            type={isAllDay ? "date" : "datetime-local"}
+                            value={isAllDay ? endAt.slice(0, 10) : endAt}
+                            onChange={(e) => handleDateChange(setEndAt, endAt, e.target.value)}
+                        />
+                    </S.DateRow>
 
-                    <div className="input-group">
+                    <S.MemoRow>
                         <label>메모</label>
                         <textarea value={memo} onChange={(e) => setMemo(e.target.value)} />
-                    </div>
+                    </S.MemoRow>
 
                     <S.Footer>
                         {todo && (
-                            <button type="button" className="delete-btn" onClick={handleDelete}>
+                            <SecondaryButton type="button" onClick={handleDelete} $width="80px" $height="40px" $variant="danger">
                                 삭제
-                            </button>
+                            </SecondaryButton>
                         )}
-                        <button type="submit" className="submit-btn">
+
+                        <SecondaryButton type="submit" $width="80px" $height="40px">
                             {todo ? "수정하기" : "저장하기"}
-                        </button>
+                        </SecondaryButton>
                     </S.Footer>
-                </S.Form>
+                </form>
             </S.Container>
         </S.Overlay>
     );
 }
-
-// --- Minimal Styled Components ---
-
-const S = {
-    Overlay: styled.div`
-        position: fixed;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background-color: rgba(0, 0, 0, 0.4);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 999;
-    `,
-    Container: styled.div`
-        background-color: #fff;
-        width: 400px;
-        max-width: 90%;
-        border-radius: 8px;
-        padding: 20px;
-        display: flex;
-        flex-direction: column;
-    `,
-    Header: styled.div`
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
-    `,
-    Form: styled.form`
-        display: flex;
-        flex-direction: column;
-        gap: 15px;
-
-        .input-group {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-        
-        input, select, textarea {
-            padding: 8px;
-        }
-    `,
-    Footer: styled.div`
-        display: flex;
-        justify-content: flex-end;
-        gap: 10px;
-        margin-top: 10px;
-    `
-};

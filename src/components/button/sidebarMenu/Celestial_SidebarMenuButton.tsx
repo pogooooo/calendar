@@ -55,7 +55,7 @@ const ArrowIconWrapper = styled.div<{ $isOpen?: boolean }>`
     cursor: pointer;
     
     &:hover {
-        background-color: rgba(0, 0, 0, 0.1);
+        background-color: ${(props) => props.theme.colors.textSecondary}55;
     }
 `;
 

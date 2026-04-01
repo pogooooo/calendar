@@ -12,24 +12,12 @@ export default function Home() {
     const accessToken = useAuthStore((state) => state.accessToken);
     const user = useAuthStore((state) => state.user);
     const theme = useSettingStore((state) => state.theme);
-    const logout = useAuthStore((state) => state.logout);
 
     const { todos } = useTodoStore();
     const { categories } = useCategoryStore();
 
-    const router = useRouter();
-
-    const handleLogout = async () => {
-        await logout();
-        router.push("/signIn");
-    };
-
     return (
         <ContentWrapper>
-            <WelcomeHeader>
-                <h1>환영합니다, {user?.name || user?.email || "사용자"}님!</h1>
-                <LogoutButton onClick={handleLogout}>로그아웃</LogoutButton>
-            </WelcomeHeader>
 
             <Section>
                 <WeekCalendar todos={todos} categories={categories} />

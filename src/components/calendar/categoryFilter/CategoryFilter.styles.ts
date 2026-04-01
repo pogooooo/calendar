@@ -33,7 +33,7 @@ export const SettingsPopover = styled.div`
     left: calc(100% + 8px);
     width: 200px;
 
-    background-color: ${(props) => props.theme.colors.surface || '#fff'};
+    background-color: ${(props) => props.theme.colors.surface};
     border: 1px solid ${(props) => props.theme.colors.primary};
     border-radius: 8px;
     box-shadow: 0 4px 20px 4px rgba(0, 0, 0, 0.15);
@@ -74,7 +74,7 @@ export const MenuItem = styled.div<{ $isSelected: boolean }>`
     text-decoration: ${(props) => props.$isSelected ? 'none' : 'line-through'};
 
     &:hover {
-        background-color: rgba(0, 0, 0, 0.05);
+        background-color: ${(props) => props.theme.colors.textSecondary}55;
     }
 `;
 

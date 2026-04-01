@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { useAuthFetch } from "@/hooks/AuthFetch";
+import { useAuthFetch } from "@/hooks/useAuthFetch";
 import useTodoStore from "@/store/todo/useTodoStore";
 import useCategoryStore from "@/store/category/useCategoryStore";
 import useAuthStore from "@/store/auth/useAuthStore";

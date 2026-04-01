@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import styled from "styled-components";
-import { useAuthFetch } from "@/hooks/AuthFetch";
+import { useAuthFetch } from "@/hooks/useAuthFetch";
 import useAuthStore from "@/store/auth/useAuthStore";
 
 // 타입 정의
