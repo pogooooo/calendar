@@ -18,7 +18,12 @@ const Menu = (props: { width: number, categories: CategoryType[] }) => {
                 <Layers size={26}/>
             </SidebarMenuButton>
 
-            <SidebarMenuButton $height={30} $width={props.width - 40} label="캘린더">
+            <SidebarMenuButton
+                $height={30}
+                $width={props.width - 40}
+                label="캘린더"
+                onClick={() => { router.push("/calendar") }}
+            >
                 <Calendar size={26}/>
             </SidebarMenuButton>
 
