@@ -1,12 +1,12 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import useAuthStore from "@/store/auth/useAuthStore";
-import useSettingStore from "@/store/setting/useSettingStore";
+import useAuthStore from "@/store/useAuthStore";
+import useSettingStore from "@/store/useSettingStore";
 import styled from "styled-components";
 import WeekCalendar from "@/components/calendar/weekCalendar/WeekCalendar";
-import useTodoStore from "@/store/todo/useTodoStore";
-import useCategoryStore from "@/store/category/useCategoryStore"; // 분리된 카테고리 스토어 임포트
+import useTodoStore from "@/store/useTodoStore";
+import useCategoryStore from "@/store/useCategoryStore"; // 분리된 카테고리 스토어 임포트
 
 export default function Home() {
     const accessToken = useAuthStore((state) => state.accessToken);

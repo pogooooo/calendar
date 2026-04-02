@@ -21,6 +21,9 @@ model User {
   createdCategories Category[] @relation("CreatedCategories")
   participatingCategories Category[] @relation("CategoryParticipants")
   settings                UserSettings?
+
+  dailyTasks  DailyTask[]
+  dailyMemos  DailyMemo[]
 }
 
 model Account {
@@ -100,4 +103,31 @@ model Todo {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model DailyTask {
+  id        String   @id @default(cuid())
+  text      String
+  isDone    Boolean  @default(false)
+  date      DateTime
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model DailyMemo {
+  id        String   @id @default(cuid())
+  content   String
+  date      DateTime
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, date])
 }

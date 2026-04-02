@@ -16,8 +16,8 @@ import CategoryFilter from "../../categoryFilter/CategoryFilter";
 import AnimatedDateText from "@/components/calendar/animatedDateText/AnimatedDateText";
 import TodoModal from "@/components/modal/todoModal/TodoModal";
 import TodoContextMenu from "../../contextMenu/TodoContextMenu";
-import useTodoStore from "@/store/todo/useTodoStore";
-import useAuthStore from "@/store/auth/useAuthStore";
+import useTodoStore from "@/store/useTodoStore";
+import useAuthStore from "@/store/useAuthStore";
 
 const slideVariants = {
     enter: (direction: number) => ({

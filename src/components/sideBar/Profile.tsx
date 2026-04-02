@@ -3,7 +3,7 @@ import DefaultProfile from "@/assets/icons/DefaultProfile";
 import SidebarMenuButton from "@/components/button/sidebarMenu/SidebarMenuButton";
 import Setting from "@/assets/icons/Setting";
 import Home from "@/assets/icons/Home";
-import useAuthStore from "@/store/auth/useAuthStore";
+import useAuthStore from "@/store/useAuthStore";
 import {useRouter} from "next/navigation";
 
 const Profile = (props: {width: number}) => {

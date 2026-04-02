@@ -8,8 +8,8 @@ import {z} from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import useSettingStore from "@/store/setting/useSettingStore";
-import useAuthStore from "@/store/auth/useAuthStore"
+import useSettingStore from "@/store/useSettingStore";
+import useAuthStore from "@/store/useAuthStore"
 import {LoginSchema} from "@/lib/schema";
 
 import SecondaryButton from "@/components/button/secondary/SecondaryButton"

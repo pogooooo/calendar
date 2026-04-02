@@ -1,5 +1,5 @@
 import { useRouter } from "next/navigation";
-import useAuthStore from "@/store/auth/useAuthStore";
+import useAuthStore from "@/store/useAuthStore";
 
 export const useAuthFetch = () => {
     const { accessToken, setAccessToken, logout } = useAuthStore();

@@ -1,7 +1,7 @@
 import styled from "styled-components";
 import SidebarMenuButton from "@/components/button/sidebarMenu/SidebarMenuButton";
 import { useRouter } from "next/navigation";
-import { CategoryType } from "@/store/category/useCategoryStore";
+import { CategoryType } from "@/store/useCategoryStore";
 import { Layers, Calendar, Kanban, Trophy } from "lucide-react";
 
 const Menu = (props: { width: number, categories: CategoryType[] }) => {

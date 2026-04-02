@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import useCategoryStore from "@/store/category/useCategoryStore";
+import useCategoryStore from "@/store/useCategoryStore";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import styled from "styled-components";
 import SecondaryButton from "@/components/button/secondary/SecondaryButton";

@@ -6,6 +6,8 @@ import { Plus, Trash2, Check } from "lucide-react";
 
 import { DayProps } from "../DayCalendar";
 import * as S from "./CelestialDayCalendar.styles";
+import useDailyStore from "@/store/useDailyStore";
+import { useAuthFetch } from "@/hooks/useAuthFetch";
 
 interface LocalTask {
     id: string;
@@ -17,42 +19,55 @@ const CelestialDayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
     ({ asChild, selectedDate = new Date(), todos = [], categories = [], onDateChange, ...props }, ref) => {
         const Component = asChild ? Slot : 'div';
 
-        // TODO: DB 연동 및 전역 상태 관리 로직 추가 필요
-        const [dailyTasks, setDailyTasks] = React.useState<LocalTask[]>([
-            { id: '1', text: '알고리즘 문제 풀이', isDone: true },
-            { id: '2', text: '리액트 컴포넌트 분리', isDone: false }
-        ]);
+        const { tasks, memo, fetchDailyData, addDailyTask, toggleDailyTask, deleteDailyTask, updateDailyMemo } = useDailyStore();
+        const authFetch = useAuthFetch();
+
         const [newTaskText, setNewTaskText] = React.useState("");
-        const [dailyMemo, setDailyMemo] = React.useState("오늘은 집중력이 좋았다. 내일도 이대로 유지하자!");
+        const [localMemo, setLocalMemo] = React.useState("");
 
-        const [timeSlots, setTimeSlots] = React.useState<Record<number, boolean[]>>({
-            9: [false, false, false, true, true, true],
-            10: [true, true, true, true, true, true],
-            11: [true, true, false, false, false, false],
-        });
+        React.useEffect(() => {
+            fetchDailyData(authFetch, selectedDate);
+            // eslint-disable-next-line react-hooks/exhaustive-deps
+        }, [selectedDate]);
 
-        const handleAddTask = (e: React.FormEvent) => {
+        React.useEffect(() => {
+            setLocalMemo(memo || "");
+        }, [memo]);
+
+        const handleAddTask = async (e: React.FormEvent) => {
             e.preventDefault();
             if (!newTaskText.trim()) return;
-            setDailyTasks([...dailyTasks, { id: Date.now().toString(), text: newTaskText.trim(), isDone: false }]);
+            const text = newTaskText.trim();
             setNewTaskText("");
+            await addDailyTask(authFetch, selectedDate, text);
         };
 
-        const handleToggleTask = (id: string) => {
-            setDailyTasks(dailyTasks.map(t => t.id === id ? { ...t, isDone: !t.isDone } : t));
+        const handleMemoBlur = async () => {
+            if (localMemo !== memo) {
+                await updateDailyMemo(authFetch, selectedDate, localMemo);
+            }
         };
 
-        const handleDeleteTask = (id: string) => {
-            setDailyTasks(dailyTasks.filter(t => t.id !== id));
-        };
+        const getSlotColor = React.useCallback((hour: number, slotIdx: number) => {
+            const slotStart = new Date(selectedDate);
+            slotStart.setHours(hour, slotIdx * 10, 0, 0);
 
-        const handleToggleSlot = (hour: number, slotIdx: number) => {
-            setTimeSlots(prev => {
-                const hourSlots = prev[hour] ? [...prev[hour]] : [false, false, false, false, false, false];
-                hourSlots[slotIdx] = !hourSlots[slotIdx];
-                return { ...prev, [hour]: hourSlots };
+            const slotEnd = new Date(selectedDate);
+            slotEnd.setHours(hour, slotIdx * 10 + 9, 59, 999);
+
+            const overlappingTodo = todos.find(todo => {
+                if (todo.isAllDay || !todo.startAt || !todo.endAt) return false;
+                const start = new Date(todo.startAt as string | number | Date);
+                const end = new Date(todo.endAt as string | number | Date);
+                return start <= slotEnd && end >= slotStart;
             });
-        };
+
+            if (overlappingTodo) {
+                const cat = categories.find(c => c.id === overlappingTodo.categoryId);
+                return cat?.color || "var(--primary-color)";
+            }
+            return null;
+        }, [todos, categories, selectedDate]);
 
         const hours = Array.from({ length: 24 }, (_, i) => i);
         const formattedDate = `${selectedDate.getFullYear()}년 ${selectedDate.getMonth() + 1}월 ${selectedDate.getDate()}일`;
@@ -76,12 +91,12 @@ const CelestialDayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
                                     <div className="time-slots">
                                         <div className="slot-bar-container">
                                             {Array.from({ length: 6 }).map((_, slotIdx) => {
-                                                const isFilled = timeSlots[hour]?.[slotIdx] || false;
+                                                const slotColor = getSlotColor(hour, slotIdx);
                                                 return (
                                                     <div
                                                         key={slotIdx}
-                                                        className={`slot-box ${isFilled ? 'filled' : ''}`}
-                                                        onClick={() => handleToggleSlot(hour, slotIdx)}
+                                                        className={`slot-box ${slotColor ? 'filled' : ''}`}
+                                                        style={slotColor ? { backgroundColor: `${slotColor}CC`, borderColor: slotColor } : {}}
                                                     />
                                                 );
                                             })}
@@ -97,13 +112,13 @@ const CelestialDayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
                             <div className="card-header">To-do List</div>
 
                             <S.TaskList>
-                                {dailyTasks.map(task => (
+                                {tasks.map(task => (
                                     <S.TaskItem key={task.id} $isDone={task.isDone}>
-                                        <button className="check-btn" onClick={() => handleToggleTask(task.id)}>
+                                        <button className="check-btn" onClick={() => toggleDailyTask(authFetch, task.id)}>
                                             {task.isDone && <Check size={14} strokeWidth={3} />}
                                         </button>
                                         <span className="task-text">{task.text}</span>
-                                        <button className="delete-btn" onClick={() => handleDeleteTask(task.id)}>
+                                        <button className="delete-btn" onClick={() => deleteDailyTask(authFetch, task.id)}>
                                             <Trash2 size={14} />
                                         </button>
                                     </S.TaskItem>
@@ -123,8 +138,9 @@ const CelestialDayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
                         <S.MemoCard>
                             <div className="card-header">Daily Memo</div>
                             <textarea
-                                value={dailyMemo}
-                                onChange={(e) => setDailyMemo(e.target.value)}
+                                value={localMemo}
+                                onChange={(e) => setLocalMemo(e.target.value)}
+                                onBlur={handleMemoBlur}
                                 placeholder="메모나 일기를 남겨보세요."
                             />
                         </S.MemoCard>

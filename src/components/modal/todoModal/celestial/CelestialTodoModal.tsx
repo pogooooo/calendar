@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { TodoModalProps } from "../TodoModal";
-import useTodoStore from "@/store/todo/useTodoStore";
+import useTodoStore from "@/store/useTodoStore";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import * as S from "./CelestialTodoModal.styles";
 import { X, ChevronDown, ChevronUp } from 'lucide-react';

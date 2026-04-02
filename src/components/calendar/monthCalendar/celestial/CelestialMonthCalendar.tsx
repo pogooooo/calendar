@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 
 import { MonthProps } from "../MonthCalendar";
-import { TodoType } from "@/store/todo/useTodoStore";
+import { TodoType } from "@/store/useTodoStore";
 import { isSameDay, isBetween } from "@/utils/DateUtils";
 import { useTodoLevels } from "@/hooks/useTodoLevels";
 import * as S from "./CelestialMonthCalendar.styles";
@@ -15,8 +15,8 @@ import CategoryFilter from "../../categoryFilter/CategoryFilter";
 import AnimatedDateText from "@/components/calendar/animatedDateText/AnimatedDateText";
 import TodoModal from "@/components/modal/todoModal/TodoModal";
 import TodoContextMenu from "../../contextMenu/TodoContextMenu";
-import useTodoStore from "@/store/todo/useTodoStore";
-import useAuthStore from "@/store/auth/useAuthStore";
+import useTodoStore from "@/store/useTodoStore";
+import useAuthStore from "@/store/useAuthStore";
 
 const slideVariants = {
     enter: (direction: number) => ({

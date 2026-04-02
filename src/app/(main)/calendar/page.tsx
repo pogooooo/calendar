@@ -2,8 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import styled from "styled-components";
-import useCategoryStore from "@/store/category/useCategoryStore";
-import useTodoStore from "@/store/todo/useTodoStore";
+import useCategoryStore from "@/store/useCategoryStore";
+import useTodoStore from "@/store/useTodoStore";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import MonthCalendar from "@/components/calendar/monthCalendar/MonthCalendar";
 import DayCalendar from "@/components/calendar/dayCalendar/DayCalendar";
@@ -31,8 +31,6 @@ export default function CalendarPage() {
                         onDateChange={(date) => setSelectedDate(date)}
                     />
                 </MonthSection>
-
-                asdf
 
                 <DaySection>
                     <DayCalendar

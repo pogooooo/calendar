@@ -5,7 +5,7 @@ import Profile from "@/components/sideBar/Profile";
 import Menu from "@/components/sideBar/Menu";
 import CelestialSidebarDesign from "@/assets/sidebarDesign/CelestialSidebarDesign";
 import styled from "styled-components";
-import useCategoryStore from "@/store/category/useCategoryStore";
+import useCategoryStore from "@/store/useCategoryStore";
 import { useSidebarLogic } from "@/hooks/useSidebarLogic";
 
 const Sidebar = () => {
