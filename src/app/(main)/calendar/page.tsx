@@ -1,16 +1,19 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 import useCategoryStore from "@/store/category/useCategoryStore";
 import useTodoStore from "@/store/todo/useTodoStore";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import MonthCalendar from "@/components/calendar/monthCalendar/MonthCalendar";
+import DayCalendar from "@/components/calendar/dayCalendar/DayCalendar";
 
 export default function CalendarPage() {
     const { categories, fetchCategories } = useCategoryStore();
     const { todos, fetchTodos } = useTodoStore();
     const authFetch = useAuthFetch();
+
+    const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
     // useEffect(() => {
     //     fetchCategories(authFetch);
@@ -20,10 +23,25 @@ export default function CalendarPage() {
     return (
         <PageWrapper>
             <CalendarContainer>
-                <MonthCalendar
-                    todos={todos}
-                    categories={categories}
-                />
+                <MonthSection>
+                    <MonthCalendar
+                        todos={todos}
+                        categories={categories}
+                        selectedDate={selectedDate}
+                        onDateChange={(date) => setSelectedDate(date)}
+                    />
+                </MonthSection>
+
+                asdf
+
+                <DaySection>
+                    <DayCalendar
+                        selectedDate={selectedDate}
+                        todos={todos}
+                        categories={categories}
+                        onDateChange={(date) => setSelectedDate(date)}
+                    />
+                </DaySection>
             </CalendarContainer>
         </PageWrapper>
     );
@@ -32,7 +50,7 @@ export default function CalendarPage() {
 const PageWrapper = styled.div`
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 80px); /* 상단 헤더가 있다면 높이를 조절해주세요 */
+    height: calc(100vh - 80px);
     padding: 30px 40px;
     background-color: ${(props) => props.theme.colors.surface};
 `;
@@ -41,8 +59,25 @@ const CalendarContainer = styled.div`
     flex: 1;
     min-height: 0;
     width: 100%;
-    max-width: 1400px; /* 화면이 너무 넓어질 때를 대비한 최대 너비 */
+    max-width: 1600px;
     margin: 0 auto;
+    
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    gap: 40px;
+`;
+
+const MonthSection = styled.div`
+    flex: 7;
+    min-width: 600px;
+    height: 100%;
+`;
+
+const DaySection = styled.div`
+    flex: 3;
+    min-width: 400px;
+    height: 100%;
+
+    border-left: 1px solid ${(props) => props.theme.colors.accent};
+    padding-left: 40px;
 `;

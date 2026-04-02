@@ -33,7 +33,7 @@ const slideVariants = {
     }),
 };
 
-const WeekRow = ({ dates, todos, categories, todayStr, currentMonth, handleCreateTodo, handleContextMenu }: any) => {
+const WeekRow = ({ dates, todos, categories, todayStr, currentMonth, handleCreateTodo, handleContextMenu, selectedDate, onCellClick }: any) => {
     const weekTodos = React.useMemo(() => {
         return todos.filter((todo: TodoType) => {
             if (!todo.startAt || !todo.endAt) return false;
@@ -53,16 +53,30 @@ const WeekRow = ({ dates, todos, categories, todayStr, currentMonth, handleCreat
             {dates.map((date: Date, idx: number) => {
                 const isToday = date.toDateString() === todayStr;
                 const isCurrentMonth = date.getMonth() === currentMonth;
+                const isSelected = selectedDate ? date.toDateString() === selectedDate.toDateString() : false;
+
                 const dayTodos = weekTodos.filter((todo: TodoType) => {
                     if (!todo.startAt || !todo.endAt) return false;
                     return isBetween(date, todo.startAt, todo.endAt);
                 });
 
                 return (
-                    <S.DayCell key={idx} $isToday={isToday} $isCurrentMonth={isCurrentMonth}>
+                    <S.DayCell
+                        key={idx}
+                        $isToday={isToday}
+                        $isCurrentMonth={isCurrentMonth}
+                        $isSelected={isSelected}
+                        onClick={() => onCellClick?.(date)}
+                    >
                         <div className="day-header">
                             <span className="day-number">{date.getDate()}</span>
-                            <S.AddTodoButton className="add-btn" onClick={() => handleCreateTodo(date)}>
+                            <S.AddTodoButton
+                                className="add-btn"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleCreateTodo(date);
+                                }}
+                            >
                                 <Plus size={16} strokeWidth={2.5} />
                             </S.AddTodoButton>
                         </div>
@@ -82,7 +96,11 @@ const WeekRow = ({ dates, todos, categories, todayStr, currentMonth, handleCreat
                                                        $isEnd={isEnd}
                                                        $color={color}
                                                        $isDone={isDone}
-                                                       onContextMenu={(e) => handleContextMenu(e, todoAtThisLevel)}>
+                                                       onClick={(e) => e.stopPropagation()}
+                                                       onContextMenu={(e) => {
+                                                           e.stopPropagation();
+                                                           handleContextMenu(e, todoAtThisLevel);
+                                                       }}>
                                             {(isStart || idx === 0) && <span className="todo-title">{todoAtThisLevel.title}</span>}
                                         </S.TodoBarItem>
                                     );
@@ -98,7 +116,7 @@ const WeekRow = ({ dates, todos, categories, todayStr, currentMonth, handleCreat
 };
 
 const CelestialMonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
-    ({ asChild, todos = [], categories = [], ...props }, ref) => {
+    ({ asChild, todos = [], categories = [], selectedDate, onDateChange, ...props }, ref) => {
         const Component = asChild ? Slot : 'div';
         const theme = useTheme();
 
@@ -117,6 +135,9 @@ const CelestialMonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
         const authFetch = React.useCallback(async (url: string, init?: RequestInit) => {
             return fetch(url, { ...init, headers: { ...init?.headers, Authorization: `Bearer ${accessToken}` } });
         }, [accessToken]);
+
+        // 월 변경 시 현재 달을 유지하기 위해 currentDate는 내부 로직대로 유지합니다.
+        // onDateChange는 부모 컴포넌트(CalendarPage)로 선택된 날짜를 올리는 데 사용됩니다.
 
         React.useEffect(() => {
             if (categories.length > 0 && selectedCategoryIds.length === 0) {
@@ -252,6 +273,8 @@ const CelestialMonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
                                             currentMonth={currentDate.getMonth()}
                                             handleCreateTodo={handleCreateTodo}
                                             handleContextMenu={handleContextMenu}
+                                            selectedDate={selectedDate} // ✨ 선택된 날짜 전달
+                                            onCellClick={onDateChange}  // ✨ 셀 클릭 시 상태 변경 전달
                                         />
                                     ))}
                                 </S.GridContainer>

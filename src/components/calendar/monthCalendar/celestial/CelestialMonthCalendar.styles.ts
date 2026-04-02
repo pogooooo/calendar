@@ -135,16 +135,23 @@ export const WeekRowContainer = styled.div`
     }
 `;
 
-export const DayCell = styled.div<{ $isToday: boolean; $isCurrentMonth: boolean }>`
+export const DayCell = styled.div<{ $isToday: boolean; $isCurrentMonth: boolean; $isSelected: boolean }>`
     display: flex;
     flex-direction: column;
     min-width: 0;
     position: relative;
     border-right: 1px solid ${(props) => props.theme.colors.primary};
     opacity: ${(props) => props.$isCurrentMonth ? 1 : 0.4};
+    background-color: ${(props) => props.$isSelected ? `${props.theme.colors.primary}1A` : props.theme.colors.surface};
+    cursor: pointer;
+    transition: background-color 0.2s ease;
 
     &:last-child {
         border-right: none;
+    }
+
+    &:hover {
+        background-color: ${(props) => props.$isSelected ? `${props.theme.colors.primary}22` : `${props.theme.colors.primary}0D`};
     }
 
     .day-header {
@@ -156,8 +163,8 @@ export const DayCell = styled.div<{ $isToday: boolean; $isCurrentMonth: boolean 
 
         .day-number {
             font-size: 0.95rem;
-            font-family: ${(props) => props.theme.fonts.celestial}; /* 글꼴 통일 */
-            font-weight: ${(props) => props.$isToday ? 'bold' : 'normal'};
+            font-family: ${(props) => props.theme.fonts.celestial};
+            font-weight: ${(props) => (props.$isToday || props.$isSelected) ? 'bold' : 'normal'};
             color: ${(props) => props.$isToday ? props.theme.colors.primary : props.theme.colors.text};
         }
     }
@@ -166,7 +173,6 @@ export const DayCell = styled.div<{ $isToday: boolean; $isCurrentMonth: boolean 
         opacity: 1;
     }
 
-    /* 오늘 표시: 테두리만 깔끔하게 */
     ${(props) => props.$isToday && css`
         &::after {
             content: "";
@@ -184,25 +190,23 @@ export const DayCell = styled.div<{ $isToday: boolean; $isCurrentMonth: boolean 
 
 export const AddTodoButton = styled.button`
     position: absolute;
-    top: 6px;
-    right: 6px;
-    width: 22px;
-    height: 22px;
-    border-radius: 4px;
-    background-color: transparent;
-    color: ${(props) => props.theme.colors.textSecondary};
-    border: none;
+    top: 4px;
+    right: 4px;
+    width: 20px;
+    height: 20px;
+    border-radius: 20%;
+    background-color: ${(props) => props.theme.colors.surface};
+    color: ${(props) => props.theme.colors.primary};
+    border: 1px solid ${(props) => props.theme.colors.primary};
     display: flex;
     justify-content: center;
     align-items: center;
     cursor: pointer;
     opacity: 0;
-    transition: all 0.2s ease;
+    transition: opacity 0.2s ease, transform 0.1s ease;
     z-index: 10;
 
     &:hover {
-        color: ${(props) => props.theme.colors.text};
-        background-color: ${(props) => props.theme.colors.primary}1A;
         transform: scale(1.1);
     }
 `;
@@ -268,7 +272,6 @@ export const TodoBarItem = styled.div<{ $isStart: boolean; $isEnd: boolean; $col
         background-color: ${(props) => props.theme.colors.primary}1A;
     }
 
-    /* 완료 시 디자인: clip-path 제거하고 단순하게 opacity 조절 및 배경색 변경 */
     ${(props) => props.$isDone && css`
         opacity: 0.4;
         background-color: transparent;
