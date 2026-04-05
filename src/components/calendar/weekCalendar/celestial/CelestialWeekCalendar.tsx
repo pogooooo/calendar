@@ -4,7 +4,7 @@ import * as React from "react";
 import { useTheme } from "styled-components";
 import { Slot } from "@radix-ui/react-slot";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus } from 'lucide-react';
+import { Plus, X } from 'lucide-react';
 
 import { WeekProps } from "../WeekCalendar";
 import { TodoType } from "@/types/calendar";
@@ -34,11 +34,14 @@ const slideVariants = {
     }),
 };
 
+const MAX_VISIBLE_LEVELS = 3;
+
 const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
     ({ asChild, todos = [], categories = [], ...props }, ref) => {
         const Component = asChild ? Slot : 'div';
         const theme = useTheme();
 
+        const [moreModalDate, setMoreModalDate] = React.useState<Date | null>(null);
         const [currentDate, setCurrentDate] = React.useState(new Date());
         const [direction, setDirection] = React.useState(0);
         const [selectedCategoryIds, setSelectedCategoryIds] = React.useState<string[]>([]);
@@ -178,6 +181,7 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
                                     {weekDates.map((date, idx) => {
                                         const isToday = date.toDateString() === todayStr;
                                         const dayTodos = filteredTodos.filter(todo => isBetween(date, todo.startAt, todo.endAt));
+                                        const hiddenCount = dayTodos.filter(t => todoLevels[t.id] >= MAX_VISIBLE_LEVELS).length;
 
                                         return (
                                             <S.DaySlot key={idx} $isToday={isToday}>
@@ -186,28 +190,34 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
                                                 </S.AddTodoButton>
 
                                                 <S.TodoBarList>
-                                                    {Array.from({ length: maxLevel }).map((_, levelIndex) => {
-                                                            const todoAtThisLevel = dayTodos.find(t => todoLevels[t.id] === levelIndex);
+                                                    {Array.from({ length: Math.min(maxLevel, MAX_VISIBLE_LEVELS) }).map((_, levelIndex) => {
+                                                        const todoAtThisLevel = dayTodos.find(t => todoLevels[t.id] === levelIndex);
 
-                                                            if (todoAtThisLevel) {
-                                                                const isStart = isSameDay(date, new Date(todoAtThisLevel.startAt!));
-                                                                const isEnd = isSameDay(date, new Date(todoAtThisLevel.endAt!));
-                                                                const color = categories.find(c => c.id === todoAtThisLevel.categoryId)?.color;
-                                                                const isDone = todoAtThisLevel.check === "done";
+                                                        if (todoAtThisLevel) {
+                                                            const isStart = isSameDay(date, new Date(todoAtThisLevel.startAt!));
+                                                            const isEnd = isSameDay(date, new Date(todoAtThisLevel.endAt!));
+                                                            const color = categories.find(c => c.id === todoAtThisLevel.categoryId)?.color;
+                                                            const isDone = todoAtThisLevel.check === "done";
 
-                                                                return (
-                                                                    <S.TodoBarItem key={todoAtThisLevel.id}
-                                                                                   $isStart={isStart}
-                                                                                   $isEnd={isEnd}
-                                                                                   $color={color}
-                                                                                   $isDone={isDone}
-                                                                                   onContextMenu={(e) => handleContextMenu(e, todoAtThisLevel)}>
-                                                                        {(isStart || idx === 0) && <span className="todo-title">{todoAtThisLevel.title}</span>}
-                                                                    </S.TodoBarItem>
-                                                                );
-                                                            }
-                                                            return <S.TodoBarSpacer key={`spacer-${levelIndex}`} />;
-                                                        })}
+                                                            return (
+                                                                <S.TodoBarItem key={todoAtThisLevel.id}
+                                                                               $isStart={isStart}
+                                                                               $isEnd={isEnd}
+                                                                               $color={color}
+                                                                               $isDone={isDone}
+                                                                               onContextMenu={(e) => handleContextMenu(e, todoAtThisLevel)}>
+                                                                    {(isStart || idx === 0) && <span className="todo-title">{todoAtThisLevel.title}</span>}
+                                                                </S.TodoBarItem>
+                                                            );
+                                                        }
+                                                        return <S.TodoBarSpacer key={`spacer-${levelIndex}`} />;
+                                                    })}
+
+                                                    {hiddenCount > 0 && (
+                                                        <S.MoreButton onClick={() => setMoreModalDate(date)}>
+                                                            +{hiddenCount} 더보기
+                                                        </S.MoreButton>
+                                                    )}
                                                 </S.TodoBarList>
                                                 {isToday && <S.TodayIndicator />}
                                             </S.DaySlot>
@@ -222,6 +232,52 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
                         <Arrow width={80} height={30} isRight={true} stroke={theme.colors.primary}/>
                     </S.ArrowWrapper>
                 </S.SliderWrapper>
+
+                <AnimatePresence>
+                    {moreModalDate && (
+                        <S.ModalOverlay
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setMoreModalDate(null)}
+                        >
+                            <S.ModalContainer
+                                initial={{ scale: 0.95, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0.95, opacity: 0 }}
+                                onClick={(e: React.MouseEvent) => e.stopPropagation()} // 모달 내부 클릭 시 닫힘 방지
+                            >
+                                <S.ModalHeader>
+                                    {formatDate(moreModalDate)}
+                                    <S.CloseButton onClick={() => setMoreModalDate(null)}>
+                                        <X size={20} />
+                                    </S.CloseButton>
+                                </S.ModalHeader>
+                                <S.ModalBody>
+                                    {filteredTodos
+                                        .filter(todo => isBetween(moreModalDate, todo.startAt, todo.endAt))
+                                        .map(todo => {
+                                            const color = categories.find(c => c.id === todo.categoryId)?.color;
+                                            const isDone = todo.check === "done";
+                                            return (
+                                                <S.TodoBarItem
+                                                    key={todo.id}
+                                                    $isStart={true} // 모달 안에서는 무조건 둥글게 처리
+                                                    $isEnd={true}
+                                                    $color={color}
+                                                    $isDone={isDone}
+                                                    onContextMenu={(e) => handleContextMenu(e, todo)}
+                                                    style={{ margin: 0, height: "30px" }} // 모달 전용 여백/크기 조정
+                                                >
+                                                    <span className="todo-title">{todo.title}</span>
+                                                </S.TodoBarItem>
+                                            );
+                                        })}
+                                </S.ModalBody>
+                            </S.ModalContainer>
+                        </S.ModalOverlay>
+                    )}
+                </AnimatePresence>
 
                 <TodoContextMenu
                     menuState={contextMenu}
