@@ -15,6 +15,7 @@ import * as S from "./CelestialWeekCalendar.styles";
 import CategoryFilter from "../../categoryFilter/CategoryFilter";
 import AnimatedDateText from "@/components/calendar/animatedDateText/AnimatedDateText";
 import TodoModal from "@/components/modal/todoModal/TodoModal";
+import MoreModal from "@/components/modal/moreModal/MoreModal";
 import TodoContextMenu from "../../contextMenu/TodoContextMenu";
 import useTodoStore from "@/store/useTodoStore";
 import useAuthStore from "@/store/useAuthStore";
@@ -233,51 +234,14 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
                     </S.ArrowWrapper>
                 </S.SliderWrapper>
 
-                <AnimatePresence>
-                    {moreModalDate && (
-                        <S.ModalOverlay
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            onClick={() => setMoreModalDate(null)}
-                        >
-                            <S.ModalContainer
-                                initial={{ scale: 0.95, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                exit={{ scale: 0.95, opacity: 0 }}
-                                onClick={(e: React.MouseEvent) => e.stopPropagation()} // 모달 내부 클릭 시 닫힘 방지
-                            >
-                                <S.ModalHeader>
-                                    {formatDate(moreModalDate)}
-                                    <S.CloseButton onClick={() => setMoreModalDate(null)}>
-                                        <X size={20} />
-                                    </S.CloseButton>
-                                </S.ModalHeader>
-                                <S.ModalBody>
-                                    {filteredTodos
-                                        .filter(todo => isBetween(moreModalDate, todo.startAt, todo.endAt))
-                                        .map(todo => {
-                                            const color = categories.find(c => c.id === todo.categoryId)?.color;
-                                            const isDone = todo.check === "done";
-                                            return (
-                                                <S.TodoBarItem
-                                                    key={todo.id}
-                                                    $isStart={true} // 모달 안에서는 무조건 둥글게 처리
-                                                    $isEnd={true}
-                                                    $color={color}
-                                                    $isDone={isDone}
-                                                    onContextMenu={(e) => handleContextMenu(e, todo)}
-                                                    style={{ margin: 0, height: "30px" }} // 모달 전용 여백/크기 조정
-                                                >
-                                                    <span className="todo-title">{todo.title}</span>
-                                                </S.TodoBarItem>
-                                            );
-                                        })}
-                                </S.ModalBody>
-                            </S.ModalContainer>
-                        </S.ModalOverlay>
-                    )}
-                </AnimatePresence>
+                <MoreModal
+                    isOpen={moreModalDate !== null}
+                    onClose={() => setMoreModalDate(null)}
+                    date={moreModalDate}
+                    todos={filteredTodos}
+                    categories={categories}
+                    handleContextMenu={handleContextMenu}
+                />
 
                 <TodoContextMenu
                     menuState={contextMenu}

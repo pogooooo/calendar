@@ -1,99 +1,97 @@
 import styled from "styled-components";
 
-export const Overlay = styled.div`
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background-color: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(2px);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-`;
-
-export const Container = styled.div`
-    background-color: ${(props) => props.theme.colors.surface};
-    width: 420px;
-    border-radius: 12px;
-    padding: 30px;
+export const FormWrapper = styled.form`
     display: flex;
     flex-direction: column;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-    animation: slideUp 0.2s ease-out;
-
-    @keyframes slideUp {
-        from { transform: translateY(20px); opacity: 0; }
-        to { transform: translateY(0); opacity: 1; }
-    }
-
-    form {
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-    }
+    width: 100%;
+    max-height: 85vh;
 `;
 
 export const Header = styled.div`
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 2px solid ${(props) => props.theme.colors.accent};
-    padding-bottom: 15px;
-    margin-bottom: 10px;
-
+    padding: 24px 24px 16px 24px;
+    border-bottom: 1px solid ${(props) => props.theme.colors.primary}22;
+    background-color: ${(props) => props.theme.colors.primary}05;
+    
     .title-input {
-        font-size: ${(props) => props.theme.fontSizes.h3};
-        color: ${(props) => props.theme.colors.text};
-        background: transparent;
+        flex: 1;
         border: none;
+        background: transparent;
+        font-size: 1.4rem;
+        font-weight: 600;
+        color: ${(props) => props.theme.colors.text};
         outline: none;
-        width: 100%;
+        font-family: ${(props) => props.theme.fonts.celestial};
+        margin-right: 15px;
 
         &::placeholder {
-            color: ${(props) => props.theme.colors.textSecondary};
+            color: ${(props) => props.theme.colors.textSecondary}80;
         }
     }
-
+    
     .close-btn {
         background: transparent;
         border: none;
-        cursor: pointer;
         color: ${(props) => props.theme.colors.textSecondary};
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
+        transition: all 0.2s;
 
         &:hover {
             color: ${(props) => props.theme.colors.text};
+            background-color: ${(props) => props.theme.colors.primary}22;
         }
     }
 `;
 
-export const InputRow = styled.div`
+export const ScrollBody = styled.div`
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow-y: auto;
+
+    &::-webkit-scrollbar {
+        width: 6px;
+    }
+    &::-webkit-scrollbar-thumb {
+        background-color: ${(props) => props.theme.colors.primary}40;
+        border-radius: 3px;
+    }
+`;
+
+export const FieldRow = styled.div`
     display: flex;
     align-items: center;
     justify-content: space-between;
-    border-bottom: 1px solid ${(props) => props.theme.colors.accent};
-    padding-bottom: 12px;
+    padding: 12px 10px;
+    border-bottom: 1px solid ${(props) => props.theme.colors.accent}66;
 
     label {
         font-size: 0.95rem;
-        font-weight: bold;
-        color: ${(props) => props.theme.colors.text};
-        width: 60px;
+        font-weight: 500;
+        color: ${(props) => props.theme.colors.textSecondary};
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
 
     .color-picker-wrapper {
         display: flex;
         align-items: center;
         gap: 12px;
-        flex: 1;
-        justify-content: flex-end;
 
         .hex-text {
             font-size: 0.95rem;
             color: ${(props) => props.theme.colors.textSecondary};
             font-family: monospace;
+            font-weight: 500;
         }
 
         input[type="color"] {
@@ -110,8 +108,9 @@ export const InputRow = styled.div`
                 padding: 0;
             }
             &::-webkit-color-swatch {
-                border: 2px solid ${(props) => props.theme.colors.accent};
+                border: none;
                 border-radius: 50%;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.15);
             }
         }
     }
@@ -121,13 +120,15 @@ export const MemoRow = styled.div`
     display: flex;
     flex-direction: column;
     gap: 12px;
-    border-bottom: 1px solid ${(props) => props.theme.colors.accent};
-    padding-bottom: 15px;
+    padding: 12px 10px;
 
     label {
         font-size: 0.95rem;
-        font-weight: bold;
-        color: ${(props) => props.theme.colors.text};
+        font-weight: 500;
+        color: ${(props) => props.theme.colors.textSecondary};
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
 
     textarea {
@@ -136,29 +137,25 @@ export const MemoRow = styled.div`
         font-family: inherit;
         font-size: 0.95rem;
         color: ${(props) => props.theme.colors.text};
-        background-color: transparent;
-        border: none;
+        background-color: ${(props) => props.theme.colors.primary}05;
+        border: 1px solid ${(props) => props.theme.colors.primary}22;
+        border-radius: 8px;
+        padding: 12px;
         outline: none;
         resize: vertical;
         line-height: 1.5;
 
         &::placeholder {
-            color: ${(props) => props.theme.colors.textSecondary};
-        }
-
-        &::-webkit-scrollbar {
-            width: 6px;
-        }
-        &::-webkit-scrollbar-thumb {
-            background-color: ${(props) => props.theme.colors.accent};
-            border-radius: 3px;
+            color: ${(props) => props.theme.colors.textSecondary}66;
         }
     }
 `;
 
 export const Footer = styled.div`
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 15px;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 16px 24px 24px 24px;
+    background-color: ${(props) => props.theme.colors.surface};
+    border-top: 1px solid ${(props) => props.theme.colors.primary}1A;
 `;

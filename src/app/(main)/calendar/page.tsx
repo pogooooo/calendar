@@ -11,14 +11,8 @@ import DayCalendar from "@/components/calendar/dayCalendar/DayCalendar";
 export default function CalendarPage() {
     const { categories, fetchCategories } = useCategoryStore();
     const { todos, fetchTodos } = useTodoStore();
-    const authFetch = useAuthFetch();
 
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-
-    // useEffect(() => {
-    //     fetchCategories(authFetch);
-    //     fetchTodos(authFetch);
-    // }, [authFetch, fetchCategories, fetchTodos]);
 
     return (
         <PageWrapper>

@@ -1,4 +1,5 @@
 import styled, { css } from "styled-components";
+import { motion } from "framer-motion";
 
 export const CelestialCalendarWrapper = styled.div`
     display: flex;
@@ -214,7 +215,7 @@ export const AddTodoButton = styled.button`
 export const TodoBarList = styled.div`
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 2px;
     width: 100%;
     margin-top: 5px;
     margin-bottom: 5px;
@@ -232,7 +233,7 @@ export const TodoBarList = styled.div`
 `;
 
 export const TodoBarSpacer = styled.div`
-    height: 26px;
+    height: 20px;
     width: 100%;
 `;
 
@@ -243,10 +244,10 @@ export const TodoBarItem = styled.div<{ $isStart: boolean; $isEnd: boolean; $col
     border-left: ${(props) => props.$isStart ? `1px solid ${props.theme.colors.primary}` : 'none'};
     border-right: ${(props) => props.$isEnd ? `1px solid ${props.theme.colors.primary}` : 'none'};
 
-    height: 26px;
+    height: 20px;
     display: flex;
     align-items: center;
-    font-size: 0.85rem;
+    font-size: ${(props) => props.theme.fontSizes.label};
     font-weight: 500;
 
     margin-left: ${(props) => props.$isStart ? '4px' : '0'};
@@ -281,4 +282,91 @@ export const TodoBarItem = styled.div<{ $isStart: boolean; $isEnd: boolean; $col
             color: ${(props) => props.theme.colors.textSecondary};
         }
     `}
+`;
+
+export const MoreButton = styled.div`
+    font-size: 0.75rem;
+    color: ${(props) => props.theme.colors.textSecondary};
+    font-weight: 500;
+    text-align: center;
+    padding: 2px 0;
+    margin: 2px 4px 0 4px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+
+    &:hover {
+        background-color: ${(props) => props.theme.colors.primary}1A;
+        color: ${(props) => props.theme.colors.text};
+    }
+`;
+
+export const ModalOverlay = styled(motion.div)`
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(3px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+`;
+
+export const ModalContainer = styled(motion.div)`
+    background-color: ${(props) => props.theme.colors.surface};
+    border: 1px solid ${(props) => props.theme.colors.primary}80;
+    width: 320px;
+    max-height: 60vh;
+    display: flex;
+    flex-direction: column;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15), 0 0 20px ${(props) => props.theme.colors.primary}22;
+    position: relative;
+`;
+
+export const ModalHeader = styled.div`
+    font-family: ${(props) => props.theme.fonts.celestial};
+    font-size: 1.1rem;
+    color: ${(props) => props.theme.colors.text};
+    padding: 15px 20px;
+    border-bottom: 1px solid ${(props) => props.theme.colors.primary}33;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: ${(props) => props.theme.colors.primary}0D;
+`;
+
+export const CloseButton = styled.button`
+    background: transparent;
+    border: none;
+    color: ${(props) => props.theme.colors.textSecondary};
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+    
+    &:hover {
+        color: ${(props) => props.theme.colors.text};
+        background-color: ${(props) => props.theme.colors.primary}22;
+    }
+`;
+
+export const ModalBody = styled.div`
+    padding: 15px 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    &::-webkit-scrollbar {
+        width: 4px;
+    }
+    &::-webkit-scrollbar-thumb {
+        background-color: ${(props) => props.theme.colors.primary}66;
+        border-radius: 2px;
+    }
 `;

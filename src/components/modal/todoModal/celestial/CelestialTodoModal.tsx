@@ -5,8 +5,9 @@ import { TodoModalProps } from "../TodoModal";
 import useTodoStore from "@/store/useTodoStore";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import * as S from "./CelestialTodoModal.styles";
-import { X, ChevronDown, ChevronUp } from 'lucide-react';
+import { X, ChevronDown, ChevronUp, MapPin, Repeat, AlignLeft, Clock } from 'lucide-react';
 import SecondaryButton from "@/components/button/secondary/SecondaryButton";
+import CelestialBaseModal from "@/components/modal/baseModal/celestial/CelestialBaseModal";
 
 const getLocalDatetimeString = (date: Date) => {
     const tzOffset = date.getTimezoneOffset() * 60000;
@@ -23,6 +24,11 @@ export default function CelestialTodoModal({ isOpen, onClose, todo, categories, 
     const [startAt, setStartAt] = React.useState("");
     const [endAt, setEndAt] = React.useState("");
     const [isAllDay, setIsAllDay] = React.useState(false);
+
+    // ✨ 새로 추가된 상태: 장소와 반복
+    const [location, setLocation] = React.useState("");
+    const [repeat, setRepeat] = React.useState<number>(0);
+
     const [isCategoryOpen, setIsCategoryOpen] = React.useState(false);
 
     const selectedCategory = categories.find(c => c.id === categoryId);
@@ -34,6 +40,8 @@ export default function CelestialTodoModal({ isOpen, onClose, todo, categories, 
                 setCategoryId(todo.categoryId);
                 setMemo(todo.memo || "");
                 setIsAllDay(todo.isAllDay || false);
+                setLocation(todo.location || "");
+                setRepeat(todo.repeat || 0);
 
                 setStartAt(todo.startAt ? getLocalDatetimeString(new Date(todo.startAt)) : "");
                 setEndAt(todo.endAt ? getLocalDatetimeString(new Date(todo.endAt)) : "");
@@ -42,6 +50,8 @@ export default function CelestialTodoModal({ isOpen, onClose, todo, categories, 
                 setCategoryId(categories.length > 0 ? categories[0].id : "");
                 setMemo("");
                 setIsAllDay(false);
+                setLocation("");
+                setRepeat(0);
 
                 const defaultDate = selectedDate ? new Date(selectedDate) : new Date();
                 setStartAt(getLocalDatetimeString(defaultDate));
@@ -75,6 +85,8 @@ export default function CelestialTodoModal({ isOpen, onClose, todo, categories, 
             startAt: new Date(startAt).toISOString(),
             endAt: new Date(endAt).toISOString(),
             isAllDay,
+            location,
+            repeat,
         };
 
         if (todo) {
@@ -93,10 +105,8 @@ export default function CelestialTodoModal({ isOpen, onClose, todo, categories, 
         }
     };
 
-    // ✨ 날짜 입력 핸들러 (종일 모드일 때 기존 시간을 유지하면서 날짜만 바꾸는 로직)
     const handleDateChange = (setter: React.Dispatch<React.SetStateAction<string>>, currentValue: string, newValue: string) => {
         if (isAllDay) {
-            // 종일일 경우 yyyy-mm-dd만 들어오므로, 뒤에 기존 시간(Thh:mm)을 붙여줌
             setter(`${newValue}T${currentValue.slice(11, 16) || "00:00"}`);
         } else {
             setter(newValue);
@@ -104,46 +114,39 @@ export default function CelestialTodoModal({ isOpen, onClose, todo, categories, 
     };
 
     return (
-        <S.Overlay onClick={onClose}>
-            <S.Container onClick={(e) => e.stopPropagation()}>
-                <form onSubmit={handleSubmit}>
-                    <S.Header>
-                        <input
-                            value={title}
-                            onChange={(e) => setTitle(e.target.value)}
-                            placeholder={todo?.title || "새 할 일"}
-                            required
-                            className="title-input"
-                        />
-                        <button type="button" className="close-btn" onClick={onClose}>
-                            <X size={30} />
-                        </button>
-                    </S.Header>
+        <CelestialBaseModal isOpen={isOpen} onClose={onClose} maxWidth="450px">
+            <S.FormWrapper onSubmit={handleSubmit}>
+                <S.Header>
+                    <input
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        placeholder={todo?.title || "새로운 할 일"}
+                        required
+                        className="title-input"
+                        autoFocus
+                    />
+                    <button type="button" className="close-btn" onClick={onClose}>
+                        <X size={26} />
+                    </button>
+                </S.Header>
 
-                    {/* ✨ 커스텀 카테고리 셀렉트 */}
+                <S.ScrollBody>
                     <S.CategorySelect onClick={(e) => e.stopPropagation()}>
                         <S.SelectedCategory onClick={() => setIsCategoryOpen(!isCategoryOpen)}>
                             <div>
                                 <S.ColorDot $color={selectedCategory?.color || "#e0e0e0"} />
                                 <span className={!selectedCategory ? "placeholder" : ""}>
-                                {selectedCategory ? selectedCategory.name : "카테고리를 선택해주세요"}
+                                    {selectedCategory ? selectedCategory.name : "카테고리 선택"}
                                 </span>
                             </div>
-                            {isCategoryOpen ? (
-                                <ChevronUp size={30} color="#888" />
-                            ) : (
-                                <ChevronDown size={30} color="#888" />
-                            )}
-
+                            {isCategoryOpen ? <ChevronUp size={20} color="#888" /> : <ChevronDown size={20} color="#888" />}
                         </S.SelectedCategory>
 
-                        {/* 드롭다운 메뉴 */}
                         {isCategoryOpen && (
                             <S.CategoryList>
                                 {categories.map((cat) => (
                                     <S.CategoryItem
                                         key={cat.id}
-                                        className="option-item"
                                         onClick={() => {
                                             setCategoryId(cat.id);
                                             setIsCategoryOpen(false);
@@ -157,55 +160,77 @@ export default function CelestialTodoModal({ isOpen, onClose, todo, categories, 
                         )}
                     </S.CategorySelect>
 
-                    <S.AllDay>
-                        <span>하루 종일</span>
-
+                    <S.FieldRow>
+                        <label><Clock size={16} /> 하루 종일</label>
                         <S.ToggleSwitch>
-                            <input
-                                type="checkbox"
-                                checked={isAllDay}
-                                onChange={(e) => setIsAllDay(e.target.checked)}
-                            />
+                            <input type="checkbox" checked={isAllDay} onChange={(e) => setIsAllDay(e.target.checked)} />
                             <span className="slider"></span>
                         </S.ToggleSwitch>
-                    </S.AllDay>
+                    </S.FieldRow>
 
-                    <S.DateRow>
+                    <S.FieldRow>
                         <label>시작</label>
                         <input
                             type={isAllDay ? "date" : "datetime-local"}
                             value={isAllDay ? startAt.slice(0, 10) : startAt}
                             onChange={(e) => handleDateChange(setStartAt, startAt, e.target.value)}
                         />
-                    </S.DateRow>
+                    </S.FieldRow>
 
-                    <S.DateRow>
+                    <S.FieldRow>
                         <label>종료</label>
                         <input
                             type={isAllDay ? "date" : "datetime-local"}
                             value={isAllDay ? endAt.slice(0, 10) : endAt}
                             onChange={(e) => handleDateChange(setEndAt, endAt, e.target.value)}
                         />
-                    </S.DateRow>
+                    </S.FieldRow>
+
+                    <S.FieldRow>
+                        <label><MapPin size={16} /> 장소</label>
+                        <input
+                            type="text"
+                            placeholder="장소를 입력하세요"
+                            value={location}
+                            onChange={(e) => setLocation(e.target.value)}
+                        />
+                    </S.FieldRow>
+
+                    <S.FieldRow>
+                        <label><Repeat size={16} /> 반복</label>
+                        <div className="repeat-input-wrapper">
+                            <input
+                                type="number"
+                                min="0"
+                                value={repeat === 0 ? "" : repeat}
+                                onChange={(e) => setRepeat(Number(e.target.value))}
+                                placeholder="0"
+                            />
+                            <span>일마다</span>
+                        </div>
+                    </S.FieldRow>
 
                     <S.MemoRow>
-                        <label>메모</label>
-                        <textarea value={memo} onChange={(e) => setMemo(e.target.value)} />
+                        <label><AlignLeft size={16} /> 메모</label>
+                        <textarea
+                            value={memo}
+                            onChange={(e) => setMemo(e.target.value)}
+                            placeholder="추가적인 설명이나 메모를 남겨보세요."
+                        />
                     </S.MemoRow>
+                </S.ScrollBody>
 
-                    <S.Footer>
-                        {todo && (
-                            <SecondaryButton type="button" onClick={handleDelete} $width="80px" $height="40px" $variant="danger">
-                                삭제
-                            </SecondaryButton>
-                        )}
-
-                        <SecondaryButton type="submit" $width="80px" $height="40px">
-                            {todo ? "수정하기" : "저장하기"}
+                <S.Footer>
+                    {todo && (
+                        <SecondaryButton type="button" onClick={handleDelete} $width="70px" $height="40px" $variant="danger">
+                            삭제
                         </SecondaryButton>
-                    </S.Footer>
-                </form>
-            </S.Container>
-        </S.Overlay>
+                    )}
+                    <SecondaryButton type="submit" $width="90px" $height="40px">
+                        {todo ? "수정하기" : "저장하기"}
+                    </SecondaryButton>
+                </S.Footer>
+            </S.FormWrapper>
+        </CelestialBaseModal>
     );
 }

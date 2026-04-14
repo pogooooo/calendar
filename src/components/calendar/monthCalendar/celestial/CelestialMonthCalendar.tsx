@@ -4,7 +4,7 @@ import * as React from "react";
 import { useTheme } from "styled-components";
 import { Slot } from "@radix-ui/react-slot";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight, X } from 'lucide-react';
 
 import { MonthProps } from "../MonthCalendar";
 import { TodoType } from "@/store/useTodoStore";
@@ -14,6 +14,7 @@ import * as S from "./CelestialMonthCalendar.styles";
 import CategoryFilter from "../../categoryFilter/CategoryFilter";
 import AnimatedDateText from "@/components/calendar/animatedDateText/AnimatedDateText";
 import TodoModal from "@/components/modal/todoModal/TodoModal";
+import MoreModal from "@/components/modal/moreModal/MoreModal";
 import TodoContextMenu from "../../contextMenu/TodoContextMenu";
 import useTodoStore from "@/store/useTodoStore";
 import useAuthStore from "@/store/useAuthStore";
@@ -33,7 +34,9 @@ const slideVariants = {
     }),
 };
 
-const WeekRow = ({ dates, todos, categories, todayStr, currentMonth, handleCreateTodo, handleContextMenu, selectedDate, onCellClick }: any) => {
+const MAX_VISIBLE_LEVELS = 2;
+
+const WeekRow = ({ dates, todos, categories, todayStr, currentMonth, handleCreateTodo, handleContextMenu, selectedDate, onCellClick, setMoreModalDate }: any) => {
     const weekTodos = React.useMemo(() => {
         return todos.filter((todo: TodoType) => {
             if (!todo.startAt || !todo.endAt) return false;
@@ -60,6 +63,8 @@ const WeekRow = ({ dates, todos, categories, todayStr, currentMonth, handleCreat
                     return isBetween(date, todo.startAt, todo.endAt);
                 });
 
+                const hiddenCount = dayTodos.filter((t: { id: string | number; }) => todoLevels[t.id] >= MAX_VISIBLE_LEVELS).length;
+
                 return (
                     <S.DayCell
                         key={idx}
@@ -81,7 +86,7 @@ const WeekRow = ({ dates, todos, categories, todayStr, currentMonth, handleCreat
                             </S.AddTodoButton>
                         </div>
                         <S.TodoBarList>
-                            {Array.from({ length: maxLevel }).map((_, levelIndex) => {
+                            {Array.from({ length: Math.min(maxLevel, MAX_VISIBLE_LEVELS) }).map((_, levelIndex) => {
                                 const todoAtThisLevel = dayTodos.find((t: TodoType) => todoLevels[t.id] === levelIndex);
 
                                 if (todoAtThisLevel && todoAtThisLevel.startAt && todoAtThisLevel.endAt) {
@@ -107,6 +112,15 @@ const WeekRow = ({ dates, todos, categories, todayStr, currentMonth, handleCreat
                                 }
                                 return <S.TodoBarSpacer key={`spacer-${levelIndex}`} />;
                             })}
+
+                            {hiddenCount > 0 && (
+                                <S.MoreButton onClick={(e) => {
+                                    e.stopPropagation();
+                                    setMoreModalDate(date);
+                                }}>
+                                    +{hiddenCount} 더보기
+                                </S.MoreButton>
+                            )}
                         </S.TodoBarList>
                     </S.DayCell>
                 )
@@ -129,6 +143,7 @@ const CelestialMonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
         const [selectedDateForModal, setSelectedDateForModal] = React.useState<Date | undefined>(undefined);
 
         const [contextMenu, setContextMenu] = React.useState<{ x: number, y: number, todo: TodoType } | null>(null);
+        const [moreModalDate, setMoreModalDate] = React.useState<Date | null>(null);
         const { deleteTodo, toggleTodo } = useTodoStore();
         const accessToken = useAuthStore((state) => state.accessToken);
 
@@ -273,8 +288,9 @@ const CelestialMonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
                                             currentMonth={currentDate.getMonth()}
                                             handleCreateTodo={handleCreateTodo}
                                             handleContextMenu={handleContextMenu}
-                                            selectedDate={selectedDate} // ✨ 선택된 날짜 전달
-                                            onCellClick={onDateChange}  // ✨ 셀 클릭 시 상태 변경 전달
+                                            selectedDate={selectedDate}
+                                            onCellClick={onDateChange}
+                                            setMoreModalDate={setMoreModalDate}
                                         />
                                     ))}
                                 </S.GridContainer>
@@ -282,6 +298,15 @@ const CelestialMonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
                         </AnimatePresence>
                     </S.CalendarWindow>
                 </S.SliderWrapper>
+
+                <MoreModal
+                    isOpen={moreModalDate !== null}
+                    onClose={() => setMoreModalDate(null)}
+                    date={moreModalDate}
+                    todos={filteredTodos}
+                    categories={categories}
+                    handleContextMenu={handleContextMenu}
+                />
 
                 <TodoContextMenu
                     menuState={contextMenu}

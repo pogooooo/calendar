@@ -330,7 +330,7 @@ const CategoryWrapper = styled.div`
     height: calc(100vh - 80px);
     max-width: 1200px;
     margin: 0 auto;
-    background-color: ${(props) => props.theme.colors.background};
+    background-color: ${(props) => props.theme.colors.surface};
 `;
 
 const SidebarContainer = styled.div`
@@ -418,7 +418,7 @@ const CategoryItem = styled.div<{ $color: string; $isSelected: boolean }>`
         border-radius: 50%;
         background-color: ${(props) => props.$color};
         margin-right: 12px;
-        box-shadow: 0 0 0 2px ${(props) => props.theme.colors.background}, 0 0 0 3px ${(props) => props.$isSelected ? props.$color : 'transparent'};
+        box-shadow: 0 0 0 2px ${(props) => props.theme.colors.surface}, 0 0 0 3px ${(props) => props.$isSelected ? props.$color : 'transparent'};
     }
 
     span {
@@ -433,7 +433,7 @@ const ContentContainer = styled.div`
     display: flex;
     flex-direction: column;
     overflow-y: auto;
-    background-color: ${(props) => props.theme.colors.background};
+    background-color: ${(props) => props.theme.colors.surface};
 `;
 
 const EmptyStateContainer = styled.div`
@@ -580,7 +580,7 @@ const PropertyRow = styled.div`
         padding: 16px 20px;
         font-size: 0.95rem;
         color: ${(props) => props.theme.colors.textSecondary};
-        background-color: ${(props) => props.theme.colors.background};
+        background-color: ${(props) => props.theme.colors.surface};
         border-right: 1px solid ${(props) => props.theme.colors.accent};
         flex-shrink: 0;
         font-weight: 500;
@@ -669,7 +669,7 @@ const ParticipantTable = styled.div`
 const TableHeader = styled.div`
     display: flex;
     align-items: center;
-    background-color: ${(props) => props.theme.colors.background};
+    background-color: ${(props) => props.theme.colors.surface};
     border-bottom: 1px solid ${(props) => props.theme.colors.accent};
     padding: 12px 20px;
     font-size: 0.85rem;
@@ -700,7 +700,7 @@ const TableRow = styled.div`
     }
 
     &:hover {
-        background-color: ${(props) => props.theme.colors.background};
+        background-color: ${(props) => props.theme.colors.accent}22;
     }
 
     .col-name {
@@ -812,7 +812,7 @@ const ModalContent = styled.div`
         width: 100%; 
         padding: 14px 16px; 
         margin-bottom: 12px;
-        background-color: ${(props) => props.theme.colors.background};
+        background-color: ${(props) => props.theme.colors.surface};
         border: 1px solid ${(props) => props.theme.colors.accent};
         border-radius: 8px; 
         outline: none;
