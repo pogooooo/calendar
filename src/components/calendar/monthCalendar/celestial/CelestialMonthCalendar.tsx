@@ -151,9 +151,6 @@ const CelestialMonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
             return fetch(url, { ...init, headers: { ...init?.headers, Authorization: `Bearer ${accessToken}` } });
         }, [accessToken]);
 
-        // 월 변경 시 현재 달을 유지하기 위해 currentDate는 내부 로직대로 유지합니다.
-        // onDateChange는 부모 컴포넌트(CalendarPage)로 선택된 날짜를 올리는 데 사용됩니다.
-
         React.useEffect(() => {
             if (categories.length > 0 && selectedCategoryIds.length === 0) {
                 setSelectedCategoryIds(categories.map(c => c.id));
@@ -183,6 +180,66 @@ const CelestialMonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
             return chunked;
         }, [currentDate]);
 
+        const expandedTodos = React.useMemo(() => {
+            if (!weeks || weeks.length === 0) return filteredTodos;
+
+            const expanded: TodoType[] = [];
+
+            const monthStart = new Date(weeks[0][0]);
+            monthStart.setHours(0, 0, 0, 0);
+            const monthEnd = new Date(weeks[5][6]);
+            monthEnd.setHours(23, 59, 59, 999);
+
+            filteredTodos.forEach(todo => {
+                if (!todo.startAt || !todo.endAt) return;
+
+                if (!todo.repeat || todo.repeat <= 0) {
+                    expanded.push(todo);
+                    return;
+                }
+
+                const R = todo.repeat;
+                let currentStart = new Date(todo.startAt);
+                let currentEnd = new Date(todo.endAt);
+                const durationMs = currentEnd.getTime() - currentStart.getTime();
+
+                const repeatIntervalMs = durationMs + (R * 24 * 60 * 60 * 1000);
+
+                if (currentEnd.getTime() < monthStart.getTime()) {
+                    const msBefore = monthStart.getTime() - currentEnd.getTime();
+                    const intervalsToSkip = Math.floor(msBefore / repeatIntervalMs);
+
+                    if (intervalsToSkip > 0) {
+                        currentStart = new Date(currentStart.getTime() + (intervalsToSkip * repeatIntervalMs));
+                        currentEnd = new Date(currentStart.getTime() + durationMs);
+                    }
+                }
+
+                let instanceCount = 0;
+                while (currentStart.getTime() <= monthEnd.getTime()) {
+                    if (currentEnd.getTime() >= monthStart.getTime()) {
+                        expanded.push({
+                            ...todo,
+                            id: `${todo.id}-rep-${currentStart.getTime()}`,
+                            startAt: currentStart.toISOString(),
+                            endAt: currentEnd.toISOString(),
+                            // @ts-ignore
+                            originalTodo: todo
+                        });
+                    }
+
+                    const nextStartMs = currentEnd.getTime() + (R * 24 * 60 * 60 * 1000);
+                    currentStart = new Date(nextStartMs);
+                    currentEnd = new Date(currentStart.getTime() + durationMs);
+
+                    instanceCount++;
+                    if (instanceCount > 1000) break;
+                }
+            });
+
+            return expanded;
+        }, [filteredTodos, weeks]);
+
         const todayStr = React.useMemo(() => new Date().toDateString(), []);
 
         const dateRangeText = React.useMemo(() => {
@@ -209,7 +266,9 @@ const CelestialMonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
 
         const handleContextMenu = (e: React.MouseEvent, todo: TodoType) => {
             e.preventDefault();
-            setContextMenu({ x: e.clientX, y: e.clientY, todo });
+            // @ts-ignore
+            const actualTodo = todo.originalTodo || todo;
+            setContextMenu({ x: e.clientX, y: e.clientY, todo: actualTodo });
         };
 
         const handleQuickEdit = (todo: TodoType) => {
@@ -282,7 +341,7 @@ const CelestialMonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
                                         <WeekRow
                                             key={idx}
                                             dates={weekDates}
-                                            todos={filteredTodos}
+                                            todos={expandedTodos}
                                             categories={categories}
                                             todayStr={todayStr}
                                             currentMonth={currentDate.getMonth()}
@@ -303,7 +362,7 @@ const CelestialMonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
                     isOpen={moreModalDate !== null}
                     onClose={() => setMoreModalDate(null)}
                     date={moreModalDate}
-                    todos={filteredTodos}
+                    todos={expandedTodos}
                     categories={categories}
                     handleContextMenu={handleContextMenu}
                 />

@@ -58,7 +58,7 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
         const authFetch = React.useCallback(async (url: string, init?: RequestInit) => {
             return fetch(url, { ...init, headers: { ...init?.headers, Authorization: `Bearer ${accessToken}` } });
         }, [accessToken]);
-        
+
         const weekDates = React.useMemo(() => getWeekDates(currentDate), [currentDate]);
         const todayStr = React.useMemo(() => new Date().toDateString(), []);
 
@@ -72,7 +72,65 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
             return (todos as TodoType[]).filter(todo => selectedCategoryIds.includes(todo.categoryId));
         }, [todos, selectedCategoryIds]);
 
-        const { todoLevels, maxLevel } = useTodoLevels(filteredTodos, weekDates);
+        const expandedTodos = React.useMemo(() => {
+            const expanded: TodoType[] = [];
+
+            const weekStart = new Date(weekDates[0]);
+            weekStart.setHours(0, 0, 0, 0);
+            const weekEnd = new Date(weekDates[6]);
+            weekEnd.setHours(23, 59, 59, 999);
+
+            filteredTodos.forEach(todo => {
+                if (!todo.startAt || !todo.endAt) return;
+
+                if (!todo.repeat || todo.repeat <= 0) {
+                    expanded.push(todo);
+                    return;
+                }
+
+                const R = todo.repeat;
+                let currentStart = new Date(todo.startAt);
+                let currentEnd = new Date(todo.endAt);
+                const durationMs = currentEnd.getTime() - currentStart.getTime();
+
+                const repeatIntervalMs = durationMs + (R * 24 * 60 * 60 * 1000);
+
+                if (currentEnd.getTime() < weekStart.getTime()) {
+                    const msBefore = weekStart.getTime() - currentEnd.getTime();
+                    const intervalsToSkip = Math.floor(msBefore / repeatIntervalMs);
+
+                    if (intervalsToSkip > 0) {
+                        currentStart = new Date(currentStart.getTime() + (intervalsToSkip * repeatIntervalMs));
+                        currentEnd = new Date(currentStart.getTime() + durationMs);
+                    }
+                }
+
+                let instanceCount = 0;
+                while (currentStart.getTime() <= weekEnd.getTime()) {
+                    if (currentEnd.getTime() >= weekStart.getTime()) {
+                        expanded.push({
+                            ...todo,
+                            id: `${todo.id}-rep-${currentStart.getTime()}`,
+                            startAt: currentStart.toISOString(),
+                            endAt: currentEnd.toISOString(),
+                            // @ts-ignore
+                            originalTodo: todo
+                        });
+                    }
+
+                    const nextStartMs = currentEnd.getTime() + (R * 24 * 60 * 60 * 1000);
+                    currentStart = new Date(nextStartMs);
+                    currentEnd = new Date(currentStart.getTime() + durationMs);
+
+                    instanceCount++;
+                    if (instanceCount > 1000) break;
+                }
+            });
+
+            return expanded;
+        }, [filteredTodos, weekDates]);
+
+        const { todoLevels, maxLevel } = useTodoLevels(expandedTodos, weekDates);
 
         const dateRangeText = React.useMemo(() => {
             return `${formatDate(weekDates[0])} - ${formatDate(weekDates[6])}`;
@@ -106,7 +164,9 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
 
         const handleContextMenu = (e: React.MouseEvent, todo: TodoType) => {
             e.preventDefault();
-            setContextMenu({ x: e.clientX, y: e.clientY, todo });
+            // @ts-ignore
+            const actualTodo = todo.originalTodo || todo;
+            setContextMenu({ x: e.clientX, y: e.clientY, todo: actualTodo });
         };
 
         const handleQuickEdit = (todo: TodoType) => {
@@ -181,7 +241,7 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
                                 <S.BarContainer>
                                     {weekDates.map((date, idx) => {
                                         const isToday = date.toDateString() === todayStr;
-                                        const dayTodos = filteredTodos.filter(todo => isBetween(date, todo.startAt, todo.endAt));
+                                        const dayTodos = expandedTodos.filter(todo => isBetween(date, todo.startAt, todo.endAt));
                                         const hiddenCount = dayTodos.filter(t => todoLevels[t.id] >= MAX_VISIBLE_LEVELS).length;
 
                                         return (
@@ -238,7 +298,7 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
                     isOpen={moreModalDate !== null}
                     onClose={() => setMoreModalDate(null)}
                     date={moreModalDate}
-                    todos={filteredTodos}
+                    todos={expandedTodos}
                     categories={categories}
                     handleContextMenu={handleContextMenu}
                 />
