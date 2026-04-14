@@ -2,7 +2,6 @@
 
 import { ThemeProvider } from 'styled-components';
 import { themes } from '@/styles/theme';
-import { useEffect, useState } from 'react';
 import useSettingStore from "@/store/useSettingStore";
 
 export default function ThemeProviderWrapper({ children }: { children: React.ReactNode }) {

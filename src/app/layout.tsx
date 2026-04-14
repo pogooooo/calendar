@@ -12,13 +12,6 @@ const orbit = Orbit({
     variable: "--font-orbit",
 })
 
-const chironHeiHK = Chiron_Hei_HK({
-    subsets: ["latin"],
-    weight: ["400"],
-    variable: "--font-chiron",
-
-})
-
 export const metadata: Metadata = {
     title: "Cronos",
     description: "Calendar todo service"
@@ -28,7 +21,7 @@ export default function RootLayout({children,}: Readonly<{ children: React.React
 
     return (
         <html lang="en">
-        <body className={`relative ${orbit.variable} ${chironHeiHK.className}`}>
+        <body className={`relative ${orbit.variable}`}>
             <ThemeProviderWrapper>
                 <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!}>
                     <StyledComponentsRegistry>

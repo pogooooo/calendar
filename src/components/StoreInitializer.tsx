@@ -17,6 +17,7 @@ export default function StoreInitializer({ children }: { children: React.ReactNo
     const fetchTodos = useTodoStore((state) => state.fetchTodos);
     const fetchCategories = useCategoryStore((state) => state.fetchCategories);
     const fetchDailyData = useDailyStore((state) => state.fetchDailyData);
+    const fetchSettings = useSettingStore((state) => state.fetchSettings);
 
     const accessToken = useAuthStore((state) => state.accessToken);
     const [isMounted, setIsMounted] = useState(false);
@@ -28,8 +29,10 @@ export default function StoreInitializer({ children }: { children: React.ReactNo
     useEffect(() => {
         if (isMounted && accessToken) {
             Promise.all([
+                fetchSettings(authFetch),
                 fetchCategories(authFetch),
-                fetchTodos(authFetch)
+                fetchTodos(authFetch),
+                fetchDailyData(authFetch, new Date())
             ]);
         }
     }, [isMounted, accessToken, authFetch, fetchTodos, fetchCategories]);
