@@ -1,17 +1,18 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import useAuthStore from "@/store/useAuthStore";
 import useSettingStore from "@/store/useSettingStore";
 import styled from "styled-components";
-import WeekCalendar from "@/components/calendar/weekCalendar/WeekCalendar";
+import dynamic from "next/dynamic";
 import useTodoStore from "@/store/useTodoStore";
-import useCategoryStore from "@/store/useCategoryStore"; // 분리된 카테고리 스토어 임포트
+import useCategoryStore from "@/store/useCategoryStore";
+
+const WeekCalendar = dynamic(() => import("@/components/calendar/weekCalendar/WeekCalendar"), {
+    ssr: false,
+    loading: () => <CalendarSkeleton>캘린더를 불러오는 중입니다...</CalendarSkeleton>
+});
 
 export default function Home() {
-    const accessToken = useAuthStore((state) => state.accessToken);
-    const user = useAuthStore((state) => state.user);
-    const theme = useSettingStore((state) => state.theme);
 
     const { todos } = useTodoStore();
     const { categories } = useCategoryStore();
@@ -48,7 +49,6 @@ export default function Home() {
                                     <StatusDot $done={todo.check === "done"} />
                                     <div className="text-content">
                                         <p className="title">{todo.title}</p>
-                                        {/* 쉐이크 관련 영양 정보 출력 로직 제거됨 */}
                                     </div>
                                 </TodoItem>
                             ))
@@ -59,32 +59,15 @@ export default function Home() {
                 </DataCard>
             </DataSection>
 
-            <DebugSection>
-                <h3>[Debug Info]</h3>
-                <p><strong>Theme:</strong> {theme}</p>
-                <p><strong>Access Token:</strong></p>
-                <TokenText>{accessToken || "없음"}</TokenText>
-                <p><strong>User Object:</strong></p>
-                <pre>{JSON.stringify(user, null, 2)}</pre>
-            </DebugSection>
         </ContentWrapper>
     );
 }
-
-// --- Styled Components ---
 
 const ContentWrapper = styled.div`
     max-width: 1200px;
     margin: 0 auto;
     padding: 2rem;
     color: ${(props) => props.theme.colors.text};
-`;
-
-const WelcomeHeader = styled.div`
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
 `;
 
 const Section = styled.section`
@@ -160,41 +143,20 @@ const StatusDot = styled.div<{ $done: boolean }>`
     background-color: ${(props) => props.$done ? props.theme.colors.textSecondary : props.theme.colors.primary};
 `;
 
-const LogoutButton = styled.button`
-    padding: 0.5rem 1rem;
-    background: transparent;
-    border: 1px solid ${(props) => props.theme.colors.border};
-    color: ${(props) => props.theme.colors.textSecondary};
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.2s;
-
-    &:hover {
-        border-color: ${(props) => props.theme.colors.error || '#ff4d4f'};
-        color: ${(props) => props.theme.colors.error || '#ff4d4f'};
-    }
-`;
-
-const DebugSection = styled.div`
-    background: #f8f9fa;
-    padding: 1.5rem;
-    border-radius: 8px;
-    font-size: 0.85rem;
-    border: 1px solid #eee;
-
-    h3 { margin-bottom: 1rem; color: #333; }
-    pre { color: #2e7d32; white-space: pre-wrap; margin-top: 0.5rem; }
-`;
-
-const TokenText = styled.p`
-    word-break: break-all;
-    color: #1565c0;
-    margin-top: 0.25rem;
-    margin-bottom: 1rem;
-`;
-
 const EmptyText = styled.p`
     color: ${(props) => props.theme.colors.textSecondary};
     font-size: 0.85rem;
     font-style: italic;
+`;
+
+const CalendarSkeleton = styled.div`
+    height: 300px;
+    width: 100%;
+    background-color: ${(props) => props.theme.colors.surface};
+    border-radius: 12px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: ${(props) => props.theme.colors.textSecondary};
+    border: 1px dashed ${(props) => props.theme.colors.border};
 `;

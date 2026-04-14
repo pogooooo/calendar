@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { TodoType } from '@/components/calendar/weekCalendar/WeekCalendar';
+import { TodoType } from '@/store/useTodoStore';
 
 export const useTodoLevels = (todos: TodoType[], weekDates: Date[]) => {
     return useMemo(() => {

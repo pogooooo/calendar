@@ -9,7 +9,7 @@ import InlineError from "@/components/error/inlineError/InlineError";
 import CategoryAddModal from "@/components/modal/categoryAddModal/CategoryAddModal";
 
 export default function CategoryPage() {
-    const { categories, fetchCategories, deleteCategory, updateCategory, addCategory } = useCategoryStore();
+    const { categories, deleteCategory, updateCategory, addCategory } = useCategoryStore();
     const authFetch = useAuthFetch();
 
     const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
@@ -22,10 +22,6 @@ export default function CategoryPage() {
     const [inviteError, setInviteError] = useState("");
     const [kickTarget, setKickTarget] = useState<{ id: string, name: string } | null>(null);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-
-    useEffect(() => {
-        fetchCategories(authFetch);
-    }, []);
 
     useEffect(() => {
         setActiveTab('info');
@@ -52,7 +48,6 @@ export default function CategoryPage() {
 
     const handleAddCategorySubmit = async (data: { name: string; color: string; description: string }) => {
         await addCategory(authFetch, data);
-        fetchCategories(authFetch);
     };
 
     const handleInviteSubmit = async () => {
@@ -83,7 +78,6 @@ export default function CategoryPage() {
             }
 
             closeInviteModal();
-            fetchCategories(authFetch);
         } catch (err) {
             setInviteError("서버 오류가 발생했습니다.");
         }
@@ -101,7 +95,6 @@ export default function CategoryPage() {
 
             if (res.ok) {
                 closeKickModal();
-                fetchCategories(authFetch);
             }
         } catch (err) {
             console.error(err);

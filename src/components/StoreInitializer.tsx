@@ -6,6 +6,8 @@ import { useAuthFetch } from "@/hooks/useAuthFetch";
 import useTodoStore from "@/store/useTodoStore";
 import useCategoryStore from "@/store/useCategoryStore";
 import useAuthStore from "@/store/useAuthStore";
+import useDailyStore from "@/store/useDailyStore";
+import useSettingStore from "@/store/useSettingStore";
 
 export default function StoreInitializer({ children }: { children: React.ReactNode }) {
     const authFetch = useAuthFetch();
@@ -14,6 +16,8 @@ export default function StoreInitializer({ children }: { children: React.ReactNo
 
     const fetchTodos = useTodoStore((state) => state.fetchTodos);
     const fetchCategories = useCategoryStore((state) => state.fetchCategories);
+    const fetchDailyData = useDailyStore((state) => state.fetchDailyData);
+
     const accessToken = useAuthStore((state) => state.accessToken);
     const [isMounted, setIsMounted] = useState(false);
 

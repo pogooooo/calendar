@@ -9,8 +9,8 @@ import MonthCalendar from "@/components/calendar/monthCalendar/MonthCalendar";
 import DayCalendar from "@/components/calendar/dayCalendar/DayCalendar";
 
 export default function CalendarPage() {
-    const { categories, fetchCategories } = useCategoryStore();
-    const { todos, fetchTodos } = useTodoStore();
+    const { categories } = useCategoryStore();
+    const { todos } = useTodoStore();
 
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
