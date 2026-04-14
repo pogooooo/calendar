@@ -25,6 +25,67 @@ const CelestialDayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
         const [newTaskText, setNewTaskText] = React.useState("");
         const [localMemo, setLocalMemo] = React.useState("");
 
+        const expandedTodos = React.useMemo(() => {
+            const expanded: any[] = [];
+
+            const dayStart = new Date(selectedDate);
+            dayStart.setHours(0, 0, 0, 0);
+            const dayEnd = new Date(selectedDate);
+            dayEnd.setHours(23, 59, 59, 999);
+
+            todos.forEach(todo => {
+                if (!todo.startAt || !todo.endAt) return;
+
+                if (!todo.repeat || todo.repeat <= 0) {
+                    expanded.push(todo);
+                    return;
+                }
+
+                const R = todo.repeat;
+                let currentStart = new Date(todo.startAt as string | number | Date);
+                let currentEnd = new Date(todo.endAt as string | number | Date);
+
+                const startDayOnly = new Date(currentStart);
+                startDayOnly.setHours(0, 0, 0, 0);
+                const endDayOnly = new Date(currentEnd);
+                endDayOnly.setHours(0, 0, 0, 0);
+
+                const daysBetween = Math.round((endDayOnly.getTime() - startDayOnly.getTime()) / (1000 * 60 * 60 * 24));
+                const intervalDays = daysBetween + R;
+                const repeatIntervalMs = intervalDays * 24 * 60 * 60 * 1000;
+
+                if (currentEnd.getTime() < dayStart.getTime()) {
+                    const msBefore = dayStart.getTime() - currentEnd.getTime();
+                    const intervalsToSkip = Math.floor(msBefore / repeatIntervalMs);
+                    if (intervalsToSkip > 0) {
+                        currentStart.setDate(currentStart.getDate() + (intervalsToSkip * intervalDays));
+                        currentEnd.setDate(currentEnd.getDate() + (intervalsToSkip * intervalDays));
+                    }
+                }
+
+                let instanceCount = 0;
+                while (currentStart.getTime() <= dayEnd.getTime()) {
+                    if (currentEnd.getTime() >= dayStart.getTime()) {
+                        expanded.push({
+                            ...todo,
+                            id: `${todo.id}-rep-${currentStart.getTime()}`,
+                            startAt: currentStart.toISOString(),
+                            endAt: currentEnd.toISOString(),
+                            originalTodo: todo
+                        });
+                    }
+
+                    currentStart.setDate(currentStart.getDate() + intervalDays);
+                    currentEnd.setDate(currentEnd.getDate() + intervalDays);
+
+                    instanceCount++;
+                    if (instanceCount > 1000) break;
+                }
+            });
+
+            return expanded;
+        }, [todos, selectedDate]);
+
         React.useEffect(() => {
             fetchDailyData(authFetch, selectedDate);
             // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -55,7 +116,7 @@ const CelestialDayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
             const slotEnd = new Date(selectedDate);
             slotEnd.setHours(hour, slotIdx * 10 + 9, 59, 999);
 
-            const overlappingTodo = todos.find(todo => {
+            const overlappingTodo = expandedTodos.find(todo => {
                 if (todo.isAllDay || !todo.startAt || !todo.endAt) return false;
                 const start = new Date(todo.startAt as string | number | Date);
                 const end = new Date(todo.endAt as string | number | Date);
@@ -67,7 +128,7 @@ const CelestialDayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
                 return cat?.color || "var(--primary-color)";
             }
             return null;
-        }, [todos, categories, selectedDate]);
+        }, [expandedTodos, categories, selectedDate]);
 
         const hours = Array.from({ length: 24 }, (_, i) => i);
         const formattedDate = `${selectedDate.getFullYear()}년 ${selectedDate.getMonth() + 1}월 ${selectedDate.getDate()}일`;

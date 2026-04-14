@@ -201,17 +201,22 @@ const CelestialMonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
                 const R = todo.repeat;
                 let currentStart = new Date(todo.startAt);
                 let currentEnd = new Date(todo.endAt);
-                const durationMs = currentEnd.getTime() - currentStart.getTime();
 
-                const repeatIntervalMs = durationMs + (R * 24 * 60 * 60 * 1000);
+                const startDayOnly = new Date(currentStart);
+                startDayOnly.setHours(0, 0, 0, 0);
+                const endDayOnly = new Date(currentEnd);
+                endDayOnly.setHours(0, 0, 0, 0);
+
+                const daysBetween = Math.round((endDayOnly.getTime() - startDayOnly.getTime()) / (1000 * 60 * 60 * 24));
+                const intervalDays = daysBetween + R;
+                const repeatIntervalMs = intervalDays * 24 * 60 * 60 * 1000;
 
                 if (currentEnd.getTime() < monthStart.getTime()) {
                     const msBefore = monthStart.getTime() - currentEnd.getTime();
                     const intervalsToSkip = Math.floor(msBefore / repeatIntervalMs);
-
                     if (intervalsToSkip > 0) {
-                        currentStart = new Date(currentStart.getTime() + (intervalsToSkip * repeatIntervalMs));
-                        currentEnd = new Date(currentStart.getTime() + durationMs);
+                        currentStart.setDate(currentStart.getDate() + (intervalsToSkip * intervalDays));
+                        currentEnd.setDate(currentEnd.getDate() + (intervalsToSkip * intervalDays));
                     }
                 }
 
@@ -228,9 +233,8 @@ const CelestialMonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
                         });
                     }
 
-                    const nextStartMs = currentEnd.getTime() + (R * 24 * 60 * 60 * 1000);
-                    currentStart = new Date(nextStartMs);
-                    currentEnd = new Date(currentStart.getTime() + durationMs);
+                    currentStart.setDate(currentStart.getDate() + intervalDays);
+                    currentEnd.setDate(currentEnd.getDate() + intervalDays);
 
                     instanceCount++;
                     if (instanceCount > 1000) break;
