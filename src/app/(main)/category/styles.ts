@@ -71,7 +71,7 @@ export const CategoryItem = styled.div<{ $color: string; $isSelected: boolean }>
     align-items: center;
     padding: 12px 16px;
     margin-bottom: 4px;
-    border-radius: 5px; /* ✨ 수정 */
+    border-radius: 5px;
     cursor: pointer;
     background-color: transparent;
     border: 1px solid ${(props) => props.$isSelected ? props.theme.colors.primary : 'transparent'};

@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { TodoType } from "@/types/calendar";
+import { TodoType } from "@/store/useTodoStore";
 import * as S from "./TodoContextMenu.styles";
 
 interface TodoContextMenuProps {
@@ -30,7 +30,7 @@ export default function TodoContextMenu({ menuState, onClose, onToggle, onEdit, 
                     exit={{ opacity: 0, scale: 0.8, x: "-50%", y: 0 }}
                     transition={{ duration: 0.15 }}
                     style={{ top: menuState.y, left: menuState.x }}
-                    onClick={(e: React.MouseEvent) => e.stopPropagation()} // 클릭 시 닫히지 않도록
+                    onClick={(e: React.MouseEvent) => e.stopPropagation()}
                 >
                     <button onClick={() => onToggle(menuState.todo)}>완료</button>
                     <div className="divider" />

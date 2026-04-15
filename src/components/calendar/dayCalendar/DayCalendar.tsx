@@ -3,7 +3,8 @@
 import * as React from "react";
 import { useTheme } from "styled-components";
 import CelestialDayCalendar from "./celestial/CelestialDayCalendar";
-import { CategoryType, TodoType } from "@/types/calendar";
+import { CategoryType } from "@/types/calendar";
+import { TodoType } from "@/store/useTodoStore";
 
 export interface DayProps extends React.HTMLAttributes<HTMLDivElement> {
     asChild?: boolean;
