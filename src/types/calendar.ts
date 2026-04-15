@@ -14,16 +14,3 @@ export interface CategoryType {
     creatorName?: string;
     participants?: ParticipantType[];
 }
-
-export interface TodoType {
-    id: string;
-    title: string;
-    categoryId: string;
-    check: "done" | "none";
-    memo?: string | null;
-    startAt?: string | number | Date | null;
-    endAt?: string | number | Date | null;
-    isAllDay: boolean;
-    location?: string | null;
-    repeat: number;
-}

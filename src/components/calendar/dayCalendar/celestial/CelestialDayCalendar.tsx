@@ -8,12 +8,7 @@ import { DayProps } from "../DayCalendar";
 import * as S from "./CelestialDayCalendar.styles";
 import useDailyStore from "@/store/useDailyStore";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
-
-interface LocalTask {
-    id: string;
-    text: string;
-    isDone: boolean;
-}
+import { useExpandedTodos } from "@/hooks/useExpandedTodos";
 
 const CelestialDayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
     ({ asChild, selectedDate = new Date(), todos = [], categories = [], onDateChange, ...props }, ref) => {
@@ -25,66 +20,11 @@ const CelestialDayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
         const [newTaskText, setNewTaskText] = React.useState("");
         const [localMemo, setLocalMemo] = React.useState("");
 
-        const expandedTodos = React.useMemo(() => {
-            const expanded: any[] = [];
-
-            const dayStart = new Date(selectedDate);
-            dayStart.setHours(0, 0, 0, 0);
-            const dayEnd = new Date(selectedDate);
-            dayEnd.setHours(23, 59, 59, 999);
-
-            todos.forEach(todo => {
-                if (!todo.startAt || !todo.endAt) return;
-
-                if (!todo.repeat || todo.repeat <= 0) {
-                    expanded.push(todo);
-                    return;
-                }
-
-                const R = todo.repeat;
-                let currentStart = new Date(todo.startAt as string | number | Date);
-                let currentEnd = new Date(todo.endAt as string | number | Date);
-
-                const startDayOnly = new Date(currentStart);
-                startDayOnly.setHours(0, 0, 0, 0);
-                const endDayOnly = new Date(currentEnd);
-                endDayOnly.setHours(0, 0, 0, 0);
-
-                const daysBetween = Math.round((endDayOnly.getTime() - startDayOnly.getTime()) / (1000 * 60 * 60 * 24));
-                const intervalDays = daysBetween + R;
-                const repeatIntervalMs = intervalDays * 24 * 60 * 60 * 1000;
-
-                if (currentEnd.getTime() < dayStart.getTime()) {
-                    const msBefore = dayStart.getTime() - currentEnd.getTime();
-                    const intervalsToSkip = Math.floor(msBefore / repeatIntervalMs);
-                    if (intervalsToSkip > 0) {
-                        currentStart.setDate(currentStart.getDate() + (intervalsToSkip * intervalDays));
-                        currentEnd.setDate(currentEnd.getDate() + (intervalsToSkip * intervalDays));
-                    }
-                }
-
-                let instanceCount = 0;
-                while (currentStart.getTime() <= dayEnd.getTime()) {
-                    if (currentEnd.getTime() >= dayStart.getTime()) {
-                        expanded.push({
-                            ...todo,
-                            id: `${todo.id}-rep-${currentStart.getTime()}`,
-                            startAt: currentStart.toISOString(),
-                            endAt: currentEnd.toISOString(),
-                            originalTodo: todo
-                        });
-                    }
-
-                    currentStart.setDate(currentStart.getDate() + intervalDays);
-                    currentEnd.setDate(currentEnd.getDate() + intervalDays);
-
-                    instanceCount++;
-                    if (instanceCount > 1000) break;
-                }
-            });
-
-            return expanded;
-        }, [todos, selectedDate]);
+        const expandedTodos = useExpandedTodos(
+            todos,
+            selectedDate,
+            selectedDate
+        );
 
         React.useEffect(() => {
             fetchDailyData(authFetch, selectedDate);

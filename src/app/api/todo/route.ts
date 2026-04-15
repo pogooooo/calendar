@@ -113,7 +113,10 @@ export const POST = async (request: NextRequest) => {
         if (!userId) return NextResponse.json({ message: "인증되지 않은 사용자입니다." }, { status: 401 });
 
         const body = await request.json();
-        const { title, categoryId, memo, startAt, endAt, isAllDay, location, repeat } = body;
+        const {
+            title, categoryId, memo, startAt, endAt,
+            isAllDay, location, repeat, repeatEndDate, repeatCount
+        } = body;
 
         if (!title || !categoryId) return NextResponse.json({ message: "제목과 카테고리는 필수입니다." }, { status: 400 });
 
@@ -130,6 +133,8 @@ export const POST = async (request: NextRequest) => {
                 isAllDay: isAllDay || false,
                 location,
                 repeat: repeat || 0,
+                repeatEndDate: repeatEndDate ? new Date(repeatEndDate) : null,
+                repeatCount: repeatCount || null,
                 check: "none",
             },
         });
@@ -166,6 +171,12 @@ export const PATCH = async (request: NextRequest) => {
         const dataToUpdate = { ...updateData };
         if (dataToUpdate.startAt) dataToUpdate.startAt = new Date(dataToUpdate.startAt);
         if (dataToUpdate.endAt) dataToUpdate.endAt = new Date(dataToUpdate.endAt);
+
+        if (dataToUpdate.repeatEndDate) {
+            dataToUpdate.repeatEndDate = new Date(dataToUpdate.repeatEndDate);
+        } else if (dataToUpdate.repeatEndDate === null) {
+            dataToUpdate.repeatEndDate = null;
+        }
 
         if (dataToUpdate.categoryId && dataToUpdate.categoryId !== existingTodo.categoryId) {
             const hasDestPermission = await checkCategoryPermission(dataToUpdate.categoryId, userId);

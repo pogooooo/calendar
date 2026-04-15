@@ -24,14 +24,25 @@ export default function CelestialTodoModal({ isOpen, onClose, todo, categories, 
     const [startAt, setStartAt] = React.useState("");
     const [endAt, setEndAt] = React.useState("");
     const [isAllDay, setIsAllDay] = React.useState(false);
-
-    // ✨ 새로 추가된 상태: 장소와 반복
     const [location, setLocation] = React.useState("");
+
     const [repeat, setRepeat] = React.useState<number>(0);
+    const [repeatEndType, setRepeatEndType] = React.useState<'never' | 'until' | 'count'>('never');
+    const [repeatEndDate, setRepeatEndDate] = React.useState("");
+    const [repeatCount, setRepeatCount] = React.useState<number | "">("");
 
     const [isCategoryOpen, setIsCategoryOpen] = React.useState(false);
+    const [isRepeatEndOpen, setIsRepeatEndOpen] = React.useState(false);
 
     const selectedCategory = categories.find(c => c.id === categoryId);
+
+    const repeatEndOptions = [
+        { value: 'never', label: '계속 반복 (종료 없음)' },
+        { value: 'until', label: '특정 날짜에 종료' },
+        { value: 'count', label: '특정 횟수만큼 반복' }
+    ];
+
+    const selectedRepeatEndLabel = repeatEndOptions.find(o => o.value === repeatEndType)?.label;
 
     React.useEffect(() => {
         if (isOpen) {
@@ -45,6 +56,20 @@ export default function CelestialTodoModal({ isOpen, onClose, todo, categories, 
 
                 setStartAt(todo.startAt ? getLocalDatetimeString(new Date(todo.startAt)) : "");
                 setEndAt(todo.endAt ? getLocalDatetimeString(new Date(todo.endAt)) : "");
+
+                if (todo.repeatCount) {
+                    setRepeatEndType('count');
+                    setRepeatCount(todo.repeatCount);
+                    setRepeatEndDate("");
+                } else if (todo.repeatEndDate) {
+                    setRepeatEndType('until');
+                    setRepeatEndDate(getLocalDatetimeString(new Date(todo.repeatEndDate)).slice(0, 10));
+                    setRepeatCount("");
+                } else {
+                    setRepeatEndType('never');
+                    setRepeatCount("");
+                    setRepeatEndDate("");
+                }
             } else {
                 setTitle("");
                 setCategoryId(categories.length > 0 ? categories[0].id : "");
@@ -52,10 +77,12 @@ export default function CelestialTodoModal({ isOpen, onClose, todo, categories, 
                 setIsAllDay(false);
                 setLocation("");
                 setRepeat(0);
+                setRepeatEndType('never');
+                setRepeatCount("");
+                setRepeatEndDate("");
 
                 const defaultDate = selectedDate ? new Date(selectedDate) : new Date();
                 setStartAt(getLocalDatetimeString(defaultDate));
-
                 const defaultEndDate = new Date(defaultDate.getTime() + 60 * 60 * 1000);
                 setEndAt(getLocalDatetimeString(defaultEndDate));
             }
@@ -63,12 +90,13 @@ export default function CelestialTodoModal({ isOpen, onClose, todo, categories, 
     }, [isOpen, todo, categories, selectedDate]);
 
     React.useEffect(() => {
-        const closeDropdown = () => setIsCategoryOpen(false);
-        if (isCategoryOpen) {
-            window.addEventListener('click', closeDropdown);
-        }
-        return () => window.removeEventListener('click', closeDropdown);
-    }, [isCategoryOpen]);
+        const closeDropdowns = () => {
+            setIsCategoryOpen(false);
+            setIsRepeatEndOpen(false);
+        };
+        window.addEventListener('click', closeDropdowns);
+        return () => window.removeEventListener('click', closeDropdowns);
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -87,6 +115,8 @@ export default function CelestialTodoModal({ isOpen, onClose, todo, categories, 
             isAllDay,
             location,
             repeat,
+            repeatEndDate: repeat > 0 && repeatEndType === 'until' && repeatEndDate ? new Date(repeatEndDate).toISOString() : null,
+            repeatCount: repeat > 0 && repeatEndType === 'count' && repeatCount ? Number(repeatCount) : null,
         };
 
         if (todo) {
@@ -114,7 +144,7 @@ export default function CelestialTodoModal({ isOpen, onClose, todo, categories, 
     };
 
     return (
-        <CelestialBaseModal isOpen={isOpen} onClose={onClose} maxWidth="450px">
+        <CelestialBaseModal isOpen={isOpen} onClose={onClose} maxWidth="420px">
             <S.FormWrapper onSubmit={handleSubmit}>
                 <S.Header>
                     <input
@@ -126,26 +156,29 @@ export default function CelestialTodoModal({ isOpen, onClose, todo, categories, 
                         autoFocus
                     />
                     <button type="button" className="close-btn" onClick={onClose}>
-                        <X size={26} />
+                        <X size={22} />
                     </button>
                 </S.Header>
 
                 <S.ScrollBody>
-                    <S.CategorySelect onClick={(e) => e.stopPropagation()}>
-                        <S.SelectedCategory onClick={() => setIsCategoryOpen(!isCategoryOpen)}>
-                            <div>
+                    <S.DropdownContainer onClick={(e) => e.stopPropagation()} style={{ marginBottom: '8px', padding: '0 8px' }}>
+                        <S.DropdownHeader onClick={() => {
+                            setIsCategoryOpen(!isCategoryOpen);
+                            setIsRepeatEndOpen(false);
+                        }}>
+                            <div className="content-wrapper">
                                 <S.ColorDot $color={selectedCategory?.color || "#e0e0e0"} />
                                 <span className={!selectedCategory ? "placeholder" : ""}>
                                     {selectedCategory ? selectedCategory.name : "카테고리 선택"}
                                 </span>
                             </div>
-                            {isCategoryOpen ? <ChevronUp size={20} color="#888" /> : <ChevronDown size={20} color="#888" />}
-                        </S.SelectedCategory>
+                            {isCategoryOpen ? <ChevronUp size={18} color="#888" /> : <ChevronDown size={18} color="#888" />}
+                        </S.DropdownHeader>
 
                         {isCategoryOpen && (
-                            <S.CategoryList>
+                            <S.DropdownList>
                                 {categories.map((cat) => (
-                                    <S.CategoryItem
+                                    <S.DropdownItem
                                         key={cat.id}
                                         onClick={() => {
                                             setCategoryId(cat.id);
@@ -154,11 +187,11 @@ export default function CelestialTodoModal({ isOpen, onClose, todo, categories, 
                                     >
                                         <S.ColorDot $color={cat.color} />
                                         <span>{cat.name}</span>
-                                    </S.CategoryItem>
+                                    </S.DropdownItem>
                                 ))}
-                            </S.CategoryList>
+                            </S.DropdownList>
                         )}
-                    </S.CategorySelect>
+                    </S.DropdownContainer>
 
                     <S.FieldRow>
                         <label><Clock size={16} /> 하루 종일</label>
@@ -169,7 +202,7 @@ export default function CelestialTodoModal({ isOpen, onClose, todo, categories, 
                     </S.FieldRow>
 
                     <S.FieldRow>
-                        <label>시작</label>
+                        <label>시작 시간</label>
                         <input
                             type={isAllDay ? "date" : "datetime-local"}
                             value={isAllDay ? startAt.slice(0, 10) : startAt}
@@ -178,7 +211,7 @@ export default function CelestialTodoModal({ isOpen, onClose, todo, categories, 
                     </S.FieldRow>
 
                     <S.FieldRow>
-                        <label>종료</label>
+                        <label>종료 시간</label>
                         <input
                             type={isAllDay ? "date" : "datetime-local"}
                             value={isAllDay ? endAt.slice(0, 10) : endAt}
@@ -196,37 +229,97 @@ export default function CelestialTodoModal({ isOpen, onClose, todo, categories, 
                         />
                     </S.FieldRow>
 
-                    <S.FieldRow>
-                        <label><Repeat size={16} /> 반복</label>
-                        <div className="repeat-input-wrapper">
-                            <input
-                                type="number"
-                                min="0"
-                                value={repeat === 0 ? "" : repeat}
-                                onChange={(e) => setRepeat(Number(e.target.value))}
-                                placeholder="0"
-                            />
-                            <span>일마다</span>
+                    <S.RepeatRow>
+                        <div className="repeat-header">
+                            <label><Repeat size={16} /> 반복 주기</label>
+                            <div className="repeat-input-group">
+                                <input
+                                    type="number"
+                                    min="0"
+                                    value={repeat === 0 ? "" : repeat}
+                                    onChange={(e) => setRepeat(Number(e.target.value))}
+                                    placeholder="0"
+                                />
+                                <span>일마다</span>
+                            </div>
                         </div>
-                    </S.FieldRow>
+
+                        {repeat > 0 && (
+                            <S.RepeatConditionBox>
+                                <div className="condition-title">반복 종료 조건</div>
+
+                                <S.DropdownContainer onClick={(e) => e.stopPropagation()}>
+                                    <S.DropdownHeader onClick={() => {
+                                        setIsRepeatEndOpen(!isRepeatEndOpen);
+                                        setIsCategoryOpen(false);
+                                    }}>
+                                        <div className="content-wrapper">
+                                            <span>{selectedRepeatEndLabel}</span>
+                                        </div>
+                                        {isRepeatEndOpen ? <ChevronUp size={18} color="#888" /> : <ChevronDown size={18} color="#888" />}
+                                    </S.DropdownHeader>
+
+                                    {isRepeatEndOpen && (
+                                        <S.DropdownList>
+                                            {repeatEndOptions.map(opt => (
+                                                <S.DropdownItem
+                                                    key={opt.value}
+                                                    onClick={() => {
+                                                        setRepeatEndType(opt.value as any);
+                                                        setIsRepeatEndOpen(false);
+                                                    }}
+                                                >
+                                                    {opt.label}
+                                                </S.DropdownItem>
+                                            ))}
+                                        </S.DropdownList>
+                                    )}
+                                </S.DropdownContainer>
+
+                                {repeatEndType === 'until' && (
+                                    <input
+                                        type="date"
+                                        value={repeatEndDate}
+                                        onChange={(e) => setRepeatEndDate(e.target.value)}
+                                        required
+                                    />
+                                )}
+
+                                {repeatEndType === 'count' && (
+                                    <div className="count-input-group">
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            max="999"
+                                            value={repeatCount}
+                                            onChange={(e) => setRepeatCount(Number(e.target.value))}
+                                            placeholder="횟수"
+                                            required
+                                        />
+                                        <span>회 반복 후 종료</span>
+                                    </div>
+                                )}
+                            </S.RepeatConditionBox>
+                        )}
+                    </S.RepeatRow>
 
                     <S.MemoRow>
                         <label><AlignLeft size={16} /> 메모</label>
                         <textarea
                             value={memo}
                             onChange={(e) => setMemo(e.target.value)}
-                            placeholder="추가적인 설명이나 메모를 남겨보세요."
+                            placeholder="할 일에 대한 설명이나 메모를 남겨보세요."
                         />
                     </S.MemoRow>
                 </S.ScrollBody>
 
                 <S.Footer>
                     {todo && (
-                        <SecondaryButton type="button" onClick={handleDelete} $width="70px" $height="40px" $variant="danger">
+                        <SecondaryButton type="button" onClick={handleDelete} $width="70px" $height="36px" $variant="danger">
                             삭제
                         </SecondaryButton>
                     )}
-                    <SecondaryButton type="submit" $width="90px" $height="40px">
+                    <SecondaryButton type="submit" $width="90px" $height="36px" $variant="primary">
                         {todo ? "수정하기" : "저장하기"}
                     </SecondaryButton>
                 </S.Footer>

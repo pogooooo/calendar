@@ -42,27 +42,27 @@ export const AddCategoryBtn = styled.button`
     justify-content: center;
     width: 32px;
     height: 32px;
-    border-radius: 6px;
+    border-radius: 5px;
     transition: all 0.2s;
     border-color: ${(props) => props.theme.colors.primary};
 
     &:hover {
         color: ${(props) => props.theme.colors.text};
         border-color: ${(props) => props.theme.colors.primary};
-        box-shadow: 0 0 10px 3px ${(props) => props.theme.colors.accent};
+        box-shadow: 0 0 5px 1px ${(props) => props.theme.colors.primary};
     }
 `;
 
 export const CategoryList = styled.div`
     display: flex;
     flex-direction: column;
-    padding: 5px 10px 0 10px;
+    padding: 10px 10px 0 10px;
     overflow-y: auto;
 
     &::-webkit-scrollbar { width: 6px; }
     &::-webkit-scrollbar-thumb {
         background-color: ${(props) => props.theme.colors.accent};
-        border-radius: 3px;
+        border-radius: 5px;
     }
 `;
 
@@ -71,7 +71,7 @@ export const CategoryItem = styled.div<{ $color: string; $isSelected: boolean }>
     align-items: center;
     padding: 12px 16px;
     margin-bottom: 4px;
-    border-radius: 8px;
+    border-radius: 5px; /* ✨ 수정 */
     cursor: pointer;
     background-color: transparent;
     border: 1px solid ${(props) => props.$isSelected ? props.theme.colors.primary : 'transparent'};
@@ -88,7 +88,7 @@ export const CategoryItem = styled.div<{ $color: string; $isSelected: boolean }>
     .color-indicator {
         width: 12px;
         height: 12px;
-        border-radius: 50%;
+        border-radius: 50%; /* 원형은 그대로 유지 */
         background-color: ${(props) => props.$color};
         margin-right: 12px;
         box-shadow: 0 0 0 2px ${(props) => props.theme.colors.surface}, 0 0 0 3px ${(props) => props.$isSelected ? props.$color : 'transparent'};
@@ -130,15 +130,15 @@ export const CategoryTitleWrapper = styled.div<{ $color: string }>`
     align-items: center;
     gap: 16px;
     margin-bottom: 40px;
-    
+
     .color-picker-container {
         position: relative;
         width: 32px;
         height: 32px;
-        border-radius: 8px;
+        border-radius: 5px; /* ✨ 수정 */
         overflow: hidden;
         box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        
+
         .color-input {
             position: absolute;
             top: -10px;
@@ -151,7 +151,7 @@ export const CategoryTitleWrapper = styled.div<{ $color: string }>`
             background-color: ${(props) => props.$color};
         }
     }
-    
+
     .title-input {
         font-size: ${(props) => props.theme.fontSizes.h1};
         font-weight: bold;
@@ -163,7 +163,7 @@ export const CategoryTitleWrapper = styled.div<{ $color: string }>`
         padding: 4px 0;
         border-bottom: 2px solid transparent;
         transition: border-color 0.2s;
-        
+
         &::placeholder {
             color: ${(props) => props.theme.colors.textSecondary};
             opacity: 0.5;
@@ -180,7 +180,7 @@ export const DetailHeader = styled.div<{ $activeTab: string }>`
     gap: 24px;
     border-bottom: 1px solid ${(props) => props.theme.colors.accent};
     margin-bottom: 30px;
-    
+
     button {
         background: transparent;
         border: none;
@@ -191,7 +191,7 @@ export const DetailHeader = styled.div<{ $activeTab: string }>`
         position: relative;
         color: ${(props) => props.theme.colors.textSecondary};
         transition: color 0.2s;
-        
+
         &::after {
             content: '';
             position: absolute;
@@ -201,15 +201,15 @@ export const DetailHeader = styled.div<{ $activeTab: string }>`
             background-color: transparent;
             transition: background-color 0.2s;
         }
-        
+
         &:hover { color: ${(props) => props.theme.colors.text}; }
     }
-    
+
     .info-tab {
         color: ${(props) => props.$activeTab === 'info' ? props.theme.colors.primary : ''};
         &::after { background-color: ${(props) => props.$activeTab === 'info' ? props.theme.colors.primary : 'transparent'}; }
     }
-    
+
     .todo-tab {
         color: ${(props) => props.$activeTab === 'todos' ? props.theme.colors.primary : ''};
         &::after { background-color: ${(props) => props.$activeTab === 'todos' ? props.theme.colors.primary : 'transparent'}; }
@@ -226,7 +226,7 @@ export const PropertiesCard = styled.div`
     display: flex;
     flex-direction: column;
     border: 1px solid ${(props) => props.theme.colors.accent};
-    border-radius: 12px;
+    border-radius: 5px; /* ✨ 수정 */
     overflow: hidden;
     background-color: ${(props) => props.theme.colors.surface};
 `;
@@ -273,7 +273,7 @@ export const PropertyRow = styled.div`
             line-height: 1.6;
             min-height: 44px;
             padding: 4px 0;
-            
+
             &::placeholder {
                 color: ${(props) => props.theme.colors.textSecondary};
                 opacity: 0.6;
@@ -282,7 +282,7 @@ export const PropertyRow = styled.div`
             &::-webkit-scrollbar { width: 6px; }
             &::-webkit-scrollbar-thumb {
                 background-color: ${(props) => props.theme.colors.accent};
-                border-radius: 3px;
+                border-radius: 5px; /* ✨ 수정 */
             }
         }
     }
@@ -311,7 +311,7 @@ export const ParticipantSection = styled.div`
         text-align: center;
         background-color: ${(props) => props.theme.colors.surface};
         border: 1px dashed ${(props) => props.theme.colors.accent};
-        border-radius: 12px;
+        border-radius: 5px; /* ✨ 수정 */
 
         p {
             color: ${(props) => props.theme.colors.textSecondary};
@@ -325,7 +325,7 @@ export const ParticipantTable = styled.div`
     display: flex;
     flex-direction: column;
     border: 1px solid ${(props) => props.theme.colors.accent};
-    border-radius: 12px;
+    border-radius: 5px; /* ✨ 수정 */
     overflow: hidden;
     background-color: ${(props) => props.theme.colors.surface};
 `;
@@ -371,7 +371,7 @@ export const TableRow = styled.div`
         .avatar {
             width: 28px;
             height: 28px;
-            border-radius: 50%;
+            border-radius: 50%; /* 원형은 그대로 유지 */
             background-color: ${(props) => props.theme.colors.primary}1A;
             color: ${(props) => props.theme.colors.primary};
             display: flex;
@@ -403,7 +403,7 @@ export const TableRow = styled.div`
             padding: 6px 12px;
             font-size: 0.85rem;
             cursor: pointer;
-            border-radius: 6px;
+            border-radius: 5px; /* ✨ 수정 */
             opacity: 0;
             transition: all 0.2s;
 
@@ -439,7 +439,7 @@ export const ModalOverlay = styled.div`
 export const ModalContent = styled.div`
     background-color: ${(props) => props.theme.colors.surface};
     padding: 32px;
-    border-radius: 16px;
+    border-radius: 5px; /* ✨ 수정 */
     width: 420px;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
     animation: scaleUp 0.2s cubic-bezier(0.16, 1, 0.3, 1);
@@ -449,47 +449,47 @@ export const ModalContent = styled.div`
         to { transform: scale(1) translateY(0); opacity: 1; }
     }
 
-    h3 { 
-        margin: 0 0 8px 0; 
+    h3 {
+        margin: 0 0 8px 0;
         font-size: ${(props) => props.theme.fontSizes.h3};
         color: ${(props) => props.theme.colors.text};
         font-weight: 600;
     }
-    
-    p { 
-        color: ${(props) => props.theme.colors.textSecondary}; 
-        font-size: 0.95rem; 
-        margin: 0 0 24px 0; 
+
+    p {
+        color: ${(props) => props.theme.colors.textSecondary};
+        font-size: 0.95rem;
+        margin: 0 0 24px 0;
         line-height: 1.5;
     }
-    
+
     input {
-        width: 100%; 
-        padding: 14px 16px; 
+        width: 100%;
+        padding: 14px 16px;
         margin-bottom: 12px;
         background-color: ${(props) => props.theme.colors.surface};
         border: 1px solid ${(props) => props.theme.colors.accent};
-        border-radius: 8px; 
+        border-radius: 5px; /* ✨ 수정 */
         outline: none;
         font-size: 1rem;
         color: ${(props) => props.theme.colors.text};
         transition: all 0.2s;
-        
+
         &::placeholder {
             color: ${(props) => props.theme.colors.textSecondary};
             opacity: 0.5;
         }
 
-        &:focus { 
+        &:focus {
             border-color: ${(props) => props.theme.colors.primary};
             box-shadow: 0 0 0 3px ${(props) => props.theme.colors.primary}22;
         }
     }
-    
-    .modal-actions { 
+
+    .modal-actions {
         display: flex;
-        justify-content: flex-end; 
-        gap: 12px; 
+        justify-content: flex-end;
+        gap: 12px;
         margin-top: 32px;
     }
 `;
@@ -522,7 +522,8 @@ export const TodoCard = styled.div<{ $isDone: boolean; $color: string }>`
     padding: 16px 20px;
     background-color: ${(props) => props.theme.colors.surface};
     border: 1px solid ${(props) => props.theme.colors.accent};
-    border-radius: 12px;
+    border-radius: 5px;
+    
     transition: all 0.2s ease;
     
     &:hover {
@@ -555,33 +556,5 @@ export const TodoCard = styled.div<{ $isDone: boolean; $color: string }>`
     .todo-actions {
         display: flex;
         gap: 8px;
-
-        button {
-            padding: 8px 14px;
-            border-radius: 8px;
-            font-size: 0.85rem;
-            font-weight: 500;
-            cursor: pointer;
-            border: none;
-            transition: all 0.2s;
-        }
-
-        .toggle-btn {
-            background-color: ${(props) => props.$isDone ? props.theme.colors.accent : props.theme.colors.primary + '1A'};
-            color: ${(props) => props.$isDone ? props.theme.colors.textSecondary : props.theme.colors.primary};
-            
-            &:hover {
-                background-color: ${(props) => props.$isDone ? props.theme.colors.textSecondary + '33' : props.theme.colors.primary + '33'};
-            }
-        }
-
-        .delete-btn {
-            background-color: ${(props) => props.theme.colors.error}1A;
-            color: ${(props) => props.theme.colors.error};
-
-            &:hover {
-                background-color: ${(props) => props.theme.colors.error}33;
-            }
-        }
     }
 `;

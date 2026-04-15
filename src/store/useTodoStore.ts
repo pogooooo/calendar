@@ -11,6 +11,8 @@ export interface TodoType {
     isAllDay: boolean;
     location?: string | null;
     repeat: number;
+    repeatEndDate?: string | number | Date | null;
+    repeatCount?: number | null;
 }
 
 type AuthFetch = (url: string, init?: RequestInit) => Promise<Response>;
@@ -91,6 +93,8 @@ const useTodoStore = create<TodoState>((set, get) => ({
             repeat: data.repeat || 0,
             startAt: data.startAt || new Date().toISOString(),
             endAt: data.endAt || new Date().toISOString(),
+            repeatEndDate: data.repeatEndDate || null,
+            repeatCount: data.repeatCount || null,
         };
 
         set((state) => ({ todos: [newTodo, ...state.todos] }));
@@ -104,7 +108,6 @@ const useTodoStore = create<TodoState>((set, get) => ({
 
             if (res.ok) {
                 const serverTodo = await res.json();
-                // 임시 ID를 서버에서 생성된 실제 ID로 교체
                 set((state) => ({
                     todos: state.todos.map(t => t.id === tempId ? serverTodo : t)
                 }));

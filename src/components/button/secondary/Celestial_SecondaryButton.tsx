@@ -20,6 +20,10 @@ const SecondaryButton = styled.button<ButtonProps>`
     font-size: ${(props) => props.theme.fontSizes.body};
     background-color: transparent;
     cursor: pointer;
+    
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
     ${(props) => {
         if (props.$variant === 'danger') {
@@ -29,7 +33,7 @@ const SecondaryButton = styled.button<ButtonProps>`
                 
                 &:hover {
                     border-color: ${(props) => props.theme.colors.error};
-                    box-shadow: 0 0 10px ${(props) => props.theme.colors.error};
+                    box-shadow: 0 0 5px ${(props) => props.theme.colors.error};
                 }
             `;
         }

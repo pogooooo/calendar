@@ -6,8 +6,9 @@ import { Slot } from "@radix-ui/react-slot";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, X } from 'lucide-react';
 
+import { useExpandedTodos, ExpandedTodoType } from "@/hooks/useExpandedTodos";
 import { WeekProps } from "../WeekCalendar";
-import { TodoType } from "@/types/calendar";
+import { TodoType } from "@/store/useTodoStore";
 import Arrow from "@/assets/celestial/Arrow";
 import { formatDate, isSameDay, isBetween, getWeekDates } from "@/utils/DateUtils";
 import { useTodoLevels } from "@/hooks/useTodoLevels";
@@ -19,6 +20,7 @@ import MoreModal from "@/components/modal/moreModal/MoreModal";
 import TodoContextMenu from "../../contextMenu/TodoContextMenu";
 import useTodoStore from "@/store/useTodoStore";
 import useAuthStore from "@/store/useAuthStore";
+import { CategoryType } from "@/store/useCategoryStore";
 
 const slideVariants = {
     enter: (direction: number) => ({
@@ -72,63 +74,11 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
             return (todos as TodoType[]).filter(todo => selectedCategoryIds.includes(todo.categoryId));
         }, [todos, selectedCategoryIds]);
 
-        const expandedTodos = React.useMemo(() => {
-            const expanded: TodoType[] = [];
-
-            const weekStart = new Date(weekDates[0]);
-            weekStart.setHours(0, 0, 0, 0);
-            const weekEnd = new Date(weekDates[6]);
-            weekEnd.setHours(23, 59, 59, 999);
-
-            filteredTodos.forEach(todo => {
-                if (!todo.startAt || !todo.endAt) return;
-
-                if (!todo.repeat || todo.repeat <= 0) {
-                    expanded.push(todo);
-                    return;
-                }
-
-                const R = todo.repeat;
-                let currentStart = new Date(todo.startAt);
-                let currentEnd = new Date(todo.endAt);
-                const durationMs = currentEnd.getTime() - currentStart.getTime();
-
-                const repeatIntervalMs = durationMs + (R * 24 * 60 * 60 * 1000);
-
-                if (currentEnd.getTime() < weekStart.getTime()) {
-                    const msBefore = weekStart.getTime() - currentEnd.getTime();
-                    const intervalsToSkip = Math.floor(msBefore / repeatIntervalMs);
-
-                    if (intervalsToSkip > 0) {
-                        currentStart = new Date(currentStart.getTime() + (intervalsToSkip * repeatIntervalMs));
-                        currentEnd = new Date(currentStart.getTime() + durationMs);
-                    }
-                }
-
-                let instanceCount = 0;
-                while (currentStart.getTime() <= weekEnd.getTime()) {
-                    if (currentEnd.getTime() >= weekStart.getTime()) {
-                        expanded.push({
-                            ...todo,
-                            id: `${todo.id}-rep-${currentStart.getTime()}`,
-                            startAt: currentStart.toISOString(),
-                            endAt: currentEnd.toISOString(),
-                            // @ts-ignore
-                            originalTodo: todo
-                        });
-                    }
-
-                    const nextStartMs = currentEnd.getTime() + (R * 24 * 60 * 60 * 1000);
-                    currentStart = new Date(nextStartMs);
-                    currentEnd = new Date(currentStart.getTime() + durationMs);
-
-                    instanceCount++;
-                    if (instanceCount > 1000) break;
-                }
-            });
-
-            return expanded;
-        }, [filteredTodos, weekDates]);
+        const expandedTodos = useExpandedTodos(
+            filteredTodos,
+            weekDates[0],
+            weekDates[6]
+        );
 
         const { todoLevels, maxLevel } = useTodoLevels(expandedTodos, weekDates);
 
@@ -162,9 +112,8 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
             );
         };
 
-        const handleContextMenu = (e: React.MouseEvent, todo: TodoType) => {
+        const handleContextMenu = (e: React.MouseEvent, todo: ExpandedTodoType) => {
             e.preventDefault();
-            // @ts-ignore
             const actualTodo = todo.originalTodo || todo;
             setContextMenu({ x: e.clientX, y: e.clientY, todo: actualTodo });
         };
@@ -202,7 +151,7 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
                     <hr/>
 
                     <CategoryFilter
-                        categories={categories}
+                        categories={categories as CategoryType[]}
                         selectedCategoryIds={selectedCategoryIds}
                         onToggle={toggleCategory}
                     />
@@ -257,7 +206,7 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
                                                         if (todoAtThisLevel) {
                                                             const isStart = isSameDay(date, new Date(todoAtThisLevel.startAt!));
                                                             const isEnd = isSameDay(date, new Date(todoAtThisLevel.endAt!));
-                                                            const color = categories.find(c => c.id === todoAtThisLevel.categoryId)?.color;
+                                                            const color = categories.find((c: CategoryType) => c.id === todoAtThisLevel.categoryId)?.color;
                                                             const isDone = todoAtThisLevel.check === "done";
 
                                                             return (
@@ -299,7 +248,7 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
                     onClose={() => setMoreModalDate(null)}
                     date={moreModalDate}
                     todos={expandedTodos}
-                    categories={categories}
+                    categories={categories as CategoryType[]}
                     handleContextMenu={handleContextMenu}
                 />
 
@@ -315,7 +264,7 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
                     isOpen={isModalOpen}
                     onClose={() => setIsModalOpen(false)}
                     todo={modalTodo}
-                    categories={categories}
+                    categories={categories as CategoryType[]}
                     selectedDate={selectedDateForModal}
                 />
 

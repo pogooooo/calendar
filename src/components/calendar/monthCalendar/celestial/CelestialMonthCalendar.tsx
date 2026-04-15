@@ -6,6 +6,7 @@ import { Slot } from "@radix-ui/react-slot";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, ChevronLeft, ChevronRight, X } from 'lucide-react';
 
+import { useExpandedTodos, ExpandedTodoType } from "@/hooks/useExpandedTodos";
 import { MonthProps } from "../MonthCalendar";
 import { TodoType } from "@/store/useTodoStore";
 import { isSameDay, isBetween } from "@/utils/DateUtils";
@@ -18,6 +19,20 @@ import MoreModal from "@/components/modal/moreModal/MoreModal";
 import TodoContextMenu from "../../contextMenu/TodoContextMenu";
 import useTodoStore from "@/store/useTodoStore";
 import useAuthStore from "@/store/useAuthStore";
+import { CategoryType } from "@/store/useCategoryStore";
+
+interface WeekRowProps {
+    dates: Date[];
+    todos: ExpandedTodoType[];
+    categories: CategoryType[];
+    todayStr: string;
+    currentMonth: number;
+    handleCreateTodo: (date: Date) => void;
+    handleContextMenu: (e: React.MouseEvent, todo: ExpandedTodoType) => void;
+    selectedDate?: Date;
+    onCellClick?: (date: Date) => void;
+    setMoreModalDate: (date: Date | null) => void;
+}
 
 const slideVariants = {
     enter: (direction: number) => ({
@@ -36,7 +51,7 @@ const slideVariants = {
 
 const MAX_VISIBLE_LEVELS = 2;
 
-const WeekRow = ({ dates, todos, categories, todayStr, currentMonth, handleCreateTodo, handleContextMenu, selectedDate, onCellClick, setMoreModalDate }: any) => {
+const WeekRow = ({ dates, todos, categories, todayStr, currentMonth, handleCreateTodo, handleContextMenu, selectedDate, onCellClick, setMoreModalDate }: WeekRowProps) => {
     const weekTodos = React.useMemo(() => {
         return todos.filter((todo: TodoType) => {
             if (!todo.startAt || !todo.endAt) return false;
@@ -92,7 +107,7 @@ const WeekRow = ({ dates, todos, categories, todayStr, currentMonth, handleCreat
                                 if (todoAtThisLevel && todoAtThisLevel.startAt && todoAtThisLevel.endAt) {
                                     const isStart = isSameDay(date, new Date(todoAtThisLevel.startAt as string | number | Date));
                                     const isEnd = isSameDay(date, new Date(todoAtThisLevel.endAt as string | number | Date));
-                                    const color = categories.find((c: any) => c.id === todoAtThisLevel.categoryId)?.color;
+                                    const color = categories.find((c: CategoryType) => c.id === todoAtThisLevel.categoryId)?.color;
                                     const isDone = todoAtThisLevel.check === "done";
 
                                     return (
@@ -180,69 +195,11 @@ const CelestialMonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
             return chunked;
         }, [currentDate]);
 
-        const expandedTodos = React.useMemo(() => {
-            if (!weeks || weeks.length === 0) return filteredTodos;
-
-            const expanded: TodoType[] = [];
-
-            const monthStart = new Date(weeks[0][0]);
-            monthStart.setHours(0, 0, 0, 0);
-            const monthEnd = new Date(weeks[5][6]);
-            monthEnd.setHours(23, 59, 59, 999);
-
-            filteredTodos.forEach(todo => {
-                if (!todo.startAt || !todo.endAt) return;
-
-                if (!todo.repeat || todo.repeat <= 0) {
-                    expanded.push(todo);
-                    return;
-                }
-
-                const R = todo.repeat;
-                let currentStart = new Date(todo.startAt);
-                let currentEnd = new Date(todo.endAt);
-
-                const startDayOnly = new Date(currentStart);
-                startDayOnly.setHours(0, 0, 0, 0);
-                const endDayOnly = new Date(currentEnd);
-                endDayOnly.setHours(0, 0, 0, 0);
-
-                const daysBetween = Math.round((endDayOnly.getTime() - startDayOnly.getTime()) / (1000 * 60 * 60 * 24));
-                const intervalDays = daysBetween + R;
-                const repeatIntervalMs = intervalDays * 24 * 60 * 60 * 1000;
-
-                if (currentEnd.getTime() < monthStart.getTime()) {
-                    const msBefore = monthStart.getTime() - currentEnd.getTime();
-                    const intervalsToSkip = Math.floor(msBefore / repeatIntervalMs);
-                    if (intervalsToSkip > 0) {
-                        currentStart.setDate(currentStart.getDate() + (intervalsToSkip * intervalDays));
-                        currentEnd.setDate(currentEnd.getDate() + (intervalsToSkip * intervalDays));
-                    }
-                }
-
-                let instanceCount = 0;
-                while (currentStart.getTime() <= monthEnd.getTime()) {
-                    if (currentEnd.getTime() >= monthStart.getTime()) {
-                        expanded.push({
-                            ...todo,
-                            id: `${todo.id}-rep-${currentStart.getTime()}`,
-                            startAt: currentStart.toISOString(),
-                            endAt: currentEnd.toISOString(),
-                            // @ts-ignore
-                            originalTodo: todo
-                        });
-                    }
-
-                    currentStart.setDate(currentStart.getDate() + intervalDays);
-                    currentEnd.setDate(currentEnd.getDate() + intervalDays);
-
-                    instanceCount++;
-                    if (instanceCount > 1000) break;
-                }
-            });
-
-            return expanded;
-        }, [filteredTodos, weeks]);
+        const expandedTodos = useExpandedTodos(
+            filteredTodos,
+            weeks.length > 0 ? weeks[0][0] : undefined, // 첫째 주 일요일
+            weeks.length > 0 ? weeks[5][6] : undefined  // 마지막 주 토요일
+        );
 
         const todayStr = React.useMemo(() => new Date().toDateString(), []);
 
@@ -268,9 +225,8 @@ const CelestialMonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
             );
         };
 
-        const handleContextMenu = (e: React.MouseEvent, todo: TodoType) => {
+        const handleContextMenu = (e: React.MouseEvent, todo: ExpandedTodoType) => {
             e.preventDefault();
-            // @ts-ignore
             const actualTodo = todo.originalTodo || todo;
             setContextMenu({ x: e.clientX, y: e.clientY, todo: actualTodo });
         };

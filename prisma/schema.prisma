@@ -92,14 +92,15 @@ model Todo {
   endAt     DateTime?
   isAllDay  Boolean   @default(false)
   location  String?
-  repeat    Int @default(0)
+  repeat    Int       @default(0)
 
-  // 카테고리 (Category와 1:N 관계)
+  repeatEndDate DateTime?
+  repeatCount   Int?
+
   category   Category @relation(fields: [categoryId], references: [id])
   categoryId String
 
-  // 체크리스트 아이템 목록
-  check      String?   // done, none
+  check      String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

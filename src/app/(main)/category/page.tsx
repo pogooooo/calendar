@@ -291,22 +291,30 @@ export default function CategoryPage() {
                                                     </span>
                                                 </div>
                                                 <div className="todo-actions">
-                                                    <button
-                                                        className="toggle-btn"
-                                                        onClick={() => toggleTodo(authFetch, todo.id)}
+                                                    <SecondaryButton
+                                                        $width={60}
+                                                        $height={32}
+                                                        $variant={todo.check === 'done' ? 'default' : 'primary'}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            toggleTodo(authFetch, todo.id);
+                                                        }}
                                                     >
                                                         {todo.check === 'done' ? '취소' : '완료'}
-                                                    </button>
-                                                    <button
-                                                        className="delete-btn"
-                                                        onClick={() => {
+                                                    </SecondaryButton>
+                                                    <SecondaryButton
+                                                        $width={60}
+                                                        $height={32}
+                                                        $variant="danger"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
                                                             if (window.confirm("정말 이 할 일을 삭제하시겠습니까?")) {
                                                                 deleteTodo(authFetch, todo.id);
                                                             }
                                                         }}
                                                     >
                                                         삭제
-                                                    </button>
+                                                    </SecondaryButton>
                                                 </div>
                                             </S.TodoCard>
                                         ))}
