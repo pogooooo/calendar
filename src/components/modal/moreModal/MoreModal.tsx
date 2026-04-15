@@ -3,7 +3,8 @@
 import * as React from "react";
 import { useTheme } from "styled-components";
 import CelestialMoreModal from "./celestial/CelestialMoreModal";
-import { CategoryType, TodoType } from "@/types/calendar";
+import { CategoryType } from "@/store/useCategoryStore";
+import {TodoType} from "@/store/useTodoStore";
 
 export interface MoreModalProps {
     isOpen: boolean;

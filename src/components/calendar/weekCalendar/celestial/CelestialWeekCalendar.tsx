@@ -4,154 +4,49 @@ import * as React from "react";
 import { useTheme } from "styled-components";
 import { Slot } from "@radix-ui/react-slot";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, X } from 'lucide-react';
+import { Plus } from 'lucide-react';
 
-import { useExpandedTodos, ExpandedTodoType } from "@/hooks/useExpandedTodos";
-import { WeekProps } from "../WeekCalendar";
-import { TodoType } from "@/store/useTodoStore";
+import { WeekThemeProps } from "../WeekCalendar";
+import { isSameDay, isBetween } from "@/utils/DateUtils";
 import Arrow from "@/assets/celestial/Arrow";
-import { formatDate, isSameDay, isBetween, getWeekDates } from "@/utils/DateUtils";
-import { useTodoLevels } from "@/hooks/useTodoLevels";
 import * as S from "./CelestialWeekCalendar.styles";
 import CategoryFilter from "@/components/calendar/celestial/categoryFilter/CategoryFilter";
 import AnimatedDateText from "@/components/calendar/celestial/animatedDateText/AnimatedDateText";
 import TodoModal from "@/components/modal/todoModal/TodoModal";
 import MoreModal from "@/components/modal/moreModal/MoreModal";
 import TodoContextMenu from "@/components/calendar/celestial/contextMenu/TodoContextMenu";
-import useTodoStore from "@/store/useTodoStore";
-import useAuthStore from "@/store/useAuthStore";
-import { CategoryType } from "@/store/useCategoryStore";
 
 const slideVariants = {
-    enter: (direction: number) => ({
-        x: direction > 0 ? 100 : -100,
-        opacity: 0,
-    }),
-    center: {
-        x: 0,
-        opacity: 1,
-    },
-    exit: (direction: number) => ({
-        x: direction < 0 ? 100 : -100,
-        opacity: 0,
-    }),
+    enter: (direction: number) => ({ x: direction > 0 ? 100 : -100, opacity: 0 }),
+    center: { x: 0, opacity: 1 },
+    exit: (direction: number) => ({ x: direction < 0 ? 100 : -100, opacity: 0 }),
 };
 
 const MAX_VISIBLE_LEVELS = 3;
 
-const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
-    ({ asChild, todos = [], categories = [], ...props }, ref) => {
+type CelestialWeekProps = WeekThemeProps & Omit<React.HTMLAttributes<HTMLDivElement>, 'contextMenu'>;
+
+const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, CelestialWeekProps>(
+    ({
+         asChild, currentDate, direction, selectedCategoryIds,
+         isModalOpen, modalTodo, selectedDateForModal, todoContextMenu,
+         moreModalDate, weekDates, expandedTodos, todayStr, dateRangeText,
+         todoLevels, maxLevel, categories, selectedDate, onDateChange,
+         handlePrevWeek, handleNextWeek, toggleCategory, handleContextMenu,
+         handleQuickEdit, handleQuickDelete, handleQuickToggle, handleCreateTodo,
+         setIsModalOpen, setMoreModalDate, setTodoContextMenu,
+         ...props
+     }, ref) => {
         const Component = asChild ? Slot : 'div';
         const theme = useTheme();
 
-        const [moreModalDate, setMoreModalDate] = React.useState<Date | null>(null);
-        const [currentDate, setCurrentDate] = React.useState(new Date());
-        const [direction, setDirection] = React.useState(0);
-        const [selectedCategoryIds, setSelectedCategoryIds] = React.useState<string[]>([]);
-
-        const [isModalOpen, setIsModalOpen] = React.useState(false);
-        const [modalTodo, setModalTodo] = React.useState<TodoType | null>(null);
-        const [selectedDateForModal, setSelectedDateForModal] = React.useState<Date | undefined>(undefined);
-
-        const [contextMenu, setContextMenu] = React.useState<{ x: number, y: number, todo: TodoType } | null>(null);
-        const { deleteTodo, toggleTodo } = useTodoStore();
-        const accessToken = useAuthStore((state) => state.accessToken);
-
-        const authFetch = React.useCallback(async (url: string, init?: RequestInit) => {
-            return fetch(url, { ...init, headers: { ...init?.headers, Authorization: `Bearer ${accessToken}` } });
-        }, [accessToken]);
-
-        const weekDates = React.useMemo(() => getWeekDates(currentDate), [currentDate]);
-        const todayStr = React.useMemo(() => new Date().toDateString(), []);
-
-        React.useEffect(() => {
-            if (categories.length > 0 && selectedCategoryIds.length === 0) {
-                setSelectedCategoryIds(categories.map(c => c.id));
-            }
-        }, [categories]);
-
-        const filteredTodos = React.useMemo(() => {
-            return (todos as TodoType[]).filter(todo => selectedCategoryIds.includes(todo.categoryId));
-        }, [todos, selectedCategoryIds]);
-
-        const expandedTodos = useExpandedTodos(
-            filteredTodos,
-            weekDates[0],
-            weekDates[6]
-        );
-
-        const { todoLevels, maxLevel } = useTodoLevels(expandedTodos, weekDates);
-
-        const dateRangeText = React.useMemo(() => {
-            return `${formatDate(weekDates[0])} - ${formatDate(weekDates[6])}`;
-        }, [weekDates]);
-
-        const handlePrevWeek = () => {
-            setDirection(-1);
-            setCurrentDate(prev => {
-                const newDate = new Date(prev);
-                newDate.setDate(prev.getDate() - 7);
-                return newDate;
-            });
-        };
-
-        const handleNextWeek = () => {
-            setDirection(1);
-            setCurrentDate(prev => {
-                const newDate = new Date(prev);
-                newDate.setDate(prev.getDate() + 7);
-                return newDate;
-            });
-        };
-
-        const toggleCategory = (categoryId: string) => {
-            setSelectedCategoryIds(prev =>
-                prev.includes(categoryId)
-                    ? prev.filter(id => id !== categoryId)
-                    : [...prev, categoryId]
-            );
-        };
-
-        const handleContextMenu = (e: React.MouseEvent, todo: ExpandedTodoType) => {
-            e.preventDefault();
-            const actualTodo = todo.originalTodo || todo;
-            setContextMenu({ x: e.clientX, y: e.clientY, todo: actualTodo });
-        };
-
-        const handleQuickEdit = (todo: TodoType) => {
-            setModalTodo(todo);
-            setIsModalOpen(true);
-            setContextMenu(null);
-        };
-
-        const handleQuickDelete = async (todo: TodoType) => {
-            if (window.confirm("정말 삭제하시겠습니까?")) {
-                await deleteTodo(authFetch, todo.id);
-            }
-            setContextMenu(null);
-        };
-
-        const handleQuickToggle = async (todo: TodoType) => {
-            await toggleTodo(authFetch, todo.id);
-            setContextMenu(null);
-        };
-
-        const handleCreateTodo = (date: Date) => {
-            setModalTodo(null);
-            setSelectedDateForModal(date);
-            setIsModalOpen(true);
-        };
-
         return (
             <S.CelestialCalendarWrapper as={Component} ref={ref} {...props}>
-
                 <S.DateRangeDisplay>
                     <AnimatedDateText text={dateRangeText} direction={direction} />
-
                     <hr/>
-
                     <CategoryFilter
-                        categories={categories as CategoryType[]}
+                        categories={categories}
                         selectedCategoryIds={selectedCategoryIds}
                         onToggle={toggleCategory}
                     />
@@ -206,7 +101,7 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
                                                         if (todoAtThisLevel) {
                                                             const isStart = isSameDay(date, new Date(todoAtThisLevel.startAt!));
                                                             const isEnd = isSameDay(date, new Date(todoAtThisLevel.endAt!));
-                                                            const color = categories.find((c: CategoryType) => c.id === todoAtThisLevel.categoryId)?.color;
+                                                            const color = categories.find(c => c.id === todoAtThisLevel.categoryId)?.color;
                                                             const isDone = todoAtThisLevel.check === "done";
 
                                                             return (
@@ -248,13 +143,13 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
                     onClose={() => setMoreModalDate(null)}
                     date={moreModalDate}
                     todos={expandedTodos}
-                    categories={categories as CategoryType[]}
+                    categories={categories}
                     handleContextMenu={handleContextMenu}
                 />
 
                 <TodoContextMenu
-                    menuState={contextMenu}
-                    onClose={() => setContextMenu(null)}
+                    menuState={todoContextMenu}
+                    onClose={() => setTodoContextMenu(null)}
                     onToggle={handleQuickToggle}
                     onEdit={handleQuickEdit}
                     onDelete={handleQuickDelete}
@@ -264,7 +159,7 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
                     isOpen={isModalOpen}
                     onClose={() => setIsModalOpen(false)}
                     todo={modalTodo}
-                    categories={categories as CategoryType[]}
+                    categories={categories}
                     selectedDate={selectedDateForModal}
                 />
 

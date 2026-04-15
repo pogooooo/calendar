@@ -1,46 +1,19 @@
 "use client";
 
 import * as React from "react";
-import { CategoryAddModalProps } from "../CategoryAddModal";
+import { CategoryAddThemeProps } from "../CategoryAddModal";
 import * as S from "./CelestialCategoryAddModal.styles";
 import { X, Palette, AlignLeft } from 'lucide-react';
 import SecondaryButton from "@/components/button/secondary/SecondaryButton";
 import CelestialBaseModal from "@/components/modal/baseModal/celestial/CelestialBaseModal";
 
-export default function CelestialCategoryAddModal({ isOpen, onClose, onAdd }: CategoryAddModalProps) {
-    const [name, setName] = React.useState("");
-    const [color, setColor] = React.useState("");
-    const [description, setDescription] = React.useState("");
-    const [isSubmitting, setIsSubmitting] = React.useState(false);
-
-    React.useEffect(() => {
-        if (isOpen) {
-            setName("");
-            setColor('#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0'));
-            setDescription("");
-            setIsSubmitting(false);
-        }
-    }, [isOpen]);
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-
-        const trimmedName = name.trim();
-        if (!trimmedName) {
-            alert("카테고리 이름을 입력해주세요.");
-            return;
-        }
-
-        setIsSubmitting(true);
-        try {
-            await onAdd({ name: trimmedName, color, description: description.trim() });
-            onClose();
-        } catch (error) {
-            console.error(error);
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
+export default function CelestialCategoryAddModal({
+                                                      isOpen, onClose,
+                                                      name, setName,
+                                                      color, setColor,
+                                                      description, setDescription,
+                                                      isSubmitting, handleSubmit
+                                                  }: CategoryAddThemeProps) {
 
     return (
         <CelestialBaseModal isOpen={isOpen} onClose={onClose} maxWidth="400px">

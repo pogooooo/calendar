@@ -24,9 +24,7 @@ const Profile = (props: {width: number}) => {
 
             <SidebarMenuButton $height={30} $width={props.width-40} label="설정"><Setting width={26}/></SidebarMenuButton>
 
-            <SidebarMenuButton $height={30} $width={props.width-40} label="홈" onClick={() => {router.push("/")}}>
-                <Home width={26} />
-            </SidebarMenuButton>
+            <SidebarMenuButton $height={30} $width={props.width-40} label="홈" onClick={() => {router.push("/")}}><Home width={26} /></SidebarMenuButton>
         </ProfileWrapper>
     )
 }
