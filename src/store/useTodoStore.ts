@@ -39,16 +39,35 @@ const useTodoStore = create<TodoState>((set, get) => ({
         try {
             let url = '/api/todo';
             if (params) {
-                const query = new URLSearchParams(params as any).toString();
-                url += `?${query}`;
+                const query = new URLSearchParams();
+                if (params.start) query.append('start', params.start);
+                if (params.end) query.append('end', params.end);
+                if (params.categoryId) query.append('categoryId', params.categoryId);
+
+                const queryString = query.toString();
+                if (queryString) {
+                    url += `?${queryString}`;
+                }
             }
             const res = await authFetch(url);
+
+            if (res.status === 401) {
+                set({ isLoading: false });
+                return;
+            }
+
             if (!res.ok) throw new Error("할 일 데이터를 불러오는 데 실패했습니다.");
 
             const todos = await res.json();
             set({ todos, isLoading: false });
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : "알 수 없는 오류가 발생했습니다.";
+
+            if (message === "Session expired") {
+                set({ isLoading: false });
+                return;
+            }
+
             set({ error: message, isLoading: false });
             console.error("[TODO_FETCH_ERROR]", err);
         }
@@ -71,6 +90,7 @@ const useTodoStore = create<TodoState>((set, get) => ({
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ id: todoId, check: newStatus }),
             });
+            if (res.status === 401) return;
             if (!res.ok) throw new Error();
         } catch (err) {
             set({ todos: previousTodos });
