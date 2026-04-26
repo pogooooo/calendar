@@ -27,7 +27,12 @@ const Menu = (props: { width: number, categories: CategoryType[] }) => {
                 <Calendar size={26}/>
             </SidebarMenuButton>
 
-            <SidebarMenuButton $height={30} $width={props.width - 40} label="프로젝트">
+            <SidebarMenuButton
+                $height={30}
+                $width={props.width - 40}
+                label="프로젝트"
+                onClick={() => { router.push("/project") }}
+            >
                 <Kanban size={26}/>
             </SidebarMenuButton>
 
