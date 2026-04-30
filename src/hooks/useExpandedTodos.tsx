@@ -3,6 +3,8 @@ import { TodoType } from '@/store/useTodoStore';
 
 export interface ExpandedTodoType extends TodoType {
     originalTodo?: TodoType;
+    date?: Date;
+    isDone?: boolean;
 }
 
 export const useExpandedTodos = (
@@ -24,7 +26,17 @@ export const useExpandedTodos = (
             if (!todo.startAt || !todo.endAt) return;
 
             if (!todo.repeat || todo.repeat <= 0) {
-                expanded.push(todo);
+                const dateStr = new Date(todo.startAt).toISOString().split('T')[0];
+                const isDone = todo.completions?.some(c =>
+                    new Date(c.targetDate).toISOString().split('T')[0] === dateStr
+                );
+
+                expanded.push({
+                    ...todo,
+                    originalTodo: todo,
+                    date: new Date(todo.startAt),
+                    isDone: isDone || false
+                });
                 return;
             }
 
@@ -65,12 +77,19 @@ export const useExpandedTodos = (
                 }
 
                 if (currentEnd.getTime() >= startLimit.getTime()) {
+                    const dateStr = currentStart.toISOString().split('T')[0];
+                    const isDone = todo.completions?.some(c =>
+                        new Date(c.targetDate).toISOString().split('T')[0] === dateStr
+                    );
+
                     expanded.push({
                         ...todo,
                         id: `${todo.id}-rep-${currentStart.getTime()}`,
                         startAt: currentStart.toISOString(),
                         endAt: currentEnd.toISOString(),
-                        originalTodo: todo
+                        originalTodo: todo,
+                        date: new Date(currentStart),
+                        isDone: isDone || false
                     });
                 }
 

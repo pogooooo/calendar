@@ -104,10 +104,23 @@ model Todo {
   category   Category @relation(fields: [categoryId], references: [id])
   categoryId String
 
-  check      String?
+  completions TodoCompletion[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model TodoCompletion {
+  id          String   @id @default(cuid())
+
+  todo        Todo     @relation(fields: [todoId], references: [id], onDelete: Cascade)
+  todoId      String
+
+  targetDate  DateTime
+
+  createdAt   DateTime @default(now())
+
+  @@unique([todoId, targetDate])
 }
 
 model DailyTask {

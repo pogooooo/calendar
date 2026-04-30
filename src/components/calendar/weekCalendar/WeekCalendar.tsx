@@ -29,7 +29,7 @@ export interface WeekThemeProps {
     isModalOpen: boolean;
     modalTodo: TodoType | null;
     selectedDateForModal: Date | undefined;
-    todoContextMenu: { x: number, y: number, todo: TodoType } | null;
+    todoContextMenu: { x: number, y: number, todo: ExpandedTodoType } | null;
     moreModalDate: Date | null;
     weekDates: Date[];
     expandedTodos: ExpandedTodoType[];
@@ -42,13 +42,13 @@ export interface WeekThemeProps {
     handleNextWeek: () => void;
     toggleCategory: (categoryId: string) => void;
     handleContextMenu: (e: React.MouseEvent, todo: ExpandedTodoType) => void;
-    handleQuickEdit: (todo: TodoType) => void;
-    handleQuickDelete: (todo: TodoType) => void;
-    handleQuickToggle: (todo: TodoType) => void;
+    handleQuickEdit: (todo: ExpandedTodoType) => void;
+    handleQuickDelete: (todo: ExpandedTodoType) => void;
+    handleQuickToggle: (todo: ExpandedTodoType) => void;
     handleCreateTodo: (date: Date) => void;
     setIsModalOpen: (isOpen: boolean) => void;
     setMoreModalDate: (date: Date | null) => void;
-    setTodoContextMenu: (menu: { x: number, y: number, todo: TodoType } | null) => void;
+    setTodoContextMenu: (menu: { x: number, y: number, todo: ExpandedTodoType } | null) => void; // ✨ ExpandedTodoType
 
     categories: CategoryType[];
     selectedDate?: Date;
@@ -68,7 +68,8 @@ const WeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
         const [modalTodo, setModalTodo] = React.useState<TodoType | null>(null);
         const [selectedDateForModal, setSelectedDateForModal] = React.useState<Date | undefined>(undefined);
 
-        const [todoContextMenu, setTodoContextMenu] = React.useState<{ x: number, y: number, todo: TodoType } | null>(null);
+        // ✨ 컨텍스트 메뉴에 ExpandedTodoType 전체를 저장
+        const [todoContextMenu, setTodoContextMenu] = React.useState<{ x: number, y: number, todo: ExpandedTodoType } | null>(null);
         const [moreModalDate, setMoreModalDate] = React.useState<Date | null>(null);
 
         const { deleteTodo, toggleTodo } = useTodoStore();
@@ -131,25 +132,30 @@ const WeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
 
         const handleContextMenu = (e: React.MouseEvent, todo: ExpandedTodoType) => {
             e.preventDefault();
-            const actualTodo = todo.originalTodo || todo;
-            setTodoContextMenu({ x: e.clientX, y: e.clientY, todo: actualTodo });
+            setTodoContextMenu({ x: e.clientX, y: e.clientY, todo: todo });
         };
 
-        const handleQuickEdit = (todo: TodoType) => {
-            setModalTodo(todo);
+        const handleQuickEdit = (expandedTodo: ExpandedTodoType) => {
+            setModalTodo(expandedTodo.originalTodo || expandedTodo as unknown as TodoType);
             setIsModalOpen(true);
             setTodoContextMenu(null);
         };
 
-        const handleQuickDelete = async (todo: TodoType) => {
-            if (window.confirm("정말 삭제하시겠습니까?")) {
-                await deleteTodo(authFetch, todo.id);
+        const handleQuickDelete = async (expandedTodo: ExpandedTodoType) => {
+            const actualId = expandedTodo.originalTodo?.id || expandedTodo.id;
+            if (window.confirm("정말 삭제하시겠습니까? (반복 일정 전체가 삭제됩니다)")) {
+                await deleteTodo(authFetch, actualId);
             }
             setTodoContextMenu(null);
         };
 
-        const handleQuickToggle = async (todo: TodoType) => {
-            await toggleTodo(authFetch, todo.id);
+        const handleQuickToggle = async (expandedTodo: ExpandedTodoType) => {
+            const actualId = expandedTodo.originalTodo?.id || expandedTodo.id;
+            const targetDateStr = expandedTodo.date
+                ? expandedTodo.date.toISOString()
+                : new Date(expandedTodo.startAt || new Date()).toISOString();
+
+            await toggleTodo(authFetch, actualId, targetDateStr);
             setTodoContextMenu(null);
         };
 

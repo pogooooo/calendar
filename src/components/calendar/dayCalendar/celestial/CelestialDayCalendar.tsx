@@ -56,17 +56,17 @@ const CelestialDayCalendar = React.forwardRef<HTMLDivElement, CelestialDayProps>
 
                     <S.SideSection>
                         <S.TaskCard>
-                            <div className="card-header">To-do List</div>
+                            <div className="card-header">Temporary Task</div>
 
                             <S.TaskList>
                                 {tasks.map(task => (
                                     <S.TaskItem key={task.id} $isDone={task.isDone}>
-                                        <button className="check-btn" onClick={() => toggleDailyTask(task.id)}>
-                                            {task.isDone && <Check size={14} strokeWidth={3} />}
+                                        <button className="check-btn" onClick={() => toggleDailyTask(task)}>
+                                            {task.isDone && <Check size={14} strokeWidth={3}/>}
                                         </button>
-                                        <span className="task-text">{task.text}</span>
-                                        <button className="delete-btn" onClick={() => deleteDailyTask(task.id)}>
-                                            <Trash2 size={14} />
+                                        <span className="task-text">{task.title}</span>
+                                        <button className="delete-btn" onClick={() => deleteDailyTask(task)}>
+                                            <Trash2 size={14}/>
                                         </button>
                                     </S.TaskItem>
                                 ))}

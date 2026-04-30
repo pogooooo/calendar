@@ -102,7 +102,9 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, CelestialWeekProp
                                                             const isStart = isSameDay(date, new Date(todoAtThisLevel.startAt!));
                                                             const isEnd = isSameDay(date, new Date(todoAtThisLevel.endAt!));
                                                             const color = categories.find(c => c.id === todoAtThisLevel.categoryId)?.color;
-                                                            const isDone = todoAtThisLevel.check === "done";
+
+                                                            // ✨ 핵심 수정: check === 'done' 이 아니라 isDone을 사용
+                                                            const isDone = todoAtThisLevel.isDone;
 
                                                             return (
                                                                 <S.TodoBarItem key={todoAtThisLevel.id}

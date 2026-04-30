@@ -1,10 +1,15 @@
 import { create } from 'zustand';
 
+export interface TodoCompletionType {
+    id?: string;
+    targetDate: string;
+}
+
 export interface TodoType {
     id: string;
     title: string;
     categoryId: string;
-    check: "done" | "none";
+    completions: TodoCompletionType[];
     memo?: string | null;
     startAt?: string | number | Date | null;
     endAt?: string | number | Date | null;
@@ -23,7 +28,7 @@ interface TodoState {
     error: string | null;
 
     fetchTodos: (authFetch: AuthFetch, params?: { start?: string, end?: string, categoryId?: string }) => Promise<void>;
-    toggleTodo: (authFetch: AuthFetch, todoId: string) => Promise<void>;
+    toggleTodo: (authFetch: AuthFetch, todoId: string, targetDate: string) => Promise<void>;
     addTodo: (authFetch: AuthFetch, data: Partial<TodoType>) => Promise<void>;
     updateTodo: (authFetch: AuthFetch, todoId: string, data: Partial<TodoType>) => Promise<void>;
     deleteTodo: (authFetch: AuthFetch, todoId: string) => Promise<void>;
@@ -73,23 +78,31 @@ const useTodoStore = create<TodoState>((set, get) => ({
         }
     },
 
-    toggleTodo: async (authFetch, todoId) => {
+    toggleTodo: async (authFetch, todoId, targetDate) => {
         const previousTodos = get().todos;
         const target = previousTodos.find(t => t.id === todoId);
         if (!target) return;
 
-        const newStatus = target.check === "done" ? "none" : "done";
+        const targetDateStr = new Date(targetDate).toISOString().split('T')[0];
+        const isCompleted = target.completions?.some(c =>
+            new Date(c.targetDate).toISOString().split('T')[0] === targetDateStr
+        );
+
+        const newCompletions = isCompleted
+            ? (target.completions || []).filter(c => new Date(c.targetDate).toISOString().split('T')[0] !== targetDateStr) // 완료 해제
+            : [...(target.completions || []), { targetDate }];
 
         set((state) => ({
-            todos: state.todos.map(t => t.id === todoId ? { ...t, check: newStatus } : t)
+            todos: state.todos.map(t => t.id === todoId ? { ...t, completions: newCompletions } : t)
         }));
 
         try {
             const res = await authFetch('/api/todo', {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: todoId, check: newStatus }),
+                body: JSON.stringify({ id: todoId, targetDate }),
             });
+
             if (res.status === 401) return;
             if (!res.ok) throw new Error();
         } catch (err) {
@@ -106,7 +119,7 @@ const useTodoStore = create<TodoState>((set, get) => ({
             id: tempId,
             title: data.title || "새 할 일",
             categoryId: data.categoryId || "",
-            check: "none",
+            completions: [],
             isAllDay: data.isAllDay || false,
             memo: data.memo || null,
             location: data.location || null,

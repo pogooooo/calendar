@@ -7,7 +7,6 @@ import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 
 import { MonthThemeProps } from "../MonthCalendar";
 import { ExpandedTodoType } from "@/hooks/useExpandedTodos";
-import { TodoType } from "@/store/useTodoStore";
 import { isSameDay, isBetween } from "@/utils/DateUtils";
 import { useTodoLevels } from "@/hooks/useTodoLevels";
 import { CategoryType } from "@/store/useCategoryStore";
@@ -40,7 +39,7 @@ const WeekRow = ({
                  }: WeekRowProps) => {
 
     const weekTodos = React.useMemo(() => {
-        return todos.filter((todo: TodoType) => {
+        return todos.filter((todo: ExpandedTodoType) => {
             if (!todo.startAt || !todo.endAt) return false;
             const start = new Date(todo.startAt as string | number | Date);
             const end = new Date(todo.endAt as string | number | Date);
@@ -59,7 +58,7 @@ const WeekRow = ({
                 const isCurrentMonth = date.getMonth() === currentMonth;
                 const isSelected = selectedDate ? date.toDateString() === selectedDate.toDateString() : false;
 
-                const dayTodos = weekTodos.filter((todo: TodoType) => {
+                const dayTodos = weekTodos.filter((todo: ExpandedTodoType) => {
                     if (!todo.startAt || !todo.endAt) return false;
                     return isBetween(date, todo.startAt, todo.endAt);
                 });
@@ -82,13 +81,15 @@ const WeekRow = ({
                         </div>
                         <S.TodoBarList>
                             {Array.from({ length: Math.min(maxLevel, MAX_VISIBLE_LEVELS) }).map((_, levelIndex) => {
-                                const todoAtThisLevel = dayTodos.find((t: TodoType) => todoLevels[t.id] === levelIndex);
+                                const todoAtThisLevel = dayTodos.find((t: ExpandedTodoType) => todoLevels[t.id] === levelIndex);
 
                                 if (todoAtThisLevel && todoAtThisLevel.startAt && todoAtThisLevel.endAt) {
                                     const isStart = isSameDay(date, new Date(todoAtThisLevel.startAt as string | number | Date));
                                     const isEnd = isSameDay(date, new Date(todoAtThisLevel.endAt as string | number | Date));
                                     const color = categories.find((c: CategoryType) => c.id === todoAtThisLevel.categoryId)?.color;
-                                    const isDone = todoAtThisLevel.check === "done";
+
+                                    // ✨ 핵심: check 필드 검사 대신 useExpandedTodos에서 생성한 isDone 프로퍼티 사용
+                                    const isDone = todoAtThisLevel.isDone;
 
                                     return (
                                         <S.TodoBarItem key={todoAtThisLevel.id}

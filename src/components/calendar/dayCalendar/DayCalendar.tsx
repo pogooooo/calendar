@@ -23,12 +23,12 @@ export interface DayThemeProps {
     formattedDate: string;
     hours: number[];
     getSlotColor: (hour: number, slotIdx: number) => string | null;
-    tasks: { id: string; text: string; isDone: boolean }[];
+    tasks: { id: string; title: string; isDone: boolean }[];
     newTaskText: string;
     setNewTaskText: (text: string) => void;
     handleAddTask: (e: React.FormEvent) => void;
-    toggleDailyTask: (id: string) => void;
-    deleteDailyTask: (id: string) => void;
+    toggleDailyTask: (task: { id: string; title: string; isDone: boolean }) => void;
+    deleteDailyTask: (task: { id: string; title: string; isDone: boolean }) => void;
     localMemo: string;
     setLocalMemo: (text: string) => void;
     handleMemoBlur: () => void;
@@ -93,15 +93,21 @@ const DayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
         const hours = Array.from({ length: 24 }, (_, i) => i);
         const formattedDate = `${selectedDate.getFullYear()}년 ${selectedDate.getMonth() + 1}월 ${selectedDate.getDate()}일`;
 
-        const handleToggleTask = (id: string) => toggleDailyTask(authFetch, id);
-        const handleDeleteTask = (id: string) => deleteDailyTask(authFetch, id);
+        const handleToggleTask = (task: { id: string; title: string; isDone: boolean }) => toggleDailyTask(authFetch, task.id);
+        const handleDeleteTask = (task: { id: string; title: string; isDone: boolean }) => deleteDailyTask(authFetch, task.id);
+
+        const mappedTasks = tasks.map((t: any) => ({
+            id: t.id,
+            title: t.title || t.text,
+            isDone: t.isDone
+        }));
 
         const themeProps: DayThemeProps = {
             asChild,
             formattedDate,
             hours,
             getSlotColor,
-            tasks,
+            tasks: mappedTasks,
             newTaskText,
             setNewTaskText,
             handleAddTask,

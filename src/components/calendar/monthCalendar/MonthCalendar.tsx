@@ -26,7 +26,7 @@ export interface MonthThemeProps {
     isModalOpen: boolean;
     modalTodo: TodoType | null;
     selectedDateForModal: Date | undefined;
-    contextMenu: { x: number, y: number, todo: TodoType } | null;
+    contextMenu: { x: number, y: number, todo: ExpandedTodoType } | null;
     moreModalDate: Date | null;
     weeks: Date[][];
     expandedTodos: ExpandedTodoType[];
@@ -37,13 +37,13 @@ export interface MonthThemeProps {
     handleNextMonth: () => void;
     toggleCategory: (categoryId: string) => void;
     handleContextMenu: (e: React.MouseEvent, todo: ExpandedTodoType) => void;
-    handleQuickEdit: (todo: TodoType) => void;
-    handleQuickDelete: (todo: TodoType) => void;
-    handleQuickToggle: (todo: TodoType) => void;
+    handleQuickEdit: (todo: ExpandedTodoType) => void;
+    handleQuickDelete: (todo: ExpandedTodoType) => void;
+    handleQuickToggle: (todo: ExpandedTodoType) => void;
     handleCreateTodo: (date: Date) => void;
     setIsModalOpen: (isOpen: boolean) => void;
     setMoreModalDate: (date: Date | null) => void;
-    setContextMenu: (menu: { x: number, y: number, todo: TodoType } | null) => void;
+    setContextMenu: (menu: { x: number, y: number, todo: ExpandedTodoType } | null) => void;
 
     categories: CategoryType[];
     selectedDate?: Date;
@@ -63,7 +63,7 @@ const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
         const [modalTodo, setModalTodo] = React.useState<TodoType | null>(null);
         const [selectedDateForModal, setSelectedDateForModal] = React.useState<Date | undefined>(undefined);
 
-        const [contextMenu, setContextMenu] = React.useState<{ x: number, y: number, todo: TodoType } | null>(null);
+        const [contextMenu, setContextMenu] = React.useState<{ x: number, y: number, todo: ExpandedTodoType } | null>(null);
         const [moreModalDate, setMoreModalDate] = React.useState<Date | null>(null);
 
         const { deleteTodo, toggleTodo } = useTodoStore();
@@ -133,25 +133,31 @@ const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
 
         const handleContextMenu = (e: React.MouseEvent, todo: ExpandedTodoType) => {
             e.preventDefault();
-            const actualTodo = todo.originalTodo || todo;
-            setContextMenu({ x: e.clientX, y: e.clientY, todo: actualTodo });
+            setContextMenu({ x: e.clientX, y: e.clientY, todo: todo });
         };
 
-        const handleQuickEdit = (todo: TodoType) => {
-            setModalTodo(todo);
+        const handleQuickEdit = (expandedTodo: ExpandedTodoType) => {
+            setModalTodo(expandedTodo.originalTodo || expandedTodo as unknown as TodoType);
             setIsModalOpen(true);
             setContextMenu(null);
         };
 
-        const handleQuickDelete = async (todo: TodoType) => {
-            if (window.confirm("정말 삭제하시겠습니까?")) {
-                await deleteTodo(authFetch, todo.id);
+        const handleQuickDelete = async (expandedTodo: ExpandedTodoType) => {
+            const actualId = expandedTodo.originalTodo?.id || expandedTodo.id;
+            if (window.confirm("정말 삭제하시겠습니까? (반복 일정 전체가 삭제됩니다)")) {
+                await deleteTodo(authFetch, actualId);
             }
             setContextMenu(null);
         };
 
-        const handleQuickToggle = async (todo: TodoType) => {
-            await toggleTodo(authFetch, todo.id);
+        const handleQuickToggle = async (expandedTodo: ExpandedTodoType) => {
+            const actualId = expandedTodo.originalTodo?.id || expandedTodo.id;
+
+            const targetDateStr = expandedTodo.date
+                ? expandedTodo.date.toISOString()
+                : new Date(expandedTodo.startAt || new Date()).toISOString();
+
+            await toggleTodo(authFetch, actualId, targetDateStr);
             setContextMenu(null);
         };
 
