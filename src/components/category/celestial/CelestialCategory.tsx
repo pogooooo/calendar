@@ -36,7 +36,7 @@ export default function CelestialCategory(props: CategoryThemeProps) {
                             onClick={() => setSelectedCategoryId(cat.id)}
                         >
                             <div className="color-indicator" />
-                            <span>{cat.name}</span>
+                            <span className="cat-name">{cat.name}</span>
                         </S.CategoryItem>
                     ))}
                 </S.CategoryList>
@@ -86,7 +86,7 @@ export default function CelestialCategory(props: CategoryThemeProps) {
                                                 onChange={(e) => setEditDescription(e.target.value)}
                                                 onBlur={handleDescriptionBlur}
                                                 placeholder="설명을 추가하여 이 카테고리의 목적을 알려주세요."
-                                                rows={2}
+                                                rows={3}
                                             />
                                         </div>
                                     </S.PropertyRow>
@@ -95,7 +95,7 @@ export default function CelestialCategory(props: CategoryThemeProps) {
                                 <S.ParticipantSection>
                                     <div className="header">
                                         <h3>멤버 목록</h3>
-                                        <SecondaryButton $width={100} $height={32} onClick={openInviteModal}>+ 초대하기</SecondaryButton>
+                                        <SecondaryButton $width={90} $height={28} onClick={openInviteModal} style={{ fontSize: '0.8rem' }}>초대하기</SecondaryButton>
                                     </div>
 
                                     {selectedCategory.participants && selectedCategory.participants.length > 0 ? (
@@ -136,54 +136,50 @@ export default function CelestialCategory(props: CategoryThemeProps) {
                                 </S.ParticipantSection>
 
                                 <S.ActionFooter>
-                                    <SecondaryButton $height={36} $width={140} $variant="danger" onClick={() => handleDelete(selectedCategory.id)}>
-                                        이 카테고리 삭제
+                                    <SecondaryButton $height={32} $width={140} $variant="danger" onClick={() => handleDelete(selectedCategory.id)}>
+                                        카테고리 삭제
                                     </SecondaryButton>
                                 </S.ActionFooter>
                             </S.InfoContainer>
                         ) : (
                             <S.TodoListContainer>
                                 <div className="header">
-                                    <h3>할 일 목록 ({categoryTodos.length})</h3>
+                                    <h3>할 일 목록 <span>({categoryTodos.length})</span></h3>
                                 </div>
 
                                 {categoryTodos.length > 0 ? (
                                     <S.TodoGrid>
                                         {categoryTodos.map(todo => (
-                                            <S.TodoCard key={todo.id} $isDone={todo.check === 'done'} $color={selectedCategory.color}>
-                                                <div className="todo-info" onClick={() => handleEditTodo(todo)}>
+                                            <S.TodoCard key={todo.id} $isDone={todo.check === 'done'} onClick={() => handleEditTodo(todo)}>
+                                                <button
+                                                    className="check-btn"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        toggleTodo(authFetch, todo.id);
+                                                    }}
+                                                >
+                                                    {todo.check === 'done' && '✓'}
+                                                </button>
+
+                                                <div className="todo-info">
                                                     <span className="title">{todo.title}</span>
                                                     <span className="date">
                                                         {todo.startAt ? new Date(todo.startAt as string).toLocaleDateString() : '날짜 없음'}
-                                                        {todo.repeat > 0 && ` (↻ ${todo.repeat}일마다 반복)`}
+                                                        {todo.repeat > 0 && ` (↻ ${todo.repeat}일마다)`}
                                                     </span>
                                                 </div>
-                                                <div className="todo-actions">
-                                                    <SecondaryButton
-                                                        $width={60}
-                                                        $height={32}
-                                                        $variant={todo.check === 'done' ? 'default' : 'primary'}
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            toggleTodo(authFetch, todo.id);
-                                                        }}
-                                                    >
-                                                        {todo.check === 'done' ? '취소' : '완료'}
-                                                    </SecondaryButton>
-                                                    <SecondaryButton
-                                                        $width={60}
-                                                        $height={32}
-                                                        $variant="danger"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            if (window.confirm("정말 이 할 일을 삭제하시겠습니까?")) {
-                                                                deleteTodo(authFetch, todo.id);
-                                                            }
-                                                        }}
-                                                    >
-                                                        삭제
-                                                    </SecondaryButton>
-                                                </div>
+
+                                                <button
+                                                    className="delete-btn"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        if (window.confirm("정말 이 할 일을 삭제하시겠습니까?")) {
+                                                            deleteTodo(authFetch, todo.id);
+                                                        }
+                                                    }}
+                                                >
+                                                    삭제
+                                                </button>
                                             </S.TodoCard>
                                         ))}
                                     </S.TodoGrid>
@@ -207,20 +203,24 @@ export default function CelestialCategory(props: CategoryThemeProps) {
             {isInviteModalOpen && (
                 <S.ModalOverlay onClick={closeInviteModal}>
                     <S.ModalContent onClick={(e) => e.stopPropagation()}>
-                        <h3>팀원 초대하기</h3>
-                        <p>초대할 멤버의 이메일을 정확히 입력해주세요.</p>
-                        <input
-                            type="email"
-                            placeholder="example@email.com"
-                            value={inviteEmail}
-                            onChange={(e) => setInviteEmail(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && handleInviteSubmit()}
-                            autoFocus
-                        />
-                        {inviteError && <InlineError>{inviteError}</InlineError>}
+                        <div className="modal-header">
+                            <h3>팀원 초대하기</h3>
+                        </div>
+                        <div className="modal-body">
+                            <p>초대할 멤버의 이메일을 정확히 입력해주세요.</p>
+                            <input
+                                type="email"
+                                placeholder="example@email.com"
+                                value={inviteEmail}
+                                onChange={(e) => setInviteEmail(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && handleInviteSubmit()}
+                                autoFocus
+                            />
+                            {inviteError && <InlineError>{inviteError}</InlineError>}
+                        </div>
                         <div className="modal-actions">
-                            <SecondaryButton $width={80} $height={36} onClick={closeInviteModal}>취소</SecondaryButton>
-                            <SecondaryButton $width={80} $height={36} $variant="primary" onClick={handleInviteSubmit}>초대</SecondaryButton>
+                            <SecondaryButton $width={70} $height={32} onClick={closeInviteModal}>취소</SecondaryButton>
+                            <SecondaryButton $width={70} $height={32} $variant="primary" onClick={handleInviteSubmit}>초대</SecondaryButton>
                         </div>
                     </S.ModalContent>
                 </S.ModalOverlay>
@@ -229,11 +229,15 @@ export default function CelestialCategory(props: CategoryThemeProps) {
             {kickTarget && (
                 <S.ModalOverlay onClick={closeKickModal}>
                     <S.ModalContent onClick={(e) => e.stopPropagation()}>
-                        <h3>멤버 추방</h3>
-                        <p>정말 <strong>{kickTarget.name}</strong>님을 이 카테고리에서 추방하시겠습니까?</p>
+                        <div className="modal-header">
+                            <h3>멤버 추방</h3>
+                        </div>
+                        <div className="modal-body">
+                            <p>정말 <strong>{kickTarget.name}</strong>님을 이 카테고리에서 추방하시겠습니까?</p>
+                        </div>
                         <div className="modal-actions">
-                            <SecondaryButton $width={80} $height={36} onClick={closeKickModal}>취소</SecondaryButton>
-                            <SecondaryButton $width={80} $height={36} $variant="danger" onClick={handleKickSubmit}>추방하기</SecondaryButton>
+                            <SecondaryButton $width={70} $height={32} onClick={closeKickModal}>취소</SecondaryButton>
+                            <SecondaryButton $width={80} $height={32} $variant="danger" onClick={handleKickSubmit}>추방하기</SecondaryButton>
                         </div>
                     </S.ModalContent>
                 </S.ModalOverlay>

@@ -2,102 +2,94 @@ import styled from "styled-components";
 
 export const CategoryWrapper = styled.div`
     display: flex;
-    height: calc(100vh - 80px);
-    max-width: 1200px;
-    margin: 0 auto;
+    height: 100%;
+    width: 100%;
     background-color: ${(props) => props.theme.colors.surface};
+    font-family: ${(props) => props.theme.fonts.celestial};
 `;
 
 export const SidebarContainer = styled.div`
-    width: 280px;
-    min-width: 280px;
-    border-right: 1px solid ${(props) => props.theme.colors.accent};
+    width: 250px;
+    min-width: 250px;
+    border-right: 1px solid ${(props) => props.theme.colors.primary}55;
     display: flex;
     flex-direction: column;
-    padding: 20px 0;
-
-    .sidebar-header {
+    
+    .sidebar-header{
         display: flex;
         justify-content: space-between;
-        align-items: center;
-        padding: 0 20px 20px 20px;
-
-        h2 {
-            font-size: ${(props) => props.theme.fontSizes.h4};
-            color: ${(props) => props.theme.colors.textSecondary};
-            font-weight: 600;
-            margin: 0;
-        }
+        padding: 10px;
     }
 `;
 
 export const AddCategoryBtn = styled.button`
     background: transparent;
-    font-size: 1.5rem;
-    line-height: 1;
-    color: ${(props) => props.theme.colors.textSecondary};
+    font-size: 1.3rem;
+    color: ${(props) => props.theme.colors.primary};
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
-    border-radius: 5px;
+    width: 26px;
+    height: 26px;
+    border: 1px solid transparent;
+    border-radius: 4px;
     transition: all 0.2s;
-    border-color: ${(props) => props.theme.colors.primary};
+    line-height: 0;
+    padding-bottom: 2px; /* 수직 중앙 정렬 미세조정 */
 
     &:hover {
-        color: ${(props) => props.theme.colors.text};
+        background-color: ${(props) => props.theme.colors.primary}1A;
         border-color: ${(props) => props.theme.colors.primary};
-        box-shadow: 0 0 5px 1px ${(props) => props.theme.colors.primary};
     }
 `;
 
 export const CategoryList = styled.div`
     display: flex;
     flex-direction: column;
-    padding: 10px 10px 0 10px;
+    padding: 8px;
     overflow-y: auto;
 
-    &::-webkit-scrollbar { width: 6px; }
+    &::-webkit-scrollbar { width: 4px; }
     &::-webkit-scrollbar-thumb {
-        background-color: ${(props) => props.theme.colors.accent};
-        border-radius: 5px;
+        background-color: ${(props) => props.theme.colors.primary}80;
+        border-radius: 2px;
     }
 `;
 
 export const CategoryItem = styled.div<{ $color: string; $isSelected: boolean }>`
     display: flex;
     align-items: center;
-    padding: 12px 16px;
-    margin-bottom: 4px;
-    border-radius: 5px;
+    padding: 8px 12px;
+    margin-bottom: 2px;
+    border-radius: 4px;
     cursor: pointer;
-    background-color: transparent;
-    border: 1px solid ${(props) => props.$isSelected ? props.theme.colors.primary : 'transparent'};
-    box-shadow: ${(props) => props.$isSelected ? `0 0 10px ${props.theme.colors.primary}` : 'none'};
-    color: ${(props) => props.$isSelected ? props.theme.colors.text : props.theme.colors.textSecondary};
-    font-weight: ${(props) => props.$isSelected ? '600' : '400'};
+    background-color: ${(props) => props.$isSelected ? props.theme.colors.primary + '1A' : 'transparent'};
+    border: 1px solid ${(props) => props.$isSelected ? props.theme.colors.primary + '55' : 'transparent'};
     transition: all 0.2s;
 
     &:hover {
-        border-color: ${(props) => props.$isSelected ? props.theme.colors.primary : props.theme.colors.accent};
-        box-shadow: ${(props) => props.$isSelected ? `0 0 10px ${props.theme.colors.primary}` : `0 0 8px ${props.theme.colors.accent}`};
+        background-color: ${(props) => props.theme.colors.primary}1A;
     }
 
     .color-indicator {
-        width: 12px;
-        height: 12px;
-        border-radius: 50%; /* 원형은 그대로 유지 */
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
         background-color: ${(props) => props.$color};
-        margin-right: 12px;
-        box-shadow: 0 0 0 2px ${(props) => props.theme.colors.surface}, 0 0 0 3px ${(props) => props.$isSelected ? props.$color : 'transparent'};
+        margin-right: 10px;
+        flex-shrink: 0;
     }
 
-    span {
+    .cat-name {
+        font-size: 0.85rem;
+        color: ${(props) => props.$isSelected ? props.theme.colors.primary : props.theme.colors.text};
+        font-weight: ${(props) => props.$isSelected ? '500' : '400'};
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        flex: 1;
+        ${(props) => props.$isSelected && `filter: drop-shadow(0 0 2px ${props.theme.colors.primary}40);`}
     }
 `;
 
@@ -115,151 +107,135 @@ export const EmptyStateContainer = styled.div`
     align-items: center;
     justify-content: center;
     color: ${(props) => props.theme.colors.textSecondary};
-    font-size: ${(props) => props.theme.fontSizes.body};
+    font-size: 0.9rem;
+    font-family: ${(props) => props.theme.fonts.celestial};
 `;
 
 export const DetailInfo = styled.div`
-    padding: 40px;
-    max-width: 800px;
-    margin: 0 auto;
+    padding: 30px 40px;
+    max-width: 700px;
     width: 100%;
+    margin: 0 auto;
 `;
 
 export const CategoryTitleWrapper = styled.div<{ $color: string }>`
     display: flex;
-    align-items: center;
-    gap: 16px;
-    margin-bottom: 40px;
+    align-items: center; /* 세로 중앙 정렬 */
+    gap: 12px;
+    margin-bottom: 30px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid ${(props) => props.theme.colors.primary};
 
     .color-picker-container {
         position: relative;
-        width: 32px;
-        height: 32px;
-        border-radius: 5px; /* ✨ 수정 */
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
         overflow: hidden;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        box-shadow: 0 0 0 2px ${(props) => props.theme.colors.surface}, 0 0 0 3px ${(props) => props.$color}80;
+        flex-shrink: 0;
 
         .color-input {
             position: absolute;
-            top: -10px;
-            left: -10px;
-            width: 52px;
-            height: 52px;
+            top: -5px; left: -5px;
+            width: 34px; height: 34px;
             border: none;
             cursor: pointer;
             padding: 0;
-            background-color: ${(props) => props.$color};
         }
     }
 
     .title-input {
-        font-size: ${(props) => props.theme.fontSizes.h1};
-        font-weight: bold;
+        font-family: ${(props) => props.theme.fonts.celestial};
+        font-size: 1.5rem;
+        font-weight: 500;
         color: ${(props) => props.theme.colors.text};
         background: transparent;
         border: none;
         outline: none;
         width: 100%;
-        padding: 4px 0;
-        border-bottom: 2px solid transparent;
-        transition: border-color 0.2s;
+        line-height: 1;
+        padding: 4px 0; /* 인풋창 내부 여백 초기화로 정렬 맞춤 */
+        letter-spacing: 1px;
 
         &::placeholder {
-            color: ${(props) => props.theme.colors.textSecondary};
-            opacity: 0.5;
-        }
-
-        &:hover, &:focus {
-            border-bottom: 2px solid ${(props) => props.theme.colors.accent};
+            color: ${(props) => props.theme.colors.textSecondary}80;
         }
     }
 `;
 
 export const DetailHeader = styled.div<{ $activeTab: string }>`
     display: flex;
-    gap: 24px;
-    border-bottom: 1px solid ${(props) => props.theme.colors.accent};
-    margin-bottom: 30px;
+    gap: 20px;
+    margin-bottom: 24px;
 
     button {
         background: transparent;
         border: none;
-        padding: 12px 4px;
-        font-size: ${(props) => props.theme.fontSizes.body};
-        font-weight: 500;
+        padding: 6px 8px;
+        font-family: ${(props) => props.theme.fonts.celestial};
+        font-size: 0.95rem;
         cursor: pointer;
-        position: relative;
         color: ${(props) => props.theme.colors.textSecondary};
-        transition: color 0.2s;
+        transition: all 0.2s;
+        border-bottom: 2px solid transparent;
 
-        &::after {
-            content: '';
-            position: absolute;
-            bottom: -1px;
-            left: 0; right: 0;
-            height: 2px;
-            background-color: transparent;
-            transition: background-color 0.2s;
-        }
-
-        &:hover { color: ${(props) => props.theme.colors.text}; }
+        &:hover { color: ${(props) => props.theme.colors.primary}; }
     }
 
     .info-tab {
         color: ${(props) => props.$activeTab === 'info' ? props.theme.colors.primary : ''};
-        &::after { background-color: ${(props) => props.$activeTab === 'info' ? props.theme.colors.primary : 'transparent'}; }
+        border-bottom-color: ${(props) => props.$activeTab === 'info' ? props.theme.colors.primary : 'transparent'};
     }
 
     .todo-tab {
         color: ${(props) => props.$activeTab === 'todos' ? props.theme.colors.primary : ''};
-        &::after { background-color: ${(props) => props.$activeTab === 'todos' ? props.theme.colors.primary : 'transparent'}; }
+        border-bottom-color: ${(props) => props.$activeTab === 'todos' ? props.theme.colors.primary : 'transparent'};
     }
 `;
 
 export const InfoContainer = styled.div`
     display: flex;
     flex-direction: column;
-    gap: 40px;
+    gap: 24px;
 `;
 
 export const PropertiesCard = styled.div`
     display: flex;
     flex-direction: column;
-    border: 1px solid ${(props) => props.theme.colors.accent};
-    border-radius: 5px; /* ✨ 수정 */
-    overflow: hidden;
+    border: 1px solid ${(props) => props.theme.colors.primary}55;
     background-color: ${(props) => props.theme.colors.surface};
+    border-radius: 4px;
 `;
 
 export const PropertyRow = styled.div`
     display: flex;
-    min-height: 52px;
+    align-items: stretch; /* 자식 요소들이 컨테이너 높이를 꽉 채움 */
+    min-height: 48px;
 
     &:not(:last-child) {
-        border-bottom: 1px solid ${(props) => props.theme.colors.accent};
+        border-bottom: 1px solid ${(props) => props.theme.colors.primary}33;
     }
 
     .prop-label {
-        width: 140px;
+        width: 120px;
         display: flex;
-        align-items: center;
-        padding: 16px 20px;
-        font-size: 0.95rem;
+        align-items: flex-start; /* 텍스트 에어리어 대비 상단 정렬 */
+        padding: 14px 16px;
+        font-size: 0.85rem;
         color: ${(props) => props.theme.colors.textSecondary};
-        background-color: ${(props) => props.theme.colors.surface};
-        border-right: 1px solid ${(props) => props.theme.colors.accent};
+        border-right: 1px solid ${(props) => props.theme.colors.primary}33;
         flex-shrink: 0;
-        font-weight: 500;
     }
 
     .prop-value {
         flex: 1;
         display: flex;
-        align-items: center;
-        padding: 12px 20px;
+        align-items: center; /* 단일 텍스트일 때 중앙 정렬 */
+        padding: 8px 16px;
+        font-family: ${(props) => props.theme.fonts.body};
+        font-size: 0.85rem;
         color: ${(props) => props.theme.colors.text};
-        font-size: 0.95rem;
-        line-height: 1.5;
 
         .desc-textarea {
             width: 100%;
@@ -267,22 +243,14 @@ export const PropertyRow = styled.div`
             border: none;
             outline: none;
             color: inherit;
-            font-size: inherit;
             font-family: inherit;
+            font-size: inherit;
             resize: vertical;
-            line-height: 1.6;
-            min-height: 44px;
-            padding: 4px 0;
+            line-height: 1.5;
+            padding: 6px 0; /* 위아래 여백 균형 맞춤 */
 
             &::placeholder {
-                color: ${(props) => props.theme.colors.textSecondary};
-                opacity: 0.6;
-            }
-
-            &::-webkit-scrollbar { width: 6px; }
-            &::-webkit-scrollbar-thumb {
-                background-color: ${(props) => props.theme.colors.accent};
-                border-radius: 5px; /* ✨ 수정 */
+                color: ${(props) => props.theme.colors.textSecondary}66;
             }
         }
     }
@@ -296,26 +264,27 @@ export const ParticipantSection = styled.div`
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 16px;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid ${(props) => props.theme.colors.primary}80;
 
         h3 {
-            font-size: ${(props) => props.theme.fontSizes.h4};
+            font-size: 0.95rem;
             color: ${(props) => props.theme.colors.text};
-            font-weight: 600;
+            font-weight: 500;
             margin: 0;
         }
     }
 
     .empty-state {
-        padding: 40px 20px;
+        padding: 30px;
         text-align: center;
-        background-color: ${(props) => props.theme.colors.surface};
-        border: 1px dashed ${(props) => props.theme.colors.accent};
-        border-radius: 5px; /* ✨ 수정 */
+        border: 1px solid ${(props) => props.theme.colors.primary}55;
+        border-radius: 4px;
 
         p {
             color: ${(props) => props.theme.colors.textSecondary};
-            font-size: 0.95rem;
+            font-size: 0.85rem;
             margin: 0;
         }
     }
@@ -324,25 +293,22 @@ export const ParticipantSection = styled.div`
 export const ParticipantTable = styled.div`
     display: flex;
     flex-direction: column;
-    border: 1px solid ${(props) => props.theme.colors.accent};
-    border-radius: 5px; /* ✨ 수정 */
-    overflow: hidden;
-    background-color: ${(props) => props.theme.colors.surface};
+    border: 1px solid ${(props) => props.theme.colors.primary}55;
+    border-radius: 4px;
 `;
 
 export const TableHeader = styled.div`
     display: flex;
     align-items: center;
-    background-color: ${(props) => props.theme.colors.surface};
-    border-bottom: 1px solid ${(props) => props.theme.colors.accent};
-    padding: 12px 20px;
-    font-size: 0.85rem;
-    font-weight: 500;
+    background-color: ${(props) => props.theme.colors.primary}11;
+    border-bottom: 1px solid ${(props) => props.theme.colors.primary}55;
+    padding: 8px 16px;
+    font-size: 0.8rem;
     color: ${(props) => props.theme.colors.textSecondary};
 
-    .col-name { flex: 1; }
-    .col-email { flex: 1.5; }
-    .col-action { width: 60px; text-align: center; }
+    .col-name { flex: 1.2; }
+    .col-email { flex: 2; }
+    .col-action { width: 60px; text-align: center; flex-shrink: 0; }
 `;
 
 export const TableBody = styled.div`
@@ -353,59 +319,64 @@ export const TableBody = styled.div`
 export const TableRow = styled.div`
     display: flex;
     align-items: center;
-    padding: 12px 20px;
-    font-size: 0.95rem;
+    padding: 10px 16px;
+    font-size: 0.85rem;
     color: ${(props) => props.theme.colors.text};
-    border-bottom: 1px solid ${(props) => props.theme.colors.accent};
-    transition: background-color 0.15s;
+    border-bottom: 1px solid ${(props) => props.theme.colors.primary}22;
+    transition: background-color 0.2s;
 
     &:last-child { border-bottom: none; }
-    &:hover { background-color: ${(props) => props.theme.colors.accent}22; }
+    &:hover { background-color: ${(props) => props.theme.colors.primary}0A; }
 
     .col-name {
-        flex: 1;
+        flex: 1.2;
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 10px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
 
         .avatar {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%; /* 원형은 그대로 유지 */
-            background-color: ${(props) => props.theme.colors.primary}1A;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background-color: ${(props) => props.theme.colors.primary}22;
             color: ${(props) => props.theme.colors.primary};
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.85rem;
-            font-weight: 600;
+            font-size: 0.75rem;
             flex-shrink: 0;
         }
-
-        span { font-weight: 500; }
     }
 
     .col-email {
-        flex: 1.5;
+        flex: 2;
         color: ${(props) => props.theme.colors.textSecondary};
-        font-size: 0.9rem;
+        font-size: 0.8rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        padding-right: 10px;
     }
 
     .col-action {
         width: 60px;
         display: flex;
         justify-content: center;
+        flex-shrink: 0;
 
         .remove-btn {
             background-color: transparent;
             color: ${(props) => props.theme.colors.textSecondary};
             border: none;
-            padding: 6px 12px;
-            font-size: 0.85rem;
+            padding: 4px 8px;
+            font-size: 0.75rem;
             cursor: pointer;
-            border-radius: 5px; /* ✨ 수정 */
             opacity: 0;
             transition: all 0.2s;
+            border-radius: 4px;
 
             &:hover {
                 color: ${(props) => props.theme.colors.error};
@@ -420,15 +391,117 @@ export const TableRow = styled.div`
 export const ActionFooter = styled.div`
     display: flex;
     justify-content: flex-end;
-    margin-top: 20px;
-    padding-top: 20px;
-    border-top: 1px solid ${(props) => props.theme.colors.accent};
+    margin-top: 10px;
+`;
+
+export const TodoListContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+
+    .header {
+        display: flex;
+        align-items: center;
+        border-bottom: 1px solid ${(props) => props.theme.colors.primary}80;
+        padding-bottom: 8px;
+
+        h3 {
+            font-size: 0.95rem;
+            color: ${(props) => props.theme.colors.text};
+            font-weight: 500;
+            margin: 0;
+
+            span {
+                color: ${(props) => props.theme.colors.primary};
+            }
+        }
+    }
+`;
+
+export const TodoGrid = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+`;
+
+export const TodoCard = styled.div<{ $isDone: boolean }>`
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    border-radius: 4px;
+    border: 1px solid ${(props) => props.theme.colors.primary}55;
+    background-color: ${(props) => props.theme.colors.surface};
+    transition: all 0.2s ease;
+    cursor: pointer;
+
+    &:hover {
+        background-color: ${(props) => props.theme.colors.primary}1A;
+        border-color: ${(props) => props.theme.colors.primary};
+
+        .delete-btn { opacity: 1; }
+    }
+
+    .check-btn {
+        width: 18px;
+        height: 18px;
+        border-radius: 4px;
+        border: 1px solid ${(props) => props.theme.colors.primary};
+        background-color: ${(props) => props.$isDone ? props.theme.colors.primary : 'transparent'};
+        color: ${(props) => props.theme.colors.surface};
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        flex-shrink: 0;
+        transition: all 0.2s;
+        font-size: 11px;
+    }
+
+    .todo-info {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        opacity: ${(props) => props.$isDone ? 0.5 : 1};
+        text-decoration: ${(props) => props.$isDone ? 'line-through' : 'none'};
+
+        .title {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: ${(props) => props.theme.colors.text};
+            word-break: keep-all;
+        }
+
+        .date {
+            font-size: 0.75rem;
+            color: ${(props) => props.theme.colors.textSecondary};
+        }
+    }
+
+    .delete-btn {
+        background: transparent;
+        border: none;
+        color: ${(props) => props.theme.colors.textSecondary};
+        cursor: pointer;
+        opacity: 0;
+        padding: 6px 10px;
+        font-size: 0.75rem;
+        transition: all 0.2s;
+        border-radius: 4px;
+        flex-shrink: 0;
+
+        &:hover {
+            color: ${(props) => props.theme.colors.error};
+            background-color: ${(props) => props.theme.colors.error}1A;
+        }
+    }
 `;
 
 export const ModalOverlay = styled.div`
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(0, 0, 0, 0.45);
     backdrop-filter: blur(4px);
     display: flex;
     justify-content: center;
@@ -438,123 +511,65 @@ export const ModalOverlay = styled.div`
 
 export const ModalContent = styled.div`
     background-color: ${(props) => props.theme.colors.surface};
-    padding: 32px;
-    border-radius: 5px; /* ✨ 수정 */
-    width: 420px;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
-    animation: scaleUp 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    border: 1px solid ${(props) => props.theme.colors.primary};
+    border-radius: 4px;
+    width: 380px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    font-family: ${(props) => props.theme.fonts.celestial};
 
-    @keyframes scaleUp {
-        from { transform: scale(0.95) translateY(10px); opacity: 0; }
-        to { transform: scale(1) translateY(0); opacity: 1; }
+    .modal-header {
+        padding: 16px 24px;
+        border-bottom: 1px solid ${(props) => props.theme.colors.primary}80;
+
+        h3 {
+            margin: 0;
+            font-size: 1.05rem;
+            color: ${(props) => props.theme.colors.text};
+            font-weight: 500;
+            letter-spacing: 1px;
+        }
     }
 
-    h3 {
-        margin: 0 0 8px 0;
-        font-size: ${(props) => props.theme.fontSizes.h3};
-        color: ${(props) => props.theme.colors.text};
-        font-weight: 600;
-    }
+    .modal-body {
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
 
-    p {
-        color: ${(props) => props.theme.colors.textSecondary};
-        font-size: 0.95rem;
-        margin: 0 0 24px 0;
-        line-height: 1.5;
-    }
-
-    input {
-        width: 100%;
-        padding: 14px 16px;
-        margin-bottom: 12px;
-        background-color: ${(props) => props.theme.colors.surface};
-        border: 1px solid ${(props) => props.theme.colors.accent};
-        border-radius: 5px; /* ✨ 수정 */
-        outline: none;
-        font-size: 1rem;
-        color: ${(props) => props.theme.colors.text};
-        transition: all 0.2s;
-
-        &::placeholder {
+        p {
             color: ${(props) => props.theme.colors.textSecondary};
-            opacity: 0.5;
+            font-size: 0.9rem;
+            margin: 0;
+            line-height: 1.5;
         }
 
-        &:focus {
-            border-color: ${(props) => props.theme.colors.primary};
-            box-shadow: 0 0 0 3px ${(props) => props.theme.colors.primary}22;
+        input {
+            width: 100%;
+            padding: 10px 12px;
+            background: transparent;
+            border: 1px solid ${(props) => props.theme.colors.primary}80;
+            border-radius: 4px;
+            outline: none;
+            font-size: 0.9rem;
+            color: ${(props) => props.theme.colors.text};
+            transition: all 0.2s;
+
+            &::placeholder {
+                color: ${(props) => props.theme.colors.textSecondary}66;
+            }
+
+            &:focus {
+                border-color: ${(props) => props.theme.colors.primary};
+                box-shadow: 0 0 0 2px ${(props) => props.theme.colors.primary}22;
+            }
         }
     }
 
     .modal-actions {
         display: flex;
         justify-content: flex-end;
-        gap: 12px;
-        margin-top: 32px;
-    }
-`;
-
-export const TodoListContainer = styled.div`
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-
-    .header {
-        h3 {
-            font-size: ${(props) => props.theme.fontSizes.h4};
-            color: ${(props) => props.theme.colors.text};
-            font-weight: 600;
-            margin: 0 0 8px 0;
-        }
-    }
-`;
-
-export const TodoGrid = styled.div`
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-`;
-
-export const TodoCard = styled.div<{ $isDone: boolean; $color: string }>`
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px 20px;
-    background-color: ${(props) => props.theme.colors.surface};
-    border: 1px solid ${(props) => props.theme.colors.accent};
-    border-radius: 5px;
-    
-    transition: all 0.2s ease;
-    
-    &:hover {
-        border-color: ${(props) => props.theme.colors.primary};
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-        transform: translateY(-2px);
-    }
-
-    .todo-info {
-        flex: 1;
-        cursor: pointer;
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        opacity: ${(props) => props.$isDone ? 0.4 : 1};
-        text-decoration: ${(props) => props.$isDone ? 'line-through' : 'none'};
-
-        .title {
-            font-size: 1.05rem;
-            font-weight: 500;
-            color: ${(props) => props.theme.colors.text};
-        }
-        
-        .date {
-            font-size: 0.85rem;
-            color: ${(props) => props.theme.colors.textSecondary};
-        }
-    }
-
-    .todo-actions {
-        display: flex;
         gap: 8px;
+        padding: 16px 24px;
+        border-top: 1px solid ${(props) => props.theme.colors.primary}80;
     }
 `;
