@@ -88,7 +88,6 @@ const WeekRow = ({
                                     const isEnd = isSameDay(date, new Date(todoAtThisLevel.endAt as string | number | Date));
                                     const color = categories.find((c: CategoryType) => c.id === todoAtThisLevel.categoryId)?.color;
 
-                                    // ✨ 핵심: check 필드 검사 대신 useExpandedTodos에서 생성한 isDone 프로퍼티 사용
                                     const isDone = todoAtThisLevel.isDone;
 
                                     return (
@@ -138,7 +137,7 @@ const CelestialMonthCalendar = React.forwardRef<HTMLDivElement, CelestialMonthPr
          categories, selectedDate, onDateChange,
          handlePrevMonth, handleNextMonth, toggleCategory, handleContextMenu,
          handleQuickEdit, handleQuickDelete, handleQuickToggle, handleCreateTodo,
-         setIsModalOpen, setMoreModalDate, setContextMenu,
+         setIsModalOpen, setMoreModalDate, setContextMenu, showProjects, onToggleProjects,
          ...props
      }, ref) => {
         const Component = asChild ? Slot : 'div';
@@ -153,6 +152,8 @@ const CelestialMonthCalendar = React.forwardRef<HTMLDivElement, CelestialMonthPr
                     <CategoryFilter
                         categories={categories}
                         selectedCategoryIds={selectedCategoryIds}
+                        showProjects={showProjects}
+                        onToggleProjects={onToggleProjects}
                         onToggle={toggleCategory}
                     />
                 </S.DateRangeDisplay>

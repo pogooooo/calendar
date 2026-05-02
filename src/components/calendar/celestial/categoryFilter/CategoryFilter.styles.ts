@@ -48,18 +48,6 @@ export const SettingsPopover = styled.div`
         flex-direction: column;
         gap: 4px;
     }
-
-    .menu-item {
-        padding: 8px;
-        font-size: 0.9rem;
-        border-radius: 4px;
-        cursor: pointer;
-        transition: all 0.3s;
-
-        &:hover {
-            background-color: rgba(0, 0, 0, 0.05);
-        }
-    }
 `;
 
 export const MenuItem = styled.div<{ $isSelected: boolean }>`
@@ -85,4 +73,10 @@ export const CategoryColorDot = styled.div<{ $color: string, $isSelected: boolea
     margin-right: 8px;
     background-color: ${(props) => props.$isSelected ? props.$color : 'gray'};
     transition: background-color 0.3s ease;
+`;
+
+export const Divider = styled.hr`
+    border: none;
+    border-top: 1px dashed ${(props) => props.theme.colors.primary}55;
+    margin: 4px 0;
 `;

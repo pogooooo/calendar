@@ -7,6 +7,8 @@ import { Plus, Trash2, Check } from "lucide-react";
 import * as S from "./CelestialDayCalendar.styles";
 import { DayThemeProps } from "../DayCalendar";
 
+import CategoryFilter from "@/components/calendar/celestial/categoryFilter/CategoryFilter";
+
 type CelestialDayProps = DayThemeProps & React.HTMLAttributes<HTMLDivElement>;
 
 const CelestialDayCalendar = React.forwardRef<HTMLDivElement, CelestialDayProps>(
@@ -15,6 +17,8 @@ const CelestialDayCalendar = React.forwardRef<HTMLDivElement, CelestialDayProps>
          tasks, newTaskText, setNewTaskText, handleAddTask,
          toggleDailyTask, deleteDailyTask,
          localMemo, setLocalMemo, handleMemoBlur,
+         categories, selectedCategoryIds, toggleCategory,
+         showProjects, onToggleProjects,
          ...props
      }, ref) => {
         const Component = asChild ? Slot : 'div';
@@ -23,6 +27,13 @@ const CelestialDayCalendar = React.forwardRef<HTMLDivElement, CelestialDayProps>
             <S.CelestialCalendarWrapper as={Component} ref={ref} {...props}>
                 <S.DateHeader>
                     <span>{formattedDate}</span>
+                    <CategoryFilter
+                        categories={categories}
+                        selectedCategoryIds={selectedCategoryIds}
+                        onToggle={toggleCategory}
+                        showProjects={showProjects}
+                        onToggleProjects={onToggleProjects}
+                    />
                     <hr />
                 </S.DateHeader>
 

@@ -3,6 +3,7 @@
 import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Settings2 } from "lucide-react";
+import { useTheme } from "styled-components";
 import * as S from "./CategoryFilter.styles";
 import { CategoryType } from "@/types/calendar";
 
@@ -10,10 +11,19 @@ interface CategoryFilterProps {
     categories: CategoryType[];
     selectedCategoryIds: string[];
     onToggle: (categoryId: string) => void;
+    showProjects?: boolean;
+    onToggleProjects?: () => void;
 }
 
-export default function CategoryFilter({ categories, selectedCategoryIds, onToggle }: CategoryFilterProps) {
+export default function CategoryFilter({
+                                           categories,
+                                           selectedCategoryIds,
+                                           onToggle,
+                                           showProjects,
+                                           onToggleProjects
+                                       }: CategoryFilterProps) {
     const [isOpen, setIsOpen] = React.useState(false);
+    const theme = useTheme();
 
     return (
         <S.SettingsContainer>
@@ -34,6 +44,22 @@ export default function CategoryFilter({ categories, selectedCategoryIds, onTogg
                             transition={{ duration: 0.15, ease: "easeOut" }}
                         >
                             <div className="popover-content">
+                                {onToggleProjects && (
+                                    <>
+                                        <S.MenuItem
+                                            onClick={onToggleProjects}
+                                            $isSelected={!!showProjects}
+                                        >
+                                            <S.CategoryColorDot
+                                                $color={theme?.colors.primary || '#ffffff'}
+                                                $isSelected={!!showProjects}
+                                            />
+                                            프로젝트 할 일
+                                        </S.MenuItem>
+                                        <S.Divider />
+                                    </>
+                                )}
+
                                 {categories.map((cat) => {
                                     const isSelected = selectedCategoryIds.includes(cat.id);
                                     return (

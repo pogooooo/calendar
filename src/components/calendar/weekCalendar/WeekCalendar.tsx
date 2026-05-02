@@ -12,6 +12,12 @@ import { useTodoLevels } from "@/hooks/useTodoLevels";
 import useTodoStore from "@/store/useTodoStore";
 import useAuthStore from "@/store/useAuthStore";
 import { formatDate } from "@/utils/DateUtils";
+import useProjectStore from "@/store/useProjectStore";
+
+export interface CalendarTodoType extends ExpandedTodoType {
+    isProject?: boolean;
+    isProjectTask?: boolean;
+}
 
 export interface WeekProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'contextMenu'> {
     asChild?: boolean;
@@ -29,10 +35,10 @@ export interface WeekThemeProps {
     isModalOpen: boolean;
     modalTodo: TodoType | null;
     selectedDateForModal: Date | undefined;
-    todoContextMenu: { x: number, y: number, todo: ExpandedTodoType } | null;
+    todoContextMenu: { x: number, y: number, todo: CalendarTodoType } | null;
     moreModalDate: Date | null;
     weekDates: Date[];
-    expandedTodos: ExpandedTodoType[];
+    expandedTodos: CalendarTodoType[];
     todayStr: string;
     dateRangeText: string;
     todoLevels: Record<string, number>;
@@ -41,18 +47,21 @@ export interface WeekThemeProps {
     handlePrevWeek: () => void;
     handleNextWeek: () => void;
     toggleCategory: (categoryId: string) => void;
-    handleContextMenu: (e: React.MouseEvent, todo: ExpandedTodoType) => void;
-    handleQuickEdit: (todo: ExpandedTodoType) => void;
-    handleQuickDelete: (todo: ExpandedTodoType) => void;
-    handleQuickToggle: (todo: ExpandedTodoType) => void;
+    handleContextMenu: (e: React.MouseEvent, todo: CalendarTodoType) => void;
+    handleQuickEdit: (todo: CalendarTodoType) => void;
+    handleQuickDelete: (todo: CalendarTodoType) => void;
+    handleQuickToggle: (todo: CalendarTodoType) => void;
     handleCreateTodo: (date: Date) => void;
     setIsModalOpen: (isOpen: boolean) => void;
     setMoreModalDate: (date: Date | null) => void;
-    setTodoContextMenu: (menu: { x: number, y: number, todo: ExpandedTodoType } | null) => void; // ✨ ExpandedTodoType
+    setTodoContextMenu: (menu: { x: number, y: number, todo: CalendarTodoType } | null) => void;
 
     categories: CategoryType[];
     selectedDate?: Date;
     onDateChange?: (date: Date) => void;
+
+    showProjects: boolean;
+    onToggleProjects: () => void;
 }
 
 const WeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
@@ -63,15 +72,16 @@ const WeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
         const [currentDate, setCurrentDate] = React.useState(new Date());
         const [direction, setDirection] = React.useState(0);
         const [selectedCategoryIds, setSelectedCategoryIds] = React.useState<string[]>([]);
+        const [showProjects, setShowProjects] = React.useState(true);
 
         const [isModalOpen, setIsModalOpen] = React.useState(false);
         const [modalTodo, setModalTodo] = React.useState<TodoType | null>(null);
         const [selectedDateForModal, setSelectedDateForModal] = React.useState<Date | undefined>(undefined);
 
-        // ✨ 컨텍스트 메뉴에 ExpandedTodoType 전체를 저장
-        const [todoContextMenu, setTodoContextMenu] = React.useState<{ x: number, y: number, todo: ExpandedTodoType } | null>(null);
+        const [todoContextMenu, setTodoContextMenu] = React.useState<{ x: number, y: number, todo: CalendarTodoType } | null>(null);
         const [moreModalDate, setMoreModalDate] = React.useState<Date | null>(null);
 
+        const { projects, fetchProjects } = useProjectStore();
         const { deleteTodo, toggleTodo } = useTodoStore();
         const accessToken = useAuthStore((state) => state.accessToken);
 
@@ -88,15 +98,69 @@ const WeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
             }
         }, [categories]);
 
+        React.useEffect(() => {
+            fetchProjects(authFetch);
+        }, [fetchProjects, authFetch]);
+
         const filteredTodos = React.useMemo(() => {
-            return todos.filter(todo => selectedCategoryIds.includes(todo.categoryId));
-        }, [todos, selectedCategoryIds]);
+            const baseTodos = todos.filter(todo => selectedCategoryIds.includes(todo.categoryId));
+
+            if (!showProjects) return baseTodos;
+
+            const projectItems = projects.reduce<TodoType[]>((acc, proj) => {
+                if (selectedCategoryIds.includes(proj.categoryId)) {
+                    const isProjCompleted = proj.status === 'done';
+
+                    acc.push({
+                        id: `project-${proj.id}`,
+                        title: `[Project] ${proj.title}`,
+                        categoryId: proj.categoryId,
+                        startAt: proj.startAt ? new Date(proj.startAt).toISOString() : null,
+                        endAt: proj.endAt ? new Date(proj.endAt).toISOString() : null,
+                        isAllDay: true,
+                        repeat: 0,
+                        memo: proj.description || null,
+                        check: isProjCompleted ? 'done' : 'none',
+                        completions: [],
+                        originalData: proj as any,
+                        isProject: true,
+                        isDone: isProjCompleted
+                    } as unknown as TodoType);
+
+                    if (proj.tasks && Array.isArray(proj.tasks)) {
+                        proj.tasks.forEach(task => {
+                            if (task.startAt || task.endAt) {
+                                const isTaskCompleted = task.status === 'done';
+                                acc.push({
+                                    id: `proj-task-${task.id}`,
+                                    title: `↳ ${task.title}`,
+                                    categoryId: proj.categoryId,
+                                    startAt: task.startAt ? new Date(task.startAt).toISOString() : null,
+                                    endAt: task.endAt ? new Date(task.endAt).toISOString() : null,
+                                    isAllDay: true,
+                                    repeat: 0,
+                                    memo: task.description || null,
+                                    check: isTaskCompleted ? 'done' : 'none',
+                                    completions: [],
+                                    originalData: task as any,
+                                    isProjectTask: true,
+                                    isDone: isTaskCompleted
+                                } as unknown as TodoType);
+                            }
+                        });
+                    }
+                }
+                return acc;
+            }, []);
+
+            return [...baseTodos, ...projectItems];
+        }, [todos, projects, selectedCategoryIds, showProjects]);
 
         const expandedTodos = useExpandedTodos(
             filteredTodos,
             weekDates[0],
             weekDates[6]
-        );
+        ) as CalendarTodoType[];
 
         const { todoLevels, maxLevel } = useTodoLevels(expandedTodos, weekDates);
 
@@ -130,18 +194,28 @@ const WeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
             );
         };
 
-        const handleContextMenu = (e: React.MouseEvent, todo: ExpandedTodoType) => {
+        const handleContextMenu = (e: React.MouseEvent, todo: CalendarTodoType) => {
             e.preventDefault();
             setTodoContextMenu({ x: e.clientX, y: e.clientY, todo: todo });
         };
 
-        const handleQuickEdit = (expandedTodo: ExpandedTodoType) => {
+        const handleQuickEdit = (expandedTodo: CalendarTodoType) => {
+            if (expandedTodo.isProject || expandedTodo.isProjectTask) {
+                alert("프로젝트 관련 항목은 프로젝트 메뉴에서 수정해주세요.");
+                setTodoContextMenu(null);
+                return;
+            }
             setModalTodo(expandedTodo.originalTodo || expandedTodo as unknown as TodoType);
             setIsModalOpen(true);
             setTodoContextMenu(null);
         };
 
-        const handleQuickDelete = async (expandedTodo: ExpandedTodoType) => {
+        const handleQuickDelete = async (expandedTodo: CalendarTodoType) => {
+            if (expandedTodo.isProject || expandedTodo.isProjectTask) {
+                alert("프로젝트 관련 항목은 프로젝트 상세 메뉴에서 삭제해주세요.");
+                setTodoContextMenu(null);
+                return;
+            }
             const actualId = expandedTodo.originalTodo?.id || expandedTodo.id;
             if (window.confirm("정말 삭제하시겠습니까? (반복 일정 전체가 삭제됩니다)")) {
                 await deleteTodo(authFetch, actualId);
@@ -149,7 +223,12 @@ const WeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
             setTodoContextMenu(null);
         };
 
-        const handleQuickToggle = async (expandedTodo: ExpandedTodoType) => {
+        const handleQuickToggle = async (expandedTodo: CalendarTodoType) => {
+            if (expandedTodo.isProject || expandedTodo.isProjectTask) {
+                alert("프로젝트 상태는 프로젝트 상세 메뉴에서 변경해주세요.");
+                setTodoContextMenu(null);
+                return;
+            }
             const actualId = expandedTodo.originalTodo?.id || expandedTodo.id;
             const targetDateStr = expandedTodo.date
                 ? expandedTodo.date.toISOString()
@@ -195,6 +274,8 @@ const WeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
             categories,
             selectedDate,
             onDateChange,
+            showProjects,
+            onToggleProjects: () => setShowProjects(prev => !prev)
         };
 
         return (

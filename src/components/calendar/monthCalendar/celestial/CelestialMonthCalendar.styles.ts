@@ -144,7 +144,7 @@ export const GridContainer = styled.div`
 
     overflow-y: auto;
     &::-webkit-scrollbar {
-        width: 0px;
+        width: 0;
     }
     &::-webkit-scrollbar-thumb {
         background-color: ${(props) => props.theme.colors.primary}80;

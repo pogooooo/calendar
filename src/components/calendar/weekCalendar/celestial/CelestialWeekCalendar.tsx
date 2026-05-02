@@ -35,6 +35,7 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, CelestialWeekProp
          handlePrevWeek, handleNextWeek, toggleCategory, handleContextMenu,
          handleQuickEdit, handleQuickDelete, handleQuickToggle, handleCreateTodo,
          setIsModalOpen, setMoreModalDate, setTodoContextMenu,
+         showProjects, onToggleProjects,
          ...props
      }, ref) => {
         const Component = asChild ? Slot : 'div';
@@ -49,6 +50,8 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, CelestialWeekProp
                         categories={categories}
                         selectedCategoryIds={selectedCategoryIds}
                         onToggle={toggleCategory}
+                        showProjects={showProjects}
+                        onToggleProjects={onToggleProjects}
                     />
                 </S.DateRangeDisplay>
 
@@ -70,6 +73,7 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, CelestialWeekProp
                                     x: { type: "spring", stiffness: 300, damping: 30 },
                                     opacity: { duration: 0.2 }
                                 }}
+                                style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
                             >
                                 <S.Header>
                                     {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map((d, i) => {
@@ -85,12 +89,18 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, CelestialWeekProp
                                 <S.BarContainer>
                                     {weekDates.map((date, idx) => {
                                         const isToday = date.toDateString() === todayStr;
-                                        const dayTodos = expandedTodos.filter(todo => isBetween(date, todo.startAt, todo.endAt));
+                                        const dayTodos = expandedTodos.filter(todo => {
+                                            if (!todo.startAt || !todo.endAt) return false;
+                                            return isBetween(date, todo.startAt, todo.endAt);
+                                        });
                                         const hiddenCount = dayTodos.filter(t => todoLevels[t.id] >= MAX_VISIBLE_LEVELS).length;
 
                                         return (
-                                            <S.DaySlot key={idx} $isToday={isToday}>
-                                                <S.AddTodoButton className="add-btn" onClick={() => handleCreateTodo(date)}>
+                                            <S.DaySlot key={idx} $isToday={isToday} onClick={() => onDateChange && onDateChange(date)}>
+                                                <S.AddTodoButton className="add-btn" onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleCreateTodo(date);
+                                                }}>
                                                     <Plus size={16} strokeWidth={3} />
                                                 </S.AddTodoButton>
 
@@ -98,12 +108,12 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, CelestialWeekProp
                                                     {Array.from({ length: Math.min(maxLevel, MAX_VISIBLE_LEVELS) }).map((_, levelIndex) => {
                                                         const todoAtThisLevel = dayTodos.find(t => todoLevels[t.id] === levelIndex);
 
-                                                        if (todoAtThisLevel) {
-                                                            const isStart = isSameDay(date, new Date(todoAtThisLevel.startAt!));
-                                                            const isEnd = isSameDay(date, new Date(todoAtThisLevel.endAt!));
+                                                        if (todoAtThisLevel && todoAtThisLevel.startAt && todoAtThisLevel.endAt) {
+                                                            const isStart = isSameDay(date, new Date(todoAtThisLevel.startAt as string | number | Date));
+                                                            const isEnd = isSameDay(date, new Date(todoAtThisLevel.endAt as string | number | Date));
                                                             const color = categories.find(c => c.id === todoAtThisLevel.categoryId)?.color;
 
-                                                            // ✨ 핵심 수정: check === 'done' 이 아니라 isDone을 사용
+                                                            // ✨ 핵심: 월간 캘린더처럼 check 필드가 아니라 isDone 속성을 사용하여 완료 상태를 판단합니다.
                                                             const isDone = todoAtThisLevel.isDone;
 
                                                             return (
@@ -112,7 +122,11 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, CelestialWeekProp
                                                                                $isEnd={isEnd}
                                                                                $color={color}
                                                                                $isDone={isDone}
-                                                                               onContextMenu={(e) => handleContextMenu(e, todoAtThisLevel)}>
+                                                                               onClick={(e) => e.stopPropagation()}
+                                                                               onContextMenu={(e) => {
+                                                                                   e.stopPropagation();
+                                                                                   handleContextMenu(e, todoAtThisLevel);
+                                                                               }}>
                                                                     {(isStart || idx === 0) && <span className="todo-title">{todoAtThisLevel.title}</span>}
                                                                 </S.TodoBarItem>
                                                             );
@@ -121,7 +135,10 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, CelestialWeekProp
                                                     })}
 
                                                     {hiddenCount > 0 && (
-                                                        <S.MoreButton onClick={() => setMoreModalDate(date)}>
+                                                        <S.MoreButton onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setMoreModalDate(date);
+                                                        }}>
                                                             +{hiddenCount} 더보기
                                                         </S.MoreButton>
                                                     )}
