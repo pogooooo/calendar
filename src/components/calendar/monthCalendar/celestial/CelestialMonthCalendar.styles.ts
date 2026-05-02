@@ -16,6 +16,13 @@ export const DateRangeDisplay = styled.div`
     letter-spacing: 2px;
     width: 49vw;
     min-width: 600px;
+
+    max-width: 100%;
+    @media (max-width: 600px) {
+        min-width: 100%;
+        width: 100%;
+    }
+    
     display: flex;
     align-items: center;
     gap: 15px;
@@ -57,6 +64,18 @@ export const SliderWrapper = styled.div`
     flex: 1;
     width: 100%;
     min-height: 0;
+
+    @media (max-width: 600px) {
+        overflow-x: auto;
+        justify-content: flex-start;
+        &::-webkit-scrollbar {
+            height: 6px;
+        }
+        &::-webkit-scrollbar-thumb {
+            background-color: ${(props) => props.theme.colors.primary}80;
+            border-radius: 3px;
+        }
+    }
 `;
 
 export const CalendarWindow = styled.div`
@@ -122,13 +141,22 @@ export const GridContainer = styled.div`
     border: 1px solid ${(props) => props.theme.colors.primary};
     border-top: none;
     background-color: ${(props) => props.theme.colors.surface};
+
+    overflow-y: auto;
+    &::-webkit-scrollbar {
+        width: 0px;
+    }
+    &::-webkit-scrollbar-thumb {
+        background-color: ${(props) => props.theme.colors.primary}80;
+        border-radius: 2px;
+    }
 `;
 
 export const WeekRowContainer = styled.div`
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     flex: 1;
-    min-height: 0;
+    min-height: 120px;
     border-bottom: 1px solid ${(props) => props.theme.colors.primary};
 
     &:last-child {
