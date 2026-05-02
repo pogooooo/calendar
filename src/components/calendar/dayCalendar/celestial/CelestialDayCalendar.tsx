@@ -11,7 +11,7 @@ type CelestialDayProps = DayThemeProps & React.HTMLAttributes<HTMLDivElement>;
 
 const CelestialDayCalendar = React.forwardRef<HTMLDivElement, CelestialDayProps>(
     ({
-         asChild, formattedDate, hours, getSlotColor,
+         asChild, formattedDate, hours, getSlotTodos,
          tasks, newTaskText, setNewTaskText, handleAddTask,
          toggleDailyTask, deleteDailyTask,
          localMemo, setLocalMemo, handleMemoBlur,
@@ -38,13 +38,37 @@ const CelestialDayCalendar = React.forwardRef<HTMLDivElement, CelestialDayProps>
                                     <div className="time-slots">
                                         <div className="slot-bar-container">
                                             {Array.from({ length: 6 }).map((_, slotIdx) => {
-                                                const slotColor = getSlotColor(hour, slotIdx);
+                                                const slotTodos = getSlotTodos(hour, slotIdx);
+                                                const hasTodo = slotTodos.length > 0;
+
+                                                const prevSlotTodos = slotIdx > 0
+                                                    ? getSlotTodos(hour, slotIdx - 1)
+                                                    : (hour > 0 ? getSlotTodos(hour - 1, 5) : []);
+
+                                                const nextSlotTodos = slotIdx < 5
+                                                    ? getSlotTodos(hour, slotIdx + 1)
+                                                    : (hour < 23 ? getSlotTodos(hour + 1, 0) : []);
+
                                                 return (
                                                     <div
                                                         key={slotIdx}
-                                                        className={`slot-box ${slotColor ? 'filled' : ''}`}
-                                                        style={slotColor ? { backgroundColor: `${slotColor}CC`, borderColor: slotColor } : {}}
-                                                    />
+                                                        className={`slot-box ${hasTodo ? 'filled' : ''}`}
+                                                    >
+                                                        {slotTodos.map((todo, idx) => {
+                                                            const isContinuingPrev = prevSlotTodos.some(pt => pt.id === todo.id);
+                                                            const isContinuingNext = nextSlotTodos.some(nt => nt.id === todo.id);
+
+                                                            return (
+                                                                <S.SlotTodoItem
+                                                                    key={`${todo.id}-${idx}`}
+                                                                    $isContinuingPrev={isContinuingPrev}
+                                                                    $isContinuingNext={isContinuingNext}
+                                                                >
+                                                                    {!isContinuingPrev && <span className="todo-text">{todo.title}</span>}
+                                                                </S.SlotTodoItem>
+                                                            );
+                                                        })}
+                                                    </div>
                                                 );
                                             })}
                                         </div>

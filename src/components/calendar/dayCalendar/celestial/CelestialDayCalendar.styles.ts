@@ -86,7 +86,7 @@ export const TimeRow = styled.div`
         font-family: ${(props) => props.theme.fonts.celestial};
         font-size: 0.75rem;
         color: ${(props) => props.theme.colors.textSecondary};
-        border-right: 1px solid ${(props) => props.theme.colors.primary};
+        border-right: 1px solid ${(props) => props.theme.colors.primary}; /* ✨ 원래의 진한 선 복구 */
         flex-shrink: 0;
     }
 
@@ -99,7 +99,7 @@ export const TimeRow = styled.div`
         .slot-bar-container {
             flex: 1;
             display: flex;
-            border: 1px solid ${(props) => props.theme.colors.primary}55;
+            border: 1px solid ${(props) => props.theme.colors.primary}55; /* ✨ 원래 테두리 복구 */
             border-radius: 4px;
             overflow: hidden;
             background-color: transparent;
@@ -107,9 +107,13 @@ export const TimeRow = styled.div`
 
         .slot-box {
             flex: 1;
+            min-width: 0;
             border-right: 1px dashed ${(props) => props.theme.colors.primary}40;
+            display: flex;
+            flex-direction: column;
             cursor: pointer;
             transition: background-color 0.1s;
+            position: relative;
 
             &:last-child {
                 border-right: none;
@@ -118,11 +122,33 @@ export const TimeRow = styled.div`
             &:hover {
                 background-color: ${(props) => props.theme.colors.primary}22;
             }
-
-            &.filled {
-                background-color: ${(props) => props.theme.colors.primary}CC;
-            }
         }
+    }
+`;
+
+export const SlotTodoItem = styled.div<{ $isContinuingPrev: boolean; $isContinuingNext: boolean }>`
+    flex: 1;
+    min-height: 0;
+    min-width: 0;
+    width: ${(props) => (props.$isContinuingNext ? "calc(100% + 2px)" : "100%")};
+    position: relative;
+    z-index: ${(props) => (props.$isContinuingPrev ? 10 : 30)};
+
+    background-color: ${(props) => props.theme.colors.primary};
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 0;
+
+    .todo-text {
+        position: absolute;
+        left: 4px;
+        z-index: 20;
+        font-size: 0.6rem;
+        color: ${(props) => props.theme.colors.surface};
+        white-space: nowrap;
+        font-weight: 500;
+        pointer-events: none;
     }
 `;
 

@@ -3,12 +3,12 @@
 import * as React from "react";
 import { useTheme } from "styled-components";
 import CelestialDayCalendar from "./celestial/CelestialDayCalendar";
-import { CategoryType } from "@/types/calendar";
+import { CategoryType } from "@/store/useCategoryStore";
 import { TodoType } from "@/store/useTodoStore";
 
 import useDailyStore from "@/store/useDailyStore";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
-import { useExpandedTodos } from "@/hooks/useExpandedTodos";
+import { useExpandedTodos, ExpandedTodoType } from "@/hooks/useExpandedTodos";
 
 export interface DayProps extends React.HTMLAttributes<HTMLDivElement> {
     asChild?: boolean;
@@ -22,7 +22,7 @@ export interface DayThemeProps {
     asChild?: boolean;
     formattedDate: string;
     hours: number[];
-    getSlotColor: (hour: number, slotIdx: number) => string | null;
+    getSlotTodos: (hour: number, slotIdx: number) => ExpandedTodoType[];
     tasks: { id: string; title: string; isDone: boolean }[];
     newTaskText: string;
     setNewTaskText: (text: string) => void;
@@ -69,26 +69,22 @@ const DayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
             }
         };
 
-        const getSlotColor = React.useCallback((hour: number, slotIdx: number) => {
+        const getSlotTodos = React.useCallback((hour: number, slotIdx: number) => {
             const slotStart = new Date(selectedDate);
             slotStart.setHours(hour, slotIdx * 10, 0, 0);
 
             const slotEnd = new Date(selectedDate);
             slotEnd.setHours(hour, slotIdx * 10 + 9, 59, 999);
 
-            const overlappingTodo = expandedTodos.find(todo => {
+            const overlappingTodos = expandedTodos.filter(todo => {
                 if (todo.isAllDay || !todo.startAt || !todo.endAt) return false;
                 const start = new Date(todo.startAt as string | number | Date);
                 const end = new Date(todo.endAt as string | number | Date);
                 return start <= slotEnd && end >= slotStart;
             });
 
-            if (overlappingTodo) {
-                const cat = categories.find(c => c.id === overlappingTodo.categoryId);
-                return cat?.color || "var(--primary-color)";
-            }
-            return null;
-        }, [expandedTodos, categories, selectedDate]);
+            return overlappingTodos;
+        }, [expandedTodos, selectedDate]);
 
         const hours = Array.from({ length: 24 }, (_, i) => i);
         const formattedDate = `${selectedDate.getFullYear()}년 ${selectedDate.getMonth() + 1}월 ${selectedDate.getDate()}일`;
@@ -106,7 +102,7 @@ const DayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
             asChild,
             formattedDate,
             hours,
-            getSlotColor,
+            getSlotTodos,
             tasks: mappedTasks,
             newTaskText,
             setNewTaskText,
