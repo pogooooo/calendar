@@ -1,4 +1,4 @@
-import styled from "styled-components";
+import styled, { css, keyframes } from "styled-components";
 
 export const CelestialCalendarWrapper = styled.div`
     display: flex;
@@ -126,13 +126,13 @@ export const TimeRow = styled.div`
     }
 `;
 
-export const SlotTodoItem = styled.div<{ $isContinuingPrev: boolean; $isContinuingNext: boolean }>`
+export const SlotTodoItem = styled.div<{ $isContinuingPrev: boolean; $isContinuingNext: boolean; $isDone?: boolean }>`
     flex: 1;
     min-height: 0;
     min-width: 0;
     width: ${(props) => (props.$isContinuingNext ? "calc(100% + 2px)" : "100%")};
     position: relative;
-    z-index: ${(props) => (props.$isContinuingPrev ? 10 : 30)};
+    z-index: ${(props) => (props.$isDone ? 40 : (props.$isContinuingPrev ? 10 : 30))};
 
     background-color: ${(props) => props.theme.colors.primary};
     display: flex;
@@ -149,6 +149,7 @@ export const SlotTodoItem = styled.div<{ $isContinuingPrev: boolean; $isContinui
         white-space: nowrap;
         font-weight: 500;
         pointer-events: none;
+        text-decoration: ${(props) => (props.$isDone ? 'line-through' : 'none')};
     }
 `;
 

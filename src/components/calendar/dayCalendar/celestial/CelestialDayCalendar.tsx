@@ -63,6 +63,7 @@ const CelestialDayCalendar = React.forwardRef<HTMLDivElement, CelestialDayProps>
                                                                     key={`${todo.id}-${idx}`}
                                                                     $isContinuingPrev={isContinuingPrev}
                                                                     $isContinuingNext={isContinuingNext}
+                                                                    $isDone={todo.isDone}
                                                                 >
                                                                     {!isContinuingPrev && <span className="todo-text">{todo.title}</span>}
                                                                 </S.SlotTodoItem>
