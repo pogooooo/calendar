@@ -36,7 +36,12 @@ const Menu = (props: { width: number, categories: CategoryType[] }) => {
                 <Kanban size={26}/>
             </SidebarMenuButton>
 
-            <SidebarMenuButton $height={30} $width={props.width - 40} label="챌린지">
+            <SidebarMenuButton
+                $height={30}
+                $width={props.width - 40}
+                label="챌린지"
+                onClick={() => { router.push("/challenge") }}
+            >
                 <Trophy size={26}/>
             </SidebarMenuButton>
         </MenuWrapper>

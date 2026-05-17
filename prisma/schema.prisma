@@ -86,6 +86,7 @@ model Category {
 
   todos Todo[]
   projects Project[]
+  challenges Challenge[]
 }
 
 model Todo {
@@ -189,4 +190,35 @@ model ProjectTask {
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model Challenge {
+  id            String    @id @default(cuid())
+  title         String
+  description   String?
+  startAt       DateTime  // 시작 날짜 (이 날짜를 기준으로 n일마다 반복을 계산)
+  interval      Int       @default(1) // n일마다 (1 = 매일, 2 = 2일마다, 3 = 3일마다...)
+  targetCount   Int?      // 목표 횟수 (null이면 무기한 반복, 100이면 100번 달성 시 종료)
+
+  category      Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  categoryId    String
+
+  completions   ChallengeCompletion[]
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model ChallengeCompletion {
+  id          String   @id @default(cuid())
+
+  challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  challengeId String
+
+  targetDate  DateTime // 챌린지를 달성한 해당 날짜
+
+  createdAt   DateTime @default(now())
+
+  // 동일한 챌린지를 같은 날짜에 여러 번 달성할 수 없도록 유니크 제약
+  @@unique([challengeId, targetDate])
 }
