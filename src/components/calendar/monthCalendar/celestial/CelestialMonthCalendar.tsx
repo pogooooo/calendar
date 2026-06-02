@@ -5,8 +5,7 @@ import { Slot } from "@radix-ui/react-slot";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 
-import { MonthThemeProps } from "../MonthCalendar";
-import { ExpandedTodoType } from "@/hooks/useExpandedTodos";
+import { MonthThemeProps, CalendarTodoType } from "../MonthCalendar";
 import { isSameDay, isBetween } from "@/utils/DateUtils";
 import { useTodoLevels } from "@/hooks/useTodoLevels";
 import { CategoryType } from "@/store/useCategoryStore";
@@ -17,16 +16,20 @@ import AnimatedDateText from "@/components/calendar/celestial/animatedDateText/A
 import TodoModal from "@/components/modal/todoModal/TodoModal";
 import MoreModal from "@/components/modal/moreModal/MoreModal";
 import TodoContextMenu from "@/components/calendar/celestial/contextMenu/TodoContextMenu";
+import { DynamicSticker } from "@/assets/celestial/ChallengeStickers";
 
 interface WeekRowProps {
     dates: Date[];
-    todos: ExpandedTodoType[];
+    todos: CalendarTodoType[];
+    challengeTodos: CalendarTodoType[];
     categories: CategoryType[];
     todayStr: string;
     currentMonth: number;
     selectedDate?: Date;
     handleCreateTodo: (date: Date) => void;
-    handleContextMenu: (e: React.MouseEvent, todo: ExpandedTodoType) => void;
+    handleContextMenu: (e: React.MouseEvent, todo: CalendarTodoType) => void;
+    handleContextMenuChallenge: (e: React.MouseEvent, challenge: CalendarTodoType) => void;
+    handleQuickToggleChallenge: (challenge: CalendarTodoType) => void;
     onCellClick?: (date: Date) => void;
     setMoreModalDate: (date: Date | null) => void;
 }
@@ -34,12 +37,13 @@ interface WeekRowProps {
 const MAX_VISIBLE_LEVELS = 2;
 
 const WeekRow = ({
-                     dates, todos, categories, todayStr, currentMonth,
-                     handleCreateTodo, handleContextMenu, selectedDate, onCellClick, setMoreModalDate
+                     dates, todos, challengeTodos, categories, todayStr, currentMonth,
+                     handleCreateTodo, handleContextMenu, handleContextMenuChallenge, handleQuickToggleChallenge,
+                     selectedDate, onCellClick, setMoreModalDate
                  }: WeekRowProps) => {
 
     const weekTodos = React.useMemo(() => {
-        return todos.filter((todo: ExpandedTodoType) => {
+        return todos.filter((todo: CalendarTodoType) => {
             if (!todo.startAt || !todo.endAt) return false;
             const start = new Date(todo.startAt as string | number | Date);
             const end = new Date(todo.endAt as string | number | Date);
@@ -58,12 +62,19 @@ const WeekRow = ({
                 const isCurrentMonth = date.getMonth() === currentMonth;
                 const isSelected = selectedDate ? date.toDateString() === selectedDate.toDateString() : false;
 
-                const dayTodos = weekTodos.filter((todo: ExpandedTodoType) => {
+                const dayTodos = weekTodos.filter((todo: CalendarTodoType) => {
                     if (!todo.startAt || !todo.endAt) return false;
                     return isBetween(date, todo.startAt, todo.endAt);
                 });
 
-                const hiddenCount = dayTodos.filter((t: { id: string | number; }) => todoLevels[t.id] >= MAX_VISIBLE_LEVELS).length;
+                const hiddenCount = dayTodos.filter((t: CalendarTodoType) => todoLevels[t.id] >= MAX_VISIBLE_LEVELS).length;
+
+                const dayChallenges = challengeTodos.filter(c => {
+                    const cDate = new Date(c.startAt as string);
+                    return cDate.getFullYear() === date.getFullYear() &&
+                        cDate.getMonth() === date.getMonth() &&
+                        cDate.getDate() === date.getDate();
+                });
 
                 return (
                     <S.DayCell
@@ -74,21 +85,45 @@ const WeekRow = ({
                         onClick={() => onCellClick?.(date)}
                     >
                         <div className="day-header">
-                            <span className="day-number">{date.getDate()}</span>
-                            <S.AddTodoButton className="add-btn" onClick={(e) => { e.stopPropagation(); handleCreateTodo(date); }}>
-                                <Plus size={16} strokeWidth={2.5} />
-                            </S.AddTodoButton>
+                            <S.DayHeaderLeft>
+                                <span className="day-number">{date.getDate()}</span>
+                                <S.AddTodoButton className="add-btn" onClick={(e) => { e.stopPropagation(); handleCreateTodo(date); }}>
+                                    <Plus size={16} strokeWidth={2.5} />
+                                </S.AddTodoButton>
+                            </S.DayHeaderLeft>
+
+                            {dayChallenges.length > 0 && (
+                                <S.DayStickerContainer>
+                                    {dayChallenges.map((challenge, cIdx) => (
+                                        <S.StickerWrapper
+                                            key={challenge.id}
+                                            title={challenge.title}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleQuickToggleChallenge(challenge);
+                                            }}
+                                            onContextMenu={(e) => {
+                                                e.stopPropagation();
+                                                handleContextMenuChallenge(e, challenge);
+                                            }}
+                                        >
+                                            <DynamicSticker isFilled={!!challenge.isDone} idx={cIdx + idx * 100} />
+                                        </S.StickerWrapper>
+                                    ))}
+                                </S.DayStickerContainer>
+                            )}
                         </div>
+
                         <S.TodoBarList>
                             {Array.from({ length: Math.min(maxLevel, MAX_VISIBLE_LEVELS) }).map((_, levelIndex) => {
-                                const todoAtThisLevel = dayTodos.find((t: ExpandedTodoType) => todoLevels[t.id] === levelIndex);
+                                const todoAtThisLevel = dayTodos.find((t: CalendarTodoType) => todoLevels[t.id] === levelIndex);
 
                                 if (todoAtThisLevel && todoAtThisLevel.startAt && todoAtThisLevel.endAt) {
                                     const isStart = isSameDay(date, new Date(todoAtThisLevel.startAt as string | number | Date));
                                     const isEnd = isSameDay(date, new Date(todoAtThisLevel.endAt as string | number | Date));
                                     const color = categories.find((c: CategoryType) => c.id === todoAtThisLevel.categoryId)?.color;
 
-                                    const isDone = todoAtThisLevel.isDone;
+                                    const isDone = !!todoAtThisLevel.isDone;
 
                                     return (
                                         <S.TodoBarItem key={todoAtThisLevel.id}
@@ -133,11 +168,13 @@ const CelestialMonthCalendar = React.forwardRef<HTMLDivElement, CelestialMonthPr
     ({
          asChild, currentDate, direction, selectedCategoryIds,
          isModalOpen, modalTodo, selectedDateForModal, contextMenu,
-         moreModalDate, weeks, expandedTodos, todayStr, dateRangeText,
+         moreModalDate, weeks, expandedTodos, challengeTodos, todayStr, dateRangeText,
          categories, selectedDate, onDateChange,
          handlePrevMonth, handleNextMonth, toggleCategory, handleContextMenu,
          handleQuickEdit, handleQuickDelete, handleQuickToggle, handleCreateTodo,
+         handleContextMenuChallenge, handleQuickToggleChallenge,
          setIsModalOpen, setMoreModalDate, setContextMenu, showProjects, onToggleProjects,
+         showChallenges, onToggleChallenges,
          ...props
      }, ref) => {
         const Component = asChild ? Slot : 'div';
@@ -154,6 +191,8 @@ const CelestialMonthCalendar = React.forwardRef<HTMLDivElement, CelestialMonthPr
                         selectedCategoryIds={selectedCategoryIds}
                         showProjects={showProjects}
                         onToggleProjects={onToggleProjects}
+                        showChallenges={showChallenges}
+                        onToggleChallenges={onToggleChallenges}
                         onToggle={toggleCategory}
                     />
                 </S.DateRangeDisplay>
@@ -188,11 +227,14 @@ const CelestialMonthCalendar = React.forwardRef<HTMLDivElement, CelestialMonthPr
                                             key={idx}
                                             dates={weekDates}
                                             todos={expandedTodos}
+                                            challengeTodos={challengeTodos}
                                             categories={categories}
                                             todayStr={todayStr}
                                             currentMonth={currentDate.getMonth()}
                                             handleCreateTodo={handleCreateTodo}
                                             handleContextMenu={handleContextMenu}
+                                            handleContextMenuChallenge={handleContextMenuChallenge}
+                                            handleQuickToggleChallenge={handleQuickToggleChallenge}
                                             selectedDate={selectedDate}
                                             onCellClick={onDateChange}
                                             setMoreModalDate={setMoreModalDate}

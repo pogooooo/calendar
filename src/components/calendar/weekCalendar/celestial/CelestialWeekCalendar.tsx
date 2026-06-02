@@ -15,6 +15,9 @@ import AnimatedDateText from "@/components/calendar/celestial/animatedDateText/A
 import TodoModal from "@/components/modal/todoModal/TodoModal";
 import MoreModal from "@/components/modal/moreModal/MoreModal";
 import TodoContextMenu from "@/components/calendar/celestial/contextMenu/TodoContextMenu";
+import { TodoType } from "@/store/useTodoStore";
+
+import { DynamicSticker } from "@/assets/celestial/ChallengeStickers";
 
 const slideVariants = {
     enter: (direction: number) => ({ x: direction > 0 ? 100 : -100, opacity: 0 }),
@@ -30,12 +33,14 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, CelestialWeekProp
     ({
          asChild, currentDate, direction, selectedCategoryIds,
          isModalOpen, modalTodo, selectedDateForModal, todoContextMenu,
-         moreModalDate, weekDates, expandedTodos, todayStr, dateRangeText,
+         moreModalDate, weekDates, expandedTodos, challengeTodos, todayStr, dateRangeText,
          todoLevels, maxLevel, categories, selectedDate, onDateChange,
          handlePrevWeek, handleNextWeek, toggleCategory, handleContextMenu,
          handleQuickEdit, handleQuickDelete, handleQuickToggle, handleCreateTodo,
          setIsModalOpen, setMoreModalDate, setTodoContextMenu,
+         handleContextMenuChallenge, handleQuickToggleChallenge,
          showProjects, onToggleProjects,
+         showChallenges, onToggleChallenges,
          ...props
      }, ref) => {
         const Component = asChild ? Slot : 'div';
@@ -52,6 +57,8 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, CelestialWeekProp
                         onToggle={toggleCategory}
                         showProjects={showProjects}
                         onToggleProjects={onToggleProjects}
+                        showChallenges={showChallenges}
+                        onToggleChallenges={onToggleChallenges}
                     />
                 </S.DateRangeDisplay>
 
@@ -86,14 +93,56 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, CelestialWeekProp
                                     })}
                                 </S.Header>
 
+                                <S.StickerRowContainer>
+                                    {weekDates.map((date, idx) => {
+                                        const isToday = date.toDateString() === todayStr;
+
+                                        const dayChallenges = challengeTodos.filter(c => {
+                                            const cDate = new Date(c.startAt);
+                                            return cDate.getFullYear() === date.getFullYear() &&
+                                                cDate.getMonth() === date.getMonth() &&
+                                                cDate.getDate() === date.getDate();
+                                        });
+
+                                        return (
+                                            <S.StickerSlot key={`sticker-col-${idx}`} $isToday={isToday}>
+                                                {dayChallenges.map((challenge, cIdx) => (
+                                                    <div
+                                                        key={challenge.id}
+                                                        title={challenge.title}
+                                                        style={{
+                                                            flexShrink: 0,
+                                                            transform: 'scale(0.75)',
+                                                            transformOrigin: 'center center',
+                                                            width: '38px',
+                                                            height: '38px',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            cursor: 'pointer'
+                                                        }}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleQuickToggleChallenge(challenge);
+                                                        }}
+                                                        onContextMenu={(e) => {
+                                                            e.stopPropagation();
+                                                            handleContextMenuChallenge(e, challenge);
+                                                        }}
+                                                    >
+                                                        <DynamicSticker isFilled={challenge.isDone} idx={cIdx + idx * 100} />
+                                                    </div>
+                                                ))}
+                                            </S.StickerSlot>
+                                        )
+                                    })}
+                                </S.StickerRowContainer>
+
                                 <S.BarContainer>
                                     {weekDates.map((date, idx) => {
                                         const isToday = date.toDateString() === todayStr;
-                                        const dayTodos = expandedTodos.filter(todo => {
-                                            if (!todo.startAt || !todo.endAt) return false;
-                                            return isBetween(date, todo.startAt, todo.endAt);
-                                        });
-                                        const hiddenCount = dayTodos.filter(t => todoLevels[t.id] >= MAX_VISIBLE_LEVELS).length;
+                                        const regularTodos = expandedTodos.filter(todo => isBetween(date, todo.startAt!, todo.endAt!));
+                                        const hiddenCount = regularTodos.filter(t => todoLevels[t.id] >= MAX_VISIBLE_LEVELS).length;
 
                                         return (
                                             <S.DaySlot key={idx} $isToday={isToday} onClick={() => onDateChange && onDateChange(date)}>
@@ -106,22 +155,22 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, CelestialWeekProp
 
                                                 <S.TodoBarList>
                                                     {Array.from({ length: Math.min(maxLevel, MAX_VISIBLE_LEVELS) }).map((_, levelIndex) => {
-                                                        const todoAtThisLevel = dayTodos.find(t => todoLevels[t.id] === levelIndex);
+                                                        const todoAtThisLevel = regularTodos.find(t => todoLevels[t.id] === levelIndex);
 
                                                         if (todoAtThisLevel && todoAtThisLevel.startAt && todoAtThisLevel.endAt) {
                                                             const isStart = isSameDay(date, new Date(todoAtThisLevel.startAt as string | number | Date));
                                                             const isEnd = isSameDay(date, new Date(todoAtThisLevel.endAt as string | number | Date));
                                                             const color = categories.find(c => c.id === todoAtThisLevel.categoryId)?.color;
 
-                                                            // ✨ 핵심: 월간 캘린더처럼 check 필드가 아니라 isDone 속성을 사용하여 완료 상태를 판단합니다.
-                                                            const isDone = todoAtThisLevel.isDone;
+                                                            const original = todoAtThisLevel.originalTodo as (TodoType & { check?: string, status?: string });
+                                                            const isActuallyDone = original?.check === 'done' || original?.status === 'done';
 
                                                             return (
                                                                 <S.TodoBarItem key={todoAtThisLevel.id}
                                                                                $isStart={isStart}
                                                                                $isEnd={isEnd}
                                                                                $color={color}
-                                                                               $isDone={isDone}
+                                                                               $isDone={isActuallyDone}
                                                                                onClick={(e) => e.stopPropagation()}
                                                                                onContextMenu={(e) => {
                                                                                    e.stopPropagation();

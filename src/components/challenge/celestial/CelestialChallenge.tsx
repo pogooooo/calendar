@@ -47,15 +47,53 @@ export default function CelestialChallenge({
     const renderStickerBoard = () => {
         if (!selectedChallenge) return <span className="placeholder">챌린지를 선택하여 스티커 보드를 확인하세요.</span>;
 
-        const completions = selectedChallenge.completions || [];
-        const currentCount = completions.length;
-        // undefined 방지
+        const start = new Date(selectedChallenge.startAt);
+        start.setHours(0, 0, 0, 0);
+        const interval = selectedChallenge.interval;
         const target = selectedChallenge.targetCount ?? null;
 
-        const totalSlots = target ? target : currentCount;
-        const slots = Array.from({ length: totalSlots }, (_, i) => i < currentCount);
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
 
-        if (totalSlots === 0) {
+        const completedDateStrs = new Set(
+            (selectedChallenge.completions || []).map(comp => {
+                const cDate = new Date(comp.targetDate);
+                return `${cDate.getFullYear()}-${String(cDate.getMonth() + 1).padStart(2, '0')}-${String(cDate.getDate()).padStart(2, '0')}`;
+            })
+        );
+
+        const slots: boolean[] = [];
+
+        if (target !== null) {
+            for (let i = 0; i < target; i++) {
+                const expectedDate = new Date(start);
+                expectedDate.setDate(start.getDate() + (i * interval));
+
+                const expectedStr = `${expectedDate.getFullYear()}-${String(expectedDate.getMonth() + 1).padStart(2, '0')}-${String(expectedDate.getDate()).padStart(2, '0')}`;
+
+                slots.push(completedDateStrs.has(expectedStr));
+            }
+        }
+
+        else {
+            const diffTime = now.getTime() - start.getTime();
+            const pastDays = Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)));
+            const pastChallengeCount = Math.floor(pastDays / interval) + 1;
+
+            if (pastChallengeCount === 0) {
+                return <span className="placeholder">아직 챌린지 시작일이 도래하지 않았습니다.</span>;
+            }
+
+            for (let i = 0; i < pastChallengeCount; i++) {
+                const expectedDate = new Date(start);
+                expectedDate.setDate(start.getDate() + (i * interval));
+                const expectedStr = `${expectedDate.getFullYear()}-${String(expectedDate.getMonth() + 1).padStart(2, '0')}-${String(expectedDate.getDate()).padStart(2, '0')}`;
+
+                slots.push(completedDateStrs.has(expectedStr));
+            }
+        }
+
+        if (slots.length === 0) {
             return <span className="placeholder">오늘의 챌린지를 달성하고 첫 스티커를 받아보세요!</span>;
         }
 

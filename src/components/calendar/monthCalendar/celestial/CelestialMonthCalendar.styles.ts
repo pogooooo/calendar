@@ -22,7 +22,7 @@ export const DateRangeDisplay = styled.div`
         min-width: 100%;
         width: 100%;
     }
-    
+
     display: flex;
     align-items: center;
     gap: 15px;
@@ -114,7 +114,7 @@ export const Header = styled.div`
     }
 `;
 
-export const DayNameBox = styled.div`
+export const DayNameBox = styled.div<{ $isToday?: boolean }>`
     display: flex;
     justify-content: center;
     align-items: center;
@@ -188,6 +188,8 @@ export const DayCell = styled.div<{ $isToday: boolean; $isCurrentMonth: boolean;
         justify-content: space-between;
         align-items: flex-start;
         padding: 6px 6px 2px 6px;
+        width: 100%;
+        box-sizing: border-box;
         z-index: 2;
 
         .day-number {
@@ -215,6 +217,34 @@ export const DayCell = styled.div<{ $isToday: boolean; $isCurrentMonth: boolean;
             z-index: 5;
         }
     `}
+`;
+
+export const DayHeaderLeft = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 4px;
+`;
+
+export const DayStickerContainer = styled.div`
+    display: flex;
+    gap: 2px;
+    flex: 1;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    max-height: 52px;
+    margin-right: 4px;
+`;
+
+export const StickerWrapper = styled.div`
+    flex-shrink: 0;
+    transform: scale(0.4);
+    transform-origin: center center;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
 `;
 
 export const AddTodoButton = styled.button`

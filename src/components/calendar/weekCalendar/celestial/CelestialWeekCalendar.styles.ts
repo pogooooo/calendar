@@ -48,9 +48,8 @@ export const ArrowWrapper = styled.div`
 export const CalendarWindow = styled.div`
     width: 49vw;
     min-width: 600px;
-    overflow: hidden; 
+    overflow: hidden;
     position: relative;
-
     padding-top: 15px;
     padding-bottom: 15px;
     margin-top: -15px;
@@ -63,8 +62,7 @@ export const Header = styled.div`
     grid-template-columns: repeat(7, 1fr);
     border: 1px solid ${(props) => props.theme.colors.primary};
     position: relative;
-
-    width: 100%; /* 수정: 49vw -> 100% */
+    width: 100%;
     box-sizing: border-box;
 
     &::after {
@@ -85,10 +83,10 @@ export const DayNameBox = styled.div<{ $isToday?: boolean }>`
     position: relative;
     box-sizing: border-box;
     border-right: 1px solid ${(props) => props.theme.colors.primary};
-    
+
     &:last-child { border-right: none; }
-    
-    .day-name { 
+
+    .day-name {
         font-size: ${(props) => props.theme.fontSizes.h4};
     }
 
@@ -96,27 +94,57 @@ export const DayNameBox = styled.div<{ $isToday?: boolean }>`
         &::before {
             content: "";
             position: absolute;
-            
             width: calc(100% + 2px);
-            height: calc(100% + 132px);
-            
+            height: calc(100% + 187px);
             top: -1px;
             left: -1px;
-            
             border: 1px solid ${(props) => props.theme.colors.primary};
             box-shadow: 0 0 5px 0.5px ${(props) => props.theme.colors.primary};
-            
             pointer-events: none;
             z-index: 10;
         }
     `}
-    
+`;
+
+export const StickerRowContainer = styled.div`
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    width: 100%;
+    min-height: 50px;
+    box-sizing: border-box;
+    border-left: 1px solid ${(props) => props.theme.colors.primary};
+    border-right: 1px solid ${(props) => props.theme.colors.primary};
+    border-bottom: 1px dashed ${(props) => props.theme.colors.primary}40;
+`;
+
+export const StickerSlot = styled.div<{ $isToday?: boolean }>`
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 5px;
+    gap: 4px;
+    align-items: center;
+    justify-content: flex-start;
+    border-right: 1px solid ${(props) => props.theme.colors.primary};
+    background-color: ${(props) => props.$isToday ? `${props.theme.colors.primary}0D` : 'transparent'};
+
+    &:last-child {
+        border-right: none;
+    }
+
+    &::-webkit-scrollbar {
+        height: 4px;
+    }
+    &::-webkit-scrollbar-thumb {
+        background-color: ${(props) => props.theme.colors.primary}40;
+        border-radius: 2px;
+    }
 `;
 
 export const BarContainer = styled.div`
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-
     width: 100%;
     height: 130px;
     box-sizing: border-box;
@@ -177,11 +205,11 @@ export const TodoBarItem = styled.div<{ $isStart: boolean, $isEnd: boolean, $col
     border: 1px solid ${(props) => props.theme.colors.primary};
     border-left: ${(props) => props.$isStart ? '1px solid props.theme.colors.primary' : '0'};
     border-right: ${(props) => props.$isEnd ? '1px solid props.theme.colors.primary' : '0'};
-    
+
     height: 25px;
     display: flex;
     font-size: ${(props) => props.theme.fontSizes.caption};
-    
+
     margin-left: ${props => props.$isStart ? '4px' : '0'};
     margin-right: ${props => props.$isEnd ? '4px' : '0'};
     border-top-left-radius: ${props => props.$isStart ? '4px' : '0'};
@@ -199,7 +227,7 @@ export const TodoBarItem = styled.div<{ $isStart: boolean, $isEnd: boolean, $col
                 -10px
                 ${props.$isStart ? '-10px' : '0px'}
         );
-        
+
         .todo-title {
             text-decoration: line-through;
             opacity: 0.8;
@@ -234,7 +262,7 @@ export const ModalOverlay = styled(motion.div)`
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
     background-color: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(3px); /* 배경 흐림 효과 살짝 강화 */
+    backdrop-filter: blur(3px);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -243,14 +271,14 @@ export const ModalOverlay = styled(motion.div)`
 
 export const ModalContainer = styled(motion.div)`
     background-color: ${(props) => props.theme.colors.surface};
-    border: 1px solid ${(props) => props.theme.colors.primary}80; /* 테두리를 살짝 연하게 */
+    border: 1px solid ${(props) => props.theme.colors.primary}80;
     width: 320px;
     max-height: 60vh;
     display: flex;
     flex-direction: column;
-    border-radius: 12px; /* ✨ 부드러운 라운드 처리 */
-    overflow: hidden; /* ✨ 헤더가 둥근 모서리를 삐져나가지 않도록 설정 */
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15), 0 0 20px ${(props) => props.theme.colors.primary}22; /* ✨ 부드럽고 입체적인 그림자 */
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15), 0 0 20px ${(props) => props.theme.colors.primary}22;
     position: relative;
 `;
 
@@ -259,11 +287,11 @@ export const ModalHeader = styled.div`
     font-size: 1.1rem;
     color: ${(props) => props.theme.colors.text};
     padding: 15px 20px;
-    border-bottom: 1px solid ${(props) => props.theme.colors.primary}33; /* 헤더 구분선을 아주 연하게 */
+    border-bottom: 1px solid ${(props) => props.theme.colors.primary}33;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background-color: ${(props) => props.theme.colors.primary}0D; /* 헤더에만 아주 옅은 배경색 추가 */
+    background-color: ${(props) => props.theme.colors.primary}0D;
 `;
 
 export const CloseButton = styled.button`
@@ -291,7 +319,6 @@ export const ModalBody = styled.div`
     flex-direction: column;
     gap: 8px;
 
-    /* 스크롤바 디자인 */
     &::-webkit-scrollbar {
         width: 4px;
     }

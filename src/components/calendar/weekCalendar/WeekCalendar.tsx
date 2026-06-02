@@ -7,16 +7,27 @@ import { CategoryType } from "@/store/useCategoryStore";
 import { TodoType } from "@/store/useTodoStore";
 
 import { useExpandedTodos, ExpandedTodoType } from "@/hooks/useExpandedTodos";
-import { getWeekDates } from "@/utils/DateUtils";
+import { getWeekDates, isSameDay } from "@/utils/DateUtils";
 import { useTodoLevels } from "@/hooks/useTodoLevels";
 import useTodoStore from "@/store/useTodoStore";
 import useAuthStore from "@/store/useAuthStore";
 import { formatDate } from "@/utils/DateUtils";
 import useProjectStore from "@/store/useProjectStore";
+import useChallengeStore, { ChallengeType } from "@/store/useChallengeStore";
 
 export interface CalendarTodoType extends ExpandedTodoType {
     isProject?: boolean;
     isProjectTask?: boolean;
+}
+
+export interface ChallengeTodoType {
+    id: string;
+    title: string;
+    categoryId: string;
+    startAt: string;
+    isChallenge: boolean;
+    isDone: boolean;
+    originalChallenge: ChallengeType;
 }
 
 export interface WeekProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'contextMenu'> {
@@ -39,6 +50,7 @@ export interface WeekThemeProps {
     moreModalDate: Date | null;
     weekDates: Date[];
     expandedTodos: CalendarTodoType[];
+    challengeTodos: ChallengeTodoType[];
     todayStr: string;
     dateRangeText: string;
     todoLevels: Record<string, number>;
@@ -56,12 +68,17 @@ export interface WeekThemeProps {
     setMoreModalDate: (date: Date | null) => void;
     setTodoContextMenu: (menu: { x: number, y: number, todo: CalendarTodoType } | null) => void;
 
+    handleContextMenuChallenge: (e: React.MouseEvent, challenge: ChallengeTodoType) => void;
+    handleQuickToggleChallenge: (challenge: ChallengeTodoType) => void;
+
     categories: CategoryType[];
     selectedDate?: Date;
     onDateChange?: (date: Date) => void;
 
     showProjects: boolean;
     onToggleProjects: () => void;
+    showChallenges: boolean;
+    onToggleChallenges: () => void;
 }
 
 const WeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
@@ -73,6 +90,7 @@ const WeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
         const [direction, setDirection] = React.useState(0);
         const [selectedCategoryIds, setSelectedCategoryIds] = React.useState<string[]>([]);
         const [showProjects, setShowProjects] = React.useState(true);
+        const [showChallenges, setShowChallenges] = React.useState(true);
 
         const [isModalOpen, setIsModalOpen] = React.useState(false);
         const [modalTodo, setModalTodo] = React.useState<TodoType | null>(null);
@@ -82,6 +100,7 @@ const WeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
         const [moreModalDate, setMoreModalDate] = React.useState<Date | null>(null);
 
         const { projects, fetchProjects } = useProjectStore();
+        const { challenges, fetchChallenges, toggleChallengeCompletion } = useChallengeStore();
         const { deleteTodo, toggleTodo } = useTodoStore();
         const accessToken = useAuthStore((state) => state.accessToken);
 
@@ -100,61 +119,111 @@ const WeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
 
         React.useEffect(() => {
             fetchProjects(authFetch);
-        }, [fetchProjects, authFetch]);
+            fetchChallenges(authFetch);
+        }, [fetchProjects, fetchChallenges, authFetch]);
 
         const filteredTodos = React.useMemo(() => {
             const baseTodos = todos.filter(todo => selectedCategoryIds.includes(todo.categoryId));
+            let projectItems: TodoType[] = [];
 
-            if (!showProjects) return baseTodos;
+            if (showProjects) {
+                projectItems = projects.reduce<TodoType[]>((acc, proj) => {
+                    if (selectedCategoryIds.includes(proj.categoryId)) {
+                        const isProjCompleted = proj.status === 'done';
+                        acc.push({
+                            id: `project-${proj.id}`,
+                            title: `[Project] ${proj.title}`,
+                            categoryId: proj.categoryId,
+                            startAt: proj.startAt ? new Date(proj.startAt).toISOString() : null,
+                            endAt: proj.endAt ? new Date(proj.endAt).toISOString() : null,
+                            isAllDay: true,
+                            repeat: 0,
+                            memo: proj.description || null,
+                            completions: [],
+                            originalData: proj as unknown as TodoType,
+                            isProject: true,
+                            check: isProjCompleted ? 'done' : 'none'
+                        } as unknown as TodoType);
 
-            const projectItems = projects.reduce<TodoType[]>((acc, proj) => {
-                if (selectedCategoryIds.includes(proj.categoryId)) {
-                    const isProjCompleted = proj.status === 'done';
-
-                    acc.push({
-                        id: `project-${proj.id}`,
-                        title: `[Project] ${proj.title}`,
-                        categoryId: proj.categoryId,
-                        startAt: proj.startAt ? new Date(proj.startAt).toISOString() : null,
-                        endAt: proj.endAt ? new Date(proj.endAt).toISOString() : null,
-                        isAllDay: true,
-                        repeat: 0,
-                        memo: proj.description || null,
-                        check: isProjCompleted ? 'done' : 'none',
-                        completions: [],
-                        originalData: proj as any,
-                        isProject: true,
-                        isDone: isProjCompleted
-                    } as unknown as TodoType);
-
-                    if (proj.tasks && Array.isArray(proj.tasks)) {
-                        proj.tasks.forEach(task => {
-                            if (task.startAt || task.endAt) {
-                                const isTaskCompleted = task.status === 'done';
-                                acc.push({
-                                    id: `proj-task-${task.id}`,
-                                    title: `↳ ${task.title}`,
-                                    categoryId: proj.categoryId,
-                                    startAt: task.startAt ? new Date(task.startAt).toISOString() : null,
-                                    endAt: task.endAt ? new Date(task.endAt).toISOString() : null,
-                                    isAllDay: true,
-                                    repeat: 0,
-                                    memo: task.description || null,
-                                    check: isTaskCompleted ? 'done' : 'none',
-                                    completions: [],
-                                    originalData: task as any,
-                                    isProjectTask: true,
-                                    isDone: isTaskCompleted
-                                } as unknown as TodoType);
-                            }
-                        });
+                        if (proj.tasks && Array.isArray(proj.tasks)) {
+                            proj.tasks.forEach(task => {
+                                if (task.startAt || task.endAt) {
+                                    const isTaskCompleted = task.status === 'done';
+                                    acc.push({
+                                        id: `proj-task-${task.id}`,
+                                        title: `↳ ${task.title}`,
+                                        categoryId: proj.categoryId,
+                                        startAt: task.startAt ? new Date(task.startAt).toISOString() : null,
+                                        endAt: task.endAt ? new Date(task.endAt).toISOString() : null,
+                                        isAllDay: true,
+                                        repeat: 0,
+                                        memo: task.description || null,
+                                        completions: [],
+                                        originalData: task as unknown as TodoType,
+                                        isProjectTask: true,
+                                        check: isTaskCompleted ? 'done' : 'none'
+                                    } as unknown as TodoType);
+                                }
+                            });
+                        }
                     }
-                }
-                return acc;
-            }, []);
+                    return acc;
+                }, []);
+            }
 
             return [...baseTodos, ...projectItems];
         }, [todos, projects, selectedCategoryIds, showProjects]);
+
+        const challengeTodos = React.useMemo(() => {
+            if (!showChallenges) return [];
+
+            const items: ChallengeTodoType[] = [];
+
+            challenges.forEach(challenge => {
+                if (!selectedCategoryIds.includes(challenge.categoryId)) return;
+
+                const start = new Date(challenge.startAt);
+                start.setHours(0, 0, 0, 0);
+
+                const safeTargetCount = challenge.targetCount ?? null;
+
+                weekDates.forEach(date => {
+                    const current = new Date(date);
+                    current.setHours(0, 0, 0, 0);
+
+                    const diffTime = current.getTime() - start.getTime();
+                    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+                    if (diffDays >= 0 && diffDays % challenge.interval === 0) {
+                        const pastDatesCount = Math.floor(diffDays / challenge.interval) + 1;
+
+                        if (safeTargetCount !== null && pastDatesCount > safeTargetCount) {
+                            return;
+                        }
+
+                        const currentStr = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}-${String(current.getDate()).padStart(2, '0')}`;
+
+                        const isCompleted = (challenge.completions || []).some(comp => {
+                            const cDate = new Date(comp.targetDate);
+                            const compStr = `${cDate.getFullYear()}-${String(cDate.getMonth() + 1).padStart(2, '0')}-${String(cDate.getDate()).padStart(2, '0')}`;
+                            return compStr === currentStr;
+                        });
+
+                        items.push({
+                            id: `challenge-${challenge.id}-${current.getTime()}`,
+                            title: challenge.title,
+                            categoryId: challenge.categoryId,
+                            startAt: current.toISOString(),
+                            isChallenge: true,
+                            isDone: isCompleted,
+                            originalChallenge: challenge
+                        });
+                    }
+                });
+            });
+
+            return items;
+        }, [challenges, selectedCategoryIds, showChallenges, weekDates]);
 
         const expandedTodos = useExpandedTodos(
             filteredTodos,
@@ -199,6 +268,12 @@ const WeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
             setTodoContextMenu({ x: e.clientX, y: e.clientY, todo: todo });
         };
 
+        const handleContextMenuChallenge = (e: React.MouseEvent, challenge: ChallengeTodoType) => {
+            e.preventDefault();
+            const statusText = challenge.isDone ? '완료' : '미완료';
+            alert(`🎯 챌린지: ${challenge.title}\n✅ 상태: ${statusText}\n\n세부 정보나 설정은 [챌린지] 탭을 이용해주세요.`);
+        };
+
         const handleQuickEdit = (expandedTodo: CalendarTodoType) => {
             if (expandedTodo.isProject || expandedTodo.isProjectTask) {
                 alert("프로젝트 관련 항목은 프로젝트 메뉴에서 수정해주세요.");
@@ -229,6 +304,7 @@ const WeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
                 setTodoContextMenu(null);
                 return;
             }
+
             const actualId = expandedTodo.originalTodo?.id || expandedTodo.id;
             const targetDateStr = expandedTodo.date
                 ? expandedTodo.date.toISOString()
@@ -236,6 +312,15 @@ const WeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
 
             await toggleTodo(authFetch, actualId, targetDateStr);
             setTodoContextMenu(null);
+        };
+
+        const handleQuickToggleChallenge = async (challengeTodo: ChallengeTodoType) => {
+            const challengeId = challengeTodo.originalChallenge.id;
+            const cellDate = new Date(challengeTodo.startAt);
+            const offset = cellDate.getTimezoneOffset() * 60000;
+            const localISOTime = (new Date(cellDate.getTime() - offset)).toISOString().split('T')[0] + 'T00:00:00.000Z';
+
+            await toggleChallengeCompletion(authFetch, challengeId, localISOTime);
         };
 
         const handleCreateTodo = (date: Date) => {
@@ -256,6 +341,7 @@ const WeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
             moreModalDate,
             weekDates,
             expandedTodos,
+            challengeTodos,
             todayStr,
             dateRangeText,
             todoLevels,
@@ -271,11 +357,15 @@ const WeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
             setIsModalOpen,
             setMoreModalDate,
             setTodoContextMenu,
+            handleContextMenuChallenge,
+            handleQuickToggleChallenge,
             categories,
             selectedDate,
             onDateChange,
             showProjects,
-            onToggleProjects: () => setShowProjects(prev => !prev)
+            onToggleProjects: () => setShowProjects(prev => !prev),
+            showChallenges,
+            onToggleChallenges: () => setShowChallenges(prev => !prev)
         };
 
         return (

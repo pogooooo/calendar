@@ -52,7 +52,8 @@ const useChallengeStore = create<ChallengeState>((set, get) => ({
             }
             if (!res.ok) throw new Error("챌린지 데이터를 불러오는 데 실패했습니다.");
 
-            const challenges = await res.json();
+            const data = await res.json();
+            const challenges = data.map((c: any) => ({ ...c, completions: c.completions || [] }));
             set({ challenges, isLoading: false });
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : "알 수 없는 오류가 발생했습니다.";
@@ -71,7 +72,9 @@ const useChallengeStore = create<ChallengeState>((set, get) => ({
             });
             if (res.ok) {
                 const serverChallenge = await res.json();
-                set((state) => ({ challenges: [...state.challenges, serverChallenge] }));
+                set((state) => ({
+                    challenges: [...state.challenges, { ...serverChallenge, completions: serverChallenge.completions || [] }]
+                }));
             }
         } catch (err) {
             console.error("[CHALLENGE_ADD_ERROR]", err);
@@ -113,24 +116,32 @@ const useChallengeStore = create<ChallengeState>((set, get) => ({
 
     toggleChallengeCompletion: async (authFetch, challengeId, targetDate) => {
         const previous = get().challenges;
+        const challenge = previous.find(c => c.id === challengeId);
+        if (!challenge) return;
+
+        const tDate = new Date(targetDate);
+        const dateStr = `${tDate.getFullYear()}-${tDate.getMonth()}-${tDate.getDate()}`;
+
+        const existingComp = (challenge.completions || []).find(comp => {
+            const cDate = new Date(comp.targetDate);
+            return `${cDate.getFullYear()}-${cDate.getMonth()}-${cDate.getDate()}` === dateStr;
+        });
+
+        let newCompletions: ChallengeCompletionType[];
+        if (existingComp) {
+            newCompletions = challenge.completions.filter(comp => comp.id !== existingComp.id);
+        } else {
+            const safeDate = new Date(tDate.getFullYear(), tDate.getMonth(), tDate.getDate(), 12, 0, 0).toISOString();
+            newCompletions = [
+                ...(challenge.completions || []),
+                { id: `temp-${Date.now()}`, challengeId, targetDate: safeDate }
+            ];
+        }
+
         set((state) => ({
-            challenges: state.challenges.map(c => {
-                if (c.id !== challengeId) return c;
-
-                const dateOnly = targetDate.split('T')[0];
-                const exists = c.completions.find(comp =>
-                    new Date(comp.targetDate).toISOString().split('T')[0] === dateOnly
-                );
-
-                if (exists) {
-                    return { ...c, completions: c.completions.filter(comp => comp.id !== exists.id) };
-                } else {
-                    return {
-                        ...c,
-                        completions: [...c.completions, { id: `temp-${Date.now()}`, challengeId, targetDate }]
-                    };
-                }
-            })
+            challenges: state.challenges.map(c =>
+                c.id === challengeId ? { ...c, completions: newCompletions } : c
+            )
         }));
 
         try {
@@ -140,16 +151,14 @@ const useChallengeStore = create<ChallengeState>((set, get) => ({
                 body: JSON.stringify({ challengeId, targetDate }),
             });
 
-            if (res.ok) {
-                const updatedCompletions = await res.json();
-                set((state) => ({
-                    challenges: state.challenges.map(c =>
-                        c.id === challengeId ? { ...c, completions: updatedCompletions } : c
-                    )
-                }));
-            } else {
-                throw new Error();
-            }
+            if (!res.ok) throw new Error("업데이트 실패");
+
+            const updatedCompletions = await res.json();
+            set((state) => ({
+                challenges: state.challenges.map(c =>
+                    c.id === challengeId ? { ...c, completions: updatedCompletions } : c
+                )
+            }));
         } catch (err) {
             console.error("[CHALLENGE_TOGGLE_ERROR]", err);
             set({ challenges: previous });

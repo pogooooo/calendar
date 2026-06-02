@@ -13,6 +13,8 @@ interface CategoryFilterProps {
     onToggle: (categoryId: string) => void;
     showProjects?: boolean;
     onToggleProjects?: () => void;
+    showChallenges?: boolean;
+    onToggleChallenges?: () => void;
 }
 
 export default function CategoryFilter({
@@ -20,7 +22,9 @@ export default function CategoryFilter({
                                            selectedCategoryIds,
                                            onToggle,
                                            showProjects,
-                                           onToggleProjects
+                                           onToggleProjects,
+                                           showChallenges,
+                                           onToggleChallenges
                                        }: CategoryFilterProps) {
     const [isOpen, setIsOpen] = React.useState(false);
     const theme = useTheme();
@@ -45,21 +49,29 @@ export default function CategoryFilter({
                         >
                             <div className="popover-content">
                                 {onToggleProjects && (
-                                    <>
-                                        <S.MenuItem
-                                            onClick={onToggleProjects}
+                                    <S.MenuItem onClick={onToggleProjects} $isSelected={!!showProjects}>
+                                        <S.CategoryColorDot
+                                            $color={theme?.colors.primary || '#ffffff'}
                                             $isSelected={!!showProjects}
-                                        >
+                                        />
+                                        프로젝트 할 일
+                                    </S.MenuItem>
+                                )}
+
+                                {onToggleChallenges && (
+                                    <>
+                                        <S.MenuItem onClick={onToggleChallenges} $isSelected={!!showChallenges}>
                                             <S.CategoryColorDot
-                                                $color={theme?.colors.primary || '#ffffff'}
-                                                $isSelected={!!showProjects}
+                                                $color={theme.colors.primary}
+                                                $isSelected={!!showChallenges}
                                             />
-                                            프로젝트 할 일
+                                            챌린지 스티커
                                         </S.MenuItem>
                                         <S.Divider />
                                     </>
                                 )}
 
+                                {/* 카테고리 맵핑 */}
                                 {categories.map((cat) => {
                                     const isSelected = selectedCategoryIds.includes(cat.id);
                                     return (
