@@ -12,8 +12,8 @@ export const DateRangeDisplay = styled.div`
     font-size: ${(props) => props.theme.fontSizes.caption};
     color: ${(props) => props.theme.colors.text};
     letter-spacing: 2px;
-    width: 49vw;
-    min-width: 600px;
+    width: 62vw;
+    min-width: 700px;
     display: flex;
     align-items: center;
     gap: 15px;
@@ -46,8 +46,8 @@ export const ArrowWrapper = styled.div`
 `;
 
 export const CalendarWindow = styled.div`
-    width: 49vw;
-    min-width: 600px;
+    width: 62vw;
+    min-width: 700px;
     overflow: hidden;
     position: relative;
     padding-top: 15px;

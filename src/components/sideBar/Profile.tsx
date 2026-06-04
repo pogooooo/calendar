@@ -22,7 +22,7 @@ const Profile = (props: {width: number}) => {
                 <UserName>{user?.name}님</UserName>
             </UserWrapper>
 
-            <SidebarMenuButton $height={30} $width={props.width-40} label="설정"><Setting width={26}/></SidebarMenuButton>
+            <SidebarMenuButton $height={30} $width={props.width-40} label="설정" onClick={() => {router.push("/settings")}}><Setting width={26}/></SidebarMenuButton>
 
             <SidebarMenuButton $height={30} $width={props.width-40} label="홈" onClick={() => {router.push("/")}}><Home width={26} /></SidebarMenuButton>
         </ProfileWrapper>
