@@ -121,7 +121,6 @@ export default function ChallengePage() {
         }
     };
 
-    // ✨ Promise<void>를 반환하도록 async를 명시적으로 유지
     const handleSaveChallenge = async (data: ChallengeData): Promise<void> => {
         if (modalMode === 'edit' && selectedChallenge) {
             await updateChallenge(authFetch, selectedChallenge.id, data);

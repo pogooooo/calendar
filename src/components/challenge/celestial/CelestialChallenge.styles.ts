@@ -1,4 +1,4 @@
-import styled, { css } from "styled-components";
+import styled from "styled-components";
 
 export const CelestialCalendarWrapper = styled.div`
     display: flex;
@@ -47,7 +47,7 @@ export const HResizer = styled.div`
     justify-content: center;
     align-items: center;
     z-index: 10;
-    
+
     .handle {
         width: 3px;
         height: 30px;
@@ -171,7 +171,7 @@ export const ChallengeRow = styled.div<{ $isSelected: boolean, $catColor: string
     }
 
     .challenge-progress {
-        width: 130px; 
+        width: 130px;
         display: flex;
         flex-direction: column;
         align-items: flex-end;
@@ -256,12 +256,12 @@ export const StickerGrid = styled.div`
 `;
 
 export const StickerSlot = styled.div`
-    width: 45px; 
+    width: 45px;
     height: 45px;
     border-radius: 50%;
     background-color: transparent;
-    display: flex; 
-    align-items: center; 
+    display: flex;
+    align-items: center;
     justify-content: center;
     position: relative;
 `;

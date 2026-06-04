@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTheme } from "styled-components";
 import { Plus, Trash2, Settings2, Sparkles, X, Check } from "lucide-react";
 
 import CategoryFilter from "@/components/calendar/celestial/categoryFilter/CategoryFilter";
@@ -43,6 +44,17 @@ export default function CelestialChallenge({
                                                isModalOpen, setIsModalOpen, modalMode, handleSaveChallenge,
                                                leftRatio, topRatio, handleHResize, handleVResize, contentRef, rightPanelRef
                                            }: CelestialChallengeProps) {
+    const theme = useTheme();
+
+    const ongoingChallenges = challenges.filter(c => {
+        const target = c.targetCount ?? null;
+        return target === null || (c.completions?.length || 0) < target;
+    });
+
+    const finishedChallenges = challenges.filter(c => {
+        const target = c.targetCount ?? null;
+        return target !== null && (c.completions?.length || 0) >= target;
+    });
 
     const renderStickerBoard = () => {
         if (!selectedChallenge) return <span className="placeholder">챌린지를 선택하여 스티커 보드를 확인하세요.</span>;
@@ -73,9 +85,7 @@ export default function CelestialChallenge({
 
                 slots.push(completedDateStrs.has(expectedStr));
             }
-        }
-
-        else {
+        } else {
             const diffTime = now.getTime() - start.getTime();
             const pastDays = Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)));
             const pastChallengeCount = Math.floor(pastDays / interval) + 1;
@@ -108,6 +118,50 @@ export default function CelestialChallenge({
         );
     };
 
+    const renderChallengeCard = (challenge: ChallengeType) => {
+        const completedCount = challenge.completions?.length || 0;
+        const targetCount = challenge.targetCount ?? null;
+        const isCompleted = targetCount !== null && completedCount >= targetCount;
+        const progress = targetCount ? Math.round((completedCount / targetCount) * 100) : 0;
+        const catColor = categories.find(c => c.id === challenge.categoryId)?.color || "gray";
+
+        return (
+            <S.ChallengeRow
+                key={challenge.id}
+                onClick={() => setSelectedChallengeId(challenge.id)}
+                $isSelected={selectedChallenge?.id === challenge.id}
+                $catColor={catColor}
+                style={{ opacity: isCompleted ? 0.6 : 1 }}
+            >
+                <div className="challenge-info">
+                    <div className="title">
+                        <span style={{ textDecoration: isCompleted ? 'line-through' : 'none' }}>
+                            {challenge.title}
+                        </span>
+                    </div>
+                    <div className="desc">{challenge.description}</div>
+                    <div className="meta">
+                        {challenge.interval === 1 ? '매일' : `${challenge.interval}일마다`} 반복
+                        {targetCount !== null && ` · 목표 ${targetCount}회`}
+                    </div>
+                </div>
+
+                <div className="challenge-progress">
+                    {targetCount !== null ? (
+                        <>
+                            <span className="count">{completedCount} / {targetCount}</span>
+                            <S.ProgressBar $progress={progress} $catColor={catColor}>
+                                <div className="fill" />
+                            </S.ProgressBar>
+                        </>
+                    ) : (
+                        <span className="count">무기한 · {completedCount}회 달성</span>
+                    )}
+                </div>
+            </S.ChallengeRow>
+        );
+    };
+
     return (
         <S.CelestialCalendarWrapper>
             <S.DateHeader>
@@ -131,55 +185,33 @@ export default function CelestialChallenge({
                         </div>
                     </div>
                     <S.TimelineScrollArea>
-                        {challenges.map((challenge) => {
-                            const completedCount = challenge.completions?.length || 0;
-                            const targetCount = challenge.targetCount ?? null;
-                            const isCompleted = targetCount !== null && completedCount >= targetCount;
-                            const progress = targetCount
-                                ? Math.round((completedCount / targetCount) * 100)
-                                : 0;
-                            const catColor = categories.find(c => c.id === challenge.categoryId)?.color || "gray";
+                        {ongoingChallenges.length > 0 && (
+                            <div style={{ padding: '12px 16px 4px', fontSize: '0.8rem', fontWeight: 600, color: theme?.colors.textSecondary }}>
+                                진행 중인 챌린지
+                            </div>
+                        )}
+                        {ongoingChallenges.map(renderChallengeCard)}
 
-                            return (
-                                <S.ChallengeRow
-                                    key={challenge.id}
-                                    onClick={() => setSelectedChallengeId(challenge.id)}
-                                    $isSelected={selectedChallenge?.id === challenge.id}
-                                    $catColor={catColor}
-                                >
-                                    <div className="challenge-info">
-                                        <div className="title">
-                                            {isCompleted && <Sparkles size={16} fill="gold" color="gold" className="star-icon" />}
-                                            <span style={{ textDecoration: isCompleted ? 'line-through' : 'none' }}>
-                                                {challenge.title}
-                                            </span>
-                                        </div>
-                                        <div className="desc">{challenge.description}</div>
-                                        <div className="meta">
-                                            {challenge.interval === 1 ? '매일' : `${challenge.interval}일마다`} 반복
-                                            {targetCount !== null && ` · 목표 ${targetCount}회`}
-                                        </div>
-                                    </div>
-
-                                    <div className="challenge-progress">
-                                        {targetCount !== null ? (
-                                            <>
-                                                <span className="count">{completedCount} / {targetCount}</span>
-                                                <S.ProgressBar $progress={progress} $catColor={catColor}>
-                                                    <div className="fill" />
-                                                </S.ProgressBar>
-                                            </>
-                                        ) : (
-                                            <span className="count">무기한 · {completedCount}회 달성</span>
-                                        )}
-                                    </div>
-                                </S.ChallengeRow>
-                            );
-                        })}
                         {challenges.length === 0 && (
                             <div style={{ padding: '20px', textAlign: 'center', color: 'gray', fontSize: '0.9rem' }}>
                                 표시할 챌린지가 없습니다.
                             </div>
+                        )}
+
+                        {finishedChallenges.length > 0 && (
+                            <>
+                                <div style={{
+                                    padding: '12px 16px 4px',
+                                    marginTop: '10px',
+                                    fontSize: '0.8rem',
+                                    fontWeight: 600,
+                                    color: theme?.colors.textSecondary,
+                                    borderTop: `1px solid ${theme?.colors.primary}33`
+                                }}>
+                                    완료된 챌린지
+                                </div>
+                                {finishedChallenges.map(renderChallengeCard)}
+                            </>
                         )}
                     </S.TimelineScrollArea>
                 </S.TimelineSection>
@@ -219,14 +251,37 @@ export default function CelestialChallenge({
                                         {selectedChallenge.targetCount != null && <div><strong>목표 횟수:</strong> {selectedChallenge.targetCount}회</div>}
                                     </div>
                                     <div className="actions">
-                                        <SecondaryButton
-                                            $variant={isCompletedToday ? "default" : "primary"}
-                                            onClick={handleToggleToday}
-                                            style={{ padding: '12px', fontSize: '1rem', fontWeight: 600, gap: '8px' }}
-                                        >
-                                            {isCompletedToday ? <X size={18} /> : <Check size={18} />}
-                                            {isCompletedToday ? "오늘 달성 취소" : "오늘 달성 완료!"}
-                                        </SecondaryButton>
+                                        {(() => {
+                                            const completedCount = selectedChallenge.completions?.length || 0;
+                                            const targetCount = selectedChallenge.targetCount ?? null;
+                                            const isFinished = targetCount !== null && completedCount >= targetCount;
+
+                                            const canToggle = !isFinished || isCompletedToday;
+
+                                            if (canToggle) {
+                                                return (
+                                                    <SecondaryButton
+                                                        $variant={isCompletedToday ? "default" : "primary"}
+                                                        onClick={handleToggleToday}
+                                                        style={{ padding: '12px', fontSize: '1rem', fontWeight: 600, gap: '8px' }}
+                                                    >
+                                                        {isCompletedToday ? <X size={18} /> : <Check size={18} />}
+                                                        {isCompletedToday ? "오늘 달성 취소" : "오늘 달성 완료!"}
+                                                    </SecondaryButton>
+                                                );
+                                            } else {
+                                                return (
+                                                    <SecondaryButton
+                                                        $variant="default"
+                                                        disabled
+                                                        style={{ padding: '12px', fontSize: '1rem', fontWeight: 600, gap: '8px', opacity: 0.6, cursor: 'not-allowed' }}
+                                                    >
+                                                        <Sparkles size={18} />
+                                                        목표 달성 완료
+                                                    </SecondaryButton>
+                                                );
+                                            }
+                                        })()}
 
                                         <div className="sub-actions">
                                             <SecondaryButton onClick={handleEditClick} style={{ gap: '6px' }}>

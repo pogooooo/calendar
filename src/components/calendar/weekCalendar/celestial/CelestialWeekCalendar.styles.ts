@@ -95,7 +95,7 @@ export const DayNameBox = styled.div<{ $isToday?: boolean }>`
             content: "";
             position: absolute;
             width: calc(100% + 2px);
-            height: calc(100% + 187px);
+            height: calc(100% + 182px);
             top: -1px;
             left: -1px;
             border: 1px solid ${(props) => props.theme.colors.primary};
