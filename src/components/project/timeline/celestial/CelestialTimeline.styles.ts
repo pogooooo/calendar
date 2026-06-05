@@ -111,11 +111,9 @@ export const DependencyLine = styled.path`
     opacity: 0.8;
 `;
 
-export const TaskNode = styled.div<{ $left: number; $top: number; $width: number; $status?: string; $isDragging?: boolean }>`
+export const TaskNode = styled.div<{ $status?: string; $isDragging?: boolean }>`
     position: absolute;
-    top: ${(props) => props.$top + 10}px;
-    left: ${(props) => props.$left}px;
-    width: ${(props) => props.$width}px;
+    /* top / left / width 는 style prop 으로 전달 (CSS 클래스 재생성 방지) */
     height: 28px;
     background: ${(props) => props.$status === 'done' ? props.theme.colors.primary + '33' : props.theme.colors.primary + '99'};
     border: 1px solid ${(props) => props.$status === 'done' ? props.theme.colors.primary + '66' : props.theme.colors.primary};
@@ -130,7 +128,8 @@ export const TaskNode = styled.div<{ $left: number; $top: number; $width: number
     z-index: ${(props) => props.$isDragging ? 10 : 3};
     opacity: ${(props) => props.$isDragging ? 0.8 : 1};
     box-shadow: ${(props) => props.$isDragging ? '0 4px 12px rgba(0,0,0,0.3)' : 'none'};
-    transition: ${(props) => props.$isDragging ? 'none' : 'box-shadow 0.2s, background 0.2s, left 0.1s ease-out'};
+    will-change: transform;
+    transition: ${(props) => props.$isDragging ? 'none' : 'box-shadow 0.2s, background 0.2s'};
 
     &:hover {
         background: ${(props) => props.theme.colors.primary};

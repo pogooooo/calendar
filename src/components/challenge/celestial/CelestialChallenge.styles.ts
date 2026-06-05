@@ -82,7 +82,9 @@ export const VResizer = styled.div`
     }
 `;
 
-export const TimelineSection = styled.div<{ $flex: number }>`
+export const TimelineSection = styled.div.attrs<{ $flex: number }>(props => ({
+    style: { flex: `${props.$flex} 1 0` }
+}))<{ $flex: number }>`
     flex: ${(props) => props.$flex};
     display: flex;
     flex-direction: column;
@@ -199,8 +201,9 @@ export const ProgressBar = styled.div<{ $progress: number, $catColor: string }>`
     }
 `;
 
-export const SideSection = styled.div<{ $flex: number }>`
-    flex: ${(props) => props.$flex};
+export const SideSection = styled.div.attrs<{ $flex: number }>(props => ({
+    style: { flex: `${props.$flex} 1 0` }
+}))<{ $flex: number }>`
     display: flex;
     flex-direction: column;
     min-height: 250px;
@@ -223,8 +226,9 @@ export const BaseCard = styled.div`
     }
 `;
 
-export const StickerBoardCard = styled(BaseCard)<{ $flex: number }>`
-    flex: ${(props) => props.$flex};
+export const StickerBoardCard = styled(BaseCard).attrs<{ $flex: number }>(props => ({
+    style: { flex: `${props.$flex} 1 0` }
+}))<{ $flex: number }>`
     min-height: 100px;
 
     .sticker-content {
@@ -266,8 +270,9 @@ export const StickerSlot = styled.div`
     position: relative;
 `;
 
-export const TaskCard = styled(BaseCard)<{ $flex: number }>`
-    flex: ${(props) => props.$flex};
+export const TaskCard = styled(BaseCard).attrs<{ $flex: number }>(props => ({
+    style: { flex: `${props.$flex} 1 0` }
+}))<{ $flex: number }>`
     min-height: 100px;
     overflow-y: auto;
 `;

@@ -38,9 +38,9 @@ const SideBarWrapper = styled.div<{ $width: number, $isResizing: boolean }>`
     width: ${(props) => props.$width}px;
 
     will-change: width;
-    contain: layout;
+    contain: layout style;
     transform: translateZ(0);
-    transition: ${(props) => props.$isResizing ? 'none' : 'width 0.3s ease-in-out'};
+    transition: ${(props) => props.$isResizing ? 'none' : 'width 0.15s ease-out'};
     
     overflow-y: clip;
     padding: 0 20px 0 20px;

@@ -19,7 +19,10 @@ export default function ProjectPage() {
 
     const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
     const [boardRatio, setBoardRatio] = useState<number>(50);
+    const boardRatioRef = useRef<number>(50);
     const layoutRef = useRef<HTMLDivElement>(null);
+    const boardRef = useRef<HTMLDivElement>(null);
+    const timelineRef = useRef<HTMLDivElement>(null);
 
     const [projectModal, setProjectModal] = useState<{ isOpen: boolean; mode: 'add' | 'edit'; data: Partial<ProjectType> }>({
         isOpen: false, mode: 'add', data: { id: '', title: '', description: '', categoryId: '', assignees: [] }
@@ -48,17 +51,29 @@ export default function ProjectPage() {
 
     const handleMouseDownResizer = (e: React.MouseEvent) => {
         e.preventDefault();
+        let rafId: number | null = null;
+
         const onMouseMove = (moveEvent: MouseEvent) => {
-            if (!layoutRef.current) return;
-            const { top, height } = layoutRef.current.getBoundingClientRect();
-            const newRatio = ((moveEvent.clientY - top) / height) * 100;
-            setBoardRatio(Math.min(Math.max(newRatio, 20), 80));
+            if (rafId !== null) cancelAnimationFrame(rafId);
+            rafId = requestAnimationFrame(() => {
+                if (!layoutRef.current) return;
+                const { top, height } = layoutRef.current.getBoundingClientRect();
+                const newRatio = Math.min(Math.max(((moveEvent.clientY - top) / height) * 100, 20), 80);
+                boardRatioRef.current = newRatio;
+                // 직접 DOM 업데이트 — React 리렌더 없음
+                if (boardRef.current)    boardRef.current.style.flex    = `${newRatio} 1 0`;
+                if (timelineRef.current) timelineRef.current.style.flex = `${100 - newRatio} 1 0`;
+            });
         };
+
         const onMouseUp = () => {
+            if (rafId !== null) cancelAnimationFrame(rafId);
+            setBoardRatio(boardRatioRef.current); // 드래그 종료 시 단 한 번 리렌더
             document.removeEventListener('mousemove', onMouseMove);
             document.removeEventListener('mouseup', onMouseUp);
         };
-        document.addEventListener('mousemove', onMouseMove);
+
+        document.addEventListener('mousemove', onMouseMove, { passive: true });
         document.addEventListener('mouseup', onMouseUp);
     };
 
@@ -115,6 +130,7 @@ export default function ProjectPage() {
             {selectedProject && (
                 <S.ContentLayout ref={layoutRef}>
                     <ProjectBoard
+                        ref={boardRef}
                         flex={boardRatio}
                         tasks={tasks}
                         onAddTask={(status) => setTaskModal({ isOpen: true, mode: 'add', data: { id: '', title: '', description: '', status, priority: 'medium', startAt: '', endAt: '', blockedBy: [], assignees: [] } })}
@@ -125,6 +141,7 @@ export default function ProjectPage() {
                     <S.Resizer onMouseDown={handleMouseDownResizer} />
 
                     <ProjectTimeline
+                        ref={timelineRef}
                         flex={100 - boardRatio}
                         tasks={tasks}
                         onEditTask={openTaskEdit}
