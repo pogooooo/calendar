@@ -1,14 +1,8 @@
 import { create } from 'zustand';
 import useAuthStore from '@/store/useAuthStore';
+import type { AuthFetch, DailyTaskType } from '@/types';
 
-export interface DailyTaskType {
-    id: string;
-    text: string;
-    isDone: boolean;
-    date: string | Date;
-}
-
-type AuthFetch = (url: string, init?: RequestInit) => Promise<Response>;
+export type { DailyTaskType };
 
 interface DailyState {
     tasks: DailyTaskType[];
@@ -17,11 +11,9 @@ interface DailyState {
     error: string | null;
 
     fetchDailyData: (authFetch: AuthFetch, date: Date) => Promise<void>;
-
     addDailyTask: (authFetch: AuthFetch, date: Date, text: string) => Promise<void>;
     toggleDailyTask: (authFetch: AuthFetch, taskId: string) => Promise<void>;
     deleteDailyTask: (authFetch: AuthFetch, taskId: string) => Promise<void>;
-
     updateDailyMemo: (authFetch: AuthFetch, date: Date, content: string) => Promise<void>;
 }
 
@@ -38,7 +30,6 @@ const useDailyStore = create<DailyState>((set, get) => ({
         set({ isLoading: true, error: null });
         try {
             const dateStr = date.toISOString();
-
             const [taskRes, memoRes] = await Promise.all([
                 authFetch(`/api/dailyTask?date=${dateStr}&userId=${userId}`),
                 authFetch(`/api/dailyMemo?date=${dateStr}&userId=${userId}`)
@@ -48,7 +39,6 @@ const useDailyStore = create<DailyState>((set, get) => ({
 
             const tasks = await taskRes.json();
             const memoData = await memoRes.json();
-
             set({ tasks, memo: memoData.content, isLoading: false });
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : "알 수 없는 오류가 발생했습니다.";
@@ -63,13 +53,7 @@ const useDailyStore = create<DailyState>((set, get) => ({
 
         const previousTasks = get().tasks;
         const tempId = `temp-${Date.now()}`;
-
-        const newTask: DailyTaskType = {
-            id: tempId,
-            text,
-            isDone: false,
-            date: date.toISOString(),
-        };
+        const newTask: DailyTaskType = { id: tempId, text, isDone: false, date: date.toISOString() };
         set((state) => ({ tasks: [...state.tasks, newTask] }));
 
         try {
@@ -78,7 +62,6 @@ const useDailyStore = create<DailyState>((set, get) => ({
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ text, date: date.toISOString(), userId }),
             });
-
             if (res.ok) {
                 const serverTask = await res.json();
                 set((state) => ({
@@ -99,7 +82,6 @@ const useDailyStore = create<DailyState>((set, get) => ({
         if (!target) return;
 
         const newStatus = !target.isDone;
-
         set((state) => ({
             tasks: state.tasks.map(t => t.id === taskId ? { ...t, isDone: newStatus } : t)
         }));
@@ -119,7 +101,6 @@ const useDailyStore = create<DailyState>((set, get) => ({
 
     deleteDailyTask: async (authFetch, taskId) => {
         const previousTasks = get().tasks;
-
         set((state) => ({ tasks: state.tasks.filter(t => t.id !== taskId) }));
 
         try {
@@ -136,7 +117,6 @@ const useDailyStore = create<DailyState>((set, get) => ({
         if (!userId) return;
 
         const previousMemo = get().memo;
-
         set({ memo: content });
 
         try {

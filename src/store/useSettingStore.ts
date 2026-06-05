@@ -1,7 +1,6 @@
 import { persist } from "zustand/middleware";
 import { create } from "zustand/react";
-
-type AuthFetch = (url: string, init?: RequestInit) => Promise<Response>;
+import type { AuthFetch } from '@/types';
 
 interface SettingState {
     theme: string;
@@ -17,7 +16,7 @@ const useSettingStore = create<SettingState>()(
             theme: 'celestial',
             isLoading: false,
 
-            setTheme: (inputTheme: string) => set({ theme: inputTheme }),
+            setTheme: (inputTheme) => set({ theme: inputTheme }),
 
             fetchSettings: async (authFetch) => {
                 set({ isLoading: true });
@@ -48,10 +47,8 @@ const useSettingStore = create<SettingState>()(
                 }
             }
         }),
-        {
-            name: "setting-store"
-        }
+        { name: "setting-store" }
     )
-)
+);
 
 export default useSettingStore;

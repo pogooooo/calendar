@@ -1,33 +1,14 @@
 import { create } from 'zustand';
+import type { AuthFetch, TodoType, TodoCompletionType } from '@/types';
 
-export interface TodoCompletionType {
-    id?: string;
-    targetDate: string;
-}
-
-export interface TodoType {
-    id: string;
-    title: string;
-    categoryId: string;
-    completions: TodoCompletionType[];
-    memo?: string | null;
-    startAt?: string | number | Date | null;
-    endAt?: string | number | Date | null;
-    isAllDay: boolean;
-    location?: string | null;
-    repeat: number;
-    repeatEndDate?: string | number | Date | null;
-    repeatCount?: number | null;
-}
-
-type AuthFetch = (url: string, init?: RequestInit) => Promise<Response>;
+export type { TodoType, TodoCompletionType };
 
 interface TodoState {
     todos: TodoType[];
     isLoading: boolean;
     error: string | null;
 
-    fetchTodos: (authFetch: AuthFetch, params?: { start?: string, end?: string, categoryId?: string }) => Promise<void>;
+    fetchTodos: (authFetch: AuthFetch, params?: { start?: string; end?: string; categoryId?: string }) => Promise<void>;
     toggleTodo: (authFetch: AuthFetch, todoId: string, targetDate: string) => Promise<void>;
     addTodo: (authFetch: AuthFetch, data: Partial<TodoType>) => Promise<void>;
     updateTodo: (authFetch: AuthFetch, todoId: string, data: Partial<TodoType>) => Promise<void>;
@@ -48,31 +29,19 @@ const useTodoStore = create<TodoState>((set, get) => ({
                 if (params.start) query.append('start', params.start);
                 if (params.end) query.append('end', params.end);
                 if (params.categoryId) query.append('categoryId', params.categoryId);
-
-                const queryString = query.toString();
-                if (queryString) {
-                    url += `?${queryString}`;
-                }
+                const qs = query.toString();
+                if (qs) url += `?${qs}`;
             }
+
             const res = await authFetch(url);
-
-            if (res.status === 401) {
-                set({ isLoading: false });
-                return;
-            }
-
+            if (res.status === 401) { set({ isLoading: false }); return; }
             if (!res.ok) throw new Error("할 일 데이터를 불러오는 데 실패했습니다.");
 
             const todos = await res.json();
             set({ todos, isLoading: false });
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : "알 수 없는 오류가 발생했습니다.";
-
-            if (message === "Session expired") {
-                set({ isLoading: false });
-                return;
-            }
-
+            if (message === "Session expired") { set({ isLoading: false }); return; }
             set({ error: message, isLoading: false });
             console.error("[TODO_FETCH_ERROR]", err);
         }
@@ -89,8 +58,10 @@ const useTodoStore = create<TodoState>((set, get) => ({
         );
 
         const newCompletions = isCompleted
-            ? (target.completions || []).filter(c => new Date(c.targetDate).toISOString().split('T')[0] !== targetDateStr) // 완료 해제
-            : [...(target.completions || []), { targetDate }];
+            ? (target.completions ?? []).filter(c =>
+                new Date(c.targetDate).toISOString().split('T')[0] !== targetDateStr
+              )
+            : [...(target.completions ?? []), { targetDate }];
 
         set((state) => ({
             todos: state.todos.map(t => t.id === todoId ? { ...t, completions: newCompletions } : t)
@@ -102,7 +73,6 @@ const useTodoStore = create<TodoState>((set, get) => ({
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ id: todoId, targetDate }),
             });
-
             if (res.status === 401) return;
             if (!res.ok) throw new Error();
         } catch (err) {
@@ -121,13 +91,13 @@ const useTodoStore = create<TodoState>((set, get) => ({
             categoryId: data.categoryId || "",
             completions: [],
             isAllDay: data.isAllDay || false,
-            memo: data.memo || null,
-            location: data.location || null,
+            memo: data.memo ?? null,
+            location: data.location ?? null,
             repeat: data.repeat || 0,
             startAt: data.startAt || new Date().toISOString(),
             endAt: data.endAt || new Date().toISOString(),
-            repeatEndDate: data.repeatEndDate || null,
-            repeatCount: data.repeatCount || null,
+            repeatEndDate: data.repeatEndDate ?? null,
+            repeatCount: data.repeatCount ?? null,
         };
 
         set((state) => ({ todos: [newTodo, ...state.todos] }));
@@ -138,7 +108,6 @@ const useTodoStore = create<TodoState>((set, get) => ({
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data),
             });
-
             if (res.ok) {
                 const serverTodo = await res.json();
                 set((state) => ({
@@ -155,7 +124,6 @@ const useTodoStore = create<TodoState>((set, get) => ({
 
     updateTodo: async (authFetch, todoId, data) => {
         const previousTodos = get().todos;
-
         set((state) => ({
             todos: state.todos.map(t => t.id === todoId ? { ...t, ...data } : t)
         }));

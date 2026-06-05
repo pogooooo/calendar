@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { verifyToken } from "@/lib/jwt";
+import { CreateTodoSchema, ToggleTodoSchema } from "@/lib/schema";
 
 const getUserId = (request: NextRequest): string | null => {
     try {
@@ -93,7 +94,7 @@ export const GET = async (request: NextRequest) => {
                 ...dateFilter,
                 categoryId: { in: targetCategoryIds }
             },
-            include: { completions: true }, // ✨ 수정됨: 완료 기록 같이 가져옴
+            include: { completions: true },
             orderBy: {
                 startAt: 'asc',
             }
@@ -114,12 +115,12 @@ export const POST = async (request: NextRequest) => {
         if (!userId) return NextResponse.json({ message: "인증되지 않은 사용자입니다." }, { status: 401 });
 
         const body = await request.json();
-        const {
-            title, categoryId, memo, startAt, endAt,
-            isAllDay, location, repeat, repeatEndDate, repeatCount
-        } = body;
+        const parsed = CreateTodoSchema.safeParse(body);
+        if (!parsed.success) {
+            return NextResponse.json({ message: parsed.error.issues[0].message }, { status: 400 });
+        }
 
-        if (!title || !categoryId) return NextResponse.json({ message: "제목과 카테고리는 필수입니다." }, { status: 400 });
+        const { title, categoryId, memo, startAt, endAt, isAllDay, location, repeat, repeatEndDate, repeatCount } = parsed.data;
 
         const hasPermission = await checkCategoryPermission(categoryId, userId);
         if (!hasPermission) return NextResponse.json({ message: "카테고리를 찾을 수 없거나 권한이 없습니다." }, { status: 403 });
@@ -131,14 +132,13 @@ export const POST = async (request: NextRequest) => {
                 memo,
                 startAt: startAt ? new Date(startAt) : null,
                 endAt: endAt ? new Date(endAt) : null,
-                isAllDay: isAllDay || false,
+                isAllDay: isAllDay ?? false,
                 location,
-                repeat: repeat || 0,
+                repeat: repeat ?? 0,
                 repeatEndDate: repeatEndDate ? new Date(repeatEndDate) : null,
-                repeatCount: repeatCount || null,
-                // check: "none" <-- 삭제됨
+                repeatCount: repeatCount ?? null,
             },
-            include: { completions: true } // ✨ 수정됨
+            include: { completions: true }
         });
 
         return NextResponse.json(newTodo);
@@ -157,41 +157,30 @@ export const PATCH = async (request: NextRequest) => {
 
         const body = await request.json();
 
-        // ✨ 새로 추가된 부분: targetDate가 있으면 "완료 토글(Completion)" 동작으로 간주
-        if (body.targetDate && body.id) {
-            const { id: todoId, targetDate } = body;
+        // targetDate 있으면 완료 토글, 없으면 내용 수정
+        if (body.targetDate !== undefined) {
+            const toggled = ToggleTodoSchema.safeParse(body);
+            if (!toggled.success) {
+                return NextResponse.json({ message: toggled.error.issues[0].message }, { status: 400 });
+            }
+            const { id: todoId, targetDate } = toggled.data;
 
-            // 날짜 비교를 위해 시간 초기화 (UTC 기준 날짜만 추출)
             const dateObj = new Date(targetDate);
             dateObj.setUTCHours(0, 0, 0, 0);
 
-            // 해당 날짜에 완료된 기록이 있는지 검사
             const existing = await prisma.todoCompletion.findFirst({
-                where: {
-                    todoId: todoId,
-                    targetDate: dateObj,
-                }
+                where: { todoId, targetDate: dateObj }
             });
 
             if (existing) {
-                // 이미 있으면 삭제 (완료 취소)
-                await prisma.todoCompletion.delete({
-                    where: { id: existing.id }
-                });
+                await prisma.todoCompletion.delete({ where: { id: existing.id } });
                 return NextResponse.json({ message: "완료 취소됨" });
             } else {
-                // 없으면 생성 (완료 처리)
-                await prisma.todoCompletion.create({
-                    data: {
-                        todoId: todoId,
-                        targetDate: dateObj,
-                    }
-                });
+                await prisma.todoCompletion.create({ data: { todoId, targetDate: dateObj } });
                 return NextResponse.json({ message: "완료됨" });
             }
         }
 
-        // --- 여기서부터는 기존 "할 일 내용 수정" 로직 ---
         const { id, ...updateData } = body;
 
         if (!id) return NextResponse.json({ message: "수정할 할 일 ID가 필요합니다." }, { status: 400 });
@@ -224,7 +213,7 @@ export const PATCH = async (request: NextRequest) => {
         const updatedTodo = await prisma.todo.update({
             where: { id },
             data: dataToUpdate,
-            include: { completions: true } // ✨ 수정됨
+            include: { completions: true }
         });
 
         return NextResponse.json(updatedTodo);

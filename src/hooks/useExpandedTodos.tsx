@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { TodoType } from '@/store/useTodoStore';
+import type { TodoType } from '@/types';
 
 export interface ExpandedTodoType extends TodoType {
     originalTodo?: TodoType;

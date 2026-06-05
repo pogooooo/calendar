@@ -1,23 +1,7 @@
 import { create } from 'zustand';
+import type { AuthFetch, CategoryType, ParticipantType } from '@/types';
 
-export interface ParticipantType {
-    id: string;
-    name: string;
-    email: string;
-    image?: string | null;
-}
-
-export interface CategoryType {
-    id: string;
-    name: string;
-    color: string;
-    description?: string | null;
-    creatorId?: string;
-    creatorName?: string;
-    participants?: ParticipantType[];
-}
-
-type AuthFetch = (url: string, init?: RequestInit) => Promise<Response>;
+export type { CategoryType, ParticipantType };
 
 interface CategoryState {
     categories: CategoryType[];
@@ -31,7 +15,7 @@ interface CategoryState {
         color: string;
         description: string;
         addParticipantEmail: string;
-        removeParticipantId: string
+        removeParticipantId: string;
     }>) => Promise<void>;
     deleteCategory: (authFetch: AuthFetch, categoryId: string) => Promise<void>;
 }
@@ -41,7 +25,7 @@ const useCategoryStore = create<CategoryState>((set, get) => ({
     isLoading: false,
     error: null,
 
-    fetchCategories: async (authFetch: AuthFetch) => {
+    fetchCategories: async (authFetch) => {
         set({ isLoading: true, error: null });
         try {
             const res = await authFetch('/api/category');
@@ -105,9 +89,7 @@ const useCategoryStore = create<CategoryState>((set, get) => ({
         set((state) => ({ categories: state.categories.filter(c => c.id !== categoryId) }));
 
         try {
-            const res = await authFetch(`/api/category?id=${categoryId}`, {
-                method: 'DELETE'
-            });
+            const res = await authFetch(`/api/category?id=${categoryId}`, { method: 'DELETE' });
             if (!res.ok) throw new Error();
         } catch (err) {
             set({ categories: prev });

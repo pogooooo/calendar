@@ -1,85 +1,75 @@
 import { NextResponse } from "next/server";
 import prisma from '@/lib/prisma';
-
-type UpdateTaskData = {
-    status?: string;
-    title?: string;
-    description?: string;
-    priority?: string;
-    startAt?: Date | null;
-    endAt?: Date | null;
-    blockedBy?: { set: { id: string }[] };
-    assignees?: { set: { id: string }[] };
-};
+import { CreateProjectTaskSchema, UpdateProjectTaskSchema } from '@/lib/schema';
 
 export async function POST(request: Request) {
     try {
-        const { title, description, status, priority, projectId, startAt, endAt, blockedBy, assignees } = await request.json();
-
-        if (!title || !projectId) {
-            return NextResponse.json({ error: "필수 항목 누락" }, { status: 400 });
+        const body = await request.json();
+        const parsed = CreateProjectTaskSchema.safeParse(body);
+        if (!parsed.success) {
+            return NextResponse.json({ message: parsed.error.issues[0].message }, { status: 400 });
         }
+
+        const { title, description, status, priority, projectId, startAt, endAt, assignees } = parsed.data;
+        const blockedBy: { id: string }[] = body.blockedBy ?? [];
 
         const task = await prisma.projectTask.create({
             data: {
                 title,
                 description,
-                status: status || 'todo',
-                priority: priority || 'medium',
+                status: status ?? 'todo',
+                priority: priority ?? 'medium',
                 projectId,
                 startAt: startAt ? new Date(startAt) : null,
                 endAt: endAt ? new Date(endAt) : null,
-                blockedBy: blockedBy && blockedBy.length > 0 ? {
-                    connect: blockedBy.map((b: { id: string }) => ({ id: b.id }))
+                blockedBy: blockedBy.length > 0 ? {
+                    connect: blockedBy.map((b) => ({ id: b.id }))
                 } : undefined,
-                assignees: assignees && assignees.length > 0 ? {
-                    connect: assignees.map((a: { id: string }) => ({ id: a.id }))
-                } : undefined
+                assignees: assignees?.length ? {
+                    connect: assignees.map((id) => ({ id }))
+                } : undefined,
             },
             include: { blockedBy: true, assignees: true }
         });
 
         return NextResponse.json(task, { status: 201 });
     } catch (error) {
-        return NextResponse.json({ error: "할 일 생성 실패" }, { status: 500 });
+        console.error("[TASK_POST_ERROR]", error);
+        return NextResponse.json({ message: "할 일 생성 실패" }, { status: 500 });
     }
 }
 
 export async function PATCH(request: Request) {
     try {
         const body = await request.json();
-        const { id, status, title, description, priority, startAt, endAt, blockedBy, assignees } = body;
-
-        const updateData: UpdateTaskData = { status, title, description, priority };
-
-        if (startAt !== undefined) updateData.startAt = startAt ? new Date(startAt) : null;
-        if (endAt !== undefined) updateData.endAt = endAt ? new Date(endAt) : null;
-
-        if (blockedBy !== undefined) {
-            updateData.blockedBy = {
-                set: blockedBy.map((b: { id: string } | string) => ({
-                    id: typeof b === 'string' ? b : b.id
-                }))
-            };
+        const parsed = UpdateProjectTaskSchema.safeParse(body);
+        if (!parsed.success) {
+            return NextResponse.json({ message: parsed.error.issues[0].message }, { status: 400 });
         }
 
-        if (assignees !== undefined) {
-            updateData.assignees = {
-                set: assignees.map((a: { id: string } | string) => ({
-                    id: typeof a === 'string' ? a : a.id
-                }))
-            };
-        }
+        const { id, startAt, endAt, assignees, ...rest } = parsed.data;
+        const blockedBy: ({ id: string } | string)[] | undefined = body.blockedBy;
 
         const task = await prisma.projectTask.update({
             where: { id },
-            data: updateData,
+            data: {
+                ...rest,
+                ...(startAt !== undefined ? { startAt: startAt ? new Date(startAt) : null } : {}),
+                ...(endAt !== undefined ? { endAt: endAt ? new Date(endAt) : null } : {}),
+                ...(blockedBy !== undefined ? {
+                    blockedBy: { set: blockedBy.map((b) => ({ id: typeof b === 'string' ? b : b.id })) }
+                } : {}),
+                ...(assignees !== undefined ? {
+                    assignees: { set: assignees.map((id) => ({ id })) }
+                } : {}),
+            },
             include: { blockedBy: true, assignees: true }
         });
 
-        return NextResponse.json(task, { status: 200 });
+        return NextResponse.json(task);
     } catch (error) {
-        return NextResponse.json({ error: "상태 변경 실패" }, { status: 500 });
+        console.error("[TASK_PATCH_ERROR]", error);
+        return NextResponse.json({ message: "상태 변경 실패" }, { status: 500 });
     }
 }
 
@@ -88,11 +78,12 @@ export async function DELETE(request: Request) {
         const { searchParams } = new URL(request.url);
         const id = searchParams.get('id');
         if (!id) {
-            return NextResponse.json({ error: "삭제할 할 일의 ID가 누락되었습니다." }, { status: 400 });
+            return NextResponse.json({ message: "ID가 필요합니다." }, { status: 400 });
         }
         await prisma.projectTask.delete({ where: { id } });
-        return NextResponse.json({ message: "삭제 완료" }, { status: 200 });
+        return NextResponse.json({ message: "삭제 완료" });
     } catch (error) {
-        return NextResponse.json({ error: "삭제 실패" }, { status: 500 });
+        console.error("[TASK_DELETE_ERROR]", error);
+        return NextResponse.json({ message: "삭제 실패" }, { status: 500 });
     }
 }

@@ -1,41 +1,7 @@
 import { create } from 'zustand';
+import type { AuthFetch, ProjectType, ProjectTaskType, UserType } from '@/types';
 
-export interface UserType {
-    id: string;
-    name: string;
-    email?: string | null;
-    image?: string | null;
-}
-
-export interface ProjectTaskType {
-    id: string;
-    title: string;
-    description?: string | null;
-    status: string;
-    priority: string;
-    projectId: string;
-    startAt?: string | null;
-    endAt?: string | null;
-    assignees?: UserType[] | null;
-    blockedBy?: ProjectTaskType[] | null;
-    blocking?: ProjectTaskType[] | null;
-}
-
-export interface ProjectType {
-    id: string;
-    title: string;
-    description?: string | null;
-    status: string;
-    categoryId: string;
-    startAt?: string | null;
-    endAt?: string | null;
-    assignees?: UserType[] | null;
-    tasks?: ProjectTaskType[] | null;
-    createdAt?: string | Date | null;
-    updatedAt?: string | Date | null;
-}
-
-type AuthFetch = (url: string, init?: RequestInit) => Promise<Response>;
+export type { ProjectType, ProjectTaskType, UserType };
 
 interface ProjectState {
     projects: ProjectType[];
@@ -52,6 +18,9 @@ interface ProjectState {
     updateProjectTask: (authFetch: AuthFetch, projectId: string, taskId: string, data: Partial<ProjectTaskType>) => Promise<void>;
 }
 
+const isSessionExpired = (err: unknown) =>
+    err instanceof Error && err.message === "Session expired";
+
 const useProjectStore = create<ProjectState>((set, get) => ({
     projects: [],
     isLoading: false,
@@ -61,26 +30,17 @@ const useProjectStore = create<ProjectState>((set, get) => ({
         set({ isLoading: true, error: null });
         try {
             let url = '/api/project';
-            if (categoryId) {
-                const query = new URLSearchParams({ categoryId }).toString();
-                url += `?${query}`;
-            }
+            if (categoryId) url += `?${new URLSearchParams({ categoryId })}`;
 
             const res = await authFetch(url);
-            if (res.status === 401) {
-                set({ isLoading: false });
-                return;
-            }
+            if (res.status === 401) { set({ isLoading: false }); return; }
             if (!res.ok) throw new Error("프로젝트 데이터를 불러오는 데 실패했습니다.");
 
             const projects = await res.json();
             set({ projects, isLoading: false });
         } catch (err: unknown) {
+            if (isSessionExpired(err)) { set({ isLoading: false }); return; }
             const message = err instanceof Error ? err.message : "알 수 없는 오류가 발생했습니다.";
-            if (message === "Session expired") {
-                set({ isLoading: false });
-                return;
-            }
             set({ error: message, isLoading: false });
             console.error("[PROJECT_FETCH_ERROR]", err);
         }
@@ -94,9 +54,9 @@ const useProjectStore = create<ProjectState>((set, get) => ({
             title: data.title || "새 프로젝트",
             categoryId: data.categoryId || "",
             status: "todo",
-            description: data.description || null,
-            startAt: data.startAt || null,
-            endAt: data.endAt || null,
+            description: data.description ?? null,
+            startAt: data.startAt ?? null,
+            endAt: data.endAt ?? null,
             assignees: [],
             tasks: [],
         };
@@ -109,7 +69,6 @@ const useProjectStore = create<ProjectState>((set, get) => ({
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data),
             });
-
             if (res.status === 401) return;
             if (res.ok) {
                 const serverProject = await res.json();
@@ -120,7 +79,7 @@ const useProjectStore = create<ProjectState>((set, get) => ({
                 throw new Error();
             }
         } catch (err) {
-            if (err instanceof Error && err.message === "Session expired") return;
+            if (isSessionExpired(err)) return;
             set({ projects: previousProjects });
             console.error("[PROJECT_ADD_ERROR]", err);
         }
@@ -141,7 +100,7 @@ const useProjectStore = create<ProjectState>((set, get) => ({
             if (res.status === 401) return;
             if (!res.ok) throw new Error();
         } catch (err) {
-            if (err instanceof Error && err.message === "Session expired") return;
+            if (isSessionExpired(err)) return;
             set({ projects: previousProjects });
             console.error("[PROJECT_UPDATE_ERROR]", err);
         }
@@ -156,7 +115,7 @@ const useProjectStore = create<ProjectState>((set, get) => ({
             if (res.status === 401) return;
             if (!res.ok) throw new Error();
         } catch (err) {
-            if (err instanceof Error && err.message === "Session expired") return;
+            if (isSessionExpired(err)) return;
             set({ projects: previousProjects });
             console.error("[PROJECT_DELETE_ERROR]", err);
         }
@@ -170,14 +129,14 @@ const useProjectStore = create<ProjectState>((set, get) => ({
             id: tempId,
             projectId,
             title: data.title || "새 할 일",
-            description: data.description || null,
+            description: data.description ?? null,
             status: data.status || "todo",
             priority: data.priority || "medium",
         };
 
         set((state) => ({
             projects: state.projects.map(p =>
-                p.id === projectId ? { ...p, tasks: [...(p.tasks || []), newTask] } : p
+                p.id === projectId ? { ...p, tasks: [...(p.tasks ?? []), newTask] } : p
             )
         }));
 
@@ -188,19 +147,18 @@ const useProjectStore = create<ProjectState>((set, get) => ({
                 body: JSON.stringify({ ...data, projectId }),
             });
             if (res.status === 401) return;
-
             if (res.ok) {
                 const serverTask = await res.json();
                 set((state) => ({
                     projects: state.projects.map(p =>
                         p.id === projectId
-                            ? { ...p, tasks: (p.tasks || []).map(t => t.id === tempId ? serverTask : t) }
+                            ? { ...p, tasks: (p.tasks ?? []).map(t => t.id === tempId ? serverTask : t) }
                             : p
                     )
                 }));
             } else throw new Error();
         } catch (err) {
-            if (err instanceof Error && err.message === "Session expired") return;
+            if (isSessionExpired(err)) return;
             set({ projects: previousProjects });
             console.error("[PROJECT_TASK_ADD_ERROR]", err);
         }
@@ -208,11 +166,10 @@ const useProjectStore = create<ProjectState>((set, get) => ({
 
     updateProjectTaskStatus: async (authFetch, projectId, taskId, newStatus) => {
         const previousProjects = get().projects;
-
         set((state) => ({
             projects: state.projects.map(p =>
                 p.id === projectId
-                    ? { ...p, tasks: (p.tasks || []).map(t => t.id === taskId ? { ...t, status: newStatus } : t) }
+                    ? { ...p, tasks: (p.tasks ?? []).map(t => t.id === taskId ? { ...t, status: newStatus } : t) }
                     : p
             )
         }));
@@ -226,19 +183,18 @@ const useProjectStore = create<ProjectState>((set, get) => ({
             if (res.status === 401) return;
             if (!res.ok) throw new Error();
         } catch (err) {
-            if (err instanceof Error && err.message === "Session expired") return;
+            if (isSessionExpired(err)) return;
             set({ projects: previousProjects });
-            console.error("[PROJECT_TASK_UPDATE_ERROR]", err);
+            console.error("[PROJECT_TASK_STATUS_ERROR]", err);
         }
     },
 
     updateProjectTask: async (authFetch, projectId, taskId, data) => {
         const previousProjects = get().projects;
-
         set((state) => ({
             projects: state.projects.map(p =>
                 p.id === projectId
-                    ? { ...p, tasks: (p.tasks || []).map(t => t.id === taskId ? { ...t, ...data } : t) }
+                    ? { ...p, tasks: (p.tasks ?? []).map(t => t.id === taskId ? { ...t, ...data } : t) }
                     : p
             )
         }));
@@ -252,7 +208,7 @@ const useProjectStore = create<ProjectState>((set, get) => ({
             if (res.status === 401) return;
             if (!res.ok) throw new Error();
         } catch (err) {
-            if (err instanceof Error && err.message === "Session expired") return;
+            if (isSessionExpired(err)) return;
             set({ projects: previousProjects });
             console.error("[PROJECT_TASK_UPDATE_ERROR]", err);
         }

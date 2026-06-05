@@ -2,15 +2,14 @@
 
 import React, { useEffect, useState, useMemo } from "react";
 import { useTheme } from "styled-components";
-import useCategoryStore, { CategoryType } from "@/store/useCategoryStore";
-import useTodoStore, { TodoType } from "@/store/useTodoStore";
+import useCategoryStore from "@/store/useCategoryStore";
+import useTodoStore from "@/store/useTodoStore";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
+import type { AuthFetch, CategoryType, TodoType } from "@/types";
 
 import CelestialCategory from "./celestial/CelestialCategory";
 import CategoryAddModal from "@/components/modal/categoryAddModal/CategoryAddModal";
 import TodoModal from "@/components/modal/todoModal/TodoModal";
-
-export type AuthFetch = (url: string, init?: RequestInit) => Promise<Response>;
 
 export interface CategoryThemeProps {
     categories: CategoryType[];
@@ -32,7 +31,7 @@ export interface CategoryThemeProps {
     handleDelete: (categoryId: string) => void;
     categoryTodos: TodoType[];
     handleEditTodo: (todo: TodoType) => void;
-    toggleTodo: (authFetch: AuthFetch, todoId: string) => void;
+    toggleTodo: (authFetch: AuthFetch, todoId: string, targetDate: string) => void;
     deleteTodo: (authFetch: AuthFetch, todoId: string) => void;
     authFetch: AuthFetch;
 

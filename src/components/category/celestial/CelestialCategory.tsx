@@ -149,16 +149,21 @@ export default function CelestialCategory(props: CategoryThemeProps) {
 
                                 {categoryTodos.length > 0 ? (
                                     <S.TodoGrid>
-                                        {categoryTodos.map(todo => (
-                                            <S.TodoCard key={todo.id} $isDone={todo.check === 'done'} onClick={() => handleEditTodo(todo)}>
+                                        {categoryTodos.map(todo => {
+                                            const todayStr = new Date().toISOString().split('T')[0];
+                                            const isDone = (todo.completions ?? []).some(c =>
+                                                new Date(c.targetDate).toISOString().split('T')[0] === todayStr
+                                            );
+                                            return (
+                                            <S.TodoCard key={todo.id} $isDone={isDone} onClick={() => handleEditTodo(todo)}>
                                                 <button
                                                     className="check-btn"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        toggleTodo(authFetch, todo.id);
+                                                        toggleTodo(authFetch, todo.id, new Date().toISOString());
                                                     }}
                                                 >
-                                                    {todo.check === 'done' && '✓'}
+                                                    {isDone && '✓'}
                                                 </button>
 
                                                 <div className="todo-info">
@@ -181,7 +186,8 @@ export default function CelestialCategory(props: CategoryThemeProps) {
                                                     삭제
                                                 </button>
                                             </S.TodoCard>
-                                        ))}
+                                            );
+                                        })}
                                     </S.TodoGrid>
                                 ) : (
                                     <S.ParticipantSection>

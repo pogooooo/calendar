@@ -1,13 +1,8 @@
-import {persist} from "zustand/middleware";
-import {create} from "zustand/react";
+import { persist } from "zustand/middleware";
+import { create } from "zustand/react";
+import type { User } from '@/types';
 
-export interface User {
-    id: string;
-    email: string;
-    name: string;
-    theme: string;
-    image: string;
-}
+export type { User };
 
 interface AuthStore {
     accessToken: string;
@@ -27,21 +22,16 @@ const useAuthStore = create<AuthStore>()(
             setUser: (user: User | null) => set({ user }),
 
             logout: async () => {
-                try{
-                    await fetch("/api/auth/logout", {
-                        method: "POST",
-                    });
+                try {
+                    await fetch("/api/auth/logout", { method: "POST" });
                     set({ accessToken: '', user: null });
-                }catch (err) {
+                } catch (err) {
                     console.error("Logout failed", err);
                 }
             },
-
         }),
-        {
-            name: "auth-store"
-        }
+        { name: "auth-store" }
     )
-)
+);
 
-export default useAuthStore
+export default useAuthStore;

@@ -1,23 +1,7 @@
 import { create } from 'zustand';
+import type { AuthFetch, ChallengeType, ChallengeCompletionType } from '@/types';
 
-export interface ChallengeCompletionType {
-    id: string;
-    challengeId: string;
-    targetDate: string | Date;
-}
-
-export interface ChallengeType {
-    id: string;
-    title: string;
-    description?: string | null;
-    startAt: string | Date;
-    interval: number;
-    targetCount?: number | null;
-    categoryId: string;
-    completions: ChallengeCompletionType[];
-}
-
-type AuthFetch = (url: string, init?: RequestInit) => Promise<Response>;
+export type { ChallengeType, ChallengeCompletionType };
 
 interface ChallengeState {
     challenges: ChallengeType[];
@@ -31,6 +15,9 @@ interface ChallengeState {
     toggleChallengeCompletion: (authFetch: AuthFetch, challengeId: string, targetDate: string) => Promise<void>;
 }
 
+const toDateKey = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
 const useChallengeStore = create<ChallengeState>((set, get) => ({
     challenges: [],
     isLoading: false,
@@ -40,20 +27,14 @@ const useChallengeStore = create<ChallengeState>((set, get) => ({
         set({ isLoading: true, error: null });
         try {
             let url = '/api/challenge';
-            if (categoryId) {
-                const query = new URLSearchParams({ categoryId }).toString();
-                url += `?${query}`;
-            }
+            if (categoryId) url += `?${new URLSearchParams({ categoryId })}`;
 
             const res = await authFetch(url);
-            if (res.status === 401) {
-                set({ isLoading: false });
-                return;
-            }
+            if (res.status === 401) { set({ isLoading: false }); return; }
             if (!res.ok) throw new Error("챌린지 데이터를 불러오는 데 실패했습니다.");
 
             const data = await res.json();
-            const challenges = data.map((c: any) => ({ ...c, completions: c.completions || [] }));
+            const challenges = data.map((c: ChallengeType) => ({ ...c, completions: c.completions ?? [] }));
             set({ challenges, isLoading: false });
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : "알 수 없는 오류가 발생했습니다.";
@@ -73,7 +54,7 @@ const useChallengeStore = create<ChallengeState>((set, get) => ({
             if (res.ok) {
                 const serverChallenge = await res.json();
                 set((state) => ({
-                    challenges: [...state.challenges, { ...serverChallenge, completions: serverChallenge.completions || [] }]
+                    challenges: [...state.challenges, { ...serverChallenge, completions: serverChallenge.completions ?? [] }]
                 }));
             }
         } catch (err) {
@@ -120,12 +101,11 @@ const useChallengeStore = create<ChallengeState>((set, get) => ({
         if (!challenge) return;
 
         const tDate = new Date(targetDate);
-        const dateStr = `${tDate.getFullYear()}-${tDate.getMonth()}-${tDate.getDate()}`;
+        const dateKey = toDateKey(tDate);
 
-        const existingComp = (challenge.completions || []).find(comp => {
-            const cDate = new Date(comp.targetDate);
-            return `${cDate.getFullYear()}-${cDate.getMonth()}-${cDate.getDate()}` === dateStr;
-        });
+        const existingComp = (challenge.completions ?? []).find(comp =>
+            toDateKey(new Date(comp.targetDate)) === dateKey
+        );
 
         let newCompletions: ChallengeCompletionType[];
         if (existingComp) {
@@ -133,7 +113,7 @@ const useChallengeStore = create<ChallengeState>((set, get) => ({
         } else {
             const safeDate = new Date(tDate.getFullYear(), tDate.getMonth(), tDate.getDate(), 12, 0, 0).toISOString();
             newCompletions = [
-                ...(challenge.completions || []),
+                ...(challenge.completions ?? []),
                 { id: `temp-${Date.now()}`, challengeId, targetDate: safeDate }
             ];
         }
@@ -150,7 +130,6 @@ const useChallengeStore = create<ChallengeState>((set, get) => ({
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ challengeId, targetDate }),
             });
-
             if (!res.ok) throw new Error("업데이트 실패");
 
             const updatedCompletions = await res.json();

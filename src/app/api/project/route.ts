@@ -1,41 +1,42 @@
 import { NextResponse } from "next/server";
 import prisma from '@/lib/prisma';
+import { CreateProjectSchema, UpdateProjectSchema } from '@/lib/schema';
 
 export async function GET(request: Request) {
     try {
         const { searchParams } = new URL(request.url);
         const categoryId = searchParams.get('categoryId');
 
-        const whereClause = categoryId ? { categoryId } : {};
-
         const projects = await prisma.project.findMany({
-            where: whereClause,
+            where: categoryId ? { categoryId } : {},
             include: {
                 assignees: true,
                 tasks: {
                     include: {
                         blockedBy: true,
-                        assignees: true
+                        assignees: true,
                     }
                 },
             },
             orderBy: { createdAt: 'desc' },
         });
 
-        return NextResponse.json(projects, { status: 200 });
+        return NextResponse.json(projects);
     } catch (error) {
-        return NextResponse.json({ error: "프로젝트 데이터를 불러오는데 실패했습니다." }, { status: 500 });
+        console.error("[PROJECT_GET_ERROR]", error);
+        return NextResponse.json({ message: "서버 오류 발생" }, { status: 500 });
     }
 }
 
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const { title, description, categoryId, startAt, endAt, assignees } = body;
-
-        if (!title || !categoryId) {
-            return NextResponse.json({ error: "필수 항목 누락." }, { status: 400 });
+        const parsed = CreateProjectSchema.safeParse(body);
+        if (!parsed.success) {
+            return NextResponse.json({ message: parsed.error.issues[0].message }, { status: 400 });
         }
+
+        const { title, description, categoryId, startAt, endAt, assignees } = parsed.data;
 
         const newProject = await prisma.project.create({
             data: {
@@ -44,56 +45,50 @@ export async function POST(request: Request) {
                 categoryId,
                 startAt: startAt ? new Date(startAt) : null,
                 endAt: endAt ? new Date(endAt) : null,
-                assignees: assignees && assignees.length > 0 ? {
-                    connect: assignees.map((id: string) => ({ id }))
+                assignees: assignees?.length ? {
+                    connect: assignees.map((id) => ({ id }))
                 } : undefined,
             },
-            include: {
-                assignees: true,
-            }
+            include: { assignees: true }
         });
 
         return NextResponse.json(newProject, { status: 201 });
     } catch (error) {
-        return NextResponse.json({ error: "생성 실패" }, { status: 500 });
+        console.error("[PROJECT_POST_ERROR]", error);
+        return NextResponse.json({ message: "서버 오류 발생" }, { status: 500 });
     }
 }
 
 export async function PATCH(request: Request) {
     try {
         const body = await request.json();
-        const { id, title, description, status, startAt, endAt, assignees } = body;
-
-        if (!id) {
-            return NextResponse.json({ error: "ID 누락" }, { status: 400 });
+        const parsed = UpdateProjectSchema.safeParse(body);
+        if (!parsed.success) {
+            return NextResponse.json({ message: parsed.error.issues[0].message }, { status: 400 });
         }
+
+        const { id, startAt, endAt, assignees, ...rest } = parsed.data;
 
         const updatedProject = await prisma.project.update({
             where: { id },
             data: {
-                title,
-                description,
-                status,
-                startAt: startAt ? new Date(startAt) : undefined,
-                endAt: endAt ? new Date(endAt) : undefined,
-                assignees: assignees ? {
-                    set: assignees.map((userId: string) => ({ id: userId }))
-                } : undefined,
+                ...rest,
+                ...(startAt !== undefined ? { startAt: startAt ? new Date(startAt) : null } : {}),
+                ...(endAt !== undefined ? { endAt: endAt ? new Date(endAt) : null } : {}),
+                ...(assignees ? { assignees: { set: assignees.map((uid) => ({ id: uid })) } } : {}),
             },
             include: {
                 assignees: true,
                 tasks: {
-                    include: {
-                        blockedBy: true,
-                        assignees: true
-                    }
+                    include: { blockedBy: true, assignees: true }
                 }
             }
         });
 
-        return NextResponse.json(updatedProject, { status: 200 });
+        return NextResponse.json(updatedProject);
     } catch (error) {
-        return NextResponse.json({ error: "수정 실패" }, { status: 500 });
+        console.error("[PROJECT_PATCH_ERROR]", error);
+        return NextResponse.json({ message: "서버 오류 발생" }, { status: 500 });
     }
 }
 
@@ -102,16 +97,13 @@ export async function DELETE(request: Request) {
         const { searchParams } = new URL(request.url);
         const id = searchParams.get('id');
 
-        if (!id) {
-            return NextResponse.json({ error: "ID 누락" }, { status: 400 });
-        }
+        if (!id) return NextResponse.json({ message: "ID가 필요합니다." }, { status: 400 });
 
-        await prisma.project.delete({
-            where: { id }
-        });
+        await prisma.project.delete({ where: { id } });
 
-        return NextResponse.json({ message: "삭제 완료" }, { status: 200 });
+        return NextResponse.json({ message: "삭제 완료" });
     } catch (error) {
-        return NextResponse.json({ error: "삭제 실패" }, { status: 500 });
+        console.error("[PROJECT_DELETE_ERROR]", error);
+        return NextResponse.json({ message: "서버 오류 발생" }, { status: 500 });
     }
 }

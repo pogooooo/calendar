@@ -35,7 +35,10 @@ export default function CelestialMoreModal({
                     <S.TodoList>
                         {dayTodos.map((todo) => {
                             const category = categories.find(c => c.id === todo.categoryId);
-                            const isDone = todo.check === "done";
+                            const dateStr = date.toISOString().split('T')[0];
+                            const isDone = (todo.completions ?? []).some(c =>
+                                new Date(c.targetDate).toISOString().split('T')[0] === dateStr
+                            );
 
                             return (
                                 <S.TodoItem
