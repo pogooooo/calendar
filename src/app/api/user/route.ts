@@ -2,6 +2,7 @@ import { NextResponse, NextRequest } from "next/server";
 import bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
 import { verifyToken } from "@/lib/jwt";
+import { passwordSchema } from "@/lib/schema";
 
 // 토큰에서 userId 추출
 function getUserId(request: NextRequest): string | null {
@@ -57,10 +58,11 @@ export async function PATCH(request: NextRequest) {
             if (!isMatch) {
                 return NextResponse.json({ message: "현재 비밀번호가 올바르지 않습니다." }, { status: 400 });
             }
-            if (newPassword.length < 8) {
-                return NextResponse.json({ message: "새 비밀번호는 8자 이상이어야 합니다." }, { status: 400 });
+            const pwCheck = passwordSchema.safeParse(newPassword);
+            if (!pwCheck.success) {
+                return NextResponse.json({ message: pwCheck.error.errors[0]?.message ?? "비밀번호 형식이 올바르지 않습니다." }, { status: 400 });
             }
-            updateData.password = await bcrypt.hash(newPassword, 10);
+            updateData.password = await bcrypt.hash(newPassword, 12);
         }
 
         if (Object.keys(updateData).length === 0) {

@@ -1,6 +1,9 @@
 import jwt from "jsonwebtoken";
 
-const SECRET_KEY = process.env.AUTH_SECRET || "";
+const SECRET_KEY = process.env.AUTH_SECRET;
+if (!SECRET_KEY) {
+    throw new Error("AUTH_SECRET 환경변수가 설정되지 않았습니다.");
+}
 
 export interface TokenPayload {
     userId: string;
