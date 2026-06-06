@@ -5,6 +5,7 @@ import useSettingStore from "@/store/useSettingStore";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import CelestialSettings from "./celestial/CelestialSettings";
 
+
 export default function SettingsPage() {
     const theme = useTheme();
     const themeName = theme?.name || "celestial";

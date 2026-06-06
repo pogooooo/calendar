@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import { Suspense } from "react";
 import SettingsPage from "@/components/settings/SettingsPage";
 
 export const metadata: Metadata = {
@@ -9,7 +10,9 @@ export const metadata: Metadata = {
 export default function Page() {
     return (
         <main style={{ width: "100%", height: "100%" }}>
-            <SettingsPage />
+            <Suspense fallback={null}>
+                <SettingsPage />
+            </Suspense>
         </main>
     );
 }
