@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
         const validation = RegisterSchema.safeParse(body);
         if (!validation.success) {
             // 첫 번째 에러 메시지만 반환 (상세 내부 구조 노출 방지)
-            const firstError = validation.error.errors[0]?.message ?? "입력값이 올바르지 않습니다.";
+            const firstError = validation.error.issues[0]?.message ?? "입력값이 올바르지 않습니다.";
             return NextResponse.json({ message: firstError }, { status: 400 });
         }
 

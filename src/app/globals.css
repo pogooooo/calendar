@@ -1,10 +1,5 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -22,4 +17,30 @@
 body {
   height: 100vh;
   width: 100%;
+}
+
+/* 🌟 위젯 창 투명 배경 (수정됨) */
+html:has([data-widget]),
+html:has([data-widget]) body {
+  background: transparent !important;
+  background-color: transparent !important;
+  /* 최상단 배경 변수만 투명하게 만들고, 내부 컴포넌트에는 영향 가지 않게! */
+  --background: transparent !important;
+}
+
+/* 월간 캘린더: 내부 모든 요소의 스크롤바 숨기기 */
+[data-widget="monthly"] *,
+[data-widget="monthly"] *::-webkit-scrollbar {
+  scrollbar-width: none !important;
+}
+[data-widget="monthly"] *::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* 위젯 전체 텍스트 선택 방지 */
+[data-widget] * {
+  -webkit-user-select: none;
+  user-select: none;
 }

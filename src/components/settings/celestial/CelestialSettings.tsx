@@ -29,11 +29,47 @@ const THEMES = [
 
 const NAV_SECTIONS = [
     { id: "sec-appearance", label: "Appearance" },
+    { id: "sec-widgets",    label: "위젯" },
     { id: "sec-account-info", label: "계정 정보" },
     { id: "sec-name", label: "이름 변경" },
     { id: "sec-password", label: "비밀번호 변경" },
     { id: "sec-delete", label: "회원 탈퇴" },
 ] as const;
+
+type WidgetKind = "daily" | "weekly" | "monthly";
+
+const WIDGET_LIST: { kind: WidgetKind; label: string; desc: string }[] = [
+    { kind: "daily",   label: "일간 캘린더",  desc: "오늘의 일정 타임라인" },
+    { kind: "weekly",  label: "주간 캘린더",  desc: "이번 주 7일 일정" },
+    { kind: "monthly", label: "월간 캘린더",  desc: "월간 일정 그리드" },
+];
+
+async function invokeWidget(action: "open" | "close", kind: WidgetKind) {
+    if (typeof window === "undefined") return;
+
+    // Tauri v2 환경 감지
+    const isTauri = "__TAURI_INTERNALS__" in window;
+
+    console.log("[Widget] isTauri:", isTauri, "action:", action, "kind:", kind);
+
+    if (isTauri) {
+        try {
+            const { invoke } = await import("@tauri-apps/api/core");
+            const cmd = action === "open" ? "open_widget" : "close_widget";
+            console.log("[Widget] invoking:", cmd);
+            const result = await invoke(cmd, { kind });
+            console.log("[Widget] invoke result:", result);
+        } catch (err) {
+            console.error("[Widget] invoke 실패:", err);
+        }
+    } else {
+        // 브라우저 모드 — 팝업으로 미리보기
+        if (action === "open") {
+            window.open(`/widget/${kind}`, `widget_${kind}`,
+                "width=400,height=520,menubar=no,toolbar=no,location=no");
+        }
+    }
+}
 
 export default function CelestialSettings({ currentTheme, onThemeChange }: SettingsThemeProps) {
     const router = useRouter();
@@ -202,6 +238,33 @@ export default function CelestialSettings({ currentTheme, onThemeChange }: Setti
                             );
                         })}
                     </S.ThemeGrid>
+                </S.Section>
+
+                {/* 위젯 */}
+                <S.Section id="sec-widgets">
+                    <S.SectionTitle>위젯</S.SectionTitle>
+                    <S.SectionBody>
+                        <S.WarningText style={{ marginBottom: 16 }}>
+                            데스크탑 위젯으로 열어 바탕화면에 캘린더를 고정할 수 있습니다.
+                            Tauri 앱에서 실행 중일 때 동작합니다.
+                        </S.WarningText>
+                        {WIDGET_LIST.map(({ kind, label, desc }) => (
+                            <S.InfoRow key={kind}>
+                                <div>
+                                    <S.InfoValue>{label}</S.InfoValue>
+                                    <div style={{ fontSize: "0.74rem", opacity: 0.55, marginTop: 2 }}>{desc}</div>
+                                </div>
+                                <S.ButtonRow style={{ marginTop: 0 }}>
+                                    <S.FormButton $variant="primary" onClick={() => invokeWidget("open", kind)}>
+                                        열기
+                                    </S.FormButton>
+                                    <S.FormButton $variant="default" onClick={() => invokeWidget("close", kind)}>
+                                        닫기
+                                    </S.FormButton>
+                                </S.ButtonRow>
+                            </S.InfoRow>
+                        ))}
+                    </S.SectionBody>
                 </S.Section>
 
                 {/* 계정 정보 */}

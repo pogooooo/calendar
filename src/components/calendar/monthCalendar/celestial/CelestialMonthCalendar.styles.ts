@@ -7,6 +7,10 @@ export const CelestialCalendarWrapper = styled.div`
     align-items: center;
     height: 100%;
     width: 100%;
+
+    ::-webkit-scrollbar {
+        display: none;
+    }
 `;
 
 export const DateRangeDisplay = styled.div`

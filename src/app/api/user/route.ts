@@ -60,7 +60,7 @@ export async function PATCH(request: NextRequest) {
             }
             const pwCheck = passwordSchema.safeParse(newPassword);
             if (!pwCheck.success) {
-                return NextResponse.json({ message: pwCheck.error.errors[0]?.message ?? "비밀번호 형식이 올바르지 않습니다." }, { status: 400 });
+                return NextResponse.json({ message: pwCheck.error.issues[0]?.message ?? "비밀번호 형식이 올바르지 않습니다." }, { status: 400 });
             }
             updateData.password = await bcrypt.hash(newPassword, 12);
         }

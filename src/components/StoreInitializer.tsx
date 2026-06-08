@@ -42,6 +42,10 @@ export default function StoreInitializer({ children }: { children: React.ReactNo
 
         const publicRoutes = ["/signIn", "/signUp"];
         const isPublicRoute = publicRoutes.includes(pathname);
+        const isWidgetRoute = pathname.startsWith("/widget");
+
+        // 위젯 창은 자체 인증 처리 — 리디렉션 없음
+        if (isWidgetRoute) return;
 
         if (!accessToken && !isPublicRoute) {
             router.replace("/signIn");
