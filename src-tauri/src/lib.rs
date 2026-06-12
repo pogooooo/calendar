@@ -29,6 +29,7 @@ mod win32 {
     pub const DWMWA_COLOR_NONE: u32 = 0xFFFF_FFFE;
     pub const DWMWA_COLOR_DEFAULT: u32 = 0xFFFF_FFFF;
     pub const DWMWA_DISALLOW_PEEK: u32 = 11;
+    pub const GWLP_HWNDPARENT: i32 = -8;
 
     #[link(name = "user32")]
     extern "system" {
@@ -47,6 +48,15 @@ mod win32 {
             pvParam: *mut std::ffi::c_void,
             fWinIni: u32,
         ) -> i32;
+        pub fn GetDesktopWindow() -> HWND;
+        // ✅ 바탕화면(Progman)을 찾기 위한 API 추가
+        pub fn FindWindowW(lpClassName: *const u16, lpWindowName: *const u16) -> HWND;
+    }
+
+    #[cfg(target_pointer_width = "64")]
+    #[link(name = "user32")]
+    extern "system" {
+        pub fn SetWindowLongPtrW(hWnd: HWND, nIndex: i32, dwNewLong: isize) -> isize;
     }
 
     #[link(name = "dwmapi")]
@@ -55,6 +65,52 @@ mod win32 {
             hwnd: HWND, dwAttribute: u32,
             pvAttribute: *const std::ffi::c_void, cbAttribute: u32,
         ) -> i32;
+    }
+
+    pub type HKEY = *mut c_void;
+    pub const HKEY_CURRENT_USER: HKEY = 0x80000001usize as _;
+    pub const KEY_READ: u32 = 0x20019;
+
+    #[link(name = "advapi32")]
+    extern "system" {
+        pub fn RegOpenKeyExW(
+            hKey: HKEY, lpSubKey: *const u16,
+            ulOptions: u32, samDesired: u32, phkResult: *mut HKEY,
+        ) -> i32;
+        pub fn RegQueryValueExW(
+            hKey: HKEY, lpValueName: *const u16,
+            lpReserved: *mut u32, lpType: *mut u32,
+            lpData: *mut u8, lpcbData: *mut u32,
+        ) -> i32;
+        pub fn RegCloseKey(hKey: HKEY) -> i32;
+    }
+
+    pub unsafe fn read_reg_sz(subkey: &str, value: &str) -> Option<String> {
+        use std::ffi::OsStr;
+        use std::os::windows::ffi::OsStrExt;
+
+        let sk: Vec<u16> = OsStr::new(subkey).encode_wide().chain(Some(0)).collect();
+        let vn: Vec<u16> = OsStr::new(value).encode_wide().chain(Some(0)).collect();
+
+        let mut hk: HKEY = std::ptr::null_mut();
+        if RegOpenKeyExW(HKEY_CURRENT_USER, sk.as_ptr(), 0, KEY_READ, &mut hk) != 0 {
+            return None;
+        }
+
+        let mut sz: u32 = 0;
+        RegQueryValueExW(hk, vn.as_ptr(), std::ptr::null_mut(), std::ptr::null_mut(), std::ptr::null_mut(), &mut sz);
+
+        let mut buf: Vec<u8> = vec![0u8; sz as usize];
+        let ret = RegQueryValueExW(hk, vn.as_ptr(), std::ptr::null_mut(), std::ptr::null_mut(), buf.as_mut_ptr(), &mut sz);
+        RegCloseKey(hk);
+
+        if ret != 0 || sz < 2 { return None; }
+
+        let u16s: Vec<u16> = buf.chunks_exact(2)
+            .map(|c| u16::from_le_bytes([c[0], c[1]]))
+            .collect();
+        let len = u16s.iter().position(|&c| c == 0).unwrap_or(u16s.len());
+        String::from_utf16(&u16s[..len]).ok()
     }
 
     pub const SW_SHOWNOACTIVATE: i32 = 4;
@@ -84,6 +140,27 @@ mod win32 {
         set_attr(hwnd, DWMWA_DISALLOW_PEEK, 1);
     }
 
+    // ✅ Progman을 찾아 소유권을 넘겨 Win+D를 무시하게 만드는 핵심 로직
+    pub unsafe fn bypass_win_d(hwnd: isize, enable: bool) {
+        let owner = if enable {
+            // "Progman" 이라는 진짜 윈도우 바탕화면 클래스 찾기
+            let progman_class = [ 'P' as u16, 'r' as u16, 'o' as u16, 'g' as u16, 'm' as u16, 'a' as u16, 'n' as u16, 0 ];
+            let mut p = FindWindowW(progman_class.as_ptr(), std::ptr::null());
+            if p.is_null() {
+                p = GetDesktopWindow(); // 최후의 보루
+            }
+            p
+        } else {
+            std::ptr::null_mut() // 우선순위가 바뀌면 다시 독립된 창으로 복귀
+        };
+
+        #[cfg(target_pointer_width = "64")]
+        SetWindowLongPtrW(hwnd as HWND, GWLP_HWNDPARENT, owner as isize);
+
+        #[cfg(target_pointer_width = "32")]
+        SetWindowLongW(hwnd as HWND, GWLP_HWNDPARENT, owner as i32);
+    }
+
     pub unsafe fn set_dwm_border(hwnd: isize, show: bool) {
         let color: u32 = if show { DWMWA_COLOR_DEFAULT } else { DWMWA_COLOR_NONE };
         DwmSetWindowAttribute(
@@ -108,6 +185,30 @@ fn get_hwnd(win: &tauri::WebviewWindow) -> Option<isize> {
 
 #[derive(Clone)]
 pub struct BottomWidgets(pub Arc<Mutex<HashSet<String>>>);
+
+#[tauri::command]
+fn get_wallpaper_style() -> String {
+    #[cfg(target_os = "windows")]
+    unsafe {
+        let tile = win32::read_reg_sz("Control Panel\\Desktop", "TileWallpaper")
+            .unwrap_or_default();
+        if tile.trim() == "1" {
+            return "tile".into();
+        }
+        let style = win32::read_reg_sz("Control Panel\\Desktop", "WallpaperStyle")
+            .unwrap_or_default();
+        return match style.trim() {
+            "0"  => "center",
+            "2"  => "stretch",
+            "6"  => "fit",
+            "10" => "fill",
+            "22" => "span",
+            _    => "fill",
+        }.into();
+    }
+    #[cfg(not(target_os = "windows"))]
+    "fill".into()
+}
 
 #[tauri::command]
 fn get_wallpaper_path() -> String {
@@ -164,7 +265,10 @@ async fn open_widget(app: tauri::AppHandle, kind: String) -> Result<(), String> 
                 let _ = win.show();
                 #[cfg(target_os = "windows")]
                 if let Some(hwnd) = get_hwnd(&win) {
-                    unsafe { win32::remove_shadow_and_border(hwnd); }
+                    unsafe {
+                        win32::remove_shadow_and_border(hwnd);
+                        win32::bypass_win_d(hwnd, true); // 생성 시 바탕화면 고정 켜기
+                    }
                 }
             }
             Err(_) => {},
@@ -198,7 +302,10 @@ async fn set_widget_priority(
                 win.set_always_on_top(true).map_err(|e| e.to_string())?;
                 #[cfg(target_os = "windows")]
                 if let Some(hwnd) = get_hwnd(&win) {
-                    unsafe { win32::set_noactivate(hwnd, false); }
+                    unsafe {
+                        win32::bypass_win_d(hwnd, false);
+                        win32::set_noactivate(hwnd, false);
+                    }
                 }
             }
             "bottom" => {
@@ -206,6 +313,7 @@ async fn set_widget_priority(
                 #[cfg(target_os = "windows")]
                 if let Some(hwnd) = get_hwnd(&win) {
                     unsafe {
+                        win32::bypass_win_d(hwnd, true); // 바탕화면일 때만 켜기
                         win32::set_noactivate(hwnd, true);
                         win32::SetWindowPos(
                             hwnd as _,
@@ -220,7 +328,10 @@ async fn set_widget_priority(
                 win.set_always_on_top(false).map_err(|e| e.to_string())?;
                 #[cfg(target_os = "windows")]
                 if let Some(hwnd) = get_hwnd(&win) {
-                    unsafe { win32::set_noactivate(hwnd, false); }
+                    unsafe {
+                        win32::bypass_win_d(hwnd, false);
+                        win32::set_noactivate(hwnd, false);
+                    }
                 }
             }
         }
@@ -325,6 +436,7 @@ pub fn run() {
             set_widget_priority,
             set_widget_locked,
             get_wallpaper_path,
+            get_wallpaper_style,
         ])
         .setup(move |app| {
             {
@@ -332,7 +444,7 @@ pub fn run() {
                 let bw = bottom_widgets.clone();
                 tauri::async_runtime::spawn(async move {
                     loop {
-                        tokio::time::sleep(tokio::time::Duration::from_millis(150)).await;
+                        tokio::time::sleep(tokio::time::Duration::from_millis(30)).await;
 
                         for &kind in &["daily", "weekly", "monthly"] {
                             if let Some(win) = app_handle

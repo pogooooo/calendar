@@ -3,7 +3,7 @@
 import React, { useState, useCallback, useEffect, useMemo } from "react";
 import styled, { ThemeProvider, keyframes, useTheme } from "styled-components";
 import { Settings, X, GripHorizontal, Lock } from "lucide-react";
-import useWidgetStore, { BgMode, WidgetBgSettings, WidgetPriority } from "@/store/useWidgetStore";
+import useWidgetStore, { BgMode, WidgetBgSettings } from "@/store/useWidgetStore";
 import { invoke } from "@tauri-apps/api/core";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { getCurrentWindow, currentMonitor } from "@tauri-apps/api/window";
@@ -107,22 +107,15 @@ function buildBackground(bg: WidgetBgSettings, surfaceColor: string): React.CSSP
     }
 }
 
-const PRIORITY_LABELS: Record<WidgetPriority, string> = {
-    top: "항상 위",
-    normal: "일반",
-    bottom: "바탕화면",
-};
-
 export default function WidgetShell({ kind, title, children }: Props) {
     const theme = useTheme() as any;
     const bg = useWidgetStore((s) => s[kind].bg);
-    const priority = useWidgetStore((s) => s[kind].priority);
     const updateBg = useWidgetStore((s) => s.updateBg);
-    const updatePriority = useWidgetStore((s) => s.updatePriority);
 
     const [showSettings, setShowSettings] = useState(false);
     const [locked, setLocked] = useState(false);
-    const [wallpaper, setWallpaper] = useState({ url: "", size: "", pos: "0px 0px" });
+    const [wallpaper, setWallpaper] = useState({ url: "", mw: 1920, mh: 1080 });
+    const [relPos, setRelPos] = useState({ x: 0, y: 0 });
 
     const bgStyle = buildBackground(bg, theme?.colors?.surface ?? "#1a160e");
 
@@ -151,11 +144,6 @@ export default function WidgetShell({ kind, title, children }: Props) {
     const handleColor = useCallback((c: string) =>
         updateBg(kind, { customColor: c }), [kind, updateBg]);
 
-    const handlePriority = useCallback((p: WidgetPriority) => {
-        updatePriority(kind, p);
-        applyPriority(kind, p);
-    }, [kind, updatePriority]);
-
     const handleAutoTextColor = useCallback((v: boolean) =>
         updateBg(kind, { autoTextColor: v }), [kind, updateBg]);
 
@@ -171,15 +159,17 @@ export default function WidgetShell({ kind, title, children }: Props) {
     }, [kind]);
 
     useEffect(() => {
-        applyPriority(kind, priority);
-    }, []);
+        applyPriority(kind, "bottom");
+    }, [kind]);
 
     useEffect(() => {
+        let cancelled = false;
+        let rafId = 0;
         let unlistenMove: (() => void) | undefined;
 
         async function setupFakeGlass() {
             if (!isTauri() || bg.mode !== "glass") {
-                setWallpaper({ url: "", size: "", pos: "0px 0px" });
+                setWallpaper({ url: "", mw: 1920, mh: 1080 });
                 return;
             }
 
@@ -189,33 +179,50 @@ export default function WidgetShell({ kind, title, children }: Props) {
 
                 const assetUrl = convertFileSrc(path);
                 const win = getCurrentWindow();
-                const monitor = await currentMonitor();
 
-                const width = monitor?.size.width ?? 1920;
-                const height = monitor?.size.height ?? 1080;
+                let mx = 0, my = 0, mw = 1920, mh = 1080;
 
-                const updatePosition = async () => {
-                    const pos = await win.outerPosition();
-                    setWallpaper({
-                        url: assetUrl,
-                        size: `${width}px ${height}px`,
-                        pos: `-${pos.x}px -${pos.y}px`
-                    });
+                const updateMonitor = async () => {
+                    const monitor = await currentMonitor();
+                    const sf = monitor?.scaleFactor ?? window.devicePixelRatio ?? 1;
+                    mw = (monitor?.size.width ?? 1920) / sf;
+                    mh = (monitor?.size.height ?? 1080) / sf;
+                    mx = (monitor?.position.x ?? 0) / sf;
+                    my = (monitor?.position.y ?? 0) / sf;
+                    setWallpaper({ url: assetUrl, mw, mh });
                 };
 
-                await updatePosition();
+                await updateMonitor();
 
-                unlistenMove = await win.onMoved(() => {
-                    updatePosition();
+                let lastRelX = -9999;
+                let lastRelY = -9999;
+
+                const tick = () => {
+                    if (cancelled) return;
+
+                    const newRelX = window.screenX - mx;
+                    const newRelY = window.screenY - my;
+
+                    if (newRelX !== lastRelX || newRelY !== lastRelY) {
+                        lastRelX = newRelX;
+                        lastRelY = newRelY;
+                        setRelPos({ x: newRelX, y: newRelY });
+                    }
+                    rafId = requestAnimationFrame(tick);
+                };
+                tick();
+
+                unlistenMove = await win.onMoved(async () => {
+                    await updateMonitor();
                 });
-            } catch (e) {
-                console.error("배경 로딩 에러:", e);
-            }
+            } catch (e) {}
         }
 
         setupFakeGlass();
 
         return () => {
+            cancelled = true;
+            cancelAnimationFrame(rafId);
             if (unlistenMove) unlistenMove();
         };
     }, [bg.mode]);
@@ -235,12 +242,15 @@ export default function WidgetShell({ kind, title, children }: Props) {
             onContextMenu={handleContextMenu}
         >
             {bg.mode === "glass" && wallpaper.url && (
-                <FakeGlassLayer
-                    $url={wallpaper.url}
-                    $size={wallpaper.size}
-                    $pos={wallpaper.pos}
-                    $opacity={bg.opacity}
-                />
+                <FakeGlassLayer $opacity={bg.opacity}>
+                    <VirtualMonitor
+                        $url={wallpaper.url}
+                        $mw={wallpaper.mw}
+                        $mh={wallpaper.mh}
+                        $relX={relPos.x}
+                        $relY={relPos.y}
+                    />
+                </FakeGlassLayer>
             )}
             {!locked && (
                 <TopBar onMouseDown={startDrag}>
@@ -253,17 +263,13 @@ export default function WidgetShell({ kind, title, children }: Props) {
                         <IconBtn
                             $active={showSettings}
                             onClick={() => setShowSettings((v) => !v)}
-                            title="설정"
                         >
                             <Settings size={13} />
                         </IconBtn>
-                        <IconBtn
-                            onClick={handleLock}
-                            title="고정"
-                        >
+                        <IconBtn onClick={handleLock}>
                             <Lock size={13} />
                         </IconBtn>
-                        <IconBtn onClick={closeWindow} title="닫기" $danger>
+                        <IconBtn onClick={closeWindow} $danger>
                             <X size={13} />
                         </IconBtn>
                     </BtnGroup>
@@ -272,26 +278,6 @@ export default function WidgetShell({ kind, title, children }: Props) {
 
             {!locked && showSettings && (
                 <SettingsPanel onClick={(e) => e.stopPropagation()}>
-                    <PanelLabel>우선순위</PanelLabel>
-                    <ModeRow>
-                        {(["top", "normal", "bottom"] as WidgetPriority[]).map((p) => (
-                            <ModeChip
-                                key={p}
-                                $active={priority === p}
-                                onClick={() => handlePriority(p)}
-                            >
-                                {PRIORITY_LABELS[p]}
-                            </ModeChip>
-                        ))}
-                    </ModeRow>
-                    <PanelHint>
-                        {priority === "bottom"
-                            ? "바탕화면"
-                            : priority === "top"
-                                ? "항상 위"
-                                : "일반"}
-                    </PanelHint>
-
                     <PanelLabel>배경</PanelLabel>
                     <ModeRow>
                         {(["theme", "glass", "custom"] as BgMode[]).map((m) => (
@@ -305,7 +291,11 @@ export default function WidgetShell({ kind, title, children }: Props) {
                         ))}
                     </ModeRow>
 
-                    <PanelLabel>투명도 {Math.round(bg.opacity * 100)}%</PanelLabel>
+                    <PanelLabel>
+                        {bg.mode === "glass"
+                            ? `블러 강도 ${Math.round(bg.opacity * 40)}px`
+                            : `투명도 ${Math.round(bg.opacity * 100)}%`}
+                    </PanelLabel>
                     <Slider
                         type="range" min={0} max={100}
                         value={Math.round(bg.opacity * 100)}
@@ -353,6 +343,8 @@ export default function WidgetShell({ kind, title, children }: Props) {
     );
 }
 
+const GLASS_MARGIN = 30;
+
 const Shell = styled.div<{ $locked?: boolean }>`
     width: 100vw;
     height: 100vh;
@@ -366,21 +358,34 @@ const Shell = styled.div<{ $locked?: boolean }>`
     position: relative;
 `;
 
-const FakeGlassLayer = styled.div<{ $url: string; $size: string; $pos: string; $opacity: number }>`
+const FakeGlassLayer = styled.div<{ $opacity: number }>`
     position: absolute;
-    top: -30px; left: -30px; right: -30px; bottom: -30px;
+    top: -${GLASS_MARGIN}px; left: -${GLASS_MARGIN}px;
+    right: -${GLASS_MARGIN}px; bottom: -${GLASS_MARGIN}px;
     z-index: -1;
-    background-image: url('${p => p.$url}');
-    background-size: ${p => p.$size};
-    background-position: ${p => p.$pos};
-    background-repeat: no-repeat;
-    filter: blur(25px) saturate(140%) brightness(${p => 1 - (p.$opacity * 0.6)});
+    filter: blur(${p => Math.round(p.$opacity * 40)}px) saturate(140%);
+    pointer-events: none;
+
     &::after {
         content: '';
         position: absolute;
         inset: 0;
-        background: rgba(0, 0, 0, ${p => p.$opacity * 0.1});
+        background: rgba(0, 0, 0, ${p => p.$opacity * 0.3});
+        z-index: 1;
     }
+`;
+
+const VirtualMonitor = styled.div<{ $url: string; $mw: number; $mh: number; $relX: number; $relY: number }>`
+    position: absolute;
+    width: ${p => p.$mw}px;
+    height: ${p => p.$mh}px;
+    left: ${p => -p.$relX + GLASS_MARGIN}px;
+    top: ${p => -p.$relY + GLASS_MARGIN}px;
+    background-image: url('${p => p.$url}');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    z-index: 0;
 `;
 
 const TopBar = styled.div`
@@ -388,9 +393,9 @@ const TopBar = styled.div`
     align-items: center;
     gap: 6px;
     padding: 6px 10px;
-    cursor: grab;
+    cursor: default;
     flex-shrink: 0;
-    &:active { cursor: grabbing; }
+    &:active { cursor: default; }
 `;
 
 const GripIcon = styled.span`
@@ -485,8 +490,8 @@ const ToggleSwitch = styled.button<{ $on: boolean }>`
     font-size: 0.62rem;
     letter-spacing: 0.5px;
     border: 1px solid ${p => p.$on
-    ? p.theme?.colors?.primary ?? "#D4AF37"
-    : (p.theme?.colors?.primary ?? "#D4AF37") + "50"};
+            ? p.theme?.colors?.primary ?? "#D4AF37"
+            : (p.theme?.colors?.primary ?? "#D4AF37") + "50"};
     background: ${p => p.$on ? (p.theme?.colors?.primary ?? "#D4AF37") + "25" : "transparent"};
     color: ${p => p.theme?.colors?.text ?? "#e8e0d0"};
     cursor: pointer;
@@ -524,8 +529,8 @@ const ModeChip = styled.button<{ $active: boolean }>`
     padding: 3px 10px;
     font-size: 0.7rem;
     border: 1px solid ${p => p.$active
-    ? p.theme?.colors?.primary ?? "#D4AF37"
-    : (p.theme?.colors?.primary ?? "#D4AF37") + "40"};
+            ? p.theme?.colors?.primary ?? "#D4AF37"
+            : (p.theme?.colors?.primary ?? "#D4AF37") + "40"};
     background: ${p => p.$active ? (p.theme?.colors?.primary ?? "#D4AF37") + "20" : "transparent"};
     color: ${p => p.theme?.colors?.text ?? "#e8e0d0"};
     cursor: pointer;
