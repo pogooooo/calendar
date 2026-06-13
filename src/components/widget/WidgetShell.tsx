@@ -1,6 +1,6 @@
-"use client";
+﻿"use client";
 
-import React, { useState, useCallback, useEffect, useMemo } from "react";
+import React, { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import styled, { ThemeProvider, keyframes, useTheme } from "styled-components";
 import { Settings, X, GripHorizontal, Lock } from "lucide-react";
 import useWidgetStore, { BgMode, WidgetBgSettings } from "@/store/useWidgetStore";
@@ -60,22 +60,6 @@ function getLuminance(hex: string): number {
     return 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);
 }
 
-function computeTextOverride(bg: WidgetBgSettings): { text: string; textSecondary: string; } | null {
-    if (!bg.autoTextColor) return null;
-    let effectiveLum = 0;
-    if (bg.mode === "custom") {
-        effectiveLum = getLuminance(bg.customColor) * bg.opacity;
-    } else if (bg.mode === "glass") {
-        return null;
-    } else {
-        return null;
-    }
-    if (effectiveLum > 0.2) {
-        return { text: "#1a1a1a", textSecondary: "#4a4a4a" };
-    }
-    return null;
-}
-
 function buildBackground(bg: WidgetBgSettings, surfaceColor: string): React.CSSProperties {
     switch (bg.mode) {
         case "theme": {
@@ -115,24 +99,31 @@ export default function WidgetShell({ kind, title, children }: Props) {
     const [showSettings, setShowSettings] = useState(false);
     const [locked, setLocked] = useState(false);
     const [wallpaper, setWallpaper] = useState({ url: "", mw: 1920, mh: 1080 });
-    const [relPos, setRelPos] = useState({ x: 0, y: 0 });
+    const [dynamicTextColor, setDynamicTextColor] = useState({ text: "#ffffff", textSecondary: "#dddddd" });
 
-    const bgStyle = buildBackground(bg, theme?.colors?.surface ?? "#1a160e");
+    const monitorRef = useRef<HTMLDivElement>(null);
+    const textColorRef = useRef("#ffffff");
+    const surfaceColor = theme?.colors?.surface ?? "#1a160e";
+    const bgStyle = buildBackground(bg, surfaceColor);
+
+    const bgRef = useRef(bg);
+    const surfaceColorRef = useRef(surfaceColor);
+
+    useEffect(() => {
+        bgRef.current = bg;
+        surfaceColorRef.current = surfaceColor;
+    }, [bg, surfaceColor]);
 
     const widgetTheme = useMemo(() => {
-        const textOverride = computeTextOverride(bg);
         return {
             ...theme,
             colors: {
                 ...theme?.colors,
                 surface: "transparent",
-                ...(textOverride
-                        ? { text: textOverride.text, textSecondary: textOverride.textSecondary }
-                        : {}
-                ),
+                ...(bg.autoTextColor ? dynamicTextColor : {}),
             },
         };
-    }, [theme, bg]);
+    }, [theme, bg.autoTextColor, dynamicTextColor]);
 
     const handleModeChange = useCallback((mode: BgMode) => {
         updateBg(kind, { mode });
@@ -146,6 +137,9 @@ export default function WidgetShell({ kind, title, children }: Props) {
 
     const handleAutoTextColor = useCallback((v: boolean) =>
         updateBg(kind, { autoTextColor: v }), [kind, updateBg]);
+
+    const handleGloss = useCallback((v: boolean) =>
+        updateBg(kind, { gloss: v }), [kind, updateBg]);
 
     const handleLock = useCallback(() => {
         setLocked(true);
@@ -165,26 +159,37 @@ export default function WidgetShell({ kind, title, children }: Props) {
     useEffect(() => {
         let cancelled = false;
         let rafId = 0;
+        let timerId = 0;
         let unlistenMove: (() => void) | undefined;
 
-        async function setupFakeGlass() {
-            if (!isTauri() || bg.mode !== "glass") {
-                setWallpaper({ url: "", mw: 1920, mh: 1080 });
-                return;
-            }
+        async function setupWallpaperSync() {
+            if (!isTauri()) return;
 
             try {
                 const path = await invoke<string>("get_wallpaper_path");
                 if (!path) return;
 
                 const assetUrl = convertFileSrc(path);
-                const win = getCurrentWindow();
+                let objUrl = assetUrl;
 
-                let mx = 0, my = 0, mw = 1920, mh = 1080;
+                try {
+                    const res = await fetch(assetUrl);
+                    const blob = await res.blob();
+                    objUrl = URL.createObjectURL(blob);
+                } catch (e) {}
+
+                const img = new Image();
+                img.crossOrigin = "anonymous";
+                img.src = objUrl;
+                await new Promise(r => { img.onload = r; img.onerror = r; });
+
+                const win = getCurrentWindow();
+                let mx = 0, my = 0, mw = 1920, mh = 1080, sf = 1;
+                let baseOffsetX = 0, baseOffsetY = 0;
 
                 const updateMonitor = async () => {
                     const monitor = await currentMonitor();
-                    const sf = monitor?.scaleFactor ?? window.devicePixelRatio ?? 1;
+                    sf = monitor?.scaleFactor ?? window.devicePixelRatio ?? 1;
                     mw = (monitor?.size.width ?? 1920) / sf;
                     mh = (monitor?.size.height ?? 1080) / sf;
                     mx = (monitor?.position.x ?? 0) / sf;
@@ -192,40 +197,117 @@ export default function WidgetShell({ kind, title, children }: Props) {
                     setWallpaper({ url: assetUrl, mw, mh });
                 };
 
+                const syncOffset = async () => {
+                    const pos = await win.outerPosition();
+                    const logicalX = pos.x / sf;
+                    const logicalY = pos.y / sf;
+                    if (window.screenX !== 0 || window.screenY !== 0) {
+                        baseOffsetX = logicalX - window.screenX;
+                        baseOffsetY = logicalY - window.screenY;
+                    }
+                };
+
                 await updateMonitor();
+                await syncOffset();
 
                 let lastRelX = -9999;
                 let lastRelY = -9999;
+                let lastLumUpdate = 0;
+
+                const canvas = document.createElement('canvas');
+                canvas.width = 1;
+                canvas.height = 1;
+                const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
                 const tick = () => {
                     if (cancelled) return;
 
-                    const newRelX = window.screenX - mx;
-                    const newRelY = window.screenY - my;
+                    const currentX = window.screenX + baseOffsetX;
+                    const currentY = window.screenY + baseOffsetY;
+                    const newRelX = currentX - mx;
+                    const newRelY = currentY - my;
+                    const curBg = bgRef.current;
 
-                    if (newRelX !== lastRelX || newRelY !== lastRelY) {
-                        lastRelX = newRelX;
-                        lastRelY = newRelY;
-                        setRelPos({ x: newRelX, y: newRelY });
+                    if (curBg.mode === 'glass') {
+                        if (newRelX !== lastRelX || newRelY !== lastRelY) {
+                            lastRelX = newRelX;
+                            lastRelY = newRelY;
+
+                            if (monitorRef.current) {
+                                monitorRef.current.style.transform = `translate(${-newRelX + GLASS_MARGIN}px, ${-newRelY + GLASS_MARGIN}px)`;
+                            }
+                        }
                     }
-                    rafId = requestAnimationFrame(tick);
+
+                    const now = performance.now();
+                    if (now - lastLumUpdate > 150 && ctx && img.naturalWidth > 0 && curBg.autoTextColor) {
+                        lastLumUpdate = now;
+                        const scaleX = img.naturalWidth / mw;
+                        const scaleY = img.naturalHeight / mh;
+                        const srcX = Math.max(0, newRelX * scaleX);
+                        const srcY = Math.max(0, newRelY * scaleY);
+                        const srcW = Math.min(img.naturalWidth - srcX, window.innerWidth * scaleX);
+                        const srcH = Math.min(img.naturalHeight - srcY, window.innerHeight * scaleY);
+
+                        if (srcW > 0 && srcH > 0) {
+                            ctx.drawImage(img, srcX, srcY, srcW, srcH, 0, 0, 1, 1);
+                            const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+                            const linear = (c: number) => {
+                                c /= 255;
+                                return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+                            };
+                            const lum = 0.2126 * linear(r) + 0.7152 * linear(g) + 0.0722 * linear(b);
+
+                            let effLum = 0.5;
+
+                            if (curBg.mode === 'glass') {
+                                effLum = lum;
+                            } else if (curBg.mode === 'custom') {
+                                const cLum = getLuminance(curBg.customColor);
+                                effLum = lum * (1 - curBg.opacity) + cLum * curBg.opacity;
+                            } else {
+                                const sLum = getLuminance(surfaceColorRef.current);
+                                effLum = lum * (1 - curBg.opacity) + sLum * curBg.opacity;
+                            }
+
+                            const newColor = effLum > 0.179 ? "#1a1a1a" : "#ffffff";
+
+                            if (textColorRef.current !== newColor) {
+                                textColorRef.current = newColor;
+                                setDynamicTextColor(
+                                    newColor === "#1a1a1a"
+                                        ? { text: "#1a1a1a", textSecondary: "#555555" }
+                                        : { text: "#ffffff", textSecondary: "#dddddd" }
+                                );
+                            }
+                        }
+                    }
+
+                    if (curBg.mode === 'glass') {
+                        rafId = requestAnimationFrame(tick);
+                    } else {
+                        timerId = window.setTimeout(() => {
+                            if (!cancelled) tick();
+                        }, 200);
+                    }
                 };
                 tick();
 
                 unlistenMove = await win.onMoved(async () => {
-                    await updateMonitor();
+                    await syncOffset();
                 });
             } catch (e) {}
         }
 
-        setupFakeGlass();
+        setupWallpaperSync();
 
         return () => {
             cancelled = true;
             cancelAnimationFrame(rafId);
+            clearTimeout(timerId);
             if (unlistenMove) unlistenMove();
         };
-    }, [bg.mode]);
+    }, []);
 
     const handleContextMenu = useCallback((e: React.MouseEvent) => {
         if (locked) {
@@ -241,104 +323,116 @@ export default function WidgetShell({ kind, title, children }: Props) {
             $locked={locked}
             onContextMenu={handleContextMenu}
         >
-            {bg.mode === "glass" && wallpaper.url && (
-                <FakeGlassLayer $opacity={bg.opacity}>
-                    <VirtualMonitor
-                        $url={wallpaper.url}
-                        $mw={wallpaper.mw}
-                        $mh={wallpaper.mh}
-                        $relX={relPos.x}
-                        $relY={relPos.y}
-                    />
-                </FakeGlassLayer>
-            )}
-            {!locked && (
-                <TopBar onMouseDown={startDrag}>
-                    <GripIcon><GripHorizontal size={13} /></GripIcon>
-                    <TitleText>{title}</TitleText>
-                    <BtnGroup
-                        onMouseDown={(e) => e.stopPropagation()}
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <IconBtn
-                            $active={showSettings}
-                            onClick={() => setShowSettings((v) => !v)}
-                        >
-                            <Settings size={13} />
-                        </IconBtn>
-                        <IconBtn onClick={handleLock}>
-                            <Lock size={13} />
-                        </IconBtn>
-                        <IconBtn onClick={closeWindow} $danger>
-                            <X size={13} />
-                        </IconBtn>
-                    </BtnGroup>
-                </TopBar>
-            )}
+            <ThemeProvider theme={widgetTheme}>
+                {bg.mode === "glass" && wallpaper.url && (
+                    <FakeGlassLayer $opacity={bg.opacity}>
+                        <VirtualMonitor
+                            ref={monitorRef}
+                            $url={wallpaper.url}
+                            $mw={wallpaper.mw}
+                            $mh={wallpaper.mh}
+                        />
+                    </FakeGlassLayer>
+                )}
 
-            {!locked && showSettings && (
-                <SettingsPanel onClick={(e) => e.stopPropagation()}>
-                    <PanelLabel>배경</PanelLabel>
-                    <ModeRow>
-                        {(["theme", "glass", "custom"] as BgMode[]).map((m) => (
-                            <ModeChip
-                                key={m}
-                                $active={bg.mode === m}
-                                onClick={() => handleModeChange(m)}
+                {bg.mode === "glass" && bg.gloss && <GlossOverlay />}
+
+                {!locked && (
+                    <TopBar onMouseDown={startDrag}>
+                        <GripIcon><GripHorizontal size={13} /></GripIcon>
+                        <TitleText>{title}</TitleText>
+                        <BtnGroup
+                            onMouseDown={(e) => e.stopPropagation()}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <IconBtn
+                                $active={showSettings}
+                                onClick={() => setShowSettings((v) => !v)}
                             >
-                                {m === "theme" ? "테마" : m === "glass" ? "글래스" : "색상"}
-                            </ModeChip>
-                        ))}
-                    </ModeRow>
+                                <Settings size={13} />
+                            </IconBtn>
+                            <IconBtn onClick={handleLock}>
+                                <Lock size={13} />
+                            </IconBtn>
+                            <IconBtn onClick={closeWindow} $danger>
+                                <X size={13} />
+                            </IconBtn>
+                        </BtnGroup>
+                    </TopBar>
+                )}
 
-                    <PanelLabel>
-                        {bg.mode === "glass"
-                            ? `블러 강도 ${Math.round(bg.opacity * 40)}px`
-                            : `투명도 ${Math.round(bg.opacity * 100)}%`}
-                    </PanelLabel>
-                    <Slider
-                        type="range" min={0} max={100}
-                        value={Math.round(bg.opacity * 100)}
-                        onChange={(e) => handleOpacity(parseInt(e.target.value) / 100)}
-                    />
+                {!locked && showSettings && (
+                    <SettingsPanel onClick={(e) => e.stopPropagation()}>
+                        <PanelLabel>배경</PanelLabel>
+                        <ModeRow>
+                            {(["theme", "glass", "custom"] as BgMode[]).map((m) => (
+                                <ModeChip
+                                    key={m}
+                                    $active={bg.mode === m}
+                                    onClick={() => handleModeChange(m)}
+                                >
+                                    {m === "theme" ? "테마" : m === "glass" ? "글래스" : "색상"}
+                                </ModeChip>
+                            ))}
+                        </ModeRow>
 
-                    {bg.mode === "custom" && (
-                        <>
-                            <PanelLabel>색상</PanelLabel>
-                            <ColorRow>
-                                <ColorPicker
-                                    type="color"
-                                    value={bg.customColor}
-                                    onChange={(e) => handleColor(e.target.value)}
-                                />
-                                <ColorHex>{bg.customColor}</ColorHex>
-                            </ColorRow>
-                        </>
-                    )}
+                        <PanelLabel>
+                            {bg.mode === "glass"
+                                ? `블러 강도 ${Math.round(bg.opacity * 40)}px`
+                                : `투명도 ${Math.round(bg.opacity * 100)}%`}
+                        </PanelLabel>
+                        <Slider
+                            type="range" min={0} max={100}
+                            value={Math.round(bg.opacity * 100)}
+                            onChange={(e) => handleOpacity(parseInt(e.target.value) / 100)}
+                        />
 
-                    <PanelDivider />
-                    <ToggleRow>
-                        <ToggleLabel>글자색 자동 조정</ToggleLabel>
-                        <ToggleSwitch
-                            $on={bg.autoTextColor}
-                            onClick={() => handleAutoTextColor(!bg.autoTextColor)}
-                        >
-                            {bg.autoTextColor ? "ON" : "OFF"}
-                        </ToggleSwitch>
-                    </ToggleRow>
+                        {bg.mode === "glass" && (
+                            <>
+                                <PanelDivider />
+                                <ToggleRow>
+                                    <ToggleLabel>광택 효과 (Gloss)</ToggleLabel>
+                                    <ToggleSwitch
+                                        $on={!!bg.gloss}
+                                        onClick={() => handleGloss(!bg.gloss)}
+                                    >
+                                        {bg.gloss ? "ON" : "OFF"}
+                                    </ToggleSwitch>
+                                </ToggleRow>
+                            </>
+                        )}
 
-                    <PanelDivider />
-                    <LockBtn onClick={handleLock}>
-                        <Lock size={12} /> 고정
-                    </LockBtn>
-                </SettingsPanel>
-            )}
+                        {bg.mode === "custom" && (
+                            <>
+                                <PanelLabel>색상</PanelLabel>
+                                <ColorRow>
+                                    <ColorPicker
+                                        type="color"
+                                        value={bg.customColor}
+                                        onChange={(e) => handleColor(e.target.value)}
+                                    />
+                                    <ColorHex>{bg.customColor}</ColorHex>
+                                </ColorRow>
+                            </>
+                        )}
 
-            <Content $kind={kind}>
-                <ThemeProvider theme={widgetTheme}>
+                        <PanelDivider />
+                        <ToggleRow>
+                            <ToggleLabel>글자색 자동 조정</ToggleLabel>
+                            <ToggleSwitch
+                                $on={bg.autoTextColor}
+                                onClick={() => handleAutoTextColor(!bg.autoTextColor)}
+                            >
+                                {bg.autoTextColor ? "ON" : "OFF"}
+                            </ToggleSwitch>
+                        </ToggleRow>
+                    </SettingsPanel>
+                )}
+
+                <Content $kind={kind}>
                     {children}
-                </ThemeProvider>
-            </Content>
+                </Content>
+            </ThemeProvider>
         </Shell>
     );
 }
@@ -356,6 +450,10 @@ const Shell = styled.div<{ $locked?: boolean }>`
     user-select: none;
     border-radius: 0;
     position: relative;
+    will-change: transform;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    contain: layout paint;
 `;
 
 const FakeGlassLayer = styled.div<{ $opacity: number }>`
@@ -364,28 +462,40 @@ const FakeGlassLayer = styled.div<{ $opacity: number }>`
     right: -${GLASS_MARGIN}px; bottom: -${GLASS_MARGIN}px;
     z-index: -1;
     filter: blur(${p => Math.round(p.$opacity * 40)}px) saturate(140%);
+    will-change: filter;
     pointer-events: none;
 
     &::after {
         content: '';
         position: absolute;
         inset: 0;
-        background: rgba(0, 0, 0, ${p => p.$opacity * 0.3});
         z-index: 1;
     }
 `;
 
-const VirtualMonitor = styled.div<{ $url: string; $mw: number; $mh: number; $relX: number; $relY: number }>`
+const GlossOverlay = styled.div`
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.03) 15%, transparent 30%);
+    border-top: 1px solid rgba(255,255,255,0.3);
+    border-left: 1px solid rgba(255,255,255,0.2);
+    box-shadow: inset 0px 0px 15px rgba(255, 255, 255, 0.05);
+`;
+
+const VirtualMonitor = styled.div<{ $url: string; $mw: number; $mh: number }>`
     position: absolute;
     width: ${p => p.$mw}px;
     height: ${p => p.$mh}px;
-    left: ${p => -p.$relX + GLASS_MARGIN}px;
-    top: ${p => -p.$relY + GLASS_MARGIN}px;
+    left: 0;
+    top: 0;
     background-image: url('${p => p.$url}');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
     z-index: 0;
+    will-change: transform;
 `;
 
 const TopBar = styled.div`
@@ -399,7 +509,7 @@ const TopBar = styled.div`
 `;
 
 const GripIcon = styled.span`
-    color: ${p => p.theme?.colors?.primary ?? "#D4AF37"};
+    color: ${p => p.theme?.colors?.text ?? "#e8e0d0"};
     opacity: 0.5;
     display: flex;
     align-items: center;
@@ -426,7 +536,7 @@ const IconBtn = styled.button<{ $active?: boolean; $danger?: boolean }>`
     padding: 3px;
     display: flex;
     align-items: center;
-    color: ${p => p.$danger ? "#e57373" : p.theme?.colors?.primary ?? "#D4AF37"};
+    color: ${p => p.$danger ? "#e57373" : p.theme?.colors?.text ?? "#e8e0d0"};
     opacity: 0.7;
     border-radius: 3px;
     transition: opacity 0.1s, background 0.1s;
@@ -454,15 +564,6 @@ const PanelLabel = styled.div`
     opacity: 0.6;
     margin: 8px 0 4px;
     &:first-child { margin-top: 0; }
-`;
-
-const PanelHint = styled.div`
-    font-size: 0.62rem;
-    color: ${p => p.theme?.colors?.textSecondary ?? "#888"};
-    opacity: 0.7;
-    margin: 3px 0 0;
-    line-height: 1.4;
-    word-break: keep-all;
 `;
 
 const PanelDivider = styled.div`
@@ -497,27 +598,6 @@ const ToggleSwitch = styled.button<{ $on: boolean }>`
     cursor: pointer;
     transition: all 0.12s;
     opacity: ${p => p.$on ? 1 : 0.5};
-`;
-
-const LockBtn = styled.button`
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    background: transparent;
-    border: 1px solid ${p => p.theme?.colors?.primary ?? "#D4AF37"}40;
-    color: ${p => p.theme?.colors?.text ?? "#e8e0d0"};
-    font-size: 0.68rem;
-    letter-spacing: 0.5px;
-    padding: 4px 10px;
-    cursor: pointer;
-    opacity: 0.75;
-    width: 100%;
-    justify-content: center;
-    transition: opacity 0.12s, background 0.12s;
-    &:hover {
-        opacity: 1;
-        background: ${p => p.theme?.colors?.primary ?? "#D4AF37"}15;
-    }
 `;
 
 const ModeRow = styled.div`
@@ -577,6 +657,11 @@ const Content = styled.div<{ $kind?: string }>`
     position: relative;
     scrollbar-width: thin;
     scrollbar-color: ${p => p.theme?.colors?.primary ?? "#D4AF37"}40 transparent;
+
+    &, & * {
+        color: ${p => p.theme?.colors?.text} !important;
+    }
+
     ${p => p.$kind === "monthly" ? `
         & *, & *::-webkit-scrollbar {
             scrollbar-width: none !important;

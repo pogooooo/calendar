@@ -18,15 +18,8 @@ export const DateRangeDisplay = styled.div`
     font-size: ${(props) => props.theme.fontSizes.caption};
     color: ${(props) => props.theme.colors.text};
     letter-spacing: 2px;
-    width: 49vw;
-    min-width: 600px;
-
-    max-width: 100%;
-    @media (max-width: 600px) {
-        min-width: 100%;
-        width: 100%;
-    }
-
+    width: 100%;
+    min-width: 0;
     display: flex;
     align-items: center;
     gap: 15px;
@@ -83,8 +76,8 @@ export const SliderWrapper = styled.div`
 `;
 
 export const CalendarWindow = styled.div`
-    width: 49vw;
-    min-width: 600px;
+    width: 100%;
+    min-width: 0;
     overflow: hidden;
     position: relative;
     display: flex;

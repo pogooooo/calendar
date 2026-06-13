@@ -35,10 +35,34 @@ export const DateHeader = styled.div`
 export const ContentLayout = styled.div`
     display: flex;
     flex-direction: column;
-    gap: 15px;
     width: 100%;
     flex: 1;
     min-height: 0;
+`;
+
+export const ResizeHandle = styled.div`
+    height: 15px;
+    flex-shrink: 0;
+    cursor: ns-resize;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    user-select: none;
+
+    span {
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background: ${(props) => props.theme.colors.primary}50;
+        transition: background 0.2s, transform 0.2s;
+        flex-shrink: 0;
+    }
+
+    &:hover span {
+        background: ${(props) => props.theme.colors.primary}90;
+        transform: scale(1.3);
+    }
 `;
 
 export const TimelineSection = styled.div`
@@ -52,7 +76,7 @@ export const TimelineSection = styled.div`
     .timeline-header {
         font-family: ${(props) => props.theme.fonts.celestial};
         font-size: 0.95rem;
-        color: ${(props) => props.theme.colors.textSecondary};
+        color: ${(props) => props.theme.colors.text};
         padding: 8px;
         text-align: center;
         border-bottom: 1px solid ${(props) => props.theme.colors.primary};
@@ -85,7 +109,7 @@ export const TimeRow = styled.div`
         align-items: center;
         font-family: ${(props) => props.theme.fonts.celestial};
         font-size: 0.75rem;
-        color: ${(props) => props.theme.colors.textSecondary};
+        color: ${(props) => props.theme.colors.text};
         border-right: 1px solid ${(props) => props.theme.colors.primary}; /* ✨ 원래의 진한 선 복구 */
         flex-shrink: 0;
     }
@@ -157,8 +181,7 @@ export const SideSection = styled.div`
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 15px;
-    min-height: 250px;
+    min-height: 0;
 `;
 
 const BaseCard = styled.div`
@@ -170,7 +193,7 @@ const BaseCard = styled.div`
     .card-header {
         font-family: ${(props) => props.theme.fonts.celestial};
         font-size: 0.95rem;
-        color: ${(props) => props.theme.colors.textSecondary};
+        color: ${(props) => props.theme.colors.text};
         padding: 8px 12px;
         border-bottom: 1px solid ${(props) => props.theme.colors.primary};
     }

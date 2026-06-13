@@ -38,7 +38,6 @@ const Loading = styled.div`
 const CalendarWrap = styled.div`
     height: 100%;
     & * { background-color: transparent !important; }
-    /* 스크롤바 숨기기 */
     scrollbar-width: none;
     &::-webkit-scrollbar { display: none; }
     overflow: hidden;

@@ -9,6 +9,8 @@ export interface WidgetBgSettings {
     opacity: number;       // 0–1
     customColor: string;   // hex, mode=custom일 때
     autoTextColor: boolean; // 배경 밝기에 따라 글자색 자동 조정
+    gloss?: boolean;
+    liquid?: boolean;
 }
 
 export interface WidgetSettings {

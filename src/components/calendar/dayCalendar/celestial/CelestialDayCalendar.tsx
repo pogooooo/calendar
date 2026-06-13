@@ -11,6 +11,9 @@ import CategoryFilter from "@/components/calendar/celestial/categoryFilter/Categ
 
 type CelestialDayProps = DayThemeProps & React.HTMLAttributes<HTMLDivElement>;
 
+const STORAGE_MAIN = 'cronos-day-main-split';
+const STORAGE_SIDE = 'cronos-day-side-split';
+
 const CelestialDayCalendar = React.forwardRef<HTMLDivElement, CelestialDayProps>(
     ({
          asChild, formattedDate, hours, getSlotTodos,
@@ -22,6 +25,71 @@ const CelestialDayCalendar = React.forwardRef<HTMLDivElement, CelestialDayProps>
          ...props
      }, ref) => {
         const Component = asChild ? Slot : 'div';
+
+        const [mainSplit, setMainSplit] = React.useState(() => {
+            try {
+                const v = parseFloat(localStorage.getItem(STORAGE_MAIN) ?? '');
+                return isNaN(v) ? 0.6 : v;
+            } catch { return 0.6; }
+        });
+
+        const [sideSplit, setSideSplit] = React.useState(() => {
+            try {
+                const v = parseFloat(localStorage.getItem(STORAGE_SIDE) ?? '');
+                return isNaN(v) ? 0.6 : v;
+            } catch { return 0.6; }
+        });
+
+        const contentRef = React.useRef<HTMLDivElement>(null);
+        const sideRef = React.useRef<HTMLDivElement>(null);
+        const mainSplitRef = React.useRef(mainSplit);
+        const sideSplitRef = React.useRef(sideSplit);
+        mainSplitRef.current = mainSplit;
+        sideSplitRef.current = sideSplit;
+
+        const handleMainDrag = React.useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+            e.preventDefault();
+            const container = contentRef.current;
+            if (!container) return;
+            const startY = e.clientY;
+            const startSplit = mainSplitRef.current;
+            const containerH = container.getBoundingClientRect().height;
+
+            const onMove = (ev: MouseEvent) => {
+                const delta = ev.clientY - startY;
+                const next = Math.max(0.15, Math.min(0.85, startSplit + delta / containerH));
+                setMainSplit(next);
+            };
+            const onUp = () => {
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup', onUp);
+                try { localStorage.setItem(STORAGE_MAIN, mainSplitRef.current.toString()); } catch {}
+            };
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+        }, []);
+
+        const handleSideDrag = React.useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+            e.preventDefault();
+            const container = sideRef.current;
+            if (!container) return;
+            const startY = e.clientY;
+            const startSplit = sideSplitRef.current;
+            const containerH = container.getBoundingClientRect().height;
+
+            const onMove = (ev: MouseEvent) => {
+                const delta = ev.clientY - startY;
+                const next = Math.max(0.15, Math.min(0.85, startSplit + delta / containerH));
+                setSideSplit(next);
+            };
+            const onUp = () => {
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup', onUp);
+                try { localStorage.setItem(STORAGE_SIDE, sideSplitRef.current.toString()); } catch {}
+            };
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+        }, []);
 
         return (
             <S.CelestialCalendarWrapper as={Component} ref={ref} {...props}>
@@ -37,8 +105,8 @@ const CelestialDayCalendar = React.forwardRef<HTMLDivElement, CelestialDayProps>
                     <hr />
                 </S.DateHeader>
 
-                <S.ContentLayout>
-                    <S.TimelineSection>
+                <S.ContentLayout ref={contentRef}>
+                    <S.TimelineSection style={{ flex: mainSplit }}>
                         <div className="timeline-header">Time Line</div>
                         <S.TimelineScrollArea>
                             {hours.map((hour) => (
@@ -90,8 +158,12 @@ const CelestialDayCalendar = React.forwardRef<HTMLDivElement, CelestialDayProps>
                         </S.TimelineScrollArea>
                     </S.TimelineSection>
 
-                    <S.SideSection>
-                        <S.TaskCard>
+                    <S.ResizeHandle onMouseDown={handleMainDrag}>
+                        <span /><span /><span />
+                    </S.ResizeHandle>
+
+                    <S.SideSection ref={sideRef} style={{ flex: 1 - mainSplit }}>
+                        <S.TaskCard style={{ flex: sideSplit }}>
                             <div className="card-header">Temporary Task</div>
 
                             <S.TaskList>
@@ -118,7 +190,11 @@ const CelestialDayCalendar = React.forwardRef<HTMLDivElement, CelestialDayProps>
                             </S.TaskForm>
                         </S.TaskCard>
 
-                        <S.MemoCard>
+                        <S.ResizeHandle onMouseDown={handleSideDrag}>
+                            <span /><span /><span />
+                        </S.ResizeHandle>
+
+                        <S.MemoCard style={{ flex: 1 - sideSplit }}>
                             <div className="card-header">Daily Memo</div>
                             <textarea
                                 value={localMemo}

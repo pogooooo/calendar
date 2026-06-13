@@ -5,6 +5,7 @@ export const CelestialCalendarWrapper = styled.div`
     display: flex;
     flex-direction: column;
     align-items: center;
+    width: 100%;
 `;
 
 export const DateRangeDisplay = styled.div`
@@ -12,8 +13,8 @@ export const DateRangeDisplay = styled.div`
     font-size: ${(props) => props.theme.fontSizes.caption};
     color: ${(props) => props.theme.colors.text};
     letter-spacing: 2px;
-    width: 62vw;
-    min-width: 700px;
+    width: 100%;
+    min-width: 0;
     display: flex;
     align-items: center;
     gap: 15px;
@@ -33,11 +34,13 @@ export const SliderWrapper = styled.div`
     align-items: flex-start;
     justify-content: center;
     gap: 10px;
+    width: 100%;
 `;
 
 export const ArrowWrapper = styled.div`
     transition: filter 0.5s ease;
     display: flex;
+    flex-shrink: 0;
     margin-top: 10px;
     cursor: pointer;
     &:hover {
@@ -46,14 +49,12 @@ export const ArrowWrapper = styled.div`
 `;
 
 export const CalendarWindow = styled.div`
-    width: 62vw;
-    min-width: 700px;
+    flex: 1;
+    min-width: 0;
     overflow: hidden;
     position: relative;
-    padding-top: 15px;
-    padding-bottom: 15px;
-    margin-top: -15px;
-    margin-bottom: -15px;
+    padding: 15px 10px;
+    margin: -15px -10px;
 `;
 
 export const Header = styled.div`
