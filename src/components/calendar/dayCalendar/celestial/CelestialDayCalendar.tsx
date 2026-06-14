@@ -8,6 +8,7 @@ import * as S from "./CelestialDayCalendar.styles";
 import { DayThemeProps } from "../DayCalendar";
 
 import CategoryFilter from "@/components/calendar/celestial/categoryFilter/CategoryFilter";
+import { useT } from "@/i18n/useT";
 
 type CelestialDayProps = DayThemeProps & React.HTMLAttributes<HTMLDivElement>;
 
@@ -25,6 +26,7 @@ const CelestialDayCalendar = React.forwardRef<HTMLDivElement, CelestialDayProps>
          ...props
      }, ref) => {
         const Component = asChild ? Slot : 'div';
+        const t = useT();
 
         const [mainSplit, setMainSplit] = React.useState(() => {
             try {
@@ -107,7 +109,7 @@ const CelestialDayCalendar = React.forwardRef<HTMLDivElement, CelestialDayProps>
 
                 <S.ContentLayout ref={contentRef}>
                     <S.TimelineSection style={{ flex: mainSplit }}>
-                        <div className="timeline-header">Time Line</div>
+                        <div className="timeline-header">{t.calendar.timeline}</div>
                         <S.TimelineScrollArea>
                             {hours.map((hour) => (
                                 <S.TimeRow key={hour}>
@@ -164,7 +166,7 @@ const CelestialDayCalendar = React.forwardRef<HTMLDivElement, CelestialDayProps>
 
                     <S.SideSection ref={sideRef} style={{ flex: 1 - mainSplit }}>
                         <S.TaskCard style={{ flex: sideSplit }}>
-                            <div className="card-header">Temporary Task</div>
+                            <div className="card-header">{t.calendar.temporaryTask}</div>
 
                             <S.TaskList>
                                 {tasks.map(task => (
@@ -184,7 +186,7 @@ const CelestialDayCalendar = React.forwardRef<HTMLDivElement, CelestialDayProps>
                                 <input
                                     value={newTaskText}
                                     onChange={(e) => setNewTaskText(e.target.value)}
-                                    placeholder="할 일 추가"
+                                    placeholder={t.calendar.addTask}
                                 />
                                 <button type="submit"><Plus size={18} /></button>
                             </S.TaskForm>
@@ -195,12 +197,12 @@ const CelestialDayCalendar = React.forwardRef<HTMLDivElement, CelestialDayProps>
                         </S.ResizeHandle>
 
                         <S.MemoCard style={{ flex: 1 - sideSplit }}>
-                            <div className="card-header">Daily Memo</div>
+                            <div className="card-header">{t.calendar.dailyMemo}</div>
                             <textarea
                                 value={localMemo}
                                 onChange={(e) => setLocalMemo(e.target.value)}
                                 onBlur={handleMemoBlur}
-                                placeholder="메모나 일기를 남겨보세요."
+                                placeholder={t.calendar.memoPlaceholder}
                             />
                         </S.MemoCard>
                     </S.SideSection>

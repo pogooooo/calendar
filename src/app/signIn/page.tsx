@@ -11,6 +11,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import useSettingStore from "@/store/useSettingStore";
 import useAuthStore from "@/store/useAuthStore";
 import { LoginSchema } from "@/lib/schema";
+import { useT } from "@/i18n/useT";
+import LocaleSelect from "@/components/LocaleSelect";
 
 import SecondaryButton from "@/components/button/secondary/SecondaryButton";
 import SingleInput from "@/components/input/single/SingleInput";
@@ -25,6 +27,7 @@ type LoginFormData = z.infer<typeof LoginSchema>;
 
 const SignIn = () => {
     const router = useRouter();
+    const t = useT();
     const setTheme = useSettingStore((state) => state.setTheme);
     const setAccessToken = useAuthStore((state) => state.setAccessToken);
     const setUser = useAuthStore((state) => state.setUser);
@@ -86,32 +89,36 @@ const SignIn = () => {
             <CelestialAuthPanel />
 
             <FormPanel>
+                <LangToggle>
+                    <LocaleSelect size="sm" />
+                </LangToggle>
+
                 <FormInner>
-                    <FormTitle>로그인</FormTitle>
-                    <FormSubtitle>계정에 접속합니다</FormSubtitle>
+                    <FormTitle>{t.auth.signInTitle}</FormTitle>
+                    <FormSubtitle>{t.auth.signInSubtitle}</FormSubtitle>
 
                     <GoogleSignInButton onClick={() => googleLogin()} />
 
-                    <Separator>또는</Separator>
+                    <Separator>{t.auth.or}</Separator>
 
                     <form onSubmit={handleSubmit(handleEmailLogin)} style={{ width: "100%" }}>
-                        <SingleInput type="text" $width={300} $height={40} label="이메일" value={email}
+                        <SingleInput type="text" $width={300} $height={40} label={t.auth.email} value={email}
                             {...register("email")} onChange={(e) => setEmail(e.target.value)} />
                         <InlineError>{errors.email?.message}</InlineError>
 
-                        <PasswordInput $width={300} $height={40} label="비밀번호" {...register("password")} />
+                        <PasswordInput $width={300} $height={40} label={t.auth.password} {...register("password")} />
                         <InlineError>{errors.password?.message}</InlineError>
 
                         <SecondaryButton type="submit" $width={300} $height={40} disabled={isSubmitting}>
-                            이메일로 로그인
+                            {t.auth.emailSignIn}
                         </SecondaryButton>
                     </form>
 
                     <GlobalError>{globalError}</GlobalError>
 
                     <SwitchLink>
-                        계정이 없으신가요?{" "}
-                        <TertiaryButton asChild><a href="/signUp">회원가입</a></TertiaryButton>
+                        {t.auth.noAccount}{" "}
+                        <TertiaryButton asChild><a href="/signUp">{t.auth.signUpLink}</a></TertiaryButton>
                     </SwitchLink>
                 </FormInner>
             </FormPanel>
@@ -119,14 +126,10 @@ const SignIn = () => {
     );
 };
 
-/* ── Animations ──────────────────────────────────────────────────────────── */
-
 const fadeUp = keyframes`
     from { opacity: 0; transform: translateY(12px); }
     to   { opacity: 1; transform: translateY(0); }
 `;
-
-/* ── Styled Components ───────────────────────────────────────────────────── */
 
 const PageWrapper = styled.div`
     display: flex;
@@ -143,6 +146,13 @@ const FormPanel = styled.div`
     align-items: center;
     justify-content: center;
     background-color: ${p => p.theme.colors.surface};
+    position: relative;
+`;
+
+const LangToggle = styled.div`
+    position: absolute;
+    top: 24px;
+    right: 24px;
 `;
 
 const FormInner = styled.div`

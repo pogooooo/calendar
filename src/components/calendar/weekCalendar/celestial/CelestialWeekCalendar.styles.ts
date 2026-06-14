@@ -31,17 +31,22 @@ export const DateRangeDisplay = styled.div`
 
 export const SliderWrapper = styled.div`
     display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    gap: 10px;
+    flex-direction: column;
     width: 100%;
 `;
 
-export const ArrowWrapper = styled.div`
+export const CalendarRow = styled.div`
+    position: relative;
+    width: 100%;
+`;
+
+export const ArrowWrapper = styled.div<{ $side: "left" | "right" }>`
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    ${p => p.$side === "left" ? "left: -90px;" : "right: -90px;"}
     transition: filter 0.5s ease;
     display: flex;
-    flex-shrink: 0;
-    margin-top: 10px;
     cursor: pointer;
     &:hover {
         filter: drop-shadow(0 0 3px ${(props) => props.theme.colors.primary});
@@ -49,8 +54,7 @@ export const ArrowWrapper = styled.div`
 `;
 
 export const CalendarWindow = styled.div`
-    flex: 1;
-    min-width: 0;
+    width: 100%;
     overflow: hidden;
     position: relative;
     padding: 15px 10px;

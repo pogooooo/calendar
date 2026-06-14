@@ -360,21 +360,21 @@ const PageWrapper = styled.div`
     height: calc(100vh - 4rem);
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow-y: clip;
     color: ${p => p.theme.colors.text};
 `;
 
 const CalSection = styled.div`
     flex-shrink: 0;
-    display: flex;
-    justify-content: center;
+    width: 62vw;
+    min-width: 700px;
+    margin: 0 auto;
     padding-bottom: 15px;
 `;
 
 const CalSkeleton = styled.div`
     height: 260px;
-    width: 58vw;
-    min-width: 700px;
+    width: 100%;
     background: ${p => p.theme.colors.surface};
     border: 1px solid ${p => p.theme.colors.primary};
     display: flex;

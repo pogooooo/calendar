@@ -8,6 +8,7 @@ import { TodoType } from "@/store/useTodoStore";
 
 import useTodoStore from "@/store/useTodoStore";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
+import { useT } from "@/i18n/useT";
 
 export interface TodoModalProps {
     isOpen: boolean;
@@ -64,6 +65,7 @@ export default function TodoModal(props: TodoModalProps) {
     const { isOpen, onClose, todo, categories, selectedDate } = props;
     const theme = useTheme();
     const themeName = theme?.name || "celestial";
+    const t = useT();
 
     const { addTodo, updateTodo, deleteTodo } = useTodoStore();
     const authFetch = useAuthFetch();
@@ -87,9 +89,9 @@ export default function TodoModal(props: TodoModalProps) {
     const selectedCategory = categories.find(c => c.id === categoryId);
 
     const repeatEndOptions = [
-        { value: 'never', label: '계속 반복 (종료 없음)' },
-        { value: 'until', label: '특정 날짜에 종료' },
-        { value: 'count', label: '특정 횟수만큼 반복' }
+        { value: 'never', label: t.todo.repeatEndNever },
+        { value: 'until', label: t.todo.repeatEndUntil },
+        { value: 'count', label: t.todo.repeatEndCount },
     ];
 
     const selectedRepeatEndLabel = repeatEndOptions.find(o => o.value === repeatEndType)?.label;
@@ -152,7 +154,7 @@ export default function TodoModal(props: TodoModalProps) {
         e.preventDefault();
 
         if (!categoryId) {
-            alert("카테고리를 선택해주세요.");
+            alert(t.todo.selectCategoryAlert);
             return;
         }
 
@@ -179,7 +181,7 @@ export default function TodoModal(props: TodoModalProps) {
     };
 
     const handleDelete = async () => {
-        if (todo && window.confirm("정말 삭제하시겠습니까?")) {
+        if (todo && window.confirm(t.todo.deleteConfirm)) {
             await deleteTodo(authFetch, todo.id);
             onClose();
         }

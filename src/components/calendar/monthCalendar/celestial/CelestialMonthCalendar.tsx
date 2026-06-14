@@ -17,6 +17,7 @@ import TodoModal from "@/components/modal/todoModal/TodoModal";
 import MoreModal from "@/components/modal/moreModal/MoreModal";
 import TodoContextMenu from "@/components/calendar/celestial/contextMenu/TodoContextMenu";
 import { DynamicSticker } from "@/assets/celestial/ChallengeStickers";
+import { useT } from "@/i18n/useT";
 
 interface WeekRowProps {
     dates: Date[];
@@ -178,6 +179,7 @@ const CelestialMonthCalendar = React.forwardRef<HTMLDivElement, CelestialMonthPr
          ...props
      }, ref) => {
         const Component = asChild ? Slot : 'div';
+        const t = useT();
 
         return (
             <S.CelestialCalendarWrapper as={Component} ref={ref} {...props}>
@@ -214,7 +216,7 @@ const CelestialMonthCalendar = React.forwardRef<HTMLDivElement, CelestialMonthPr
                                 style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
                             >
                                 <S.Header>
-                                    {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map((d) => (
+                                    {t.calendar.days.map((d) => (
                                         <S.DayNameBox key={d}>
                                             <div className="day-name">{d}</div>
                                         </S.DayNameBox>

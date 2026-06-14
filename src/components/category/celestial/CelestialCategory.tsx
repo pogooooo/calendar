@@ -5,8 +5,10 @@ import * as S from "./styles";
 import SecondaryButton from "@/components/button/secondary/SecondaryButton";
 import InlineError from "@/components/error/inlineError/InlineError";
 import { CategoryThemeProps } from "../CategoryPage";
+import { useT } from "@/i18n/useT";
 
 export default function CelestialCategory(props: CategoryThemeProps) {
+    const t = useT();
 
     const {
         categories, selectedCategory, selectedCategoryId, setSelectedCategoryId,
@@ -24,8 +26,8 @@ export default function CelestialCategory(props: CategoryThemeProps) {
         <S.CategoryWrapper>
             <S.SidebarContainer>
                 <div className="sidebar-header">
-                    <h2>카테고리</h2>
-                    <S.AddCategoryBtn onClick={() => setIsAddModalOpen(true)}>+</S.AddCategoryBtn>
+                    <h2>{t.category.title}</h2>
+                    <S.AddCategoryBtn onClick={() => setIsAddModalOpen(true)}>{t.category.addCategory}</S.AddCategoryBtn>
                 </div>
                 <S.CategoryList>
                     {categories.map((cat) => (
@@ -61,31 +63,31 @@ export default function CelestialCategory(props: CategoryThemeProps) {
                                 onChange={(e) => setEditName(e.target.value)}
                                 onBlur={handleNameBlur}
                                 onKeyDown={handleNameKeyDown}
-                                placeholder="카테고리 이름을 입력하세요"
+                                placeholder={t.category.namePlaceholder}
                             />
                         </S.CategoryTitleWrapper>
 
                         <S.DetailHeader $activeTab={activeTab}>
-                            <button onClick={() => setActiveTab('info')} className="info-tab">상세 정보</button>
-                            <button onClick={() => setActiveTab('todos')} className="todo-tab">할 일 목록</button>
+                            <button onClick={() => setActiveTab('info')} className="info-tab">{t.category.infoTab}</button>
+                            <button onClick={() => setActiveTab('todos')} className="todo-tab">{t.category.todosTab}</button>
                         </S.DetailHeader>
 
                         {activeTab === 'info' ? (
                             <S.InfoContainer>
                                 <S.PropertiesCard>
                                     <S.PropertyRow>
-                                        <div className="prop-label">생성자</div>
-                                        <div className="prop-value">{selectedCategory.creatorName || '알 수 없음'}</div>
+                                        <div className="prop-label">{t.category.creator}</div>
+                                        <div className="prop-value">{selectedCategory.creatorName || t.category.unknown}</div>
                                     </S.PropertyRow>
                                     <S.PropertyRow>
-                                        <div className="prop-label">설명</div>
+                                        <div className="prop-label">{t.category.description}</div>
                                         <div className="prop-value">
                                             <textarea
                                                 className="desc-textarea"
                                                 value={editDescription}
                                                 onChange={(e) => setEditDescription(e.target.value)}
                                                 onBlur={handleDescriptionBlur}
-                                                placeholder="설명을 추가하여 이 카테고리의 목적을 알려주세요."
+                                                placeholder={t.category.descriptionPlaceholder}
                                                 rows={3}
                                             />
                                         </div>
@@ -94,15 +96,15 @@ export default function CelestialCategory(props: CategoryThemeProps) {
 
                                 <S.ParticipantSection>
                                     <div className="header">
-                                        <h3>멤버 목록</h3>
-                                        <SecondaryButton $width={90} $height={28} onClick={openInviteModal} style={{ fontSize: '0.8rem' }}>초대하기</SecondaryButton>
+                                        <h3>{t.category.members}</h3>
+                                        <SecondaryButton $width={90} $height={28} onClick={openInviteModal} style={{ fontSize: '0.8rem' }}>{t.category.invite}</SecondaryButton>
                                     </div>
 
                                     {selectedCategory.participants && selectedCategory.participants.length > 0 ? (
                                         <S.ParticipantTable>
                                             <S.TableHeader>
-                                                <div className="col-name">이름</div>
-                                                <div className="col-email">이메일</div>
+                                                <div className="col-name">{t.account.name}</div>
+                                                <div className="col-email">{t.account.email}</div>
                                                 <div className="col-action"></div>
                                             </S.TableHeader>
                                             <S.TableBody>
@@ -120,7 +122,7 @@ export default function CelestialCategory(props: CategoryThemeProps) {
                                                                     className="remove-btn"
                                                                     onClick={() => setKickTarget({id: participant.id, name: participant.name})}
                                                                 >
-                                                                    추방
+                                                                    {t.category.kick}
                                                                 </button>
                                                             )}
                                                         </div>
@@ -130,21 +132,21 @@ export default function CelestialCategory(props: CategoryThemeProps) {
                                         </S.ParticipantTable>
                                     ) : (
                                         <div className="empty-state">
-                                            <p>참여 중인 멤버가 없습니다.</p>
+                                            <p>{t.category.noMembers}</p>
                                         </div>
                                     )}
                                 </S.ParticipantSection>
 
                                 <S.ActionFooter>
                                     <SecondaryButton $height={32} $width={140} $variant="danger" onClick={() => handleDelete(selectedCategory.id)}>
-                                        카테고리 삭제
+                                        {t.category.deleteCategory}
                                     </SecondaryButton>
                                 </S.ActionFooter>
                             </S.InfoContainer>
                         ) : (
                             <S.TodoListContainer>
                                 <div className="header">
-                                    <h3>할 일 목록 <span>({categoryTodos.length})</span></h3>
+                                    <h3>{t.category.todosTab} <span>({categoryTodos.length})</span></h3>
                                 </div>
 
                                 {categoryTodos.length > 0 ? (
@@ -169,8 +171,8 @@ export default function CelestialCategory(props: CategoryThemeProps) {
                                                 <div className="todo-info">
                                                     <span className="title">{todo.title}</span>
                                                     <span className="date">
-                                                        {todo.startAt ? new Date(todo.startAt as string).toLocaleDateString() : '날짜 없음'}
-                                                        {todo.repeat > 0 && ` (↻ ${todo.repeat}일마다)`}
+                                                        {todo.startAt ? new Date(todo.startAt as string).toLocaleDateString() : t.category.noDate}
+                                                        {todo.repeat > 0 && ` (↻ ${todo.repeat}${t.todo.perNDays})`}
                                                     </span>
                                                 </div>
 
@@ -178,12 +180,12 @@ export default function CelestialCategory(props: CategoryThemeProps) {
                                                     className="delete-btn"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        if (window.confirm("정말 이 할 일을 삭제하시겠습니까?")) {
+                                                        if (window.confirm(t.category.deleteConfirm)) {
                                                             deleteTodo(authFetch, todo.id);
                                                         }
                                                     }}
                                                 >
-                                                    삭제
+                                                    {t.todo.delete}
                                                 </button>
                                             </S.TodoCard>
                                             );
@@ -192,7 +194,7 @@ export default function CelestialCategory(props: CategoryThemeProps) {
                                 ) : (
                                     <S.ParticipantSection>
                                         <div className="empty-state">
-                                            <p>이 카테고리에 등록된 할 일이 없습니다.</p>
+                                            <p>{t.category.noTodos}</p>
                                         </div>
                                     </S.ParticipantSection>
                                 )}
@@ -201,7 +203,7 @@ export default function CelestialCategory(props: CategoryThemeProps) {
                     </S.DetailInfo>
                 ) : (
                     <S.EmptyStateContainer>
-                        <p>왼쪽 목록에서 카테고리를 선택하거나 새 카테고리를 추가해보세요.</p>
+                        <p>{t.category.selectOrAdd}</p>
                     </S.EmptyStateContainer>
                 )}
             </S.ContentContainer>
@@ -210,10 +212,10 @@ export default function CelestialCategory(props: CategoryThemeProps) {
                 <S.ModalOverlay onClick={closeInviteModal}>
                     <S.ModalContent onClick={(e) => e.stopPropagation()}>
                         <div className="modal-header">
-                            <h3>팀원 초대하기</h3>
+                            <h3>{t.category.inviteTitle}</h3>
                         </div>
                         <div className="modal-body">
-                            <p>초대할 멤버의 이메일을 정확히 입력해주세요.</p>
+                            <p>{t.category.inviteHint}</p>
                             <input
                                 type="email"
                                 placeholder="example@email.com"
@@ -225,8 +227,8 @@ export default function CelestialCategory(props: CategoryThemeProps) {
                             {inviteError && <InlineError>{inviteError}</InlineError>}
                         </div>
                         <div className="modal-actions">
-                            <SecondaryButton $width={70} $height={32} onClick={closeInviteModal}>취소</SecondaryButton>
-                            <SecondaryButton $width={70} $height={32} $variant="primary" onClick={handleInviteSubmit}>초대</SecondaryButton>
+                            <SecondaryButton $width={70} $height={32} onClick={closeInviteModal}>{t.category.cancel}</SecondaryButton>
+                            <SecondaryButton $width={70} $height={32} $variant="primary" onClick={handleInviteSubmit}>{t.category.invite}</SecondaryButton>
                         </div>
                     </S.ModalContent>
                 </S.ModalOverlay>
@@ -236,14 +238,14 @@ export default function CelestialCategory(props: CategoryThemeProps) {
                 <S.ModalOverlay onClick={closeKickModal}>
                     <S.ModalContent onClick={(e) => e.stopPropagation()}>
                         <div className="modal-header">
-                            <h3>멤버 추방</h3>
+                            <h3>{t.category.kickTitle}</h3>
                         </div>
                         <div className="modal-body">
-                            <p>정말 <strong>{kickTarget.name}</strong>님을 이 카테고리에서 추방하시겠습니까?</p>
+                            <p>{t.category.kickConfirm(kickTarget.name)}</p>
                         </div>
                         <div className="modal-actions">
-                            <SecondaryButton $width={70} $height={32} onClick={closeKickModal}>취소</SecondaryButton>
-                            <SecondaryButton $width={80} $height={32} $variant="danger" onClick={handleKickSubmit}>추방하기</SecondaryButton>
+                            <SecondaryButton $width={70} $height={32} onClick={closeKickModal}>{t.category.cancel}</SecondaryButton>
+                            <SecondaryButton $width={80} $height={32} $variant="danger" onClick={handleKickSubmit}>{t.category.kick}</SecondaryButton>
                         </div>
                     </S.ModalContent>
                 </S.ModalOverlay>

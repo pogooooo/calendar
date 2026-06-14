@@ -16,6 +16,7 @@ import TodoModal from "@/components/modal/todoModal/TodoModal";
 import MoreModal from "@/components/modal/moreModal/MoreModal";
 import TodoContextMenu from "@/components/calendar/celestial/contextMenu/TodoContextMenu";
 import { TodoType } from "@/store/useTodoStore";
+import { useT } from "@/i18n/useT";
 
 import { DynamicSticker } from "@/assets/celestial/ChallengeStickers";
 
@@ -45,25 +46,27 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, CelestialWeekProp
      }, ref) => {
         const Component = asChild ? Slot : 'div';
         const theme = useTheme();
+        const t = useT();
 
         return (
             <S.CelestialCalendarWrapper as={Component} ref={ref} {...props}>
-                <S.DateRangeDisplay>
-                    <AnimatedDateText text={dateRangeText} direction={direction} />
-                    <hr/>
-                    <CategoryFilter
-                        categories={categories}
-                        selectedCategoryIds={selectedCategoryIds}
-                        onToggle={toggleCategory}
-                        showProjects={showProjects}
-                        onToggleProjects={onToggleProjects}
-                        showChallenges={showChallenges}
-                        onToggleChallenges={onToggleChallenges}
-                    />
-                </S.DateRangeDisplay>
-
                 <S.SliderWrapper>
-                    <S.ArrowWrapper onClick={handlePrevWeek}>
+                    <S.DateRangeDisplay>
+                        <AnimatedDateText text={dateRangeText} direction={direction} />
+                        <hr/>
+                        <CategoryFilter
+                            categories={categories}
+                            selectedCategoryIds={selectedCategoryIds}
+                            onToggle={toggleCategory}
+                            showProjects={showProjects}
+                            onToggleProjects={onToggleProjects}
+                            showChallenges={showChallenges}
+                            onToggleChallenges={onToggleChallenges}
+                        />
+                    </S.DateRangeDisplay>
+
+                    <S.CalendarRow>
+                    <S.ArrowWrapper $side="left" onClick={handlePrevWeek}>
                         <Arrow width={80} height={30} isRight={false} stroke={theme.colors.primary}/>
                     </S.ArrowWrapper>
 
@@ -83,7 +86,7 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, CelestialWeekProp
                                 style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
                             >
                                 <S.Header>
-                                    {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map((d, i) => {
+                                    {t.calendar.days.map((d, i) => {
                                         const isToday = weekDates[i].toDateString() === todayStr;
                                         return (
                                             <S.DayNameBox key={d} $isToday={isToday}>
@@ -201,9 +204,10 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, CelestialWeekProp
                         </AnimatePresence>
                     </S.CalendarWindow>
 
-                    <S.ArrowWrapper onClick={handleNextWeek}>
+                    <S.ArrowWrapper $side="right" onClick={handleNextWeek}>
                         <Arrow width={80} height={30} isRight={true} stroke={theme.colors.primary}/>
                     </S.ArrowWrapper>
+                    </S.CalendarRow>
                 </S.SliderWrapper>
 
                 <MoreModal

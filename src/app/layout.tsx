@@ -1,10 +1,11 @@
 import "./globals.css";
-import {Orbit, Chiron_Hei_HK} from "next/font/google";
+import {Orbit} from "next/font/google";
 import StyledComponentsRegistry from "@/lib/StyledComponentsRegistry";
 import {Metadata} from "next";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import ThemeProviderWrapper from "@/components/ThemeProviderWrapper";
 import StoreInitializer from "@/components/StoreInitializer";
+import AutostartSync from "@/components/AutostartSync";
 
 const orbit = Orbit({
     subsets: ["latin"],
@@ -26,6 +27,7 @@ export default function RootLayout({children,}: Readonly<{ children: React.React
                 <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!}>
                     <StyledComponentsRegistry>
                         <StoreInitializer>
+                            <AutostartSync />
                             {children}
                         </StoreInitializer>
                     </StyledComponentsRegistry>

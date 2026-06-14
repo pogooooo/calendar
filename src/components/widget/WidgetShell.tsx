@@ -4,6 +4,7 @@ import React, { useState, useCallback, useEffect, useMemo, useRef } from "react"
 import styled, { ThemeProvider, keyframes, useTheme } from "styled-components";
 import { Settings, X, GripHorizontal, Lock } from "lucide-react";
 import useWidgetStore, { BgMode, WidgetBgSettings } from "@/store/useWidgetStore";
+import { useT } from "@/i18n/useT";
 import { invoke } from "@tauri-apps/api/core";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { getCurrentWindow, currentMonitor } from "@tauri-apps/api/window";
@@ -93,6 +94,7 @@ function buildBackground(bg: WidgetBgSettings, surfaceColor: string): React.CSSP
 
 export default function WidgetShell({ kind, title, children }: Props) {
     const theme = useTheme() as any;
+    const t = useT();
     const bg = useWidgetStore((s) => s[kind].bg);
     const updateBg = useWidgetStore((s) => s.updateBg);
 
@@ -363,7 +365,7 @@ export default function WidgetShell({ kind, title, children }: Props) {
 
                 {!locked && showSettings && (
                     <SettingsPanel onClick={(e) => e.stopPropagation()}>
-                        <PanelLabel>배경</PanelLabel>
+                        <PanelLabel>{t.widgetShell.background}</PanelLabel>
                         <ModeRow>
                             {(["theme", "glass", "custom"] as BgMode[]).map((m) => (
                                 <ModeChip
@@ -371,15 +373,15 @@ export default function WidgetShell({ kind, title, children }: Props) {
                                     $active={bg.mode === m}
                                     onClick={() => handleModeChange(m)}
                                 >
-                                    {m === "theme" ? "테마" : m === "glass" ? "글래스" : "색상"}
+                                    {m === "theme" ? t.widgetShell.theme : m === "glass" ? t.widgetShell.glass : t.widgetShell.color}
                                 </ModeChip>
                             ))}
                         </ModeRow>
 
                         <PanelLabel>
                             {bg.mode === "glass"
-                                ? `블러 강도 ${Math.round(bg.opacity * 40)}px`
-                                : `투명도 ${Math.round(bg.opacity * 100)}%`}
+                                ? t.widgetShell.blur(Math.round(bg.opacity * 40))
+                                : t.widgetShell.opacity(Math.round(bg.opacity * 100))}
                         </PanelLabel>
                         <Slider
                             type="range" min={0} max={100}
@@ -391,7 +393,7 @@ export default function WidgetShell({ kind, title, children }: Props) {
                             <>
                                 <PanelDivider />
                                 <ToggleRow>
-                                    <ToggleLabel>광택 효과 (Gloss)</ToggleLabel>
+                                    <ToggleLabel>{t.widgetShell.gloss}</ToggleLabel>
                                     <ToggleSwitch
                                         $on={!!bg.gloss}
                                         onClick={() => handleGloss(!bg.gloss)}
@@ -418,7 +420,7 @@ export default function WidgetShell({ kind, title, children }: Props) {
 
                         <PanelDivider />
                         <ToggleRow>
-                            <ToggleLabel>글자색 자동 조정</ToggleLabel>
+                            <ToggleLabel>{t.widgetShell.autoTextColor}</ToggleLabel>
                             <ToggleSwitch
                                 $on={bg.autoTextColor}
                                 onClick={() => handleAutoTextColor(!bg.autoTextColor)}

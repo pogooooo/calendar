@@ -4,7 +4,10 @@ import * as React from "react";
 import { Check } from "lucide-react";
 import { useRouter } from "next/navigation";
 import useAuthStore from "@/store/useAuthStore";
+import useSettingStore from "@/store/useSettingStore";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
+import { useT } from "@/i18n/useT";
+import LocaleSelect from "@/components/LocaleSelect";
 import * as S from "./CelestialSettings.styles";
 
 export interface SettingsThemeProps {
@@ -27,43 +30,19 @@ const THEMES = [
     },
 ];
 
-const NAV_SECTIONS = [
-    { id: "sec-appearance", label: "Appearance" },
-    { id: "sec-widgets",    label: "위젯" },
-    { id: "sec-account-info", label: "계정 정보" },
-    { id: "sec-name", label: "이름 변경" },
-    { id: "sec-password", label: "비밀번호 변경" },
-    { id: "sec-delete", label: "회원 탈퇴" },
-] as const;
-
 type WidgetKind = "daily" | "weekly" | "monthly";
-
-const WIDGET_LIST: { kind: WidgetKind; label: string; desc: string }[] = [
-    { kind: "daily",   label: "일간 캘린더",  desc: "오늘의 일정 타임라인" },
-    { kind: "weekly",  label: "주간 캘린더",  desc: "이번 주 7일 일정" },
-    { kind: "monthly", label: "월간 캘린더",  desc: "월간 일정 그리드" },
-];
 
 async function invokeWidget(action: "open" | "close", kind: WidgetKind) {
     if (typeof window === "undefined") return;
-
-    // Tauri v2 환경 감지
     const isTauri = "__TAURI_INTERNALS__" in window;
-
-    console.log("[Widget] isTauri:", isTauri, "action:", action, "kind:", kind);
-
     if (isTauri) {
         try {
             const { invoke } = await import("@tauri-apps/api/core");
-            const cmd = action === "open" ? "open_widget" : "close_widget";
-            console.log("[Widget] invoking:", cmd);
-            const result = await invoke(cmd, { kind });
-            console.log("[Widget] invoke result:", result);
+            await invoke(action === "open" ? "open_widget" : "close_widget", { kind });
         } catch (err) {
             console.error("[Widget] invoke 실패:", err);
         }
     } else {
-        // 브라우저 모드 — 팝업으로 미리보기
         if (action === "open") {
             window.open(`/widget/${kind}`, `widget_${kind}`,
                 "width=400,height=520,menubar=no,toolbar=no,location=no");
@@ -71,20 +50,51 @@ async function invokeWidget(action: "open" | "close", kind: WidgetKind) {
     }
 }
 
+async function invokeAutostart(enabled: boolean): Promise<void> {
+    if (typeof window === "undefined") return;
+    if (!("__TAURI_INTERNALS__" in window)) return;
+    try {
+        const { invoke } = await import("@tauri-apps/api/core");
+        await invoke("set_autostart", { enabled });
+    } catch (err) {
+        console.error("[Autostart] invoke 실패:", err);
+    }
+}
+
 export default function CelestialSettings({ currentTheme, onThemeChange }: SettingsThemeProps) {
     const router = useRouter();
+    const t = useT();
     const user = useAuthStore((state) => state.user);
     const setUser = useAuthStore((state) => state.setUser);
     const logout = useAuthStore((state) => state.logout);
     const authFetch = useAuthFetch();
 
-    // ── active nav item 추적 ──────────────────────────────────────────────────
+    const locale = useSettingStore((s) => s.locale);
+    const setLocale = useSettingStore((s) => s.setLocale);
+    const autostart = useSettingStore((s) => s.autostart);
+    const setAutostart = useSettingStore((s) => s.setAutostart);
+
+    const NAV_SECTIONS = React.useMemo(() => [
+        { id: "sec-appearance", label: t.settings.appearance },
+        { id: "sec-widgets",    label: t.settings.widgets },
+        { id: "sec-system",     label: t.settings.system },
+        { id: "sec-account-info", label: t.settings.accountInfo },
+        { id: "sec-name",       label: t.settings.changeName },
+        { id: "sec-password",   label: t.settings.changePassword },
+        { id: "sec-delete",     label: t.settings.deleteAccount },
+    ], [t]);
+
+    const WIDGET_LIST = React.useMemo(() => [
+        { kind: "daily" as WidgetKind,   label: t.widget.daily,   desc: t.widget.dailyDesc },
+        { kind: "weekly" as WidgetKind,  label: t.widget.weekly,  desc: t.widget.weeklyDesc },
+        { kind: "monthly" as WidgetKind, label: t.widget.monthly, desc: t.widget.monthlyDesc },
+    ], [t]);
+
     const [activeId, setActiveId] = React.useState<string>("sec-appearance");
 
     React.useEffect(() => {
         const observer = new IntersectionObserver(
             (entries) => {
-                // 가장 위쪽에 있는 visible 섹션을 active로
                 const visible = entries
                     .filter((e) => e.isIntersecting)
                     .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
@@ -92,21 +102,24 @@ export default function CelestialSettings({ currentTheme, onThemeChange }: Setti
             },
             { rootMargin: "-10% 0px -60% 0px", threshold: 0 }
         );
-
         NAV_SECTIONS.forEach(({ id }) => {
             const el = document.getElementById(id);
             if (el) observer.observe(el);
         });
-
         return () => observer.disconnect();
-    }, []);
+    }, [NAV_SECTIONS]);
 
     const scrollTo = (id: string) => {
         const el = document.getElementById(id);
         if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
     };
 
-    // ── 이름 변경 ─────────────────────────────────────────────────────────────
+    const handleAutostartToggle = async () => {
+        const next = !autostart;
+        setAutostart(next);
+        await invokeAutostart(next);
+    };
+
     const [newName, setNewName] = React.useState(user?.name ?? "");
     const [nameStatus, setNameStatus] = React.useState<{ type: "success" | "error"; msg: string } | null>(null);
     const [namePending, setNamePending] = React.useState(false);
@@ -134,7 +147,6 @@ export default function CelestialSettings({ currentTheme, onThemeChange }: Setti
         }
     };
 
-    // ── 비밀번호 변경 ─────────────────────────────────────────────────────────
     const [pwForm, setPwForm] = React.useState({ current: "", next: "", confirm: "" });
     const [pwStatus, setPwStatus] = React.useState<{ type: "success" | "error"; msg: string } | null>(null);
     const [pwPending, setPwPending] = React.useState(false);
@@ -163,15 +175,19 @@ export default function CelestialSettings({ currentTheme, onThemeChange }: Setti
         }
     };
 
-    // ── 회원 탈퇴 ─────────────────────────────────────────────────────────────
     const [deleteConfirm, setDeleteConfirm] = React.useState("");
     const [deletePassword, setDeletePassword] = React.useState("");
     const [deleteStatus, setDeleteStatus] = React.useState<{ type: "success" | "error"; msg: string } | null>(null);
     const [deletePending, setDeletePending] = React.useState(false);
     const [showDeleteForm, setShowDeleteForm] = React.useState(false);
 
+    const deleteKeyword = locale === 'en' ? 'delete' : '탈퇴';
+
     const handleDelete = async () => {
-        if (deleteConfirm !== "탈퇴") { setDeleteStatus({ type: "error", msg: '"탈퇴" 를 정확히 입력해주세요.' }); return; }
+        if (deleteConfirm !== deleteKeyword) {
+            setDeleteStatus({ type: "error", msg: locale === 'en' ? `Please type "${deleteKeyword}" exactly.` : `"${deleteKeyword}" 를 정확히 입력해주세요.` });
+            return;
+        }
         setDeletePending(true); setDeleteStatus(null);
         try {
             const res = await authFetch("/api/user", {
@@ -195,42 +211,40 @@ export default function CelestialSettings({ currentTheme, onThemeChange }: Setti
 
     return (
         <S.PageWrapper>
-            {/* ── 메인 콘텐츠 ─────────────────────────────────────────────── */}
             <S.MainContent>
                 <S.PageHeader>
-                    <span>Settings</span>
+                    <span>{t.settings.title}</span>
                     <hr />
                 </S.PageHeader>
 
-                {/* Appearance */}
                 <S.Section id="sec-appearance">
-                    <S.SectionTitle>Appearance</S.SectionTitle>
+                    <S.SectionTitle>{t.settings.appearance}</S.SectionTitle>
                     <S.ThemeGrid>
-                        {THEMES.map((t) => {
-                            const selected = currentTheme === t.id;
+                        {THEMES.map((th) => {
+                            const selected = currentTheme === th.id;
                             return (
-                                <S.ThemeCard key={t.id} $selected={selected} onClick={() => onThemeChange(t.id)}>
+                                <S.ThemeCard key={th.id} $selected={selected} onClick={() => onThemeChange(th.id)}>
                                     <S.ThemePreview>
-                                        <S.PreviewBar $color={t.preview.bar} />
+                                        <S.PreviewBar $color={th.preview.bar} />
                                         <S.PreviewRow>
-                                            <S.PreviewDot $color={t.preview.dot} />
+                                            <S.PreviewDot $color={th.preview.dot} />
                                             <S.PreviewLines>
-                                                <S.PreviewLine $color={t.preview.line1} $w={55} />
-                                                <S.PreviewLine $color={t.preview.line2} $w={35} />
+                                                <S.PreviewLine $color={th.preview.line1} $w={55} />
+                                                <S.PreviewLine $color={th.preview.line2} $w={35} />
                                             </S.PreviewLines>
                                         </S.PreviewRow>
                                         <S.PreviewRow>
-                                            <S.PreviewDot $color={t.preview.dot} />
+                                            <S.PreviewDot $color={th.preview.dot} />
                                             <S.PreviewLines>
-                                                <S.PreviewLine $color={t.preview.line1} $w={40} />
-                                                <S.PreviewLine $color={t.preview.line2} $w={60} />
+                                                <S.PreviewLine $color={th.preview.line1} $w={40} />
+                                                <S.PreviewLine $color={th.preview.line2} $w={60} />
                                             </S.PreviewLines>
                                         </S.PreviewRow>
                                     </S.ThemePreview>
                                     <S.ThemeInfo>
                                         <S.ThemeLabelGroup>
-                                            <S.ThemeLabel>{t.label}</S.ThemeLabel>
-                                            <S.ThemeDesc>{t.description}</S.ThemeDesc>
+                                            <S.ThemeLabel>{th.label}</S.ThemeLabel>
+                                            <S.ThemeDesc>{th.description}</S.ThemeDesc>
                                         </S.ThemeLabelGroup>
                                         {selected && <S.CheckMark><Check size={12} strokeWidth={3} /></S.CheckMark>}
                                     </S.ThemeInfo>
@@ -240,13 +254,11 @@ export default function CelestialSettings({ currentTheme, onThemeChange }: Setti
                     </S.ThemeGrid>
                 </S.Section>
 
-                {/* 위젯 */}
                 <S.Section id="sec-widgets">
-                    <S.SectionTitle>위젯</S.SectionTitle>
+                    <S.SectionTitle>{t.settings.widgets}</S.SectionTitle>
                     <S.SectionBody>
                         <S.WarningText style={{ marginBottom: 16 }}>
-                            데스크탑 위젯으로 열어 바탕화면에 캘린더를 고정할 수 있습니다.
-                            Tauri 앱에서 실행 중일 때 동작합니다.
+                            {t.widget.desc}
                         </S.WarningText>
                         {WIDGET_LIST.map(({ kind, label, desc }) => (
                             <S.InfoRow key={kind}>
@@ -256,10 +268,10 @@ export default function CelestialSettings({ currentTheme, onThemeChange }: Setti
                                 </div>
                                 <S.ButtonRow style={{ marginTop: 0 }}>
                                     <S.FormButton $variant="primary" onClick={() => invokeWidget("open", kind)}>
-                                        열기
+                                        {t.widget.open}
                                     </S.FormButton>
                                     <S.FormButton $variant="default" onClick={() => invokeWidget("close", kind)}>
-                                        닫기
+                                        {t.widget.close}
                                     </S.FormButton>
                                 </S.ButtonRow>
                             </S.InfoRow>
@@ -267,31 +279,54 @@ export default function CelestialSettings({ currentTheme, onThemeChange }: Setti
                     </S.SectionBody>
                 </S.Section>
 
-                {/* 계정 정보 */}
-                <S.Section id="sec-account-info">
-                    <S.SectionTitle>계정 정보</S.SectionTitle>
+                <S.Section id="sec-system">
+                    <S.SectionTitle>{t.settings.system}</S.SectionTitle>
                     <S.SectionBody>
                         <S.InfoRow>
-                            <S.InfoLabel>이메일</S.InfoLabel>
+                            <div>
+                                <S.InfoValue>{t.system.autostart}</S.InfoValue>
+                                <div style={{ fontSize: "0.74rem", opacity: 0.55, marginTop: 2 }}>{t.system.autostartDesc}</div>
+                            </div>
+                            <S.FormButton
+                                $variant={autostart ? "primary" : "default"}
+                                onClick={handleAutostartToggle}
+                            >
+                                {autostart ? "ON" : "OFF"}
+                            </S.FormButton>
+                        </S.InfoRow>
+                        <S.InfoRow style={{ marginTop: 16 }}>
+                            <div>
+                                <S.InfoValue>{t.system.language}</S.InfoValue>
+                                <div style={{ fontSize: "0.74rem", opacity: 0.55, marginTop: 2 }}>{t.system.languageDesc}</div>
+                            </div>
+                            <LocaleSelect />
+                        </S.InfoRow>
+                    </S.SectionBody>
+                </S.Section>
+
+                <S.Section id="sec-account-info">
+                    <S.SectionTitle>{t.settings.accountInfo}</S.SectionTitle>
+                    <S.SectionBody>
+                        <S.InfoRow>
+                            <S.InfoLabel>{t.account.email}</S.InfoLabel>
                             <S.InfoValue>{user?.email ?? "—"}</S.InfoValue>
                         </S.InfoRow>
                         <S.InfoRow>
-                            <S.InfoLabel>이름</S.InfoLabel>
+                            <S.InfoLabel>{t.account.name}</S.InfoLabel>
                             <S.InfoValue>{user?.name ?? "—"}</S.InfoValue>
                         </S.InfoRow>
                     </S.SectionBody>
                 </S.Section>
 
-                {/* 이름 변경 */}
                 <S.Section id="sec-name">
-                    <S.SectionTitle>이름 변경</S.SectionTitle>
+                    <S.SectionTitle>{t.settings.changeName}</S.SectionTitle>
                     <S.SectionBody>
                         <S.FormRow>
-                            <S.FormLabel>새 이름</S.FormLabel>
+                            <S.FormLabel>{t.account.newName}</S.FormLabel>
                             <S.FormInput
                                 value={newName}
                                 onChange={(e) => setNewName(e.target.value)}
-                                placeholder="변경할 이름을 입력하세요"
+                                placeholder={t.account.newNamePlaceholder}
                                 maxLength={30}
                             />
                         </S.FormRow>
@@ -301,44 +336,43 @@ export default function CelestialSettings({ currentTheme, onThemeChange }: Setti
                                 onClick={handleNameSave}
                                 disabled={namePending || !newName.trim() || newName.trim() === user?.name}
                             >
-                                {namePending ? "저장 중..." : "저장"}
+                                {namePending ? t.account.saving : t.account.save}
                             </S.FormButton>
                         </S.ButtonRow>
                         {nameStatus && <S.StatusMessage $type={nameStatus.type}>{nameStatus.msg}</S.StatusMessage>}
                     </S.SectionBody>
                 </S.Section>
 
-                {/* 비밀번호 변경 */}
                 <S.Section id="sec-password">
-                    <S.SectionTitle>비밀번호 변경</S.SectionTitle>
+                    <S.SectionTitle>{t.settings.changePassword}</S.SectionTitle>
                     <S.SectionBody>
                         <S.FormRow>
-                            <S.FormLabel>현재 비밀번호</S.FormLabel>
+                            <S.FormLabel>{t.account.currentPassword}</S.FormLabel>
                             <S.FormInput
                                 type="password"
                                 value={pwForm.current}
                                 onChange={(e) => setPwForm((p) => ({ ...p, current: e.target.value }))}
-                                placeholder="현재 비밀번호"
+                                placeholder={t.account.currentPassword}
                                 autoComplete="current-password"
                             />
                         </S.FormRow>
                         <S.FormRow>
-                            <S.FormLabel>새 비밀번호</S.FormLabel>
+                            <S.FormLabel>{t.account.newPassword}</S.FormLabel>
                             <S.FormInput
                                 type="password"
                                 value={pwForm.next}
                                 onChange={(e) => setPwForm((p) => ({ ...p, next: e.target.value }))}
-                                placeholder="8자 이상"
+                                placeholder={t.account.newPasswordPlaceholder}
                                 autoComplete="new-password"
                             />
                         </S.FormRow>
                         <S.FormRow>
-                            <S.FormLabel>새 비밀번호 확인</S.FormLabel>
+                            <S.FormLabel>{t.account.confirmPassword}</S.FormLabel>
                             <S.FormInput
                                 type="password"
                                 value={pwForm.confirm}
                                 onChange={(e) => setPwForm((p) => ({ ...p, confirm: e.target.value }))}
-                                placeholder="새 비밀번호 재입력"
+                                placeholder={t.account.confirmPasswordPlaceholder}
                                 autoComplete="new-password"
                             />
                         </S.FormRow>
@@ -348,47 +382,45 @@ export default function CelestialSettings({ currentTheme, onThemeChange }: Setti
                                 onClick={handlePasswordSave}
                                 disabled={pwPending || !pwForm.current || !pwForm.next || !pwForm.confirm}
                             >
-                                {pwPending ? "변경 중..." : "비밀번호 변경"}
+                                {pwPending ? t.account.changing : t.account.changePassword}
                             </S.FormButton>
                         </S.ButtonRow>
                         {pwStatus && <S.StatusMessage $type={pwStatus.type}>{pwStatus.msg}</S.StatusMessage>}
                     </S.SectionBody>
                 </S.Section>
 
-                {/* 회원 탈퇴 */}
                 <S.Section id="sec-delete">
-                    <S.SectionTitle>회원 탈퇴</S.SectionTitle>
+                    <S.SectionTitle>{t.settings.deleteAccount}</S.SectionTitle>
                     <S.SectionBody>
                         {!showDeleteForm ? (
                             <>
                                 <S.WarningText>
-                                    탈퇴 시 모든 데이터(카테고리, 투두, 프로젝트, 챌린지 등)가 <strong>영구적으로 삭제</strong>됩니다.
-                                    이 작업은 되돌릴 수 없습니다.
+                                    {t.account.deleteWarning}
                                 </S.WarningText>
                                 <S.FormButton $variant="danger" onClick={() => setShowDeleteForm(true)}>
-                                    탈퇴 진행
+                                    {t.account.proceed}
                                 </S.FormButton>
                             </>
                         ) : (
                             <>
                                 <S.WarningText>
-                                    탈퇴를 진행하려면 비밀번호를 입력하고 아래에 <strong>탈퇴</strong>라고 입력해주세요.
+                                    {t.account.deleteInstructions}
                                 </S.WarningText>
                                 <S.FormRow>
-                                    <S.FormLabel>비밀번호 확인</S.FormLabel>
+                                    <S.FormLabel>{t.account.passwordConfirm}</S.FormLabel>
                                     <S.FormInput
                                         type="password"
                                         value={deletePassword}
                                         onChange={(e) => setDeletePassword(e.target.value)}
-                                        placeholder="현재 비밀번호 (소셜 로그인은 비워두세요)"
+                                        placeholder={t.account.passwordConfirmPlaceholder}
                                     />
                                 </S.FormRow>
                                 <S.FormRow>
-                                    <S.FormLabel>확인 문구 — <strong>탈퇴</strong> 라고 입력</S.FormLabel>
+                                    <S.FormLabel>{t.account.deleteConfirmLabel}</S.FormLabel>
                                     <S.FormInput
                                         value={deleteConfirm}
                                         onChange={(e) => setDeleteConfirm(e.target.value)}
-                                        placeholder="탈퇴"
+                                        placeholder={t.account.deleteConfirmPlaceholder}
                                     />
                                 </S.FormRow>
                                 <S.ButtonRow>
@@ -396,14 +428,14 @@ export default function CelestialSettings({ currentTheme, onThemeChange }: Setti
                                         $variant="default"
                                         onClick={() => { setShowDeleteForm(false); setDeleteConfirm(""); setDeletePassword(""); setDeleteStatus(null); }}
                                     >
-                                        취소
+                                        {t.account.cancel}
                                     </S.FormButton>
                                     <S.FormButton
                                         $variant="danger"
                                         onClick={handleDelete}
-                                        disabled={deletePending || deleteConfirm !== "탈퇴"}
+                                        disabled={deletePending || deleteConfirm !== deleteKeyword}
                                     >
-                                        {deletePending ? "처리 중..." : "최종 탈퇴"}
+                                        {deletePending ? t.account.processing : t.account.finalDelete}
                                     </S.FormButton>
                                 </S.ButtonRow>
                                 {deleteStatus && <S.StatusMessage $type={deleteStatus.type}>{deleteStatus.msg}</S.StatusMessage>}
@@ -413,9 +445,8 @@ export default function CelestialSettings({ currentTheme, onThemeChange }: Setti
                 </S.Section>
             </S.MainContent>
 
-            {/* ── 우측 네비게이션 ──────────────────────────────────────────── */}
             <S.NavPanel>
-                <S.NavTitle>On this page</S.NavTitle>
+                <S.NavTitle>{t.settings.onThisPage}</S.NavTitle>
                 {NAV_SECTIONS.map(({ id, label }) => (
                     <S.NavItem
                         key={id}

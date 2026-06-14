@@ -70,6 +70,7 @@ mod win32 {
     pub type HKEY = *mut c_void;
     pub const HKEY_CURRENT_USER: HKEY = 0x80000001usize as _;
     pub const KEY_READ: u32 = 0x20019;
+    pub const KEY_WRITE: u32 = 0x20006;
 
     #[link(name = "advapi32")]
     extern "system" {
@@ -82,7 +83,49 @@ mod win32 {
             lpReserved: *mut u32, lpType: *mut u32,
             lpData: *mut u8, lpcbData: *mut u32,
         ) -> i32;
+        pub fn RegSetValueExW(
+            hKey: HKEY, lpValueName: *const u16,
+            Reserved: u32, dwType: u32,
+            lpData: *const u8, cbData: u32,
+        ) -> i32;
+        pub fn RegDeleteValueW(
+            hKey: HKEY, lpValueName: *const u16,
+        ) -> i32;
         pub fn RegCloseKey(hKey: HKEY) -> i32;
+    }
+
+    pub unsafe fn write_reg_sz(subkey: &str, value: &str, data: &str) -> bool {
+        use std::ffi::OsStr;
+        use std::os::windows::ffi::OsStrExt;
+
+        let sk: Vec<u16> = OsStr::new(subkey).encode_wide().chain(Some(0)).collect();
+        let vn: Vec<u16> = OsStr::new(value).encode_wide().chain(Some(0)).collect();
+        let dt: Vec<u16> = OsStr::new(data).encode_wide().chain(Some(0)).collect();
+        let dt_bytes: Vec<u8> = dt.iter().flat_map(|&w| w.to_le_bytes()).collect();
+
+        let mut hk: HKEY = std::ptr::null_mut();
+        if RegOpenKeyExW(HKEY_CURRENT_USER, sk.as_ptr(), 0, KEY_READ | KEY_WRITE, &mut hk) != 0 {
+            return false;
+        }
+        let ret = RegSetValueExW(hk, vn.as_ptr(), 0, 1, dt_bytes.as_ptr(), dt_bytes.len() as u32);
+        RegCloseKey(hk);
+        ret == 0
+    }
+
+    pub unsafe fn delete_reg_value(subkey: &str, value: &str) -> bool {
+        use std::ffi::OsStr;
+        use std::os::windows::ffi::OsStrExt;
+
+        let sk: Vec<u16> = OsStr::new(subkey).encode_wide().chain(Some(0)).collect();
+        let vn: Vec<u16> = OsStr::new(value).encode_wide().chain(Some(0)).collect();
+
+        let mut hk: HKEY = std::ptr::null_mut();
+        if RegOpenKeyExW(HKEY_CURRENT_USER, sk.as_ptr(), 0, KEY_READ | KEY_WRITE, &mut hk) != 0 {
+            return false;
+        }
+        let ret = RegDeleteValueW(hk, vn.as_ptr());
+        RegCloseKey(hk);
+        ret == 0
     }
 
     pub unsafe fn read_reg_sz(subkey: &str, value: &str) -> Option<String> {
@@ -231,6 +274,37 @@ fn get_wallpaper_path() -> String {
         }
     }
     "".to_string()
+}
+
+const AUTOSTART_KEY: &str = "Software\\Microsoft\\Windows\\CurrentVersion\\Run";
+const AUTOSTART_NAME: &str = "CRONOS";
+
+#[tauri::command]
+fn get_autostart() -> bool {
+    #[cfg(target_os = "windows")]
+    unsafe {
+        win32::read_reg_sz(AUTOSTART_KEY, AUTOSTART_NAME).is_some()
+    }
+    #[cfg(not(target_os = "windows"))]
+    false
+}
+
+#[tauri::command]
+fn set_autostart(enabled: bool) -> bool {
+    #[cfg(target_os = "windows")]
+    unsafe {
+        if enabled {
+            if let Ok(exe) = std::env::current_exe() {
+                let path = format!("\"{}\"", exe.to_string_lossy());
+                return win32::write_reg_sz(AUTOSTART_KEY, AUTOSTART_NAME, &path);
+            }
+            false
+        } else {
+            win32::delete_reg_value(AUTOSTART_KEY, AUTOSTART_NAME)
+        }
+    }
+    #[cfg(not(target_os = "windows"))]
+    enabled
 }
 
 #[tauri::command]
@@ -437,6 +511,8 @@ pub fn run() {
             set_widget_locked,
             get_wallpaper_path,
             get_wallpaper_style,
+            get_autostart,
+            set_autostart,
         ])
         .setup(move |app| {
             {

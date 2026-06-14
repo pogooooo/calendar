@@ -1,11 +1,16 @@
 import { persist } from "zustand/middleware";
 import { create } from "zustand/react";
 import type { AuthFetch } from '@/types';
+import type { Locale } from '@/i18n/types';
 
 interface SettingState {
     theme: string;
+    locale: Locale;
+    autostart: boolean;
     isLoading: boolean;
     setTheme: (inputTheme: string) => void;
+    setLocale: (locale: Locale) => void;
+    setAutostart: (enabled: boolean) => void;
     updateTheme: (authFetch: AuthFetch, inputTheme: string) => Promise<void>;
     fetchSettings: (authFetch: AuthFetch) => Promise<void>;
 }
@@ -14,9 +19,13 @@ const useSettingStore = create<SettingState>()(
     persist(
         (set) => ({
             theme: 'celestial',
+            locale: 'ko' as Locale,
+            autostart: true,
             isLoading: false,
 
             setTheme: (inputTheme) => set({ theme: inputTheme }),
+            setLocale: (locale) => set({ locale }),
+            setAutostart: (enabled) => set({ autostart: enabled }),
 
             fetchSettings: async (authFetch) => {
                 set({ isLoading: true });

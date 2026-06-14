@@ -9,15 +9,16 @@ import Home from "@/assets/icons/Home";
 import useAuthStore from "@/store/useAuthStore";
 import { useRouter } from "next/navigation";
 import { LogOut, UserCog, ChevronDown } from "lucide-react";
+import { useT } from "@/i18n/useT";
 
 const Profile = (props: { width: number }) => {
     const user = useAuthStore((state) => state.user);
     const logout = useAuthStore((state) => state.logout);
     const router = useRouter();
+    const t = useT();
     const [open, setOpen] = useState(false);
     const popupRef = useRef<HTMLDivElement>(null);
 
-    // 팝업 외부 클릭 시 닫기
     useEffect(() => {
         if (!open) return;
         const handler = (e: MouseEvent) => {
@@ -39,15 +40,14 @@ const Profile = (props: { width: number }) => {
         <ProfileWrapper>
             <Logo onClick={() => { router.push("/") }}>CRONOS</Logo>
 
-            {/* 프로필 영역 — 클릭 시 팝업 */}
             <UserWrapper ref={popupRef}>
                 <UserClickable onClick={() => setOpen((v) => !v)} $open={open}>
                     {user?.image ? (
-                        <ProfileImage src={user.image} alt="프로필 이미지" />
+                        <ProfileImage src={user.image} alt="profile" />
                     ) : (
                         <DefaultProfile width={30} />
                     )}
-                    <UserName>{user?.name}님</UserName>
+                    <UserName>{user?.name}{t.sidebar.userSuffix}</UserName>
                     <ChevronDown
                         size={14}
                         style={{
@@ -74,29 +74,27 @@ const Profile = (props: { width: number }) => {
                             }}
                         >
                             <UserCog size={15} />
-                            <span>회원 관리</span>
+                            <span>{t.sidebar.memberManagement}</span>
                         </PopupItem>
                         <PopupDivider />
                         <PopupItem $danger onClick={handleLogout}>
                             <LogOut size={15} />
-                            <span>로그아웃</span>
+                            <span>{t.sidebar.logout}</span>
                         </PopupItem>
                     </ProfilePopup>
                 )}
             </UserWrapper>
 
-            <SidebarMenuButton $height={30} $width={props.width - 40} label="설정" onClick={() => { router.push("/settings") }}>
+            <SidebarMenuButton $height={30} $width={props.width - 40} label={t.sidebar.settings} onClick={() => { router.push("/settings") }}>
                 <Setting width={26} />
             </SidebarMenuButton>
 
-            <SidebarMenuButton $height={30} $width={props.width - 40} label="홈" onClick={() => { router.push("/") }}>
+            <SidebarMenuButton $height={30} $width={props.width - 40} label={t.sidebar.home} onClick={() => { router.push("/") }}>
                 <Home width={26} />
             </SidebarMenuButton>
         </ProfileWrapper>
     );
 };
-
-/* ── Styled Components ───────────────────────────── */
 
 const ProfileWrapper = styled.div`
     & > * {
@@ -152,8 +150,6 @@ const ProfileImage = styled.img`
 const UserName = styled.div`
     margin-left: 10px;
 `;
-
-/* ── 팝업 ─────────────────────────────────────────── */
 
 const ProfilePopup = styled.div`
     position: absolute;

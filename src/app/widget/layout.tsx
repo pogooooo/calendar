@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect } from "react";
+import useSettingStore from "@/store/useSettingStore";
+import type { Locale } from "@/i18n/types";
 
-/* 위젯 전용 레이아웃 — 투명 배경, 사이드바 없음
-   루트 layout의 StoreInitializer 리디렉션을 우회하기 위해 별도 경로 유지 */
 export default function WidgetLayout({ children }: { children: React.ReactNode }) {
+    const setLocale = useSettingStore((s) => s.setLocale);
+
     useEffect(() => {
-        // CSS :has() 선택자에만 의존하지 않고 JS로 직접 설정
-        // WebView2가 html/body 배경을 흰색으로 기본 렌더링하면 Acrylic이 가려짐
         const html = document.documentElement;
         const body = document.body;
         html.style.setProperty("background", "transparent", "important");
@@ -15,6 +15,19 @@ export default function WidgetLayout({ children }: { children: React.ReactNode }
         body.style.setProperty("background", "transparent", "important");
         body.style.setProperty("background-color", "transparent", "important");
     }, []);
+
+    useEffect(() => {
+        const handler = (e: StorageEvent) => {
+            if (e.key !== "setting-store" || !e.newValue) return;
+            try {
+                const parsed = JSON.parse(e.newValue);
+                const locale = parsed?.state?.locale as Locale | undefined;
+                if (locale) setLocale(locale);
+            } catch {}
+        };
+        window.addEventListener("storage", handler);
+        return () => window.removeEventListener("storage", handler);
+    }, [setLocale]);
 
     return (
         <div

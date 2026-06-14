@@ -6,17 +6,18 @@ import * as S from "./CelestialTodoModal.styles";
 import { X, ChevronDown, ChevronUp, MapPin, Repeat, AlignLeft, Clock } from 'lucide-react';
 import SecondaryButton from "@/components/button/secondary/SecondaryButton";
 import CelestialBaseModal from "@/components/modal/baseModal/celestial/CelestialBaseModal";
+import { useT } from "@/i18n/useT";
 
 export default function CelestialTodoModal({
-                                               isOpen, onClose, todo, categories,
-                                               title, setTitle, categoryId, setCategoryId, memo, setMemo,
-                                               startAt, setStartAt, endAt, setEndAt, isAllDay, setIsAllDay, location, setLocation,
-                                               repeat, setRepeat, repeatEndType, setRepeatEndType, repeatEndDate, setRepeatEndDate, repeatCount, setRepeatCount,
-                                               isCategoryOpen, setIsCategoryOpen, isRepeatEndOpen, setIsRepeatEndOpen,
-                                               selectedCategory, repeatEndOptions, selectedRepeatEndLabel,
-                                               handleDateChange, handleSubmit, handleDelete
-                                           }: TodoModalThemeProps) {
-
+    isOpen, onClose, todo, categories,
+    title, setTitle, categoryId, setCategoryId, memo, setMemo,
+    startAt, setStartAt, endAt, setEndAt, isAllDay, setIsAllDay, location, setLocation,
+    repeat, setRepeat, repeatEndType, setRepeatEndType, repeatEndDate, setRepeatEndDate, repeatCount, setRepeatCount,
+    isCategoryOpen, setIsCategoryOpen, isRepeatEndOpen, setIsRepeatEndOpen,
+    selectedCategory, repeatEndOptions, selectedRepeatEndLabel,
+    handleDateChange, handleSubmit, handleDelete
+}: TodoModalThemeProps) {
+    const t = useT();
 
     return (
         <CelestialBaseModal isOpen={isOpen} onClose={onClose} maxWidth="420px">
@@ -25,7 +26,7 @@ export default function CelestialTodoModal({
                     <input
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
-                        placeholder={todo?.title || "새로운 할 일"}
+                        placeholder={todo?.title || t.todo.newTodo}
                         required
                         className="title-input"
                         autoFocus
@@ -44,7 +45,7 @@ export default function CelestialTodoModal({
                             <div className="content-wrapper">
                                 <S.ColorDot $color={selectedCategory?.color || "#e0e0e0"} />
                                 <span className={!selectedCategory ? "placeholder" : ""}>
-                                    {selectedCategory ? selectedCategory.name : "카테고리 선택"}
+                                    {selectedCategory ? selectedCategory.name : t.todo.categorySelect}
                                 </span>
                             </div>
                             {isCategoryOpen ? <ChevronUp size={18} color="#888" /> : <ChevronDown size={18} color="#888" />}
@@ -69,7 +70,7 @@ export default function CelestialTodoModal({
                     </S.DropdownContainer>
 
                     <S.FieldRow>
-                        <label><Clock size={16} /> 하루 종일</label>
+                        <label><Clock size={16} /> {t.todo.allDay}</label>
                         <S.ToggleSwitch>
                             <input type="checkbox" checked={isAllDay} onChange={(e) => setIsAllDay(e.target.checked)} />
                             <span className="slider"></span>
@@ -77,7 +78,7 @@ export default function CelestialTodoModal({
                     </S.FieldRow>
 
                     <S.FieldRow>
-                        <label>시작 시간</label>
+                        <label>{t.todo.startTime}</label>
                         <input
                             type={isAllDay ? "date" : "datetime-local"}
                             value={isAllDay ? startAt.slice(0, 10) : startAt}
@@ -86,7 +87,7 @@ export default function CelestialTodoModal({
                     </S.FieldRow>
 
                     <S.FieldRow>
-                        <label>종료 시간</label>
+                        <label>{t.todo.endTime}</label>
                         <input
                             type={isAllDay ? "date" : "datetime-local"}
                             value={isAllDay ? endAt.slice(0, 10) : endAt}
@@ -95,10 +96,10 @@ export default function CelestialTodoModal({
                     </S.FieldRow>
 
                     <S.FieldRow>
-                        <label><MapPin size={16} /> 장소</label>
+                        <label><MapPin size={16} /> {t.todo.location}</label>
                         <input
                             type="text"
-                            placeholder="장소를 입력하세요"
+                            placeholder={t.todo.locationPlaceholder}
                             value={location}
                             onChange={(e) => setLocation(e.target.value)}
                         />
@@ -106,7 +107,7 @@ export default function CelestialTodoModal({
 
                     <S.RepeatRow>
                         <div className="repeat-header">
-                            <label><Repeat size={16} /> 반복 주기</label>
+                            <label><Repeat size={16} /> {t.todo.repeatCycle}</label>
                             <div className="repeat-input-group">
                                 <input
                                     type="number"
@@ -115,13 +116,13 @@ export default function CelestialTodoModal({
                                     onChange={(e) => setRepeat(Number(e.target.value))}
                                     placeholder="0"
                                 />
-                                <span>일마다</span>
+                                <span>{t.todo.perNDays}</span>
                             </div>
                         </div>
 
                         {repeat > 0 && (
                             <S.RepeatConditionBox>
-                                <div className="condition-title">반복 종료 조건</div>
+                                <div className="condition-title">{t.todo.repeatEndCond}</div>
 
                                 <S.DropdownContainer onClick={(e) => e.stopPropagation()}>
                                     <S.DropdownHeader onClick={() => {
@@ -140,7 +141,7 @@ export default function CelestialTodoModal({
                                                 <S.DropdownItem
                                                     key={opt.value}
                                                     onClick={() => {
-                                                        setRepeatEndType(opt.value as any);
+                                                        setRepeatEndType(opt.value as 'never' | 'until' | 'count');
                                                         setIsRepeatEndOpen(false);
                                                     }}
                                                 >
@@ -168,10 +169,10 @@ export default function CelestialTodoModal({
                                             max="999"
                                             value={repeatCount}
                                             onChange={(e) => setRepeatCount(Number(e.target.value))}
-                                            placeholder="횟수"
+                                            placeholder={t.todo.countPlaceholder}
                                             required
                                         />
-                                        <span>회 반복 후 종료</span>
+                                        <span>{t.todo.timesRepeat}</span>
                                     </div>
                                 )}
                             </S.RepeatConditionBox>
@@ -179,11 +180,11 @@ export default function CelestialTodoModal({
                     </S.RepeatRow>
 
                     <S.MemoRow>
-                        <label><AlignLeft size={16} /> 메모</label>
+                        <label><AlignLeft size={16} /> {t.todo.notes}</label>
                         <textarea
                             value={memo}
                             onChange={(e) => setMemo(e.target.value)}
-                            placeholder="할 일에 대한 설명이나 메모를 남겨보세요."
+                            placeholder={t.todo.notesPlaceholder}
                         />
                     </S.MemoRow>
                 </S.ScrollBody>
@@ -191,11 +192,11 @@ export default function CelestialTodoModal({
                 <S.Footer>
                     {todo && (
                         <SecondaryButton type="button" onClick={handleDelete} $width="70px" $height="36px" $variant="danger">
-                            삭제
+                            {t.todo.delete}
                         </SecondaryButton>
                     )}
                     <SecondaryButton type="submit" $width="90px" $height="36px" $variant="primary">
-                        {todo ? "수정하기" : "저장하기"}
+                        {todo ? t.todo.update : t.todo.save}
                     </SecondaryButton>
                 </S.Footer>
             </S.FormWrapper>
