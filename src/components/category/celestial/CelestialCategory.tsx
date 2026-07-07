@@ -24,6 +24,7 @@ export default function CelestialCategory(props: CategoryThemeProps) {
 
     return (
         <S.CategoryWrapper>
+        <S.CenterWrapper>
             <S.SidebarContainer>
                 <div className="sidebar-header">
                     <h2>{t.category.title}</h2>
@@ -108,7 +109,7 @@ export default function CelestialCategory(props: CategoryThemeProps) {
                                                 <div className="col-action"></div>
                                             </S.TableHeader>
                                             <S.TableBody>
-                                                {selectedCategory.participants.map((participant: any) => (
+                                                {selectedCategory.participants.map((participant: { id: string; name: string; email: string }) => (
                                                     <S.TableRow key={participant.id}>
                                                         <div className="col-name">
                                                             <div className="avatar">{participant.name.charAt(0)}</div>
@@ -207,6 +208,7 @@ export default function CelestialCategory(props: CategoryThemeProps) {
                     </S.EmptyStateContainer>
                 )}
             </S.ContentContainer>
+        </S.CenterWrapper>
 
             {isInviteModalOpen && (
                 <S.ModalOverlay onClick={closeInviteModal}>

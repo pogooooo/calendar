@@ -2,10 +2,20 @@ import styled from "styled-components";
 
 export const CategoryWrapper = styled.div`
     display: flex;
+    justify-content: center;
     height: 100%;
     width: 100%;
-    background-color: ${(props) => props.theme.colors.surface};
+    background-color: ${(props) => props.theme.colors.background};
     font-family: ${(props) => props.theme.fonts.celestial};
+`;
+
+export const CenterWrapper = styled.div`
+    display: flex;
+    height: 100%;
+    width: 100%;
+    max-width: 1100px;
+    gap: 24px;
+    padding: 0 24px;
 `;
 
 export const SidebarContainer = styled.div`
@@ -14,17 +24,28 @@ export const SidebarContainer = styled.div`
     border-right: 1px solid ${(props) => props.theme.colors.primary}55;
     display: flex;
     flex-direction: column;
-    
-    .sidebar-header{
+
+    .sidebar-header {
         display: flex;
         justify-content: space-between;
-        padding: 10px;
+        align-items: center;
+        padding: 10px 12px;
+        border-bottom: 1px solid ${(props) => props.theme.colors.primary}33;
+
+        h2 {
+            font-family: ${(props) => props.theme.fonts.celestial};
+            font-size: 0.9rem;
+            letter-spacing: 2px;
+            color: ${(props) => props.theme.colors.textSecondary};
+            font-weight: 400;
+            margin: 0;
+        }
     }
 `;
 
 export const AddCategoryBtn = styled.button`
     background: transparent;
-    font-size: 1.3rem;
+    font-size: 1.1rem;
     color: ${(props) => props.theme.colors.primary};
     cursor: pointer;
     display: flex;
@@ -33,10 +54,9 @@ export const AddCategoryBtn = styled.button`
     width: 26px;
     height: 26px;
     border: 1px solid transparent;
-    border-radius: 4px;
     transition: all 0.2s;
     line-height: 0;
-    padding-bottom: 2px; /* 수직 중앙 정렬 미세조정 */
+    padding-bottom: 2px;
 
     &:hover {
         background-color: ${(props) => props.theme.colors.primary}1A;
@@ -47,7 +67,7 @@ export const AddCategoryBtn = styled.button`
 export const CategoryList = styled.div`
     display: flex;
     flex-direction: column;
-    padding: 8px;
+    padding: 6px 0;
     overflow-y: auto;
 
     &::-webkit-scrollbar { width: 4px; }
@@ -60,21 +80,19 @@ export const CategoryList = styled.div`
 export const CategoryItem = styled.div<{ $color: string; $isSelected: boolean }>`
     display: flex;
     align-items: center;
-    padding: 8px 12px;
-    margin-bottom: 2px;
-    border-radius: 4px;
+    padding: 9px 14px;
     cursor: pointer;
+    border-left: 2px solid ${(props) => props.$isSelected ? props.theme.colors.primary : 'transparent'};
     background-color: ${(props) => props.$isSelected ? props.theme.colors.primary + '1A' : 'transparent'};
-    border: 1px solid ${(props) => props.$isSelected ? props.theme.colors.primary + '55' : 'transparent'};
-    transition: all 0.2s;
+    transition: all 0.15s;
 
     &:hover {
         background-color: ${(props) => props.theme.colors.primary}1A;
     }
 
     .color-indicator {
-        width: 10px;
-        height: 10px;
+        width: 8px;
+        height: 8px;
         border-radius: 50%;
         background-color: ${(props) => props.$color};
         margin-right: 10px;
@@ -84,12 +102,10 @@ export const CategoryItem = styled.div<{ $color: string; $isSelected: boolean }>
     .cat-name {
         font-size: 0.85rem;
         color: ${(props) => props.$isSelected ? props.theme.colors.primary : props.theme.colors.text};
-        font-weight: ${(props) => props.$isSelected ? '500' : '400'};
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
         flex: 1;
-        ${(props) => props.$isSelected && `filter: drop-shadow(0 0 2px ${props.theme.colors.primary}40);`}
     }
 `;
 
@@ -98,7 +114,13 @@ export const ContentContainer = styled.div`
     display: flex;
     flex-direction: column;
     overflow-y: auto;
-    background-color: ${(props) => props.theme.colors.surface};
+    background-color: ${(props) => props.theme.colors.background};
+
+    &::-webkit-scrollbar { width: 4px; }
+    &::-webkit-scrollbar-thumb {
+        background-color: ${(props) => props.theme.colors.primary}80;
+        border-radius: 2px;
+    }
 `;
 
 export const EmptyStateContainer = styled.div`
@@ -109,18 +131,16 @@ export const EmptyStateContainer = styled.div`
     color: ${(props) => props.theme.colors.textSecondary};
     font-size: 0.9rem;
     font-family: ${(props) => props.theme.fonts.celestial};
+    letter-spacing: 1px;
 `;
 
 export const DetailInfo = styled.div`
-    padding: 30px 40px;
-    max-width: 700px;
-    width: 100%;
-    margin: 0 auto;
+    padding: 24px 32px;
 `;
 
 export const CategoryTitleWrapper = styled.div<{ $color: string }>`
     display: flex;
-    align-items: center; /* 세로 중앙 정렬 */
+    align-items: center;
     gap: 12px;
     margin-bottom: 30px;
     padding-bottom: 12px;
@@ -155,8 +175,8 @@ export const CategoryTitleWrapper = styled.div<{ $color: string }>`
         outline: none;
         width: 100%;
         line-height: 1;
-        padding: 4px 0; /* 인풋창 내부 여백 초기화로 정렬 맞춤 */
-        letter-spacing: 1px;
+        padding: 4px 0;
+        letter-spacing: 2px;
 
         &::placeholder {
             color: ${(props) => props.theme.colors.textSecondary}80;
@@ -166,31 +186,38 @@ export const CategoryTitleWrapper = styled.div<{ $color: string }>`
 
 export const DetailHeader = styled.div<{ $activeTab: string }>`
     display: flex;
-    gap: 20px;
+    border: 1px solid ${(props) => props.theme.colors.primary};
     margin-bottom: 24px;
+    width: fit-content;
 
     button {
         background: transparent;
         border: none;
-        padding: 6px 8px;
+        padding: 6px 20px;
         font-family: ${(props) => props.theme.fonts.celestial};
-        font-size: 0.95rem;
+        font-size: 0.85rem;
+        letter-spacing: 1.5px;
         cursor: pointer;
-        color: ${(props) => props.theme.colors.textSecondary};
-        transition: all 0.2s;
-        border-bottom: 2px solid transparent;
+        transition: all 0.15s;
 
-        &:hover { color: ${(props) => props.theme.colors.primary}; }
+        &:not(:last-child) {
+            border-right: 1px solid ${(props) => props.theme.colors.primary};
+        }
     }
 
     .info-tab {
-        color: ${(props) => props.$activeTab === 'info' ? props.theme.colors.primary : ''};
-        border-bottom-color: ${(props) => props.$activeTab === 'info' ? props.theme.colors.primary : 'transparent'};
+        background: ${(props) => props.$activeTab === 'info' ? props.theme.colors.primary : 'transparent'};
+        color: ${(props) => props.$activeTab === 'info' ? props.theme.colors.surface : props.theme.colors.primary};
     }
 
     .todo-tab {
-        color: ${(props) => props.$activeTab === 'todos' ? props.theme.colors.primary : ''};
-        border-bottom-color: ${(props) => props.$activeTab === 'todos' ? props.theme.colors.primary : 'transparent'};
+        background: ${(props) => props.$activeTab === 'todos' ? props.theme.colors.primary : 'transparent'};
+        color: ${(props) => props.$activeTab === 'todos' ? props.theme.colors.surface : props.theme.colors.primary};
+    }
+
+    button:hover {
+        background: ${(props) => props.theme.colors.primary}22;
+        color: ${(props) => props.theme.colors.primary};
     }
 `;
 
@@ -203,14 +230,13 @@ export const InfoContainer = styled.div`
 export const PropertiesCard = styled.div`
     display: flex;
     flex-direction: column;
-    border: 1px solid ${(props) => props.theme.colors.primary}55;
-    background-color: ${(props) => props.theme.colors.surface};
-    border-radius: 4px;
+    border: 1px solid ${(props) => props.theme.colors.primary};
+    background-color: transparent;
 `;
 
 export const PropertyRow = styled.div`
     display: flex;
-    align-items: stretch; /* 자식 요소들이 컨테이너 높이를 꽉 채움 */
+    align-items: stretch;
     min-height: 48px;
 
     &:not(:last-child) {
@@ -220,18 +246,20 @@ export const PropertyRow = styled.div`
     .prop-label {
         width: 120px;
         display: flex;
-        align-items: flex-start; /* 텍스트 에어리어 대비 상단 정렬 */
+        align-items: flex-start;
         padding: 14px 16px;
         font-size: 0.85rem;
         color: ${(props) => props.theme.colors.textSecondary};
         border-right: 1px solid ${(props) => props.theme.colors.primary}33;
         flex-shrink: 0;
+        font-family: ${(props) => props.theme.fonts.celestial};
+        letter-spacing: 0.3px;
     }
 
     .prop-value {
         flex: 1;
         display: flex;
-        align-items: center; /* 단일 텍스트일 때 중앙 정렬 */
+        align-items: center;
         padding: 8px 16px;
         font-family: ${(props) => props.theme.fonts.body};
         font-size: 0.85rem;
@@ -247,11 +275,18 @@ export const PropertyRow = styled.div`
             font-size: inherit;
             resize: vertical;
             line-height: 1.5;
-            padding: 6px 0; /* 위아래 여백 균형 맞춤 */
+            padding: 6px 0;
 
             &::placeholder {
                 color: ${(props) => props.theme.colors.textSecondary}66;
             }
+
+            &::-webkit-scrollbar { width: 4px; }
+            &::-webkit-scrollbar-thumb {
+                background-color: ${(props) => props.theme.colors.primary}80;
+                border-radius: 2px;
+            }
+            &::-webkit-scrollbar-track { background: transparent; }
         }
     }
 `;
@@ -266,12 +301,14 @@ export const ParticipantSection = styled.div`
         align-items: center;
         margin-bottom: 12px;
         padding-bottom: 8px;
-        border-bottom: 1px solid ${(props) => props.theme.colors.primary}80;
+        border-bottom: 1px solid ${(props) => props.theme.colors.primary};
 
         h3 {
-            font-size: 0.95rem;
-            color: ${(props) => props.theme.colors.text};
-            font-weight: 500;
+            font-family: ${(props) => props.theme.fonts.celestial};
+            font-size: 0.9rem;
+            letter-spacing: 1.5px;
+            color: ${(props) => props.theme.colors.textSecondary};
+            font-weight: 400;
             margin: 0;
         }
     }
@@ -280,12 +317,13 @@ export const ParticipantSection = styled.div`
         padding: 30px;
         text-align: center;
         border: 1px solid ${(props) => props.theme.colors.primary}55;
-        border-radius: 4px;
 
         p {
             color: ${(props) => props.theme.colors.textSecondary};
             font-size: 0.85rem;
             margin: 0;
+            font-family: ${(props) => props.theme.fonts.celestial};
+            letter-spacing: 0.5px;
         }
     }
 `;
@@ -294,7 +332,6 @@ export const ParticipantTable = styled.div`
     display: flex;
     flex-direction: column;
     border: 1px solid ${(props) => props.theme.colors.primary}55;
-    border-radius: 4px;
 `;
 
 export const TableHeader = styled.div`
@@ -303,7 +340,9 @@ export const TableHeader = styled.div`
     background-color: ${(props) => props.theme.colors.primary}11;
     border-bottom: 1px solid ${(props) => props.theme.colors.primary}55;
     padding: 8px 16px;
-    font-size: 0.8rem;
+    font-family: ${(props) => props.theme.fonts.celestial};
+    font-size: 0.78rem;
+    letter-spacing: 0.5px;
     color: ${(props) => props.theme.colors.textSecondary};
 
     .col-name { flex: 1.2; }
@@ -323,10 +362,10 @@ export const TableRow = styled.div`
     font-size: 0.85rem;
     color: ${(props) => props.theme.colors.text};
     border-bottom: 1px solid ${(props) => props.theme.colors.primary}22;
-    transition: background-color 0.2s;
+    transition: background-color 0.15s;
 
     &:last-child { border-bottom: none; }
-    &:hover { background-color: ${(props) => props.theme.colors.primary}0A; }
+    &:hover { background-color: ${(props) => props.theme.colors.primary}0D; }
 
     .col-name {
         flex: 1.2;
@@ -376,11 +415,9 @@ export const TableRow = styled.div`
             cursor: pointer;
             opacity: 0;
             transition: all 0.2s;
-            border-radius: 4px;
 
             &:hover {
                 color: ${(props) => props.theme.colors.error};
-                background-color: ${(props) => props.theme.colors.error}1A;
             }
         }
     }
@@ -402,13 +439,15 @@ export const TodoListContainer = styled.div`
     .header {
         display: flex;
         align-items: center;
-        border-bottom: 1px solid ${(props) => props.theme.colors.primary}80;
+        border-bottom: 1px solid ${(props) => props.theme.colors.primary};
         padding-bottom: 8px;
 
         h3 {
-            font-size: 0.95rem;
-            color: ${(props) => props.theme.colors.text};
-            font-weight: 500;
+            font-family: ${(props) => props.theme.fonts.celestial};
+            font-size: 0.9rem;
+            letter-spacing: 1.5px;
+            color: ${(props) => props.theme.colors.textSecondary};
+            font-weight: 400;
             margin: 0;
 
             span {
@@ -429,10 +468,9 @@ export const TodoCard = styled.div<{ $isDone: boolean }>`
     align-items: center;
     gap: 12px;
     padding: 10px 16px;
-    border-radius: 4px;
     border: 1px solid ${(props) => props.theme.colors.primary}55;
-    background-color: ${(props) => props.theme.colors.surface};
-    transition: all 0.2s ease;
+    background-color: transparent;
+    transition: all 0.15s;
     cursor: pointer;
 
     &:hover {
@@ -443,9 +481,8 @@ export const TodoCard = styled.div<{ $isDone: boolean }>`
     }
 
     .check-btn {
-        width: 18px;
-        height: 18px;
-        border-radius: 4px;
+        width: 16px;
+        height: 16px;
         border: 1px solid ${(props) => props.theme.colors.primary};
         background-color: ${(props) => props.$isDone ? props.theme.colors.primary : 'transparent'};
         color: ${(props) => props.theme.colors.surface};
@@ -474,7 +511,9 @@ export const TodoCard = styled.div<{ $isDone: boolean }>`
         }
 
         .date {
+            font-family: ${(props) => props.theme.fonts.celestial};
             font-size: 0.75rem;
+            letter-spacing: 0.3px;
             color: ${(props) => props.theme.colors.textSecondary};
         }
     }
@@ -488,12 +527,10 @@ export const TodoCard = styled.div<{ $isDone: boolean }>`
         padding: 6px 10px;
         font-size: 0.75rem;
         transition: all 0.2s;
-        border-radius: 4px;
         flex-shrink: 0;
 
         &:hover {
             color: ${(props) => props.theme.colors.error};
-            background-color: ${(props) => props.theme.colors.error}1A;
         }
     }
 `;
@@ -512,21 +549,22 @@ export const ModalOverlay = styled.div`
 export const ModalContent = styled.div`
     background-color: ${(props) => props.theme.colors.surface};
     border: 1px solid ${(props) => props.theme.colors.primary};
-    border-radius: 4px;
+    border-radius: 5px;
     width: 380px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
     font-family: ${(props) => props.theme.fonts.celestial};
 
     .modal-header {
         padding: 16px 24px;
-        border-bottom: 1px solid ${(props) => props.theme.colors.primary}80;
+        background-color: ${(props) => props.theme.colors.primary}0D;
+        border-bottom: 1px solid ${(props) => props.theme.colors.primary}33;
 
         h3 {
             margin: 0;
-            font-size: 1.05rem;
+            font-size: 1rem;
             color: ${(props) => props.theme.colors.text};
-            font-weight: 500;
-            letter-spacing: 1px;
+            font-weight: 400;
+            letter-spacing: 1.5px;
         }
     }
 
@@ -545,22 +583,22 @@ export const ModalContent = styled.div`
 
         input {
             width: 100%;
-            padding: 10px 12px;
+            padding: 9px 12px;
             background: transparent;
-            border: 1px solid ${(props) => props.theme.colors.primary}80;
-            border-radius: 4px;
+            border: 1px solid ${(props) => props.theme.colors.primary};
             outline: none;
             font-size: 0.9rem;
+            font-family: ${(props) => props.theme.fonts.body};
             color: ${(props) => props.theme.colors.text};
             transition: all 0.2s;
+            box-sizing: border-box;
 
             &::placeholder {
                 color: ${(props) => props.theme.colors.textSecondary}66;
             }
 
             &:focus {
-                border-color: ${(props) => props.theme.colors.primary};
-                box-shadow: 0 0 0 2px ${(props) => props.theme.colors.primary}22;
+                box-shadow: 0 0 0 2px ${(props) => props.theme.colors.primary}30;
             }
         }
     }
@@ -570,6 +608,6 @@ export const ModalContent = styled.div`
         justify-content: flex-end;
         gap: 8px;
         padding: 16px 24px;
-        border-top: 1px solid ${(props) => props.theme.colors.primary}80;
+        border-top: 1px solid ${(props) => props.theme.colors.primary}40;
     }
 `;

@@ -41,13 +41,11 @@ export const CalendarRow = styled.div`
 `;
 
 export const ArrowWrapper = styled.div<{ $side: "left" | "right" }>`
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    ${p => p.$side === "left" ? "left: -90px;" : "right: -90px;"}
-    transition: filter 0.5s ease;
     display: flex;
+    align-items: center;
+    flex-shrink: 0;
     cursor: pointer;
+    transition: filter 0.5s ease;
     &:hover {
         filter: drop-shadow(0 0 3px ${(props) => props.theme.colors.primary});
     }
@@ -57,8 +55,8 @@ export const CalendarWindow = styled.div`
     width: 100%;
     overflow: hidden;
     position: relative;
-    padding: 15px 10px;
-    margin: -15px -10px;
+    padding: 15px 0;
+    margin: -15px 0;
 `;
 
 export const Header = styled.div`
@@ -164,7 +162,7 @@ export const AddTodoButton = styled.button`
     width: 24px;
     height: 24px;
     border-radius: 20%;
-    background-color: ${(props) => props.theme.colors.surface};
+    background-color: transparent;
     color: ${(props) => props.theme.colors.primary};
     border: 1px solid ${(props) => props.theme.colors.primary};
     display: flex;

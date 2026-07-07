@@ -6,7 +6,7 @@ export const SectionWrapper = styled.div`
     min-height: 150px;
     overflow: hidden;
     border: 1px solid ${(props) => props.theme.colors.primary};
-    background: ${(props) => props.theme.colors.surface};
+    background: transparent;
     border-radius: 4px;
 `;
 
@@ -49,7 +49,7 @@ export const TimelineDateHeader = styled.div`
     border-bottom: 1px solid ${(props) => props.theme.colors.primary}33;
     position: sticky;
     top: 0;
-    background: ${(props) => props.theme.colors.surface};
+    background: ${(props) => props.theme.colors.background};
     z-index: 5;
 `;
 

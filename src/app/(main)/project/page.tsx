@@ -90,8 +90,9 @@ export default function ProjectPage() {
     const handleSaveTask = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!selectedProjectId) return;
-        if (taskModal.mode === 'add') await addProjectTask(authFetch, selectedProjectId, taskModal.data);
-        else if (taskModal.data.id) await updateProjectTask(authFetch, selectedProjectId, taskModal.data.id, taskModal.data);
+        const taskData = { ...taskModal.data, assignees: taskModal.data.assignees?.map(a => a.id) as any };
+        if (taskModal.mode === 'add') await addProjectTask(authFetch, selectedProjectId, taskData);
+        else if (taskModal.data.id) await updateProjectTask(authFetch, selectedProjectId, taskModal.data.id, taskData);
         setTaskModal(prev => ({ ...prev, isOpen: false }));
     };
 

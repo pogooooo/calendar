@@ -3,14 +3,85 @@ import prisma from "@/lib/prisma";
 import { generateAccessToken, generateRefreshToken } from "@/lib/jwt";
 import {cookies} from "next/headers";
 
+const GOOGLE_CLIENT_ID =
+    process.env.GOOGLE_CLIENT_ID ?? process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+
+interface GoogleTokenInfo {
+    aud?: string;
+    azp?: string;
+    sub?: string;
+    email?: string;
+    email_verified?: string | boolean;
+    expires_in?: string;
+    error?: string;
+    error_description?: string;
+}
+
+interface GoogleUserInfo {
+    sub?: string;
+    email?: string;
+    email_verified?: boolean;
+    name?: string;
+    picture?: string;
+}
+
+async function verifyGoogleAccessToken(accessToken: string) {
+    const tokenInfoRes = await fetch(
+        `https://oauth2.googleapis.com/tokeninfo?access_token=${encodeURIComponent(accessToken)}`
+    );
+    if (!tokenInfoRes.ok) return null;
+
+    const tokenInfo = (await tokenInfoRes.json()) as GoogleTokenInfo;
+
+    if (tokenInfo.error) return null;
+
+    const audience = tokenInfo.aud ?? tokenInfo.azp;
+    if (!GOOGLE_CLIENT_ID || audience !== GOOGLE_CLIENT_ID) return null;
+
+    const userInfoRes = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+        headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!userInfoRes.ok) return null;
+
+    const userInfo = (await userInfoRes.json()) as GoogleUserInfo;
+
+    const sub = tokenInfo.sub ?? userInfo.sub;
+    const email = tokenInfo.email ?? userInfo.email;
+    const emailVerified =
+        tokenInfo.email_verified === true ||
+        tokenInfo.email_verified === "true" ||
+        userInfo.email_verified === true;
+
+    if (!sub || !email || !emailVerified) return null;
+
+    return {
+        googleId: sub,
+        email,
+        name: userInfo.name ?? email.split("@")[0],
+        image: userInfo.picture ?? null,
+    };
+}
+
 export async function POST(request: NextRequest) {
     try {
-        const body = await request.json();
-        const { email, name, googleId, image } = body;
-
-        if (!email || !googleId) {
-            return new NextResponse("필수 정보 누락", { status: 400 });
+        if (!GOOGLE_CLIENT_ID) {
+            console.error("GOOGLE_LOGIN_ERROR: GOOGLE_CLIENT_ID 미설정");
+            return NextResponse.json({ message: "서버 설정 오류입니다." }, { status: 500 });
         }
+
+        const body = await request.json();
+        const { accessToken } = body as { accessToken?: string };
+
+        if (!accessToken) {
+            return NextResponse.json({ message: "토큰이 필요합니다." }, { status: 400 });
+        }
+
+        const verified = await verifyGoogleAccessToken(accessToken);
+        if (!verified) {
+            return NextResponse.json({ message: "유효하지 않은 구글 인증입니다." }, { status: 401 });
+        }
+
+        const { email, name, googleId, image } = verified;
 
         let user = await prisma.user.findUnique({
             where: { email },
@@ -60,7 +131,7 @@ export async function POST(request: NextRequest) {
             });
         }
 
-        const accessToken = generateAccessToken({userId: user.id, email: user.email});
+        const newAccessToken = generateAccessToken({userId: user.id, email: user.email});
         const refreshToken = generateRefreshToken({ userId: user.id });
 
         await prisma.refreshToken.deleteMany({ where: { userId: user.id } });
@@ -84,7 +155,7 @@ export async function POST(request: NextRequest) {
         });
 
         return NextResponse.json({
-            accessToken,
+            accessToken: newAccessToken,
             user: {
                 id: user.id,
                 email: user.email,

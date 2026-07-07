@@ -156,6 +156,47 @@ export const CheckMark = styled.div`
     flex-shrink: 0;
 `;
 
+/* ── Theme Sub-Settings ──────────────────────────────────────────────────── */
+
+export const ThemeSubSection = styled.div`
+    border: 1px solid ${p => p.theme.colors.primary};
+    border-top: none;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+`;
+
+export const ThemeSubLabel = styled.div`
+    font-size: 0.8rem;
+    color: ${p => p.theme.colors.textSecondary};
+    letter-spacing: 0.5px;
+`;
+
+export const ModeButtonGroup = styled.div`
+    display: flex;
+    gap: 0;
+    border: 1px solid ${p => p.theme.colors.primary};
+`;
+
+export const ModeButton = styled.button<{ $active: boolean }>`
+    padding: 6px 18px;
+    border: none;
+    border-right: 1px solid ${p => p.theme.colors.primary};
+    background: ${p => p.$active ? p.theme.colors.primary : 'transparent'};
+    color: ${p => p.$active ? p.theme.colors.surface : p.theme.colors.primary};
+    font-family: ${p => p.theme.fonts.celestial};
+    font-size: 0.75rem;
+    letter-spacing: 1.5px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+
+    &:last-child { border-right: none; }
+    &:hover:not([data-active="true"]) {
+        background: ${p => p.theme.colors.primary}18;
+    }
+`;
+
 /* ── Info rows ───────────────────────────────────────────────────────────── */
 
 export const InfoRow = styled.div`

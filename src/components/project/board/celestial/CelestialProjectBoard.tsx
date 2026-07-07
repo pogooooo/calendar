@@ -106,7 +106,7 @@ export const SectionWrapper = styled.div`
     min-height: 150px;
     overflow: hidden;
     border: 1px solid ${(props) => props.theme.colors.primary};
-    background: ${(props) => props.theme.colors.surface};
+    background: transparent;
     border-radius: 4px;
 `;
 
@@ -169,7 +169,7 @@ export const CardBox = styled.div<{ $isLocked?: boolean }>`
     display: flex;
     flex-direction: column;
     gap: 6px;
-    background-color: ${(props) => props.theme.colors.surface};
+    background-color: transparent;
     border: 1px solid ${(props) => props.theme.colors.border};
     border-radius: 4px;
     padding: 8px 10px; /* 패딩을 줄여서 더 간결하게 */

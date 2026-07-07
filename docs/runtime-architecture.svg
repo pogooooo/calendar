@@ -1,0 +1,126 @@
+<svg viewBox="0 0 1100 720" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, ui-sans-serif, system-ui, sans-serif" role="img">
+<title>Chronos - Runtime / Deployment Architecture</title>
+<desc>Tauri 런타임(Rust) 안에서 메인 WebView와 5개의 위젯 WebView(캘린더 일·주·월, 챌린지, 프로젝트)가 실행된다. Rust 코어가 Next.js standalone 서버를 spawn하고 Win32/DWM API를 FFI로 호출하며, WebView는 HTTP로 Next.js API에 접근하고 서버는 Prisma로 SQLite에 접근한다.</desc>
+
+<!-- ===== editable palette (색상은 여기 값을 바꾸면 됩니다) =====
+     accent(네이티브/Rust): #B5832B | titlebar: #2f2a22 | text: #2b2b2b | sub: #6f6f6f | border: #cfcfcf
+-->
+<defs>
+<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+<path d="M0 0 L10 5 L0 10 z" fill="#6f6f6f"/>
+</marker>
+</defs>
+
+<rect x="0" y="0" width="1100" height="720" fill="#ffffff"/>
+<text x="24" y="34" font-size="18" font-weight="700" fill="#2b2b2b">Chronos — Runtime / Deployment Architecture</text>
+
+<!-- ===================== external edges (boxes 뒤에 먼저) ===================== -->
+<g stroke="#6f6f6f" stroke-width="1.6" fill="none">
+<line x1="560" y1="150" x2="658" y2="150" marker-end="url(#ar)"/>
+<line x1="560" y1="300" x2="658" y2="276" marker-end="url(#ar)"/>
+<line x1="560" y1="402" x2="658" y2="545" marker-end="url(#ar)"/>
+<line x1="810" y1="320" x2="810" y2="386" marker-end="url(#ar)"/>
+</g>
+<g font-size="11" fill="#6f6f6f" text-anchor="middle">
+<rect x="566" y="128" width="86" height="30" fill="#ffffff"/>
+<text x="609" y="141">HTTP REST</text>
+<text x="609" y="154">authFetch · JWT</text>
+<rect x="566" y="262" width="86" height="30" fill="#ffffff"/>
+<text x="609" y="275">spawn / kill</text>
+<text x="609" y="288">health-check</text>
+<rect x="566" y="430" width="74" height="30" fill="#ffffff"/>
+<text x="603" y="443">FFI</text>
+<text x="603" y="456">unsafe extern</text>
+</g>
+<text x="818" y="358" font-size="11" fill="#6f6f6f">Prisma ORM</text>
+
+<!-- ===================== Tauri Runtime node (accent) ===================== -->
+<rect x="30" y="80" width="530" height="510" rx="6" fill="none" stroke="#B5832B" stroke-width="2.4"/>
+<rect x="30" y="80" width="530" height="30" fill="#B5832B"/>
+<text x="44" y="100" font-size="13" font-weight="700" fill="#ffffff">«execution environment»  Tauri Runtime (Rust) — Native Shell</text>
+
+<!-- Main Window WebView -->
+<rect x="52" y="130" width="224" height="100" rx="4" fill="#ffffff" stroke="#cfcfcf"/>
+<text x="64" y="152" font-size="12" font-weight="700" fill="#2b2b2b">Main Window (WebView2)</text>
+<text x="64" y="173" font-size="11" fill="#2b2b2b">Next.js UI · React 19</text>
+<text x="64" y="192" font-size="11" fill="#6f6f6f">styled-components · Zustand</text>
+<text x="64" y="211" font-size="11" fill="#6f6f6f">framer-motion · GSAP</text>
+
+<!-- Widget windows x5 -->
+<rect x="300" y="130" width="238" height="128" rx="4" fill="#ffffff" stroke="#cfcfcf"/>
+<text x="312" y="152" font-size="12" font-weight="700" fill="#2b2b2b">Widget Windows ×5 (WebView)</text>
+<text x="312" y="173" font-size="11" fill="#2b2b2b">· Calendar — 일 · 주 · 월</text>
+<text x="312" y="192" font-size="11" fill="#2b2b2b">· Challenge — 습관 스티커</text>
+<text x="312" y="211" font-size="11" fill="#2b2b2b">· Project — 보드 / 타임라인</text>
+<text x="312" y="232" font-size="11" fill="#6f6f6f">바탕화면 고정 · 배경 동기화</text>
+
+<!-- internal arrows -->
+<line x1="164" y1="230" x2="164" y2="298" stroke="#6f6f6f" stroke-width="1.5" marker-end="url(#ar)"/>
+<text x="172" y="270" font-size="10.5" fill="#6f6f6f">Tauri IPC (invoke)</text>
+<line x1="416" y1="298" x2="416" y2="260" stroke="#6f6f6f" stroke-width="1.5" marker-end="url(#ar)"/>
+<text x="300" y="284" font-size="10.5" fill="#6f6f6f">Win32 제어 ▸</text>
+
+<!-- Rust Core -->
+<rect x="52" y="300" width="486" height="262" rx="4" fill="none" stroke="#b9b9b9" stroke-dasharray="4 3"/>
+<text x="64" y="320" font-size="11.5" font-weight="700" fill="#2b2b2b">Rust Core (src-tauri/lib.rs)</text>
+
+<rect x="66" y="332" width="226" height="68" rx="4" fill="#ffffff" stroke="#cfcfcf"/>
+<text x="78" y="352" font-size="11" font-weight="600" fill="#2b2b2b">invoke handlers</text>
+<text x="78" y="371" font-size="10.5" fill="#6f6f6f">open_widget,</text>
+<text x="78" y="388" font-size="10.5" fill="#6f6f6f">set_widget_priority…</text>
+
+<rect x="304" y="332" width="224" height="68" rx="4" fill="#ffffff" stroke="#cfcfcf"/>
+<text x="316" y="352" font-size="11" font-weight="600" fill="#2b2b2b">Z-order / visibility worker</text>
+<text x="316" y="371" font-size="10.5" fill="#6f6f6f">30ms async loop</text>
+<text x="316" y="388" font-size="10.5" fill="#6f6f6f">HWND_BOTTOM · re-show</text>
+
+<rect x="66" y="412" width="226" height="68" rx="4" fill="#ffffff" stroke="#cfcfcf"/>
+<text x="78" y="432" font-size="11" font-weight="600" fill="#2b2b2b">child process manager</text>
+<text x="78" y="451" font-size="10.5" fill="#6f6f6f">Arc&lt;Mutex&lt;Child&gt;&gt;</text>
+<text x="78" y="468" font-size="10.5" fill="#6f6f6f">spawn / kill on Destroyed</text>
+
+<rect x="304" y="412" width="224" height="68" rx="4" fill="#ffffff" stroke="#cfcfcf"/>
+<text x="316" y="432" font-size="11" font-weight="600" fill="#2b2b2b">Win32 · DWM · Registry FFI</text>
+<text x="316" y="451" font-size="10.5" fill="#6f6f6f">SetWindowLongPtrW,</text>
+<text x="316" y="468" font-size="10.5" fill="#6f6f6f">DwmSetWindowAttribute…</text>
+
+<rect x="66" y="492" width="462" height="58" rx="4" fill="#ffffff" stroke="#b9b9b9" stroke-dasharray="3 2"/>
+<text x="78" y="512" font-size="10.5" font-weight="700" fill="#2b2b2b">실행 토폴로지 분기</text>
+<text x="78" y="530" font-size="10.5" fill="#6f6f6f">dev → next dev @localhost:3000</text>
+<text x="78" y="545" font-size="10.5" fill="#6f6f6f">prod → spawn node server.js @127.0.0.1:3457</text>
+
+<!-- ===================== Next.js server node ===================== -->
+<rect x="660" y="110" width="400" height="210" rx="6" fill="none" stroke="#2f2a22" stroke-width="1.6"/>
+<rect x="660" y="110" width="400" height="28" fill="#2f2a22"/>
+<text x="672" y="129" font-size="12.5" font-weight="700" fill="#ffffff">«server»  Next.js Standalone</text>
+<text x="672" y="158" font-size="11" fill="#6f6f6f">prod: node server.js @127.0.0.1:3457</text>
+<g font-size="11" fill="#2b2b2b">
+<text x="672" y="182">▪ REST API Route Handlers ×14</text>
+<text x="672" y="204">▪ JWT 검증 · checkCategoryPermission</text>
+<text x="672" y="226">▪ zod 입력검증 · Rate Limiter</text>
+<text x="672" y="248">▪ Google OAuth (audience 검증)</text>
+<text x="672" y="270">▪ Prisma Client</text>
+</g>
+<text x="672" y="298" font-size="10.5" fill="#6f6f6f">JWT: Access(1h) / Refresh(7d, httpOnly)</text>
+
+<!-- SQLite -->
+<rect x="710" y="386" width="300" height="74" rx="6" fill="#ffffff" stroke="#cfcfcf"/>
+<rect x="710" y="386" width="300" height="24" fill="#cfcfcf"/>
+<text x="722" y="403" font-size="12" font-weight="700" fill="#2b2b2b">«database»  SQLite</text>
+<text x="722" y="427" font-size="11" fill="#2b2b2b">prisma/Chronos.db</text>
+<text x="722" y="445" font-size="10.5" fill="#6f6f6f">12 models · N:M · self-ref · Cascade</text>
+
+<!-- ===================== Windows OS APIs (accent) ===================== -->
+<rect x="660" y="500" width="400" height="180" rx="6" fill="none" stroke="#B5832B" stroke-width="2"/>
+<rect x="660" y="500" width="400" height="28" fill="#B5832B"/>
+<text x="672" y="519" font-size="12.5" font-weight="700" fill="#ffffff">«external»  Windows OS APIs</text>
+<g font-size="11" fill="#2b2b2b">
+<text x="672" y="550">▪ Win32: Progman(owner), HWND_BOTTOM</text>
+<text x="672" y="572">▪ ShowWindow · WS_EX_NOACTIVATE</text>
+<text x="672" y="594">▪ DWM: 그림자 · 테두리 제거</text>
+<text x="672" y="616">▪ Registry: 자동 시작 (autostart)</text>
+<text x="672" y="638">▪ SystemParameters: 바탕화면 경로</text>
+</g>
+
+<text x="24" y="700" font-size="10.5" fill="#6f6f6f">amber 테두리 = 네이티브/Rust 계층(이 프로젝트의 차별점) ·  화살표 라벨 = 통신 방식(HTTP · IPC · FFI · spawn · Prisma)</text>
+</svg>

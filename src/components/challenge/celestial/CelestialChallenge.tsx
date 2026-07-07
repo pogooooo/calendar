@@ -1,13 +1,14 @@
-"use client";
+﻿"use client";
 
 import * as React from "react";
 import { useTheme } from "styled-components";
-import { Plus, Trash2, Settings2, Sparkles, X, Check } from "lucide-react";
+import { Plus, Trash2, Settings2, X, Check } from "lucide-react";
 
 import CategoryFilter from "@/components/calendar/celestial/categoryFilter/CategoryFilter";
 import SecondaryButton from "@/components/button/secondary/SecondaryButton";
 import ChallengeModal, { ChallengeData } from "@/components/modal/challengeModal/ChallengeModal";
 import { DynamicSticker } from "@/assets/celestial/ChallengeStickers";
+import { BotanicalDynamicSticker } from "@/assets/botanical/BotanicalStickers";
 import * as S from "./CelestialChallenge.styles";
 import type { CategoryType, ChallengeType } from "@/types";
 
@@ -23,6 +24,8 @@ interface CelestialChallengeProps {
     handleDelete: () => void;
     handleToggleToday: () => void;
     isCompletedToday: boolean;
+    isTodayValidDay: boolean;
+    isChallengeEnded: boolean;
     isModalOpen: boolean;
     setIsModalOpen: (isOpen: boolean) => void;
     modalMode: 'create' | 'edit';
@@ -33,7 +36,7 @@ export default function CelestialChallenge({
     categories, challenges, selectedCategoryIds, toggleCategory,
     selectedChallenge, setSelectedChallengeId,
     handleCreateNew, handleEditClick, handleDelete,
-    handleToggleToday, isCompletedToday,
+    handleToggleToday, isCompletedToday, isTodayValidDay, isChallengeEnded,
     isModalOpen, setIsModalOpen, modalMode, handleSaveChallenge,
 }: CelestialChallengeProps) {
     const theme = useTheme();
@@ -110,13 +113,28 @@ export default function CelestialChallenge({
     }, []);
 
     // ── 유틸 ─────────────────────────────────────────────────────────────────
+    const isChallengeExpired = (c: typeof challenges[0]) => {
+        const t = c.targetCount ?? null;
+        if (t === null) return false;
+        const start = new Date(c.startAt);
+        start.setHours(0, 0, 0, 0);
+        const lastSlot = new Date(start);
+        lastSlot.setDate(start.getDate() + (t - 1) * c.interval);
+        lastSlot.setHours(0, 0, 0, 0);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return today > lastSlot;
+    };
+
     const ongoingChallenges  = challenges.filter(c => {
         const t = c.targetCount ?? null;
-        return t === null || (c.completions?.length ?? 0) < t;
+        if (t !== null && (c.completions?.length ?? 0) >= t) return false;
+        return !isChallengeExpired(c);
     });
     const finishedChallenges = challenges.filter(c => {
         const t = c.targetCount ?? null;
-        return t !== null && (c.completions?.length ?? 0) >= t;
+        if (t !== null && (c.completions?.length ?? 0) >= t) return true;
+        return isChallengeExpired(c);
     });
 
     const renderStickerBoard = () => {
@@ -159,7 +177,7 @@ export default function CelestialChallenge({
             <S.StickerGrid>
                 {slots.map((isFilled, idx) => (
                     <S.StickerSlot key={idx}>
-                        <DynamicSticker isFilled={isFilled} idx={idx} />
+                        {theme.name === "botanical" ? <BotanicalDynamicSticker isFilled={isFilled} idx={idx} /> : <DynamicSticker isFilled={isFilled} idx={idx} />}
                     </S.StickerSlot>
                 ))}
             </S.StickerGrid>
@@ -178,7 +196,6 @@ export default function CelestialChallenge({
                 key={challenge.id}
                 onClick={() => setSelectedChallengeId(challenge.id)}
                 $isSelected={selectedChallenge?.id === challenge.id}
-                $catColor={catColor}
                 style={{ opacity: isCompleted ? 0.6 : 1 }}
             >
                 <div className="challenge-info">
@@ -293,25 +310,38 @@ export default function CelestialChallenge({
                                             const completedCount = selectedChallenge.completions?.length ?? 0;
                                             const targetCount    = selectedChallenge.targetCount ?? null;
                                             const isFinished     = targetCount !== null && completedCount >= targetCount;
-                                            const canToggle      = !isFinished || isCompletedToday;
+                                            const canToggle      = isTodayValidDay && (!isFinished || isCompletedToday);
 
-                                            return canToggle ? (
-                                                <SecondaryButton
-                                                    $variant={isCompletedToday ? "default" : "primary"}
-                                                    onClick={handleToggleToday}
-                                                    style={{ padding: '12px', fontSize: '1rem', fontWeight: 600, gap: '8px' }}
-                                                >
-                                                    {isCompletedToday ? <X size={18} /> : <Check size={18} />}
-                                                    {isCompletedToday ? "오늘 달성 취소" : "오늘 달성 완료!"}
-                                                </SecondaryButton>
-                                            ) : (
+                                            if (canToggle) {
+                                                return (
+                                                    <SecondaryButton
+                                                        $variant={isCompletedToday ? "default" : "primary"}
+                                                        onClick={handleToggleToday}
+                                                        style={{ padding: '12px', fontSize: '1rem', fontWeight: 600, gap: '8px' }}
+                                                    >
+                                                        {isCompletedToday ? <X size={18} /> : <Check size={18} />}
+                                                        {isCompletedToday ? "오늘 달성 취소" : "오늘 달성 완료!"}
+                                                    </SecondaryButton>
+                                                );
+                                            }
+                                            if (isFinished || isChallengeEnded) {
+                                                return (
+                                                    <SecondaryButton
+                                                        $variant="default"
+                                                        disabled
+                                                        style={{ padding: '12px', fontSize: '1rem', fontWeight: 600, opacity: 0.6, cursor: 'not-allowed' }}
+                                                    >
+                                                        {isChallengeEnded && !isFinished ? "챌린지 종료" : "목표 달성 완료"}
+                                                    </SecondaryButton>
+                                                );
+                                            }
+                                            return (
                                                 <SecondaryButton
                                                     $variant="default"
                                                     disabled
-                                                    style={{ padding: '12px', fontSize: '1rem', fontWeight: 600, gap: '8px', opacity: 0.6, cursor: 'not-allowed' }}
+                                                    style={{ padding: '12px', fontSize: '1rem', fontWeight: 600, gap: '8px', opacity: 0.5, cursor: 'not-allowed' }}
                                                 >
-                                                    <Sparkles size={18} />
-                                                    목표 달성 완료
+                                                    오늘은 달성일이 아닙니다
                                                 </SecondaryButton>
                                             );
                                         })()}

@@ -4,6 +4,7 @@ import {useTheme} from "styled-components";
 import Profile from "@/components/sideBar/Profile";
 import Menu from "@/components/sideBar/Menu";
 import CelestialSidebarDesign from "@/assets/sidebarDesign/CelestialSidebarDesign";
+import LiteSidebarDesign from "@/assets/sidebarDesign/LiteSidebarDesign";
 import styled from "styled-components";
 import useCategoryStore from "@/store/useCategoryStore";
 import { useSidebarLogic } from "@/hooks/useSidebarLogic";
@@ -23,7 +24,8 @@ const Sidebar = () => {
             </Content>
 
             <SidebarContour $height={screenHeight} $isResizing={isResizing} onMouseDown={startResizing}>
-                {themeName === 'celestial' && <CelestialSidebarDesign />}
+                {themeName.startsWith('celestial') && <CelestialSidebarDesign />}
+                {themeName === 'botanical' && <LiteSidebarDesign />}
             </SidebarContour>
 
             {isResizing && <ResizeOverlay />}
@@ -32,7 +34,7 @@ const Sidebar = () => {
 }
 
 const SideBarWrapper = styled.div<{ $width: number, $isResizing: boolean }>`
-    background-color: ${(props) => props.theme.colors.surface};
+    background-color: ${(props) => props.theme.colors.background};
     display: flex;
     flex-shrink: 0;
     width: ${(props) => props.$width}px;

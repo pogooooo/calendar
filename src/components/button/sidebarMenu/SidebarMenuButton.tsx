@@ -3,6 +3,7 @@
 import * as React from 'react';
 import {useTheme} from 'styled-components';
 import CelestialSidebarMenuButton, { ButtonProps } from "./Celestial_SidebarMenuButton";
+import LiteSidebarMenuButton from "./Lite_SidebarMenuButton";
 
 const Sidebar_MenuButton = React.forwardRef<HTMLButtonElement, ButtonProps>(({ asChild = false, ...props }, ref) => {
     const theme = useTheme();
@@ -20,8 +21,11 @@ const Sidebar_MenuButton = React.forwardRef<HTMLButtonElement, ButtonProps>(({ a
         $onArrowClick: props.$onArrowClick ? handleArrowClick : undefined
     };
 
-    if (themeName === 'celestial') {
+    if (themeName.startsWith('celestial')) {
         return <CelestialSidebarMenuButton ref={ref} {...props} />;
+    }
+    if (themeName === 'botanical') {
+        return <LiteSidebarMenuButton ref={ref} {...props} />;
     }
 });
 

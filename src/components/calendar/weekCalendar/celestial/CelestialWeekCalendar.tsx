@@ -52,6 +52,9 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, CelestialWeekProp
             <S.CelestialCalendarWrapper as={Component} ref={ref} {...props}>
                 <S.SliderWrapper>
                     <S.DateRangeDisplay>
+                        <S.ArrowWrapper $side="left" onClick={handlePrevWeek}>
+                            <Arrow width={80} height={30} isRight={false} stroke={theme.colors.primary}/>
+                        </S.ArrowWrapper>
                         <AnimatedDateText text={dateRangeText} direction={direction} />
                         <hr/>
                         <CategoryFilter
@@ -63,13 +66,12 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, CelestialWeekProp
                             showChallenges={showChallenges}
                             onToggleChallenges={onToggleChallenges}
                         />
+                        <S.ArrowWrapper $side="right" onClick={handleNextWeek}>
+                            <Arrow width={80} height={30} isRight={true} stroke={theme.colors.primary}/>
+                        </S.ArrowWrapper>
                     </S.DateRangeDisplay>
 
                     <S.CalendarRow>
-                    <S.ArrowWrapper $side="left" onClick={handlePrevWeek}>
-                        <Arrow width={80} height={30} isRight={false} stroke={theme.colors.primary}/>
-                    </S.ArrowWrapper>
-
                     <S.CalendarWindow>
                         <AnimatePresence initial={false} custom={direction} mode="popLayout">
                             <motion.div
@@ -203,10 +205,6 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, CelestialWeekProp
                             </motion.div>
                         </AnimatePresence>
                     </S.CalendarWindow>
-
-                    <S.ArrowWrapper $side="right" onClick={handleNextWeek}>
-                        <Arrow width={80} height={30} isRight={true} stroke={theme.colors.primary}/>
-                    </S.ArrowWrapper>
                     </S.CalendarRow>
                 </S.SliderWrapper>
 

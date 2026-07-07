@@ -207,6 +207,14 @@ const useProjectStore = create<ProjectState>((set, get) => ({
             });
             if (res.status === 401) return;
             if (!res.ok) throw new Error();
+            const serverTask = await res.json();
+            set((state) => ({
+                projects: state.projects.map(p =>
+                    p.id === projectId
+                        ? { ...p, tasks: (p.tasks ?? []).map(t => t.id === taskId ? serverTask : t) }
+                        : p
+                )
+            }));
         } catch (err) {
             if (isSessionExpired(err)) return;
             set({ projects: previousProjects });

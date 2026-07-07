@@ -2,7 +2,10 @@ export interface Translations {
     settings: {
         title: string;
         onThisPage: string;
-        appearance: string;
+        theme: string;
+        themeOptions: string;
+        lightMode: string;
+        darkMode: string;
         widgets: string;
         accountInfo: string;
         changeName: string;

@@ -4,7 +4,10 @@ const ko: Translations = {
     settings: {
         title: '설정',
         onThisPage: '이 페이지에서',
-        appearance: '외관',
+        theme: '테마',
+        themeOptions: '테마 설정',
+        lightMode: '라이트',
+        darkMode: '다크',
         widgets: '위젯',
         accountInfo: '계정 정보',
         changeName: '이름 변경',

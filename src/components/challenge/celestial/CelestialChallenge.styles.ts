@@ -89,7 +89,7 @@ export const TimelineSection = styled.div.attrs<{ $flex: number }>(props => ({
     display: flex;
     flex-direction: column;
     border: 1px solid ${(props) => props.theme.colors.primary};
-    background-color: ${(props) => props.theme.colors.surface};
+    background-color: transparent;
 
     .timeline-header {
         font-family: ${(props) => props.theme.fonts.celestial};
@@ -135,13 +135,12 @@ export const TimelineScrollArea = styled.div`
     }
 `;
 
-export const ChallengeRow = styled.div<{ $isSelected: boolean, $catColor: string }>`
+export const ChallengeRow = styled.div<{ $isSelected: boolean }>`
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 15px;
     border-bottom: 1px solid ${(props) => props.theme.colors.primary}33;
-    border-left: 4px solid ${(props) => props.$catColor};
     cursor: pointer;
     background-color: ${(props) => props.$isSelected ? `${props.theme.colors.primary}1A` : 'transparent'};
     transition: background-color 0.2s;
@@ -211,7 +210,7 @@ export const SideSection = styled.div.attrs<{ $flex: number }>(props => ({
 
 export const BaseCard = styled.div`
     border: 1px solid ${(props) => props.theme.colors.primary};
-    background-color: ${(props) => props.theme.colors.surface};
+    background-color: transparent;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -275,6 +274,13 @@ export const TaskCard = styled(BaseCard).attrs<{ $flex: number }>(props => ({
 }))<{ $flex: number }>`
     min-height: 100px;
     overflow-y: auto;
+
+    &::-webkit-scrollbar { width: 4px; }
+    &::-webkit-scrollbar-thumb {
+        background-color: ${(props) => props.theme.colors.primary}80;
+        border-radius: 2px;
+    }
+    &::-webkit-scrollbar-track { background: transparent; }
 `;
 
 export const DetailArea = styled.div`

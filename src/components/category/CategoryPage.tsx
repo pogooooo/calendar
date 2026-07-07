@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useState, useMemo } from "react";
 import { useTheme } from "styled-components";
@@ -8,6 +8,7 @@ import { useAuthFetch } from "@/hooks/useAuthFetch";
 import type { AuthFetch, CategoryType, TodoType } from "@/types";
 
 import CelestialCategory from "./celestial/CelestialCategory";
+import BotanicalCategory from "./botanical/BotanicalCategory";
 import CategoryAddModal from "@/components/modal/categoryAddModal/CategoryAddModal";
 import TodoModal from "@/components/modal/todoModal/TodoModal";
 
@@ -210,11 +211,8 @@ export default function CategoryPage() {
 
     return (
         <>
-            {themeName === 'celestial' ? (
-                <CelestialCategory {...themeProps} />
-            ) : (
-                <CelestialCategory {...themeProps} />
-            )}
+            {themeName.startsWith('celestial') ? <CelestialCategory {...themeProps} /> : null}
+            {themeName === 'botanical' ? <BotanicalCategory {...themeProps} /> : null}
 
             <CategoryAddModal
                 isOpen={isAddModalOpen}

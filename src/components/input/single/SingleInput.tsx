@@ -4,6 +4,7 @@ import React, { forwardRef, InputHTMLAttributes } from 'react';
 import styled, { useTheme } from 'styled-components';
 import { Slot } from "@radix-ui/react-slot";
 import CelestialSingleInput from './Celestial_SingleInput';
+import LiteSingleInput from './Lite_SingleInput';
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
     asChild?: boolean;
@@ -24,8 +25,11 @@ const SingleInput = forwardRef<HTMLInputElement, InputProps>(({ asChild, label, 
     const theme = useTheme();
     const themeName = theme?.name || 'celestial';
 
-    if (themeName === 'celestial') {
+    if (themeName.startsWith('celestial')) {
         return <CelestialSingleInput ref={ref} asChild={asChild} label={label} {...props} />;
+    }
+    if (themeName === 'botanical') {
+        return <LiteSingleInput ref={ref} asChild={asChild} label={label} {...props} />;
     }
 
     const Comp = asChild ? Slot : 'input';

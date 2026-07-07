@@ -42,25 +42,42 @@ const celestial: DefaultTheme = {
     },
 };
 
-const light: DefaultTheme = {
-    name: 'light',
+const celestialDark: DefaultTheme = {
+    name: 'celestial-dark',
     ...commonStyles,
     colors: {
-        background: '#ffffff',
-        primary: '#007bff',
-        accent: '#0056b3',
-        surface: '#ffffff',
-        text: '#000000',
-        textSecondary: '#666666',
-        border: '#cccccc',
-        success: '#28a745',
-        error: '#dc3545',
+        background: '#111111',
+        primary: '#D4AF37',
+        accent: '#FAE7B5',
+        surface: '#1A1A1A',
+        text: '#E8E8E8',
+        textSecondary: '#888888',
+        border: '#2A2A2A',
+        success: '#4E8A6D',
+        error: '#A13D4B',
+    },
+};
+
+const botanical: DefaultTheme = {
+    name: 'botanical',
+    ...commonStyles,
+    colors: {
+        background: '#F9F8F6',
+        primary: '#C9B59C',
+        accent: '#E8DDD4',
+        surface: '#EFE9E3',
+        text: '#3A3530',
+        textSecondary: '#7A736C',
+        border: '#D9CFC7',
+        success: '#6B8F71',
+        error: '#A0574F',
     },
 };
 
 export const themes = {
     celestial,
-    light,
+    'celestial-dark': celestialDark,
+    botanical,
 };
 
 export default celestial;

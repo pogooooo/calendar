@@ -1,8 +1,9 @@
-"use client";
+﻿"use client";
 
 import * as React from "react";
 import { useTheme } from "styled-components";
 import CelestialChallenge from "./celestial/CelestialChallenge";
+import BotanicalChallenge from "./botanical/BotanicalChallenge";
 
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import useChallengeStore from "@/store/useChallengeStore";
@@ -75,33 +76,67 @@ export default function ChallengePage() {
         setIsModalOpen(false);
     };
 
-    const isCompletedToday = React.useMemo(() => {
-        if (!selectedChallenge) return false;
-        const now = new Date();
-        const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
-        return selectedChallenge.completions.some(comp => {
-            const d = new Date(comp.targetDate);
-            return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` === todayStr;
-        });
+    const toDateKey = (d: Date) =>
+        `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
+    const todayValidSlot = React.useMemo(() => {
+        if (!selectedChallenge) return null;
+        const start = new Date(selectedChallenge.startAt);
+        start.setHours(0, 0, 0, 0);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const diffMs = today.getTime() - start.getTime();
+        if (diffMs < 0) return null;
+        const diffDays = Math.round(diffMs / 86400000);
+        if (diffDays % selectedChallenge.interval !== 0) return null;
+        const slotIndex = diffDays / selectedChallenge.interval;
+        const target = selectedChallenge.targetCount ?? null;
+        if (target !== null && slotIndex >= target) return null;
+        return new Date(start.getFullYear(), start.getMonth(), start.getDate() + diffDays, 12, 0, 0);
     }, [selectedChallenge]);
 
+    const isCompletedToday = React.useMemo(() => {
+        if (!selectedChallenge || !todayValidSlot) return false;
+        const todayKey = toDateKey(todayValidSlot);
+        return selectedChallenge.completions.some(comp => {
+            const d = new Date(comp.targetDate);
+            return toDateKey(d) === todayKey;
+        });
+    }, [selectedChallenge, todayValidSlot]);
+
     const handleToggleToday = async () => {
-        if (!selectedChallenge) return;
-        const now = new Date();
+        if (!selectedChallenge || !todayValidSlot) return;
         await toggleChallengeCompletion(
             authFetch,
             selectedChallenge.id,
-            new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0).toISOString()
+            todayValidSlot.toISOString()
         );
     };
+
+    const isChallengeEnded = React.useMemo(() => {
+        if (!selectedChallenge) return false;
+        const target = selectedChallenge.targetCount ?? null;
+        if (target === null) return false;
+        const start = new Date(selectedChallenge.startAt);
+        start.setHours(0, 0, 0, 0);
+        const lastSlot = new Date(start);
+        lastSlot.setDate(start.getDate() + (target - 1) * selectedChallenge.interval);
+        lastSlot.setHours(0, 0, 0, 0);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return today > lastSlot;
+    }, [selectedChallenge]);
 
     const themeProps = {
         categories, challenges: filteredChallenges, selectedCategoryIds, toggleCategory,
         selectedChallenge, setSelectedChallengeId,
         handleCreateNew, handleEditClick, handleDelete, handleToggleToday, isCompletedToday,
+        isTodayValidDay: todayValidSlot !== null,
+        isChallengeEnded,
         isModalOpen, setIsModalOpen, modalMode, handleSaveChallenge,
     };
 
-    if (themeName === 'celestial') return <CelestialChallenge {...themeProps} />;
-    return <CelestialChallenge {...themeProps} />;
+    if (themeName.startsWith('celestial')) return <CelestialChallenge {...themeProps} />;
+    if (themeName === 'botanical') return <BotanicalChallenge {...themeProps} />;
+    return null;
 }

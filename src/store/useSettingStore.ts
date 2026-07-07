@@ -5,10 +5,12 @@ import type { Locale } from '@/i18n/types';
 
 interface SettingState {
     theme: string;
+    themeOptions: Record<string, string>;
     locale: Locale;
     autostart: boolean;
     isLoading: boolean;
     setTheme: (inputTheme: string) => void;
+    setThemeOption: (themeId: string, option: string) => void;
     setLocale: (locale: Locale) => void;
     setAutostart: (enabled: boolean) => void;
     updateTheme: (authFetch: AuthFetch, inputTheme: string) => Promise<void>;
@@ -19,11 +21,14 @@ const useSettingStore = create<SettingState>()(
     persist(
         (set) => ({
             theme: 'celestial',
+            themeOptions: {},
             locale: 'ko' as Locale,
             autostart: true,
             isLoading: false,
 
             setTheme: (inputTheme) => set({ theme: inputTheme }),
+            setThemeOption: (themeId, option) =>
+                set((s) => ({ themeOptions: { ...s.themeOptions, [themeId]: option } })),
             setLocale: (locale) => set({ locale }),
             setAutostart: (enabled) => set({ autostart: enabled }),
 

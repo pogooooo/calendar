@@ -1,8 +1,9 @@
-"use client";
+﻿"use client";
 
 import * as React from "react";
 import { useTheme } from "styled-components";
 import CelestialWeekCalendar from "./celestial/CelestialWeekCalendar";
+import BotanicalWeekCalendar from "./botanical/BotanicalWeekCalendar";
 import { CategoryType } from "@/store/useCategoryStore";
 import { TodoType } from "@/store/useTodoStore";
 
@@ -370,11 +371,8 @@ const WeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
 
         return (
             <>
-                {themeName === 'celestial' ? (
-                    <CelestialWeekCalendar ref={ref} {...themeProps} {...props} />
-                ) : (
-                    <CelestialWeekCalendar ref={ref} {...themeProps} {...props} />
-                )}
+                {themeName.startsWith('celestial') ? <CelestialWeekCalendar ref={ref} {...themeProps} {...props} /> : null}
+                {themeName === 'botanical' ? <BotanicalWeekCalendar ref={ref} {...themeProps} {...props} /> : null}
             </>
         );
     }

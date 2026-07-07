@@ -4,7 +4,10 @@ const en: Translations = {
     settings: {
         title: 'Settings',
         onThisPage: 'On this page',
-        appearance: 'Appearance',
+        theme: 'Theme',
+        themeOptions: 'Theme Options',
+        lightMode: 'Light',
+        darkMode: 'Dark',
         widgets: 'Widgets',
         accountInfo: 'Account Info',
         changeName: 'Change Name',

@@ -70,7 +70,7 @@ export const TimelineSection = styled.div`
     display: flex;
     flex-direction: column;
     border: 1px solid ${(props) => props.theme.colors.primary};
-    background-color: ${(props) => props.theme.colors.surface};
+    background-color: transparent;
     overflow: hidden;
 
     .timeline-header {
@@ -186,7 +186,7 @@ export const SideSection = styled.div`
 
 const BaseCard = styled.div`
     border: 1px solid ${(props) => props.theme.colors.primary};
-    background-color: ${(props) => props.theme.colors.surface};
+    background-color: transparent;
     display: flex;
     flex-direction: column;
 

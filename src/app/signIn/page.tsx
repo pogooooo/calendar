@@ -43,14 +43,10 @@ const SignIn = () => {
     const googleLogin = useGoogleLogin({
         onSuccess: async (tokenResponse) => {
             try {
-                const userInfoRes = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
-                    headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
-                });
-                const userInfo = await userInfoRes.json();
                 const res = await fetch("/api/auth/google", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ email: userInfo.email, name: userInfo.name, googleId: userInfo.sub, image: userInfo.picture }),
+                    body: JSON.stringify({ accessToken: tokenResponse.access_token }),
                 });
                 const data = await res.json();
                 if (!res.ok) { setGlobalError(data.message || "구글 로그인 실패"); return; }

@@ -93,7 +93,7 @@ function buildBackground(bg: WidgetBgSettings, surfaceColor: string): React.CSSP
 }
 
 export default function WidgetShell({ kind, title, children }: Props) {
-    const theme = useTheme() as any;
+    const theme = useTheme();
     const t = useT();
     const bg = useWidgetStore((s) => s[kind].bg);
     const updateBg = useWidgetStore((s) => s.updateBg);

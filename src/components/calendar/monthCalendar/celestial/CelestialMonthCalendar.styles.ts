@@ -137,7 +137,7 @@ export const GridContainer = styled.div`
     box-sizing: border-box;
     border: 1px solid ${(props) => props.theme.colors.primary};
     border-top: none;
-    background-color: ${(props) => props.theme.colors.surface};
+    background-color: transparent;
 
     overflow-y: auto;
     &::-webkit-scrollbar {
@@ -168,7 +168,7 @@ export const DayCell = styled.div<{ $isToday: boolean; $isCurrentMonth: boolean;
     position: relative;
     border-right: 1px solid ${(props) => props.theme.colors.primary};
     opacity: ${(props) => props.$isCurrentMonth ? 1 : 0.4};
-    background-color: ${(props) => props.$isSelected ? `${props.theme.colors.primary}1A` : props.theme.colors.surface};
+    background-color: ${(props) => props.$isSelected ? `${props.theme.colors.primary}1A` : 'transparent'};
     cursor: pointer;
     transition: background-color 0.2s ease;
 
@@ -230,18 +230,30 @@ export const DayStickerContainer = styled.div`
     flex-wrap: wrap;
     max-height: 52px;
     margin-right: 4px;
+
+    && {
+        overflow: visible !important;
+    }
 `;
 
 export const StickerWrapper = styled.div`
     flex-shrink: 0;
-    transform: scale(0.4);
-    transform-origin: center center;
-    width: 24px;
-    height: 24px;
+    width: 21px;
+    height: 21px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
+
+    && {
+        overflow: visible !important;
+    }
+
+    & svg {
+        width: 100%;
+        height: 100%;
+        overflow: visible;
+    }
 `;
 
 export const AddTodoButton = styled.button`
@@ -251,7 +263,7 @@ export const AddTodoButton = styled.button`
     width: 20px;
     height: 20px;
     border-radius: 20%;
-    background-color: ${(props) => props.theme.colors.surface};
+    background-color: transparent;
     color: ${(props) => props.theme.colors.primary};
     border: 1px solid ${(props) => props.theme.colors.primary};
     display: flex;
@@ -293,7 +305,7 @@ export const TodoBarSpacer = styled.div`
 `;
 
 export const TodoBarItem = styled.div<{ $isStart: boolean; $isEnd: boolean; $color?: string; $isDone?: boolean }>`
-    background-color: ${(props) => props.theme.colors.surface};
+    background-color: transparent;
     border-top: 1px solid ${(props) => props.theme.colors.primary};
     border-bottom: 1px solid ${(props) => props.theme.colors.primary};
     border-left: ${(props) => props.$isStart ? `1px solid ${props.theme.colors.primary}` : 'none'};

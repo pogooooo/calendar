@@ -1,8 +1,9 @@
-"use client";
+﻿"use client";
 
 import * as React from 'react';
 import { useTheme } from 'styled-components';
 import CelestialProjectTimeline from './celestial/CelestialProjectTimeline';
+import BotanicalProjectTimeline from './botanical/BotanicalProjectTimeline';
 import { ProjectTaskType } from '@/store/useProjectStore';
 
 export interface ProjectTimelineProps {
@@ -16,8 +17,11 @@ const ProjectTimeline = React.forwardRef<HTMLDivElement, ProjectTimelineProps>((
     const theme = useTheme();
     const themeName = theme?.name || 'celestial';
 
-    if (themeName === 'celestial') {
+    if (themeName.startsWith('celestial')) {
         return <CelestialProjectTimeline ref={ref} {...props} />;
+    }
+    if (themeName === 'botanical') {
+        return <BotanicalProjectTimeline ref={ref} {...props} />;
     }
     return null;
 });
