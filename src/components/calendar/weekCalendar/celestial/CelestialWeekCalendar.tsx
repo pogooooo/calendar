@@ -18,7 +18,8 @@ import TodoContextMenu from "@/components/calendar/celestial/contextMenu/TodoCon
 import { TodoType } from "@/store/useTodoStore";
 import { useT } from "@/i18n/useT";
 
-import { DynamicSticker } from "@/assets/celestial/ChallengeStickers";
+import DayCellDecor from "@/assets/celestial/DayCellDecor";
+import CalendarAmbience from "@/assets/celestial/CalendarAmbience";
 
 const slideVariants = {
     enter: (direction: number) => ({ x: direction > 0 ? 100 : -100, opacity: 0 }),
@@ -27,6 +28,17 @@ const slideVariants = {
 };
 
 const MAX_VISIBLE_LEVELS = 3;
+
+const isItemDone = (todo: TodoType & { isDone?: boolean; check?: string; status?: string }) => {
+    if (todo.isDone) return true;
+    return todo.check === 'done' || todo.status === 'done';
+};
+
+const tierFor = (done: number, total: number) => {
+    if (total === 0 || done === 0) return 0;
+    if (done >= total) return 3;
+    return done / total >= 0.5 ? 2 : 1;
+};
 
 type CelestialWeekProps = WeekThemeProps & Omit<React.HTMLAttributes<HTMLDivElement>, 'contextMenu'>;
 
@@ -39,7 +51,6 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, CelestialWeekProp
          handlePrevWeek, handleNextWeek, toggleCategory, handleContextMenu,
          handleQuickEdit, handleQuickDelete, handleQuickToggle, handleCreateTodo,
          setIsModalOpen, setMoreModalDate, setTodoContextMenu,
-         handleContextMenuChallenge, handleQuickToggleChallenge,
          showProjects, onToggleProjects,
          showChallenges, onToggleChallenges,
          ...props
@@ -47,6 +58,20 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, CelestialWeekProp
         const Component = asChild ? Slot : 'div';
         const theme = useTheme();
         const t = useT();
+
+        const dayTiers = React.useMemo(() => {
+            return weekDates.map(date => {
+                const dayTodos = expandedTodos.filter(todo =>
+                    !todo.isProject && isBetween(date, todo.startAt!, todo.endAt!)
+                );
+                const dayChallenges = challengeTodos.filter(c => isSameDay(new Date(c.startAt), date));
+
+                const total = dayTodos.length + dayChallenges.length;
+                const done = dayTodos.filter(isItemDone).length + dayChallenges.filter(c => c.isDone).length;
+
+                return tierFor(done, total);
+            });
+        }, [weekDates, expandedTodos, challengeTodos]);
 
         return (
             <S.CelestialCalendarWrapper as={Component} ref={ref} {...props}>
@@ -73,6 +98,7 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, CelestialWeekProp
 
                     <S.CalendarRow>
                     <S.CalendarWindow>
+                        <CalendarAmbience />
                         <AnimatePresence initial={false} custom={direction} mode="popLayout">
                             <motion.div
                                 key={weekDates[0].toISOString()}
@@ -85,7 +111,7 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, CelestialWeekProp
                                     x: { type: "spring", stiffness: 300, damping: 30 },
                                     opacity: { duration: 0.2 }
                                 }}
-                                style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+                                style={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative', zIndex: 1 }}
                             >
                                 <S.Header>
                                     {t.calendar.days.map((d, i) => {
@@ -93,55 +119,13 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, CelestialWeekProp
                                         return (
                                             <S.DayNameBox key={d} $isToday={isToday}>
                                                 <div className="day-name">{d}</div>
+                                                {dayTiers[i] >= 2 && (
+                                                    <span className={dayTiers[i] === 3 ? "day-mark done" : "day-mark"} />
+                                                )}
                                             </S.DayNameBox>
                                         )
                                     })}
                                 </S.Header>
-
-                                <S.StickerRowContainer>
-                                    {weekDates.map((date, idx) => {
-                                        const isToday = date.toDateString() === todayStr;
-
-                                        const dayChallenges = challengeTodos.filter(c => {
-                                            const cDate = new Date(c.startAt);
-                                            return cDate.getFullYear() === date.getFullYear() &&
-                                                cDate.getMonth() === date.getMonth() &&
-                                                cDate.getDate() === date.getDate();
-                                        });
-
-                                        return (
-                                            <S.StickerSlot key={`sticker-col-${idx}`} $isToday={isToday}>
-                                                {dayChallenges.map((challenge, cIdx) => (
-                                                    <div
-                                                        key={challenge.id}
-                                                        title={challenge.title}
-                                                        style={{
-                                                            flexShrink: 0,
-                                                            transform: 'scale(0.75)',
-                                                            transformOrigin: 'center center',
-                                                            width: '38px',
-                                                            height: '38px',
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            justifyContent: 'center',
-                                                            cursor: 'pointer'
-                                                        }}
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleQuickToggleChallenge(challenge);
-                                                        }}
-                                                        onContextMenu={(e) => {
-                                                            e.stopPropagation();
-                                                            handleContextMenuChallenge(e, challenge);
-                                                        }}
-                                                    >
-                                                        <DynamicSticker isFilled={challenge.isDone} idx={cIdx + idx * 100} />
-                                                    </div>
-                                                ))}
-                                            </S.StickerSlot>
-                                        )
-                                    })}
-                                </S.StickerRowContainer>
 
                                 <S.BarContainer>
                                     {weekDates.map((date, idx) => {
@@ -197,6 +181,8 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, CelestialWeekProp
                                                         </S.MoreButton>
                                                     )}
                                                 </S.TodoBarList>
+                                                <DayCellDecor tier={dayTiers[idx]} />
+
                                                 {isToday && <S.TodayIndicator />}
                                             </S.DaySlot>
                                         );
