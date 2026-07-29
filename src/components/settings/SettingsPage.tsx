@@ -8,7 +8,6 @@ import useSettingStore from "@/store/useSettingStore";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useT } from "@/i18n/useT";
 import CelestialSettings from "./celestial/CelestialSettings";
-import BotanicalSettings from "./botanical/BotanicalSettings";
 import type { Translations } from "@/i18n/types";
 
 export type ThemeDef = {
@@ -63,13 +62,6 @@ const THEMES: ThemeDef[] = [
         description: "Gold accents, Orbit typeface",
         preview: { bar: "#D4AF37", dot: "#FAE7B5", line1: "#D4AF37", line2: "#FAE7B5" },
         options: ["light", "dark"] as const,
-    },
-    {
-        id: "botanical",
-        label: "Botanical",
-        description: "Warm botanicals, calm & organic",
-        preview: { bar: "#C9B59C", dot: "#EFE9E3", line1: "#C9B59C", line2: "#D9CFC7" },
-        options: [] as const,
     },
 ];
 
@@ -285,7 +277,5 @@ export default function SettingsPage() {
         onDeleteCancel: handleDeleteCancel,
     };
 
-    if (themeName.startsWith("celestial")) return <CelestialSettings {...themeProps} />;
-    if (themeName === "botanical") return <BotanicalSettings {...themeProps} />;
     return <CelestialSettings {...themeProps} />;
 }

@@ -34,6 +34,7 @@ const SignIn = () => {
 
     const [globalError, setGlobalError] = useState<string>(" ");
     const [email, setEmail] = useState("");
+    const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
     const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<LoginFormData>({
         resolver: zodResolver(LoginSchema),
@@ -42,6 +43,7 @@ const SignIn = () => {
 
     const googleLogin = useGoogleLogin({
         onSuccess: async (tokenResponse) => {
+            setIsGoogleLoading(true);
             try {
                 const res = await fetch("/api/auth/google", {
                     method: "POST",
@@ -49,16 +51,20 @@ const SignIn = () => {
                     body: JSON.stringify({ accessToken: tokenResponse.access_token }),
                 });
                 const data = await res.json();
-                if (!res.ok) { setGlobalError(data.message || "구글 로그인 실패"); return; }
+                if (!res.ok) { setGlobalError(data.message || "구글 로그인 실패"); setIsGoogleLoading(false); return; }
                 setTheme(data.user.theme);
                 setAccessToken(data.accessToken);
                 setUser(data.user);
                 router.push("/");
             } catch {
                 setGlobalError("구글 로그인 중 오류가 발생했습니다.");
+                setIsGoogleLoading(false);
             }
         },
-        onError: () => setGlobalError("구글 로그인 창이 닫혔거나 오류가 발생했습니다."),
+        onError: () => {
+            setIsGoogleLoading(false);
+            setGlobalError("구글 로그인 창이 닫혔거나 오류가 발생했습니다.");
+        },
     });
 
     const handleEmailLogin = async (formData: LoginFormData) => {
@@ -82,7 +88,7 @@ const SignIn = () => {
 
     return (
         <PageWrapper>
-            <CelestialAuthPanel />
+            <CelestialAuthPanel busy={isSubmitting || isGoogleLoading} />
 
             <FormPanel>
                 <LangToggle>

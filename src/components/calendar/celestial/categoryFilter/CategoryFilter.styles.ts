@@ -15,7 +15,7 @@ export const SetCategoryButton = styled.div`
     &:hover {
         background-color: rgba(0, 0, 0, 0.1);
         svg {
-            filter: drop-shadow(0 0 3px ${(props) => props.theme.colors.accent});
+            filter: drop-shadow(0 0 3px ${(props) => props.theme.colors.primary});
         }
     }
 `;

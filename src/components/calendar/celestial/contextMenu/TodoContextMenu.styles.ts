@@ -2,7 +2,7 @@ import styled from "styled-components";
 
 export const FloatingContextMenu = styled.div`
     position: fixed;
-    z-index: 9999;
+    z-index: 1100;
 
     display: flex;
     align-items: center;

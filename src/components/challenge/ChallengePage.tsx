@@ -3,7 +3,6 @@
 import * as React from "react";
 import { useTheme } from "styled-components";
 import CelestialChallenge from "./celestial/CelestialChallenge";
-import BotanicalChallenge from "./botanical/BotanicalChallenge";
 
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import useChallengeStore from "@/store/useChallengeStore";
@@ -136,7 +135,5 @@ export default function ChallengePage() {
         isModalOpen, setIsModalOpen, modalMode, handleSaveChallenge,
     };
 
-    if (themeName.startsWith('celestial')) return <CelestialChallenge {...themeProps} />;
-    if (themeName === 'botanical') return <BotanicalChallenge {...themeProps} />;
-    return null;
+    return <CelestialChallenge {...themeProps} />;
 }

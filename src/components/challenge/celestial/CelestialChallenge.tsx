@@ -8,7 +8,6 @@ import CategoryFilter from "@/components/calendar/celestial/categoryFilter/Categ
 import SecondaryButton from "@/components/button/secondary/SecondaryButton";
 import ChallengeModal, { ChallengeData } from "@/components/modal/challengeModal/ChallengeModal";
 import { DynamicSticker } from "@/assets/celestial/ChallengeStickers";
-import { BotanicalDynamicSticker } from "@/assets/botanical/BotanicalStickers";
 import * as S from "./CelestialChallenge.styles";
 import type { CategoryType, ChallengeType } from "@/types";
 
@@ -177,7 +176,7 @@ export default function CelestialChallenge({
             <S.StickerGrid>
                 {slots.map((isFilled, idx) => (
                     <S.StickerSlot key={idx}>
-                        {theme.name === "botanical" ? <BotanicalDynamicSticker isFilled={isFilled} idx={idx} /> : <DynamicSticker isFilled={isFilled} idx={idx} />}
+                        <DynamicSticker isFilled={isFilled} idx={idx} />
                     </S.StickerSlot>
                 ))}
             </S.StickerGrid>

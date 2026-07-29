@@ -3,7 +3,6 @@
 import * as React from "react";
 import { useTheme } from "styled-components";
 import CelestialDayCalendar from "./celestial/CelestialDayCalendar";
-import BotanicalDayCalendar from "./botanical/BotanicalDayCalendar";
 import { CategoryType } from "@/store/useCategoryStore";
 import { TodoType } from "@/store/useTodoStore";
 
@@ -204,8 +203,7 @@ const DayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
 
         return (
             <>
-                {themeName.startsWith('celestial') ? <CelestialDayCalendar ref={ref} {...themeProps} {...props} /> : null}
-                {themeName === 'botanical' ? <BotanicalDayCalendar ref={ref} {...themeProps} {...props} /> : null}
+                <CelestialDayCalendar ref={ref} {...themeProps} {...props} />
             </>
         );
     }

@@ -3,7 +3,6 @@
 import * as React from 'react';
 import { useTheme } from 'styled-components';
 import CelestialProjectHeader from './celestial/CelestialProjectHeader';
-import BotanicalProjectHeader from './botanical/BotanicalProjectHeader';
 import { ProjectType } from '@/store/useProjectStore';
 
 export interface ProjectHeaderProps {
@@ -20,14 +19,7 @@ const ProjectHeader = React.forwardRef<HTMLDivElement, ProjectHeaderProps>((prop
     const theme = useTheme();
     const themeName = theme?.name || 'celestial';
 
-    if (themeName.startsWith('celestial')) {
-        return <CelestialProjectHeader ref={ref} {...props} />;
-    }
-    if (themeName === 'botanical') {
-        return <BotanicalProjectHeader ref={ref} {...props} />;
-    }
-
-    return null;
+    return <CelestialProjectHeader ref={ref} {...props} />;
 });
 
 ProjectHeader.displayName = 'ProjectHeader';

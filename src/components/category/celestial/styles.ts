@@ -1,4 +1,5 @@
 import styled from "styled-components";
+import { celestial_corner_accent } from "@/styles/celestial_theme";
 
 export const CategoryWrapper = styled.div`
     display: flex;
@@ -11,17 +12,44 @@ export const CategoryWrapper = styled.div`
 
 export const CenterWrapper = styled.div`
     display: flex;
+    flex-direction: column;
     height: 100%;
     width: 100%;
     max-width: 1100px;
+    padding: 0 clamp(8px, 2vw, 24px);
+`;
+
+export const PageHeader = styled.div`
+    font-family: ${(props) => props.theme.fonts.celestial};
+    font-size: 1rem;
+    color: ${(props) => props.theme.colors.text};
+    letter-spacing: 2px;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+
+    & > hr {
+        flex: 1;
+        border: none;
+        border-top: 1px solid ${(props) => props.theme.colors.primary};
+        margin: 0;
+    }
+`;
+
+export const BodyRow = styled.div`
+    display: flex;
+    flex: 1;
+    min-height: 0;
     gap: 24px;
-    padding: 0 24px;
 `;
 
 export const SidebarContainer = styled.div`
+    flex: 0 1 250px;
     width: 250px;
-    min-width: 250px;
-    border-right: 1px solid ${(props) => props.theme.colors.primary}55;
+    min-width: 150px;
+    border-right: 1px solid ${(props) => props.theme.colors.primary};
     display: flex;
     flex-direction: column;
 
@@ -30,7 +58,7 @@ export const SidebarContainer = styled.div`
         justify-content: space-between;
         align-items: center;
         padding: 10px 12px;
-        border-bottom: 1px solid ${(props) => props.theme.colors.primary}33;
+        border-bottom: 1px solid ${(props) => props.theme.colors.primary};
 
         h2 {
             font-family: ${(props) => props.theme.fonts.celestial};
@@ -59,8 +87,8 @@ export const AddCategoryBtn = styled.button`
     padding-bottom: 2px;
 
     &:hover {
-        background-color: ${(props) => props.theme.colors.primary}1A;
         border-color: ${(props) => props.theme.colors.primary};
+        box-shadow: 0 0 6px ${(props) => props.theme.colors.primary}66;
     }
 `;
 
@@ -83,11 +111,12 @@ export const CategoryItem = styled.div<{ $color: string; $isSelected: boolean }>
     padding: 9px 14px;
     cursor: pointer;
     border-left: 2px solid ${(props) => props.$isSelected ? props.theme.colors.primary : 'transparent'};
-    background-color: ${(props) => props.$isSelected ? props.theme.colors.primary + '1A' : 'transparent'};
+    background-color: transparent;
+    box-shadow: ${(props) => props.$isSelected ? `0 0 5px 0.5px ${props.theme.colors.primary}66` : 'none'};
     transition: all 0.15s;
 
     &:hover {
-        background-color: ${(props) => props.theme.colors.primary}1A;
+        box-shadow: 0 0 5px 0.5px ${(props) => props.theme.colors.primary}66;
     }
 
     .color-indicator {
@@ -110,7 +139,8 @@ export const CategoryItem = styled.div<{ $color: string; $isSelected: boolean }>
 `;
 
 export const ContentContainer = styled.div`
-    flex: 1;
+    flex: 1 1 400px;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     overflow-y: auto;
@@ -135,7 +165,7 @@ export const EmptyStateContainer = styled.div`
 `;
 
 export const DetailInfo = styled.div`
-    padding: 24px 32px;
+    padding: 24px clamp(12px, 3vw, 32px);
 `;
 
 export const CategoryTitleWrapper = styled.div<{ $color: string }>`
@@ -206,18 +236,20 @@ export const DetailHeader = styled.div<{ $activeTab: string }>`
     }
 
     .info-tab {
-        background: ${(props) => props.$activeTab === 'info' ? props.theme.colors.primary : 'transparent'};
-        color: ${(props) => props.$activeTab === 'info' ? props.theme.colors.surface : props.theme.colors.primary};
+        background: transparent;
+        color: ${(props) => props.$activeTab === 'info' ? props.theme.colors.primary : props.theme.colors.textSecondary};
+        text-shadow: ${(props) => props.$activeTab === 'info' ? `0 0 8px ${props.theme.colors.primary}99` : 'none'};
     }
 
     .todo-tab {
-        background: ${(props) => props.$activeTab === 'todos' ? props.theme.colors.primary : 'transparent'};
-        color: ${(props) => props.$activeTab === 'todos' ? props.theme.colors.surface : props.theme.colors.primary};
+        background: transparent;
+        color: ${(props) => props.$activeTab === 'todos' ? props.theme.colors.primary : props.theme.colors.textSecondary};
+        text-shadow: ${(props) => props.$activeTab === 'todos' ? `0 0 8px ${props.theme.colors.primary}99` : 'none'};
     }
 
     button:hover {
-        background: ${(props) => props.theme.colors.primary}22;
         color: ${(props) => props.theme.colors.primary};
+        text-shadow: 0 0 8px ${(props) => props.theme.colors.primary}66;
     }
 `;
 
@@ -232,6 +264,7 @@ export const PropertiesCard = styled.div`
     flex-direction: column;
     border: 1px solid ${(props) => props.theme.colors.primary};
     background-color: transparent;
+    ${celestial_corner_accent}
 `;
 
 export const PropertyRow = styled.div`
@@ -244,7 +277,7 @@ export const PropertyRow = styled.div`
     }
 
     .prop-label {
-        width: 120px;
+        width: clamp(80px, 25%, 120px);
         display: flex;
         align-items: flex-start;
         padding: 14px 16px;
@@ -316,7 +349,7 @@ export const ParticipantSection = styled.div`
     .empty-state {
         padding: 30px;
         text-align: center;
-        border: 1px solid ${(props) => props.theme.colors.primary}55;
+        border: 1px solid ${(props) => props.theme.colors.primary};
 
         p {
             color: ${(props) => props.theme.colors.textSecondary};
@@ -331,14 +364,14 @@ export const ParticipantSection = styled.div`
 export const ParticipantTable = styled.div`
     display: flex;
     flex-direction: column;
-    border: 1px solid ${(props) => props.theme.colors.primary}55;
+    border: 1px solid ${(props) => props.theme.colors.primary};
+    ${celestial_corner_accent}
 `;
 
 export const TableHeader = styled.div`
     display: flex;
     align-items: center;
-    background-color: ${(props) => props.theme.colors.primary}11;
-    border-bottom: 1px solid ${(props) => props.theme.colors.primary}55;
+    border-bottom: 1px solid ${(props) => props.theme.colors.primary};
     padding: 8px 16px;
     font-family: ${(props) => props.theme.fonts.celestial};
     font-size: 0.78rem;
@@ -365,7 +398,7 @@ export const TableRow = styled.div`
     transition: background-color 0.15s;
 
     &:last-child { border-bottom: none; }
-    &:hover { background-color: ${(props) => props.theme.colors.primary}0D; }
+    &:hover { box-shadow: 0 0 5px ${(props) => props.theme.colors.primary}40; }
 
     .col-name {
         flex: 1.2;
@@ -380,7 +413,7 @@ export const TableRow = styled.div`
             width: 26px;
             height: 26px;
             border-radius: 50%;
-            background-color: ${(props) => props.theme.colors.primary}22;
+            background-color: ${(props) => props.theme.colors.textSecondary}22;
             color: ${(props) => props.theme.colors.primary};
             display: flex;
             align-items: center;
@@ -468,14 +501,14 @@ export const TodoCard = styled.div<{ $isDone: boolean }>`
     align-items: center;
     gap: 12px;
     padding: 10px 16px;
-    border: 1px solid ${(props) => props.theme.colors.primary}55;
+    border: 1px solid ${(props) => props.theme.colors.primary};
     background-color: transparent;
     transition: all 0.15s;
     cursor: pointer;
 
     &:hover {
-        background-color: ${(props) => props.theme.colors.primary}1A;
         border-color: ${(props) => props.theme.colors.primary};
+        box-shadow: 0 0 6px ${(props) => props.theme.colors.primary}55;
 
         .delete-btn { opacity: 1; }
     }
@@ -556,8 +589,7 @@ export const ModalContent = styled.div`
 
     .modal-header {
         padding: 16px 24px;
-        background-color: ${(props) => props.theme.colors.primary}0D;
-        border-bottom: 1px solid ${(props) => props.theme.colors.primary}33;
+        border-bottom: 1px solid ${(props) => props.theme.colors.primary};
 
         h3 {
             margin: 0;

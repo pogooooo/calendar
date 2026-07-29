@@ -36,7 +36,7 @@ const celestial: DefaultTheme = {
         surface: '#F9F9F9',
         text: '#2E2E2E',
         textSecondary: '#7A7A7A',
-        border: '#EAEAEA',
+        border: '#D4AF37',
         success: '#4E8A6D',
         error: '#A13D4B',
     },
@@ -52,32 +52,15 @@ const celestialDark: DefaultTheme = {
         surface: '#1A1A1A',
         text: '#E8E8E8',
         textSecondary: '#888888',
-        border: '#2A2A2A',
+        border: '#D4AF37',
         success: '#4E8A6D',
         error: '#A13D4B',
-    },
-};
-
-const botanical: DefaultTheme = {
-    name: 'botanical',
-    ...commonStyles,
-    colors: {
-        background: '#F9F8F6',
-        primary: '#C9B59C',
-        accent: '#E8DDD4',
-        surface: '#EFE9E3',
-        text: '#3A3530',
-        textSecondary: '#7A736C',
-        border: '#D9CFC7',
-        success: '#6B8F71',
-        error: '#A0574F',
     },
 };
 
 export const themes = {
     celestial,
     'celestial-dark': celestialDark,
-    botanical,
 };
 
 export default celestial;

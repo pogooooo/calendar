@@ -11,8 +11,7 @@ export const Header = styled.div`
     justify-content: space-between;
     align-items: center;
     padding: 20px 24px;
-    border-bottom: 1px solid ${(props) => props.theme.colors.primary}22;
-    background-color: ${(props) => props.theme.colors.primary}05;
+    border-bottom: 1px solid ${(props) => props.theme.colors.primary};
     
     .title-text {
         font-size: 1.1rem;

@@ -54,7 +54,7 @@ const SignUp = () => {
 
     return (
         <PageWrapper>
-            <CelestialAuthPanel />
+            <CelestialAuthPanel busy={isSubmitting} />
 
             <FormPanel>
                 <LangToggle>

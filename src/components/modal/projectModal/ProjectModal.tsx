@@ -3,7 +3,6 @@
 import * as React from 'react';
 import { useTheme } from 'styled-components';
 import CelestialProjectModal from './celestial/CelestialProjectModal';
-import BotanicalProjectModal from './botanical/BotanicalProjectModal';
 import { ProjectType } from '@/store/useProjectStore';
 import { CategoryType } from "@/store/useCategoryStore";
 
@@ -25,11 +24,5 @@ export default function ProjectModal(props: ProjectModalProps) {
 
     if (!props.isOpen) return null;
 
-    if (themeName.startsWith('celestial')) {
-        return <CelestialProjectModal {...props} />;
-    }
-    if (themeName === 'botanical') {
-        return <BotanicalProjectModal {...props} />;
-    }
-    return null;
+    return <CelestialProjectModal {...props} />;
 }

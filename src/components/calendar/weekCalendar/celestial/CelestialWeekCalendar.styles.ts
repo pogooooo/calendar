@@ -55,8 +55,8 @@ export const CalendarWindow = styled.div`
     width: 100%;
     overflow: hidden;
     position: relative;
-    padding: 15px 0;
-    margin: -15px 0;
+    padding: 15px 8px;
+    margin: -15px -8px;
 `;
 
 export const Header = styled.div`
@@ -93,12 +93,39 @@ export const DayNameBox = styled.div<{ $isToday?: boolean }>`
         font-size: ${(props) => props.theme.fontSizes.h4};
     }
 
+    .day-mark {
+        position: absolute;
+        bottom: 7px;
+        left: 50%;
+        transform: translateX(-50%);
+        height: 1px;
+        width: 18px;
+        background-color: ${(props) => props.theme.colors.primary};
+        pointer-events: none;
+    }
+
+    .day-mark.done {
+        width: 26px;
+    }
+
+    .day-mark.done::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        bottom: 3px;
+        margin-left: -3px;
+        width: 6px;
+        height: 6px;
+        background-color: ${(props) => props.theme.colors.primary};
+        clip-path: polygon(50% 0%, 59% 41%, 100% 50%, 59% 59%, 50% 100%, 41% 59%, 0% 50%, 41% 41%);
+    }
+
     ${(props) => props.$isToday && css`
         &::before {
             content: "";
             position: absolute;
             width: calc(100% + 2px);
-            height: calc(100% + 182px);
+            height: calc(100% + 131px);
             top: -1px;
             left: -1px;
             border: 1px solid ${(props) => props.theme.colors.primary};
@@ -109,50 +136,27 @@ export const DayNameBox = styled.div<{ $isToday?: boolean }>`
     `}
 `;
 
-export const StickerRowContainer = styled.div`
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    width: 100%;
-    min-height: 50px;
-    box-sizing: border-box;
-    border-left: 1px solid ${(props) => props.theme.colors.primary};
-    border-right: 1px solid ${(props) => props.theme.colors.primary};
-    border-bottom: 1px dashed ${(props) => props.theme.colors.primary}40;
-`;
-
-export const StickerSlot = styled.div<{ $isToday?: boolean }>`
-    display: flex;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    overflow-y: hidden;
-    padding-bottom: 5px;
-    gap: 4px;
-    align-items: center;
-    justify-content: flex-start;
-    border-right: 1px solid ${(props) => props.theme.colors.primary};
-    background-color: ${(props) => props.$isToday ? `${props.theme.colors.primary}0D` : 'transparent'};
-
-    &:last-child {
-        border-right: none;
-    }
-
-    &::-webkit-scrollbar {
-        height: 4px;
-    }
-    &::-webkit-scrollbar-thumb {
-        background-color: ${(props) => props.theme.colors.primary}40;
-        border-radius: 2px;
-    }
-`;
-
 export const BarContainer = styled.div`
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     width: 100%;
     height: 130px;
     box-sizing: border-box;
+    position: relative;
     border: 1px solid ${(props) => props.theme.colors.primary};
     border-top: none;
+
+    &::after {
+        content: "";
+        width: 25px;
+        height: 25px;
+        background: linear-gradient(135deg, transparent 49%, ${(props) => props.theme.colors.primary} 50%, transparent 51%);
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        pointer-events: none;
+        z-index: 2;
+    }
 `;
 
 export const AddTodoButton = styled.button`
@@ -194,6 +198,10 @@ export const DaySlot = styled.div<{ $isToday: boolean }>`
     &:hover .add-btn {
         opacity: 0.8;
     }
+
+    &:hover .cell-decor {
+        filter: drop-shadow(0 0 4px ${(props) => props.theme.colors.primary});
+    }
 `;
 
 export const TodoBarList = styled.div`
@@ -202,6 +210,8 @@ export const TodoBarList = styled.div`
     gap: 5px;
     width: 100%;
     margin-top: 10px;
+    position: relative;
+    z-index: 1;
 `;
 
 export const TodoBarItem = styled.div<{ $isStart: boolean, $isEnd: boolean, $color?: string, $isDone?: boolean }>`

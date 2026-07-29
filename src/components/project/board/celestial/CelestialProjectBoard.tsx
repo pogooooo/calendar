@@ -5,6 +5,7 @@ import SecondaryButton from '@/components/button/secondary/SecondaryButton';
 import { ProjectBoardProps } from '../ProjectBoard';
 import { ProjectTaskType } from '@/store/useProjectStore';
 import styled, { css } from "styled-components";
+import { celestial_corner_accent } from "@/styles/celestial_theme";
 
 const CelestialProjectBoard = React.forwardRef<HTMLDivElement, ProjectBoardProps>(({
                                                                                        tasks,
@@ -107,16 +108,16 @@ export const SectionWrapper = styled.div`
     overflow: hidden;
     border: 1px solid ${(props) => props.theme.colors.primary};
     background: transparent;
-    border-radius: 4px;
+    ${celestial_corner_accent}
 `;
 
 export const SectionTitle = styled.div`
     font-family: ${(props) => props.theme.fonts.celestial};
     font-size: 0.9rem;
+    letter-spacing: 2px;
     color: ${(props) => props.theme.colors.textSecondary};
     padding: 8px 12px;
-    border-bottom: 1px solid ${(props) => props.theme.colors.primary}55;
-    background: ${(props) => props.theme.colors.primary}11;
+    border-bottom: 1px solid ${(props) => props.theme.colors.primary};
 `;
 
 export const BoardGrid = styled.div`
@@ -171,18 +172,15 @@ export const CardBox = styled.div<{ $isLocked?: boolean }>`
     gap: 6px;
     background-color: transparent;
     border: 1px solid ${(props) => props.theme.colors.border};
-    border-radius: 4px;
-    padding: 8px 10px; /* 패딩을 줄여서 더 간결하게 */
+    padding: 8px 10px;
     cursor: pointer;
     opacity: ${(props) => props.$isLocked ? 0.6 : 1};
     transition: background-color 0.2s, border-color 0.2s;
 
     &:hover {
-        /* 일간 캘린더 TaskItem의 호버 효과 적용 */
-        background-color: ${(props) => props.theme.colors.primary}1A;
         border-color: ${(props) => props.theme.colors.primary}80;
+        box-shadow: 0 0 6px ${(props) => props.theme.colors.primary}40;
 
-        /* 호버 시에만 액션 버튼 노출 */
         .action-group {
             opacity: 1;
         }
@@ -217,7 +215,6 @@ export const CardTitle = styled.div<{ $isDone?: boolean }>`
 export const PriorityTag = styled.span<{ $priority: string }>`
     font-size: 0.65rem;
     padding: 1px 4px;
-    border-radius: 2px;
     border: 1px solid;
     white-space: nowrap;
     color: ${(props) =>
@@ -233,10 +230,9 @@ export const PriorityTag = styled.span<{ $priority: string }>`
 export const LockedTag = styled.span`
     font-size: 0.65rem;
     color: ${(props) => props.theme.colors.textSecondary};
-    background-color: ${(props) => props.theme.colors.border};
+    background-color: transparent;
     border: 1px solid ${(props) => props.theme.colors.textSecondary};
     padding: 1px 4px;
-    border-radius: 2px;
     white-space: nowrap;
 `;
 
@@ -276,13 +272,11 @@ export const CardMoveButton = styled.button`
     color: ${(props) => props.theme.colors.primary};
     font-size: 0.65rem;
     padding: 2px 6px;
-    border-radius: 3px;
     cursor: pointer;
     transition: background-color 0.2s, color 0.2s;
     white-space: nowrap;
 
     &:hover {
-        background-color: ${(props) => props.theme.colors.primary};
-        color: ${(props) => props.theme.colors.surface};
+        box-shadow: 0 0 5px ${(props) => props.theme.colors.primary}66;
     }
 `;

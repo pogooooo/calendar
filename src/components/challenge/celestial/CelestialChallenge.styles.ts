@@ -1,4 +1,5 @@
 import styled from "styled-components";
+import { celestial_corner_accent } from "@/styles/celestial_theme";
 
 export const CelestialCalendarWrapper = styled.div`
     display: flex;
@@ -90,6 +91,7 @@ export const TimelineSection = styled.div.attrs<{ $flex: number }>(props => ({
     flex-direction: column;
     border: 1px solid ${(props) => props.theme.colors.primary};
     background-color: transparent;
+    ${celestial_corner_accent}
 
     .timeline-header {
         font-family: ${(props) => props.theme.fonts.celestial};
@@ -111,7 +113,8 @@ export const TimelineSection = styled.div.attrs<{ $flex: number }>(props => ({
             background: transparent;
             border: 1px solid ${(props) => props.theme.colors.primary};
             color: ${(props) => props.theme.colors.primary};
-            border-radius: 4px;
+            font-family: ${(props) => props.theme.fonts.celestial};
+            letter-spacing: 1px;
             padding: 4px 8px;
             font-size: 0.8rem;
             display: flex;
@@ -119,7 +122,7 @@ export const TimelineSection = styled.div.attrs<{ $flex: number }>(props => ({
             gap: 4px;
             cursor: pointer;
             transition: all 0.2s;
-            &:hover { background-color: ${(props) => props.theme.colors.primary}22; }
+            &:hover { box-shadow: 0 0 6px ${(props) => props.theme.colors.primary}66; }
         }
     }
 `;
@@ -142,10 +145,11 @@ export const ChallengeRow = styled.div<{ $isSelected: boolean }>`
     padding: 15px;
     border-bottom: 1px solid ${(props) => props.theme.colors.primary}33;
     cursor: pointer;
-    background-color: ${(props) => props.$isSelected ? `${props.theme.colors.primary}1A` : 'transparent'};
-    transition: background-color 0.2s;
+    background-color: transparent;
+    box-shadow: ${(props) => props.$isSelected ? `inset 0 0 8px ${props.theme.colors.primary}33, 0 0 5px ${props.theme.colors.primary}40` : 'none'};
+    transition: box-shadow 0.2s;
 
-    &:hover { background-color: ${(props) => props.theme.colors.primary}22; }
+    &:hover { box-shadow: inset 0 0 8px ${(props) => props.theme.colors.primary}33, 0 0 5px ${(props) => props.theme.colors.primary}40; }
 
     .challenge-info {
         flex: 1;
@@ -187,9 +191,8 @@ export const ChallengeRow = styled.div<{ $isSelected: boolean }>`
 
 export const ProgressBar = styled.div<{ $progress: number, $catColor: string }>`
     width: 100%;
-    height: 6px;
+    height: 4px;
     background-color: ${(props) => props.theme.colors.primary}33;
-    border-radius: 3px;
     overflow: hidden;
 
     .fill {
@@ -214,6 +217,7 @@ export const BaseCard = styled.div`
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    ${celestial_corner_accent}
 
     .card-header {
         font-family: ${(props) => props.theme.fonts.celestial};
@@ -221,7 +225,7 @@ export const BaseCard = styled.div`
         color: ${(props) => props.theme.colors.textSecondary};
         padding: 8px 12px;
         border-bottom: 1px solid ${(props) => props.theme.colors.primary};
-        background-color: ${(props) => props.theme.colors.primary}0D;
+        background-color: transparent;
     }
 `;
 
@@ -304,9 +308,8 @@ export const DetailArea = styled.div`
         p { margin: 0; color: ${(props) => props.theme.colors.textSecondary}; font-size: 0.9rem; }
 
         .stats {
-            background-color: ${(props) => props.theme.colors.primary}0D;
+            background-color: transparent;
             padding: 12px;
-            border-radius: 6px;
             font-size: 0.85rem;
             color: ${(props) => props.theme.colors.text};
             display: flex;

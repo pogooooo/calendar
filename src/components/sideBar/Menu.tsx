@@ -5,15 +5,13 @@ import { CategoryType } from "@/store/useCategoryStore";
 import { Layers, Calendar, Kanban, Trophy } from "lucide-react";
 import { useT } from "@/i18n/useT";
 
-const Menu = (props: { width: number, categories: CategoryType[] }) => {
+const Menu = (props: { categories: CategoryType[] }) => {
     const router = useRouter();
     const t = useT();
 
     return(
         <MenuWrapper>
             <SidebarMenuButton
-                $height={30}
-                $width={props.width - 40}
                 label={t.sidebar.categories}
                 onClick={() => { router.push("/category") }}
             >
@@ -21,8 +19,6 @@ const Menu = (props: { width: number, categories: CategoryType[] }) => {
             </SidebarMenuButton>
 
             <SidebarMenuButton
-                $height={30}
-                $width={props.width - 40}
                 label={t.sidebar.calendar}
                 onClick={() => { router.push("/calendar") }}
             >
@@ -30,8 +26,6 @@ const Menu = (props: { width: number, categories: CategoryType[] }) => {
             </SidebarMenuButton>
 
             <SidebarMenuButton
-                $height={30}
-                $width={props.width - 40}
                 label={t.sidebar.project}
                 onClick={() => { router.push("/project") }}
             >
@@ -39,8 +33,6 @@ const Menu = (props: { width: number, categories: CategoryType[] }) => {
             </SidebarMenuButton>
 
             <SidebarMenuButton
-                $height={30}
-                $width={props.width - 40}
                 label={t.sidebar.challenge}
                 onClick={() => { router.push("/challenge") }}
             >

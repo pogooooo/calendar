@@ -1,10 +1,10 @@
 "use client"
 
+import { useState } from "react";
 import {useTheme} from "styled-components";
 import Profile from "@/components/sideBar/Profile";
 import Menu from "@/components/sideBar/Menu";
 import CelestialSidebarDesign from "@/assets/sidebarDesign/CelestialSidebarDesign";
-import LiteSidebarDesign from "@/assets/sidebarDesign/LiteSidebarDesign";
 import styled from "styled-components";
 import useCategoryStore from "@/store/useCategoryStore";
 import { useSidebarLogic } from "@/hooks/useSidebarLogic";
@@ -16,16 +16,23 @@ const Sidebar = () => {
 
     const { width, isResizing, screenHeight, startResizing, sidebarRef } = useSidebarLogic();
 
+    const [isContourHovered, setIsContourHovered] = useState(false);
+
     return(
         <SideBarWrapper ref={sidebarRef} $width={width} $isResizing={isResizing}>
             <Content>
-                <Profile width={width} />
-                <Menu width={width} categories={categories} />
+                <Profile />
+                <Menu categories={categories} />
             </Content>
 
-            <SidebarContour $height={screenHeight} $isResizing={isResizing} onMouseDown={startResizing}>
-                {themeName.startsWith('celestial') && <CelestialSidebarDesign />}
-                {themeName === 'botanical' && <LiteSidebarDesign />}
+            <SidebarContour
+                $height={screenHeight}
+                $isResizing={isResizing}
+                onMouseDown={startResizing}
+                onMouseEnter={() => setIsContourHovered(true)}
+                onMouseLeave={() => setIsContourHovered(false)}
+            >
+                {themeName.startsWith('celestial') && <CelestialSidebarDesign isHovered={isContourHovered} />}
             </SidebarContour>
 
             {isResizing && <ResizeOverlay />}
@@ -41,10 +48,10 @@ const SideBarWrapper = styled.div<{ $width: number, $isResizing: boolean }>`
 
     will-change: width;
     contain: layout style;
+    container-type: inline-size;
     transform: translateZ(0);
     transition: ${(props) => props.$isResizing ? 'none' : 'width 0.15s ease-out'};
     
-    overflow-y: clip;
     padding: 0 20px 0 20px;
     margin-right: 50px;
     cursor: default;
@@ -55,6 +62,8 @@ const SideBarWrapper = styled.div<{ $width: number, $isResizing: boolean }>`
 `
 
 const Content = styled.div`
+    flex: 1;
+    min-width: 0;
     z-index: 1;
 `
 
@@ -68,15 +77,14 @@ const SidebarContour = styled.div<{ $height: number, $isResizing: boolean }>`
     pointer-events: auto;
     
     &:hover {
-        stroke: ${(props) => props.theme.colors.accent};
-        filter: drop-shadow(0 0 5px ${(props) => props.theme.colors.primary});
+        stroke: ${(props) => props.theme.colors.primary};
     }
 
     &::before {
         content: "";
         position: absolute;
-        left: 30px;
-        width: 60px;
+        left: 58px;
+        width: 90px;
         height: 100%;
         background: transparent;
     }

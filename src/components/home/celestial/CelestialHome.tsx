@@ -348,10 +348,8 @@ const PageWrapper = styled.div`
 
 const CalSection = styled.div`
     flex: 0 0 auto;
-    max-height: 42%;
-    overflow: hidden;
-    width: 68vw;
-    min-width: 700px;
+    width: min(68vw, 100%);
+    min-width: min(700px, 100%);
     margin: 0 auto;
 `;
 
@@ -372,8 +370,8 @@ const CalSkeleton = styled.div`
 const BottomGrid = styled.div`
     flex: 1;
     min-height: 0;
-    width: 68vw;
-    min-width: 700px;
+    width: min(68vw, 100%);
+    min-width: min(700px, 100%);
     margin: 0 auto;
     display: grid;
     grid-template-columns: 3fr 2fr;
@@ -385,7 +383,8 @@ const Panel = styled.div`
     background: transparent;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    min-width: 0;
+    min-height: 0;
 `;
 
 const PanelHeader = styled.div`
@@ -529,18 +528,31 @@ const ProjectSelector = styled.div`
     padding: 2px 8px;
     cursor: pointer;
     user-select: none;
+
+    & > span {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 140px;
+    }
+
     &:hover { background: ${p => p.theme.colors.primary}1A; }
 `;
 
 const DropMenu = styled.div`
     position: absolute;
     top: calc(100% + 4px);
-    left: 0;
+    right: 0;
     min-width: 160px;
+    max-height: 240px;
+    overflow-y: auto;
     background: ${p => p.theme.colors.background};
     border: 1px solid ${p => p.theme.colors.primary};
     z-index: 100;
     box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+
+    &::-webkit-scrollbar { width: 4px; }
+    &::-webkit-scrollbar-thumb { background: ${p => p.theme.colors.primary}80; }
 `;
 
 const DropItem = styled.div<{ $active: boolean }>`

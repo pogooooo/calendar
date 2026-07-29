@@ -14,7 +14,7 @@ export const Header = styled.div`
     justify-content: space-between;
     align-items: center;
     padding: 16px 20px 12px 20px;
-    border-bottom: 1px solid ${(props) => props.theme.colors.primary}55; /* 얇은 테마 선 */
+    border-bottom: 1px solid ${(props) => props.theme.colors.primary}; /* 얇은 테마 선 */
     background-color: ${(props) => props.theme.colors.surface};
 `;
 

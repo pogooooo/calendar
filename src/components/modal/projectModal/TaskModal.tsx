@@ -3,7 +3,6 @@
 import * as React from 'react';
 import { useTheme } from 'styled-components';
 import CelestialTaskModal from './celestial/CelestialTaskModal';
-import BotanicalTaskModal from './botanical/BotanicalTaskModal';
 import { ProjectTaskType } from '@/store/useProjectStore';
 
 export interface TaskModalProps {
@@ -24,11 +23,5 @@ export default function TaskModal(props: TaskModalProps) {
 
     if (!props.isOpen) return null;
 
-    if (themeName.startsWith('celestial')) {
-        return <CelestialTaskModal {...props} />;
-    }
-    if (themeName === 'botanical') {
-        return <BotanicalTaskModal {...props} />;
-    }
-    return null;
+    return <CelestialTaskModal {...props} />;
 }

@@ -12,8 +12,7 @@ export const Header = styled.div`
     justify-content: space-between;
     align-items: center;
     padding: 24px 24px 16px 24px;
-    border-bottom: 1px solid ${(props) => props.theme.colors.primary}22;
-    background-color: ${(props) => props.theme.colors.primary}05;
+    border-bottom: 1px solid ${(props) => props.theme.colors.primary};
     
     .title-input {
         flex: 1;
@@ -71,7 +70,7 @@ export const FieldRow = styled.div`
     align-items: center;
     justify-content: space-between;
     padding: 12px 10px;
-    border-bottom: 1px solid ${(props) => props.theme.colors.accent}66;
+    border-bottom: 1px solid ${(props) => props.theme.colors.primary}66;
 
     label {
         font-size: 0.95rem;

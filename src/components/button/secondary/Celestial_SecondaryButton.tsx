@@ -15,7 +15,6 @@ const SecondaryButton = styled.button<ButtonProps>`
     width: ${({ $width }) => (typeof $width === 'number' ? `${$width}px` : $width || '100%')};
     height: ${({ $height }) => (typeof $height === 'number' ? `${$height}px` : $height || '40px')};
 
-    border-radius: 5px;
     transition: box-shadow 0.2s ease-in-out, border-color 0.2s ease-in-out;
     font-size: ${(props) => props.theme.fontSizes.body};
     background-color: transparent;
@@ -51,10 +50,10 @@ const SecondaryButton = styled.button<ButtonProps>`
         return css`
             border: 1px solid ${props.theme.colors.border};
             color: ${props.theme.colors.text};
-            
+
             &:hover {
                 border-color: ${props.theme.colors.primary};
-                box-shadow: 0 0 10px 3px ${props.theme.colors.accent};
+                box-shadow: 0 0 6px ${props.theme.colors.primary}66;
             }
         `;
     }}

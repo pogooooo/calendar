@@ -1,4 +1,5 @@
 import styled from "styled-components";
+import { celestial_corner_accent } from "@/styles/celestial_theme";
 
 export const SectionWrapper = styled.div`
     display: flex;
@@ -7,16 +8,16 @@ export const SectionWrapper = styled.div`
     overflow: hidden;
     border: 1px solid ${(props) => props.theme.colors.primary};
     background: transparent;
-    border-radius: 4px;
+    ${celestial_corner_accent}
 `;
 
 export const SectionTitle = styled.div`
     font-family: ${(props) => props.theme.fonts.celestial};
     font-size: 0.9rem;
+    letter-spacing: 2px;
     color: ${(props) => props.theme.colors.textSecondary};
     padding: 8px 12px;
-    border-bottom: 1px solid ${(props) => props.theme.colors.primary}55;
-    background: ${(props) => props.theme.colors.primary}11;
+    border-bottom: 1px solid ${(props) => props.theme.colors.primary};
 `;
 
 export const TimelineLayout = styled.div`
@@ -117,7 +118,7 @@ export const TaskNode = styled.div<{ $status?: string; $isDragging?: boolean }>`
     height: 28px;
     background: ${(props) => props.$status === 'done' ? props.theme.colors.primary + '33' : props.theme.colors.primary + '99'};
     border: 1px solid ${(props) => props.$status === 'done' ? props.theme.colors.primary + '66' : props.theme.colors.primary};
-    border-radius: 4px;
+    border-radius: 3px;
     color: ${(props) => props.$status === 'done' ? props.theme.colors.textSecondary : props.theme.colors.background};
     text-decoration: ${(props) => props.$status === 'done' ? 'line-through' : 'none'};
     display: flex;
@@ -154,7 +155,6 @@ export const TaskResizeHandle = styled.div`
     cursor: col-resize;
     background-color: transparent;
     transition: background-color 0.2s;
-    border-radius: 0 4px 4px 0;
 
     &:hover {
         background-color: rgba(255, 255, 255, 0.4);

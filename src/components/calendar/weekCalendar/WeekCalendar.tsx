@@ -3,7 +3,6 @@
 import * as React from "react";
 import { useTheme } from "styled-components";
 import CelestialWeekCalendar from "./celestial/CelestialWeekCalendar";
-import BotanicalWeekCalendar from "./botanical/BotanicalWeekCalendar";
 import { CategoryType } from "@/store/useCategoryStore";
 import { TodoType } from "@/store/useTodoStore";
 
@@ -69,9 +68,6 @@ export interface WeekThemeProps {
     setMoreModalDate: (date: Date | null) => void;
     setTodoContextMenu: (menu: { x: number, y: number, todo: CalendarTodoType } | null) => void;
 
-    handleContextMenuChallenge: (e: React.MouseEvent, challenge: ChallengeTodoType) => void;
-    handleQuickToggleChallenge: (challenge: ChallengeTodoType) => void;
-
     categories: CategoryType[];
     selectedDate?: Date;
     onDateChange?: (date: Date) => void;
@@ -101,7 +97,7 @@ const WeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
         const [moreModalDate, setMoreModalDate] = React.useState<Date | null>(null);
 
         const { projects, fetchProjects } = useProjectStore();
-        const { challenges, fetchChallenges, toggleChallengeCompletion } = useChallengeStore();
+        const { challenges, fetchChallenges } = useChallengeStore();
         const { deleteTodo, toggleTodo } = useTodoStore();
         const accessToken = useAuthStore((state) => state.accessToken);
 
@@ -269,12 +265,6 @@ const WeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
             setTodoContextMenu({ x: e.clientX, y: e.clientY, todo: todo });
         };
 
-        const handleContextMenuChallenge = (e: React.MouseEvent, challenge: ChallengeTodoType) => {
-            e.preventDefault();
-            const statusText = challenge.isDone ? '완료' : '미완료';
-            alert(`🎯 챌린지: ${challenge.title}\n✅ 상태: ${statusText}\n\n세부 정보나 설정은 [챌린지] 탭을 이용해주세요.`);
-        };
-
         const handleQuickEdit = (expandedTodo: CalendarTodoType) => {
             if (expandedTodo.isProject || expandedTodo.isProjectTask) {
                 alert("프로젝트 관련 항목은 프로젝트 메뉴에서 수정해주세요.");
@@ -315,15 +305,6 @@ const WeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
             setTodoContextMenu(null);
         };
 
-        const handleQuickToggleChallenge = async (challengeTodo: ChallengeTodoType) => {
-            const challengeId = challengeTodo.originalChallenge.id;
-            const cellDate = new Date(challengeTodo.startAt);
-            const offset = cellDate.getTimezoneOffset() * 60000;
-            const localISOTime = (new Date(cellDate.getTime() - offset)).toISOString().split('T')[0] + 'T00:00:00.000Z';
-
-            await toggleChallengeCompletion(authFetch, challengeId, localISOTime);
-        };
-
         const handleCreateTodo = (date: Date) => {
             setModalTodo(null);
             setSelectedDateForModal(date);
@@ -358,8 +339,6 @@ const WeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
             setIsModalOpen,
             setMoreModalDate,
             setTodoContextMenu,
-            handleContextMenuChallenge,
-            handleQuickToggleChallenge,
             categories,
             selectedDate,
             onDateChange,
@@ -371,8 +350,7 @@ const WeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
 
         return (
             <>
-                {themeName.startsWith('celestial') ? <CelestialWeekCalendar ref={ref} {...themeProps} {...props} /> : null}
-                {themeName === 'botanical' ? <BotanicalWeekCalendar ref={ref} {...themeProps} {...props} /> : null}
+                <CelestialWeekCalendar ref={ref} {...themeProps} {...props} />
             </>
         );
     }

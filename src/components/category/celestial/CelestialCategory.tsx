@@ -25,6 +25,11 @@ export default function CelestialCategory(props: CategoryThemeProps) {
     return (
         <S.CategoryWrapper>
         <S.CenterWrapper>
+            <S.PageHeader>
+                <span>Celestial Categories</span>
+                <hr />
+            </S.PageHeader>
+            <S.BodyRow>
             <S.SidebarContainer>
                 <div className="sidebar-header">
                     <h2>{t.category.title}</h2>
@@ -208,6 +213,7 @@ export default function CelestialCategory(props: CategoryThemeProps) {
                     </S.EmptyStateContainer>
                 )}
             </S.ContentContainer>
+            </S.BodyRow>
         </S.CenterWrapper>
 
             {isInviteModalOpen && (

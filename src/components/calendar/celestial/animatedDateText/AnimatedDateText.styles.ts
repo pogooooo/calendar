@@ -5,6 +5,7 @@ export const DateTextContainer = styled.div`
     align-items: center;
     height: 1.5em;
     overflow: hidden;
+    flex-shrink: 0;
 `;
 
 export const DateCharWrapper = styled.span<{ $char: string }>`

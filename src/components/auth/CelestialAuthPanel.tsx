@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState, useCallback } from "react";
+import React, { useRef, useState, useCallback, useEffect } from "react";
 import styled, { keyframes } from "styled-components";
 
 /* ── keyframes ───────────────────────────────────────────────────────────── */
@@ -54,12 +54,41 @@ export const ServiceName = styled.h1`
 `;
 
 /* ── Component ───────────────────────────────────────────────────────────── */
-function CelestialAuthPanel() {
+function CelestialAuthPanel({ busy = false }: { busy?: boolean }) {
     const CX = 260, CY = 350;
     const R = { r1: 58, r2: 115, r3: 175, r4: 235 };
 
     const panelRef = useRef<HTMLDivElement>(null);
+    const svgRef = useRef<SVGSVGElement>(null);
+    const rafRef = useRef(0);
     const [mouse, setMouse] = useState({ x: 0, y: 0 });
+
+    useEffect(() => {
+        const svg = svgRef.current;
+        if (!svg || typeof svg.getAnimations !== 'function') return;
+        const anims = svg.getAnimations({ subtree: true });
+        if (anims.length === 0) return;
+
+        const target = busy ? 7 : 1;
+        cancelAnimationFrame(rafRef.current);
+
+        const step = () => {
+            let settled = true;
+            anims.forEach(anim => {
+                const next = anim.playbackRate + (target - anim.playbackRate) * 0.06;
+                if (Math.abs(next - target) < 0.03) {
+                    anim.playbackRate = target;
+                } else {
+                    anim.playbackRate = next;
+                    settled = false;
+                }
+            });
+            if (!settled) rafRef.current = requestAnimationFrame(step);
+        };
+        rafRef.current = requestAnimationFrame(step);
+
+        return () => cancelAnimationFrame(rafRef.current);
+    }, [busy]);
 
     const handleMouseMove = useCallback((e: React.MouseEvent) => {
         const rect = panelRef.current?.getBoundingClientRect();
@@ -80,6 +109,7 @@ function CelestialAuthPanel() {
     return (
         <BrandPanel ref={panelRef} onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
             <svg
+                ref={svgRef}
                 width="100%" height="100%"
                 viewBox="0 0 520 700"
                 preserveAspectRatio="xMidYMid slice"
