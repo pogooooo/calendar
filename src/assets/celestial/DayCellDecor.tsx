@@ -1,160 +1,257 @@
 "use client";
 
-import styled, { css, keyframes } from "styled-components";
+import { useEffect, useRef } from "react";
+import styled, { keyframes } from "styled-components";
 
-const CRESCENT_PATH = "M48.5 36.6402C46.5499 40.7118 43.5434 44.1857 39.7939 46.6999C36.0443 49.2141 31.6891 50.6766 27.182 50.9349C22.675 51.1931 18.1811 50.2378 14.1689 48.1684C10.1567 46.0989 6.77306 42.9912 4.3706 39.1691C1.96814 35.347 0.634851 30.9505 0.509702 26.4378C0.384553 21.925 1.47213 17.4614 3.65907 13.512C5.846 9.56262 9.05224 6.27214 12.9436 3.98353C16.8349 1.69492 21.2689 0.491968 25.7833 0.500059C28.0558 0.495113 30.3181 0.802149 32.5071 1.41257C28.0714 2.81948 24.285 5.76637 21.8321 9.7209C19.3792 13.6754 18.4215 18.3768 19.1319 22.9758C19.8424 27.5747 22.1741 31.7679 25.706 34.798C29.2378 37.828 33.7369 39.495 38.3904 39.4978C41.9603 39.5031 45.4611 38.5136 48.5 36.6402Z";
-
-const frameIn = keyframes`
-    from { opacity: 0; transform: scale(0.9); }
-    to { opacity: 1; transform: scale(1); }
-`;
-
-const fadeIn = keyframes`
+const appear = keyframes`
     from { opacity: 0; }
     to { opacity: 1; }
 `;
 
-const bloom = keyframes`
-    from { transform: scale(0) rotate(-45deg); }
-    to { transform: scale(1) rotate(0deg); }
+/* 실 흔들림 */
+const sway = keyframes`
+    0%, 100% { transform: rotate(-1deg); }
+    50% { transform: rotate(1deg); }
 `;
 
-const twinkle = keyframes`
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.2; }
+/* 실 끝 별 반짝임 */
+const twinkleStar = keyframes`
+    0%, 100% { transform: scale(1); opacity: 0.85; filter: drop-shadow(0 0 0 rgba(212, 175, 55, 0)); }
+    50% { transform: scale(1.25); opacity: 1; filter: drop-shadow(0 0 3px rgba(212, 175, 55, 0.95)); }
 `;
 
-const breathe = keyframes`
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
-`;
-
-const spin = keyframes`
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-`;
-
-const starShape = css`
-    position: absolute;
-    background-color: ${(props) => props.theme.colors.primary};
-    clip-path: polygon(50% 0%, 59% 41%, 100% 50%, 59% 59%, 50% 100%, 41% 59%, 0% 50%, 41% 41%);
-`;
-
-const Decor = styled.div`
+/* 단계별 프레임 (할 일 바와 같은 골드 라인아트) */
+const FrameWrap = styled.div`
     position: absolute;
     inset: 0;
     pointer-events: none;
     z-index: 0;
-    transition: filter 0.25s ease;
+    color: ${(props) => props.theme.colors.primary};
+    --mx: 50%;
+    --my: 50%;
+    --glow: 0;
 
-    .solo {
-        ${starShape}
-        width: 9px;
-        height: 9px;
-        bottom: 6px;
-        left: 50%;
-        margin-left: -4.5px;
-        animation: ${bloom} 0.45s ease-out both, ${twinkle} 3.2s ease-in-out 0.5s infinite;
-    }
-
-    .frame {
+    .fr-svg {
         position: absolute;
-        inset: 6px;
-        border: 1px solid ${(props) => props.theme.colors.primary};
-        animation: ${frameIn} 0.5s ease-out both;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        overflow: visible;
     }
 
-    .moon {
+    .fr-line {
+        stroke: currentColor;
+        fill: none;
+        vector-effect: non-scaling-stroke;
+    }
+    .f-out { stroke-width: 1; }
+    .f-in { stroke-width: 0.8; opacity: 0.4; }
+    .corner { stroke-width: 1; stroke-linecap: round; }
+
+    .fr-base { animation: ${appear} 0.55s ease-out both; }
+
+    /* 호버 시 커서 주변 프레임만 빛나는 레이어 */
+    .fr-glow {
+        opacity: var(--glow, 0);
+        transition: opacity 0.18s ease;
+        filter:
+            drop-shadow(0 0 3px rgba(212, 175, 55, 0.95))
+            drop-shadow(0 0 7px rgba(212, 175, 55, 0.55));
+        -webkit-mask: radial-gradient(
+            circle 46px at var(--mx) var(--my),
+            #000 0%, #000 20%, transparent 72%
+        );
+        mask: radial-gradient(
+            circle 46px at var(--mx) var(--my),
+            #000 0%, #000 20%, transparent 72%
+        );
+    }
+    .fr-glow .fr-line { stroke-width: 1.6; opacity: 1; }
+`;
+
+/* 연결 여부에 따라 변을 열어 그린다 (연속된 같은 단계는 프레임이 이어짐) */
+const buildFrame = (inset: number, connectLeft: boolean, connectRight: boolean) => {
+    const top = inset;
+    const bot = 130 - inset;
+    const left = inset;
+    const right = 110 - inset;
+    const x0 = connectLeft ? 0 : left;
+    const x1 = connectRight ? 110 : right;
+    let d = `M${x0} ${top} H${x1} M${x0} ${bot} H${x1}`;
+    if (!connectLeft) d += ` M${left} ${top} V${bot}`;
+    if (!connectRight) d += ` M${right} ${top} V${bot}`;
+    return d;
+};
+
+const buildCorners = (connectLeft: boolean, connectRight: boolean) => {
+    const parts: string[] = [];
+    if (!connectLeft) parts.push("M6 22 L22 6", "M6 108 L22 124");
+    if (!connectRight) parts.push("M104 22 L88 6", "M104 108 L88 124");
+    return parts.join(" ");
+};
+
+/* level 1: 단일 프레임 / 2: + 코너 사선 / 3: 겹 프레임 + 코너 사선 */
+const FrameShapes = ({
+    level,
+    connectLeft,
+    connectRight,
+    base,
+}: {
+    level: number;
+    connectLeft: boolean;
+    connectRight: boolean;
+    base?: boolean;
+}) => {
+    const corners = level >= 2 ? buildCorners(connectLeft, connectRight) : "";
+    return (
+        <g className={base ? "fr-base" : undefined}>
+            <path className="fr-line f-out" d={buildFrame(6, connectLeft, connectRight)} />
+            {corners && <path className="fr-line corner" d={corners} />}
+            {level >= 3 && (
+                <path className="fr-line f-in" d={buildFrame(11, connectLeft, connectRight)} />
+            )}
+        </g>
+    );
+};
+
+/* 천장(위 프레임)에서 늘어지는 가는 실 + 끝에 별.
+   할 일 바(z-index:1)보다 위(z-index:2)에 렌더 → 항상 보임 */
+const ThreadWrap = styled.div`
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 2;
+    color: ${(props) => props.theme.colors.primary};
+    filter: drop-shadow(0 0 2px rgba(212, 175, 55, 0.6));
+
+    .th-svg {
         position: absolute;
-        top: -5px;
-        right: -5px;
-        width: 12px;
-        height: 12px;
-        color: ${(props) => props.theme.colors.primary};
-        animation: ${fadeIn} 0.5s ease-out 0.35s both, ${breathe} 6.5s ease-in-out 0.85s infinite;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        overflow: visible;
     }
 
-    .star-lg {
-        ${starShape}
-        width: 9px;
-        height: 9px;
-        top: -4px;
-        left: -4px;
-        animation: ${fadeIn} 0.4s ease-out 0.45s both, ${spin} 18s linear 0.85s infinite;
+    .fr-curtain {
+        transform-box: fill-box;
+        transform-origin: 50% 0%;
+        animation: ${sway} 4.5s ease-in-out infinite;
     }
-
-    .star-md {
-        ${starShape}
-        width: 7px;
-        height: 7px;
-        bottom: -3px;
-        right: -3px;
-        animation: ${bloom} 0.4s ease-out 0.55s both, ${twinkle} 3.8s ease-in-out 1.2s infinite;
+    .th-line {
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 0.9;
+        stroke-linecap: round;
+        vector-effect: non-scaling-stroke;
     }
-
-    .star-sm {
-        ${starShape}
-        width: 5px;
-        height: 5px;
-        bottom: -2px;
-        left: -2px;
-        animation: ${bloom} 0.4s ease-out 0.65s both, ${twinkle} 2.9s ease-in-out 2.1s infinite;
-    }
-
-    .dot {
-        ${starShape}
-        width: 3px;
-        height: 3px;
-        animation: ${twinkle} 3.4s ease-in-out infinite;
-    }
-
-    .dot.d1 {
-        top: 9px;
-        right: 16px;
-        animation-duration: 4.2s;
-        animation-delay: 1.4s;
-    }
-
-    .dot.d2 {
-        bottom: 12px;
-        left: 15px;
-        animation-duration: 3.1s;
-        animation-delay: 2.6s;
+    .th-star {
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 1;
+        stroke-linejoin: round;
+        vector-effect: non-scaling-stroke;
+        transform-box: fill-box;
+        transform-origin: center;
+        animation: ${twinkleStar} 3s ease-in-out infinite;
     }
 `;
 
-const Crescent = () => (
-    <svg className="moon" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path
-            d={CRESCENT_PATH}
-            stroke="currentColor"
-            strokeWidth="1"
-            vectorEffect="non-scaling-stroke"
-            strokeMiterlimit="10"
-        />
-    </svg>
+const ThreadDecor = () => (
+    <ThreadWrap aria-hidden="true">
+        <svg
+            className="th-svg"
+            viewBox="0 0 110 130"
+            fill="none"
+            preserveAspectRatio="none"
+            xmlns="http://www.w3.org/2000/svg"
+        >
+            <g className="fr-curtain">
+                <path className="th-line" d="M9 6 V46" />
+                <path
+                    className="th-star"
+                    d="M9 45.5C9 49 9 49 10.5 49C9 49 9 49 9 52.5C9 49 9 49 7.5 49C9 49 9 49 9 45.5Z"
+                />
+            </g>
+        </svg>
+    </ThreadWrap>
 );
 
-const DayCellDecor = ({ tier }: { tier: number }) => {
-    if (tier < 1) return null;
+const FrameDecor = ({
+    level,
+    connectLeft,
+    connectRight,
+}: {
+    level: number;
+    connectLeft: boolean;
+    connectRight: boolean;
+}) => {
+    const rootRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const root = rootRef.current;
+        if (!root) return;
+        const host = root.parentElement; // DaySlot
+        if (!host) return;
+
+        const onMove = (e: MouseEvent) => {
+            const r = root.getBoundingClientRect();
+            root.style.setProperty("--mx", `${e.clientX - r.left}px`);
+            root.style.setProperty("--my", `${e.clientY - r.top}px`);
+        };
+        const onEnter = () => root.style.setProperty("--glow", "1");
+        const onLeave = () => root.style.setProperty("--glow", "0");
+
+        host.addEventListener("mousemove", onMove);
+        host.addEventListener("mouseenter", onEnter);
+        host.addEventListener("mouseleave", onLeave);
+
+        return () => {
+            host.removeEventListener("mousemove", onMove);
+            host.removeEventListener("mouseenter", onEnter);
+            host.removeEventListener("mouseleave", onLeave);
+        };
+    }, []);
 
     return (
-        <Decor className="cell-decor" aria-hidden="true">
-            {tier === 1 && <span className="solo" />}
+        <FrameWrap ref={rootRef} className="cell-decor" aria-hidden="true">
+            <svg
+                className="fr-svg"
+                viewBox="0 0 110 130"
+                fill="none"
+                preserveAspectRatio="none"
+                xmlns="http://www.w3.org/2000/svg"
+            >
+                <FrameShapes level={level} connectLeft={connectLeft} connectRight={connectRight} base />
+            </svg>
 
-            {tier === 2 && <span className="frame" />}
+            <svg
+                className="fr-svg fr-glow"
+                viewBox="0 0 110 130"
+                fill="none"
+                preserveAspectRatio="none"
+                xmlns="http://www.w3.org/2000/svg"
+            >
+                <FrameShapes level={level} connectLeft={connectLeft} connectRight={connectRight} />
+            </svg>
+        </FrameWrap>
+    );
+};
 
-            {tier === 3 && (
-                <span className="frame">
-                    <Crescent />
-                    <span className="star-lg" />
-                    <span className="star-md" />
-                    <span className="star-sm" />
-                    <span className="dot d1" />
-                    <span className="dot d2" />
-                </span>
-            )}
-        </Decor>
+const DayCellDecor = ({
+    tier,
+    connectLeft = false,
+    connectRight = false,
+}: {
+    tier: number;
+    connectLeft?: boolean;
+    connectRight?: boolean;
+}) => {
+    if (tier < 1) return null;
+    return (
+        <>
+            <FrameDecor level={tier} connectLeft={connectLeft} connectRight={connectRight} />
+            {tier >= 3 && !connectLeft && <ThreadDecor />}
+        </>
     );
 };
 

@@ -21,18 +21,14 @@ import { useT } from "@/i18n/useT";
 import DayCellDecor from "@/assets/celestial/DayCellDecor";
 import CalendarAmbience from "@/assets/celestial/CalendarAmbience";
 
+// 시간이 빠르게 흐르거나 되감기되는 느낌 — 빠른 슬라이드 + 모션 블러
 const slideVariants = {
-    enter: (direction: number) => ({ x: direction > 0 ? 100 : -100, opacity: 0 }),
-    center: { x: 0, opacity: 1 },
-    exit: (direction: number) => ({ x: direction < 0 ? 100 : -100, opacity: 0 }),
+    enter: (direction: number) => ({ x: direction > 0 ? 130 : -130, opacity: 0, filter: "blur(5px)" }),
+    center: { x: 0, opacity: 1, filter: "blur(0px)" },
+    exit: (direction: number) => ({ x: direction < 0 ? 130 : -130, opacity: 0, filter: "blur(5px)" }),
 };
 
 const MAX_VISIBLE_LEVELS = 3;
-
-const isItemDone = (todo: TodoType & { isDone?: boolean; check?: string; status?: string }) => {
-    if (todo.isDone) return true;
-    return todo.check === 'done' || todo.status === 'done';
-};
 
 const tierFor = (done: number, total: number) => {
     if (total === 0 || done === 0) return 0;
@@ -59,19 +55,15 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, CelestialWeekProp
         const theme = useTheme();
         const t = useT();
 
+        // 단계(tier)는 챌린지 완료율로만 계산 (일반 할 일은 합산하지 않음)
         const dayTiers = React.useMemo(() => {
             return weekDates.map(date => {
-                const dayTodos = expandedTodos.filter(todo =>
-                    !todo.isProject && isBetween(date, todo.startAt!, todo.endAt!)
-                );
                 const dayChallenges = challengeTodos.filter(c => isSameDay(new Date(c.startAt), date));
-
-                const total = dayTodos.length + dayChallenges.length;
-                const done = dayTodos.filter(isItemDone).length + dayChallenges.filter(c => c.isDone).length;
-
+                const total = dayChallenges.length;
+                const done = dayChallenges.filter(c => c.isDone).length;
                 return tierFor(done, total);
             });
-        }, [weekDates, expandedTodos, challengeTodos]);
+        }, [weekDates, challengeTodos]);
 
         return (
             <S.CelestialCalendarWrapper as={Component} ref={ref} {...props}>
@@ -108,8 +100,9 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, CelestialWeekProp
                                 animate="center"
                                 exit="exit"
                                 transition={{
-                                    x: { type: "spring", stiffness: 300, damping: 30 },
-                                    opacity: { duration: 0.2 }
+                                    x: { type: "tween", duration: 0.34, ease: [0.5, 0, 0.15, 1] },
+                                    opacity: { duration: 0.18 },
+                                    filter: { duration: 0.34 }
                                 }}
                                 style={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative', zIndex: 1 }}
                             >
@@ -117,8 +110,19 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, CelestialWeekProp
                                     {t.calendar.days.map((d, i) => {
                                         const isToday = weekDates[i].toDateString() === todayStr;
                                         return (
-                                            <S.DayNameBox key={d} $isToday={isToday}>
-                                                <div className="day-name">{d}</div>
+                                            <S.DayNameBox key={d} $isToday={isToday} $tier={dayTiers[i]}>
+                                                <motion.div
+                                                    className="day-name"
+                                                    initial={{ opacity: 0, y: -8 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    transition={{
+                                                        delay: 0.14 + (direction < 0 ? (6 - i) : i) * 0.05,
+                                                        duration: 0.32,
+                                                        ease: "easeOut",
+                                                    }}
+                                                >
+                                                    {d}
+                                                </motion.div>
                                                 {dayTiers[i] >= 2 && (
                                                     <span className={dayTiers[i] === 3 ? "day-mark done" : "day-mark"} />
                                                 )}
@@ -132,6 +136,11 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, CelestialWeekProp
                                         const isToday = date.toDateString() === todayStr;
                                         const regularTodos = expandedTodos.filter(todo => isBetween(date, todo.startAt!, todo.endAt!));
                                         const hiddenCount = regularTodos.filter(t => todoLevels[t.id] >= MAX_VISIBLE_LEVELS).length;
+
+                                        // 같은 단계의 날이 연속되면 프레임을 이어지게
+                                        const tier = dayTiers[idx];
+                                        const connectLeft = idx > 0 && dayTiers[idx - 1] === tier && tier >= 1;
+                                        const connectRight = idx < weekDates.length - 1 && dayTiers[idx + 1] === tier && tier >= 1;
 
                                         return (
                                             <S.DaySlot key={idx} $isToday={isToday} onClick={() => onDateChange && onDateChange(date)}>
@@ -151,8 +160,8 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, CelestialWeekProp
                                                             const isEnd = isSameDay(date, new Date(todoAtThisLevel.endAt as string | number | Date));
                                                             const color = categories.find(c => c.id === todoAtThisLevel.categoryId)?.color;
 
-                                                            const original = todoAtThisLevel.originalTodo as (TodoType & { check?: string, status?: string });
-                                                            const isActuallyDone = original?.check === 'done' || original?.status === 'done';
+                                                            const item = todoAtThisLevel as (typeof todoAtThisLevel & { isDone?: boolean; check?: string; status?: string });
+                                                            const isActuallyDone = item.isDone === true || item.check === 'done' || item.status === 'done';
 
                                                             return (
                                                                 <S.TodoBarItem key={todoAtThisLevel.id}
@@ -181,7 +190,7 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, CelestialWeekProp
                                                         </S.MoreButton>
                                                     )}
                                                 </S.TodoBarList>
-                                                <DayCellDecor tier={dayTiers[idx]} />
+                                                <DayCellDecor tier={tier} connectLeft={connectLeft} connectRight={connectRight} />
 
                                                 {isToday && <S.TodayIndicator />}
                                             </S.DaySlot>

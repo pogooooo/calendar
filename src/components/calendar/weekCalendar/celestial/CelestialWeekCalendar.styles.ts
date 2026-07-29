@@ -78,7 +78,7 @@ export const Header = styled.div`
     }
 `;
 
-export const DayNameBox = styled.div<{ $isToday?: boolean }>`
+export const DayNameBox = styled.div<{ $isToday?: boolean; $tier?: number }>`
     display: flex;
     justify-content: center;
     align-items: center;
@@ -108,17 +108,25 @@ export const DayNameBox = styled.div<{ $isToday?: boolean }>`
         width: 26px;
     }
 
-    .day-mark.done::after {
-        content: "";
-        position: absolute;
-        left: 50%;
-        bottom: 3px;
-        margin-left: -3px;
-        width: 6px;
-        height: 6px;
-        background-color: ${(props) => props.theme.colors.primary};
-        clip-path: polygon(50% 0%, 59% 41%, 100% 50%, 59% 59%, 50% 100%, 41% 59%, 0% 50%, 41% 41%);
-    }
+    /* 3단계 요일 헤더 장식: 밑선 글로우 + 양끝 다이아 스터드 */
+    ${(props) => props.$tier === 3 && css`
+        .day-mark.done {
+            box-shadow: 0 0 5px ${(props) => props.theme.colors.primary};
+        }
+
+        .day-mark.done::before,
+        .day-mark.done::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            width: 3px;
+            height: 3px;
+            background-color: ${(props) => props.theme.colors.primary};
+            transform: translateY(-50%) rotate(45deg);
+        }
+        .day-mark.done::before { left: -5px; }
+        .day-mark.done::after { right: -5px; }
+    `}
 
     ${(props) => props.$isToday && css`
         &::before {
@@ -129,7 +137,7 @@ export const DayNameBox = styled.div<{ $isToday?: boolean }>`
             top: -1px;
             left: -1px;
             border: 1px solid ${(props) => props.theme.colors.primary};
-            box-shadow: 0 0 5px 0.5px ${(props) => props.theme.colors.primary};
+            box-shadow: 0 0 4px ${(props) => props.theme.colors.primary};
             pointer-events: none;
             z-index: 10;
         }
@@ -189,18 +197,16 @@ export const DaySlot = styled.div<{ $isToday: boolean }>`
     min-width: 0;
     position: relative;
     top: 0;
+    /* 투명 left border로 right border(구분선)와 대칭 → 콘텐츠 정확히 가운데 */
     border-right: 1px solid ${(props) => props.theme.colors.primary};
+    border-left: 1px solid transparent;
 
     &:last-child {
-        border-right: none;
+        border-right: 1px solid transparent;
     }
 
     &:hover .add-btn {
         opacity: 0.8;
-    }
-
-    &:hover .cell-decor {
-        filter: drop-shadow(0 0 4px ${(props) => props.theme.colors.primary});
     }
 `;
 
@@ -209,7 +215,7 @@ export const TodoBarList = styled.div`
     flex-direction: column;
     gap: 5px;
     width: 100%;
-    margin-top: 10px;
+    margin-top: 15px;
     position: relative;
     z-index: 1;
 `;
@@ -223,8 +229,9 @@ export const TodoBarItem = styled.div<{ $isStart: boolean, $isEnd: boolean, $col
     display: flex;
     font-size: ${(props) => props.theme.fontSizes.caption};
 
-    margin-left: ${props => props.$isStart ? '4px' : '0'};
-    margin-right: ${props => props.$isEnd ? '4px' : '0'};
+    /* 프레임 안쪽으로 8px 들어오게 → 바가 프레임 안, 왼쪽에 실(thread)이 걸릴 채널 확보 */
+    margin-left: ${props => props.$isStart ? 'calc(5.45% + 8px)' : '0'};
+    margin-right: ${props => props.$isEnd ? 'calc(5.45% + 8px)' : '0'};
     border-top-left-radius: ${props => props.$isStart ? '4px' : '0'};
     border-bottom-left-radius: ${props => props.$isStart ? '4px' : '0'};
     border-top-right-radius: ${props => props.$isEnd ? '4px' : '0'};
@@ -232,13 +239,15 @@ export const TodoBarItem = styled.div<{ $isStart: boolean, $isEnd: boolean, $col
     .todo-title { padding: 0 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
     ${(props) => props.$isDone && css`
-        box-shadow: 0 0 5px 1px ${(props) => props.theme.colors.primary || props.theme.colors.primary};
+        /* 좁고 진한 바깥 글로우 — 바가 프레임 안쪽이라 여백 안에서 빛나 겹치지 않음 */
+        box-shadow: 0 0 3px ${(props) => props.theme.colors.primary};
 
+        /* 이어지는(연결) 변에는 글로우가 새지 않도록 클립 */
         clip-path: inset(
-                -10px
-                ${props.$isEnd ? '-10px' : '0px'}
-                -10px
-                ${props.$isStart ? '-10px' : '0px'}
+                -8px
+                ${props.$isEnd ? '-8px' : '0px'}
+                -8px
+                ${props.$isStart ? '-8px' : '0px'}
         );
 
         .todo-title {
@@ -255,19 +264,18 @@ export const TodayIndicator = styled.div`
 `;
 
 export const MoreButton = styled.div`
-    font-size: ${(props) => props.theme.fontSizes.caption};
+    font-size: ${(props) => props.theme.fontSizes.label};
     color: ${(props) => props.theme.colors.textSecondary};
     font-weight: 500;
     text-align: center;
-    padding: 3px 0;
-    margin: 2px 4px 0 4px;
+    padding: 1px 0;
+    margin: 1px 4px 0 4px;
     cursor: pointer;
-    border-radius: 4px;
-    transition: all 0.2s ease;
+    transition: color 0.2s ease, text-shadow 0.2s ease;
 
     &:hover {
-        background-color: ${(props) => props.theme.colors.primary}1A;
-        color: ${(props) => props.theme.colors.text};
+        color: ${(props) => props.theme.colors.primary};
+        text-shadow: 0 0 5px ${(props) => props.theme.colors.primary}99;
     }
 `;
 

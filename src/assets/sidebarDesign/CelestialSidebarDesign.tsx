@@ -34,20 +34,6 @@ const beadFlow = keyframes`
     100% { offset-distance: 100%; opacity: 0; }
 `;
 
-const shoot1 = keyframes`
-    0%, 86% { transform: translate(148px, 42px); opacity: 0; }
-    88% { opacity: 1; }
-    99% { opacity: 0.9; }
-    100% { transform: translate(72px, 134px); opacity: 0; }
-`;
-
-const shoot2 = keyframes`
-    0%, 90% { transform: translate(142px, 610px); opacity: 0; }
-    92% { opacity: 1; }
-    99% { opacity: 0.9; }
-    100% { transform: translate(80px, 688px); opacity: 0; }
-`;
-
 const AnimatedSvg = styled.svg<{ $hovered?: boolean }>`
     filter: none;
     transition: filter 0.35s ease;
@@ -63,11 +49,6 @@ const AnimatedSvg = styled.svg<{ $hovered?: boolean }>`
     .satellite {
         offset-path: path("M85.5856 226.264C100.47 219.702 114.627 215.354 125.478 213.621C130.907 212.753 135.479 212.546 138.889 213.028C142.331 213.515 144.426 214.677 145.179 216.385C145.932 218.092 145.376 220.423 143.414 223.292C141.47 226.135 138.232 229.37 133.93 232.793C125.332 239.634 112.572 247.153 97.6875 253.715C82.8035 260.276 68.6456 264.625 57.7954 266.358C52.3665 267.225 47.7943 267.432 44.384 266.95C40.9424 266.464 38.847 265.302 38.0942 263.594C37.3414 261.886 37.897 259.556 39.8592 256.687C41.8036 253.844 45.0408 250.608 49.343 247.185C57.9413 240.344 70.7015 232.826 85.5856 226.264Z");
         animation: ${orbit} 14s linear infinite;
-    }
-
-    .satellite-inner {
-        offset-path: path("M62.8964 213C44.396 263 103.896 288 126.896 248");
-        animation: ${orbit} 7s ease-in-out infinite alternate;
     }
 
     .spark {
@@ -120,9 +101,6 @@ const AnimatedSvg = styled.svg<{ $hovered?: boolean }>`
         animation: ${beadFlow} 9s linear infinite;
         animation-delay: 4s;
     }
-
-    .s1 { animation: ${shoot1} 11s linear infinite; }
-    .s2 { animation: ${shoot2} 15s linear infinite; }
 `;
 
 const CelestialSidebarDesign = ({ isHovered = false }: { isHovered?: boolean }) => {
@@ -160,12 +138,6 @@ const CelestialSidebarDesign = ({ isHovered = false }: { isHovered?: boolean }) 
 
     return (
         <AnimatedSvg ref={svgRef} $hovered={isHovered} width="160" height="954" viewBox="0 0 160 954" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                    <linearGradient id="shootTail" gradientUnits="userSpaceOnUse" x1="11" y1="-13" x2="0" y2="0">
-                        <stop offset="0" stopColor="#D4AF37" stopOpacity="0"/>
-                        <stop offset="1" stopColor="#D4AF37" stopOpacity="0.9"/>
-                    </linearGradient>
-                </defs>
                 <path className="orn spark"
                     d="M102.384 115.625C102.384 118.317 103.727 120.5 105.384 120.5C103.727 120.5 102.384 122.683 102.384 125.375C102.384 122.683 101.041 120.5 99.384 120.5C101.041 120.5 102.384 118.317 102.384 115.625Z"
                     stroke="#D4AF37" strokeWidth="0.768" strokeLinecap="round" strokeLinejoin="round"/>
@@ -231,17 +203,8 @@ const CelestialSidebarDesign = ({ isHovered = false }: { isHovered?: boolean }) 
                 <circle className="mini m7" cx="95" cy="694" r="0.8" fill="#D4AF37"/>
                 <circle className="mini m8" cx="107" cy="782" r="0.7" fill="#D4AF37"/>
                 <circle className="mini m9" cx="98" cy="872" r="0.9" fill="#D4AF37"/>
-                <circle className="orbiter satellite-inner" r="1.2" fill="#D4AF37"/>
                 <circle className="bead" r="1" fill="#D4AF37"/>
                 <circle className="bead-top" r="1" fill="#D4AF37"/>
-                <g className="shooting s1">
-                    <line x1="0" y1="0" x2="11" y2="-13" stroke="url(#shootTail)" strokeWidth="1" strokeLinecap="round"/>
-                    <circle r="1.1" fill="#D4AF37"/>
-                </g>
-                <g className="shooting s2">
-                    <line x1="0" y1="0" x2="11" y2="-13" stroke="url(#shootTail)" strokeWidth="1" strokeLinecap="round"/>
-                    <circle r="1" fill="#D4AF37"/>
-                </g>
         </AnimatedSvg>
     )
 }
