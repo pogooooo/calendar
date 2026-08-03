@@ -56,13 +56,6 @@ export const ScrollBody = styled.div`
     gap: 12px;
     overflow-y: auto;
 
-    &::-webkit-scrollbar {
-        width: 6px;
-    }
-    &::-webkit-scrollbar-thumb {
-        background-color: ${(props) => props.theme.colors.primary}40;
-        border-radius: 3px;
-    }
 `;
 
 export const FieldRow = styled.div`

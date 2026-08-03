@@ -50,13 +50,6 @@ export const DropdownList = styled.div`
     z-index: 50;
 
     /* 제공해주신 커스텀 스크롤바 디자인 적용 */
-    &::-webkit-scrollbar { 
-        width: 4px; 
-    }
-    &::-webkit-scrollbar-thumb {
-        background-color: ${(props) => props.theme.colors.primary}80;
-        border-radius: 2px;
-    }
 `;
 
 export const DropdownItem = styled.div<{ $selected: boolean }>`

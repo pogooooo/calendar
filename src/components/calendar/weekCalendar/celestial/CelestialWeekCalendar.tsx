@@ -21,11 +21,10 @@ import { useT } from "@/i18n/useT";
 import DayCellDecor from "@/assets/celestial/DayCellDecor";
 import CalendarAmbience from "@/assets/celestial/CalendarAmbience";
 
-// 시간이 빠르게 흐르거나 되감기되는 느낌 — 빠른 슬라이드 + 모션 블러
 const slideVariants = {
-    enter: (direction: number) => ({ x: direction > 0 ? 130 : -130, opacity: 0, filter: "blur(5px)" }),
-    center: { x: 0, opacity: 1, filter: "blur(0px)" },
-    exit: (direction: number) => ({ x: direction < 0 ? 130 : -130, opacity: 0, filter: "blur(5px)" }),
+    enter: (direction: number) => ({ x: direction > 0 ? 18 : -18, opacity: 0 }),
+    center: { x: 0, opacity: 1 },
+    exit: (direction: number) => ({ x: direction < 0 ? 18 : -18, opacity: 0 }),
 };
 
 const MAX_VISIBLE_LEVELS = 3;
@@ -73,7 +72,7 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, CelestialWeekProp
                             <Arrow width={80} height={30} isRight={false} stroke={theme.colors.primary}/>
                         </S.ArrowWrapper>
                         <AnimatedDateText text={dateRangeText} direction={direction} />
-                        <hr/>
+                        <S.DateLine $direction={direction} />
                         <CategoryFilter
                             categories={categories}
                             selectedCategoryIds={selectedCategoryIds}
@@ -100,9 +99,8 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, CelestialWeekProp
                                 animate="center"
                                 exit="exit"
                                 transition={{
-                                    x: { type: "tween", duration: 0.34, ease: [0.5, 0, 0.15, 1] },
-                                    opacity: { duration: 0.18 },
-                                    filter: { duration: 0.34 }
+                                    x: { type: "tween", duration: 0.2, ease: "easeOut" },
+                                    opacity: { duration: 0.15 }
                                 }}
                                 style={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative', zIndex: 1 }}
                             >
@@ -111,18 +109,7 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, CelestialWeekProp
                                         const isToday = weekDates[i].toDateString() === todayStr;
                                         return (
                                             <S.DayNameBox key={d} $isToday={isToday} $tier={dayTiers[i]}>
-                                                <motion.div
-                                                    className="day-name"
-                                                    initial={{ opacity: 0, y: -8 }}
-                                                    animate={{ opacity: 1, y: 0 }}
-                                                    transition={{
-                                                        delay: 0.14 + (direction < 0 ? (6 - i) : i) * 0.05,
-                                                        duration: 0.32,
-                                                        ease: "easeOut",
-                                                    }}
-                                                >
-                                                    {d}
-                                                </motion.div>
+                                                <div className="day-name">{d}</div>
                                                 {dayTiers[i] >= 2 && (
                                                     <span className={dayTiers[i] === 3 ? "day-mark done" : "day-mark"} />
                                                 )}

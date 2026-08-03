@@ -65,7 +65,7 @@ const THEMES: ThemeDef[] = [
     },
 ];
 
-type WidgetKind = "daily" | "weekly" | "monthly";
+import type { WidgetKind } from "@/store/useWidgetStore";
 
 async function invokeWidget(action: "open" | "close", kind: WidgetKind) {
     if (typeof window === "undefined") return;
@@ -124,9 +124,20 @@ export default function SettingsPage() {
     ], [t]);
 
     const WIDGET_LIST = React.useMemo(() => [
-        { kind: "daily",   label: t.widget.daily,   desc: t.widget.dailyDesc },
-        { kind: "weekly",  label: t.widget.weekly,  desc: t.widget.weeklyDesc },
-        { kind: "monthly", label: t.widget.monthly, desc: t.widget.monthlyDesc },
+        { kind: "daily",     label: t.widget.daily,      desc: t.widget.dailyDesc },
+        { kind: "weekly",    label: t.widget.weekly,     desc: t.widget.weeklyDesc },
+        { kind: "monthly",   label: t.widget.monthly,    desc: t.widget.monthlyDesc },
+        { kind: "today",     label: t.widget.todayW,     desc: t.widget.todayWDesc },
+        { kind: "upcoming",  label: t.widget.upcomingW,  desc: t.widget.upcomingWDesc },
+        { kind: "stats",     label: t.widget.statsW,     desc: t.widget.statsWDesc },
+        { kind: "projectboard",  label: t.widget.projectBoardW,  desc: t.widget.projectBoardWDesc },
+        { kind: "projectdetail", label: t.widget.projectDetailW, desc: t.widget.projectDetailWDesc },
+        { kind: "projecttimeline", label: t.widget.projectTimelineW, desc: t.widget.projectTimelineWDesc },
+        { kind: "challenge", label: t.widget.challengeW, desc: t.widget.challengeWDesc },
+        { kind: "memo",      label: t.widget.memoW,      desc: t.widget.memoWDesc },
+        { kind: "quicktask", label: t.widget.quicktaskW, desc: t.widget.quicktaskWDesc },
+        { kind: "sticker",   label: t.widget.stickerW,   desc: t.widget.stickerWDesc },
+        { kind: "category",  label: t.widget.categoryW,  desc: t.widget.categoryWDesc },
     ], [t]);
 
     const handleThemeChange = (themeId: string) => updateTheme(authFetch, themeId);

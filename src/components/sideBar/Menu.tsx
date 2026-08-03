@@ -1,13 +1,19 @@
+import { useEffect, useState } from "react";
 import styled from "styled-components";
 import SidebarMenuButton from "@/components/button/sidebarMenu/SidebarMenuButton";
 import { useRouter } from "next/navigation";
 import { CategoryType } from "@/store/useCategoryStore";
-import { Layers, Calendar, Kanban, Trophy } from "lucide-react";
+import { Layers, Calendar, Kanban, Trophy, MonitorDown } from "lucide-react";
 import { useT } from "@/i18n/useT";
+import { isDesktopApp } from "@/lib/apiBase";
 
 const Menu = (props: { categories: CategoryType[] }) => {
     const router = useRouter();
     const t = useT();
+
+    // 데스크톱 앱에서는 이미 설치된 상태라 안내가 필요 없다.
+    const [showDownload, setShowDownload] = useState(false);
+    useEffect(() => setShowDownload(!isDesktopApp()), []);
 
     return(
         <MenuWrapper>
@@ -38,6 +44,15 @@ const Menu = (props: { categories: CategoryType[] }) => {
             >
                 <Trophy size={26}/>
             </SidebarMenuButton>
+
+            {showDownload && (
+                <SidebarMenuButton
+                    label={t.sidebar.download}
+                    onClick={() => { router.push("/download") }}
+                >
+                    <MonitorDown size={26}/>
+                </SidebarMenuButton>
+            )}
         </MenuWrapper>
     )
 }

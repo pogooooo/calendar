@@ -4,6 +4,8 @@ import React from "react";
 import styled from "styled-components";
 import Sidebar from "@/components/sideBar/SideBar";
 import TitleBar from "@/components/titleBar/TitleBar";
+import PageTransition from "@/components/transition/PageTransition";
+import UpdateNotice from "@/components/update/UpdateNotice";
 
 interface MainLayoutProps {
     children: React.ReactNode;
@@ -16,9 +18,12 @@ export default function MainLayout({ children }: MainLayoutProps) {
             <LayoutWrapper>
                 <Sidebar />
                 <MainContent>
-                    {children}
+                    <PageTransition>
+                        {children}
+                    </PageTransition>
                 </MainContent>
             </LayoutWrapper>
+            <UpdateNotice />
         </AppShell>
     );
 }

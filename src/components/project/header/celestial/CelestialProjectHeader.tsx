@@ -140,11 +140,6 @@ export const TabContainer = styled.div`
     overflow-x: auto;
     padding-bottom: 5px;
 
-    &::-webkit-scrollbar { height: 4px; }
-    &::-webkit-scrollbar-thumb {
-        background-color: ${(props) => props.theme.colors.primary}80;
-        border-radius: 2px;
-    }
 `;
 
 export const Tab = styled.div<{ $active: boolean }>`

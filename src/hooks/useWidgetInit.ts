@@ -7,8 +7,13 @@ import useCategoryStore from "@/store/useCategoryStore";
 import useProjectStore from "@/store/useProjectStore";
 import useChallengeStore from "@/store/useChallengeStore";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
+import { api, clientHeaders } from "@/lib/apiBase";
 
-export function useWidgetInit() {
+export type WidgetData = "todos" | "categories" | "projects" | "challenges";
+
+const ALL: WidgetData[] = ["todos", "categories", "projects", "challenges"];
+
+export function useWidgetInit(need: WidgetData[] = ALL) {
     const [ready, setReady]   = useState(false);
     const [authed, setAuthed] = useState(false);
 
@@ -22,11 +27,21 @@ export function useWidgetInit() {
     const fetchProjects   = useProjectStore((s) => s.fetchProjects);
     const fetchChallenges = useChallengeStore((s) => s.fetchChallenges);
 
-    // 1) 액세스 토큰 없으면 refresh
+    const needKey = need.join(",");
+
     useEffect(() => {
         if (accessToken) { setAuthed(true); return; }
 
-        fetch("/api/auth/refresh", { method: "POST", credentials: "include" })
+        const stored = useAuthStore.getState().refreshToken;
+
+        fetch(api("/api/auth/refresh"), {
+            method: "POST",
+            credentials: "include",
+            headers: {
+                ...clientHeaders(),
+                ...(stored ? { "X-Refresh-Token": stored } : {}),
+            },
+        })
             .then((r) => r.ok ? r.json() : null)
             .then((data) => {
                 if (data?.accessToken) {
@@ -35,24 +50,24 @@ export function useWidgetInit() {
                     setAuthed(true);
                 }
             })
-            .catch(() => {})
-            .finally(() => {
-                // authed가 설정될 때까지 ready는 false 유지
-            });
+            .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // 2) 인증 후 데이터 패치
     useEffect(() => {
         if (!authed) return;
-        Promise.all([
-            fetchTodos(authFetch),
-            fetchCategories(authFetch),
-            fetchProjects(authFetch),
-            fetchChallenges(authFetch),
-        ]).finally(() => setReady(true));
+
+        const wanted = needKey ? needKey.split(",") as WidgetData[] : [];
+        const jobs: Promise<unknown>[] = [];
+
+        if (wanted.includes("todos")) jobs.push(fetchTodos(authFetch));
+        if (wanted.includes("categories")) jobs.push(fetchCategories(authFetch));
+        if (wanted.includes("projects")) jobs.push(fetchProjects(authFetch));
+        if (wanted.includes("challenges")) jobs.push(fetchChallenges(authFetch));
+
+        Promise.all(jobs).finally(() => setReady(true));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [authed]);
+    }, [authed, needKey]);
 
     return { ready, authed };
 }

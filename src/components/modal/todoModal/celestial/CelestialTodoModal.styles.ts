@@ -66,11 +66,6 @@ export const ScrollBody = styled.div`
     overflow-y: auto;
     background-color: ${(props) => props.theme.colors.surface};
 
-    &::-webkit-scrollbar { width: 6px; }
-    &::-webkit-scrollbar-thumb {
-        background-color: ${(props) => props.theme.colors.primary}80;
-        border-radius: 5px;
-    }
 `;
 
 export const FieldRow = styled.div`
@@ -328,11 +323,6 @@ export const DropdownList = styled.div`
     overflow-y: auto;
     z-index: 30;
 
-    &::-webkit-scrollbar { width: 4px; }
-    &::-webkit-scrollbar-thumb {
-        background-color: ${(props) => props.theme.colors.primary}80;
-        border-radius: 5px;
-    }
 `;
 
 export const DropdownItem = styled.div`

@@ -1,10 +1,59 @@
 "use client";
 
 import * as React from "react";
+import styled from "styled-components";
 import { Check } from "lucide-react";
 import LocaleSelect from "@/components/LocaleSelect";
 import * as S from "./CelestialSettings.styles";
+import WidgetPreview from "./WidgetPreview";
 import type { SettingsThemeProps } from "../SettingsPage";
+
+const WidgetBoard = styled.div`
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 12px;
+`;
+
+const WidgetCard = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 12px;
+    border: 1px solid ${(props) => props.theme.colors.primary}55;
+    transition: border-color 0.2s ease;
+
+    &:hover {
+        border-color: ${(props) => props.theme.colors.primary};
+    }
+`;
+
+const CardLabel = styled.div`
+    font-family: ${(props) => props.theme.fonts.celestial};
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+    color: ${(props) => props.theme.colors.text};
+    margin-top: 4px;
+`;
+
+const CardDesc = styled.div`
+    font-size: 0.72rem;
+    line-height: 1.45;
+    opacity: 0.55;
+    flex: 1;
+`;
+
+const CardActions = styled.div`
+    display: flex;
+    gap: 6px;
+    margin-top: 6px;
+
+    & > button {
+        flex: 1;
+        min-width: 0;
+        padding: 5px 0;
+        font-size: 0.72rem;
+    }
+`;
 
 export default function CelestialSettings({
     currentTheme, onThemeChange,
@@ -120,22 +169,23 @@ export default function CelestialSettings({
                         <S.WarningText style={{ marginBottom: 16 }}>
                             {t.widget.desc}
                         </S.WarningText>
-                        {widgetList.map(({ kind, label, desc }) => (
-                            <S.InfoRow key={kind}>
-                                <div>
-                                    <S.InfoValue>{label}</S.InfoValue>
-                                    <div style={{ fontSize: "0.74rem", opacity: 0.55, marginTop: 2 }}>{desc}</div>
-                                </div>
-                                <S.ButtonRow style={{ marginTop: 0 }}>
-                                    <S.FormButton $variant="primary" onClick={() => onWidgetOpen(kind)}>
-                                        {t.widget.open}
-                                    </S.FormButton>
-                                    <S.FormButton $variant="default" onClick={() => onWidgetClose(kind)}>
-                                        {t.widget.close}
-                                    </S.FormButton>
-                                </S.ButtonRow>
-                            </S.InfoRow>
-                        ))}
+                        <WidgetBoard>
+                            {widgetList.map(({ kind, label, desc }) => (
+                                <WidgetCard key={kind}>
+                                    <WidgetPreview kind={kind} />
+                                    <CardLabel>{label}</CardLabel>
+                                    <CardDesc>{desc}</CardDesc>
+                                    <CardActions>
+                                        <S.FormButton $variant="primary" onClick={() => onWidgetOpen(kind)}>
+                                            {t.widget.open}
+                                        </S.FormButton>
+                                        <S.FormButton $variant="default" onClick={() => onWidgetClose(kind)}>
+                                            {t.widget.close}
+                                        </S.FormButton>
+                                    </CardActions>
+                                </WidgetCard>
+                            ))}
+                        </WidgetBoard>
                     </S.SectionBody>
                 </S.Section>
 

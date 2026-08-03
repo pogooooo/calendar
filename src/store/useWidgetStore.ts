@@ -20,14 +20,17 @@ export interface WidgetSettings {
 
 const defaultBg: WidgetBgSettings = { mode: "theme", opacity: 0.92, customColor: "#1a160e", autoTextColor: true };
 
-interface WidgetStore {
-    daily:   WidgetSettings;
-    weekly:  WidgetSettings;
-    monthly: WidgetSettings;
-    update: (kind: "daily" | "weekly" | "monthly", patch: Partial<WidgetSettings>) => void;
-    updateBg: (kind: "daily" | "weekly" | "monthly", patch: Partial<WidgetBgSettings>) => void;
-    updatePriority: (kind: "daily" | "weekly" | "monthly", priority: WidgetPriority) => void;
-}
+export type WidgetKind =
+    | "daily" | "weekly" | "monthly"
+    | "today" | "upcoming" | "stats" | "challenge"
+    | "projectboard" | "projectdetail" | "projecttimeline"
+    | "memo" | "quicktask" | "sticker" | "category";
+
+type WidgetStore = Record<WidgetKind, WidgetSettings> & {
+    update: (kind: WidgetKind, patch: Partial<WidgetSettings>) => void;
+    updateBg: (kind: WidgetKind, patch: Partial<WidgetBgSettings>) => void;
+    updatePriority: (kind: WidgetKind, priority: WidgetPriority) => void;
+};
 
 const useWidgetStore = create<WidgetStore>()(
     persist(
@@ -35,6 +38,17 @@ const useWidgetStore = create<WidgetStore>()(
             daily:   { bg: { ...defaultBg }, priority: "top" },
             weekly:  { bg: { ...defaultBg }, priority: "top" },
             monthly: { bg: { ...defaultBg }, priority: "top" },
+            today:     { bg: { ...defaultBg }, priority: "top" },
+            upcoming:  { bg: { ...defaultBg }, priority: "top" },
+            stats:     { bg: { ...defaultBg }, priority: "top" },
+            challenge: { bg: { ...defaultBg }, priority: "top" },
+            projectboard:  { bg: { ...defaultBg }, priority: "top" },
+            projectdetail: { bg: { ...defaultBg }, priority: "top" },
+            projecttimeline: { bg: { ...defaultBg }, priority: "top" },
+            memo:      { bg: { ...defaultBg }, priority: "top" },
+            quicktask: { bg: { ...defaultBg }, priority: "top" },
+            sticker:   { bg: { ...defaultBg }, priority: "top" },
+            category:  { bg: { ...defaultBg }, priority: "top" },
 
             update: (kind, patch) =>
                 set((s) => ({ [kind]: { ...s[kind], ...patch } })),

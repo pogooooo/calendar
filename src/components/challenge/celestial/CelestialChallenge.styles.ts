@@ -131,11 +131,6 @@ export const TimelineScrollArea = styled.div`
     flex: 1;
     overflow-y: auto;
 
-    &::-webkit-scrollbar { width: 4px; }
-    &::-webkit-scrollbar-thumb {
-        background-color: ${(props) => props.theme.colors.primary}80;
-        border-radius: 2px;
-    }
 `;
 
 export const ChallengeRow = styled.div<{ $isSelected: boolean }>`
@@ -246,11 +241,6 @@ export const StickerBoardCard = styled(BaseCard).attrs<{ $flex: number }>(props 
             color: ${(props) => props.theme.colors.textSecondary}80;
         }
 
-        &::-webkit-scrollbar { width: 4px; }
-        &::-webkit-scrollbar-thumb {
-            background-color: ${(props) => props.theme.colors.primary}80;
-            border-radius: 2px;
-        }
     }
 `;
 
@@ -279,12 +269,6 @@ export const TaskCard = styled(BaseCard).attrs<{ $flex: number }>(props => ({
     min-height: 100px;
     overflow-y: auto;
 
-    &::-webkit-scrollbar { width: 4px; }
-    &::-webkit-scrollbar-thumb {
-        background-color: ${(props) => props.theme.colors.primary}80;
-        border-radius: 2px;
-    }
-    &::-webkit-scrollbar-track { background: transparent; }
 `;
 
 export const DetailArea = styled.div`

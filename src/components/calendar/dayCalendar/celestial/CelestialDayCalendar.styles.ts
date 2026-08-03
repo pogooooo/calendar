@@ -38,6 +38,8 @@ export const ContentLayout = styled.div`
     width: 100%;
     flex: 1;
     min-height: 0;
+    overflow-y: auto;
+
 `;
 
 export const ResizeHandle = styled.div`
@@ -67,6 +69,7 @@ export const ResizeHandle = styled.div`
 
 export const TimelineSection = styled.div`
     flex: 1.5;
+    min-height: 180px;
     display: flex;
     flex-direction: column;
     border: 1px solid ${(props) => props.theme.colors.primary};
@@ -87,13 +90,6 @@ export const TimelineScrollArea = styled.div`
     flex: 1;
     overflow-y: auto;
     
-    &::-webkit-scrollbar {
-        width: 4px;
-    }
-    &::-webkit-scrollbar-thumb {
-        background-color: ${(props) => props.theme.colors.primary}80;
-        border-radius: 2px;
-    }
 `;
 
 export const TimeRow = styled.div`
@@ -181,7 +177,7 @@ export const SideSection = styled.div`
     flex: 1;
     display: flex;
     flex-direction: column;
-    min-height: 0;
+    min-height: 190px;
 `;
 
 const BaseCard = styled.div`
@@ -212,13 +208,6 @@ export const TaskList = styled.div`
     flex-direction: column;
     gap: 6px;
 
-    &::-webkit-scrollbar {
-        width: 4px;
-    }
-    &::-webkit-scrollbar-thumb {
-        background-color: ${(props) => props.theme.colors.primary}80;
-        border-radius: 2px;
-    }
 `;
 
 export const TaskItem = styled.div<{ $isDone: boolean }>`
@@ -339,12 +328,5 @@ export const MemoCard = styled(BaseCard)`
             color: ${(props) => props.theme.colors.textSecondary};
         }
 
-        &::-webkit-scrollbar {
-            width: 4px;
-        }
-        &::-webkit-scrollbar-thumb {
-            background-color: ${(props) => props.theme.colors.primary}80;
-            border-radius: 2px;
-        }
     }
 `;

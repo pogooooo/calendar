@@ -8,6 +8,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { RegisterSchema } from "@/lib/schema";
+import { api, clientHeaders } from "@/lib/apiBase";
 import useSettingStore from "@/store/useSettingStore";
 import { useT } from "@/i18n/useT";
 import LocaleSelect from "@/components/LocaleSelect";
@@ -36,9 +37,9 @@ const SignUp = () => {
     const handleRegister = async (formData: RegisterFormData) => {
         setRegisterError(" ");
         try {
-            const res = await fetch("/api/auth/register", {
+            const res = await fetch(api("/api/auth/register"), {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: { "Content-Type": "application/json", ...clientHeaders() },
                 body: JSON.stringify(formData),
             });
             if (res.ok) {

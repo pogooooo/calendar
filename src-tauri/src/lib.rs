@@ -4,14 +4,31 @@ use std::collections::HashSet;
 
 #[cfg(debug_assertions)]
 const BASE_URL: &str = "http://localhost:3000";
-#[cfg(not(debug_assertions))]
-const BASE_URL: &str = "http://127.0.0.1:3457";
+
+const WIDGET_KINDS: &[&str] = &[
+    "daily", "weekly", "monthly",
+    "today", "upcoming", "stats", "challenge",
+    "projectboard", "projectdetail", "projecttimeline",
+    "memo", "quicktask", "sticker", "category",
+];
 
 fn widget_size(kind: &str) -> (f64, f64) {
     match kind {
-        "weekly"  => (900.0, 560.0),
-        "monthly" => (420.0, 500.0),
-        _         => (400.0, 640.0),
+        "weekly"    => (900.0, 560.0),
+        "monthly"   => (420.0, 500.0),
+        "daily"     => (400.0, 640.0),
+        "today"     => (340.0, 460.0),
+        "upcoming"  => (340.0, 420.0),
+        "stats"     => (320.0, 360.0),
+        "projectboard"  => (620.0, 420.0),
+        "projectdetail" => (360.0, 480.0),
+        "projecttimeline" => (760.0, 400.0),
+        "challenge" => (340.0, 400.0),
+        "memo"      => (380.0, 300.0),
+        "quicktask" => (340.0, 430.0),
+        "sticker"   => (430.0, 480.0),
+        "category"  => (340.0, 330.0),
+        _           => (400.0, 640.0),
     }
 }
 
@@ -316,10 +333,17 @@ async fn open_widget(app: tauri::AppHandle, kind: String) -> Result<(), String> 
         return Ok(());
     }
 
-    let url_str  = format!("{BASE_URL}/widget/{kind}");
-    let (w, h)   = widget_size(&kind);
-    let parsed      = url_str.parse::<url::Url>().map_err(|e| e.to_string())?;
-    let webview_url = WebviewUrl::External(parsed);
+    let (w, h) = widget_size(&kind);
+
+    #[cfg(debug_assertions)]
+    let webview_url = {
+        let url_str = format!("{BASE_URL}/widget/{kind}");
+        let parsed = url_str.parse::<url::Url>().map_err(|e| e.to_string())?;
+        WebviewUrl::External(parsed)
+    };
+
+    #[cfg(not(debug_assertions))]
+    let webview_url = WebviewUrl::App(format!("widget/{kind}/").into());
 
     let app2 = app.clone();
     app.run_on_main_thread(move || {
@@ -458,43 +482,6 @@ fn list_open_widgets(app: tauri::AppHandle) -> Vec<String> {
         .collect()
 }
 
-#[cfg(not(debug_assertions))]
-mod prod {
-    use std::path::PathBuf;
-    use std::process::{Child, Command, Stdio};
-
-    pub const PORT: u16 = 3457;
-
-    pub fn start_server(standalone_dir: PathBuf) -> Result<Child, String> {
-        let server_js = standalone_dir.join("server.js");
-        if !server_js.exists() {
-            return Err(format!("server.js 없음"));
-        }
-        Command::new("node")
-            .arg(&server_js)
-            .current_dir(&standalone_dir)
-            .env("PORT", PORT.to_string())
-            .env("HOSTNAME", "127.0.0.1")
-            .env("NODE_ENV", "production")
-            .stdout(Stdio::null())
-            .stderr(Stdio::null())
-            .spawn()
-            .map_err(|e| format!("{e}"))
-    }
-
-    pub fn wait_ready(port: u16, timeout_secs: u64) -> bool {
-        let url = format!("http://127.0.0.1:{port}");
-        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(timeout_secs);
-        while std::time::Instant::now() < deadline {
-            if reqwest::blocking::get(&url).is_ok() {
-                return true;
-            }
-            std::thread::sleep(std::time::Duration::from_millis(300));
-        }
-        false
-    }
-}
-
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let bottom_widgets = BottomWidgets(Arc::new(Mutex::new(HashSet::new())));
@@ -502,6 +489,8 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(bottom_widgets.clone())
         .invoke_handler(tauri::generate_handler![
             open_widget,
@@ -522,7 +511,7 @@ pub fn run() {
                     loop {
                         tokio::time::sleep(tokio::time::Duration::from_millis(30)).await;
 
-                        for &kind in &["daily", "weekly", "monthly"] {
+                        for &kind in WIDGET_KINDS {
                             if let Some(win) = app_handle
                                 .get_webview_window(&format!("widget-{kind}"))
                             {
@@ -563,34 +552,6 @@ pub fn run() {
                         }
                     }
                 });
-            }
-
-            #[cfg(not(debug_assertions))]
-            {
-                use prod::*;
-                use std::sync::{Arc, Mutex};
-
-                let resource_dir = app.path().resource_dir().unwrap();
-
-                match start_server(resource_dir.join("standalone")) {
-                    Ok(child) => {
-                        let child = Arc::new(Mutex::new(child));
-                        app.on_window_event({
-                            let child = child.clone();
-                            move |_win, event| {
-                                if matches!(event, tauri::WindowEvent::Destroyed) {
-                                    if let Ok(mut c) = child.lock() {
-                                        let _ = c.kill();
-                                    }
-                                }
-                            }
-                        });
-                        wait_ready(PORT, 15);
-                    }
-                    Err(_) => {
-                        std::process::exit(1);
-                    }
-                }
             }
 
             if let Some(win) = app.get_webview_window("main") {

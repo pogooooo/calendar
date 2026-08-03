@@ -16,7 +16,7 @@ import AnimatedDateText from "@/components/calendar/celestial/animatedDateText/A
 import TodoModal from "@/components/modal/todoModal/TodoModal";
 import MoreModal from "@/components/modal/moreModal/MoreModal";
 import TodoContextMenu from "@/components/calendar/celestial/contextMenu/TodoContextMenu";
-import { DynamicSticker } from "@/assets/celestial/ChallengeStickers";
+import DayCellDecor from "@/assets/celestial/DayCellDecor";
 import { useT } from "@/i18n/useT";
 
 interface WeekRowProps {
@@ -56,6 +56,15 @@ const WeekRow = ({
 
     const { todoLevels, maxLevel } = useTodoLevels(weekTodos, dates);
 
+    const dayTiers = React.useMemo(() => dates.map((date) => {
+        const list = challengeTodos.filter(c => isSameDay(date, new Date(c.startAt as string | number | Date)));
+        const total = list.length;
+        const done = list.filter(c => c.isDone).length;
+        if (total === 0 || done === 0) return 0;
+        if (done >= total) return 3;
+        return done / total >= 0.5 ? 2 : 1;
+    }), [dates, challengeTodos]);
+
     return (
         <S.WeekRowContainer>
             {dates.map((date: Date, idx: number) => {
@@ -70,12 +79,13 @@ const WeekRow = ({
 
                 const hiddenCount = dayTodos.filter((t: CalendarTodoType) => todoLevels[t.id] >= MAX_VISIBLE_LEVELS).length;
 
-                const dayChallenges = challengeTodos.filter(c => {
-                    const cDate = new Date(c.startAt as string);
-                    return cDate.getFullYear() === date.getFullYear() &&
-                        cDate.getMonth() === date.getMonth() &&
-                        cDate.getDate() === date.getDate();
-                });
+                const tier = dayTiers[idx];
+                const connectLeft = tier > 0 && idx > 0 && dayTiers[idx - 1] === tier;
+                const connectRight = tier > 0 && idx < dates.length - 1 && dayTiers[idx + 1] === tier;
+
+                const dayChallenges = challengeTodos.filter(c =>
+                    isSameDay(date, new Date(c.startAt as string | number | Date))
+                );
 
                 return (
                     <S.DayCell
@@ -85,6 +95,8 @@ const WeekRow = ({
                         $isSelected={isSelected}
                         onClick={() => onCellClick?.(date)}
                     >
+                        <DayCellDecor tier={tier} connectLeft={connectLeft} connectRight={connectRight} />
+
                         <div className="day-header">
                             <S.DayHeaderLeft>
                                 <span className="day-number">{date.getDate()}</span>
@@ -93,26 +105,40 @@ const WeekRow = ({
                                 </S.AddTodoButton>
                             </S.DayHeaderLeft>
 
-                            {dayChallenges.length > 0 && (
-                                <S.DayStickerContainer>
-                                    {dayChallenges.map((challenge, cIdx) => (
-                                        <S.StickerWrapper
-                                            key={challenge.id}
-                                            title={challenge.title}
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleQuickToggleChallenge(challenge);
-                                            }}
-                                            onContextMenu={(e) => {
-                                                e.stopPropagation();
-                                                handleContextMenuChallenge(e, challenge);
-                                            }}
-                                        >
-                                            <DynamicSticker isFilled={!!challenge.isDone} idx={cIdx + idx * 100} />
-                                        </S.StickerWrapper>
-                                    ))}
-                                </S.DayStickerContainer>
-                            )}
+                            {dayChallenges.length > 0 && (() => {
+                                const doneCount = dayChallenges.filter(c => c.isDone).length;
+                                const ratio = doneCount / dayChallenges.length;
+                                return (
+                                    <S.ChallengeGauge
+                                        $complete={ratio >= 1}
+                                        title={`${doneCount} / ${dayChallenges.length}`}
+                                        onClick={(e) => { e.stopPropagation(); setMoreModalDate(date); }}
+                                    >
+                                        <svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                            <circle className="track" cx="10" cy="10" r="7" />
+                                            <circle
+                                                className="arc"
+                                                cx="10"
+                                                cy="10"
+                                                r="7"
+                                                strokeDasharray={`${ratio * 44} 44`}
+                                            />
+                                            {[0, 90, 180, 270].map(deg => (
+                                                <line
+                                                    key={deg}
+                                                    className="tick"
+                                                    x1="10"
+                                                    y1="0.6"
+                                                    x2="10"
+                                                    y2="2.2"
+                                                    transform={`rotate(${deg} 10 10)`}
+                                                />
+                                            ))}
+                                            <path className="pip" d="M10 6.9 L13.1 10 L10 13.1 L6.9 10 Z" />
+                                        </svg>
+                                    </S.ChallengeGauge>
+                                );
+                            })()}
                         </div>
 
                         <S.TodoBarList>
@@ -255,6 +281,8 @@ const CelestialMonthCalendar = React.forwardRef<HTMLDivElement, CelestialMonthPr
                     todos={expandedTodos}
                     categories={categories}
                     handleContextMenu={handleContextMenu}
+                    challenges={challengeTodos}
+                    onToggleChallenge={(challenge) => handleQuickToggleChallenge(challenge as CalendarTodoType)}
                 />
 
                 <TodoContextMenu

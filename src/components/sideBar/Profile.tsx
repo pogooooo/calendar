@@ -128,7 +128,7 @@ const Profile = () => {
                                 />
                             </StarDivider>
 
-                            <SectionLabel>ACCOUNT</SectionLabel>
+                            <SectionLabel>{t.popup.account}</SectionLabel>
 
                             <PopupItem
                                 onClick={() => {

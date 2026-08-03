@@ -11,6 +11,7 @@ import { getWeekDates, isSameDay } from "@/utils/DateUtils";
 import { useTodoLevels } from "@/hooks/useTodoLevels";
 import useTodoStore from "@/store/useTodoStore";
 import useAuthStore from "@/store/useAuthStore";
+import { api, clientHeaders } from "@/lib/apiBase";
 import { formatDate } from "@/utils/DateUtils";
 import useProjectStore from "@/store/useProjectStore";
 import useChallengeStore, { ChallengeType } from "@/store/useChallengeStore";
@@ -102,7 +103,7 @@ const WeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
         const accessToken = useAuthStore((state) => state.accessToken);
 
         const authFetch = React.useCallback(async (url: string, init?: RequestInit) => {
-            return fetch(url, { ...init, headers: { ...init?.headers, Authorization: `Bearer ${accessToken}` } });
+            return fetch(api(url), { ...init, credentials: "include", headers: { ...clientHeaders(), ...init?.headers, Authorization: `Bearer ${accessToken}` } });
         }, [accessToken]);
 
         const weekDates = React.useMemo(() => getWeekDates(currentDate), [currentDate]);

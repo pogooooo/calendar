@@ -9,6 +9,7 @@ import { TodoType } from "@/store/useTodoStore";
 import { useExpandedTodos, ExpandedTodoType } from "@/hooks/useExpandedTodos";
 import useTodoStore from "@/store/useTodoStore";
 import useAuthStore from "@/store/useAuthStore";
+import { api, clientHeaders } from "@/lib/apiBase";
 import useProjectStore from "@/store/useProjectStore";
 import useChallengeStore, { ChallengeType } from "@/store/useChallengeStore";
 
@@ -94,7 +95,7 @@ const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
         const accessToken = useAuthStore((state) => state.accessToken);
 
         const authFetch = React.useCallback(async (url: string, init?: RequestInit) => {
-            return fetch(url, { ...init, headers: { ...init?.headers, Authorization: `Bearer ${accessToken}` } });
+            return fetch(api(url), { ...init, credentials: "include", headers: { ...clientHeaders(), ...init?.headers, Authorization: `Bearer ${accessToken}` } });
         }, [accessToken]);
 
         React.useEffect(() => {

@@ -15,6 +15,17 @@ export const celestial_corner_accent = css`
     }
 `;
 
+export const celestial_hide_scrollbar = css`
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+
+    &::-webkit-scrollbar {
+        display: none;
+        width: 0;
+        height: 0;
+    }
+`;
+
 export const celestial_star = css`
     width: 7px;
     height: 7px;

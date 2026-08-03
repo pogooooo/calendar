@@ -8,18 +8,6 @@ const appear = keyframes`
     to { opacity: 1; }
 `;
 
-/* 실 흔들림 */
-const sway = keyframes`
-    0%, 100% { transform: rotate(-1deg); }
-    50% { transform: rotate(1deg); }
-`;
-
-/* 실 끝 별 반짝임 */
-const twinkleStar = keyframes`
-    0%, 100% { transform: scale(1); opacity: 0.85; filter: drop-shadow(0 0 0 rgba(212, 175, 55, 0)); }
-    50% { transform: scale(1.25); opacity: 1; filter: drop-shadow(0 0 3px rgba(212, 175, 55, 0.95)); }
-`;
-
 /* 단계별 프레임 (할 일 바와 같은 골드 라인아트) */
 const FrameWrap = styled.div`
     position: absolute;
@@ -67,6 +55,7 @@ const FrameWrap = styled.div`
         );
     }
     .fr-glow .fr-line { stroke-width: 1.6; opacity: 1; }
+
 `;
 
 /* 연결 여부에 따라 변을 열어 그린다 (연속된 같은 단계는 프레임이 이어짐) */
@@ -102,7 +91,7 @@ const FrameShapes = ({
     connectRight: boolean;
     base?: boolean;
 }) => {
-    const corners = level >= 2 ? buildCorners(connectLeft, connectRight) : "";
+    const corners = level >= 3 ? buildCorners(connectLeft, connectRight) : "";
     return (
         <g className={base ? "fr-base" : undefined}>
             <path className="fr-line f-out" d={buildFrame(6, connectLeft, connectRight)} />
@@ -113,68 +102,6 @@ const FrameShapes = ({
         </g>
     );
 };
-
-/* 천장(위 프레임)에서 늘어지는 가는 실 + 끝에 별.
-   할 일 바(z-index:1)보다 위(z-index:2)에 렌더 → 항상 보임 */
-const ThreadWrap = styled.div`
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    z-index: 2;
-    color: ${(props) => props.theme.colors.primary};
-    filter: drop-shadow(0 0 2px rgba(212, 175, 55, 0.6));
-
-    .th-svg {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        overflow: visible;
-    }
-
-    .fr-curtain {
-        transform-box: fill-box;
-        transform-origin: 50% 0%;
-        animation: ${sway} 4.5s ease-in-out infinite;
-    }
-    .th-line {
-        stroke: currentColor;
-        fill: none;
-        stroke-width: 0.9;
-        stroke-linecap: round;
-        vector-effect: non-scaling-stroke;
-    }
-    .th-star {
-        stroke: currentColor;
-        fill: none;
-        stroke-width: 1;
-        stroke-linejoin: round;
-        vector-effect: non-scaling-stroke;
-        transform-box: fill-box;
-        transform-origin: center;
-        animation: ${twinkleStar} 3s ease-in-out infinite;
-    }
-`;
-
-const ThreadDecor = () => (
-    <ThreadWrap aria-hidden="true">
-        <svg
-            className="th-svg"
-            viewBox="0 0 110 130"
-            fill="none"
-            preserveAspectRatio="none"
-            xmlns="http://www.w3.org/2000/svg"
-        >
-            <g className="fr-curtain">
-                <path className="th-line" d="M9 6 V46" />
-                <path
-                    className="th-star"
-                    d="M9 45.5C9 49 9 49 10.5 49C9 49 9 49 9 52.5C9 49 9 49 7.5 49C9 49 9 49 9 45.5Z"
-                />
-            </g>
-        </svg>
-    </ThreadWrap>
-);
 
 const FrameDecor = ({
     level,
@@ -233,6 +160,7 @@ const FrameDecor = ({
             >
                 <FrameShapes level={level} connectLeft={connectLeft} connectRight={connectRight} />
             </svg>
+
         </FrameWrap>
     );
 };
@@ -250,7 +178,6 @@ const DayCellDecor = ({
     return (
         <>
             <FrameDecor level={tier} connectLeft={connectLeft} connectRight={connectRight} />
-            {tier >= 3 && !connectLeft && <ThreadDecor />}
         </>
     );
 };

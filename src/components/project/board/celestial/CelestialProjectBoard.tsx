@@ -159,11 +159,6 @@ export const CardList = styled.div`
     display: flex;
     flex-direction: column;
     gap: 8px;
-    &::-webkit-scrollbar { width: 4px; }
-    &::-webkit-scrollbar-thumb {
-        background-color: ${(props) => props.theme.colors.primary}80;
-        border-radius: 2px;
-    }
 `;
 
 export const CardBox = styled.div<{ $isLocked?: boolean }>`

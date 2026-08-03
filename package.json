@@ -4,27 +4,36 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build --turbopack",
+    "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "next:dev": "next dev --turbopack",
     "next:build": "next build",
+    "build:desktop": "node scripts/build-desktop.mjs",
+    "build:cloudflare": "node scripts/build-cloudflare.mjs",
+    "preview": "node scripts/build-cloudflare.mjs && opennextjs-cloudflare preview",
+    "deploy": "node scripts/build-cloudflare.mjs && wrangler deploy",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build"
   },
   "dependencies": {
-    "@tauri-apps/api": "^2",
     "@auth/prisma-adapter": "^2.10.0",
     "@hookform/resolvers": "^5.2.2",
+    "@prisma/adapter-d1": "^6.19.3",
+    "@prisma/client": "^6.15.0",
     "@radix-ui/react-slot": "^1.2.4",
     "@react-oauth/google": "^0.12.2",
+    "@tauri-apps/api": "^2",
+    "@tauri-apps/plugin-process": "^2.3.1",
+    "@tauri-apps/plugin-updater": "^2.10.1",
     "@types/bcryptjs": "^2.4.6",
     "bcryptjs": "^3.0.2",
     "framer-motion": "^12.34.4",
     "gsap": "^3.15.0",
+    "jose": "^6.2.6",
     "jsonwebtoken": "^9.0.3",
     "lucide-react": "^0.562.0",
-    "next": "15.5.2",
+    "next": "^15.5.22",
     "next-auth": "^4.24.11",
     "react": "19.1.0",
     "react-dom": "19.1.0",
@@ -34,9 +43,10 @@
     "zustand": "^5.0.9"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^2",
     "@eslint/eslintrc": "^3",
+    "@opennextjs/cloudflare": "^1.20.2",
     "@tailwindcss/postcss": "^4",
+    "@tauri-apps/cli": "^2",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20",
     "@types/react": "^19",
@@ -45,6 +55,7 @@
     "eslint-config-next": "15.5.2",
     "prisma": "^6.15.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "wrangler": "^4.118.0"
   }
 }

@@ -1,5 +1,17 @@
-import styled, {css} from "styled-components";
+import styled, {css, keyframes} from "styled-components";
 import { motion } from "framer-motion";
+
+const beadRun = keyframes`
+    0% { left: 0; opacity: 0; }
+    12% { opacity: 1; }
+    88% { opacity: 1; }
+    100% { left: 100%; opacity: 0; }
+`;
+
+const lineStarTwinkle = keyframes`
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.2; }
+`;
 
 export const CelestialCalendarWrapper = styled.div`
     display: flex;
@@ -29,6 +41,43 @@ export const DateRangeDisplay = styled.div`
     & > span { white-space: nowrap; }
 `;
 
+export const DateLine = styled.div<{ $direction?: number }>`
+    position: relative;
+    flex: 1;
+    min-width: 24px;
+    height: 1px;
+    background-color: ${(props) => props.theme.colors.primary};
+
+    &::before {
+        content: "";
+        position: absolute;
+        top: 50%;
+        width: 4px;
+        height: 4px;
+        margin-top: -2px;
+        margin-left: -2px;
+        border-radius: 50%;
+        background-color: ${(props) => props.theme.colors.primary};
+        animation: ${beadRun} ${(props) =>
+            props.$direction && props.$direction > 0 ? '2.6s'
+                : props.$direction && props.$direction < 0 ? '12s'
+                    : '7s'} linear infinite;
+    }
+
+    &::after {
+        content: "";
+        position: absolute;
+        right: -3px;
+        top: 50%;
+        width: 7px;
+        height: 7px;
+        margin-top: -3.5px;
+        background-color: ${(props) => props.theme.colors.primary};
+        clip-path: polygon(50% 0%, 59% 41%, 100% 50%, 59% 59%, 50% 100%, 41% 59%, 0% 50%, 41% 41%);
+        animation: ${lineStarTwinkle} 4.2s ease-in-out infinite;
+    }
+`;
+
 export const SliderWrapper = styled.div`
     display: flex;
     flex-direction: column;
@@ -52,11 +101,12 @@ export const ArrowWrapper = styled.div<{ $side: "left" | "right" }>`
 `;
 
 export const CalendarWindow = styled.div`
-    width: 100%;
+    width: calc(100% + 16px);
     overflow: hidden;
     position: relative;
     padding: 15px 8px;
     margin: -15px -8px;
+    box-sizing: border-box;
 `;
 
 export const Header = styled.div`
@@ -75,6 +125,16 @@ export const Header = styled.div`
         position: absolute;
         top: 0; left: 0;
         pointer-events: none;
+    }
+
+    &::before {
+        content: "";
+        width: 25px; height: 25px;
+        background: linear-gradient(45deg, transparent 49%, ${(props) => props.theme.colors.primary} 50%, transparent 51%);
+        position: absolute;
+        top: 0; right: 0;
+        pointer-events: none;
+        z-index: 2;
     }
 `;
 
@@ -162,6 +222,18 @@ export const BarContainer = styled.div`
         position: absolute;
         bottom: 0;
         right: 0;
+        pointer-events: none;
+        z-index: 2;
+    }
+
+    &::before {
+        content: "";
+        width: 25px;
+        height: 25px;
+        background: linear-gradient(225deg, transparent 49%, ${(props) => props.theme.colors.primary} 50%, transparent 51%);
+        position: absolute;
+        bottom: 0;
+        left: 0;
         pointer-events: none;
         z-index: 2;
     }
@@ -340,11 +412,4 @@ export const ModalBody = styled.div`
     flex-direction: column;
     gap: 8px;
 
-    &::-webkit-scrollbar {
-        width: 4px;
-    }
-    &::-webkit-scrollbar-thumb {
-        background-color: ${(props) => props.theme.colors.primary}66;
-        border-radius: 2px;
-    }
 `;

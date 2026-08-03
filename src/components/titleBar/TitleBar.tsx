@@ -5,6 +5,11 @@ import styled from "styled-components";
 
 export default function TitleBar() {
     const [isMaximized, setIsMaximized] = useState(false);
+    const [isDesktop, setIsDesktop] = useState(false);
+
+    useEffect(() => {
+        setIsDesktop(typeof window !== "undefined" && "__TAURI_INTERNALS__" in window);
+    }, []);
 
     useEffect(() => {
         let unlisten: (() => void) | undefined;
@@ -40,6 +45,8 @@ export default function TitleBar() {
             getCurrentWindow().close();
         });
     };
+
+    if (!isDesktop) return null;
 
     return (
         <Bar data-tauri-drag-region>

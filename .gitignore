@@ -16,6 +16,11 @@
 # next.js
 /.next/
 /out/
+/out-desktop/
+/.open-next/
+/dl.html
+/tail*.log
+/d1-schema.sql
 
 # production
 /build

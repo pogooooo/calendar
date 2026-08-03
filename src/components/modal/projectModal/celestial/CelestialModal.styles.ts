@@ -65,11 +65,6 @@ export const ScrollBody = styled.div`
     background-color: ${(props) => props.theme.colors.surface};
     flex: 1;
 
-    &::-webkit-scrollbar { width: 4px; }
-    &::-webkit-scrollbar-thumb {
-        background-color: ${(props) => props.theme.colors.primary}80;
-        border-radius: 2px;
-    }
 `;
 
 export const FieldRow = styled.div`
@@ -140,11 +135,6 @@ export const ParticipantPicker = styled.div`
     max-height: 100px;
     overflow-y: auto;
 
-    &::-webkit-scrollbar { width: 4px; }
-    &::-webkit-scrollbar-thumb {
-        background-color: ${(props) => props.theme.colors.primary}80;
-        border-radius: 2px;
-    }
 `;
 
 export const ParticipantItem = styled.div<{ $selected: boolean }>`
@@ -198,11 +188,6 @@ export const MemoTextArea = styled.textarea`
         border-color: ${(props) => props.theme.colors.primary};
     }
 
-    &::-webkit-scrollbar { width: 4px; }
-    &::-webkit-scrollbar-thumb {
-        background-color: ${(props) => props.theme.colors.primary}80;
-        border-radius: 2px;
-    }
 `;
 
 export const Footer = styled.div`

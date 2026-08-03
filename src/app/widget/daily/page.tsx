@@ -8,7 +8,7 @@ import useCategoryStore from "@/store/useCategoryStore";
 import DayCalendar from "@/components/calendar/dayCalendar/DayCalendar";
 
 export default function DailyWidget() {
-    const { ready, authed } = useWidgetInit();
+    const { ready, authed } = useWidgetInit(["todos", "categories"]);
     const todos      = useTodoStore((s) => s.todos);
     const categories = useCategoryStore((s) => s.categories);
 

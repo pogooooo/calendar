@@ -7,9 +7,9 @@ import useWidgetStore, { BgMode, WidgetBgSettings } from "@/store/useWidgetStore
 import { useT } from "@/i18n/useT";
 import { invoke } from "@tauri-apps/api/core";
 import { convertFileSrc } from "@tauri-apps/api/core";
-import { getCurrentWindow, currentMonitor } from "@tauri-apps/api/window";
+import { getCurrentWindow, currentMonitor, LogicalSize } from "@tauri-apps/api/window";
 
-type WidgetKind = "daily" | "weekly" | "monthly";
+import type { WidgetKind } from "@/store/useWidgetStore";
 
 interface Props {
     kind: WidgetKind;
@@ -49,6 +49,80 @@ async function applyLocked(kind: string, locked: boolean) {
     try {
         await invoke("set_widget_locked", { kind, locked });
     } catch (e) {}
+}
+
+const FIXED_HEIGHT_KINDS: string[] = ["weekly", "monthly", "daily"];
+const MIN_FIT_HEIGHT = 170;
+const MAX_FIT_HEIGHT = 900;
+
+function useAutoFitHeight(kind: WidgetKind, ref: React.RefObject<HTMLDivElement | null>) {
+    useEffect(() => {
+        if (!isTauri() || FIXED_HEIGHT_KINDS.includes(kind)) return;
+
+        let cancelled = false;
+        let raf = 0;
+        let busy = false;
+
+        const slack = () => {
+            const root = ref.current;
+            if (!root) return null;
+            let min = Infinity;
+            root.querySelectorAll<HTMLElement>("*").forEach((el) => {
+                const cs = getComputedStyle(el);
+                if (cs.overflowY !== "auto" && cs.overflowY !== "scroll") return;
+                if (el.clientHeight < 60 || el.children.length === 0) return;
+                const box = el.getBoundingClientRect();
+                let bottom = box.top;
+                for (const child of Array.from(el.children)) {
+                    const cb = child.getBoundingClientRect();
+                    if (cb.bottom > bottom) bottom = cb.bottom;
+                }
+                const contentHeight = bottom - box.top + (parseFloat(cs.paddingBottom) || 0);
+                const d = el.clientHeight - contentHeight;
+                if (d < min) min = d;
+            });
+            return Number.isFinite(min) ? min : null;
+        };
+
+        const apply = async () => {
+            if (cancelled || busy) return;
+            const d = slack();
+            if (d === null || d < 12) return;
+            busy = true;
+            try {
+                const win = getCurrentWindow();
+                const sf = await win.scaleFactor();
+                const inner = (await win.innerSize()).toLogical(sf);
+                const next = Math.max(MIN_FIT_HEIGHT, Math.min(MAX_FIT_HEIGHT, Math.round(inner.height - d)));
+                if (Math.abs(next - inner.height) >= 8) {
+                    await win.setSize(new LogicalSize(Math.round(inner.width), next));
+                }
+            } catch (e) {
+            } finally {
+                busy = false;
+            }
+        };
+
+        const schedule = () => {
+            cancelAnimationFrame(raf);
+            raf = requestAnimationFrame(() => { void apply(); });
+        };
+
+        const ro = new ResizeObserver(schedule);
+        if (ref.current) ro.observe(ref.current);
+        const mo = new MutationObserver(schedule);
+        if (ref.current) mo.observe(ref.current, { childList: true, subtree: true, characterData: true });
+
+        const timers = [120, 400, 900, 1800].map(ms => window.setTimeout(schedule, ms));
+
+        return () => {
+            cancelled = true;
+            cancelAnimationFrame(raf);
+            ro.disconnect();
+            mo.disconnect();
+            timers.forEach(clearTimeout);
+        };
+    }, [kind, ref]);
 }
 
 function getLuminance(hex: string): number {
@@ -104,7 +178,10 @@ export default function WidgetShell({ kind, title, children }: Props) {
     const [dynamicTextColor, setDynamicTextColor] = useState({ text: "#ffffff", textSecondary: "#dddddd" });
 
     const monitorRef = useRef<HTMLDivElement>(null);
+    const contentRef = useRef<HTMLDivElement>(null);
     const textColorRef = useRef("#ffffff");
+
+    useAutoFitHeight(kind, contentRef);
     const surfaceColor = theme?.colors?.surface ?? "#1a160e";
     const bgStyle = buildBackground(bg, surfaceColor);
 
@@ -431,7 +508,7 @@ export default function WidgetShell({ kind, title, children }: Props) {
                     </SettingsPanel>
                 )}
 
-                <Content $kind={kind}>
+                <Content ref={contentRef} $kind={kind}>
                     {children}
                 </Content>
             </ThemeProvider>

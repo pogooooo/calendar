@@ -17,7 +17,6 @@ export const Container = styled(motion.div)<{ $maxWidth: string }>`
     width: 90%;
     max-width: ${(props) => props.$maxWidth};
     max-height: 85vh;
-    border-radius: 5px;
     border: 1px solid ${(props) => props.theme.colors.primary};
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
     overflow: hidden;

@@ -9,6 +9,7 @@ import SecondaryButton from "@/components/button/secondary/SecondaryButton";
 import ChallengeModal, { ChallengeData } from "@/components/modal/challengeModal/ChallengeModal";
 import { DynamicSticker } from "@/assets/celestial/ChallengeStickers";
 import * as S from "./CelestialChallenge.styles";
+import { useT } from "@/i18n/useT";
 import type { CategoryType, ChallengeType } from "@/types";
 
 interface CelestialChallengeProps {
@@ -39,6 +40,7 @@ export default function CelestialChallenge({
     isModalOpen, setIsModalOpen, modalMode, handleSaveChallenge,
 }: CelestialChallengeProps) {
     const theme = useTheme();
+    const tr = useT().challenge;
 
     // ── 리사이즈: useRef + 직접 DOM 업데이트 — 리렌더 없음 ────────────────────
     const [leftRatio, setLeftRatio] = React.useState(50);
@@ -137,7 +139,7 @@ export default function CelestialChallenge({
     });
 
     const renderStickerBoard = () => {
-        if (!selectedChallenge) return <span className="placeholder">챌린지를 선택하여 스티커 보드를 확인하세요.</span>;
+        if (!selectedChallenge) return <span className="placeholder">{tr.selectForBoard}</span>;
 
         const start    = new Date(selectedChallenge.startAt);
         start.setHours(0, 0, 0, 0);
@@ -163,14 +165,14 @@ export default function CelestialChallenge({
             });
         } else {
             const pastCount = Math.floor(Math.max(0, now.getTime() - start.getTime()) / (86400000 * interval)) + 1;
-            if (pastCount === 0) return <span className="placeholder">아직 챌린지 시작일이 도래하지 않았습니다.</span>;
+            if (pastCount === 0) return <span className="placeholder">{tr.notStarted}</span>;
             slots = Array.from({ length: pastCount }, (_, i) => {
                 const d = new Date(start); d.setDate(start.getDate() + i * interval);
                 return completedSet.has(toKey(d));
             });
         }
 
-        if (slots.length === 0) return <span className="placeholder">오늘의 챌린지를 달성하고 첫 스티커를 받아보세요!</span>;
+        if (slots.length === 0) return <span className="placeholder">{tr.firstSticker}</span>;
 
         return (
             <S.StickerGrid>
@@ -205,8 +207,8 @@ export default function CelestialChallenge({
                     </div>
                     <div className="desc">{challenge.description}</div>
                     <div className="meta">
-                        {challenge.interval === 1 ? '매일' : `${challenge.interval}일마다`} 반복
-                        {targetCount !== null && ` · 목표 ${targetCount}회`}
+                        {tr.repeats(challenge.interval === 1 ? tr.everyday : tr.everyNDays(challenge.interval))}
+                        {targetCount !== null && tr.goal(targetCount)}
                     </div>
                 </div>
 
@@ -219,7 +221,7 @@ export default function CelestialChallenge({
                             </S.ProgressBar>
                         </>
                     ) : (
-                        <span className="count">무기한 · {completedCount}회 달성</span>
+                        <span className="count">{tr.indefinite(completedCount)}</span>
                     )}
                 </div>
             </S.ChallengeRow>
@@ -229,14 +231,14 @@ export default function CelestialChallenge({
     return (
         <S.CelestialCalendarWrapper>
             <S.DateHeader>
-                <span>Celestial Challenges</span>
+                <span>{tr.title}</span>
                 <hr />
             </S.DateHeader>
 
             <S.ContentLayout ref={contentRef}>
                 <S.TimelineSection ref={leftPanelRef} $flex={leftRatio}>
                     <div className="timeline-header">
-                        My Challenges
+                        {tr.myChallenges}
                         <div className="header-actions">
                             <CategoryFilter
                                 categories={categories}
@@ -244,28 +246,28 @@ export default function CelestialChallenge({
                                 onToggle={toggleCategory}
                             />
                             <button className="add-header-btn" onClick={handleCreateNew}>
-                                <Plus size={16} /> New
+                                <Plus size={16} /> {tr.new}
                             </button>
                         </div>
                     </div>
                     <S.TimelineScrollArea>
                         {ongoingChallenges.length > 0 && (
                             <div style={{ padding: '12px 16px 4px', fontSize: '0.8rem', fontWeight: 600, color: theme?.colors.textSecondary }}>
-                                진행 중인 챌린지
+                                {tr.ongoing}
                             </div>
                         )}
                         {ongoingChallenges.map(renderChallengeCard)}
 
                         {challenges.length === 0 && (
                             <div style={{ padding: '20px', textAlign: 'center', color: 'gray', fontSize: '0.9rem' }}>
-                                표시할 챌린지가 없습니다.
+                                {tr.none}
                             </div>
                         )}
 
                         {finishedChallenges.length > 0 && (
                             <>
                                 <div style={{ padding: '12px 16px 4px', marginTop: '10px', fontSize: '0.8rem', fontWeight: 600, color: theme?.colors.textSecondary, borderTop: `1px solid ${theme?.colors.primary}33` }}>
-                                    완료된 챌린지
+                                    {tr.finished}
                                 </div>
                                 {finishedChallenges.map(renderChallengeCard)}
                             </>
@@ -280,7 +282,7 @@ export default function CelestialChallenge({
                 <S.SideSection ref={rightPanelRef} $flex={100 - leftRatio}>
                     <S.StickerBoardCard ref={stickerCardRef} $flex={topRatio}>
                         <div className="card-header">
-                            Sticker Board {selectedChallenge && `- ${selectedChallenge.title}`}
+                            {tr.stickerBoard} {selectedChallenge && `- ${selectedChallenge.title}`}
                         </div>
                         <div className="sticker-content">
                             {renderStickerBoard()}
@@ -292,17 +294,17 @@ export default function CelestialChallenge({
                     </S.VResizer>
 
                     <S.TaskCard ref={detailCardRef} $flex={100 - topRatio}>
-                        <div className="card-header">Challenge Details</div>
+                        <div className="card-header">{tr.details}</div>
                         <S.DetailArea>
                             {selectedChallenge ? (
                                 <div className="detail-content">
                                     <h3>{selectedChallenge.title}</h3>
-                                    <p>{selectedChallenge.description || "설명이 없습니다."}</p>
+                                    <p>{selectedChallenge.description || tr.noDescription}</p>
                                     <div className="stats">
-                                        <div><strong>카테고리:</strong> {categories.find(c => c.id === selectedChallenge.categoryId)?.name}</div>
-                                        <div><strong>반복 주기:</strong> {selectedChallenge.interval === 1 ? '매일' : `${selectedChallenge.interval}일마다`}</div>
-                                        <div><strong>현재 달성:</strong> {selectedChallenge.completions?.length ?? 0}회</div>
-                                        {selectedChallenge.targetCount != null && <div><strong>목표 횟수:</strong> {selectedChallenge.targetCount}회</div>}
+                                        <div><strong>{tr.category}:</strong> {categories.find(c => c.id === selectedChallenge.categoryId)?.name}</div>
+                                        <div><strong>{tr.interval}:</strong> {selectedChallenge.interval === 1 ? tr.everyday : tr.everyNDays(selectedChallenge.interval)}</div>
+                                        <div><strong>{tr.currentCount}:</strong> {tr.times(selectedChallenge.completions?.length ?? 0)}</div>
+                                        {selectedChallenge.targetCount != null && <div><strong>{tr.targetCount}:</strong> {tr.times(selectedChallenge.targetCount)}</div>}
                                     </div>
                                     <div className="actions">
                                         {(() => {
@@ -319,7 +321,7 @@ export default function CelestialChallenge({
                                                         style={{ padding: '12px', fontSize: '1rem', fontWeight: 600, gap: '8px' }}
                                                     >
                                                         {isCompletedToday ? <X size={18} /> : <Check size={18} />}
-                                                        {isCompletedToday ? "오늘 달성 취소" : "오늘 달성 완료!"}
+                                                        {isCompletedToday ? tr.cancelToday : tr.doneToday}
                                                     </SecondaryButton>
                                                 );
                                             }
@@ -330,7 +332,7 @@ export default function CelestialChallenge({
                                                         disabled
                                                         style={{ padding: '12px', fontSize: '1rem', fontWeight: 600, opacity: 0.6, cursor: 'not-allowed' }}
                                                     >
-                                                        {isChallengeEnded && !isFinished ? "챌린지 종료" : "목표 달성 완료"}
+                                                        {isChallengeEnded && !isFinished ? tr.ended : tr.goalReached}
                                                     </SecondaryButton>
                                                 );
                                             }
@@ -340,22 +342,22 @@ export default function CelestialChallenge({
                                                     disabled
                                                     style={{ padding: '12px', fontSize: '1rem', fontWeight: 600, gap: '8px', opacity: 0.5, cursor: 'not-allowed' }}
                                                 >
-                                                    오늘은 달성일이 아닙니다
+                                                    {tr.notTodaySlot}
                                                 </SecondaryButton>
                                             );
                                         })()}
                                         <div className="sub-actions">
                                             <SecondaryButton onClick={handleEditClick} style={{ gap: '6px' }}>
-                                                <Settings2 size={16} /> Edit
+                                                <Settings2 size={16} /> {tr.edit}
                                             </SecondaryButton>
                                             <SecondaryButton $variant="danger" onClick={handleDelete} style={{ gap: '6px' }}>
-                                                <Trash2 size={16} /> Delete
+                                                <Trash2 size={16} /> {tr.delete}
                                             </SecondaryButton>
                                         </div>
                                     </div>
                                 </div>
                             ) : (
-                                <div className="placeholder">챌린지를 선택하거나 새로 생성해주세요.</div>
+                                <div className="placeholder">{tr.selectOrCreate}</div>
                             )}
                         </S.DetailArea>
                     </S.TaskCard>

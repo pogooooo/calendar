@@ -33,8 +33,6 @@ export const TimelineGridArea = styled.div`
     overflow-x: auto;
     overflow-y: auto;
     position: relative;
-    &::-webkit-scrollbar { width: 4px; height: 4px; }
-    &::-webkit-scrollbar-thumb { background-color: ${(props) => props.theme.colors.primary}80; }
 `;
 
 export const TimelineContent = styled.div`

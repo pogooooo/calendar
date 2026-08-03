@@ -1,5 +1,6 @@
 import styled, { css } from "styled-components";
 import { motion } from "framer-motion";
+import { celestial_hide_scrollbar } from "@/styles/celestial_theme";
 
 export const CelestialCalendarWrapper = styled.div`
     display: flex;
@@ -8,9 +9,6 @@ export const CelestialCalendarWrapper = styled.div`
     height: 100%;
     width: 100%;
 
-    ::-webkit-scrollbar {
-        display: none;
-    }
 `;
 
 export const DateRangeDisplay = styled.div`
@@ -65,13 +63,6 @@ export const SliderWrapper = styled.div`
     @media (max-width: 600px) {
         overflow-x: auto;
         justify-content: flex-start;
-        &::-webkit-scrollbar {
-            height: 6px;
-        }
-        &::-webkit-scrollbar-thumb {
-            background-color: ${(props) => props.theme.colors.primary}80;
-            border-radius: 3px;
-        }
     }
 `;
 
@@ -140,13 +131,7 @@ export const GridContainer = styled.div`
     background-color: transparent;
 
     overflow-y: auto;
-    &::-webkit-scrollbar {
-        width: 0;
-    }
-    &::-webkit-scrollbar-thumb {
-        background-color: ${(props) => props.theme.colors.primary}80;
-        border-radius: 2px;
-    }
+    ${celestial_hide_scrollbar}
 `;
 
 export const WeekRowContainer = styled.div`
@@ -183,14 +168,19 @@ export const DayCell = styled.div<{ $isToday: boolean; $isCurrentMonth: boolean;
     .day-header {
         display: flex;
         justify-content: space-between;
-        align-items: flex-start;
+        align-items: center;
         padding: 6px 6px 2px 6px;
         width: 100%;
+        min-width: 0;
         box-sizing: border-box;
+        overflow: hidden;
+        position: relative;
         z-index: 2;
 
         .day-number {
             font-size: 0.95rem;
+            line-height: 18px;
+            display: block;
             font-family: ${(props) => props.theme.fonts.celestial};
             font-weight: ${(props) => (props.$isToday || props.$isSelected) ? 'bold' : 'normal'};
             color: ${(props) => props.$isToday ? props.theme.colors.primary : props.theme.colors.text};
@@ -222,46 +212,71 @@ export const DayHeaderLeft = styled.div`
     gap: 4px;
 `;
 
-export const DayStickerContainer = styled.div`
-    display: flex;
-    gap: 2px;
-    flex: 1;
-    justify-content: flex-end;
-    flex-wrap: wrap;
-    max-height: 52px;
-    margin-right: 4px;
 
-    && {
-        overflow: visible !important;
-    }
-`;
-
-export const StickerWrapper = styled.div`
+export const ChallengeGauge = styled.button<{ $complete: boolean }>`
+    width: 14px;
+    height: 14px;
+    line-height: 14px;
     flex-shrink: 0;
-    width: 21px;
-    height: 21px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    margin-right: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
     cursor: pointer;
+    color: ${(props) => props.theme.colors.primary};
+    opacity: ${(props) => props.$complete ? 1 : 0.75};
+    transition: opacity 0.15s, filter 0.15s;
+    filter: ${(props) => props.$complete
+            ? `drop-shadow(0 0 3px ${props.theme.colors.primary}99)`
+            : 'none'};
 
-    && {
-        overflow: visible !important;
-    }
-
-    & svg {
+    svg {
         width: 100%;
         height: 100%;
+        transform: rotate(-90deg);
         overflow: visible;
+    }
+
+    .track {
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1;
+        opacity: 0.28;
+    }
+
+    .arc {
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: butt;
+        transition: stroke-dasharray 0.3s ease;
+    }
+
+    .tick {
+        stroke: currentColor;
+        stroke-width: 1;
+        opacity: 0.45;
+    }
+
+    .pip {
+        fill: ${(props) => props.$complete ? 'currentColor' : 'none'};
+        stroke: currentColor;
+        stroke-width: 1;
+        opacity: ${(props) => props.$complete ? 1 : 0.5};
+    }
+
+    &:hover {
+        opacity: 1;
+        filter: drop-shadow(0 0 5px ${(props) => props.theme.colors.primary}CC);
     }
 `;
 
 export const AddTodoButton = styled.button`
     position: absolute;
-    top: 4px;
-    right: 4px;
-    width: 20px;
-    height: 20px;
+    top: 5px;
+    left: 26px;
+    width: 18px;
+    height: 18px;
     border-radius: 20%;
     background-color: transparent;
     color: ${(props) => props.theme.colors.primary};
@@ -280,6 +295,8 @@ export const AddTodoButton = styled.button`
 `;
 
 export const TodoBarList = styled.div`
+    position: relative;
+    z-index: 1;
     display: flex;
     flex-direction: column;
     gap: 2px;
@@ -289,14 +306,7 @@ export const TodoBarList = styled.div`
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
-
-    &::-webkit-scrollbar {
-        width: 4px;
-    }
-    &::-webkit-scrollbar-thumb {
-        background-color: ${(props) => props.theme.colors.primary}80;
-        border-radius: 2px;
-    }
+    ${celestial_hide_scrollbar}
 `;
 
 export const TodoBarSpacer = styled.div`
@@ -429,11 +439,4 @@ export const ModalBody = styled.div`
     flex-direction: column;
     gap: 8px;
 
-    &::-webkit-scrollbar {
-        width: 4px;
-    }
-    &::-webkit-scrollbar-thumb {
-        background-color: ${(props) => props.theme.colors.primary}66;
-        border-radius: 2px;
-    }
 `;

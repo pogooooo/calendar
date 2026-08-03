@@ -98,11 +98,6 @@ export const CategoryList = styled.div`
     padding: 6px 0;
     overflow-y: auto;
 
-    &::-webkit-scrollbar { width: 4px; }
-    &::-webkit-scrollbar-thumb {
-        background-color: ${(props) => props.theme.colors.primary}80;
-        border-radius: 2px;
-    }
 `;
 
 export const CategoryItem = styled.div<{ $color: string; $isSelected: boolean }>`
@@ -146,11 +141,6 @@ export const ContentContainer = styled.div`
     overflow-y: auto;
     background-color: ${(props) => props.theme.colors.background};
 
-    &::-webkit-scrollbar { width: 4px; }
-    &::-webkit-scrollbar-thumb {
-        background-color: ${(props) => props.theme.colors.primary}80;
-        border-radius: 2px;
-    }
 `;
 
 export const EmptyStateContainer = styled.div`
@@ -314,12 +304,6 @@ export const PropertyRow = styled.div`
                 color: ${(props) => props.theme.colors.textSecondary}66;
             }
 
-            &::-webkit-scrollbar { width: 4px; }
-            &::-webkit-scrollbar-thumb {
-                background-color: ${(props) => props.theme.colors.primary}80;
-                border-radius: 2px;
-            }
-            &::-webkit-scrollbar-track { background: transparent; }
         }
     }
 `;

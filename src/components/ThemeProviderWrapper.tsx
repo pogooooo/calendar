@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { ThemeProvider } from 'styled-components';
 import { themes } from '@/styles/theme';
+import GlobalScrollbar from '@/styles/GlobalScrollbar';
 import useSettingStore from "@/store/useSettingStore";
 
 export default function ThemeProviderWrapper({ children }: { children: React.ReactNode }) {
@@ -26,6 +27,7 @@ export default function ThemeProviderWrapper({ children }: { children: React.Rea
 
     return (
         <ThemeProvider theme={theme}>
+            <GlobalScrollbar />
             {children}
         </ThemeProvider>
     );

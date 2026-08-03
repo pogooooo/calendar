@@ -26,7 +26,7 @@ export default function CelestialCategory(props: CategoryThemeProps) {
         <S.CategoryWrapper>
         <S.CenterWrapper>
             <S.PageHeader>
-                <span>Celestial Categories</span>
+                <span>{t.category.title}</span>
                 <hr />
             </S.PageHeader>
             <S.BodyRow>

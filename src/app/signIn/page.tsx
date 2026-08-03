@@ -11,6 +11,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import useSettingStore from "@/store/useSettingStore";
 import useAuthStore from "@/store/useAuthStore";
 import { LoginSchema } from "@/lib/schema";
+import { api, clientHeaders } from "@/lib/apiBase";
 import { useT } from "@/i18n/useT";
 import LocaleSelect from "@/components/LocaleSelect";
 
@@ -30,6 +31,7 @@ const SignIn = () => {
     const t = useT();
     const setTheme = useSettingStore((state) => state.setTheme);
     const setAccessToken = useAuthStore((state) => state.setAccessToken);
+    const setRefreshToken = useAuthStore((state) => state.setRefreshToken);
     const setUser = useAuthStore((state) => state.setUser);
 
     const [globalError, setGlobalError] = useState<string>(" ");
@@ -45,15 +47,17 @@ const SignIn = () => {
         onSuccess: async (tokenResponse) => {
             setIsGoogleLoading(true);
             try {
-                const res = await fetch("/api/auth/google", {
+                const res = await fetch(api("/api/auth/google"), {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                    credentials: "include",
+                    headers: { "Content-Type": "application/json", ...clientHeaders() },
                     body: JSON.stringify({ accessToken: tokenResponse.access_token }),
                 });
                 const data = await res.json();
                 if (!res.ok) { setGlobalError(data.message || "구글 로그인 실패"); setIsGoogleLoading(false); return; }
                 setTheme(data.user.theme);
                 setAccessToken(data.accessToken);
+                if (data.refreshToken) setRefreshToken(data.refreshToken);
                 setUser(data.user);
                 router.push("/");
             } catch {
@@ -70,15 +74,17 @@ const SignIn = () => {
     const handleEmailLogin = async (formData: LoginFormData) => {
         setGlobalError(" ");
         try {
-            const res = await fetch("/api/auth/login", {
+            const res = await fetch(api("/api/auth/login"), {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                headers: { "Content-Type": "application/json", ...clientHeaders() },
                 body: JSON.stringify(formData),
             });
             const data = await res.json();
             if (!res.ok) { setGlobalError(data.message || "로그인에 실패했습니다."); return; }
             setTheme(data.user.theme);
             setAccessToken(data.accessToken);
+            if (data.refreshToken) setRefreshToken(data.refreshToken);
             setUser(data.user);
             router.push("/");
         } catch (err) {
