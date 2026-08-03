@@ -2,30 +2,45 @@
 
 import * as React from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import styled, { keyframes, css } from "styled-components";
-import { CalendarDays, KanbanSquare, Flame, LayoutGrid, Globe, MonitorDown, RefreshCw, ArrowRight, Loader2 } from "lucide-react";
+import { Globe, MonitorDown, ArrowRight, ArrowDown, Loader2 } from "lucide-react";
 import CronosOrbit from "@/assets/download/CronosOrbit";
+import CursorTrail from "@/components/download/CursorTrail";
 import useAuthStore from "@/store/useAuthStore";
 import { api } from "@/lib/apiBase";
+
+const HeroScene = dynamic(() => import("@/components/download/HeroScene"), {
+    ssr: false,
+    loading: () => <CronosOrbit />,
+});
 
 const REPO = "https://github.com/pogooooo/calendar";
 
 type PlatformKey = "windows" | "macos" | "linux";
-type CardState = "idle" | "checking" | "unreleased" | "error";
+
+type PlatformInfo = {
+    available: boolean;
+    name: string | null;
+    size: number | null;
+    version: string | null;
+};
 
 const PLATFORMS: { key: PlatformKey; label: string; ext: string; note: string }[] = [
     { key: "windows", label: "Windows", ext: ".exe", note: "Windows 10 이상" },
-    { key: "macos", label: "macOS", ext: ".dmg", note: "Apple Silicon · Intel" },
+    { key: "macos", label: "macOS", ext: ".dmg", note: "macOS 11 이상 · Apple Silicon / Intel" },
     { key: "linux", label: "Linux", ext: ".AppImage", note: "x86_64" },
 ];
 
-const FEATURES = [
-    { icon: CalendarDays, title: "월간 · 주간 · 일간 캘린더", desc: "하나의 일정을 세 가지 시야로 봅니다. 기간이 있는 할 일은 막대로 이어지고, 하루는 시간대로 나뉩니다." },
-    { icon: KanbanSquare, title: "프로젝트 보드와 타임라인", desc: "진행 전·진행 중·완료 보드로 태스크를 옮기고, 타임라인에서 일정과 선행 관계를 한눈에 확인합니다." },
-    { icon: Flame, title: "챌린지와 스티커 보드", desc: "매일 또는 주기마다 반복하는 목표를 기록하고, 달성할수록 캘린더에 장식이 더해집니다." },
-    { icon: LayoutGrid, title: "바탕화면 위젯", desc: "오늘 할 일, 메모, 프로젝트 보드 같은 14가지 위젯을 바탕화면에 고정해 두고 씁니다." },
-];
+const STARS = Array.from({ length: 42 }, (_, i) => ({
+    x: (i * 137 + 29) % 100,
+    y: (i * 61 + 7) % 100,
+    s: 1 + (i % 3) * 0.7,
+    d: (i % 8) * 0.55,
+    layer: i % 3,
+    glyph: i % 11 === 0,
+}));
 
 function detectPlatform(): PlatformKey | null {
     if (typeof navigator === "undefined") return null;
@@ -36,7 +51,11 @@ function detectPlatform(): PlatformKey | null {
     return null;
 }
 
-/** 화면에 들어오면 한 번만 켜지는 등장 애니메이션용 훅 */
+function mb(size: number | null | undefined) {
+    if (!size) return null;
+    return `${(size / 1048576).toFixed(1)} MB`;
+}
+
 function useReveal<T extends HTMLElement>() {
     const ref = React.useRef<T>(null);
     const [shown, setShown] = React.useState(false);
@@ -62,169 +81,368 @@ function useReveal<T extends HTMLElement>() {
     return { ref, shown };
 }
 
-function Reveal({ children, delay = 0, as }: { children: React.ReactNode; delay?: number; as?: "div" | "section" }) {
+function Reveal({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
     const { ref, shown } = useReveal<HTMLDivElement>();
     return (
-        <RevealBox ref={ref} $shown={shown} $delay={delay} as={as}>
+        <RevealBox ref={ref} $shown={shown} $delay={delay}>
             {children}
         </RevealBox>
     );
 }
 
+function RevealTitle({ children }: { children: string }) {
+    const { ref, shown } = useReveal<HTMLHeadingElement>();
+    return (
+        <SectionTitle ref={ref}>
+            <span>
+                {children.split("").map((ch, i) => (
+                    <Char key={i} $shown={shown} style={{ transitionDelay: `${i * 55}ms` }}>
+                        {ch === " " ? " " : ch}
+                    </Char>
+                ))}
+            </span>
+        </SectionTitle>
+    );
+}
+
+function useMagnetic<T extends HTMLElement>(strength = 0.22) {
+    const ref = React.useRef<T>(null);
+
+    React.useEffect(() => {
+        const el = ref.current;
+        if (!el) return;
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+        const move = (e: PointerEvent) => {
+            const r = el.getBoundingClientRect();
+            const dx = e.clientX - (r.left + r.width / 2);
+            const dy = e.clientY - (r.top + r.height / 2);
+            el.style.setProperty("--magx", `${dx * strength}px`);
+            el.style.setProperty("--magy", `${dy * strength}px`);
+        };
+
+        const leave = () => {
+            el.style.setProperty("--magx", "0px");
+            el.style.setProperty("--magy", "0px");
+        };
+
+        el.addEventListener("pointermove", move);
+        el.addEventListener("pointerleave", leave);
+        return () => {
+            el.removeEventListener("pointermove", move);
+            el.removeEventListener("pointerleave", leave);
+        };
+    }, [strength]);
+
+    return ref;
+}
+
+function tiltStart(e: React.PointerEvent<HTMLElement>) {
+    const el = e.currentTarget;
+    const r = el.getBoundingClientRect();
+    el.style.setProperty("--rx", `${((e.clientY - r.top) / r.height - 0.5) * -7}deg`);
+    el.style.setProperty("--ry", `${((e.clientX - r.left) / r.width - 0.5) * 7}deg`);
+}
+
+function tiltEnd(e: React.PointerEvent<HTMLElement>) {
+    const el = e.currentTarget;
+    el.style.setProperty("--rx", "0deg");
+    el.style.setProperty("--ry", "0deg");
+}
+
+const FEATURES = [
+    {
+        key: "calendar",
+        title: "월간 · 주간 · 일간 캘린더",
+        desc: "기간이 있는 일정은 막대로 이어지고, 하루는 시간대로 나뉩니다.",
+        visual: () => (
+            <MiniCalendar aria-hidden="true">
+                {Array.from({ length: 28 }, (_, i) => (
+                    <span key={i} className={`cell ${[3, 9, 16, 24].includes(i) ? "dot" : ""}`} />
+                ))}
+                <span className="bar" />
+            </MiniCalendar>
+        ),
+    },
+    {
+        key: "project",
+        title: "프로젝트 보드와 타임라인",
+        desc: "태스크를 보드에서 옮기고, 타임라인에서 선행 관계를 확인합니다.",
+        visual: () => (
+            <MiniBoard aria-hidden="true">
+                <span className="col"><i /><i /><i className="mover" /></span>
+                <span className="col"><i /></span>
+                <span className="col"><i /><i /></span>
+            </MiniBoard>
+        ),
+    },
+    {
+        key: "challenge",
+        title: "챌린지",
+        desc: "반복 목표를 기록하면 달성한 날마다 별이 새겨집니다.",
+        visual: () => (
+            <MiniChallenge aria-hidden="true">
+                {Array.from({ length: 7 }, (_, i) => (
+                    <span
+                        key={i}
+                        className={`day ${i < 4 ? "on" : ""}`}
+                        style={{ transitionDelay: `${i * 70}ms`, animationDelay: `${i * 0.4}s` }}
+                    >
+                        ✦
+                    </span>
+                ))}
+            </MiniChallenge>
+        ),
+    },
+    {
+        key: "widget",
+        title: "바탕화면 위젯",
+        desc: "오늘 할 일, 메모, 보드까지 14가지 위젯을 화면에 고정합니다.",
+        visual: () => (
+            <MiniWidgets aria-hidden="true">
+                <span className="pane p1" />
+                <span className="pane p2" />
+                <span className="pane p3" />
+            </MiniWidgets>
+        ),
+    },
+];
+
 export default function DownloadPage() {
     const router = useRouter();
-    const [states, setStates] = React.useState<Record<string, CardState>>({});
+    const pageRef = React.useRef<HTMLDivElement>(null);
+    const progressRef = React.useRef<HTMLDivElement>(null);
+    const primaryRef = useMagnetic<HTMLButtonElement>();
+    const ghostRef = useMagnetic<HTMLButtonElement>();
     const [mine, setMine] = React.useState<PlatformKey | null>(null);
+    const [infos, setInfos] = React.useState<Partial<Record<PlatformKey, PlatformInfo>>>({});
+    const [busy, setBusy] = React.useState<PlatformKey | null>(null);
 
     React.useEffect(() => setMine(detectPlatform()), []);
 
-    // 로그인 상태면 앱으로, 아니면 로그인 화면으로 보낸다.
+    React.useEffect(() => {
+        PLATFORMS.forEach(({ key }) => {
+            fetch(api(`/api/download?platform=${key}&check=1`))
+                .then(r => r.ok ? r.json() : null)
+                .then((d: PlatformInfo | null) => {
+                    if (d) setInfos(s => ({ ...s, [key]: d }));
+                })
+                .catch(() => {});
+        });
+    }, []);
+
+    React.useEffect(() => {
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+        const el = pageRef.current;
+        if (!el) return;
+
+        let raf = 0;
+        const onMove = (e: PointerEvent) => {
+            cancelAnimationFrame(raf);
+            raf = requestAnimationFrame(() => {
+                el.style.setProperty("--mx", (e.clientX / window.innerWidth * 2 - 1).toFixed(3));
+                el.style.setProperty("--my", (e.clientY / window.innerHeight * 2 - 1).toFixed(3));
+            });
+        };
+
+        window.addEventListener("pointermove", onMove);
+        return () => {
+            window.removeEventListener("pointermove", onMove);
+            cancelAnimationFrame(raf);
+        };
+    }, []);
+
+    React.useEffect(() => {
+        const bar = progressRef.current;
+        if (!bar) return;
+
+        let raf = 0;
+        const onScroll = () => {
+            cancelAnimationFrame(raf);
+            raf = requestAnimationFrame(() => {
+                const max = document.documentElement.scrollHeight - window.innerHeight;
+                bar.style.transform = `scaleX(${max > 0 ? window.scrollY / max : 0})`;
+            });
+        };
+
+        onScroll();
+        window.addEventListener("scroll", onScroll, { passive: true });
+        return () => {
+            window.removeEventListener("scroll", onScroll);
+            cancelAnimationFrame(raf);
+        };
+    }, []);
+
     const goToWeb = React.useCallback(() => {
         const token = useAuthStore.getState().accessToken;
         router.push(token ? "/" : "/signIn");
     }, [router]);
 
-    const download = React.useCallback(async (platform: PlatformKey) => {
-        setStates(s => ({ ...s, [platform]: "checking" }));
-        try {
-            const res = await fetch(api(`/api/download?platform=${platform}&check=1`));
-            const data = await res.json() as { available: boolean };
+    const download = React.useCallback((platform: PlatformKey) => {
+        const info = infos[platform];
+        if (!info?.available || busy) return;
+        setBusy(platform);
+        window.location.href = api(`/api/download?platform=${platform}`);
+        window.setTimeout(() => setBusy(null), 4000);
+    }, [infos, busy]);
 
-            if (!data.available) {
-                setStates(s => ({ ...s, [platform]: "unreleased" }));
-                return;
-            }
-
-            setStates(s => ({ ...s, [platform]: "idle" }));
-            // 첨부 파일 응답이라 페이지 이동 없이 곧바로 내려받는다.
-            window.location.href = api(`/api/download?platform=${platform}`);
-        } catch {
-            setStates(s => ({ ...s, [platform]: "error" }));
-        }
-    }, []);
+    const mineInfo = mine ? infos[mine] : undefined;
+    const mineLabel = PLATFORMS.find(p => p.key === mine)?.label;
+    const version = Object.values(infos).find(i => i?.version)?.version;
 
     return (
-        <Page>
-            <Backdrop aria-hidden="true">
-                <span className="glow g1" />
-                <span className="glow g2" />
-                <Grain />
-            </Backdrop>
+        <Page ref={pageRef}>
+            <ProgressBar ref={progressRef} aria-hidden="true" />
+            <CursorTrail />
 
-            <Inner>
-                <Hero>
-                    <HeroArt aria-hidden="true">
-                        <CronosOrbit />
-                    </HeroArt>
+            <Sky aria-hidden="true">
+                {STARS.map((s, i) => (
+                    <Star
+                        key={i}
+                        $layer={s.layer}
+                        style={{ left: `${s.x}%`, top: `${s.y}%`, animationDelay: `${s.d}s` }}
+                    >
+                        {s.glyph ? "✦" : ""}
+                        {!s.glyph && <i style={{ width: s.s, height: s.s }} />}
+                    </Star>
+                ))}
+            </Sky>
 
-                    <HeroText>
-                        <Brand>CRONOS</Brand>
-                        <Tagline>일정과 목표를 하나의 별자리처럼</Tagline>
-                        <Lead>
-                            캘린더 · 프로젝트 · 챌린지를 한 곳에서 관리하는 할 일 앱입니다.
-                            웹에서 바로 쓰거나, 데스크톱 앱을 설치해 바탕화면 위젯까지 함께 사용할 수 있습니다.
-                        </Lead>
+            <Nav>
+                <NavBrand>CRONOS</NavBrand>
+                <NavRight>
+                    <NavLink as="a" href={REPO} target="_blank" rel="noreferrer">GitHub</NavLink>
+                    <NavCta type="button" onClick={goToWeb}>
+                        <Globe size={14} />
+                        웹으로 열기
+                    </NavCta>
+                </NavRight>
+            </Nav>
 
-                        <CtaRow>
-                            <PrimaryCta type="button" onClick={goToWeb}>
-                                <Globe size={16} />
-                                웹으로 시작하기
-                                <ArrowRight size={15} className="arrow" />
-                            </PrimaryCta>
-                            <GhostCta href="#download">
-                                <MonitorDown size={16} />
-                                데스크톱 앱 다운로드
-                            </GhostCta>
-                        </CtaRow>
+            <Hero>
+                <HeroText>
+                    <Brand>CRONOS</Brand>
+                    <Tagline>일정과 목표를 하나의 별자리처럼</Tagline>
+                    <Lead>
+                        캘린더 · 프로젝트 · 챌린지를 한 곳에서 관리하는 할 일 앱.
+                        웹에서 바로 쓰거나, 앱을 설치해 바탕화면 위젯까지 사용할 수 있습니다.
+                    </Lead>
 
-                        <Fineprint>설치 없이 브라우저에서 바로 사용할 수 있습니다.</Fineprint>
-                    </HeroText>
-                </Hero>
+                    <CtaRow>
+                        <PrimaryCta
+                            ref={primaryRef}
+                            type="button"
+                            onClick={() => mine && download(mine)}
+                            disabled={!mine || !mineInfo?.available || busy !== null}
+                        >
+                            {busy ? <Spinner size={15} /> : <MonitorDown size={15} />}
+                            {mineLabel ? `${mineLabel}용 다운로드` : "다운로드"}
+                            {mineInfo?.available && (
+                                <CtaMeta>
+                                    v{mineInfo.version} · {mb(mineInfo.size)}
+                                </CtaMeta>
+                            )}
+                            {mine && infos[mine] && !mineInfo?.available && <CtaMeta>준비 중</CtaMeta>}
+                        </PrimaryCta>
+                        <GhostCta ref={ghostRef} type="button" onClick={goToWeb}>
+                            웹에서 바로 사용
+                            <ArrowRight size={14} className="arrow" />
+                        </GhostCta>
+                    </CtaRow>
 
-                <Divider />
+                    <Fineprint>
+                        무료 · 회원가입만으로 시작 ·{" "}
+                        <a href="#all-downloads">다른 플랫폼<ArrowDown size={11} /></a>
+                    </Fineprint>
+                </HeroText>
 
-                <Reveal>
-                    <SectionTitle>기능</SectionTitle>
-                </Reveal>
+                <HeroArt aria-hidden="true">
+                    <HeroScene />
+                    <DragHint>끌어서 돌려보세요</DragHint>
+                </HeroArt>
+            </Hero>
 
+            <Section>
+                <RevealTitle>기능</RevealTitle>
                 <FeatureGrid>
-                    {FEATURES.map(({ icon: Icon, title, desc }, i) => (
-                        <Reveal key={title} delay={i * 90}>
-                            <Feature>
-                                <FeatureIcon><Icon size={18} /></FeatureIcon>
-                                <FeatureTitle>{title}</FeatureTitle>
-                                <FeatureDesc>{desc}</FeatureDesc>
+                    {FEATURES.map((f, i) => (
+                        <Reveal key={f.key} delay={i * 90}>
+                            <Feature
+                                tabIndex={0}
+                                onPointerMove={tiltStart}
+                                onPointerLeave={tiltEnd}
+                            >
+                                <FeatureVisual>{f.visual()}</FeatureVisual>
+                                <FeatureTitle>{f.title}</FeatureTitle>
+                                <FeatureDesc>{f.desc}</FeatureDesc>
                             </Feature>
                         </Reveal>
                     ))}
                 </FeatureGrid>
+            </Section>
 
-                <Divider />
-
+            <Section id="all-downloads">
+                <RevealTitle>모든 플랫폼</RevealTitle>
                 <Reveal>
-                    <SectionTitle id="download">다운로드</SectionTitle>
-                    <DownloadNote>
-                        운영체제에 맞는 설치 파일을 바로 내려받습니다. 다른 사이트로 이동하지 않습니다.
-                    </DownloadNote>
+                    <SectionNote>
+                        {version ? `현재 버전 v${version} — ` : ""}
+                        이 사이트에서 바로 내려받습니다.
+                    </SectionNote>
                 </Reveal>
 
-                <PlatformGrid>
-                    {PLATFORMS.map((p, i) => {
-                        const state = states[p.key] ?? "idle";
-                        return (
-                            <Reveal key={p.key} delay={i * 90}>
-                                <Platform
+                <Reveal delay={80}>
+                    <PlatformList>
+                        {PLATFORMS.map(p => {
+                            const info = infos[p.key];
+                            const ready = info?.available;
+                            return (
+                                <PlatformRow
+                                    key={p.key}
                                     type="button"
                                     onClick={() => download(p.key)}
-                                    disabled={state === "checking"}
+                                    disabled={!ready || busy !== null}
                                     $mine={mine === p.key}
                                 >
-                                    {mine === p.key && <MineTag>내 운영체제</MineTag>}
-                                    <PlatformName>{p.label}</PlatformName>
-                                    <PlatformExt>{p.ext}</PlatformExt>
-                                    <PlatformNote>{p.note}</PlatformNote>
-                                    <PlatformCta $state={state}>
-                                        {state === "checking" && <><Spinner size={13} /> 확인 중</>}
-                                        {state === "idle" && <>내려받기 <ArrowRight size={13} className="arrow" /></>}
-                                        {state === "unreleased" && "아직 준비 중"}
-                                        {state === "error" && "다시 시도해주세요"}
-                                    </PlatformCta>
-                                </Platform>
-                            </Reveal>
-                        );
-                    })}
-                </PlatformGrid>
-
-                <Reveal delay={120}>
-                    <UpdateCard>
-                        <UpdateIcon><RefreshCw size={16} /></UpdateIcon>
-                        <div>
-                            <UpdateTitle>한 번 설치하면 계속 최신 상태</UpdateTitle>
-                            <UpdateDesc>
-                                새 버전이 나오면 앱이 스스로 확인하고 알려줍니다. 다시 받을 필요 없이
-                                &lsquo;지금 설치&rsquo;를 누르면 내려받아 적용한 뒤 한 번 다시 시작합니다.
-                            </UpdateDesc>
-                        </div>
-                    </UpdateCard>
+                                    <RowName>
+                                        {p.label}
+                                        {mine === p.key && <RowMine>내 운영체제</RowMine>}
+                                    </RowName>
+                                    <RowNote>{p.note}</RowNote>
+                                    <RowMeta>
+                                        {info === undefined && "확인 중"}
+                                        {info !== undefined && !ready && "준비 중"}
+                                        {ready && `${p.ext} · ${mb(info?.size)}`}
+                                    </RowMeta>
+                                    <RowAction>
+                                        {busy === p.key ? <Spinner size={13} /> : <ArrowDown size={13} className="arrow" />}
+                                    </RowAction>
+                                </PlatformRow>
+                            );
+                        })}
+                    </PlatformList>
                 </Reveal>
+            </Section>
 
-                <Foot>
-                    <span>CRONOS</span>
-                    <FootLinks>
-                        <a href={REPO} target="_blank" rel="noreferrer">GitHub</a>
-                        <Link href="/signIn">로그인</Link>
-                    </FootLinks>
-                </Foot>
-            </Inner>
+            <Foot>
+                <span>CRONOS</span>
+                <FootLinks>
+                    <a href={REPO} target="_blank" rel="noreferrer">GitHub</a>
+                    <Link href="/signIn">로그인</Link>
+                    <Link href="/signUp">회원가입</Link>
+                </FootLinks>
+            </Foot>
         </Page>
     );
 }
 
-/* ── 애니메이션 ─────────────────────────────── */
+const twinkle = keyframes`
+    0%, 100% { opacity: 0.12; transform: scale(0.8); }
+    50%      { opacity: 0.85; transform: scale(1.1); }
+`;
 
-const float = keyframes`
-    0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
-    50%      { transform: translate3d(24px, -18px, 0) scale(1.06); }
+const starPulse = keyframes`
+    0%, 100% { opacity: 0.55; text-shadow: none; }
+    50%      { opacity: 1; text-shadow: 0 0 6px currentColor; }
 `;
 
 const riseIn = keyframes`
@@ -242,18 +460,15 @@ const spin = keyframes`
 `;
 
 const sheen = keyframes`
-    from { transform: translateX(-120%); }
-    to   { transform: translateX(220%); }
+    from { transform: translateX(-130%); }
+    to   { transform: translateX(230%); }
 `;
 
-/** 모션을 원치 않는 사용자에게는 애니메이션을 붙이지 않는다. */
 const motionOnly = (rule: ReturnType<typeof css>) => css`
     @media (prefers-reduced-motion: no-preference) {
         ${rule}
     }
 `;
-
-/* ── 레이아웃 ───────────────────────────────── */
 
 const Page = styled.div`
     position: relative;
@@ -263,89 +478,114 @@ const Page = styled.div`
     overflow-x: hidden;
 `;
 
-const Backdrop = styled.div`
+const ProgressBar = styled.div`
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    z-index: 50;
+    background: ${p => p.theme.colors.primary};
+    box-shadow: 0 0 8px ${p => p.theme.colors.primary}88;
+    transform: scaleX(0);
+    transform-origin: left;
+`;
+
+const Sky = styled.div`
     position: fixed;
     inset: 0;
     pointer-events: none;
     z-index: 0;
+`;
 
-    .glow {
-        position: absolute;
-        border-radius: 50%;
-        filter: blur(90px);
-        opacity: 0.18;
+const Star = styled.span<{ $layer: number }>`
+    position: absolute;
+    color: ${p => p.theme.colors.primary};
+    font-size: 9px;
+    line-height: 1;
+    opacity: 0.3;
+    transform: translate3d(
+        calc(var(--mx, 0) * ${p => 6 + p.$layer * 7}px),
+        calc(var(--my, 0) * ${p => 4 + p.$layer * 5}px),
+        0
+    );
+
+    i {
+        display: block;
         background: ${p => p.theme.colors.primary};
+        border-radius: 50%;
     }
 
-    .g1 { top: -160px; right: -120px; width: 520px; height: 520px; }
-    .g2 { bottom: -220px; left: -160px; width: 460px; height: 460px; opacity: 0.12; }
-
     ${motionOnly(css`
-        .g1 { animation: ${float} 26s ease-in-out infinite; }
-        .g2 { animation: ${float} 34s ease-in-out infinite reverse; }
+        i, &:not(:empty) { animation: ${twinkle} 5s ease-in-out infinite; animation-delay: inherit; }
     `)}
 `;
 
-const Grain = styled.span`
-    position: absolute;
-    inset: 0;
-    opacity: 0.35;
-    background-image: radial-gradient(currentColor 0.5px, transparent 0.5px);
-    background-size: 22px 22px;
-    color: ${p => p.theme.colors.primary}22;
-    mask-image: radial-gradient(ellipse at 50% 30%, black 20%, transparent 72%);
-`;
-
-const Inner = styled.div`
+const Nav = styled.nav`
     position: relative;
-    z-index: 1;
-    max-width: 1040px;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 1080px;
     margin: 0 auto;
-    padding: 72px 28px 60px;
-
-    @media (max-width: 720px) {
-        padding: 44px 20px 48px;
-    }
+    padding: 20px 28px 0;
 `;
 
-const RevealBox = styled.div<{ $shown: boolean; $delay: number }>`
-    opacity: 1;
-    height: 100%;
+const NavBrand = styled.span`
+    font-family: ${p => p.theme.fonts.celestial};
+    font-size: 0.9rem;
+    letter-spacing: 5px;
+`;
 
-    @media (prefers-reduced-motion: no-preference) {
-        opacity: ${p => (p.$shown ? 1 : 0)};
-        transform: ${p => (p.$shown ? "none" : "translateY(18px)")};
-        transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
-        transition-delay: ${p => p.$delay}ms;
+const NavRight = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 18px;
+`;
+
+const NavLink = styled.a`
+    font-size: 0.78rem;
+    letter-spacing: 1px;
+    color: ${p => p.theme.colors.textSecondary};
+    text-decoration: none;
+    transition: color 0.2s;
+
+    &:hover { color: ${p => p.theme.colors.primary}; }
+`;
+
+const NavCta = styled.button`
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    font-size: 0.76rem;
+    font-family: inherit;
+    letter-spacing: 1px;
+    color: ${p => p.theme.colors.text};
+    background: none;
+    border: 1px solid ${p => p.theme.colors.primary}55;
+    cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s;
+
+    &:hover {
+        border-color: ${p => p.theme.colors.primary};
+        box-shadow: 0 0 8px ${p => p.theme.colors.primary}40;
     }
 `;
 
 const Hero = styled.header`
+    position: relative;
+    z-index: 1;
     display: flex;
     align-items: center;
-    gap: 44px;
+    gap: 48px;
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 76px 28px 96px;
 
-    @media (max-width: 860px) {
-        gap: 24px;
-    }
-`;
-
-const HeroArt = styled.div`
-    flex: 0 0 auto;
-    width: 300px;
-    height: 300px;
-
-    ${motionOnly(css`
-        animation: ${riseIn} 1s cubic-bezier(0.22, 1, 0.36, 1) both;
-    `)}
-
-    @media (max-width: 980px) {
-        width: 220px;
-        height: 220px;
-    }
-
-    @media (max-width: 860px) {
-        display: none;
+    @media (max-width: 900px) {
+        padding: 56px 24px 72px;
     }
 `;
 
@@ -354,23 +594,20 @@ const HeroText = styled.div`
     min-width: 0;
 
     ${motionOnly(css`
-        & > * {
-            animation: ${riseIn} 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
-        }
-        & > *:nth-child(2) { animation-delay: 0.12s; }
-        & > *:nth-child(3) { animation-delay: 0.22s; }
-        & > *:nth-child(4) { animation-delay: 0.32s; }
-        & > *:nth-child(5) { animation-delay: 0.42s; }
+        & > * { animation: ${riseIn} 0.8s cubic-bezier(0.22, 1, 0.36, 1) both; }
+        & > *:nth-child(2) { animation-delay: 0.1s; }
+        & > *:nth-child(3) { animation-delay: 0.2s; }
+        & > *:nth-child(4) { animation-delay: 0.3s; }
+        & > *:nth-child(5) { animation-delay: 0.4s; }
     `)}
 `;
 
 const Brand = styled.h1`
     margin: 0;
     font-family: ${p => p.theme.fonts.celestial};
-    font-size: 3rem;
-    letter-spacing: 12px;
+    font-size: 3.2rem;
     font-weight: 400;
-    color: ${p => p.theme.colors.text};
+    letter-spacing: 12px;
 
     ${motionOnly(css`
         animation: ${letterIn} 1.1s cubic-bezier(0.22, 1, 0.36, 1) both;
@@ -383,7 +620,7 @@ const Brand = styled.h1`
 `;
 
 const Tagline = styled.p`
-    margin: 10px 0 0;
+    margin: 12px 0 0;
     font-family: ${p => p.theme.fonts.celestial};
     font-size: 1rem;
     letter-spacing: 3px;
@@ -392,7 +629,7 @@ const Tagline = styled.p`
 
 const Lead = styled.p`
     margin: 22px 0 0;
-    max-width: 560px;
+    max-width: 480px;
     font-size: 0.94rem;
     line-height: 1.75;
     color: ${p => p.theme.colors.textSecondary};
@@ -401,34 +638,35 @@ const Lead = styled.p`
 const CtaRow = styled.div`
     display: flex;
     flex-wrap: wrap;
+    align-items: stretch;
     gap: 12px;
-    margin-top: 30px;
+    margin-top: 34px;
 `;
 
 const ctaBase = css`
     position: relative;
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    padding: 12px 22px;
-    font-size: 0.86rem;
+    gap: 9px;
+    padding: 13px 22px;
+    font-size: 0.87rem;
     font-family: inherit;
     letter-spacing: 1px;
-    text-decoration: none;
+    color: ${p => p.theme.colors.text};
     background: none;
     cursor: pointer;
     overflow: hidden;
-    transition: box-shadow 0.25s, border-color 0.25s, transform 0.25s, color 0.25s;
+    transform: translate(var(--magx, 0px), var(--magy, 0px));
+    transition: box-shadow 0.25s, border-color 0.25s, transform 0.25s ease-out;
 
     .arrow { transition: transform 0.25s; }
-    &:hover .arrow { transform: translateX(4px); }
-    &:hover { transform: translateY(-2px); }
+    &:hover:not(:disabled) .arrow { transform: translateX(4px); }
+    &:disabled { cursor: default; opacity: 0.6; }
 `;
 
 const PrimaryCta = styled.button`
     ${ctaBase}
     border: 1px solid ${p => p.theme.colors.primary};
-    color: ${p => p.theme.colors.text};
 
     &::after {
         content: "";
@@ -437,63 +675,152 @@ const PrimaryCta = styled.button`
         bottom: 0;
         width: 42%;
         background: linear-gradient(100deg, transparent, ${p => p.theme.colors.primary}44, transparent);
-        transform: translateX(-120%);
+        transform: translateX(-130%);
     }
 
-    &:hover { box-shadow: 0 0 18px ${p => p.theme.colors.primary}55; }
+    &:hover:not(:disabled) { box-shadow: 0 0 18px ${p => p.theme.colors.primary}55; }
 
     ${motionOnly(css`
-        &:hover::after { animation: ${sheen} 0.9s ease-out; }
+        &:hover:not(:disabled)::after { animation: ${sheen} 0.9s ease-out; }
     `)}
 `;
 
-const GhostCta = styled.a`
+const CtaMeta = styled.span`
+    padding-left: 10px;
+    border-left: 1px solid ${p => p.theme.colors.primary}55;
+    font-size: 0.74rem;
+    white-space: nowrap;
+    color: ${p => p.theme.colors.textSecondary};
+`;
+
+const GhostCta = styled.button`
     ${ctaBase}
-    border: 1px solid ${p => p.theme.colors.primary}55;
+    border: 1px solid ${p => p.theme.colors.primary}44;
     color: ${p => p.theme.colors.textSecondary};
 
-    &:hover {
+    &:hover:not(:disabled) {
         border-color: ${p => p.theme.colors.primary};
         color: ${p => p.theme.colors.text};
     }
 `;
 
 const Fineprint = styled.p`
-    margin: 14px 0 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 16px 0 0;
     font-size: 0.76rem;
     letter-spacing: 0.5px;
     color: ${p => p.theme.colors.textSecondary};
+
+    a {
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
+        color: ${p => p.theme.colors.textSecondary};
+        text-decoration: none;
+        border-bottom: 1px dashed ${p => p.theme.colors.primary}55;
+        transition: color 0.2s, border-color 0.2s;
+
+        &:hover { color: ${p => p.theme.colors.primary}; border-color: ${p => p.theme.colors.primary}; }
+    }
 `;
 
-const Divider = styled.hr`
-    margin: 64px 0 40px;
-    border: none;
-    border-top: 1px solid ${p => p.theme.colors.primary}44;
+const HeroArt = styled.div`
+    position: relative;
+    flex: 0 0 auto;
+    width: 340px;
+    height: 340px;
+
+    ${motionOnly(css`
+        animation: ${riseIn} 1s cubic-bezier(0.22, 1, 0.36, 1) both;
+    `)}
+
+    @media (max-width: 1000px) { width: 250px; height: 250px; }
+    @media (max-width: 860px) { display: none; }
+`;
+
+const DragHint = styled.span`
+    position: absolute;
+    bottom: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.68rem;
+    letter-spacing: 2px;
+    white-space: nowrap;
+    color: ${p => p.theme.colors.textSecondary};
+    opacity: 0.7;
+`;
+
+const RevealBox = styled.div<{ $shown: boolean; $delay: number }>`
+    height: 100%;
+
+    @media (prefers-reduced-motion: no-preference) {
+        opacity: ${p => (p.$shown ? 1 : 0)};
+        transform: ${p => (p.$shown ? "none" : "translateY(18px)")};
+        transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+        transition-delay: ${p => p.$delay}ms;
+    }
+`;
+
+const Section = styled.section`
+    position: relative;
+    z-index: 1;
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 0 28px 88px;
+    scroll-margin-top: 24px;
 `;
 
 const SectionTitle = styled.h2`
-    margin: 0 0 22px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 0 0 26px;
     font-family: ${p => p.theme.fonts.celestial};
-    font-size: 1.1rem;
+    font-size: 1.05rem;
     font-weight: 400;
     letter-spacing: 5px;
-    color: ${p => p.theme.colors.text};
-    scroll-margin-top: 24px;
+
+    &::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: linear-gradient(to right, ${p => p.theme.colors.primary}88, transparent);
+    }
+`;
+
+const Char = styled.span<{ $shown: boolean }>`
+    display: inline-block;
+
+    @media (prefers-reduced-motion: no-preference) {
+        opacity: ${p => (p.$shown ? 1 : 0)};
+        transform: ${p => (p.$shown ? "none" : "translateY(10px)")};
+        filter: ${p => (p.$shown ? "none" : "blur(4px)")};
+        transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1), filter 0.5s;
+    }
+`;
+
+const SectionNote = styled.p`
+    margin: -14px 0 24px;
+    font-size: 0.82rem;
+    color: ${p => p.theme.colors.textSecondary};
 `;
 
 const FeatureGrid = styled.div`
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
     gap: 14px;
 `;
 
 const Feature = styled.article`
     position: relative;
     height: 100%;
-    padding: 22px 20px 24px;
+    padding: 20px;
     border: 1px solid ${p => p.theme.colors.primary}33;
-    background-color: ${p => p.theme.colors.background};
-    transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
+    outline: none;
+    transform: perspective(700px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateY(var(--lift, 0px));
+    transition: border-color 0.3s, transform 0.18s ease-out, box-shadow 0.3s;
 
     &::after {
         content: "";
@@ -506,139 +833,245 @@ const Feature = styled.article`
         transition: width 0.3s, height 0.3s;
     }
 
-    &:hover {
+    &:hover, &:focus-visible {
+        --lift: -4px;
         border-color: ${p => p.theme.colors.primary}99;
-        transform: translateY(-4px);
-        box-shadow: 0 10px 30px ${p => p.theme.colors.primary}1f;
+        box-shadow: 0 10px 28px ${p => p.theme.colors.primary}1f;
     }
 
-    &:hover::after { width: 24px; height: 24px; }
+    &:hover::after, &:focus-visible::after { width: 24px; height: 24px; }
 `;
 
-const FeatureIcon = styled.span`
+const FeatureVisual = styled.div`
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 34px;
-    height: 34px;
-    border: 1px solid ${p => p.theme.colors.primary}66;
-    color: ${p => p.theme.colors.primary};
-    transition: transform 0.3s, border-color 0.3s;
+    height: 92px;
+    margin-bottom: 16px;
+    border-bottom: 1px dashed ${p => p.theme.colors.primary}33;
+`;
 
-    ${Feature}:hover & {
-        transform: rotate(-6deg) scale(1.08);
+const MiniCalendar = styled.div`
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(7, 14px);
+    gap: 3px;
+
+    .cell {
+        height: 10px;
+        border: 1px solid ${p => p.theme.colors.primary}40;
+    }
+
+    .cell.dot::after {
+        content: "";
+        display: block;
+        width: 3px;
+        height: 3px;
+        margin: 2px auto 0;
+        background: ${p => p.theme.colors.primary};
+        border-radius: 50%;
+    }
+
+    .bar {
+        position: absolute;
+        left: 17px;
+        top: 28px;
+        width: 84px;
+        height: 2px;
+        background: ${p => p.theme.colors.primary};
+        transform-origin: left;
+        transform: scaleX(0.35);
+        transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+        box-shadow: 0 0 6px ${p => p.theme.colors.primary}66;
+    }
+
+    ${Feature}:hover &, ${Feature}:focus-visible & {
+        .bar { transform: scaleX(1); }
+    }
+`;
+
+const MiniBoard = styled.div`
+    display: flex;
+    gap: 6px;
+
+    .col {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        width: 34px;
+        padding: 5px 4px;
+        border: 1px solid ${p => p.theme.colors.primary}40;
+        min-height: 62px;
+    }
+
+    .col i {
+        display: block;
+        height: 3px;
+        background: ${p => p.theme.colors.primary}99;
+        transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.45s;
+    }
+
+    ${Feature}:hover .col .mover, ${Feature}:focus-visible .col .mover {
+        transform: translateX(40px);
+        box-shadow: 0 0 6px ${p => p.theme.colors.primary}88;
+    }
+`;
+
+const MiniChallenge = styled.div`
+    display: flex;
+    gap: 7px;
+
+    .day {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 18px;
+        height: 18px;
+        border: 1px solid ${p => p.theme.colors.primary}66;
+        font-size: 10px;
+        color: ${p => p.theme.colors.primary};
+        opacity: 0.3;
+        transition: opacity 0.35s, text-shadow 0.35s, border-color 0.35s;
+    }
+
+    .day.on {
+        opacity: 1;
         border-color: ${p => p.theme.colors.primary};
+        text-shadow: 0 0 5px ${p => p.theme.colors.primary}99;
+    }
+
+    ${motionOnly(css`
+        .day.on { animation: ${starPulse} 3.2s ease-in-out infinite; }
+    `)}
+
+    ${Feature}:hover .day, ${Feature}:focus-visible .day {
+        opacity: 1;
+        border-color: ${p => p.theme.colors.primary};
+        text-shadow: 0 0 5px ${p => p.theme.colors.primary}99;
+    }
+`;
+
+const MiniWidgets = styled.div`
+    position: relative;
+    width: 74px;
+    height: 58px;
+
+    .pane {
+        position: absolute;
+        inset: 0;
+        border: 1px solid ${p => p.theme.colors.primary}55;
+        transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+        background: ${p => p.theme.colors.background};
+    }
+
+    .p2 { transform: translate(6px, 6px); }
+    .p3 { transform: translate(12px, 12px); }
+
+    ${Feature}:hover &, ${Feature}:focus-visible & {
+        .p1 { transform: translate(-8px, -4px) rotate(-3deg); }
+        .p2 { transform: translate(10px, 2px) rotate(2deg); }
+        .p3 { transform: translate(2px, 14px); }
     }
 `;
 
 const FeatureTitle = styled.h3`
-    margin: 14px 0 0;
-    font-size: 0.92rem;
+    margin: 0;
+    font-size: 0.9rem;
     font-weight: 600;
     letter-spacing: 0.5px;
-    color: ${p => p.theme.colors.text};
 `;
 
 const FeatureDesc = styled.p`
     margin: 8px 0 0;
-    font-size: 0.82rem;
-    line-height: 1.7;
+    font-size: 0.8rem;
+    line-height: 1.65;
     color: ${p => p.theme.colors.textSecondary};
 `;
 
-const DownloadNote = styled.p`
-    margin: -8px 0 22px;
-    font-size: 0.84rem;
-    color: ${p => p.theme.colors.textSecondary};
-`;
-
-const PlatformGrid = styled.div`
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 14px;
-`;
-
-const Platform = styled.button<{ $mine: boolean }>`
-    position: relative;
-    display: block;
-    width: 100%;
-    height: 100%;
-    padding: 20px;
-    text-align: left;
-    font-family: inherit;
-    cursor: pointer;
-    background: none;
-    border: 1px solid ${p => p.$mine ? p.theme.colors.primary : `${p.theme.colors.primary}55`};
-    overflow: hidden;
-    transition: border-color 0.25s, box-shadow 0.25s, transform 0.25s;
-
-    &::after {
-        content: "";
-        position: absolute;
-        top: 0;
-        bottom: 0;
-        width: 40%;
-        background: linear-gradient(100deg, transparent, ${p => p.theme.colors.primary}33, transparent);
-        transform: translateX(-120%);
-    }
-
-    &:hover:not(:disabled) {
-        border-color: ${p => p.theme.colors.primary};
-        box-shadow: 0 10px 28px ${p => p.theme.colors.primary}26;
-        transform: translateY(-4px);
-    }
-
-    &:disabled { cursor: progress; }
-
-    ${motionOnly(css`
-        &:hover:not(:disabled)::after { animation: ${sheen} 0.9s ease-out; }
-    `)}
-`;
-
-const MineTag = styled.span`
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    padding: 3px 8px;
-    font-size: 0.64rem;
-    letter-spacing: 1px;
-    color: ${p => p.theme.colors.primary};
-    border: 1px solid ${p => p.theme.colors.primary}66;
-`;
-
-const PlatformName = styled.div`
-    font-family: ${p => p.theme.fonts.celestial};
-    font-size: 1.05rem;
-    letter-spacing: 2px;
-    color: ${p => p.theme.colors.text};
-`;
-
-const PlatformExt = styled.div`
-    margin-top: 4px;
-    font-size: 0.76rem;
-    letter-spacing: 1px;
-    color: ${p => p.theme.colors.primary};
-`;
-
-const PlatformNote = styled.div`
-    margin-top: 10px;
-    font-size: 0.76rem;
-    color: ${p => p.theme.colors.textSecondary};
-`;
-
-const PlatformCta = styled.div<{ $state: CardState }>`
+const PlatformList = styled.div`
     display: flex;
+    flex-direction: column;
+    border-top: 1px solid ${p => p.theme.colors.primary}44;
+`;
+
+const PlatformRow = styled.button<{ $mine: boolean }>`
+    display: grid;
+    grid-template-columns: auto 1fr auto 40px;
     align-items: center;
-    gap: 6px;
-    margin-top: 16px;
-    padding-top: 10px;
-    border-top: 1px dashed ${p => p.theme.colors.primary}44;
-    font-size: 0.78rem;
-    letter-spacing: 1px;
-    color: ${p => p.$state === "idle" ? p.theme.colors.text : p.theme.colors.textSecondary};
+    gap: 14px;
+    width: 100%;
+    padding: 16px 6px;
+    font-family: inherit;
+    text-align: left;
+    color: inherit;
+    background: none;
+    border: none;
+    border-bottom: 1px solid ${p => p.theme.colors.primary}33;
+    cursor: pointer;
+    transition: box-shadow 0.25s;
 
     .arrow { transition: transform 0.25s; }
-    ${Platform}:hover & .arrow { transform: translateX(4px); }
+
+    &:hover:not(:disabled) {
+        box-shadow: inset 0 -1px 0 ${p => p.theme.colors.primary}, 0 6px 16px -8px ${p => p.theme.colors.primary}44;
+
+        .arrow { transform: translateY(3px); }
+    }
+
+    &:disabled { cursor: default; opacity: 0.55; }
+
+    @media (max-width: 620px) {
+        grid-template-columns: auto 1fr 32px;
+
+        & > :nth-child(2) { display: none; }
+    }
+`;
+
+const RowName = styled.span`
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 150px;
+    font-family: ${p => p.theme.fonts.celestial};
+    font-size: 0.98rem;
+    letter-spacing: 2px;
+    white-space: nowrap;
+
+    @media (max-width: 620px) {
+        min-width: 0;
+    }
+`;
+
+const RowMine = styled.span`
+    padding: 2px 7px;
+    border: 1px solid ${p => p.theme.colors.primary}66;
+    font-size: 0.6rem;
+    letter-spacing: 1px;
+    white-space: nowrap;
+    color: ${p => p.theme.colors.primary};
+`;
+
+const RowNote = styled.span`
+    font-size: 0.76rem;
+    color: ${p => p.theme.colors.textSecondary};
+`;
+
+const RowMeta = styled.span`
+    font-size: 0.76rem;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    text-align: right;
+    color: ${p => p.theme.colors.primary};
+`;
+
+const RowAction = styled.span`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border: 1px solid ${p => p.theme.colors.primary}55;
+    color: ${p => p.theme.colors.primary};
 `;
 
 const Spinner = styled(Loader2)`
@@ -647,52 +1080,16 @@ const Spinner = styled(Loader2)`
     `)}
 `;
 
-const UpdateCard = styled.section`
-    display: flex;
-    gap: 16px;
-    margin-top: 30px;
-    padding: 20px;
-    border: 1px solid ${p => p.theme.colors.primary}33;
-    transition: border-color 0.3s;
-
-    &:hover { border-color: ${p => p.theme.colors.primary}66; }
-`;
-
-const UpdateIcon = styled.span`
-    flex: 0 0 auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 34px;
-    height: 34px;
-    border: 1px solid ${p => p.theme.colors.primary}66;
-    color: ${p => p.theme.colors.primary};
-    transition: transform 0.5s;
-
-    ${UpdateCard}:hover & { transform: rotate(180deg); }
-`;
-
-const UpdateTitle = styled.h3`
-    margin: 4px 0 0;
-    font-size: 0.92rem;
-    letter-spacing: 0.5px;
-    color: ${p => p.theme.colors.text};
-`;
-
-const UpdateDesc = styled.p`
-    margin: 8px 0 0;
-    font-size: 0.82rem;
-    line-height: 1.7;
-    color: ${p => p.theme.colors.textSecondary};
-`;
-
 const Foot = styled.footer`
+    position: relative;
+    z-index: 1;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    margin-top: 64px;
-    padding-top: 20px;
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 20px 28px 36px;
     border-top: 1px solid ${p => p.theme.colors.primary}33;
     font-family: ${p => p.theme.fonts.celestial};
     font-size: 0.74rem;

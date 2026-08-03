@@ -36,7 +36,6 @@ export function useWidgetInit(need: WidgetData[] = ALL) {
 
         fetch(api("/api/auth/refresh"), {
             method: "POST",
-            credentials: "include",
             headers: {
                 ...clientHeaders(),
                 ...(stored ? { "X-Refresh-Token": stored } : {}),

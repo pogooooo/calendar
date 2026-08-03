@@ -8,6 +8,7 @@ import useCategoryStore from "@/store/useCategoryStore";
 import useAuthStore from "@/store/useAuthStore";
 import useDailyStore from "@/store/useDailyStore";
 import useSettingStore from "@/store/useSettingStore";
+import { isDesktopApp } from "@/lib/apiBase";
 
 const PUBLIC_ROUTES = ["/signIn", "/signUp", "/download"];
 const NO_PREFETCH_ROUTES = PUBLIC_ROUTES;
@@ -58,7 +59,7 @@ export default function StoreInitializer({ children }: { children: React.ReactNo
         if (isWidgetRoute) return;
 
         if (!accessToken && !isPublicRoute) {
-            router.replace("/signIn");
+            router.replace(isDesktopApp() ? "/signIn" : "/download");
         }
 
         if (accessToken && isPublicRoute && !isLandingRoute) {

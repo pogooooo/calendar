@@ -3,11 +3,6 @@
 import * as React from "react";
 import styled, { keyframes, css } from "styled-components";
 
-/**
- * 다운로드 페이지 히어로 아트.
- * 시간(시계 눈금·바늘)과 별자리(궤도·행성)를 겹친 라인 드로잉이다.
- * 사이드바 장식과는 별개의 그림이며 여기서만 쓴다.
- */
 
 const TICKS = Array.from({ length: 60 }, (_, i) => i);
 
@@ -43,7 +38,6 @@ export default function CronosOrbit({ className }: { className?: string }) {
                 </linearGradient>
             </defs>
 
-            {/* 시계 눈금 테두리 */}
             <g className="dial">
                 {TICKS.map(i => {
                     const major = i % 5 === 0;
@@ -65,12 +59,10 @@ export default function CronosOrbit({ className }: { className?: string }) {
             <circle className="rim" cx="168" cy="168" r="150" strokeWidth="0.8" opacity="0.3" />
             <circle className="rim dashed" cx="168" cy="168" r="141" strokeWidth="0.7" opacity="0.4" />
 
-            {/* 시침처럼 도는 빛줄기 */}
             <g className="sweep">
                 <line x1="168" y1="168" x2="168" y2="46" stroke="url(#cronos-sweep)" strokeWidth="1.6" />
             </g>
 
-            {/* 궤도와 행성 */}
             {ORBITS.map((o, i) => (
                 <g key={i} transform={`rotate(${o.tilt} 168 168)`}>
                     <ellipse
@@ -89,7 +81,6 @@ export default function CronosOrbit({ className }: { className?: string }) {
                 </g>
             ))}
 
-            {/* 중심 */}
             <circle cx="168" cy="168" r="46" fill="url(#cronos-core)" className="core" />
             <circle className="coreRing" cx="168" cy="168" r="17" strokeWidth="1" />
             <g className="burst">
@@ -107,7 +98,6 @@ export default function CronosOrbit({ className }: { className?: string }) {
                 ))}
             </g>
 
-            {/* 반짝이는 별 */}
             {STARS.map((s, i) => (
                 <circle
                     key={i}

@@ -7,8 +7,8 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 웹 주소 | https://cronos.poggo201103.workers.dev |
-| 소개·다운로드 페이지 | https://cronos.poggo201103.workers.dev/download |
+| 웹 주소 | https://cronos.pogoo.workers.dev |
+| 소개·다운로드 페이지 | https://cronos.pogoo.workers.dev/download |
 | Worker 이름 | `cronos` |
 | D1 데이터베이스 | `cronos` (b14d1f13-9acf-4706-989b-254650c4276c) |
 
@@ -58,7 +58,7 @@ npx tauri signer generate -w "$HOME/.tauri/cronos.key"
 2. 저장소 Settings → Secrets and variables → Actions 에 등록합니다.
    - `TAURI_SIGNING_PRIVATE_KEY` — 비밀키 파일 내용
    - `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` — 키 비밀번호 (없으면 빈 값)
-3. 같은 화면 **Variables** 탭에 `NEXT_PUBLIC_API_BASE_URL` = `https://cronos.poggo201103.workers.dev` 를 등록합니다.
+3. 같은 화면 **Variables** 탭에 `NEXT_PUBLIC_API_BASE_URL` = `https://cronos.pogoo.workers.dev` 를 등록합니다.
 4. 버전을 올리고 태그를 밀면 `.github/workflows/release.yml` 이 Windows·macOS·Linux 설치 파일을 만들어 서명하고, 업데이트 정보(`latest.json`)와 함께 GitHub 릴리스에 올립니다.
 
 ```bash

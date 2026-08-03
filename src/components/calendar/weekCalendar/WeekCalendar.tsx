@@ -103,7 +103,7 @@ const WeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
         const accessToken = useAuthStore((state) => state.accessToken);
 
         const authFetch = React.useCallback(async (url: string, init?: RequestInit) => {
-            return fetch(api(url), { ...init, credentials: "include", headers: { ...clientHeaders(), ...init?.headers, Authorization: `Bearer ${accessToken}` } });
+            return fetch(api(url), { ...init, headers: { ...clientHeaders(), ...init?.headers, Authorization: `Bearer ${accessToken}` } });
         }, [accessToken]);
 
         const weekDates = React.useMemo(() => getWeekDates(currentDate), [currentDate]);

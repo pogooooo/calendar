@@ -47,12 +47,41 @@ jobs:
       - name: Install npm dependencies
         run: npm ci
 
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      # 실패 원인 파악용: 같은 빌드를 먼저 돌려 로그를 남긴다.
+      # 성공하면 cargo 캐시 덕에 아래 tauri-action 은 빠르게 재빌드된다.
+      - name: Build (log capture)
+        shell: bash
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${{ vars.NEXT_PUBLIC_GOOGLE_CLIENT_ID || secrets.NEXT_PUBLIC_GOOGLE_CLIENT_ID }}
+        run: |
+          set -o pipefail
+          npm run tauri build -- ${{ matrix.args }} 2>&1 | tee build.log
+
+      # 실패하면 로그 끝부분을 어노테이션으로 내보낸다 (로그인 없이 API 로 읽을 수 있는 유일한 채널).
+      - name: Publish failure log
+        if: failure()
+        shell: bash
+        run: |
+          tail -c 4000 build.log > tail.txt 2>/dev/null || echo "no build log" > tail.txt
+          split -b 700 tail.txt chunk_
+          i=0
+          for f in chunk_*; do
+            msg=$(sed 's/[%"\r]//g' "$f" | awk '{printf "%s || ", $0}')
+            echo "::error::LOG$i: $msg"
+            i=$((i+1))
+          done
+
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-          NEXT_PUBLIC_API_BASE_URL: ${{ vars.NEXT_PUBLIC_API_BASE_URL }}
+          NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${{ vars.NEXT_PUBLIC_GOOGLE_CLIENT_ID || secrets.NEXT_PUBLIC_GOOGLE_CLIENT_ID }}
         with:
           tagName: ${{ github.ref_name }}
           releaseName: "CRONOS ${{ github.ref_name }}"
@@ -60,5 +89,6 @@ jobs:
           releaseDraft: false
           prerelease: false
           includeUpdaterJson: true
-          updaterJsonPreferNsis: false
+          # 다운로드 페이지가 NSIS(.exe)를 배포하므로 업데이트도 같은 형식으로 맞춘다.
+          updaterJsonPreferNsis: true
           args: ${{ matrix.args }}

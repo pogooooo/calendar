@@ -31,7 +31,6 @@ const useAuthStore = create<AuthStore>()(
                 try {
                     await fetch(api("/api/auth/logout"), {
                         method: "POST",
-                        credentials: "include",
                         headers: {
                             ...clientHeaders(),
                             ...(stored ? { "X-Refresh-Token": stored } : {}),

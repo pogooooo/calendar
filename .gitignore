@@ -45,8 +45,14 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-/src/generated/prisma
+/src/generated/
 
 # Tauri
 /src-tauri/target/
 /src-tauri/gen/
+
+# Cloudflare 로컬 개발 상태 (miniflare)
+/.wrangler/
+
+# Claude Code 작업 공간
+/.claude/worktrees/

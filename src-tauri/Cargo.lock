@@ -573,7 +573,7 @@ dependencies = [
 
 [[package]]
 name = "cronos"
-version = "0.1.0"
+version = "0.1.2"
 dependencies = [
  "raw-window-handle",
  "reqwest 0.12.28",

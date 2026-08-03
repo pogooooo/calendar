@@ -95,7 +95,7 @@ const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
         const accessToken = useAuthStore((state) => state.accessToken);
 
         const authFetch = React.useCallback(async (url: string, init?: RequestInit) => {
-            return fetch(api(url), { ...init, credentials: "include", headers: { ...clientHeaders(), ...init?.headers, Authorization: `Bearer ${accessToken}` } });
+            return fetch(api(url), { ...init, headers: { ...clientHeaders(), ...init?.headers, Authorization: `Bearer ${accessToken}` } });
         }, [accessToken]);
 
         React.useEffect(() => {

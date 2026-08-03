@@ -5,7 +5,6 @@ const RELEASE_API = `https://api.github.com/repos/${REPO}/releases/latest`;
 
 type PlatformKey = "windows" | "macos" | "linux";
 
-// 릴리스 자산 이름에서 플랫폼을 골라내는 규칙. 앞쪽 확장자를 우선한다.
 const MATCHERS: Record<PlatformKey, RegExp[]> = {
     windows: [/\.exe$/i, /\.msi$/i],
     macos: [/\.dmg$/i, /\.app\.tar\.gz$/i],
@@ -13,20 +12,19 @@ const MATCHERS: Record<PlatformKey, RegExp[]> = {
 };
 
 type Asset = { name: string; browser_download_url: string; size: number };
+type Release = { tag_name?: string; assets?: Asset[] };
 
-async function fetchLatestAssets(): Promise<Asset[] | null> {
+async function fetchLatestRelease(): Promise<Release | null> {
     const res = await fetch(RELEASE_API, {
         headers: {
             Accept: "application/vnd.github+json",
             "User-Agent": "cronos-download",
         },
-        // 릴리스 정보는 10분간 캐시해 GitHub API 호출을 아낀다.
         cf: { cacheTtl: 600, cacheEverything: true },
     } as RequestInit);
 
     if (!res.ok) return null;
-    const data = await res.json() as { assets?: Asset[] };
-    return data.assets ?? [];
+    return await res.json() as Release;
 }
 
 function pickAsset(assets: Asset[], platform: PlatformKey): Asset | null {
@@ -44,11 +42,11 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ message: "지원하지 않는 플랫폼입니다." }, { status: 400 });
     }
 
-    // check=1 이면 파일을 흘려보내지 않고 있는지만 알려준다.
     const checkOnly = req.nextUrl.searchParams.get("check") === "1";
 
     try {
-        const assets = await fetchLatestAssets();
+        const release = await fetchLatestRelease();
+        const assets = release?.assets;
 
         if (checkOnly) {
             const asset = assets ? pickAsset(assets, platform) : null;
@@ -56,6 +54,7 @@ export async function GET(req: NextRequest) {
                 available: Boolean(asset),
                 name: asset?.name ?? null,
                 size: asset?.size ?? null,
+                version: release?.tag_name?.replace(/^v/, "") ?? null,
             });
         }
 
@@ -75,7 +74,6 @@ export async function GET(req: NextRequest) {
             );
         }
 
-        // 사용자를 깃허브로 보내지 않고 이 도메인에서 그대로 내려준다.
         const file = await fetch(asset.browser_download_url, {
             headers: { "User-Agent": "cronos-download" },
             redirect: "follow",

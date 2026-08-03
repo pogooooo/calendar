@@ -1,6 +1,6 @@
 {
   "productName": "CRONOS",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "identifier": "com.cronos.todoapp",
   "build": {
     "beforeDevCommand": "npm run next:dev",
@@ -9,6 +9,7 @@
     "frontendDist": "../out-desktop"
   },
   "app": {
+    "macOSPrivateApi": true,
     "windows": [
       {
         "title": "CRONOS",

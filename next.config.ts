@@ -16,8 +16,9 @@ const prismaDevAlias = { "@prisma/client/wasm": "@prisma/client" };
 
 const webConfig: NextConfig = {
     pageExtensions: ["tsx", "ts", "jsx", "js", "api.ts"],
-    serverExternalPackages: ["@prisma/client", ".prisma/client"],
-    ...(isCloudflare ? {} : {
+    ...(isCloudflare ? {
+        serverExternalPackages: ["@prisma/client", ".prisma/client"],
+    } : {
         turbopack: { resolveAlias: prismaDevAlias },
         webpack: (config: { resolve: { alias: Record<string, string> } }) => {
             config.resolve.alias = { ...config.resolve.alias, ...prismaDevAlias };

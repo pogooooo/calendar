@@ -26,6 +26,26 @@ import GoogleSignInButton from "@/components/button/googleSignIn/GoogleSignInBut
 
 type LoginFormData = z.infer<typeof LoginSchema>;
 
+const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+
+const GoogleAuthArea = (props: {
+    label: string;
+    onToken: (accessToken: string) => void;
+    onError: () => void;
+}) => {
+    const googleLogin = useGoogleLogin({
+        onSuccess: (tokenResponse) => props.onToken(tokenResponse.access_token),
+        onError: props.onError,
+    });
+
+    return (
+        <>
+            <GoogleSignInButton onClick={() => googleLogin()} />
+            <Separator>{props.label}</Separator>
+        </>
+    );
+};
+
 const SignIn = () => {
     const router = useRouter();
     const t = useT();
@@ -43,40 +63,37 @@ const SignIn = () => {
         defaultValues: { email: "", password: "" },
     });
 
-    const googleLogin = useGoogleLogin({
-        onSuccess: async (tokenResponse) => {
-            setIsGoogleLoading(true);
-            try {
-                const res = await fetch(api("/api/auth/google"), {
-                    method: "POST",
-                    credentials: "include",
-                    headers: { "Content-Type": "application/json", ...clientHeaders() },
-                    body: JSON.stringify({ accessToken: tokenResponse.access_token }),
-                });
-                const data = await res.json();
-                if (!res.ok) { setGlobalError(data.message || "구글 로그인 실패"); setIsGoogleLoading(false); return; }
-                setTheme(data.user.theme);
-                setAccessToken(data.accessToken);
-                if (data.refreshToken) setRefreshToken(data.refreshToken);
-                setUser(data.user);
-                router.push("/");
-            } catch {
-                setGlobalError("구글 로그인 중 오류가 발생했습니다.");
-                setIsGoogleLoading(false);
-            }
-        },
-        onError: () => {
+    const handleGoogleToken = async (accessToken: string) => {
+        setIsGoogleLoading(true);
+        try {
+            const res = await fetch(api("/api/auth/google"), {
+                method: "POST",
+                headers: { "Content-Type": "application/json", ...clientHeaders() },
+                body: JSON.stringify({ accessToken }),
+            });
+            const data = await res.json();
+            if (!res.ok) { setGlobalError(data.message || "구글 로그인 실패"); setIsGoogleLoading(false); return; }
+            setTheme(data.user.theme);
+            setAccessToken(data.accessToken);
+            if (data.refreshToken) setRefreshToken(data.refreshToken);
+            setUser(data.user);
+            router.push("/");
+        } catch {
+            setGlobalError("구글 로그인 중 오류가 발생했습니다.");
             setIsGoogleLoading(false);
-            setGlobalError("구글 로그인 창이 닫혔거나 오류가 발생했습니다.");
-        },
-    });
+        }
+    };
+
+    const handleGoogleError = () => {
+        setIsGoogleLoading(false);
+        setGlobalError("구글 로그인 창이 닫혔거나 오류가 발생했습니다.");
+    };
 
     const handleEmailLogin = async (formData: LoginFormData) => {
         setGlobalError(" ");
         try {
             const res = await fetch(api("/api/auth/login"), {
                 method: "POST",
-                credentials: "include",
                 headers: { "Content-Type": "application/json", ...clientHeaders() },
                 body: JSON.stringify(formData),
             });
@@ -105,9 +122,9 @@ const SignIn = () => {
                     <FormTitle>{t.auth.signInTitle}</FormTitle>
                     <FormSubtitle>{t.auth.signInSubtitle}</FormSubtitle>
 
-                    <GoogleSignInButton onClick={() => googleLogin()} />
-
-                    <Separator>{t.auth.or}</Separator>
+                    {GOOGLE_CLIENT_ID && (
+                        <GoogleAuthArea label={t.auth.or} onToken={handleGoogleToken} onError={handleGoogleError} />
+                    )}
 
                     <form onSubmit={handleSubmit(handleEmailLogin)} style={{ width: "100%" }}>
                         <SingleInput type="text" $width={300} $height={40} label={t.auth.email} value={email}

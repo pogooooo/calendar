@@ -15,7 +15,7 @@ export const useAuthFetch = () => {
             Authorization: accessToken ? `Bearer ${accessToken}` : "",
         };
 
-        let response = await fetch(target, { ...options, credentials: "include", headers });
+        let response = await fetch(target, { ...options, headers });
 
         if (response.status === 401) {
             try {
@@ -23,7 +23,6 @@ export const useAuthFetch = () => {
 
                 const refreshRes = await fetch(api("/api/auth/refresh"), {
                     method: "POST",
-                    credentials: "include",
                     headers: {
                         ...clientHeaders(),
                         ...(stored ? { "X-Refresh-Token": stored } : {}),
@@ -42,7 +41,7 @@ export const useAuthFetch = () => {
                         ...options.headers,
                         Authorization: `Bearer ${newAccessToken}`,
                     };
-                    response = await fetch(target, { ...options, credentials: "include", headers: newHeaders });
+                    response = await fetch(target, { ...options, headers: newHeaders });
                 } else {
                     await logout();
                     router.push("/signIn");
