@@ -5,6 +5,21 @@ import styled, { css, keyframes } from "styled-components";
 
 let hasNavigated = false;
 
+const FLIGHTS = [
+    { top: "14%", delay: 0, duration: 0.62, trail: "24vw", size: 13, tilt: 3, dim: 1 },
+    { top: "34%", delay: 0.07, duration: 0.7, trail: "15vw", size: 9, tilt: -2, dim: 0.65 },
+    { top: "56%", delay: 0.12, duration: 0.66, trail: "19vw", size: 11, tilt: 2, dim: 0.8 },
+    { top: "76%", delay: 0.05, duration: 0.74, trail: "11vw", size: 8, tilt: -3, dim: 0.5 },
+];
+
+const POPS = [
+    { top: "22%", left: "28%", delay: 0.14, size: 10 },
+    { top: "38%", left: "66%", delay: 0.24, size: 13 },
+    { top: "58%", left: "40%", delay: 0.3, size: 8 },
+    { top: "70%", left: "72%", delay: 0.2, size: 9 },
+    { top: "30%", left: "84%", delay: 0.34, size: 7 },
+];
+
 export default function CelestialPageTransition({ children }: { children: React.ReactNode }) {
     const animate = hasNavigated;
 
@@ -16,17 +31,38 @@ export default function CelestialPageTransition({ children }: { children: React.
         <Stage>
             {animate && (
                 <Overlay aria-hidden="true">
-                    <span className="flight main">
-                        <span className="trail" />
-                        <span className="head">✦</span>
-                    </span>
-                    <span className="flight echo">
-                        <span className="trail" />
-                        <span className="head">✦</span>
-                    </span>
-                    <span className="pop p1">✦</span>
-                    <span className="pop p2">✦</span>
-                    <span className="pop p3">✦</span>
+                    <span className="pulse" />
+
+                    {FLIGHTS.map((f, i) => (
+                        <span
+                            key={i}
+                            className="flight"
+                            style={{
+                                top: f.top,
+                                opacity: f.dim,
+                                animationDelay: `${f.delay}s`,
+                                animationDuration: `${f.duration}s`,
+                                transform: `rotate(${f.tilt}deg)`,
+                            }}
+                        >
+                            <span className="trail" style={{ width: f.trail }} />
+                            <span className="head" style={{ fontSize: f.size }}>✦</span>
+                        </span>
+                    ))}
+
+                    <svg className="constellation" viewBox="0 0 100 100" preserveAspectRatio="none">
+                        <path d="M28 24 L66 39 L40 58 L72 71" />
+                    </svg>
+
+                    {POPS.map((p, i) => (
+                        <span
+                            key={i}
+                            className="pop"
+                            style={{ top: p.top, left: p.left, fontSize: p.size, animationDelay: `${p.delay}s` }}
+                        >
+                            ✦
+                        </span>
+                    ))}
                 </Overlay>
             )}
             <Body $animate={animate}>{children}</Body>
@@ -35,22 +71,35 @@ export default function CelestialPageTransition({ children }: { children: React.
 }
 
 const fly = keyframes`
-    0%   { transform: translateX(-14vw); opacity: 0; }
+    0%   { translate: -16vw 0; opacity: 0; }
     10%  { opacity: 1; }
     82%  { opacity: 1; }
-    100% { transform: translateX(92vw); opacity: 0; }
+    100% { translate: 94vw 0; opacity: 0; }
 `;
 
 const headSpin = keyframes`
     from { transform: rotate(0deg) scale(1); }
-    50%  { transform: rotate(180deg) scale(1.25); }
+    50%  { transform: rotate(180deg) scale(1.3); }
     to   { transform: rotate(360deg) scale(1); }
 `;
 
 const popIn = keyframes`
     0%   { opacity: 0; transform: scale(0) rotate(0deg); }
-    45%  { opacity: 1; transform: scale(1.1) rotate(40deg); }
+    45%  { opacity: 1; transform: scale(1.15) rotate(40deg); }
     100% { opacity: 0; transform: scale(0.4) rotate(80deg); }
+`;
+
+const lineDraw = keyframes`
+    0%   { stroke-dashoffset: 240; opacity: 0; }
+    15%  { opacity: 0.55; }
+    70%  { opacity: 0.55; }
+    100% { stroke-dashoffset: 0; opacity: 0; }
+`;
+
+const glowPulse = keyframes`
+    0%   { opacity: 0; }
+    35%  { opacity: 0.5; }
+    100% { opacity: 0; }
 `;
 
 const bodyIn = keyframes`
@@ -84,27 +133,24 @@ const Overlay = styled.div`
         display: none;
     }
 
+    .pulse {
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(ellipse at 30% 40%, ${p => p.theme.colors.primary}14, transparent 60%);
+        animation: ${glowPulse} 0.7s ease-out both;
+    }
+
     .flight {
         position: absolute;
         left: 0;
         display: flex;
         align-items: center;
-        animation: ${fly} 0.6s cubic-bezier(0.3, 0, 0.4, 1) both;
-    }
-
-    .flight.main { top: 16%; }
-
-    .flight.echo {
-        top: 58%;
-        animation-delay: 0.09s;
-        animation-duration: 0.66s;
-
-        .trail { width: 12vw; opacity: 0.5; }
-        .head { font-size: 9px; opacity: 0.6; }
+        animation-name: ${fly};
+        animation-timing-function: cubic-bezier(0.3, 0, 0.4, 1);
+        animation-fill-mode: both;
     }
 
     .trail {
-        width: 24vw;
         height: 1px;
         background: linear-gradient(to left, ${p => p.theme.colors.primary}, transparent);
         box-shadow: 0 0 6px ${p => p.theme.colors.primary}44;
@@ -112,23 +158,33 @@ const Overlay = styled.div`
 
     .head {
         margin-left: 2px;
-        font-size: 13px;
         line-height: 1;
         color: ${p => p.theme.colors.primary};
         text-shadow: 0 0 8px ${p => p.theme.colors.primary};
-        animation: ${headSpin} 0.6s linear both;
+        animation: ${headSpin} 0.65s linear both;
+    }
+
+    .constellation {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+
+        path {
+            fill: none;
+            stroke: ${p => p.theme.colors.primary};
+            stroke-width: 1;
+            vector-effect: non-scaling-stroke;
+            stroke-dasharray: 240;
+            animation: ${lineDraw} 0.75s ease-out 0.1s both;
+        }
     }
 
     .pop {
         position: absolute;
-        font-size: 10px;
         line-height: 1;
         color: ${p => p.theme.colors.primary};
         text-shadow: 0 0 6px ${p => p.theme.colors.primary}99;
         animation: ${popIn} 0.55s ease-out both;
     }
-
-    .pop.p1 { top: 24%; left: 30%; animation-delay: 0.12s; }
-    .pop.p2 { top: 40%; left: 68%; animation-delay: 0.22s; font-size: 13px; }
-    .pop.p3 { top: 66%; left: 44%; animation-delay: 0.3s; font-size: 8px; }
 `;

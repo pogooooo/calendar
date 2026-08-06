@@ -198,7 +198,7 @@ const CelestialMonthCalendar = React.forwardRef<HTMLDivElement, CelestialMonthPr
          moreModalDate, weeks, expandedTodos, challengeTodos, todayStr, dateRangeText,
          categories, selectedDate, onDateChange,
          handlePrevMonth, handleNextMonth, toggleCategory, handleContextMenu,
-         handleQuickEdit, handleQuickDelete, handleQuickToggle, handleCreateTodo,
+         handleQuickEdit, handleQuickDelete, handleQuickDeleteOne, handleQuickToggle, handleCreateTodo,
          handleContextMenuChallenge, handleQuickToggleChallenge,
          setIsModalOpen, setMoreModalDate, setContextMenu, showProjects, onToggleProjects,
          showChallenges, onToggleChallenges,
@@ -291,6 +291,7 @@ const CelestialMonthCalendar = React.forwardRef<HTMLDivElement, CelestialMonthPr
                     onToggle={handleQuickToggle}
                     onEdit={handleQuickEdit}
                     onDelete={handleQuickDelete}
+                    onDeleteOne={handleQuickDeleteOne}
                 />
 
                 <TodoModal

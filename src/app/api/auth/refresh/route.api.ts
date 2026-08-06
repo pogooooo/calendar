@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 import prisma from "@/lib/prisma";
-import { generateAccessToken, verifyToken } from "@/lib/jwt";
+import { generateAccessToken, generateRefreshToken, verifyToken } from "@/lib/jwt";
 import {cookies} from "next/headers";
 
 export async function POST(request: NextRequest) {
@@ -47,11 +47,37 @@ export async function POST(request: NextRequest) {
         }
 
         const newAccessToken = await generateAccessToken({ userId: session.userId, email: session.user.email });
+        const newRefreshToken = await generateRefreshToken({ userId: session.userId });
+
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 7);
+
+        await prisma.refreshToken.create({
+            data: { userId: session.userId, Token: newRefreshToken, expires: expiresAt },
+        });
+        await prisma.refreshToken.update({
+            where: { id: session.id },
+            data: { expires: new Date(Date.now() + 60_000) },
+        });
+        await prisma.refreshToken.deleteMany({
+            where: { userId: session.userId, expires: { lt: new Date() } },
+        });
+
+        cookieStore.set({
+            name: "refreshToken",
+            value: newRefreshToken,
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "strict",
+            maxAge: 7 * 24 * 60 * 60,
+            path: "/",
+        });
+
         const isDesktop = request.headers.get("x-client") === "desktop";
 
         return NextResponse.json({
             accessToken: newAccessToken,
-            ...(isDesktop ? { refreshToken } : {}),
+            ...(isDesktop ? { refreshToken: newRefreshToken } : {}),
         });
 
     } catch (error) {

@@ -158,23 +158,35 @@ export default function TodoModal(props: TodoModalProps) {
             return;
         }
 
+        const start = new Date(startAt);
+        const end = new Date(endAt);
+        if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+            alert("시작/종료 시간을 다시 확인해주세요.");
+            return;
+        }
+
+        const safeRepeat = Number.isFinite(repeat) && repeat > 0 ? Math.floor(repeat) : 0;
+
         const todoData = {
             title,
             categoryId,
             memo,
-            startAt: new Date(startAt).toISOString(),
-            endAt: new Date(endAt).toISOString(),
+            startAt: start.toISOString(),
+            endAt: end.toISOString(),
             isAllDay,
             location,
-            repeat,
-            repeatEndDate: repeat > 0 && repeatEndType === 'until' && repeatEndDate ? new Date(repeatEndDate).toISOString() : null,
-            repeatCount: repeat > 0 && repeatEndType === 'count' && repeatCount ? Number(repeatCount) : null,
+            repeat: safeRepeat,
+            repeatEndDate: safeRepeat > 0 && repeatEndType === 'until' && repeatEndDate ? new Date(repeatEndDate).toISOString() : null,
+            repeatCount: safeRepeat > 0 && repeatEndType === 'count' && repeatCount ? Number(repeatCount) : null,
         };
 
-        if (todo) {
-            await updateTodo(authFetch, todo.id, todoData);
-        } else {
-            await addTodo(authFetch, todoData);
+        const errorMessage = todo
+            ? await updateTodo(authFetch, todo.id, todoData)
+            : await addTodo(authFetch, todoData);
+
+        if (errorMessage) {
+            alert(errorMessage);
+            return;
         }
 
         onClose();

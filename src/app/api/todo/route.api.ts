@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { verifyToken } from "@/lib/jwt";
-import { CreateTodoSchema, ToggleTodoSchema } from "@/lib/schema";
+import { CreateTodoSchema, ToggleTodoSchema, UpdateTodoSchema } from "@/lib/schema";
 
 const getUserId = async (request: NextRequest): Promise<string | null> => {
     try {
@@ -181,9 +181,11 @@ export const PATCH = async (request: NextRequest) => {
             }
         }
 
-        const { id, ...updateData } = body;
-
-        if (!id) return NextResponse.json({ message: "수정할 할 일 ID가 필요합니다." }, { status: 400 });
+        const parsedUpdate = UpdateTodoSchema.safeParse(body);
+        if (!parsedUpdate.success) {
+            return NextResponse.json({ message: parsedUpdate.error.issues[0].message }, { status: 400 });
+        }
+        const { id, startAt: rawStartAt, endAt: rawEndAt, repeatEndDate: rawRepeatEnd, ...updateData } = parsedUpdate.data;
 
         const existingTodo = await prisma.todo.findUnique({
             where: { id },
@@ -195,18 +197,18 @@ export const PATCH = async (request: NextRequest) => {
         const hasPermission = await checkCategoryPermission(existingTodo.categoryId, userId);
         if (!hasPermission) return NextResponse.json({ message: "수정 권한이 없습니다." }, { status: 403 });
 
-        const dataToUpdate = { ...updateData };
-        if (dataToUpdate.startAt) dataToUpdate.startAt = new Date(dataToUpdate.startAt);
-        if (dataToUpdate.endAt) dataToUpdate.endAt = new Date(dataToUpdate.endAt);
+        const dataToUpdate: Record<string, unknown> = { ...updateData };
+        if (rawStartAt) dataToUpdate.startAt = new Date(rawStartAt);
+        if (rawEndAt) dataToUpdate.endAt = new Date(rawEndAt);
 
-        if (dataToUpdate.repeatEndDate) {
-            dataToUpdate.repeatEndDate = new Date(dataToUpdate.repeatEndDate);
-        } else if (dataToUpdate.repeatEndDate === null) {
+        if (rawRepeatEnd) {
+            dataToUpdate.repeatEndDate = new Date(rawRepeatEnd);
+        } else if (rawRepeatEnd === null) {
             dataToUpdate.repeatEndDate = null;
         }
 
-        if (dataToUpdate.categoryId && dataToUpdate.categoryId !== existingTodo.categoryId) {
-            const hasDestPermission = await checkCategoryPermission(dataToUpdate.categoryId, userId);
+        if (updateData.categoryId && updateData.categoryId !== existingTodo.categoryId) {
+            const hasDestPermission = await checkCategoryPermission(updateData.categoryId, userId);
             if (!hasDestPermission) return NextResponse.json({ message: "이동할 카테고리에 대한 권한이 없습니다." }, { status: 403 });
         }
 
@@ -231,18 +233,41 @@ export const DELETE = async (request: NextRequest) => {
 
         const { searchParams } = new URL(request.url);
         const id = searchParams.get("id");
+        const targetDate = searchParams.get("targetDate");
 
         if (!id) return NextResponse.json({ message: "삭제할 할 일 ID가 필요합니다." }, { status: 400 });
 
         const existingTodo = await prisma.todo.findUnique({
             where: { id },
-            select: { categoryId: true }
+            select: { categoryId: true, repeat: true, excludedDates: true }
         });
 
         if (!existingTodo) return NextResponse.json({ message: "할 일을 찾을 수 없습니다." }, { status: 404 });
 
         const hasPermission = await checkCategoryPermission(existingTodo.categoryId, userId);
         if (!hasPermission) return NextResponse.json({ message: "삭제 권한이 없습니다." }, { status: 403 });
+
+        if (targetDate && existingTodo.repeat > 0) {
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(targetDate)) {
+                return NextResponse.json({ message: "날짜 형식이 올바르지 않습니다." }, { status: 400 });
+            }
+
+            let excluded: string[] = [];
+            try {
+                const parsed = JSON.parse(existingTodo.excludedDates ?? "[]");
+                if (Array.isArray(parsed)) excluded = parsed.filter(v => typeof v === "string");
+            } catch {}
+
+            if (!excluded.includes(targetDate)) excluded.push(targetDate);
+
+            const updated = await prisma.todo.update({
+                where: { id },
+                data: { excludedDates: JSON.stringify(excluded) },
+                include: { completions: true }
+            });
+
+            return NextResponse.json(updated);
+        }
 
         await prisma.todo.delete({
             where: { id },

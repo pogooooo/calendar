@@ -43,6 +43,7 @@ export interface TodoType {
     repeat: number;
     repeatEndDate?: string | number | Date | null;
     repeatCount?: number | null;
+    excludedDates?: string | null;
 }
 
 export interface ChallengeCompletionType {

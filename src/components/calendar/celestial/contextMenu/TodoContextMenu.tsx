@@ -1,19 +1,26 @@
 "use client";
 
 import * as React from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { TodoType } from "@/store/useTodoStore";
 import * as S from "./TodoContextMenu.styles";
 
-interface TodoContextMenuProps {
-    menuState: { x: number; y: number; todo: TodoType } | null;
-    onClose: () => void;
-    onToggle: (todo: TodoType) => void;
-    onEdit: (todo: TodoType) => void;
-    onDelete: (todo: TodoType) => void;
+export interface ContextMenuTodo extends TodoType {
+    originalTodo?: TodoType;
+    date?: Date;
 }
 
-export default function TodoContextMenu({ menuState, onClose, onToggle, onEdit, onDelete }: TodoContextMenuProps) {
+interface TodoContextMenuProps {
+    menuState: { x: number; y: number; todo: ContextMenuTodo } | null;
+    onClose: () => void;
+    onToggle: (todo: ContextMenuTodo) => void;
+    onEdit: (todo: ContextMenuTodo) => void;
+    onDelete: (todo: ContextMenuTodo) => void;
+    onDeleteOne?: (todo: ContextMenuTodo) => void;
+}
+
+export default function TodoContextMenu({ menuState, onClose, onToggle, onEdit, onDelete, onDeleteOne }: TodoContextMenuProps) {
     const menuRef = React.useRef<HTMLDivElement>(null);
     const [pos, setPos] = React.useState<{ left: number; top: number } | null>(null);
 
@@ -47,7 +54,13 @@ export default function TodoContextMenu({ menuState, onClose, onToggle, onEdit, 
         setPos({ left, top });
     }, [menuState]);
 
-    return (
+    if (typeof document === "undefined") return null;
+
+    const isRepeat = menuState
+        ? (menuState.todo.originalTodo?.repeat ?? menuState.todo.repeat ?? 0) > 0
+        : false;
+
+    return createPortal(
         <AnimatePresence>
             {menuState && (
                 <S.FloatingContextMenu
@@ -64,9 +77,18 @@ export default function TodoContextMenu({ menuState, onClose, onToggle, onEdit, 
                     <div className="divider" />
                     <button onClick={() => onEdit(menuState.todo)}>수정</button>
                     <div className="divider" />
-                    <button className="danger" onClick={() => onDelete(menuState.todo)}>삭제</button>
+                    {isRepeat && onDeleteOne ? (
+                        <>
+                            <button className="danger" onClick={() => onDeleteOne(menuState.todo)}>이 일정만 삭제</button>
+                            <div className="divider" />
+                            <button className="danger" onClick={() => onDelete(menuState.todo)}>전체 삭제</button>
+                        </>
+                    ) : (
+                        <button className="danger" onClick={() => onDelete(menuState.todo)}>삭제</button>
+                    )}
                 </S.FloatingContextMenu>
             )}
-        </AnimatePresence>
+        </AnimatePresence>,
+        document.body,
     );
 }

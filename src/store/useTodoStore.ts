@@ -10,9 +10,10 @@ interface TodoState {
 
     fetchTodos: (authFetch: AuthFetch, params?: { start?: string; end?: string; categoryId?: string }) => Promise<void>;
     toggleTodo: (authFetch: AuthFetch, todoId: string, targetDate: string) => Promise<void>;
-    addTodo: (authFetch: AuthFetch, data: Partial<TodoType>) => Promise<void>;
-    updateTodo: (authFetch: AuthFetch, todoId: string, data: Partial<TodoType>) => Promise<void>;
+    addTodo: (authFetch: AuthFetch, data: Partial<TodoType>) => Promise<string | null>;
+    updateTodo: (authFetch: AuthFetch, todoId: string, data: Partial<TodoType>) => Promise<string | null>;
     deleteTodo: (authFetch: AuthFetch, todoId: string) => Promise<void>;
+    deleteTodoOccurrence: (authFetch: AuthFetch, todoId: string, dateKey: string) => Promise<void>;
 }
 
 const useTodoStore = create<TodoState>((set, get) => ({
@@ -113,12 +114,15 @@ const useTodoStore = create<TodoState>((set, get) => ({
                 set((state) => ({
                     todos: state.todos.map(t => t.id === tempId ? serverTodo : t)
                 }));
-            } else {
-                throw new Error();
+                return null;
             }
+            const body = await res.json().catch(() => null);
+            set({ todos: previousTodos });
+            return body?.message ?? "할 일 등록에 실패했습니다.";
         } catch (err) {
             set({ todos: previousTodos });
             console.error("[TODO_ADD_ERROR]", err);
+            return "할 일 등록 중 오류가 발생했습니다.";
         }
     },
 
@@ -134,10 +138,14 @@ const useTodoStore = create<TodoState>((set, get) => ({
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ id: todoId, ...data }),
             });
-            if (!res.ok) throw new Error();
+            if (res.ok) return null;
+            const body = await res.json().catch(() => null);
+            set({ todos: previousTodos });
+            return body?.message ?? "할 일 수정에 실패했습니다.";
         } catch (err) {
             set({ todos: previousTodos });
             console.error("[TODO_UPDATE_ERROR]", err);
+            return "할 일 수정 중 오류가 발생했습니다.";
         }
     },
 
@@ -151,6 +159,37 @@ const useTodoStore = create<TodoState>((set, get) => ({
         } catch (err) {
             set({ todos: previousTodos });
             console.error("[TODO_DELETE_ERROR]", err);
+        }
+    },
+
+    deleteTodoOccurrence: async (authFetch, todoId, dateKey) => {
+        const previousTodos = get().todos;
+
+        set((state) => ({
+            todos: state.todos.map(t => {
+                if (t.id !== todoId) return t;
+                let excluded: string[] = [];
+                try {
+                    const parsed = JSON.parse(t.excludedDates ?? "[]");
+                    if (Array.isArray(parsed)) excluded = parsed;
+                } catch {}
+                if (!excluded.includes(dateKey)) excluded.push(dateKey);
+                return { ...t, excludedDates: JSON.stringify(excluded) };
+            })
+        }));
+
+        try {
+            const res = await authFetch(`/api/todo?id=${todoId}&targetDate=${dateKey}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error();
+            const serverTodo = await res.json();
+            if (serverTodo?.id) {
+                set((state) => ({
+                    todos: state.todos.map(t => t.id === todoId ? serverTodo : t)
+                }));
+            }
+        } catch (err) {
+            set({ todos: previousTodos });
+            console.error("[TODO_DELETE_OCCURRENCE_ERROR]", err);
         }
     }
 }));

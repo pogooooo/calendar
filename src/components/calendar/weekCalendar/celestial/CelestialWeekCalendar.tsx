@@ -44,7 +44,7 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, CelestialWeekProp
          moreModalDate, weekDates, expandedTodos, challengeTodos, todayStr, dateRangeText,
          todoLevels, maxLevel, categories, selectedDate, onDateChange,
          handlePrevWeek, handleNextWeek, toggleCategory, handleContextMenu,
-         handleQuickEdit, handleQuickDelete, handleQuickToggle, handleCreateTodo,
+         handleQuickEdit, handleQuickDelete, handleQuickDeleteOne, handleQuickToggle, handleCreateTodo,
          setIsModalOpen, setMoreModalDate, setTodoContextMenu,
          showProjects, onToggleProjects,
          showChallenges, onToggleChallenges,
@@ -205,6 +205,7 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, CelestialWeekProp
                     onToggle={handleQuickToggle}
                     onEdit={handleQuickEdit}
                     onDelete={handleQuickDelete}
+                    onDeleteOne={handleQuickDeleteOne}
                 />
 
                 <TodoModal

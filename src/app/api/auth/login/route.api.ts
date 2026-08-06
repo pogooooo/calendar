@@ -79,7 +79,9 @@ export async function POST(request: NextRequest) {
         const expiresAt = new Date();
         expiresAt.setDate(expiresAt.getDate() + 7);
 
-        await prisma.refreshToken.deleteMany({ where: { userId: user.id } });
+        await prisma.refreshToken.deleteMany({
+            where: { userId: user.id, expires: { lt: new Date() } },
+        });
         await prisma.refreshToken.create({
             data: {
                 userId: user.id,

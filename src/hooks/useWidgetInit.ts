@@ -6,8 +6,7 @@ import useTodoStore from "@/store/useTodoStore";
 import useCategoryStore from "@/store/useCategoryStore";
 import useProjectStore from "@/store/useProjectStore";
 import useChallengeStore from "@/store/useChallengeStore";
-import { useAuthFetch } from "@/hooks/useAuthFetch";
-import { api, clientHeaders } from "@/lib/apiBase";
+import { useAuthFetch, refreshSession } from "@/hooks/useAuthFetch";
 
 export type WidgetData = "todos" | "categories" | "projects" | "challenges";
 
@@ -17,10 +16,8 @@ export function useWidgetInit(need: WidgetData[] = ALL) {
     const [ready, setReady]   = useState(false);
     const [authed, setAuthed] = useState(false);
 
-    const accessToken    = useAuthStore((s) => s.accessToken);
-    const setAccessToken = useAuthStore((s) => s.setAccessToken);
-    const setUser        = useAuthStore((s) => s.setUser);
-    const authFetch      = useAuthFetch();
+    const accessToken = useAuthStore((s) => s.accessToken);
+    const authFetch   = useAuthFetch();
 
     const fetchTodos      = useTodoStore((s) => s.fetchTodos);
     const fetchCategories = useCategoryStore((s) => s.fetchCategories);
@@ -32,24 +29,9 @@ export function useWidgetInit(need: WidgetData[] = ALL) {
     useEffect(() => {
         if (accessToken) { setAuthed(true); return; }
 
-        const stored = useAuthStore.getState().refreshToken;
-
-        fetch(api("/api/auth/refresh"), {
-            method: "POST",
-            headers: {
-                ...clientHeaders(),
-                ...(stored ? { "X-Refresh-Token": stored } : {}),
-            },
-        })
-            .then((r) => r.ok ? r.json() : null)
-            .then((data) => {
-                if (data?.accessToken) {
-                    setAccessToken(data.accessToken);
-                    if (data.user) setUser(data.user);
-                    setAuthed(true);
-                }
-            })
-            .catch(() => {});
+        refreshSession().then((token) => {
+            if (token) setAuthed(true);
+        });
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 

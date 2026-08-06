@@ -10,6 +10,7 @@ import { useExpandedTodos, ExpandedTodoType } from "@/hooks/useExpandedTodos";
 import { getWeekDates, isSameDay } from "@/utils/DateUtils";
 import { useTodoLevels } from "@/hooks/useTodoLevels";
 import useTodoStore from "@/store/useTodoStore";
+import { localDateKey } from "@/lib/dateKey";
 import useAuthStore from "@/store/useAuthStore";
 import { api, clientHeaders } from "@/lib/apiBase";
 import { formatDate } from "@/utils/DateUtils";
@@ -63,6 +64,7 @@ export interface WeekThemeProps {
     handleContextMenu: (e: React.MouseEvent, todo: CalendarTodoType) => void;
     handleQuickEdit: (todo: CalendarTodoType) => void;
     handleQuickDelete: (todo: CalendarTodoType) => void;
+    handleQuickDeleteOne: (todo: CalendarTodoType) => void;
     handleQuickToggle: (todo: CalendarTodoType) => void;
     handleCreateTodo: (date: Date) => void;
     setIsModalOpen: (isOpen: boolean) => void;
@@ -99,7 +101,7 @@ const WeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
 
         const { projects, fetchProjects } = useProjectStore();
         const { challenges, fetchChallenges } = useChallengeStore();
-        const { deleteTodo, toggleTodo } = useTodoStore();
+        const { deleteTodo, deleteTodoOccurrence, toggleTodo } = useTodoStore();
         const accessToken = useAuthStore((state) => state.accessToken);
 
         const authFetch = React.useCallback(async (url: string, init?: RequestInit) => {
@@ -290,6 +292,18 @@ const WeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
             setTodoContextMenu(null);
         };
 
+        const handleQuickDeleteOne = async (expandedTodo: CalendarTodoType) => {
+            if (expandedTodo.isProject || expandedTodo.isProjectTask) {
+                alert("프로젝트 관련 항목은 프로젝트 상세 메뉴에서 삭제해주세요.");
+                setTodoContextMenu(null);
+                return;
+            }
+            const actualId = expandedTodo.originalTodo?.id || expandedTodo.id;
+            const occurrence = expandedTodo.date ?? new Date(expandedTodo.startAt || Date.now());
+            await deleteTodoOccurrence(authFetch, actualId, localDateKey(occurrence));
+            setTodoContextMenu(null);
+        };
+
         const handleQuickToggle = async (expandedTodo: CalendarTodoType) => {
             if (expandedTodo.isProject || expandedTodo.isProjectTask) {
                 alert("프로젝트 상태는 프로젝트 상세 메뉴에서 변경해주세요.");
@@ -335,6 +349,7 @@ const WeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
             handleContextMenu,
             handleQuickEdit,
             handleQuickDelete,
+            handleQuickDeleteOne,
             handleQuickToggle,
             handleCreateTodo,
             setIsModalOpen,

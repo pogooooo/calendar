@@ -2,14 +2,21 @@ import { publicUserSelect } from "@/lib/publicUser";
 import { NextResponse } from "next/server";
 import prisma from '@/lib/prisma';
 import { CreateProjectSchema, UpdateProjectSchema } from '@/lib/schema';
+import { getUserId, categoryAccessWhere, checkCategoryPermission } from '@/lib/apiAuth';
 
 export async function GET(request: Request) {
     try {
+        const userId = await getUserId(request);
+        if (!userId) return NextResponse.json({ message: "인증되지 않은 사용자입니다." }, { status: 401 });
+
         const { searchParams } = new URL(request.url);
         const categoryId = searchParams.get('categoryId');
 
         const projects = await prisma.project.findMany({
-            where: categoryId ? { categoryId } : {},
+            where: {
+                category: categoryAccessWhere(userId),
+                ...(categoryId ? { categoryId } : {}),
+            },
             include: {
                 assignees: { select: publicUserSelect },
                 tasks: {
@@ -31,6 +38,9 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
     try {
+        const userId = await getUserId(request);
+        if (!userId) return NextResponse.json({ message: "인증되지 않은 사용자입니다." }, { status: 401 });
+
         const body = await request.json();
         const parsed = CreateProjectSchema.safeParse(body);
         if (!parsed.success) {
@@ -38,6 +48,9 @@ export async function POST(request: Request) {
         }
 
         const { title, description, categoryId, startAt, endAt, assignees } = parsed.data;
+
+        const hasPermission = await checkCategoryPermission(categoryId, userId);
+        if (!hasPermission) return NextResponse.json({ message: "카테고리를 찾을 수 없거나 권한이 없습니다." }, { status: 403 });
 
         const newProject = await prisma.project.create({
             data: {
@@ -62,6 +75,9 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
     try {
+        const userId = await getUserId(request);
+        if (!userId) return NextResponse.json({ message: "인증되지 않은 사용자입니다." }, { status: 401 });
+
         const body = await request.json();
         const parsed = UpdateProjectSchema.safeParse(body);
         if (!parsed.success) {
@@ -69,6 +85,12 @@ export async function PATCH(request: Request) {
         }
 
         const { id, startAt, endAt, assignees, ...rest } = parsed.data;
+
+        const owned = await prisma.project.findFirst({
+            where: { id, category: categoryAccessWhere(userId) },
+            select: { id: true },
+        });
+        if (!owned) return NextResponse.json({ message: "프로젝트를 찾을 수 없거나 권한이 없습니다." }, { status: 404 });
 
         const updatedProject = await prisma.project.update({
             where: { id },
@@ -95,10 +117,19 @@ export async function PATCH(request: Request) {
 
 export async function DELETE(request: Request) {
     try {
+        const userId = await getUserId(request);
+        if (!userId) return NextResponse.json({ message: "인증되지 않은 사용자입니다." }, { status: 401 });
+
         const { searchParams } = new URL(request.url);
         const id = searchParams.get('id');
 
         if (!id) return NextResponse.json({ message: "ID가 필요합니다." }, { status: 400 });
+
+        const owned = await prisma.project.findFirst({
+            where: { id, category: categoryAccessWhere(userId) },
+            select: { id: true },
+        });
+        if (!owned) return NextResponse.json({ message: "프로젝트를 찾을 수 없거나 권한이 없습니다." }, { status: 404 });
 
         await prisma.project.delete({ where: { id } });
 

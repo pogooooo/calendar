@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import type { TodoType } from '@/types';
+import { localDateKey, parseExcludedDates } from '@/lib/dateKey';
 
 export interface ExpandedTodoType extends TodoType {
     originalTodo?: TodoType;
@@ -26,9 +27,9 @@ export const useExpandedTodos = (
             if (!todo.startAt || !todo.endAt) return;
 
             if (!todo.repeat || todo.repeat <= 0) {
-                const dateStr = new Date(todo.startAt).toISOString().split('T')[0];
+                const dateStr = localDateKey(todo.startAt);
                 const isDone = todo.completions?.some(c =>
-                    new Date(c.targetDate).toISOString().split('T')[0] === dateStr
+                    localDateKey(c.targetDate) === dateStr
                 );
 
                 expanded.push({
@@ -41,6 +42,7 @@ export const useExpandedTodos = (
             }
 
             const R = todo.repeat;
+            const excluded = parseExcludedDates(todo.excludedDates);
             const currentStart = new Date(todo.startAt);
             const currentEnd = new Date(todo.endAt);
 
@@ -76,10 +78,10 @@ export const useExpandedTodos = (
                     if (currentStart.getTime() > endDateLimit.getTime()) break;
                 }
 
-                if (currentEnd.getTime() >= startLimit.getTime()) {
-                    const dateStr = currentStart.toISOString().split('T')[0];
+                if (currentEnd.getTime() >= startLimit.getTime() && !excluded.includes(localDateKey(currentStart))) {
+                    const dateStr = localDateKey(currentStart);
                     const isDone = todo.completions?.some(c =>
-                        new Date(c.targetDate).toISOString().split('T')[0] === dateStr
+                        localDateKey(c.targetDate) === dateStr
                     );
 
                     expanded.push({
