@@ -288,7 +288,6 @@ export default function DownloadPage() {
 
     const mineInfo = mine ? infos[mine] : undefined;
     const mineLabel = PLATFORMS.find(p => p.key === mine)?.label;
-    const version = Object.values(infos).find(i => i?.version)?.version;
 
     return (
         <Page ref={pageRef}>
@@ -350,15 +349,10 @@ export default function DownloadPage() {
                         </GhostCta>
                     </CtaRow>
 
-                    <Fineprint>
-                        무료 · 회원가입만으로 시작 ·{" "}
-                        <a href="#all-downloads">다른 플랫폼<ArrowDown size={11} /></a>
-                    </Fineprint>
                 </HeroText>
 
                 <HeroArt aria-hidden="true">
                     <HeroScene />
-                    <DragHint>끌어서 돌려보세요</DragHint>
                 </HeroArt>
             </Hero>
 
@@ -383,13 +377,6 @@ export default function DownloadPage() {
 
             <Section id="all-downloads">
                 <RevealTitle>모든 플랫폼</RevealTitle>
-                <Reveal>
-                    <SectionNote>
-                        {version ? `현재 버전 v${version} — ` : ""}
-                        이 사이트에서 바로 내려받습니다.
-                    </SectionNote>
-                </Reveal>
-
                 <Reveal delay={80}>
                     <PlatformList>
                         {PLATFORMS.map(p => {
@@ -704,28 +691,6 @@ const GhostCta = styled.button`
     }
 `;
 
-const Fineprint = styled.p`
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin: 16px 0 0;
-    font-size: 0.76rem;
-    letter-spacing: 0.5px;
-    color: ${p => p.theme.colors.textSecondary};
-
-    a {
-        display: inline-flex;
-        align-items: center;
-        gap: 2px;
-        color: ${p => p.theme.colors.textSecondary};
-        text-decoration: none;
-        border-bottom: 1px dashed ${p => p.theme.colors.primary}55;
-        transition: color 0.2s, border-color 0.2s;
-
-        &:hover { color: ${p => p.theme.colors.primary}; border-color: ${p => p.theme.colors.primary}; }
-    }
-`;
-
 const HeroArt = styled.div`
     position: relative;
     flex: 0 0 auto;
@@ -738,18 +703,6 @@ const HeroArt = styled.div`
 
     @media (max-width: 1000px) { width: 250px; height: 250px; }
     @media (max-width: 860px) { display: none; }
-`;
-
-const DragHint = styled.span`
-    position: absolute;
-    bottom: -20px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 0.68rem;
-    letter-spacing: 2px;
-    white-space: nowrap;
-    color: ${p => p.theme.colors.textSecondary};
-    opacity: 0.7;
 `;
 
 const RevealBox = styled.div<{ $shown: boolean; $delay: number }>`
@@ -799,12 +752,6 @@ const Char = styled.span<{ $shown: boolean }>`
         filter: ${p => (p.$shown ? "none" : "blur(4px)")};
         transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1), filter 0.5s;
     }
-`;
-
-const SectionNote = styled.p`
-    margin: -14px 0 24px;
-    font-size: 0.82rem;
-    color: ${p => p.theme.colors.textSecondary};
 `;
 
 const FeatureGrid = styled.div`
