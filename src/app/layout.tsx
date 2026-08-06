@@ -5,7 +5,7 @@ import {Metadata} from "next";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import ThemeProviderWrapper from "@/components/ThemeProviderWrapper";
 import StoreInitializer from "@/components/StoreInitializer";
-import AutostartSync from "@/components/AutostartSync";
+import DesktopWidgetRestore from "@/components/DesktopWidgetRestore";
 
 const orbit = Orbit({
     subsets: ["latin"],
@@ -27,7 +27,7 @@ export default function RootLayout({children,}: Readonly<{ children: React.React
                 <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!}>
                     <StyledComponentsRegistry>
                         <StoreInitializer>
-                            <AutostartSync />
+                            <DesktopWidgetRestore />
                             {children}
                         </StoreInitializer>
                     </StyledComponentsRegistry>

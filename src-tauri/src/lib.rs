@@ -293,39 +293,32 @@ fn get_wallpaper_path() -> String {
     "".to_string()
 }
 
-const AUTOSTART_KEY: &str = "Software\\Microsoft\\Windows\\CurrentVersion\\Run";
-const AUTOSTART_NAME: &str = "CRONOS";
-
 #[tauri::command]
-fn get_autostart() -> bool {
-    #[cfg(target_os = "windows")]
-    unsafe {
-        win32::read_reg_sz(AUTOSTART_KEY, AUTOSTART_NAME).is_some()
-    }
-    #[cfg(not(target_os = "windows"))]
-    false
+fn get_autostart(app: tauri::AppHandle) -> bool {
+    use tauri_plugin_autostart::ManagerExt;
+    app.autolaunch().is_enabled().unwrap_or(false)
 }
 
 #[tauri::command]
-fn set_autostart(enabled: bool) -> bool {
-    #[cfg(target_os = "windows")]
-    unsafe {
-        if enabled {
-            if let Ok(exe) = std::env::current_exe() {
-                let path = format!("\"{}\"", exe.to_string_lossy());
-                return win32::write_reg_sz(AUTOSTART_KEY, AUTOSTART_NAME, &path);
-            }
-            false
-        } else {
-            win32::delete_reg_value(AUTOSTART_KEY, AUTOSTART_NAME)
-        }
+fn set_autostart(app: tauri::AppHandle, enabled: bool) -> bool {
+    use tauri_plugin_autostart::ManagerExt;
+    let autolaunch = app.autolaunch();
+    if enabled {
+        autolaunch.enable().is_ok()
+    } else {
+        autolaunch.disable().is_ok()
     }
-    #[cfg(not(target_os = "windows"))]
-    enabled
 }
 
 #[tauri::command]
-async fn open_widget(app: tauri::AppHandle, kind: String) -> Result<(), String> {
+async fn open_widget(
+    app: tauri::AppHandle,
+    kind: String,
+    x: Option<f64>,
+    y: Option<f64>,
+    w: Option<f64>,
+    h: Option<f64>,
+) -> Result<(), String> {
     let label = format!("widget-{kind}");
 
     if let Some(win) = app.get_webview_window(&label) {
@@ -333,7 +326,8 @@ async fn open_widget(app: tauri::AppHandle, kind: String) -> Result<(), String> 
         return Ok(());
     }
 
-    let (w, h) = widget_size(&kind);
+    let (dw, dh) = widget_size(&kind);
+    let (w, h) = (w.unwrap_or(dw), h.unwrap_or(dh));
 
     #[cfg(debug_assertions)]
     let webview_url = {
@@ -347,7 +341,7 @@ async fn open_widget(app: tauri::AppHandle, kind: String) -> Result<(), String> 
 
     let app2 = app.clone();
     app.run_on_main_thread(move || {
-        match WebviewWindowBuilder::new(&app2, &label, webview_url)
+        let mut builder = WebviewWindowBuilder::new(&app2, &label, webview_url)
             .title("")
             .transparent(true)
             .shadow(false)
@@ -356,8 +350,13 @@ async fn open_widget(app: tauri::AppHandle, kind: String) -> Result<(), String> 
             .skip_taskbar(true)
             .resizable(true)
             .visible(true)
-            .inner_size(w, h)
-            .build()
+            .inner_size(w, h);
+
+        if let (Some(px), Some(py)) = (x, y) {
+            builder = builder.position(px, py);
+        }
+
+        match builder.build()
         {
             Ok(win)  => {
                 let _ = win.show();
@@ -491,6 +490,10 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_autostart::init(
+            tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+            None,
+        ))
         .manage(bottom_widgets.clone())
         .invoke_handler(tauri::generate_handler![
             open_widget,

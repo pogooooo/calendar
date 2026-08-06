@@ -182,6 +182,43 @@ export default function WidgetShell({ kind, title, children }: Props) {
     const textColorRef = useRef("#ffffff");
 
     useAutoFitHeight(kind, contentRef);
+
+    React.useEffect(() => {
+        if (!isTauri()) return;
+
+        try { localStorage.setItem(`cronos-widget-open:${kind}`, "1"); } catch {}
+
+        const win = getCurrentWindow();
+        let timer: number | undefined;
+
+        const save = async () => {
+            try {
+                const sf = await win.scaleFactor();
+                const pos = await win.outerPosition();
+                const size = await win.innerSize();
+                localStorage.setItem(`cronos-widget-bounds:${kind}`, JSON.stringify({
+                    x: pos.x / sf,
+                    y: pos.y / sf,
+                    w: size.width / sf,
+                    h: size.height / sf,
+                }));
+            } catch {}
+        };
+
+        const schedule = () => {
+            window.clearTimeout(timer);
+            timer = window.setTimeout(save, 400);
+        };
+
+        const unMoved = win.onMoved(schedule);
+        const unResized = win.onResized(schedule);
+
+        return () => {
+            unMoved.then(f => f()).catch(() => {});
+            unResized.then(f => f()).catch(() => {});
+            window.clearTimeout(timer);
+        };
+    }, [kind]);
     const surfaceColor = theme?.colors?.surface ?? "#1a160e";
     const bgStyle = buildBackground(bg, surfaceColor);
 
@@ -433,7 +470,13 @@ export default function WidgetShell({ kind, title, children }: Props) {
                             <IconBtn onClick={handleLock}>
                                 <Lock size={13} />
                             </IconBtn>
-                            <IconBtn onClick={closeWindow} $danger>
+                            <IconBtn
+                                onClick={() => {
+                                    try { localStorage.setItem(`cronos-widget-open:${kind}`, "0"); } catch {}
+                                    closeWindow();
+                                }}
+                                $danger
+                            >
                                 <X size={13} />
                             </IconBtn>
                         </BtnGroup>
