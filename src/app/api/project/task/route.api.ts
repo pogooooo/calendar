@@ -1,3 +1,4 @@
+import { publicUserSelect } from "@/lib/publicUser";
 import { NextResponse } from "next/server";
 import prisma from '@/lib/prisma';
 import { CreateProjectTaskSchema, UpdateProjectTaskSchema } from '@/lib/schema';
@@ -29,7 +30,7 @@ export async function POST(request: Request) {
                     connect: assignees.map((id) => ({ id }))
                 } : undefined,
             },
-            include: { blockedBy: true, assignees: true }
+            include: { blockedBy: true, assignees: { select: publicUserSelect } }
         });
 
         return NextResponse.json(task, { status: 201 });
@@ -63,7 +64,7 @@ export async function PATCH(request: Request) {
                     assignees: { set: assignees.map((id) => ({ id })) }
                 } : {}),
             },
-            include: { blockedBy: true, assignees: true }
+            include: { blockedBy: true, assignees: { select: publicUserSelect } }
         });
 
         return NextResponse.json(task);

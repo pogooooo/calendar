@@ -1,3 +1,4 @@
+import { publicUserSelect } from "@/lib/publicUser";
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { verifyToken } from "@/lib/jwt";
@@ -26,7 +27,7 @@ export const GET = async (request: NextRequest) => {
         if (id) {
             const category = await prisma.category.findUnique({
                 where: { id },
-                include: { participants: true, todos: true }
+                include: { participants: { select: publicUserSelect }, todos: true }
             });
 
             if (!category) return NextResponse.json({ message: "카테고리를 찾을 수 없습니다." }, { status: 404 });
@@ -47,7 +48,7 @@ export const GET = async (request: NextRequest) => {
                     { participants: { some: { id: userId } } }
                 ]
             },
-            include: { participants: true }
+            include: { participants: { select: publicUserSelect } }
         });
 
         return NextResponse.json(categories);
@@ -82,7 +83,7 @@ export const POST = async (request: NextRequest) => {
                 creatorName: user.name,
                 participants: { connect: { id: userId } }
             },
-            include: { participants: true }
+            include: { participants: { select: publicUserSelect } }
         });
 
         return NextResponse.json(newCategory);
@@ -148,7 +149,7 @@ export const PATCH = async (request: NextRequest) => {
         const updatedCategory = await prisma.category.update({
             where: { id },
             data: updateData,
-            include: { participants: true }
+            include: { participants: { select: publicUserSelect } }
         });
 
         return NextResponse.json(updatedCategory);

@@ -1,3 +1,4 @@
+import { publicUserSelect } from "@/lib/publicUser";
 import { NextResponse } from "next/server";
 import prisma from '@/lib/prisma';
 import { CreateProjectSchema, UpdateProjectSchema } from '@/lib/schema';
@@ -10,11 +11,11 @@ export async function GET(request: Request) {
         const projects = await prisma.project.findMany({
             where: categoryId ? { categoryId } : {},
             include: {
-                assignees: true,
+                assignees: { select: publicUserSelect },
                 tasks: {
                     include: {
                         blockedBy: true,
-                        assignees: true,
+                        assignees: { select: publicUserSelect },
                     }
                 },
             },
@@ -49,7 +50,7 @@ export async function POST(request: Request) {
                     connect: assignees.map((id) => ({ id }))
                 } : undefined,
             },
-            include: { assignees: true }
+            include: { assignees: { select: publicUserSelect } }
         });
 
         return NextResponse.json(newProject, { status: 201 });
@@ -78,9 +79,9 @@ export async function PATCH(request: Request) {
                 ...(assignees ? { assignees: { set: assignees.map((uid) => ({ id: uid })) } } : {}),
             },
             include: {
-                assignees: true,
+                assignees: { select: publicUserSelect },
                 tasks: {
-                    include: { blockedBy: true, assignees: true }
+                    include: { blockedBy: true, assignees: { select: publicUserSelect } }
                 }
             }
         });
