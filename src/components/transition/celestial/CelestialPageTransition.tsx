@@ -31,8 +31,6 @@ export default function CelestialPageTransition({ children }: { children: React.
                 <Overlay aria-hidden="true">
                     <Veil />
                     <Art viewBox="0 0 192 192">
-                        <circle className="halo" cx="96" cy="96" r="62" />
-
                         <circle className="ring" cx="96" cy="96" r="74" pathLength={100} />
                         <ellipse className="orbit" cx="96" cy="96" rx="86" ry="34" pathLength={100} />
 
@@ -94,11 +92,6 @@ const sparkCycle = keyframes`
     45%  { opacity: 1; transform: scale(1) rotate(0deg); }
     70%  { opacity: 1; }
     100% { opacity: 0; transform: scale(0.5) rotate(25deg); }
-`;
-
-const haloCycle = keyframes`
-    0%, 100% { opacity: 0; }
-    50%      { opacity: 0.5; }
 `;
 
 const artCycle = keyframes`
@@ -175,7 +168,6 @@ const Art = styled.svg`
 
     .moon {
         stroke-width: 1.6;
-        filter: drop-shadow(0 0 5px ${p => p.theme.colors.primary}66);
     }
 
     .ring {
@@ -188,13 +180,6 @@ const Art = styled.svg`
         stroke-width: 0.7;
         opacity: 0.4;
         animation-delay: 0.16s;
-    }
-
-    .halo {
-        fill: ${p => p.theme.colors.primary};
-        opacity: 0;
-        filter: blur(26px);
-        animation: ${haloCycle} 1.15s ease-in-out both;
     }
 
     .crater {

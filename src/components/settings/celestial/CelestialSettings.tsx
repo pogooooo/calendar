@@ -8,6 +8,49 @@ import * as S from "./CelestialSettings.styles";
 import WidgetPreview from "./WidgetPreview";
 import type { SettingsThemeProps } from "../SettingsPage";
 import { FONT_OPTIONS, ensureFontLoaded } from "@/lib/fonts";
+import { FONT_SIZE_OPTIONS, FONT_WEIGHT_OPTIONS } from "@/styles/GlobalTypography";
+
+const SegmentRow = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+`;
+
+const SegmentLabel = styled.span`
+    min-width: 68px;
+    font-size: 0.8rem;
+    letter-spacing: 1px;
+    color: ${(props) => props.theme.colors.textSecondary};
+`;
+
+const SegmentGroup = styled.div`
+    display: flex;
+    border: 1px solid ${(props) => props.theme.colors.primary}44;
+`;
+
+const Segment = styled.button<{ $selected: boolean }>`
+    padding: 7px 15px;
+    font-size: 0.78rem;
+    font-family: inherit;
+    letter-spacing: 0.5px;
+    background: none;
+    border: none;
+    border-right: 1px solid ${(props) => props.theme.colors.primary}33;
+    color: ${(props) => (props.$selected ? props.theme.colors.primary : props.theme.colors.textSecondary)};
+    cursor: pointer;
+    transition: color 0.2s, box-shadow 0.2s;
+
+    &:last-child { border-right: none; }
+
+    ${(props) => props.$selected && `
+        box-shadow: inset 0 -2px 0 ${props.theme.colors.primary};
+        text-shadow: 0 0 6px ${props.theme.colors.primary}55;
+    `}
+
+    &:hover { color: ${(props) => props.theme.colors.primary}; }
+`;
 
 const FontGrid = styled.div`
     display: grid;
@@ -99,6 +142,8 @@ export default function CelestialSettings({
     currentTheme, onThemeChange,
     themes, themeOptions, onThemeOptionChange,
     fontKey, onFontChange,
+    fontSizeKey, onFontSizeChange,
+    fontWeightKey, onFontWeightChange,
     navSections, widgetList,
     onWidgetOpen, onWidgetClose,
     autostart, onAutostartToggle,
@@ -210,6 +255,40 @@ export default function CelestialSettings({
 
                 <S.Section id="sec-font">
                     <S.SectionTitle>{t.settings.font}</S.SectionTitle>
+
+                    <SegmentRow>
+                        <SegmentLabel>글자 크기</SegmentLabel>
+                        <SegmentGroup>
+                            {FONT_SIZE_OPTIONS.map((o) => (
+                                <Segment
+                                    key={o.key}
+                                    type="button"
+                                    $selected={fontSizeKey === o.key}
+                                    onClick={() => onFontSizeChange(o.key)}
+                                >
+                                    {o.label}
+                                </Segment>
+                            ))}
+                        </SegmentGroup>
+                    </SegmentRow>
+
+                    <SegmentRow>
+                        <SegmentLabel>글자 두께</SegmentLabel>
+                        <SegmentGroup>
+                            {FONT_WEIGHT_OPTIONS.map((o) => (
+                                <Segment
+                                    key={o.key}
+                                    type="button"
+                                    $selected={fontWeightKey === o.key}
+                                    onClick={() => onFontWeightChange(o.key)}
+                                    style={o.weight > 0 ? { fontWeight: o.weight } : undefined}
+                                >
+                                    {o.label}
+                                </Segment>
+                            ))}
+                        </SegmentGroup>
+                    </SegmentRow>
+
                     <FontGrid>
                         {FONT_OPTIONS.map((f) => {
                             const selected = fontKey === f.key;
