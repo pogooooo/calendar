@@ -8,11 +8,13 @@ interface SettingState {
     themeOptions: Record<string, string>;
     locale: Locale;
     autostart: boolean;
+    font: string;
     isLoading: boolean;
     setTheme: (inputTheme: string) => void;
     setThemeOption: (themeId: string, option: string) => void;
     setLocale: (locale: Locale) => void;
     setAutostart: (enabled: boolean) => void;
+    setFont: (font: string) => void;
     updateTheme: (authFetch: AuthFetch, inputTheme: string) => Promise<void>;
     fetchSettings: (authFetch: AuthFetch) => Promise<void>;
 }
@@ -24,6 +26,7 @@ const useSettingStore = create<SettingState>()(
             themeOptions: {},
             locale: 'ko' as Locale,
             autostart: true,
+            font: 'default',
             isLoading: false,
 
             setTheme: (inputTheme) => set({ theme: inputTheme }),
@@ -31,6 +34,7 @@ const useSettingStore = create<SettingState>()(
                 set((s) => ({ themeOptions: { ...s.themeOptions, [themeId]: option } })),
             setLocale: (locale) => set({ locale }),
             setAutostart: (enabled) => set({ autostart: enabled }),
+            setFont: (font) => set({ font }),
 
             fetchSettings: async (authFetch) => {
                 set({ isLoading: true });

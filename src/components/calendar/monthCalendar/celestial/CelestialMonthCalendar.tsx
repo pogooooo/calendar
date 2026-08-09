@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import styled, { keyframes } from "styled-components";
 import { Slot } from "@radix-ui/react-slot";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -18,6 +19,48 @@ import MoreModal from "@/components/modal/moreModal/MoreModal";
 import TodoContextMenu from "@/components/calendar/celestial/contextMenu/TodoContextMenu";
 import DayCellDecor from "@/assets/celestial/DayCellDecor";
 import { useT } from "@/i18n/useT";
+import useAnniversaryStore from "@/store/useAnniversaryStore";
+import { anniversariesOn } from "@/lib/anniversary";
+
+const anniversaryTwinkle = keyframes`
+    0%, 100% { opacity: 0.75; }
+    50%      { opacity: 1; text-shadow: 0 0 6px currentColor; }
+`;
+
+const AnniversaryStrip = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 0 3px 3px;
+
+    .chip {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        min-width: 0;
+        padding: 1px 0;
+        border-top: 1px solid ${(props) => props.theme.colors.primary};
+        border-bottom: 1px solid ${(props) => props.theme.colors.primary}55;
+        color: ${(props) => props.theme.colors.primary};
+        font-size: 0.62rem;
+        line-height: 1.35;
+        animation: ${anniversaryTwinkle} 3.4s ease-in-out infinite;
+    }
+
+    i {
+        font-style: normal;
+        font-size: 0.7rem;
+        flex: 0 0 auto;
+    }
+
+    em {
+        font-style: normal;
+        letter-spacing: 0.3px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+`;
 
 interface WeekRowProps {
     dates: Date[];
@@ -56,6 +99,8 @@ const WeekRow = ({
 
     const { todoLevels, maxLevel } = useTodoLevels(weekTodos, dates);
 
+    const anniversaries = useAnniversaryStore(s => s.anniversaries);
+
     const dayTiers = React.useMemo(() => dates.map((date) => {
         const list = challengeTodos.filter(c => isSameDay(date, new Date(c.startAt as string | number | Date)));
         const total = list.length;
@@ -86,6 +131,8 @@ const WeekRow = ({
                 const dayChallenges = challengeTodos.filter(c =>
                     isSameDay(date, new Date(c.startAt as string | number | Date))
                 );
+
+                const dayAnniversaries = anniversariesOn(anniversaries, date);
 
                 return (
                     <S.DayCell
@@ -140,6 +187,17 @@ const WeekRow = ({
                                 );
                             })()}
                         </div>
+
+                        {dayAnniversaries.length > 0 && (
+                            <AnniversaryStrip title={dayAnniversaries.map(a => a.title).join(", ")}>
+                                {dayAnniversaries.slice(0, 2).map(a => (
+                                    <span className="chip" key={a.id}>
+                                        <i>{a.icon || "✦"}</i>
+                                        <em>{a.title}</em>
+                                    </span>
+                                ))}
+                            </AnniversaryStrip>
+                        )}
 
                         <S.TodoBarList>
                             {Array.from({ length: Math.min(maxLevel, MAX_VISIBLE_LEVELS) }).map((_, levelIndex) => {

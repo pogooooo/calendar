@@ -86,6 +86,26 @@ export const UpdateTodoSchema = z.object({
 export type CreateTodoInput = z.infer<typeof CreateTodoSchema>;
 export type UpdateTodoInput = z.infer<typeof UpdateTodoSchema>;
 
+// ── Anniversary ───────────────────────────────────────────────────────────────
+
+export const CreateAnniversarySchema = z.object({
+    title: z.string().min(1, "기념일 이름을 입력해주세요."),
+    month: z.number().int().min(1).max(12),
+    day: z.number().int().min(1).max(31),
+    icon: z.string().max(8).nullable().optional(),
+});
+
+export const UpdateAnniversarySchema = z.object({
+    id: z.string().min(1),
+    title: z.string().min(1).optional(),
+    month: z.number().int().min(1).max(12).optional(),
+    day: z.number().int().min(1).max(31).optional(),
+    icon: z.string().max(8).nullable().optional(),
+});
+
+export type CreateAnniversaryInput = z.infer<typeof CreateAnniversarySchema>;
+export type UpdateAnniversaryInput = z.infer<typeof UpdateAnniversarySchema>;
+
 // ── Challenge ─────────────────────────────────────────────────────────────────
 
 export const CreateChallengeSchema = z.object({

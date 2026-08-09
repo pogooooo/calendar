@@ -5,19 +5,17 @@ import styled, { css, keyframes } from "styled-components";
 
 let hasNavigated = false;
 
-const FLIGHTS = [
-    { top: "14%", delay: 0, duration: 0.62, trail: "24vw", size: 13, tilt: 3, dim: 1 },
-    { top: "34%", delay: 0.07, duration: 0.7, trail: "15vw", size: 9, tilt: -2, dim: 0.65 },
-    { top: "56%", delay: 0.12, duration: 0.66, trail: "19vw", size: 11, tilt: 2, dim: 0.8 },
-    { top: "76%", delay: 0.05, duration: 0.74, trail: "11vw", size: 8, tilt: -3, dim: 0.5 },
+const CRATERS = [
+    { cx: 104, cy: 74, r: 5.5, delay: 0.3 },
+    { cx: 92, cy: 100, r: 3.2, delay: 0.38 },
+    { cx: 110, cy: 116, r: 4.4, delay: 0.46 },
 ];
 
-const POPS = [
-    { top: "22%", left: "28%", delay: 0.14, size: 10 },
-    { top: "38%", left: "66%", delay: 0.24, size: 13 },
-    { top: "58%", left: "40%", delay: 0.3, size: 8 },
-    { top: "70%", left: "72%", delay: 0.2, size: 9 },
-    { top: "30%", left: "84%", delay: 0.34, size: 7 },
+const SPARKS = [
+    { x: 26, y: 40, s: 9, delay: 0.34 },
+    { x: 166, y: 58, s: 7, delay: 0.44 },
+    { x: 150, y: 152, s: 10, delay: 0.52 },
+    { x: 36, y: 138, s: 6, delay: 0.6 },
 ];
 
 export default function CelestialPageTransition({ children }: { children: React.ReactNode }) {
@@ -31,38 +29,44 @@ export default function CelestialPageTransition({ children }: { children: React.
         <Stage>
             {animate && (
                 <Overlay aria-hidden="true">
-                    <span className="pulse" />
+                    <Veil />
+                    <Art viewBox="0 0 192 192">
+                        <circle className="halo" cx="96" cy="96" r="62" />
 
-                    {FLIGHTS.map((f, i) => (
-                        <span
-                            key={i}
-                            className="flight"
-                            style={{
-                                top: f.top,
-                                opacity: f.dim,
-                                animationDelay: `${f.delay}s`,
-                                animationDuration: `${f.duration}s`,
-                                transform: `rotate(${f.tilt}deg)`,
-                            }}
-                        >
-                            <span className="trail" style={{ width: f.trail }} />
-                            <span className="head" style={{ fontSize: f.size }}>✦</span>
-                        </span>
-                    ))}
+                        <circle className="ring" cx="96" cy="96" r="74" pathLength={100} />
+                        <ellipse className="orbit" cx="96" cy="96" rx="86" ry="34" pathLength={100} />
 
-                    <svg className="constellation" viewBox="0 0 100 100" preserveAspectRatio="none">
-                        <path d="M28 24 L66 39 L40 58 L72 71" />
-                    </svg>
+                        <path
+                            className="moon"
+                            pathLength={100}
+                            d="M118 46 a54 54 0 1 0 0 100 a42 42 0 1 1 0 -100 z"
+                        />
 
-                    {POPS.map((p, i) => (
-                        <span
-                            key={i}
-                            className="pop"
-                            style={{ top: p.top, left: p.left, fontSize: p.size, animationDelay: `${p.delay}s` }}
-                        >
-                            ✦
-                        </span>
-                    ))}
+                        {CRATERS.map((c, i) => (
+                            <circle
+                                key={i}
+                                className="crater"
+                                cx={c.cx}
+                                cy={c.cy}
+                                r={c.r}
+                                style={{ animationDelay: `${c.delay}s` }}
+                            />
+                        ))}
+
+                        {SPARKS.map((s, i) => (
+                            <text
+                                key={i}
+                                className="spark"
+                                x={s.x}
+                                y={s.y}
+                                fontSize={s.s}
+                                textAnchor="middle"
+                                style={{ animationDelay: `${s.delay}s` }}
+                            >
+                                ✦
+                            </text>
+                        ))}
+                    </Art>
                 </Overlay>
             )}
             <Body $animate={animate}>{children}</Body>
@@ -70,41 +74,48 @@ export default function CelestialPageTransition({ children }: { children: React.
     );
 }
 
-const fly = keyframes`
-    0%   { translate: -16vw 0; opacity: 0; }
-    10%  { opacity: 1; }
-    82%  { opacity: 1; }
-    100% { translate: 94vw 0; opacity: 0; }
+const strokeCycle = keyframes`
+    0%   { stroke-dashoffset: 100; opacity: 0; }
+    12%  { opacity: 1; }
+    48%  { stroke-dashoffset: 0; }
+    60%  { stroke-dashoffset: 0; opacity: 1; }
+    100% { stroke-dashoffset: -100; opacity: 0; }
 `;
 
-const headSpin = keyframes`
-    from { transform: rotate(0deg) scale(1); }
-    50%  { transform: rotate(180deg) scale(1.3); }
-    to   { transform: rotate(360deg) scale(1); }
+const dotCycle = keyframes`
+    0%   { opacity: 0; transform: scale(0.4); }
+    45%  { opacity: 0.9; transform: scale(1); }
+    70%  { opacity: 0.9; transform: scale(1); }
+    100% { opacity: 0; transform: scale(0.4); }
 `;
 
-const popIn = keyframes`
-    0%   { opacity: 0; transform: scale(0) rotate(0deg); }
-    45%  { opacity: 1; transform: scale(1.15) rotate(40deg); }
-    100% { opacity: 0; transform: scale(0.4) rotate(80deg); }
+const sparkCycle = keyframes`
+    0%   { opacity: 0; transform: scale(0.3) rotate(-25deg); }
+    45%  { opacity: 1; transform: scale(1) rotate(0deg); }
+    70%  { opacity: 1; }
+    100% { opacity: 0; transform: scale(0.5) rotate(25deg); }
 `;
 
-const lineDraw = keyframes`
-    0%   { stroke-dashoffset: 240; opacity: 0; }
-    15%  { opacity: 0.55; }
-    70%  { opacity: 0.55; }
-    100% { stroke-dashoffset: 0; opacity: 0; }
+const haloCycle = keyframes`
+    0%, 100% { opacity: 0; }
+    50%      { opacity: 0.5; }
 `;
 
-const glowPulse = keyframes`
+const artCycle = keyframes`
+    0%   { transform: scale(0.94); }
+    55%  { transform: scale(1); }
+    100% { transform: scale(1.05); }
+`;
+
+const veilCycle = keyframes`
     0%   { opacity: 0; }
-    35%  { opacity: 0.5; }
+    30%  { opacity: 1; }
     100% { opacity: 0; }
 `;
 
 const bodyIn = keyframes`
-    from { opacity: 0; transform: translateY(13px); }
-    to   { opacity: 1; transform: none; }
+    from { opacity: 0; }
+    to   { opacity: 1; }
 `;
 
 const Stage = styled.div`
@@ -117,7 +128,7 @@ const Body = styled.div<{ $animate: boolean }>`
 
     ${p => p.$animate && css`
         @media (prefers-reduced-motion: no-preference) {
-            animation: ${bodyIn} 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.08s both;
+            animation: ${bodyIn} 0.6s ease-out 0.45s both;
         }
     `}
 `;
@@ -126,65 +137,81 @@ const Overlay = styled.div`
     position: absolute;
     inset: 0;
     z-index: 60;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     pointer-events: none;
     overflow: hidden;
 
     @media (prefers-reduced-motion: reduce) {
         display: none;
     }
+`;
 
-    .pulse {
-        position: absolute;
-        inset: 0;
-        background: radial-gradient(ellipse at 30% 40%, ${p => p.theme.colors.primary}14, transparent 60%);
-        animation: ${glowPulse} 0.7s ease-out both;
+const Veil = styled.span`
+    position: absolute;
+    inset: 0;
+    background-color: ${p => p.theme.colors.background};
+    animation: ${veilCycle} 1.15s ease-in-out both;
+`;
+
+const Art = styled.svg`
+    position: relative;
+    width: 240px;
+    height: 240px;
+    overflow: visible;
+    color: ${p => p.theme.colors.primary};
+    animation: ${artCycle} 1.15s cubic-bezier(0.33, 0, 0.2, 1) both;
+
+    .ring,
+    .orbit,
+    .moon {
+        fill: none;
+        stroke: currentColor;
+        vector-effect: non-scaling-stroke;
+        stroke-dasharray: 100;
+        animation: ${strokeCycle} 1.15s cubic-bezier(0.4, 0, 0.3, 1) both;
     }
 
-    .flight {
-        position: absolute;
-        left: 0;
-        display: flex;
-        align-items: center;
-        animation-name: ${fly};
-        animation-timing-function: cubic-bezier(0.3, 0, 0.4, 1);
-        animation-fill-mode: both;
+    .moon {
+        stroke-width: 1.6;
+        filter: drop-shadow(0 0 5px ${p => p.theme.colors.primary}66);
     }
 
-    .trail {
-        height: 1px;
-        background: linear-gradient(to left, ${p => p.theme.colors.primary}, transparent);
-        box-shadow: 0 0 6px ${p => p.theme.colors.primary}44;
+    .ring {
+        stroke-width: 0.8;
+        opacity: 0.55;
+        animation-delay: 0.08s;
     }
 
-    .head {
-        margin-left: 2px;
-        line-height: 1;
-        color: ${p => p.theme.colors.primary};
-        text-shadow: 0 0 8px ${p => p.theme.colors.primary};
-        animation: ${headSpin} 0.65s linear both;
+    .orbit {
+        stroke-width: 0.7;
+        opacity: 0.4;
+        animation-delay: 0.16s;
     }
 
-    .constellation {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-
-        path {
-            fill: none;
-            stroke: ${p => p.theme.colors.primary};
-            stroke-width: 1;
-            vector-effect: non-scaling-stroke;
-            stroke-dasharray: 240;
-            animation: ${lineDraw} 0.75s ease-out 0.1s both;
-        }
+    .halo {
+        fill: ${p => p.theme.colors.primary};
+        opacity: 0;
+        filter: blur(26px);
+        animation: ${haloCycle} 1.15s ease-in-out both;
     }
 
-    .pop {
-        position: absolute;
-        line-height: 1;
-        color: ${p => p.theme.colors.primary};
-        text-shadow: 0 0 6px ${p => p.theme.colors.primary}99;
-        animation: ${popIn} 0.55s ease-out both;
+    .crater {
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 0.9;
+        opacity: 0;
+        transform-origin: center;
+        transform-box: fill-box;
+        animation: ${dotCycle} 0.8s ease-out both;
+    }
+
+    .spark {
+        fill: currentColor;
+        opacity: 0;
+        transform-origin: center;
+        transform-box: fill-box;
+        animation: ${sparkCycle} 0.75s ease-out both;
     }
 `;

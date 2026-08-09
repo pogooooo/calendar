@@ -4,6 +4,7 @@ const en: Translations = {
     settings: {
         title: 'Settings',
         onThisPage: 'On this page',
+        font: 'Font',
         theme: 'Theme',
         themeOptions: 'Theme Options',
         lightMode: 'Light',
@@ -107,6 +108,7 @@ const en: Translations = {
         calendar: 'Calendar',
         project: 'Project',
         challenge: 'Challenge',
+        anniversary: 'Anniversary',
         download: 'Get the App',
         memberManagement: 'Account Settings',
         logout: 'Log Out',

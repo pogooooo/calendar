@@ -24,6 +24,8 @@ export interface SettingsThemeProps {
     themes: ThemeDef[];
     themeOptions: Record<string, string>;
     onThemeOptionChange: (themeId: string, opt: string) => void;
+    fontKey: string;
+    onFontChange: (fontKey: string) => void;
     navSections: { id: string; label: string }[];
     widgetList: { kind: string; label: string; desc: string }[];
     onWidgetOpen: (kind: string) => void;
@@ -112,9 +114,12 @@ export default function SettingsPage() {
     const locale = useSettingStore((s) => s.locale);
     const autostart = useSettingStore((s) => s.autostart);
     const setAutostart = useSettingStore((s) => s.setAutostart);
+    const fontKey = useSettingStore((s) => s.font);
+    const setFont = useSettingStore((s) => s.setFont);
 
     const NAV_SECTIONS = React.useMemo(() => [
         { id: "sec-theme",        label: t.settings.theme },
+        { id: "sec-font",         label: t.settings.font },
         { id: "sec-widgets",      label: t.settings.widgets },
         { id: "sec-system",       label: t.settings.system },
         { id: "sec-account-info", label: t.settings.accountInfo },
@@ -257,6 +262,8 @@ export default function SettingsPage() {
         themes: THEMES,
         themeOptions,
         onThemeOptionChange: handleThemeOptionChange,
+        fontKey,
+        onFontChange: setFont,
         navSections: NAV_SECTIONS,
         widgetList: WIDGET_LIST,
         onWidgetOpen: handleWidgetOpen,

@@ -1,3 +1,4 @@
+import * as React from "react";
 import { useRouter } from "next/navigation";
 import useAuthStore from "@/store/useAuthStore";
 import { api, clientHeaders } from "@/lib/apiBase";
@@ -37,11 +38,13 @@ export async function refreshSession(): Promise<string | null> {
 }
 
 export const useAuthFetch = () => {
-    const { accessToken, logout } = useAuthStore();
+    const logout = useAuthStore((s) => s.logout);
     const router = useRouter();
 
-    const authFetch = async (url: string, options: RequestInit = {}) => {
+    // 렌더마다 새 함수를 만들면 이 값을 의존성으로 쓰는 effect 들이 무한 반복된다.
+    const authFetch = React.useCallback(async (url: string, options: RequestInit = {}) => {
         const target = api(url);
+        const accessToken = useAuthStore.getState().accessToken;
 
         const headers = {
             ...clientHeaders(),
@@ -68,7 +71,7 @@ export const useAuthFetch = () => {
         }
 
         return response;
-    };
+    }, [logout, router]);
 
     return authFetch;
 };

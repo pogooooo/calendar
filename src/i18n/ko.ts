@@ -4,6 +4,7 @@ const ko: Translations = {
     settings: {
         title: '설정',
         onThisPage: '이 페이지에서',
+        font: '폰트',
         theme: '테마',
         themeOptions: '테마 설정',
         lightMode: '라이트',
@@ -107,6 +108,7 @@ const ko: Translations = {
         calendar: '캘린더',
         project: '프로젝트',
         challenge: '챌린지',
+        anniversary: '기념일',
         download: '앱 다운로드',
         memberManagement: '회원 관리',
         logout: '로그아웃',

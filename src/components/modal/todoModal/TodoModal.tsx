@@ -200,10 +200,19 @@ export default function TodoModal(props: TodoModalProps) {
     };
 
     const handleDateChange = (setter: (val: string) => void, currentValue: string, newValue: string) => {
-        if (isAllDay) {
-            setter(`${newValue}T${currentValue.slice(11, 16) || "00:00"}`);
-        } else {
-            setter(newValue);
+        const composed = isAllDay
+            ? `${newValue}T${currentValue.slice(11, 16) || "00:00"}`
+            : newValue;
+
+        setter(composed);
+
+        // 시작을 옮기면 종료는 자동으로 1시간 뒤(종일 일정은 같은 날)로 따라간다.
+        if (setter === setStartAt && composed) {
+            const start = new Date(composed);
+            if (!isNaN(start.getTime())) {
+                const end = isAllDay ? start : new Date(start.getTime() + 60 * 60 * 1000);
+                setEndAt(getLocalDatetimeString(end));
+            }
         }
     };
 

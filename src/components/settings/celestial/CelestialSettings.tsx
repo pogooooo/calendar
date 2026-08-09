@@ -7,6 +7,46 @@ import LocaleSelect from "@/components/LocaleSelect";
 import * as S from "./CelestialSettings.styles";
 import WidgetPreview from "./WidgetPreview";
 import type { SettingsThemeProps } from "../SettingsPage";
+import { FONT_OPTIONS, ensureFontLoaded } from "@/lib/fonts";
+
+const FontGrid = styled.div`
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 12px;
+`;
+
+const FontCard = styled.button<{ $selected: boolean }>`
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px;
+    text-align: left;
+    background: none;
+    color: inherit;
+    font-family: inherit;
+    border: 1px solid ${(props) => props.theme.colors.primary}${(props) => (props.$selected ? "" : "55")};
+    cursor: pointer;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+    &:hover {
+        border-color: ${(props) => props.theme.colors.primary};
+        box-shadow: 0 0 8px ${(props) => props.theme.colors.primary}33;
+    }
+`;
+
+const FontPreview = styled.div<{ $family: string }>`
+    font-family: ${(props) => props.$family};
+    font-size: 1.05rem;
+    line-height: 1.5;
+    color: ${(props) => props.theme.colors.text};
+`;
+
+const FontMeta = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+`;
 
 const WidgetBoard = styled.div`
     display: grid;
@@ -58,6 +98,7 @@ const CardActions = styled.div`
 export default function CelestialSettings({
     currentTheme, onThemeChange,
     themes, themeOptions, onThemeOptionChange,
+    fontKey, onFontChange,
     navSections, widgetList,
     onWidgetOpen, onWidgetClose,
     autostart, onAutostartToggle,
@@ -70,6 +111,10 @@ export default function CelestialSettings({
     showDeleteForm, onShowDeleteForm, onDelete, onDeleteCancel,
 }: SettingsThemeProps) {
     const [activeId, setActiveId] = React.useState<string>("sec-theme");
+
+    React.useEffect(() => {
+        FONT_OPTIONS.forEach(ensureFontLoaded);
+    }, []);
 
     React.useEffect(() => {
         const observer = new IntersectionObserver(
@@ -161,6 +206,31 @@ export default function CelestialSettings({
                             </S.ThemeSubSection>
                         );
                     })()}
+                </S.Section>
+
+                <S.Section id="sec-font">
+                    <S.SectionTitle>{t.settings.font}</S.SectionTitle>
+                    <FontGrid>
+                        {FONT_OPTIONS.map((f) => {
+                            const selected = fontKey === f.key;
+                            return (
+                                <FontCard
+                                    key={f.key}
+                                    type="button"
+                                    $selected={selected}
+                                    onClick={() => onFontChange(f.key)}
+                                >
+                                    <FontPreview $family={f.family}>
+                                        일정과 목표를 하나의 별자리처럼 ✦
+                                    </FontPreview>
+                                    <FontMeta>
+                                        <CardLabel>{f.label}</CardLabel>
+                                        {selected && <S.CheckMark><Check size={12} strokeWidth={3} /></S.CheckMark>}
+                                    </FontMeta>
+                                </FontCard>
+                            );
+                        })}
+                    </FontGrid>
                 </S.Section>
 
                 <S.Section id="sec-widgets">

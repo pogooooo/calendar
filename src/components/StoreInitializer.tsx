@@ -8,6 +8,7 @@ import useCategoryStore from "@/store/useCategoryStore";
 import useAuthStore from "@/store/useAuthStore";
 import useDailyStore from "@/store/useDailyStore";
 import useSettingStore from "@/store/useSettingStore";
+import useAnniversaryStore from "@/store/useAnniversaryStore";
 import { isDesktopApp } from "@/lib/apiBase";
 
 const PUBLIC_ROUTES = ["/signIn", "/signUp", "/download"];
@@ -25,6 +26,7 @@ export default function StoreInitializer({ children }: { children: React.ReactNo
     const fetchCategories = useCategoryStore((state) => state.fetchCategories);
     const fetchDailyData = useDailyStore((state) => state.fetchDailyData);
     const fetchSettings = useSettingStore((state) => state.fetchSettings);
+    const fetchAnniversaries = useAnniversaryStore((state) => state.fetchAnniversaries);
 
     const accessToken = useAuthStore((state) => state.accessToken);
     const [isMounted, setIsMounted] = useState(false);
@@ -43,7 +45,8 @@ export default function StoreInitializer({ children }: { children: React.ReactNo
             fetchSettings(authFetch),
             fetchCategories(authFetch),
             fetchTodos(authFetch),
-            fetchDailyData(authFetch, new Date())
+            fetchDailyData(authFetch, new Date()),
+            fetchAnniversaries(authFetch)
         ]);
     }, [isMounted, accessToken, pathname, authFetch, fetchTodos, fetchCategories]);
 

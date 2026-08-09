@@ -1,4 +1,5 @@
 import * as React from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence } from "framer-motion";
 import * as S from "./CelestialBaseModal.styles";
 
@@ -19,7 +20,9 @@ export default function CelestialBaseModal({ isOpen, onClose, children, maxWidth
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [isOpen, onClose]);
 
-    return (
+    if (typeof document === "undefined") return null;
+
+    return createPortal(
         <AnimatePresence>
             {isOpen && (
                 <S.Overlay
@@ -40,6 +43,7 @@ export default function CelestialBaseModal({ isOpen, onClose, children, maxWidth
                     </S.Container>
                 </S.Overlay>
             )}
-        </AnimatePresence>
+        </AnimatePresence>,
+        document.body,
     );
 }

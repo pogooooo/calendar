@@ -2,6 +2,7 @@ export interface Translations {
     settings: {
         title: string;
         onThisPage: string;
+        font: string;
         theme: string;
         themeOptions: string;
         lightMode: string;
@@ -105,6 +106,7 @@ export interface Translations {
         calendar: string;
         project: string;
         challenge: string;
+        anniversary: string;
         download: string;
         memberManagement: string;
         logout: string;

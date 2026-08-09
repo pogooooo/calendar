@@ -3,7 +3,7 @@ import styled from "styled-components";
 import SidebarMenuButton from "@/components/button/sidebarMenu/SidebarMenuButton";
 import { useRouter } from "next/navigation";
 import { CategoryType } from "@/store/useCategoryStore";
-import { Layers, Calendar, Kanban, Trophy, MonitorDown } from "lucide-react";
+import { Layers, Calendar, Kanban, Trophy, Cake, MonitorDown } from "lucide-react";
 import { useT } from "@/i18n/useT";
 import { isDesktopApp } from "@/lib/apiBase";
 
@@ -43,6 +43,13 @@ const Menu = (props: { categories: CategoryType[] }) => {
                 onClick={() => { router.push("/challenge") }}
             >
                 <Trophy size={26}/>
+            </SidebarMenuButton>
+
+            <SidebarMenuButton
+                label={t.sidebar.anniversary}
+                onClick={() => { router.push("/anniversary") }}
+            >
+                <Cake size={26}/>
             </SidebarMenuButton>
 
             {showDownload && (
