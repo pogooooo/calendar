@@ -193,6 +193,53 @@ mod win32 {
         SetWindowLongW(hwnd as HWND, GWL_EXSTYLE, new_style);
     }
 
+    pub const WM_WINDOWPOSCHANGING: u32 = 0x0046;
+    pub const SWP_NOZORDER: u32 = 0x0004;
+    const PIN_BOTTOM_ID: usize = 0xC1105;
+
+    #[repr(C)]
+    pub struct WINDOWPOS {
+        pub hwnd: HWND,
+        pub hwnd_insert_after: HWND,
+        pub x: i32,
+        pub y: i32,
+        pub cx: i32,
+        pub cy: i32,
+        pub flags: u32,
+    }
+
+    pub type SubclassProc = unsafe extern "system" fn(HWND, u32, usize, isize, usize, usize) -> isize;
+
+    #[link(name = "comctl32")]
+    extern "system" {
+        pub fn SetWindowSubclass(hWnd: HWND, pfnSubclass: SubclassProc, uIdSubclass: usize, dwRefData: usize) -> i32;
+        pub fn RemoveWindowSubclass(hWnd: HWND, pfnSubclass: SubclassProc, uIdSubclass: usize) -> i32;
+        pub fn DefSubclassProc(hWnd: HWND, uMsg: u32, wParam: usize, lParam: isize) -> isize;
+    }
+
+    // 창을 위로 올리려는 모든 시도를 z순서 맨 아래로 바꿔치기한다.
+    // 주기적으로 밀어 넣는 방식과 달리 z순서 변경 자체가 일어나지 않아 깜빡임이 없다.
+    unsafe extern "system" fn pin_bottom_proc(
+        hwnd: HWND, msg: u32, wparam: usize, lparam: isize,
+        _id: usize, _data: usize,
+    ) -> isize {
+        if msg == WM_WINDOWPOSCHANGING && lparam != 0 {
+            let wp = lparam as *mut WINDOWPOS;
+            (*wp).hwnd_insert_after = HWND_BOTTOM;
+            (*wp).flags &= !SWP_NOZORDER;
+        }
+        DefSubclassProc(hwnd, msg, wparam, lparam)
+    }
+
+    pub unsafe fn set_pin_bottom(hwnd: isize, enable: bool) {
+        if enable {
+            SetWindowSubclass(hwnd as HWND, pin_bottom_proc, PIN_BOTTOM_ID, 0);
+            SetWindowPos(hwnd as HWND, HWND_BOTTOM, 0, 0, 0, 0, SWP_POS_FLAGS);
+        } else {
+            RemoveWindowSubclass(hwnd as HWND, pin_bottom_proc, PIN_BOTTOM_ID);
+        }
+    }
+
     pub unsafe fn remove_shadow_and_border(hwnd: isize) {
         set_attr(hwnd, 33, 1);
         set_attr(hwnd, DWMWA_BORDER_COLOR, DWMWA_COLOR_NONE);
@@ -399,36 +446,33 @@ async fn set_widget_priority(
                 win.set_always_on_top(true).map_err(|e| e.to_string())?;
                 #[cfg(target_os = "windows")]
                 if let Some(hwnd) = get_hwnd(&win) {
-                    unsafe {
+                    win.run_on_main_thread(move || unsafe {
+                        win32::set_pin_bottom(hwnd, false);
                         win32::bypass_win_d(hwnd, false);
                         win32::set_noactivate(hwnd, false);
-                    }
+                    }).map_err(|e| e.to_string())?;
                 }
             }
             "bottom" => {
                 win.set_always_on_top(false).map_err(|e| e.to_string())?;
                 #[cfg(target_os = "windows")]
                 if let Some(hwnd) = get_hwnd(&win) {
-                    unsafe {
+                    win.run_on_main_thread(move || unsafe {
                         win32::bypass_win_d(hwnd, true); // 바탕화면일 때만 켜기
                         win32::set_noactivate(hwnd, true);
-                        win32::SetWindowPos(
-                            hwnd as _,
-                            win32::HWND_BOTTOM,
-                            0, 0, 0, 0,
-                            win32::SWP_POS_FLAGS,
-                        );
-                    }
+                        win32::set_pin_bottom(hwnd, true);
+                    }).map_err(|e| e.to_string())?;
                 }
             }
             _ => {
                 win.set_always_on_top(false).map_err(|e| e.to_string())?;
                 #[cfg(target_os = "windows")]
                 if let Some(hwnd) = get_hwnd(&win) {
-                    unsafe {
+                    win.run_on_main_thread(move || unsafe {
+                        win32::set_pin_bottom(hwnd, false);
                         win32::bypass_win_d(hwnd, false);
                         win32::set_noactivate(hwnd, false);
-                    }
+                    }).map_err(|e| e.to_string())?;
                 }
             }
         }
@@ -509,10 +553,9 @@ pub fn run() {
         .setup(move |app| {
             {
                 let app_handle = app.handle().clone();
-                let bw = bottom_widgets.clone();
                 tauri::async_runtime::spawn(async move {
                     loop {
-                        tokio::time::sleep(tokio::time::Duration::from_millis(30)).await;
+                        tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
 
                         for &kind in WIDGET_KINDS {
                             if let Some(win) = app_handle
@@ -531,28 +574,6 @@ pub fn run() {
                             }
                         }
 
-                        let bottom_kinds: Vec<String> = {
-                            let set = bw.0.lock().unwrap();
-                            set.iter().cloned().collect()
-                        };
-
-                        for kind in bottom_kinds {
-                            if let Some(win) = app_handle
-                                .get_webview_window(&format!("widget-{kind}"))
-                            {
-                                #[cfg(target_os = "windows")]
-                                if let Some(hwnd) = get_hwnd(&win) {
-                                    unsafe {
-                                        win32::SetWindowPos(
-                                            hwnd as _,
-                                            win32::HWND_BOTTOM,
-                                            0, 0, 0, 0,
-                                            win32::SWP_POS_FLAGS,
-                                        );
-                                    }
-                                }
-                            }
-                        }
                     }
                 });
             }

@@ -6,6 +6,7 @@ import * as S from "./CelestialTodoModal.styles";
 import { X, ChevronDown, ChevronUp, MapPin, Repeat, AlignLeft, Clock } from 'lucide-react';
 import SecondaryButton from "@/components/button/secondary/SecondaryButton";
 import CelestialBaseModal from "@/components/modal/baseModal/celestial/CelestialBaseModal";
+import CelestialDateTimePicker from "@/components/input/dateTimePicker/CelestialDateTimePicker";
 import { useT } from "@/i18n/useT";
 
 export default function CelestialTodoModal({
@@ -79,19 +80,19 @@ export default function CelestialTodoModal({
 
                     <S.FieldRow>
                         <label>{t.todo.startTime}</label>
-                        <input
-                            type={isAllDay ? "date" : "datetime-local"}
+                        <CelestialDateTimePicker
+                            mode={isAllDay ? "date" : "datetime"}
                             value={isAllDay ? startAt.slice(0, 10) : startAt}
-                            onChange={(e) => handleDateChange(setStartAt, startAt, e.target.value)}
+                            onChange={(v) => handleDateChange(setStartAt, startAt, v)}
                         />
                     </S.FieldRow>
 
                     <S.FieldRow>
                         <label>{t.todo.endTime}</label>
-                        <input
-                            type={isAllDay ? "date" : "datetime-local"}
+                        <CelestialDateTimePicker
+                            mode={isAllDay ? "date" : "datetime"}
                             value={isAllDay ? endAt.slice(0, 10) : endAt}
-                            onChange={(e) => handleDateChange(setEndAt, endAt, e.target.value)}
+                            onChange={(v) => handleDateChange(setEndAt, endAt, v)}
                         />
                     </S.FieldRow>
 
@@ -153,11 +154,10 @@ export default function CelestialTodoModal({
                                 </S.DropdownContainer>
 
                                 {repeatEndType === 'until' && (
-                                    <input
-                                        type="date"
+                                    <CelestialDateTimePicker
+                                        mode="date"
                                         value={repeatEndDate}
-                                        onChange={(e) => setRepeatEndDate(e.target.value)}
-                                        required
+                                        onChange={setRepeatEndDate}
                                     />
                                 )}
 
