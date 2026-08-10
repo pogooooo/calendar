@@ -21,43 +21,45 @@ import DayCellDecor from "@/assets/celestial/DayCellDecor";
 import { useT } from "@/i18n/useT";
 import useAnniversaryStore from "@/store/useAnniversaryStore";
 import { anniversariesOn } from "@/lib/anniversary";
-import AnniversaryIcon from "@/assets/celestial/AnniversaryIcons";
+import AnniversaryBadge from "@/components/calendar/celestial/anniversary/AnniversaryBadge";
 
-const anniversaryTwinkle = keyframes`
-    0%, 100% { opacity: 0.75; }
-    50%      { opacity: 1; text-shadow: 0 0 6px currentColor; }
+const auraBreathe = keyframes`
+    0%, 100% { opacity: 0.55; }
+    50%      { opacity: 1; }
 `;
 
-const AnniversaryStrip = styled.div`
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    margin: 0 3px 3px;
+/* 기념일이 있는 날은 셀 안쪽이 은은하게 밝아지고 모서리에 금선이 걸린다 */
+const AnniversaryAura = styled.span`
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    box-shadow: inset 0 0 20px ${(props) => props.theme.colors.primary}14;
 
-    .chip {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        min-width: 0;
-        padding: 1px 0;
-        border-top: 1px solid ${(props) => props.theme.colors.primary};
-        border-bottom: 1px solid ${(props) => props.theme.colors.primary}55;
-        color: ${(props) => props.theme.colors.primary};
-        font-size: 0.62rem;
-        line-height: 1.35;
-        animation: ${anniversaryTwinkle} 3.4s ease-in-out infinite;
+    &::before,
+    &::after {
+        content: "";
+        position: absolute;
+        width: 9px;
+        height: 9px;
+        border-color: ${(props) => props.theme.colors.primary}AA;
+        border-style: solid;
     }
 
-    svg {
-        flex: 0 0 auto;
+    &::before {
+        top: 0;
+        left: 0;
+        border-width: 1px 0 0 1px;
     }
 
-    em {
-        font-style: normal;
-        letter-spacing: 0.3px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+    &::after {
+        bottom: 0;
+        right: 0;
+        border-width: 0 1px 1px 0;
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+        animation: ${auraBreathe} 5s ease-in-out infinite;
     }
 `;
 
@@ -188,14 +190,10 @@ const WeekRow = ({
                         </div>
 
                         {dayAnniversaries.length > 0 && (
-                            <AnniversaryStrip title={dayAnniversaries.map(a => a.title).join(", ")}>
-                                {dayAnniversaries.slice(0, 2).map(a => (
-                                    <span className="chip" key={a.id}>
-                                        <AnniversaryIcon name={a.icon} size={11} strokeWidth={1.7} />
-                                        <em>{a.title}</em>
-                                    </span>
-                                ))}
-                            </AnniversaryStrip>
+                            <>
+                                <AnniversaryAura aria-hidden="true" />
+                                <AnniversaryBadge items={dayAnniversaries} />
+                            </>
                         )}
 
                         <S.TodoBarList>

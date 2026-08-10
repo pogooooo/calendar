@@ -31,6 +31,9 @@ export default function CalendarPage() {
         setDayCollapsed(prev => {
             const next = !prev;
             try { localStorage.setItem(DAY_COLLAPSE_KEY, next ? "1" : "0"); } catch {}
+            // 드래그로 넣어둔 인라인 flex 가 남아 있으면 전환이 먹지 않는다.
+            if (monthRef.current) monthRef.current.style.flex = "";
+            if (dayRef.current) dayRef.current.style.flex = "";
             return next;
         });
     }, []);
@@ -84,32 +87,39 @@ export default function CalendarPage() {
                     />
                 </MonthSection>
 
-                {dayCollapsed ? (
-                    <CollapsedRail type="button" onClick={toggleDay} title="일간 캘린더 펼치기">
-                        <ChevronLeft size={14} />
+                <Resizer
+                    $hidden={dayCollapsed}
+                    onMouseDown={dayCollapsed ? undefined : handleResize}
+                    onDoubleClick={dayCollapsed ? undefined : handleReset}
+                >
+                    <span className="line" />
+                    <span className="grip" />
+                </Resizer>
+
+                <DaySection ref={dayRef} $flex={100 - monthRatio} $collapsed={dayCollapsed}>
+                    <ToggleButton
+                        type="button"
+                        onClick={toggleDay}
+                        $collapsed={dayCollapsed}
+                        title={dayCollapsed ? "일간 캘린더 펼치기" : "일간 캘린더 접기"}
+                    >
+                        {dayCollapsed ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
+                    </ToggleButton>
+
+                    <CollapsedRail $visible={dayCollapsed} aria-hidden={!dayCollapsed}>
                         <span className="label">일간</span>
                         <span className="star">✦</span>
                     </CollapsedRail>
-                ) : (
-                    <>
-                        <Resizer onMouseDown={handleResize} onDoubleClick={handleReset}>
-                            <span className="line" />
-                            <span className="grip" />
-                        </Resizer>
 
-                        <DaySection ref={dayRef} $flex={100 - monthRatio}>
-                            <CollapseButton type="button" onClick={toggleDay} title="일간 캘린더 접기">
-                                <ChevronRight size={14} />
-                            </CollapseButton>
-                            <DayCalendar
-                                selectedDate={selectedDate}
-                                todos={todos}
-                                categories={categories}
-                                onDateChange={(date) => setSelectedDate(date)}
-                            />
-                        </DaySection>
-                    </>
-                )}
+                    <DayBody $collapsed={dayCollapsed}>
+                        <DayCalendar
+                            selectedDate={selectedDate}
+                            todos={todos}
+                            categories={categories}
+                            onDateChange={(date) => setSelectedDate(date)}
+                        />
+                    </DayBody>
+                </DaySection>
             </CalendarContainer>
         </PageWrapper>
     );
@@ -146,10 +156,13 @@ const CalendarContainer = styled.div<{ $collapsed: boolean }>`
     }
 `;
 
+const PANEL_EASE = "cubic-bezier(0.4, 0, 0.2, 1)";
+
 const MonthSection = styled.div<{ $flex: number; $collapsed: boolean }>`
-    flex: ${(props) => (props.$collapsed ? 1 : props.$flex)} 1 0;
+    flex: ${(props) => (props.$collapsed ? 100 : props.$flex)} 1 0;
     min-width: 0;
     height: 100%;
+    transition: flex-grow 0.38s ${PANEL_EASE};
 
     @media (max-width: 1250px) {
         flex: none !important;
@@ -157,103 +170,117 @@ const MonthSection = styled.div<{ $flex: number; $collapsed: boolean }>`
     }
 `;
 
-const CollapsedRail = styled.button`
-    position: relative;
-    flex: 0 0 34px;
+/* 접힌 상태에서 세로로 서는 라벨 */
+const CollapsedRail = styled.div<{ $visible: boolean }>`
+    position: absolute;
+    inset: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 12px;
-    padding: 0;
-    background: none;
-    border: none;
-    border-left: 1px solid ${(props) => props.theme.colors.primary}55;
+    pointer-events: none;
     color: ${(props) => props.theme.colors.textSecondary};
-    cursor: pointer;
-    transition: border-color 0.2s, color 0.2s;
+    opacity: ${(props) => (props.$visible ? 1 : 0)};
+    transition: opacity 0.25s ${(props) => (props.$visible ? "0.15s" : "0s")} ease;
 
     .label {
         font-family: ${(props) => props.theme.fonts.celestial};
         font-size: 0.78rem;
         letter-spacing: 3px;
+        white-space: nowrap;
         writing-mode: vertical-rl;
     }
 
     .star {
         font-size: 10px;
         color: ${(props) => props.theme.colors.primary};
-        opacity: 0.6;
-        transition: opacity 0.2s, text-shadow 0.2s;
-    }
-
-    &:hover {
-        border-color: ${(props) => props.theme.colors.primary};
-        color: ${(props) => props.theme.colors.primary};
-
-        .star {
-            opacity: 1;
-            text-shadow: 0 0 6px ${(props) => props.theme.colors.primary};
-        }
+        opacity: 0.7;
     }
 
     @media (max-width: 1250px) {
-        flex: none;
-        flex-direction: row;
-        gap: 8px;
-        padding: 10px 0;
-        border-left: none;
-        border-top: 1px solid ${(props) => props.theme.colors.primary}55;
-
-        .label { writing-mode: horizontal-tb; }
+        display: none;
     }
 `;
 
-const CollapseButton = styled.button`
+/* 패널 사이 여백에 놓아 일간 캘린더와 겹치지 않게 한다 */
+const ToggleButton = styled.button<{ $collapsed: boolean }>`
     position: absolute;
     top: 0;
-    right: 0;
-    z-index: 2;
+    left: ${(props) => (props.$collapsed ? "-24px" : "-34px")};
+    z-index: 3;
     display: flex;
     align-items: center;
     justify-content: center;
     width: 24px;
     height: 24px;
-    background: none;
+    background-color: ${(props) => props.theme.colors.background};
     border: 1px solid ${(props) => props.theme.colors.primary}44;
     color: ${(props) => props.theme.colors.textSecondary};
     cursor: pointer;
-    transition: border-color 0.2s, color 0.2s, box-shadow 0.2s;
+    transition: border-color 0.2s, color 0.2s, box-shadow 0.2s, left 0.38s ${PANEL_EASE};
 
     &:hover {
         border-color: ${(props) => props.theme.colors.primary};
         color: ${(props) => props.theme.colors.primary};
         box-shadow: 0 0 7px ${(props) => props.theme.colors.primary}44;
     }
+
+    @media (max-width: 1250px) {
+        top: -32px;
+        left: auto;
+        right: 0;
+    }
 `;
 
-const DaySection = styled.div<{ $flex: number }>`
-    position: relative;
-    flex: ${(props) => props.$flex} 1 0;
-    min-width: 300px;
+const DayBody = styled.div<{ $collapsed: boolean }>`
     height: 100%;
+    min-width: 300px;
+    opacity: ${(props) => (props.$collapsed ? 0 : 1)};
+    transform: translateX(${(props) => (props.$collapsed ? "12px" : "0")});
+    pointer-events: ${(props) => (props.$collapsed ? "none" : "auto")};
+    transition: opacity 0.28s ${(props) => (props.$collapsed ? "0s" : "0.12s")} ease,
+                transform 0.38s ${PANEL_EASE};
+
+    @media (max-width: 1250px) {
+        min-width: 0;
+    }
+`;
+
+const DaySection = styled.div<{ $flex: number; $collapsed: boolean }>`
+    position: relative;
+    flex: ${(props) => (props.$collapsed ? 0 : props.$flex)} 1 ${(props) => (props.$collapsed ? "34px" : "0")};
+    min-width: ${(props) => (props.$collapsed ? "34px" : "300px")};
+    height: 100%;
+    overflow: hidden;
+    border-left: 1px solid ${(props) => (props.$collapsed ? `${props.theme.colors.primary}55` : "transparent")};
+    transition: flex-grow 0.38s ${PANEL_EASE},
+                flex-basis 0.38s ${PANEL_EASE},
+                min-width 0.38s ${PANEL_EASE},
+                border-color 0.3s ease;
 
     @media (max-width: 1250px) {
         flex: none !important;
         min-width: 0;
         height: auto;
+        overflow: visible;
+        border-left: none;
         border-top: 1px solid ${(props) => props.theme.colors.primary};
         padding-top: 24px;
+        margin-top: 12px;
     }
 `;
 
-const Resizer = styled.div`
+const Resizer = styled.div<{ $hidden: boolean }>`
     position: relative;
     flex: 0 0 auto;
     width: 1px;
-    cursor: col-resize;
+    cursor: ${(props) => (props.$hidden ? "default" : "col-resize")};
     user-select: none;
     background-color: ${(props) => props.theme.colors.primary};
+    opacity: ${(props) => (props.$hidden ? 0 : 1)};
+    pointer-events: ${(props) => (props.$hidden ? "none" : "auto")};
+    transition: opacity 0.25s ease;
 
     &::after {
         content: "";
