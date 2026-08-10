@@ -36,7 +36,8 @@ const Loading = styled.div`
 `;
 
 const CalendarWrap = styled.div`
-    height: 100%;
+    /* 주간 캘린더는 내용 높이가 정해져 있어 창을 억지로 채우지 않는다 */
+    height: auto;
     & * { background-color: transparent !important; }
     scrollbar-width: thin;
     scrollbar-color: ${p => p.theme.colors.primary}40 transparent;

@@ -51,7 +51,8 @@ async function applyLocked(kind: string, locked: boolean) {
     } catch (e) {}
 }
 
-const FIXED_HEIGHT_KINDS: string[] = ["weekly", "monthly", "daily"];
+// 월간·일간은 내용이 창보다 길어 압축해서 보여주므로 자동 맞춤에서 제외한다.
+const FIXED_HEIGHT_KINDS: string[] = ["monthly", "daily"];
 const MIN_FIT_HEIGHT = 170;
 const MAX_FIT_HEIGHT = 900;
 
@@ -63,7 +64,7 @@ function useAutoFitHeight(kind: WidgetKind, ref: React.RefObject<HTMLDivElement 
         let raf = 0;
         let busy = false;
 
-        const slack = () => {
+        const measure = () => {
             const root = ref.current;
             if (!root) return null;
             let min = Infinity;
@@ -81,13 +82,31 @@ function useAutoFitHeight(kind: WidgetKind, ref: React.RefObject<HTMLDivElement 
                 const d = el.clientHeight - contentHeight;
                 if (d < min) min = d;
             });
-            return Number.isFinite(min) ? min : null;
+            // 스크롤 영역이 없는 위젯은 내용 아래 남는 여백(음수면 넘친 양)을 함께 본다.
+            const docSlack = window.innerHeight - root.getBoundingClientRect().bottom;
+
+            return {
+                scrollSlack: Number.isFinite(min) ? min : null,
+                docSlack,
+            };
         };
 
         const apply = async () => {
             if (cancelled || busy) return;
-            const d = slack();
-            if (d === null || d < 12) return;
+            const m = measure();
+            if (!m) return;
+
+            // 내용이 창을 넘치면 늘리고, 아래가 남으면 그만큼 줄인다.
+            let d: number;
+            if (m.docSlack < -8) {
+                d = m.docSlack;
+            } else {
+                const spare = [m.scrollSlack, m.docSlack].filter((v): v is number => v !== null && v > 0);
+                if (spare.length === 0) return;
+                d = Math.min(...spare);
+            }
+
+            if (Math.abs(d) < 12) return;
             busy = true;
             try {
                 const win = getCurrentWindow();

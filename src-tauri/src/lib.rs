@@ -14,7 +14,7 @@ const WIDGET_KINDS: &[&str] = &[
 
 fn widget_size(kind: &str) -> (f64, f64) {
     match kind {
-        "weekly"    => (900.0, 560.0),
+        "weekly"    => (900.0, 300.0),
         "monthly"   => (420.0, 500.0),
         "daily"     => (400.0, 640.0),
         "today"     => (340.0, 460.0),
