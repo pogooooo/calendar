@@ -1,11 +1,19 @@
 "use client";
 
 import React from "react";
+import useSettingStore from "@/store/useSettingStore";
 
 export default function DesktopWidgetRestore() {
     React.useEffect(() => {
         if (typeof window === "undefined" || !("__TAURI_INTERNALS__" in window)) return;
         if (window.location.pathname.startsWith("/widget")) return;
+
+        // 설정이 켜져 있으면 실제 시작프로그램 등록을 보장한다 (끄는 건 설정 토글에서만).
+        if (useSettingStore.getState().autostart) {
+            import("@tauri-apps/api/core").then(({ invoke }) => {
+                invoke("set_autostart", { enabled: true }).catch(() => {});
+            });
+        }
         if (sessionStorage.getItem("cronos-widgets-restored")) return;
         sessionStorage.setItem("cronos-widgets-restored", "1");
 

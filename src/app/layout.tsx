@@ -6,6 +6,7 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 import ThemeProviderWrapper from "@/components/ThemeProviderWrapper";
 import StoreInitializer from "@/components/StoreInitializer";
 import DesktopWidgetRestore from "@/components/DesktopWidgetRestore";
+import DesktopDragRegion from "@/components/DesktopDragRegion";
 
 const orbit = Orbit({
     subsets: ["latin"],
@@ -28,6 +29,7 @@ export default function RootLayout({children,}: Readonly<{ children: React.React
                     <StyledComponentsRegistry>
                         <StoreInitializer>
                             <DesktopWidgetRestore />
+                            <DesktopDragRegion />
                             {children}
                         </StoreInitializer>
                     </StyledComponentsRegistry>

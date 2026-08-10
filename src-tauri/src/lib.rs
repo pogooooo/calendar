@@ -388,12 +388,14 @@ async fn open_widget(
 
     let app2 = app.clone();
     app.run_on_main_thread(move || {
+        // 로딩 중 위젯이 화면을 가리지 않도록 맨 아래에서 시작한다.
+        // 실제 우선순위는 로드 후 set_widget_priority 가 다시 적용한다.
         let mut builder = WebviewWindowBuilder::new(&app2, &label, webview_url)
             .title("")
             .transparent(true)
             .shadow(false)
             .decorations(false)
-            .always_on_top(true)
+            .always_on_top(false)
             .skip_taskbar(true)
             .resizable(true)
             .visible(true)
@@ -412,6 +414,8 @@ async fn open_widget(
                     unsafe {
                         win32::remove_shadow_and_border(hwnd);
                         win32::bypass_win_d(hwnd, true); // 생성 시 바탕화면 고정 켜기
+                        win32::set_noactivate(hwnd, true);
+                        win32::set_pin_bottom(hwnd, true);
                     }
                 }
             }

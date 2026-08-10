@@ -32,7 +32,7 @@ const Loading = styled.div`
     display: flex; align-items: center; justify-content: center;
     height: 100vh; font-size: 0.8rem;
     color: ${p => p.theme.colors.textSecondary};
-    background: ${p => p.theme.colors.surface};
+    background: transparent;
 `;
 
 /* 캘린더 내부 배경을 투명으로 오버라이드 → WidgetShell 배경이 보임 */
