@@ -5,8 +5,7 @@ import styled, { css, keyframes } from "styled-components";
 import { Cake, Plus, Trash2 } from "lucide-react";
 import useAnniversaryStore, { AnniversaryType } from "@/store/useAnniversaryStore";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
-
-const ICONS = ["🎂", "💍", "🎉", "💐", "🕯", "🎁", "✦"];
+import AnniversaryIcon, { ANNIVERSARY_ICONS } from "@/assets/celestial/AnniversaryIcons";
 
 function nextOccurrence(month: number, day: number) {
     const now = new Date();
@@ -33,7 +32,7 @@ export default function AnniversaryPage() {
     const [title, setTitle] = React.useState("");
     const [month, setMonth] = React.useState(new Date().getMonth() + 1);
     const [day, setDay] = React.useState(new Date().getDate());
-    const [icon, setIcon] = React.useState(ICONS[0]);
+    const [icon, setIcon] = React.useState(ANNIVERSARY_ICONS[0].key);
     const [pending, setPending] = React.useState(false);
 
     React.useEffect(() => {
@@ -70,14 +69,15 @@ export default function AnniversaryPage() {
 
             <AddForm onSubmit={handleAdd}>
                 <IconRow>
-                    {ICONS.map(i => (
+                    {ANNIVERSARY_ICONS.map(i => (
                         <IconChoice
-                            key={i}
+                            key={i.key}
                             type="button"
-                            $selected={icon === i}
-                            onClick={() => setIcon(i)}
+                            title={i.label}
+                            $selected={icon === i.key}
+                            onClick={() => setIcon(i.key)}
                         >
-                            {i}
+                            <AnniversaryIcon name={i.key} size={17} />
                         </IconChoice>
                     ))}
                 </IconRow>
@@ -117,7 +117,7 @@ export default function AnniversaryPage() {
                         const isToday = d === "오늘";
                         return (
                             <Row key={a.id} $today={isToday}>
-                                <RowIcon>{a.icon || "✦"}</RowIcon>
+                                <RowIcon><AnniversaryIcon name={a.icon} size={18} /></RowIcon>
                                 <RowTitle>{a.title}</RowTitle>
                                 <RowDate>매년 {a.month}월 {a.day}일</RowDate>
                                 <RowDday $today={isToday}>{isToday ? "오늘! ✦" : d}</RowDday>
@@ -179,22 +179,26 @@ const IconRow = styled.div`
 `;
 
 const IconChoice = styled.button<{ $selected: boolean }>`
-    width: 32px;
-    height: 32px;
+    width: 34px;
+    height: 34px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 15px;
     background: none;
+    color: ${p => (p.$selected ? p.theme.colors.primary : p.theme.colors.textSecondary)};
     border: 1px solid ${p => p.theme.colors.primary}${p => (p.$selected ? "" : "33")};
     cursor: pointer;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    transition: border-color 0.2s, box-shadow 0.2s, color 0.2s;
 
     ${p => p.$selected && css`
         box-shadow: 0 0 6px ${p.theme.colors.primary}55;
+        svg { filter: drop-shadow(0 0 3px ${p.theme.colors.primary}66); }
     `}
 
-    &:hover { border-color: ${p => p.theme.colors.primary}; }
+    &:hover {
+        border-color: ${p => p.theme.colors.primary};
+        color: ${p => p.theme.colors.primary};
+    }
 `;
 
 const FormRow = styled.div`
@@ -290,8 +294,10 @@ const Row = styled.div<{ $today: boolean }>`
 `;
 
 const RowIcon = styled.span`
-    font-size: 17px;
-    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: ${p => p.theme.colors.primary};
 `;
 
 const RowTitle = styled.span`

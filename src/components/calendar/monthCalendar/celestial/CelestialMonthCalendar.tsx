@@ -21,6 +21,7 @@ import DayCellDecor from "@/assets/celestial/DayCellDecor";
 import { useT } from "@/i18n/useT";
 import useAnniversaryStore from "@/store/useAnniversaryStore";
 import { anniversariesOn } from "@/lib/anniversary";
+import AnniversaryIcon from "@/assets/celestial/AnniversaryIcons";
 
 const anniversaryTwinkle = keyframes`
     0%, 100% { opacity: 0.75; }
@@ -47,9 +48,7 @@ const AnniversaryStrip = styled.div`
         animation: ${anniversaryTwinkle} 3.4s ease-in-out infinite;
     }
 
-    i {
-        font-style: normal;
-        font-size: 0.7rem;
+    svg {
         flex: 0 0 auto;
     }
 
@@ -192,7 +191,7 @@ const WeekRow = ({
                             <AnniversaryStrip title={dayAnniversaries.map(a => a.title).join(", ")}>
                                 {dayAnniversaries.slice(0, 2).map(a => (
                                     <span className="chip" key={a.id}>
-                                        <i>{a.icon || "✦"}</i>
+                                        <AnniversaryIcon name={a.icon} size={11} strokeWidth={1.7} />
                                         <em>{a.title}</em>
                                     </span>
                                 ))}
