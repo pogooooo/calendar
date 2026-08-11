@@ -531,6 +531,26 @@ fn list_open_widgets(app: tauri::AppHandle) -> Vec<String> {
         .collect()
 }
 
+fn widget_state_path(app: &tauri::AppHandle) -> Option<std::path::PathBuf> {
+    app.path().app_config_dir().ok().map(|d| d.join("widget-state.json"))
+}
+
+#[tauri::command]
+fn load_widget_state(app: tauri::AppHandle) -> String {
+    widget_state_path(&app)
+        .and_then(|p| std::fs::read_to_string(p).ok())
+        .unwrap_or_else(|| "{}".to_string())
+}
+
+#[tauri::command]
+fn save_widget_state(app: tauri::AppHandle, state: String) -> bool {
+    let Some(path) = widget_state_path(&app) else { return false };
+    if let Some(dir) = path.parent() {
+        let _ = std::fs::create_dir_all(dir);
+    }
+    std::fs::write(path, state).is_ok()
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let bottom_widgets = BottomWidgets(Arc::new(Mutex::new(HashSet::new())));
@@ -555,6 +575,8 @@ pub fn run() {
             get_wallpaper_style,
             get_autostart,
             set_autostart,
+            load_widget_state,
+            save_widget_state,
         ])
         .setup(move |app| {
             {

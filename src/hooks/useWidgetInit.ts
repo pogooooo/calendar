@@ -16,6 +16,7 @@ const ALL: WidgetData[] = ["todos", "categories", "projects", "challenges", "ann
 export function useWidgetInit(need: WidgetData[] = ALL) {
     const [ready, setReady]   = useState(false);
     const [authed, setAuthed] = useState(false);
+    const [authChecked, setAuthChecked] = useState(false);
 
     const accessToken = useAuthStore((s) => s.accessToken);
     const authFetch   = useAuthFetch();
@@ -29,11 +30,11 @@ export function useWidgetInit(need: WidgetData[] = ALL) {
     const needKey = need.join(",");
 
     useEffect(() => {
-        if (accessToken) { setAuthed(true); return; }
+        if (accessToken) { setAuthed(true); setAuthChecked(true); return; }
 
         refreshSession().then((token) => {
             if (token) setAuthed(true);
-        });
+        }).finally(() => setAuthChecked(true));
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
@@ -53,5 +54,5 @@ export function useWidgetInit(need: WidgetData[] = ALL) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [authed, needKey]);
 
-    return { ready, authed };
+    return { ready, authed, authChecked };
 }

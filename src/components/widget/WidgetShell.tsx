@@ -10,6 +10,7 @@ import { convertFileSrc } from "@tauri-apps/api/core";
 import { getCurrentWindow, currentMonitor, LogicalSize } from "@tauri-apps/api/window";
 
 import type { WidgetKind } from "@/store/useWidgetStore";
+import { mirrorWidgetStateToFile } from "@/lib/widgetStateFile";
 
 interface Props {
     kind: WidgetKind;
@@ -206,6 +207,7 @@ export default function WidgetShell({ kind, title, children }: Props) {
         if (!isTauri()) return;
 
         try { localStorage.setItem(`cronos-widget-open:${kind}`, "1"); } catch {}
+        mirrorWidgetStateToFile();
 
         const win = getCurrentWindow();
         let timer: number | undefined;
@@ -221,6 +223,7 @@ export default function WidgetShell({ kind, title, children }: Props) {
                     w: size.width / sf,
                     h: size.height / sf,
                 }));
+                mirrorWidgetStateToFile();
             } catch {}
         };
 
@@ -492,6 +495,7 @@ export default function WidgetShell({ kind, title, children }: Props) {
                             <IconBtn
                                 onClick={() => {
                                     try { localStorage.setItem(`cronos-widget-open:${kind}`, "0"); } catch {}
+                                    mirrorWidgetStateToFile();
                                     closeWindow();
                                 }}
                                 $danger

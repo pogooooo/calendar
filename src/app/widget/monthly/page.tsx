@@ -8,11 +8,12 @@ import useCategoryStore from "@/store/useCategoryStore";
 import MonthCalendar from "@/components/calendar/monthCalendar/MonthCalendar";
 
 export default function MonthlyWidget() {
-    const { ready, authed } = useWidgetInit();
+    const { authed, authChecked } = useWidgetInit();
     const todos      = useTodoStore((s) => s.todos);
     const categories = useCategoryStore((s) => s.categories);
 
-    if (!ready) return <Loading>로딩 중...</Loading>;
+    // 인증만 확인되면 즉시 그리드를 그리고 데이터는 도착하는 대로 채운다
+    if (!authChecked) return <Loading>로딩 중...</Loading>;
     if (!authed) return <Loading>로그인이 필요합니다</Loading>;
 
     return (

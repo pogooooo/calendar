@@ -2,6 +2,7 @@
 
 import React from "react";
 import useSettingStore from "@/store/useSettingStore";
+import { hydrateWidgetStateFromFile } from "@/lib/widgetStateFile";
 
 export default function DesktopWidgetRestore() {
     React.useEffect(() => {
@@ -17,7 +18,8 @@ export default function DesktopWidgetRestore() {
         if (sessionStorage.getItem("cronos-widgets-restored")) return;
         sessionStorage.setItem("cronos-widgets-restored", "1");
 
-        import("@tauri-apps/api/core").then(({ invoke }) => {
+        // 업데이트 등으로 웹뷰 저장소가 비어 있으면 설정 파일에서 복원한다
+        hydrateWidgetStateFromFile().then(() => import("@tauri-apps/api/core")).then(({ invoke }) => {
             const prefix = "cronos-widget-open:";
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i) ?? "";
