@@ -11,10 +11,25 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
     $width?: string | number;
     $height?: string | number;
     label?: string;
+    $numeral?: string;
+    $active?: boolean;
     $isDropdown?: boolean;
     $isOpen?: boolean;
     $onArrowClick?: (e: React.MouseEvent) => void;
 }
+
+const Numeral = styled.em`
+    margin-left: auto;
+    margin-right: 12px;
+    flex-shrink: 0;
+    font-style: normal;
+    font-family: ${(props) => props.theme.fonts.celestial};
+    font-size: 0.66rem;
+    letter-spacing: 2px;
+    color: ${(props) => props.theme.colors.textSecondary};
+    opacity: 0.5;
+    transition: opacity 0.25s ease, color 0.25s ease;
+`;
 
 const IconContainer = styled.div`
     position: relative;
@@ -84,6 +99,25 @@ const SidebarButton = styled.button<ButtonProps>`
             transform: rotate(${$isOpen ? "90deg" : "0deg"}) scale(1);
         }
     `}
+
+    &:hover ${Numeral} {
+        opacity: 1;
+        color: ${(props) => props.theme.colors.primary};
+    }
+
+    ${({ $active, theme }) => $active && css`
+        background-size: calc(100% - 32px) 1px;
+
+        &::before,
+        &::after {
+            transform: scale(1) rotate(0deg);
+        }
+
+        ${Numeral} {
+            opacity: 1;
+            color: ${theme.colors.primary};
+        }
+    `}
 `;
 
 const CelestialSidebarMenuButton = React.forwardRef<HTMLButtonElement, ButtonProps>(({ asChild, ...props }, ref) => {
@@ -111,6 +145,7 @@ const CelestialSidebarMenuButton = React.forwardRef<HTMLButtonElement, ButtonPro
         <SidebarButton as={Component} ref={ref} {...props} >
             {IconSection}
             <span>{props.label}</span>
+            {props.$numeral && <Numeral>{props.$numeral}</Numeral>}
         </SidebarButton>
     );
 });

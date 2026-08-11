@@ -7,6 +7,13 @@ import useAnniversaryStore, { AnniversaryType } from "@/store/useAnniversaryStor
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import AnniversaryIcon, { ANNIVERSARY_ICONS } from "@/assets/celestial/AnniversaryIcons";
 
+const ROMAN = [
+    "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X",
+    "XI", "XII", "XIII", "XIV", "XV", "XVI", "XVII", "XVIII", "XIX", "XX",
+];
+const RING_R = 27;
+const RING_C = 2 * Math.PI * RING_R;
+
 function nextOccurrence(month: number, day: number) {
     const now = new Date();
     const thisYear = new Date(now.getFullYear(), month - 1, day);
@@ -16,13 +23,11 @@ function nextOccurrence(month: number, day: number) {
     return new Date(now.getFullYear() + 1, month - 1, day);
 }
 
-function dday(month: number, day: number) {
+function ddayDiff(month: number, day: number) {
     const target = nextOccurrence(month, day);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const diff = Math.round((target.getTime() - today.getTime()) / 86400000);
-    if (diff === 0) return "오늘";
-    return `D-${diff}`;
+    return Math.round((target.getTime() - today.getTime()) / 86400000);
 }
 
 export default function AnniversaryPage() {
@@ -62,12 +67,23 @@ export default function AnniversaryPage() {
 
     return (
         <Page>
+            <Zodiac viewBox="0 0 400 400" aria-hidden>
+                <circle className="dashed" cx="200" cy="200" r="190" />
+                <circle cx="200" cy="200" r="160" />
+                {Array.from({ length: 24 }, (_, i) => (
+                    <line key={i} x1="200" y1="14" x2="200" y2="26" transform={`rotate(${i * 15} 200 200)`} />
+                ))}
+            </Zodiac>
+
             <PageHeader>
+                <i />
                 <span>기념일</span>
                 <hr />
             </PageHeader>
 
             <AddForm onSubmit={handleAdd}>
+                <Corners><i /><i /><i /><i /></Corners>
+                <FormCaption>새로운 날을 새기다</FormCaption>
                 <IconRow>
                     {ANNIVERSARY_ICONS.map(i => (
                         <IconChoice
@@ -111,43 +127,89 @@ export default function AnniversaryPage() {
                     <p>등록된 기념일이 없습니다.<br />매년 축하하고 싶은 날을 추가해보세요.</p>
                 </Empty>
             ) : (
-                <List>
-                    {sorted.map(a => {
-                        const d = dday(a.month, a.day);
-                        const isToday = d === "오늘";
+                <CardGrid>
+                    {sorted.map((a, idx) => {
+                        const diff = ddayDiff(a.month, a.day);
+                        const isToday = diff === 0;
                         return (
-                            <Row key={a.id} $today={isToday}>
-                                <RowIcon><AnniversaryIcon name={a.icon} size={18} /></RowIcon>
-                                <RowTitle>{a.title}</RowTitle>
-                                <RowDate>매년 {a.month}월 {a.day}일</RowDate>
-                                <RowDday $today={isToday}>{isToday ? "오늘! ✦" : d}</RowDday>
-                                <RowDelete type="button" onClick={() => handleDelete(a)}>
-                                    <Trash2 size={14} />
-                                </RowDelete>
-                            </Row>
+                            <Card key={a.id} $today={isToday}>
+                                <Corners><i /><i /><i /><i /></Corners>
+                                <CardDelete type="button" onClick={() => handleDelete(a)}>
+                                    <Trash2 size={13} />
+                                </CardDelete>
+                                <CardNumeral>{ROMAN[idx] ?? String(idx + 1)}</CardNumeral>
+                                <CardEmblem $today={isToday}>
+                                    <svg viewBox="0 0 64 64">
+                                        <rect className="dia" x="21" y="21" width="22" height="22" transform="rotate(45 32 32)" />
+                                        <circle className="orbit" cx="32" cy="32" r={RING_R} />
+                                        {/* 다가올수록 차오르는 궤도 — 남은 날이 적을수록 호가 길어진다 */}
+                                        <circle
+                                            className="orbit-fill"
+                                            cx="32" cy="32" r={RING_R}
+                                            strokeDasharray={RING_C}
+                                            strokeDashoffset={RING_C * (diff / 365)}
+                                            transform="rotate(-90 32 32)"
+                                        />
+                                    </svg>
+                                    <span className="glyph"><AnniversaryIcon name={a.icon} size={20} /></span>
+                                </CardEmblem>
+                                <CardTitle>{a.title}</CardTitle>
+                                <CardDate>매년 {a.month}월 {a.day}일</CardDate>
+                                <CardDday $today={isToday}>
+                                    <i />{isToday ? "오늘 ✦" : `D-${diff}`}<i />
+                                </CardDday>
+                            </Card>
                         );
                     })}
-                </List>
+                </CardGrid>
             )}
         </Page>
     );
 }
 
 const todayGlow = keyframes`
-    0%, 100% { text-shadow: 0 0 4px currentColor; }
-    50%      { text-shadow: 0 0 10px currentColor; }
+    0%, 100% { box-shadow: 0 0 8px 0 currentColor inset, 0 0 10px -4px currentColor; }
+    50%      { box-shadow: 0 0 14px 0 currentColor inset, 0 0 18px -4px currentColor; }
 `;
 
 const Page = styled.div`
+    position: relative;
     max-width: 860px;
     margin: 0 auto;
 `;
 
+const Zodiac = styled.svg`
+    position: absolute;
+    top: -60px;
+    right: -80px;
+    width: 380px;
+    height: 380px;
+    color: ${p => p.theme.colors.primary};
+    opacity: 0.055;
+    pointer-events: none;
+
+    circle, line {
+        fill: none;
+        stroke: currentColor;
+    }
+
+    .dashed { stroke-dasharray: 2 6; }
+`;
+
 const PageHeader = styled.div`
+    position: relative;
     display: flex;
     align-items: center;
     gap: 16px;
     margin-bottom: 28px;
+
+    i {
+        width: 7px;
+        height: 7px;
+        border: 1px solid ${p => p.theme.colors.primary};
+        transform: rotate(45deg);
+        flex-shrink: 0;
+    }
 
     span {
         font-family: ${p => p.theme.fonts.celestial};
@@ -164,13 +226,45 @@ const PageHeader = styled.div`
     }
 `;
 
+const Corners = styled.span`
+    i {
+        position: absolute;
+        width: 6px;
+        height: 6px;
+        border: 1px solid ${p => p.theme.colors.primary}88;
+        background: ${p => p.theme.colors.background};
+        transform: rotate(45deg);
+        pointer-events: none;
+    }
+
+    i:nth-child(1) { top: -3.5px; left: -3.5px; }
+    i:nth-child(2) { top: -3.5px; right: -3.5px; }
+    i:nth-child(3) { bottom: -3.5px; left: -3.5px; }
+    i:nth-child(4) { bottom: -3.5px; right: -3.5px; }
+`;
+
 const AddForm = styled.form`
+    position: relative;
     display: flex;
     flex-direction: column;
     gap: 10px;
-    padding: 16px;
-    margin-bottom: 26px;
+    padding: 22px 16px 16px;
+    margin-bottom: 30px;
     border: 1px solid ${p => p.theme.colors.primary}55;
+`;
+
+const FormCaption = styled.span`
+    position: absolute;
+    top: -9px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0 14px;
+    background: ${p => p.theme.colors.background};
+    font-family: ${p => p.theme.fonts.celestial};
+    font-size: 0.72rem;
+    letter-spacing: 4px;
+    color: ${p => p.theme.colors.primary};
+    white-space: nowrap;
 `;
 
 const IconRow = styled.div`
@@ -269,76 +363,144 @@ const Empty = styled.div`
     }
 `;
 
-const List = styled.div`
-    display: flex;
-    flex-direction: column;
-    border-top: 1px solid ${p => p.theme.colors.primary}44;
+const CardGrid = styled.div`
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(158px, 1fr));
+    gap: 18px;
+    padding-bottom: 30px;
 `;
 
-const Row = styled.div<{ $today: boolean }>`
-    display: grid;
-    grid-template-columns: 34px 1fr auto auto 30px;
+const Card = styled.div<{ $today: boolean }>`
+    position: relative;
+    display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 12px;
-    padding: 13px 6px;
-    border-bottom: 1px solid ${p => p.theme.colors.primary}33;
-    transition: box-shadow 0.2s;
+    gap: 7px;
+    padding: 22px 12px 18px;
+    border: 1px solid ${p => p.theme.colors.primary}${p => (p.$today ? "" : "55")};
+    text-align: center;
+
+    &::before {
+        content: "";
+        position: absolute;
+        inset: 5px;
+        border: 1px solid ${p => p.theme.colors.primary}22;
+        pointer-events: none;
+        transition: border-color 0.3s;
+    }
+
+    &:hover::before { border-color: ${p => p.theme.colors.primary}66; }
 
     ${p => p.$today && css`
-        box-shadow: inset 0 1px 0 ${p.theme.colors.primary}, inset 0 -1px 0 ${p.theme.colors.primary};
+        color: ${p.theme.colors.primary}44;
+        animation: ${todayGlow} 2.6s ease-in-out infinite;
     `}
 
-    &:hover {
-        box-shadow: inset 0 -1px 0 ${p => p.theme.colors.primary};
+    &:hover button { opacity: 1; }
+`;
+
+const CardDelete = styled.button`
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    background: none;
+    border: none;
+    color: ${p => p.theme.colors.textSecondary};
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s, color 0.2s;
+
+    &:hover { color: #e05b5b; }
+`;
+
+const CardNumeral = styled.span`
+    font-family: ${p => p.theme.fonts.celestial};
+    font-size: 0.72rem;
+    letter-spacing: 3px;
+    color: ${p => p.theme.colors.primary};
+    opacity: 0.85;
+`;
+
+const CardEmblem = styled.span<{ $today: boolean }>`
+    position: relative;
+    width: 64px;
+    height: 64px;
+    margin: 2px 0;
+
+    svg {
+        width: 100%;
+        height: 100%;
+
+        .dia {
+            fill: none;
+            stroke: ${p => p.theme.colors.primary}66;
+        }
+
+        .orbit {
+            fill: none;
+            stroke: ${p => p.theme.colors.primary}22;
+        }
+
+        .orbit-fill {
+            fill: none;
+            stroke: ${p => p.theme.colors.primary};
+            stroke-width: 1.2;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 0.6s ease;
+        }
+    }
+
+    .glyph {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: ${p => p.theme.colors.primary};
+
+        ${p => p.$today && css`
+            svg { filter: drop-shadow(0 0 4px ${p.theme.colors.primary}); }
+        `}
     }
 `;
 
-const RowIcon = styled.span`
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: ${p => p.theme.colors.primary};
-`;
-
-const RowTitle = styled.span`
-    font-size: 0.9rem;
+const CardTitle = styled.span`
+    font-size: 0.88rem;
     letter-spacing: 0.5px;
+    color: ${p => p.theme.colors.text};
+    word-break: keep-all;
 `;
 
-const RowDate = styled.span`
-    font-size: 0.76rem;
+const CardDate = styled.span`
+    font-size: 0.72rem;
     color: ${p => p.theme.colors.textSecondary};
     white-space: nowrap;
 `;
 
-const RowDday = styled.span<{ $today: boolean }>`
-    min-width: 56px;
-    text-align: right;
+const CardDday = styled.span<{ $today: boolean }>`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 2px;
     font-family: ${p => p.theme.fonts.celestial};
-    font-size: 0.82rem;
-    letter-spacing: 1px;
+    font-size: 0.8rem;
+    letter-spacing: 2px;
     white-space: nowrap;
     color: ${p => p.theme.colors.primary};
 
-    ${p => p.$today && css`
-        animation: ${todayGlow} 2.4s ease-in-out infinite;
-    `}
-`;
+    i {
+        width: 14px;
+        height: 1px;
+        background: linear-gradient(to right, transparent, ${p => p.theme.colors.primary}88);
+    }
 
-const RowDelete = styled.button`
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 26px;
-    height: 26px;
-    background: none;
-    border: 1px solid transparent;
-    color: ${p => p.theme.colors.textSecondary};
-    cursor: pointer;
-    transition: color 0.2s, border-color 0.2s;
-
-    &:hover {
-        color: #e05b5b;
-        border-color: #e05b5b66;
+    i:last-child {
+        background: linear-gradient(to left, transparent, ${p => p.theme.colors.primary}88);
     }
 `;
