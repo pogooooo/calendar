@@ -193,7 +193,7 @@ export default function CelestialHome() {
             .map(c => ({ ...c, count: todos.filter(t => t.categoryId === c.id).length }))
             .filter(c => c.count > 0)
             .sort((a, b) => b.count - a.count)
-            .slice(0, 5);
+            .slice(0, 4);
     }, [categories, todos]);
 
     const maxCatCount = categoryStats.length ? categoryStats[0].count : 1;
@@ -520,17 +520,19 @@ export default function CelestialHome() {
 
                         <StatDivider />
 
-                        {categoryStats.length === 0
-                            ? <Empty style={{ padding: "8px 0" }}>{tr.home.noData}</Empty>
-                            : categoryStats.map(c => (
-                                <CatRow key={c.id}>
-                                    <RowMark $c={c.color} />
-                                    <CatName>{c.name}</CatName>
-                                    <CatBar><CatFill $c={c.color} $pct={(c.count / maxCatCount) * 100} /></CatBar>
-                                    <CatCount>{c.count}</CatCount>
-                                </CatRow>
-                            ))
-                        }
+                        <CatList>
+                            {categoryStats.length === 0
+                                ? <Empty style={{ padding: "6px 0" }}>{tr.home.noData}</Empty>
+                                : categoryStats.map(c => (
+                                    <CatRow key={c.id}>
+                                        <RowMark $c={c.color} />
+                                        <CatName>{c.name}</CatName>
+                                        <CatBar><CatFill $c={c.color} $pct={(c.count / maxCatCount) * 100} /></CatBar>
+                                        <CatCount>{c.count}</CatCount>
+                                    </CatRow>
+                                ))
+                            }
+                        </CatList>
                     </StatBody>
                 </Panel>
             </WidgetGrid>
@@ -549,7 +551,7 @@ const PageWrapper = styled.div`
 `;
 
 const WidgetGrid = styled.div`
-    flex: 1 1 0;
+    flex: 1.25 1 0;
     min-height: 0;
     width: min(68vw, 100%);
     min-width: min(700px, 100%);
@@ -600,35 +602,45 @@ const RowMeta = styled.span`
 const StatBody = styled.div`
     flex: 1;
     min-height: 0;
-    overflow-y: auto;
-    padding: 14px 14px 16px;
+    overflow: hidden;
+    padding: 12px 14px 14px;
     display: flex;
     flex-direction: column;
 `;
 
 const StatBig = styled.div`
     font-family: ${p => p.theme.fonts.celestial};
-    font-size: 1.9rem;
+    font-size: 1.5rem;
     line-height: 1;
     letter-spacing: 2px;
+    flex-shrink: 0;
     color: ${p => p.theme.colors.primary};
 
     span {
-        font-size: 0.9rem;
+        font-size: 0.8rem;
         margin-left: 3px;
     }
 `;
 
 const StatCaption = styled.div`
-    font-size: 0.72rem;
+    font-size: 0.7rem;
+    flex-shrink: 0;
     color: ${p => p.theme.colors.textSecondary};
-    margin-top: 5px;
+    margin-top: 3px;
 `;
 
 const StatBar = styled.div`
     height: 1px;
-    margin-top: 10px;
+    margin-top: 7px;
+    flex-shrink: 0;
     background: ${p => p.theme.colors.primary}33;
+`;
+
+/* 남는 높이만큼만 보여주고 절대 스크롤하지 않는다 */
+const CatList = styled.div`
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
 `;
 
 const StatFill = styled.div<{ $pct: number }>`
@@ -640,14 +652,15 @@ const StatFill = styled.div<{ $pct: number }>`
 
 const StatDivider = styled.div`
     border-top: 1px dashed ${p => p.theme.colors.primary}40;
-    margin: 12px 0 10px;
+    margin: 8px 0 6px;
+    flex-shrink: 0;
 `;
 
 const CatRow = styled.div`
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 4px 0;
+    padding: 3px 0;
 `;
 
 const CatName = styled.span`
@@ -701,7 +714,7 @@ const CalSkeleton = styled.div`
 `;
 
 const BottomGrid = styled.div`
-    flex: 1.35 1 0;
+    flex: 1.1 1 0;
     min-height: 0;
     width: min(68vw, 100%);
     min-width: min(700px, 100%);

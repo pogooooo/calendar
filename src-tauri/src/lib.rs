@@ -217,16 +217,18 @@ mod win32 {
         pub fn DefSubclassProc(hWnd: HWND, uMsg: u32, wParam: usize, lParam: isize) -> isize;
     }
 
-    // 창을 위로 올리려는 모든 시도를 z순서 맨 아래로 바꿔치기한다.
-    // 주기적으로 밀어 넣는 방식과 달리 z순서 변경 자체가 일어나지 않아 깜빡임이 없다.
+    // 창을 위로 올리려는 시도만 맨 아래로 바꿔치기한다.
+    // 이동·크기 변경(SWP_NOZORDER)은 그대로 통과시켜야 한다.
+    // 드래그 중에도 z순서를 강제하면 매 프레임 재배치가 일어나 심하게 깜빡인다.
     unsafe extern "system" fn pin_bottom_proc(
         hwnd: HWND, msg: u32, wparam: usize, lparam: isize,
         _id: usize, _data: usize,
     ) -> isize {
         if msg == WM_WINDOWPOSCHANGING && lparam != 0 {
             let wp = lparam as *mut WINDOWPOS;
-            (*wp).hwnd_insert_after = HWND_BOTTOM;
-            (*wp).flags &= !SWP_NOZORDER;
+            if (*wp).flags & SWP_NOZORDER == 0 {
+                (*wp).hwnd_insert_after = HWND_BOTTOM;
+            }
         }
         DefSubclassProc(hwnd, msg, wparam, lparam)
     }
