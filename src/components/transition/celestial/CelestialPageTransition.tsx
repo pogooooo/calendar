@@ -8,31 +8,30 @@ let hasNavigated = false;
 // 사이드바(CelestialSidebarDesign)의 초승달과 동일한 path
 const MOON_PATH = "M124.384 243.14C122.434 247.212 119.427 250.686 115.678 253.2C111.928 255.714 107.573 257.177 103.066 257.435C98.559 257.693 94.0652 256.738 90.053 254.668C86.0408 252.599 82.6571 249.491 80.2546 245.669C77.8522 241.847 76.5189 237.45 76.3937 232.938C76.2686 228.425 77.3562 223.961 79.5431 220.012C81.73 216.063 84.9363 212.772 88.8276 210.484C92.7189 208.195 97.1529 206.992 101.667 207C103.94 206.995 106.202 207.302 108.391 207.913C103.955 209.319 100.169 212.266 97.7162 216.221C95.2633 220.175 94.3055 224.877 95.016 229.476C95.7264 234.075 98.0582 238.268 101.59 241.298C105.122 244.328 109.621 245.995 114.274 245.998C117.844 246.003 121.345 245.014 124.384 243.14Z";
 
-// 화면 전체에 퍼지는 별자리 (퍼센트 좌표)
-const NODES = [
-    { x: 4, y: 30, s: 11 },
-    { x: 15, y: 55, s: 8 },
-    { x: 27, y: 23, s: 13 },
-    { x: 38, y: 62, s: 9 },
-    { x: 52, y: 15, s: 10 },
-    { x: 64, y: 71, s: 12 },
-    { x: 77, y: 25, s: 8 },
-    { x: 89, y: 57, s: 11 },
-    { x: 97, y: 33, s: 9 },
-];
+const C = 200;
+const polar = (r: number, deg: number) => {
+    const a = ((deg - 90) * Math.PI) / 180;
+    return [C + r * Math.cos(a), C + r * Math.sin(a)] as const;
+};
 
-const POLYLINE = NODES.map(n => `${n.x},${n.y}`).join(" ");
+// {12/5} 별 다각형 — 한 붓으로 이어지는 고전 마법 문장
+const STAR12 = (() => {
+    const pts: string[] = [];
+    let i = 0;
+    for (let n = 0; n < 12; n++) {
+        const [x, y] = polar(150, i * 30);
+        pts.push(`${x.toFixed(1)},${y.toFixed(1)}`);
+        i = (i + 5) % 12;
+    }
+    return pts.join(" ");
+})();
 
-const CRATERS = [
-    { cx: 100, cy: 76, r: 4.5, delay: 0.34 },
-    { cx: 88, cy: 96, r: 3, delay: 0.42 },
-    { cx: 84, cy: 116, r: 4, delay: 0.5 },
-];
+// 안쪽 육각성 (삼각형 두 개)
+const TRI_UP = [0, 120, 240].map(d => polar(92, d).map(v => v.toFixed(1)).join(",")).join(" ");
+const TRI_DOWN = [60, 180, 300].map(d => polar(92, d).map(v => v.toFixed(1)).join(",")).join(" ");
 
-const RULES = [
-    { top: "13%", delay: 0 },
-    { top: "87%", delay: 0.08 },
-];
+const TICKS = Array.from({ length: 48 }, (_, i) => i * 7.5);
+const CARDINALS = [0, 90, 180, 270];
 
 export default function CelestialPageTransition({ children }: { children: React.ReactNode }) {
     const animate = hasNavigated;
@@ -47,52 +46,63 @@ export default function CelestialPageTransition({ children }: { children: React.
                 <Overlay aria-hidden="true">
                     <Veil />
 
-                    {RULES.map((r, i) => (
-                        <Rule key={i} style={{ top: r.top, animationDelay: `${r.delay}s` }} />
-                    ))}
+                    <Frame viewBox="0 0 100 100" preserveAspectRatio="none">
+                        <rect x="1.2" y="1.2" width="97.6" height="97.6" pathLength={100} />
+                    </Frame>
 
                     <Corners>
                         <i className="tl" /><i className="tr" /><i className="bl" /><i className="br" />
                     </Corners>
 
-                    <Constellation viewBox="0 0 100 100" preserveAspectRatio="none">
-                        <polyline points={POLYLINE} pathLength={100} />
-                    </Constellation>
+                    <Sigil viewBox="0 0 400 400">
+                        <circle className="rim dashed" cx={C} cy={C} r="190" />
+                        <circle className="rim" cx={C} cy={C} r="176" pathLength={100} />
 
-                    {NODES.map((n, i) => (
-                        <Node
-                            key={i}
-                            style={{
-                                left: `${n.x}%`,
-                                top: `${n.y}%`,
-                                fontSize: n.s,
-                                animationDelay: `${0.12 + i * 0.045}s`,
-                            }}
-                        >
-                            ✦
-                        </Node>
-                    ))}
+                        <g className="ticks">
+                            {TICKS.map((deg, i) => (
+                                <line
+                                    key={deg}
+                                    x1={C}
+                                    y1={i % 4 === 0 ? 30 : 36}
+                                    x2={C}
+                                    y2="44"
+                                    transform={`rotate(${deg} ${C} ${C})`}
+                                    strokeWidth={i % 4 === 0 ? 1.2 : 0.6}
+                                />
+                            ))}
+                        </g>
 
-                    <Art viewBox="0 0 192 192">
-                        <circle className="ring" cx="96" cy="96" r="74" pathLength={100} />
-                        <ellipse className="orbit" cx="96" cy="96" rx="86" ry="34" pathLength={100} />
+                        <polygon className="star12" points={STAR12} pathLength={100} />
+                        <circle className="rim thin" cx={C} cy={C} r="150" pathLength={100} />
+
+                        <polygon className="tri" points={TRI_UP} pathLength={100} />
+                        <polygon className="tri tri-b" points={TRI_DOWN} pathLength={100} />
+
+                        <circle className="rim thin inner" cx={C} cy={C} r="92" pathLength={100} />
+
                         <path
                             className="moon"
                             pathLength={100}
-                            transform="translate(96 96) scale(1.95) translate(-100.389 -232.217)"
+                            transform={`translate(${C} ${C}) scale(1.28) translate(-100.389 -232.217)`}
                             d={MOON_PATH}
                         />
-                        {CRATERS.map((c, i) => (
-                            <circle
-                                key={i}
-                                className="crater"
-                                cx={c.cx}
-                                cy={c.cy}
-                                r={c.r}
-                                style={{ animationDelay: `${c.delay}s` }}
-                            />
+
+                        {CARDINALS.map((deg, i) => (
+                            // CSS 애니메이션의 transform 이 속성 transform 을 덮어쓰지 않도록 g 로 감싼다
+                            <g key={deg} transform={`rotate(${deg} ${C} ${C})`}>
+                                <g transform={`rotate(45 ${C} 9)`}>
+                                    <rect
+                                        className="pip"
+                                        x={C - 5}
+                                        y="4"
+                                        width="10"
+                                        height="10"
+                                        style={{ animationDelay: `${0.34 + i * 0.07}s` }}
+                                    />
+                                </g>
+                            </g>
                         ))}
-                    </Art>
+                    </Sigil>
                 </Overlay>
             )}
             <Body $animate={animate}>{children}</Body>
@@ -100,49 +110,44 @@ export default function CelestialPageTransition({ children }: { children: React.
     );
 }
 
-const DURATION = "1.25s";
+const DURATION = "1.3s";
 
 const strokeCycle = keyframes`
     0%   { stroke-dashoffset: 100; opacity: 0; }
     10%  { opacity: 1; }
     48%  { stroke-dashoffset: 0; }
-    60%  { stroke-dashoffset: 0; opacity: 1; }
+    62%  { stroke-dashoffset: 0; opacity: 1; }
     100% { stroke-dashoffset: -100; opacity: 0; }
 `;
 
-const ruleCycle = keyframes`
-    0%   { transform: scaleX(0); opacity: 0; }
-    12%  { opacity: 1; }
-    45%  { transform: scaleX(1); }
-    62%  { transform: scaleX(1); opacity: 1; }
-    100% { transform: scaleX(0); opacity: 0; }
+const fadeCycle = keyframes`
+    0%   { opacity: 0; }
+    25%  { opacity: 1; }
+    66%  { opacity: 1; }
+    100% { opacity: 0; }
 `;
 
-const nodeCycle = keyframes`
-    0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.2) rotate(-30deg); }
-    35%  { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(0deg); }
-    68%  { opacity: 1; }
-    100% { opacity: 0; transform: translate(-50%, -50%) scale(0.4) rotate(30deg); }
+const pipCycle = keyframes`
+    0%   { opacity: 0; transform: scale(0.3); }
+    40%  { opacity: 1; transform: scale(1); }
+    70%  { opacity: 1; }
+    100% { opacity: 0; transform: scale(1.3); }
 `;
 
-const cornerCycle = keyframes`
-    0%   { opacity: 0; transform: scale(0.6); }
-    28%  { opacity: 0.9; transform: scale(1); }
-    66%  { opacity: 0.9; }
-    100% { opacity: 0; transform: scale(1.25); }
+const turn = keyframes`
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(24deg); }
 `;
 
-const dotCycle = keyframes`
-    0%   { opacity: 0; transform: scale(0.4); }
-    45%  { opacity: 0.9; transform: scale(1); }
-    70%  { opacity: 0.9; transform: scale(1); }
-    100% { opacity: 0; transform: scale(0.4); }
+const turnBack = keyframes`
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(-18deg); }
 `;
 
-const artCycle = keyframes`
-    0%   { transform: scale(0.92); }
-    55%  { transform: scale(1); }
-    100% { transform: scale(1.06); }
+const sigilCycle = keyframes`
+    0%   { transform: scale(0.9); }
+    58%  { transform: scale(1); }
+    100% { transform: scale(1.07); }
 `;
 
 const veilCycle = keyframes`
@@ -166,7 +171,7 @@ const Body = styled.div<{ $animate: boolean }>`
 
     ${p => p.$animate && css`
         @media (prefers-reduced-motion: no-preference) {
-            animation: ${bodyIn} 0.6s ease-out 0.5s both;
+            animation: ${bodyIn} 0.6s ease-out 0.52s both;
         }
     `}
 `;
@@ -194,106 +199,119 @@ const Veil = styled.span`
     animation: ${veilCycle} ${DURATION} ease-in-out both;
 `;
 
-const Rule = styled.span`
-    position: absolute;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: linear-gradient(
-        to right,
-        transparent,
-        currentColor 18%,
-        currentColor 82%,
-        transparent
-    );
-    transform-origin: center;
-    animation: ${ruleCycle} ${DURATION} cubic-bezier(0.4, 0, 0.3, 1) both;
-`;
-
-const Corners = styled.div`
-    position: absolute;
-    inset: 22px;
-
-    i {
-        position: absolute;
-        width: 26px;
-        height: 26px;
-        border-color: currentColor;
-        border-style: solid;
-        opacity: 0;
-        animation: ${cornerCycle} ${DURATION} ease-out both;
-    }
-
-    .tl { top: 0; left: 0; border-width: 1px 0 0 1px; }
-    .tr { top: 0; right: 0; border-width: 1px 1px 0 0; animation-delay: 0.06s; }
-    .bl { bottom: 0; left: 0; border-width: 0 0 1px 1px; animation-delay: 0.12s; }
-    .br { bottom: 0; right: 0; border-width: 0 1px 1px 0; animation-delay: 0.18s; }
-`;
-
-const Constellation = styled.svg`
+/* 타로 카드 테두리처럼 화면을 한 바퀴 그린다 */
+const Frame = styled.svg`
     position: absolute;
     inset: 0;
     width: 100%;
     height: 100%;
 
-    polyline {
+    rect {
         fill: none;
         stroke: currentColor;
         stroke-width: 1;
-        stroke-linecap: round;
-        stroke-linejoin: round;
-        opacity: 0.5;
-        vector-effect: non-scaling-stroke;
-        stroke-dasharray: 100;
-        animation: ${strokeCycle} ${DURATION} cubic-bezier(0.4, 0, 0.3, 1) 0.06s both;
-    }
-`;
-
-const Node = styled.span`
-    position: absolute;
-    line-height: 1;
-    transform: translate(-50%, -50%);
-    animation: ${nodeCycle} ${DURATION} ease-out both;
-`;
-
-const Art = styled.svg`
-    position: relative;
-    width: 210px;
-    height: 210px;
-    overflow: visible;
-    animation: ${artCycle} ${DURATION} cubic-bezier(0.33, 0, 0.2, 1) both;
-
-    .ring,
-    .orbit,
-    .moon {
-        fill: none;
-        stroke: currentColor;
+        opacity: 0.45;
         vector-effect: non-scaling-stroke;
         stroke-dasharray: 100;
         animation: ${strokeCycle} ${DURATION} cubic-bezier(0.4, 0, 0.3, 1) both;
     }
+`;
 
-    .moon { stroke-width: 1.6; }
+const Corners = styled.div`
+    position: absolute;
+    inset: 26px;
 
-    .ring {
-        stroke-width: 0.8;
-        opacity: 0.55;
+    i {
+        position: absolute;
+        width: 9px;
+        height: 9px;
+        border: 1px solid currentColor;
+        transform: rotate(45deg);
+        opacity: 0;
+        animation: ${pipCycle} ${DURATION} ease-out both;
+    }
+
+    .tl { top: -4px; left: -4px; }
+    .tr { top: -4px; right: -4px; animation-delay: 0.06s; }
+    .bl { bottom: -4px; left: -4px; animation-delay: 0.12s; }
+    .br { bottom: -4px; right: -4px; animation-delay: 0.18s; }
+`;
+
+const Sigil = styled.svg`
+    position: relative;
+    width: min(58vh, 400px);
+    height: min(58vh, 400px);
+    overflow: visible;
+    animation: ${sigilCycle} ${DURATION} cubic-bezier(0.33, 0, 0.2, 1) both;
+
+    .rim,
+    .star12,
+    .tri,
+    .moon {
+        fill: none;
+        stroke: currentColor;
+        vector-effect: non-scaling-stroke;
+    }
+
+    .rim,
+    .star12,
+    .tri,
+    .moon {
+        stroke-dasharray: 100;
+        animation: ${strokeCycle} ${DURATION} cubic-bezier(0.4, 0, 0.3, 1) both;
+    }
+
+    .rim { stroke-width: 0.9; opacity: 0.5; }
+    .rim.thin { stroke-width: 0.7; opacity: 0.42; }
+    .rim.inner { animation-delay: 0.16s; }
+
+    .dashed {
+        stroke-width: 0.7;
+        stroke-dasharray: 2 7;
+        opacity: 0.4;
+        animation: ${fadeCycle} ${DURATION} ease-in-out both, ${turn} ${DURATION} linear both;
+        transform-origin: ${C}px ${C}px;
+    }
+
+    .ticks {
+        opacity: 0;
+        transform-origin: ${C}px ${C}px;
+        animation: ${fadeCycle} ${DURATION} ease-in-out 0.05s both, ${turnBack} ${DURATION} linear both;
+
+        line {
+            stroke: currentColor;
+            vector-effect: non-scaling-stroke;
+            opacity: 0.55;
+        }
+    }
+
+    .star12 {
+        stroke-width: 0.9;
+        opacity: 0.7;
         animation-delay: 0.08s;
     }
 
-    .orbit {
-        stroke-width: 0.7;
-        opacity: 0.4;
-        animation-delay: 0.16s;
+    .tri {
+        stroke-width: 0.8;
+        opacity: 0.55;
+        animation-delay: 0.2s;
     }
 
-    .crater {
+    .tri-b { animation-delay: 0.28s; }
+
+    .moon {
+        stroke-width: 1.5;
+        animation-delay: 0.12s;
+    }
+
+    .pip {
         fill: none;
         stroke: currentColor;
-        stroke-width: 0.9;
+        stroke-width: 1;
+        vector-effect: non-scaling-stroke;
         opacity: 0;
-        transform-origin: center;
         transform-box: fill-box;
-        animation: ${dotCycle} 0.85s ease-out both;
+        transform-origin: center;
+        animation: ${pipCycle} 0.9s ease-out both;
     }
 `;
