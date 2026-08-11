@@ -15,6 +15,9 @@ import AnimatedDateText from "@/components/calendar/celestial/animatedDateText/A
 import TodoModal from "@/components/modal/todoModal/TodoModal";
 import MoreModal from "@/components/modal/moreModal/MoreModal";
 import TodoContextMenu from "@/components/calendar/celestial/contextMenu/TodoContextMenu";
+import AnniversaryBadge from "@/components/calendar/celestial/anniversary/AnniversaryBadge";
+import useAnniversaryStore from "@/store/useAnniversaryStore";
+import { anniversariesOn } from "@/lib/anniversary";
 import { TodoType } from "@/store/useTodoStore";
 import { useT } from "@/i18n/useT";
 
@@ -53,6 +56,7 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, CelestialWeekProp
         const Component = asChild ? Slot : 'div';
         const theme = useTheme();
         const t = useT();
+        const anniversaries = useAnniversaryStore(s => s.anniversaries);
 
         // 단계(tier)는 챌린지 완료율로만 계산 (일반 할 일은 합산하지 않음)
         const dayTiers = React.useMemo(() => {
@@ -137,6 +141,13 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, CelestialWeekProp
                                                 }}>
                                                     <Plus size={16} strokeWidth={3} />
                                                 </S.AddTodoButton>
+
+                                                {(() => {
+                                                    const days = anniversariesOn(anniversaries, date);
+                                                    return days.length > 0
+                                                        ? <AnniversaryBadge items={days} max={1} compact />
+                                                        : null;
+                                                })()}
 
                                                 <S.TodoBarList>
                                                     {Array.from({ length: Math.min(maxLevel, MAX_VISIBLE_LEVELS) }).map((_, levelIndex) => {

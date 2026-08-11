@@ -6,11 +6,12 @@ import useTodoStore from "@/store/useTodoStore";
 import useCategoryStore from "@/store/useCategoryStore";
 import useProjectStore from "@/store/useProjectStore";
 import useChallengeStore from "@/store/useChallengeStore";
+import useAnniversaryStore from "@/store/useAnniversaryStore";
 import { useAuthFetch, refreshSession } from "@/hooks/useAuthFetch";
 
-export type WidgetData = "todos" | "categories" | "projects" | "challenges";
+export type WidgetData = "todos" | "categories" | "projects" | "challenges" | "anniversaries";
 
-const ALL: WidgetData[] = ["todos", "categories", "projects", "challenges"];
+const ALL: WidgetData[] = ["todos", "categories", "projects", "challenges", "anniversaries"];
 
 export function useWidgetInit(need: WidgetData[] = ALL) {
     const [ready, setReady]   = useState(false);
@@ -23,6 +24,7 @@ export function useWidgetInit(need: WidgetData[] = ALL) {
     const fetchCategories = useCategoryStore((s) => s.fetchCategories);
     const fetchProjects   = useProjectStore((s) => s.fetchProjects);
     const fetchChallenges = useChallengeStore((s) => s.fetchChallenges);
+    const fetchAnniversaries = useAnniversaryStore((s) => s.fetchAnniversaries);
 
     const needKey = need.join(",");
 
@@ -45,6 +47,7 @@ export function useWidgetInit(need: WidgetData[] = ALL) {
         if (wanted.includes("categories")) jobs.push(fetchCategories(authFetch));
         if (wanted.includes("projects")) jobs.push(fetchProjects(authFetch));
         if (wanted.includes("challenges")) jobs.push(fetchChallenges(authFetch));
+        if (wanted.includes("anniversaries")) jobs.push(fetchAnniversaries(authFetch));
 
         Promise.all(jobs).finally(() => setReady(true));
     // eslint-disable-next-line react-hooks/exhaustive-deps

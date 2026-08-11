@@ -110,13 +110,14 @@ export default function CelestialPageTransition({ children }: { children: React.
     );
 }
 
-const DURATION = "1.3s";
+const DURATION = "1.45s";
 
+/* 지연이 가장 큰 요소까지 다 그려진 뒤에 지우기 시작하도록 유지 구간을 넉넉히 둔다 */
 const strokeCycle = keyframes`
     0%   { stroke-dashoffset: 100; opacity: 0; }
-    10%  { opacity: 1; }
-    48%  { stroke-dashoffset: 0; }
-    62%  { stroke-dashoffset: 0; opacity: 1; }
+    8%   { opacity: 1; }
+    40%  { stroke-dashoffset: 0; }
+    72%  { stroke-dashoffset: 0; opacity: 1; }
     100% { stroke-dashoffset: -100; opacity: 0; }
 `;
 
@@ -171,7 +172,7 @@ const Body = styled.div<{ $animate: boolean }>`
 
     ${p => p.$animate && css`
         @media (prefers-reduced-motion: no-preference) {
-            animation: ${bodyIn} 0.6s ease-out 0.52s both;
+            animation: ${bodyIn} 0.6s ease-out 0.62s both;
         }
     `}
 `;
@@ -263,7 +264,7 @@ const Sigil = styled.svg`
 
     .rim { stroke-width: 0.9; opacity: 0.5; }
     .rim.thin { stroke-width: 0.7; opacity: 0.42; }
-    .rim.inner { animation-delay: 0.16s; }
+    .rim.inner { animation-delay: 0.1s; }
 
     .dashed {
         stroke-width: 0.7;
@@ -288,20 +289,20 @@ const Sigil = styled.svg`
     .star12 {
         stroke-width: 0.9;
         opacity: 0.7;
-        animation-delay: 0.08s;
+        animation-delay: 0.06s;
     }
 
     .tri {
         stroke-width: 0.8;
         opacity: 0.55;
-        animation-delay: 0.2s;
+        animation-delay: 0.13s;
     }
 
-    .tri-b { animation-delay: 0.28s; }
+    .tri-b { animation-delay: 0.16s; }
 
     .moon {
         stroke-width: 1.5;
-        animation-delay: 0.12s;
+        animation-delay: 0.09s;
     }
 
     .pip {

@@ -197,11 +197,13 @@ const BaseCard = styled.div`
 
 export const TaskCard = styled(BaseCard)`
     flex: 1.2;
-    min-height: 0;
+    min-height: 108px;
+    overflow: hidden;
 `;
 
 export const TaskList = styled.div`
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
     padding: 8px;
     display: flex;
@@ -271,6 +273,7 @@ export const TaskItem = styled.div<{ $isDone: boolean }>`
 
 export const TaskForm = styled.form`
     display: flex;
+    flex-shrink: 0;
     border-top: 1px solid ${(props) => props.theme.colors.primary}55;
     padding: 8px;
     gap: 8px;
