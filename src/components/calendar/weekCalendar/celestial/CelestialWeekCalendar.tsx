@@ -15,7 +15,7 @@ import AnimatedDateText from "@/components/calendar/celestial/animatedDateText/A
 import TodoModal from "@/components/modal/todoModal/TodoModal";
 import MoreModal from "@/components/modal/moreModal/MoreModal";
 import TodoContextMenu from "@/components/calendar/celestial/contextMenu/TodoContextMenu";
-import AnniversaryBadge from "@/components/calendar/celestial/anniversary/AnniversaryBadge";
+import AnniversaryLocket from "@/components/calendar/celestial/anniversary/AnniversaryLocket";
 import useAnniversaryStore from "@/store/useAnniversaryStore";
 import { anniversariesOn } from "@/lib/anniversary";
 import { TodoType } from "@/store/useTodoStore";
@@ -111,11 +111,15 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, CelestialWeekProp
                                 <S.Header>
                                     {t.calendar.days.map((d, i) => {
                                         const isToday = weekDates[i].toDateString() === todayStr;
+                                        const dayAnniversaries = anniversariesOn(anniversaries, weekDates[i]);
                                         return (
                                             <S.DayNameBox key={d} $isToday={isToday} $tier={dayTiers[i]}>
                                                 <div className="day-name">{d}</div>
                                                 {dayTiers[i] >= 2 && (
                                                     <span className={dayTiers[i] === 3 ? "day-mark done" : "day-mark"} />
+                                                )}
+                                                {dayAnniversaries.length > 0 && (
+                                                    <AnniversaryLocket items={dayAnniversaries} today={isToday} />
                                                 )}
                                             </S.DayNameBox>
                                         )
@@ -142,12 +146,6 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, CelestialWeekProp
                                                     <Plus size={16} strokeWidth={3} />
                                                 </S.AddTodoButton>
 
-                                                {(() => {
-                                                    const days = anniversariesOn(anniversaries, date);
-                                                    return days.length > 0
-                                                        ? <AnniversaryBadge items={days} max={1} compact />
-                                                        : null;
-                                                })()}
 
                                                 <S.TodoBarList>
                                                     {Array.from({ length: Math.min(maxLevel, MAX_VISIBLE_LEVELS) }).map((_, levelIndex) => {

@@ -1,6 +1,25 @@
-import styled from "styled-components";
-import { celestial_corner_accent } from "@/styles/celestial_theme";
+import styled, { css, keyframes } from "styled-components";
 
+/* ── 등장 모션 (한 번만, 잔잔하게) ─────────────────────── */
+const fadeUp = keyframes`
+    from { opacity: 0; transform: translateY(7px); }
+    to { opacity: 1; transform: translateY(0); }
+`;
+
+const emblemIn = keyframes`
+    from { opacity: 0; transform: scale(0.72) rotate(-8deg); }
+    to { opacity: 1; transform: scale(1) rotate(0deg); }
+`;
+
+/* 날렵한 4각 별 (사이드바 bigstar 곡선) */
+export const SLENDER_STAR_48 =
+    "M24 6C24 24 24 24 32 24C24 24 24 24 24 42C24 24 24 24 16 24C24 24 24 24 24 6Z";
+
+const starChip = css`
+    clip-path: polygon(50% 0%, 59% 41%, 100% 50%, 59% 59%, 50% 100%, 41% 59%, 0% 50%, 41% 41%);
+`;
+
+/* ── 페이지 골격 ───────────────────────────────────────── */
 export const CategoryWrapper = styled.div`
     display: flex;
     justify-content: center;
@@ -11,6 +30,7 @@ export const CategoryWrapper = styled.div`
 `;
 
 export const CenterWrapper = styled.div`
+    position: relative;
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -19,22 +39,53 @@ export const CenterWrapper = styled.div`
     padding: 0 clamp(8px, 2vw, 24px);
 `;
 
+/* 배경 별자리 워터마크 (기념일 화면과 동일 언어) */
+export const Zodiac = styled.svg`
+    position: absolute;
+    top: -50px;
+    right: -70px;
+    width: 360px;
+    height: 360px;
+    color: ${(p) => p.theme.colors.primary};
+    opacity: 0.055;
+    pointer-events: none;
+
+    circle, line {
+        fill: none;
+        stroke: currentColor;
+    }
+
+    .dashed { stroke-dasharray: 2 6; }
+`;
+
 export const PageHeader = styled.div`
-    font-family: ${(props) => props.theme.fonts.celestial};
-    font-size: 1rem;
-    color: ${(props) => props.theme.colors.text};
-    letter-spacing: 2px;
-    width: 100%;
     display: flex;
     align-items: center;
-    gap: 15px;
-    margin-bottom: 15px;
+    gap: 16px;
+    margin-bottom: 20px;
 
-    & > hr {
+    i {
+        width: 7px;
+        height: 7px;
+        border: 1px solid ${(p) => p.theme.colors.primary};
+        transform: rotate(45deg);
+        flex-shrink: 0;
+    }
+
+    span {
+        font-family: ${(p) => p.theme.fonts.celestial};
+        font-size: 1.3rem;
+        letter-spacing: 5px;
+        color: ${(p) => p.theme.colors.text};
+        white-space: nowrap;
+    }
+
+    hr {
         flex: 1;
         border: none;
-        border-top: 1px solid ${(props) => props.theme.colors.primary};
+        height: 1px;
         margin: 0;
+        background: linear-gradient(to right, ${(p) => p.theme.colors.primary}, transparent);
     }
 `;
 
@@ -42,516 +93,629 @@ export const BodyRow = styled.div`
     display: flex;
     flex: 1;
     min-height: 0;
-    gap: 24px;
+    gap: 28px;
 `;
 
+/* ── ① 좌측: 카드 덱 ──────────────────────────────────── */
 export const SidebarContainer = styled.div`
-    flex: 0 1 250px;
-    width: 250px;
+    flex: 0 1 230px;
+    width: 230px;
     min-width: 150px;
-    border-right: 1px solid ${(props) => props.theme.colors.primary};
     display: flex;
     flex-direction: column;
-
-    .sidebar-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 10px 12px;
-        border-bottom: 1px solid ${(props) => props.theme.colors.primary};
-
-        h2 {
-            font-family: ${(props) => props.theme.fonts.celestial};
-            font-size: 0.9rem;
-            letter-spacing: 2px;
-            color: ${(props) => props.theme.colors.textSecondary};
-            font-weight: 400;
-            margin: 0;
-        }
-    }
-`;
-
-export const AddCategoryBtn = styled.button`
-    background: transparent;
-    font-size: 1.1rem;
-    color: ${(props) => props.theme.colors.primary};
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 26px;
-    height: 26px;
-    border: 1px solid transparent;
-    transition: all 0.2s;
-    line-height: 0;
-    padding-bottom: 2px;
-
-    &:hover {
-        border-color: ${(props) => props.theme.colors.primary};
-        box-shadow: 0 0 6px ${(props) => props.theme.colors.primary}66;
-    }
 `;
 
 export const CategoryList = styled.div`
     display: flex;
     flex-direction: column;
-    padding: 6px 0;
+    gap: 8px;
+    padding: 4px 8px 12px 2px;
     overflow-y: auto;
-
 `;
 
-export const CategoryItem = styled.div<{ $color: string; $isSelected: boolean }>`
+export const DeckCard = styled.button<{ $color: string; $isSelected: boolean }>`
+    position: relative;
     display: flex;
     align-items: center;
-    padding: 9px 14px;
+    gap: 8px;
+    padding: 11px 12px;
+    background: transparent;
+    border: 1px solid ${(p) => p.theme.colors.primary}${(p) => (p.$isSelected ? "" : "55")};
+    color: ${(p) => p.theme.colors.text};
+    text-align: left;
     cursor: pointer;
-    border-left: 2px solid ${(props) => props.$isSelected ? props.theme.colors.primary : 'transparent'};
-    background-color: transparent;
-    box-shadow: ${(props) => props.$isSelected ? `0 0 5px 0.5px ${props.theme.colors.primary}66` : 'none'};
-    transition: all 0.15s;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    animation: ${fadeUp} 0.4s ease both;
+
+    /* 이중 프레임 */
+    &::before {
+        content: "";
+        position: absolute;
+        inset: 3px;
+        border: 1px solid ${(p) => p.theme.colors.primary}18;
+        pointer-events: none;
+        transition: border-color 0.2s ease;
+    }
 
     &:hover {
-        box-shadow: 0 0 5px 0.5px ${(props) => props.theme.colors.primary}66;
+        transform: translateX(3px);
+        border-color: ${(p) => p.theme.colors.primary}aa;
+        &::before { border-color: ${(p) => p.theme.colors.primary}33; }
     }
 
-    .color-indicator {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background-color: ${(props) => props.$color};
-        margin-right: 10px;
+    ${(p) => p.$isSelected && css`
+        transform: translateX(6px);
+        box-shadow: 0 0 9px ${p.theme.colors.primary}40;
+        &::before { border-color: ${p.theme.colors.primary}33; }
+        &:hover { transform: translateX(6px); }
+    `}
+
+    .num {
+        width: 20px;
         flex-shrink: 0;
+        font-size: 0.62rem;
+        letter-spacing: 1px;
+        color: ${(p) => p.theme.colors.primary};
+        opacity: 0.85;
     }
 
-    .cat-name {
+    .chip {
+        width: 9px;
+        height: 9px;
+        flex-shrink: 0;
+        background-color: ${(p) => p.$color};
+        ${starChip}
+    }
+
+    .nm {
+        flex: 1;
+        min-width: 0;
+        font-family: ${(p) => p.theme.fonts.celestial};
         font-size: 0.85rem;
-        color: ${(props) => props.$isSelected ? props.theme.colors.primary : props.theme.colors.text};
+        letter-spacing: 0.5px;
+        color: ${(p) => (p.$isSelected ? p.theme.colors.primary : p.theme.colors.text)};
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        flex: 1;
+        transition: color 0.2s ease;
+    }
+
+    .mark {
+        flex-shrink: 0;
+        font-size: 0.6rem;
+        color: ${(p) => p.theme.colors.primary};
     }
 `;
 
+/* 덱 끝의 새 카드(추가) */
+export const DeckAddCard = styled.button`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 12px;
+    background: transparent;
+    border: 1px dashed ${(p) => p.theme.colors.primary}55;
+    color: ${(p) => p.theme.colors.textSecondary};
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+
+    &:hover {
+        border-color: ${(p) => p.theme.colors.primary};
+        color: ${(p) => p.theme.colors.primary};
+        box-shadow: 0 0 7px ${(p) => p.theme.colors.primary}33;
+    }
+`;
+
+/* ── 우측 컨텐츠 ──────────────────────────────────────── */
 export const ContentContainer = styled.div`
     flex: 1 1 400px;
     min-width: 0;
     display: flex;
     flex-direction: column;
     overflow-y: auto;
-    background-color: ${(props) => props.theme.colors.background};
-
-`;
-
-export const EmptyStateContainer = styled.div`
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: ${(props) => props.theme.colors.textSecondary};
-    font-size: 0.9rem;
-    font-family: ${(props) => props.theme.fonts.celestial};
-    letter-spacing: 1px;
 `;
 
 export const DetailInfo = styled.div`
-    padding: 24px clamp(12px, 3vw, 32px);
+    padding: 4px clamp(4px, 2vw, 20px) 24px;
+    animation: ${fadeUp} 0.35s ease both;
 `;
 
-export const CategoryTitleWrapper = styled.div<{ $color: string }>`
+/* 코너 다이아 장식 (기념일 카드와 동일) */
+export const Corners = styled.span`
+    i {
+        position: absolute;
+        width: 6px;
+        height: 6px;
+        border: 1px solid ${(p) => p.theme.colors.primary}88;
+        background: ${(p) => p.theme.colors.background};
+        transform: rotate(45deg);
+        pointer-events: none;
+    }
+
+    i:nth-child(1) { top: -3.5px; left: -3.5px; }
+    i:nth-child(2) { top: -3.5px; right: -3.5px; }
+    i:nth-child(3) { bottom: -3.5px; left: -3.5px; }
+    i:nth-child(4) { bottom: -3.5px; right: -3.5px; }
+`;
+
+/* ── ② 표제부(플레이트): 엠블럼 + 이름 ─────────────────── */
+export const Plate = styled.div`
+    position: relative;
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin-bottom: 30px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid ${(props) => props.theme.colors.primary};
+    gap: 18px;
+    padding: 18px 20px;
+    margin-bottom: 22px;
+    border: 1px solid ${(p) => p.theme.colors.primary}66;
+`;
 
-    .color-picker-container {
-        position: relative;
-        width: 24px;
-        height: 24px;
-        border-radius: 50%;
-        overflow: hidden;
-        box-shadow: 0 0 0 2px ${(props) => props.theme.colors.surface}, 0 0 0 3px ${(props) => props.$color}80;
-        flex-shrink: 0;
+export const EmblemWrap = styled.div<{ $color: string }>`
+    position: relative;
+    width: 56px;
+    height: 56px;
+    flex-shrink: 0;
+    cursor: pointer;
+    animation: ${emblemIn} 0.5s ease both;
 
-        .color-input {
-            position: absolute;
-            top: -5px; left: -5px;
-            width: 34px; height: 34px;
-            border: none;
-            cursor: pointer;
-            padding: 0;
+    svg {
+        width: 100%;
+        height: 100%;
+        overflow: visible;
+
+        .ring {
+            fill: none;
+            stroke: ${(p) => p.theme.colors.primary};
+            stroke-width: 1;
+        }
+
+        .star {
+            fill: none;
+            stroke: ${(p) => p.$color};
+            stroke-width: 1.2;
+            stroke-linejoin: round;
+            transition: stroke 0.25s ease;
         }
     }
 
+    &:hover svg {
+        filter: drop-shadow(0 0 4px ${(p) => p.theme.colors.primary}66);
+    }
+
+    .color-input {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+        border: none;
+        padding: 0;
+    }
+`;
+
+export const PlateText = styled.div`
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+
+    .numeral {
+        font-size: 0.66rem;
+        letter-spacing: 3px;
+        color: ${(p) => p.theme.colors.primary};
+        opacity: 0.85;
+    }
+
     .title-input {
-        font-family: ${(props) => props.theme.fonts.celestial};
-        font-size: 1.5rem;
-        font-weight: 500;
-        color: ${(props) => props.theme.colors.text};
+        font-family: ${(p) => p.theme.fonts.celestial};
+        font-size: 1.35rem;
+        letter-spacing: 3px;
+        color: ${(p) => p.theme.colors.text};
         background: transparent;
         border: none;
         outline: none;
         width: 100%;
-        line-height: 1;
-        padding: 4px 0;
-        letter-spacing: 2px;
+        padding: 2px 0;
+        line-height: 1.2;
 
         &::placeholder {
-            color: ${(props) => props.theme.colors.textSecondary}80;
+            color: ${(p) => p.theme.colors.textSecondary}80;
         }
+    }
+
+    .sub {
+        font-size: 0.66rem;
+        letter-spacing: 2px;
+        color: ${(p) => p.theme.colors.textSecondary};
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 `;
 
+/* ── ③ 탭 ─────────────────────────────────────────────── */
 export const DetailHeader = styled.div<{ $activeTab: string }>`
     display: flex;
-    border: 1px solid ${(props) => props.theme.colors.primary};
-    margin-bottom: 24px;
-    width: fit-content;
+    gap: 24px;
+    margin-bottom: 22px;
 
     button {
+        position: relative;
         background: transparent;
         border: none;
-        padding: 6px 20px;
-        font-family: ${(props) => props.theme.fonts.celestial};
+        padding: 4px 2px 8px;
+        font-family: ${(p) => p.theme.fonts.celestial};
         font-size: 0.85rem;
-        letter-spacing: 1.5px;
+        letter-spacing: 2px;
+        color: ${(p) => p.theme.colors.textSecondary};
         cursor: pointer;
-        transition: all 0.15s;
+        transition: color 0.2s ease, text-shadow 0.2s ease;
 
-        &:not(:last-child) {
-            border-right: 1px solid ${(props) => props.theme.colors.primary};
+        /* 골드 밑줄 */
+        &::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            height: 1px;
+            width: 0;
+            background: ${(p) => p.theme.colors.primary};
+            transition: width 0.25s ease;
+        }
+
+        &:hover {
+            color: ${(p) => p.theme.colors.primary};
         }
     }
 
-    .info-tab {
-        background: transparent;
-        color: ${(props) => props.$activeTab === 'info' ? props.theme.colors.primary : props.theme.colors.textSecondary};
-        text-shadow: ${(props) => props.$activeTab === 'info' ? `0 0 8px ${props.theme.colors.primary}99` : 'none'};
-    }
+    ${(p) => css`
+        .${p.$activeTab === "info" ? "info-tab" : "todo-tab"} {
+            color: ${p.theme.colors.primary};
+            text-shadow: 0 0 8px ${p.theme.colors.primary}66;
 
-    .todo-tab {
-        background: transparent;
-        color: ${(props) => props.$activeTab === 'todos' ? props.theme.colors.primary : props.theme.colors.textSecondary};
-        text-shadow: ${(props) => props.$activeTab === 'todos' ? `0 0 8px ${props.theme.colors.primary}99` : 'none'};
-    }
-
-    button:hover {
-        color: ${(props) => props.theme.colors.primary};
-        text-shadow: 0 0 8px ${(props) => props.theme.colors.primary}66;
-    }
+            &::after { width: 100%; }
+        }
+    `}
 `;
 
 export const InfoContainer = styled.div`
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 22px;
 `;
 
-export const PropertiesCard = styled.div`
+/* ── ④ 점선 리더 속성 ─────────────────────────────────── */
+export const LoreRow = styled.div`
     display: flex;
-    flex-direction: column;
-    border: 1px solid ${(props) => props.theme.colors.primary};
-    background-color: transparent;
-    ${celestial_corner_accent}
-`;
+    align-items: baseline;
+    gap: 10px;
 
-export const PropertyRow = styled.div`
-    display: flex;
-    align-items: stretch;
-    min-height: 48px;
-
-    &:not(:last-child) {
-        border-bottom: 1px solid ${(props) => props.theme.colors.primary}33;
-    }
-
-    .prop-label {
-        width: clamp(80px, 25%, 120px);
-        display: flex;
-        align-items: flex-start;
-        padding: 14px 16px;
-        font-size: 0.85rem;
-        color: ${(props) => props.theme.colors.textSecondary};
-        border-right: 1px solid ${(props) => props.theme.colors.primary}33;
+    .k {
+        font-size: 0.72rem;
+        letter-spacing: 2px;
+        color: ${(p) => p.theme.colors.textSecondary};
+        white-space: nowrap;
         flex-shrink: 0;
-        font-family: ${(props) => props.theme.fonts.celestial};
-        letter-spacing: 0.3px;
     }
 
-    .prop-value {
+    .dots {
         flex: 1;
-        display: flex;
-        align-items: center;
-        padding: 8px 16px;
-        font-family: ${(props) => props.theme.fonts.body};
+        border-bottom: 1px dotted ${(p) => p.theme.colors.primary}55;
+        transform: translateY(-3px);
+    }
+
+    .v {
+        font-family: ${(p) => p.theme.fonts.body};
         font-size: 0.85rem;
-        color: ${(props) => props.theme.colors.text};
-
-        .desc-textarea {
-            width: 100%;
-            background: transparent;
-            border: none;
-            outline: none;
-            color: inherit;
-            font-family: inherit;
-            font-size: inherit;
-            resize: vertical;
-            line-height: 1.5;
-            padding: 6px 0;
-
-            &::placeholder {
-                color: ${(props) => props.theme.colors.textSecondary}66;
-            }
-
-        }
-    }
-`;
-
-export const ParticipantSection = styled.div`
-    display: flex;
-    flex-direction: column;
-
-    .header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 12px;
-        padding-bottom: 8px;
-        border-bottom: 1px solid ${(props) => props.theme.colors.primary};
-
-        h3 {
-            font-family: ${(props) => props.theme.fonts.celestial};
-            font-size: 0.9rem;
-            letter-spacing: 1.5px;
-            color: ${(props) => props.theme.colors.textSecondary};
-            font-weight: 400;
-            margin: 0;
-        }
-    }
-
-    .empty-state {
-        padding: 30px;
-        text-align: center;
-        border: 1px solid ${(props) => props.theme.colors.primary};
-
-        p {
-            color: ${(props) => props.theme.colors.textSecondary};
-            font-size: 0.85rem;
-            margin: 0;
-            font-family: ${(props) => props.theme.fonts.celestial};
-            letter-spacing: 0.5px;
-        }
-    }
-`;
-
-export const ParticipantTable = styled.div`
-    display: flex;
-    flex-direction: column;
-    border: 1px solid ${(props) => props.theme.colors.primary};
-    ${celestial_corner_accent}
-`;
-
-export const TableHeader = styled.div`
-    display: flex;
-    align-items: center;
-    border-bottom: 1px solid ${(props) => props.theme.colors.primary};
-    padding: 8px 16px;
-    font-family: ${(props) => props.theme.fonts.celestial};
-    font-size: 0.78rem;
-    letter-spacing: 0.5px;
-    color: ${(props) => props.theme.colors.textSecondary};
-
-    .col-name { flex: 1.2; }
-    .col-email { flex: 2; }
-    .col-action { width: 60px; text-align: center; flex-shrink: 0; }
-`;
-
-export const TableBody = styled.div`
-    display: flex;
-    flex-direction: column;
-`;
-
-export const TableRow = styled.div`
-    display: flex;
-    align-items: center;
-    padding: 10px 16px;
-    font-size: 0.85rem;
-    color: ${(props) => props.theme.colors.text};
-    border-bottom: 1px solid ${(props) => props.theme.colors.primary}22;
-    transition: background-color 0.15s;
-
-    &:last-child { border-bottom: none; }
-    &:hover { box-shadow: 0 0 5px ${(props) => props.theme.colors.primary}40; }
-
-    .col-name {
-        flex: 1.2;
-        display: flex;
-        align-items: center;
-        gap: 10px;
+        color: ${(p) => p.theme.colors.text};
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        max-width: 55%;
+    }
+`;
 
-        .avatar {
-            width: 26px;
-            height: 26px;
-            border-radius: 50%;
-            background-color: ${(props) => props.theme.colors.textSecondary}22;
-            color: ${(props) => props.theme.colors.primary};
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.75rem;
-            flex-shrink: 0;
+export const DescBlock = styled.div`
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px 14px 10px;
+    border: 1px solid ${(p) => p.theme.colors.primary}44;
+
+    .cap {
+        position: absolute;
+        top: -8px;
+        left: 12px;
+        padding: 0 8px;
+        background: ${(p) => p.theme.colors.background};
+        font-size: 0.66rem;
+        letter-spacing: 3px;
+        color: ${(p) => p.theme.colors.primary};
+    }
+
+    textarea {
+        width: 100%;
+        background: transparent;
+        border: none;
+        outline: none;
+        color: ${(p) => p.theme.colors.text};
+        font-family: ${(p) => p.theme.fonts.body};
+        font-size: 0.85rem;
+        line-height: 1.6;
+        resize: vertical;
+        min-height: 56px;
+
+        &::placeholder {
+            color: ${(p) => p.theme.colors.textSecondary}66;
         }
     }
+`;
 
-    .col-email {
-        flex: 2;
-        color: ${(props) => props.theme.colors.textSecondary};
-        font-size: 0.8rem;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        padding-right: 10px;
+/* ── ⑤ 멤버 메달 ──────────────────────────────────────── */
+export const SectionCap = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.72rem;
+    letter-spacing: 3px;
+    color: ${(p) => p.theme.colors.textSecondary};
+
+    b {
+        font-weight: 400;
+        color: ${(p) => p.theme.colors.primary};
     }
 
-    .col-action {
-        width: 60px;
+    hr {
+        flex: 1;
+        border: none;
+        height: 1px;
+        margin: 0;
+        background: linear-gradient(to right, ${(p) => p.theme.colors.primary}66, transparent);
+    }
+`;
+
+export const MedalRow = styled.div`
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px 22px;
+`;
+
+export const Medal = styled.div<{ $ghost?: boolean }>`
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+    color: ${(p) => (p.$ghost ? p.theme.colors.textSecondary : p.theme.colors.text)};
+    cursor: ${(p) => (p.$ghost ? "pointer" : "default")};
+
+    .av {
+        position: relative;
         display: flex;
+        align-items: center;
         justify-content: center;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        border: 1px ${(p) => (p.$ghost ? "dashed" : "solid")} ${(p) =>
+            p.$ghost ? p.theme.colors.textSecondary : p.theme.colors.primary};
+        color: ${(p) => (p.$ghost ? p.theme.colors.textSecondary : p.theme.colors.primary)};
+        font-size: 0.72rem;
         flex-shrink: 0;
+        box-shadow: ${(p) => (p.$ghost ? "none" : `inset 0 0 6px ${p.theme.colors.primary}33`)};
+        transition: border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+    }
 
-        .remove-btn {
-            background-color: transparent;
-            color: ${(props) => props.theme.colors.textSecondary};
-            border: none;
-            padding: 4px 8px;
-            font-size: 0.75rem;
-            cursor: pointer;
-            opacity: 0;
-            transition: all 0.2s;
+    ${(p) => p.$ghost && css`
+        &:hover .av {
+            border-color: ${p.theme.colors.primary};
+            color: ${p.theme.colors.primary};
+            box-shadow: 0 0 7px ${p.theme.colors.primary}33;
+        }
+        &:hover { color: ${p.theme.colors.primary}; }
+    `}
 
-            &:hover {
-                color: ${(props) => props.theme.colors.error};
-            }
+    .owner-mark {
+        font-size: 0.6rem;
+        color: ${(p) => p.theme.colors.primary};
+    }
+
+    .kick {
+        position: absolute;
+        top: -5px;
+        left: 20px;
+        width: 14px;
+        height: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background: ${(p) => p.theme.colors.background};
+        border: 1px solid ${(p) => p.theme.colors.textSecondary}66;
+        color: ${(p) => p.theme.colors.textSecondary};
+        font-size: 0.6rem;
+        line-height: 1;
+        cursor: pointer;
+        opacity: 0;
+        transition: opacity 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+
+        &:hover {
+            color: ${(p) => p.theme.colors.error};
+            border-color: ${(p) => p.theme.colors.error};
         }
     }
 
-    &:hover .remove-btn { opacity: 1; }
+    &:hover .kick { opacity: 1; }
 `;
 
 export const ActionFooter = styled.div`
     display: flex;
     justify-content: flex-end;
-    margin-top: 10px;
+    margin-top: 6px;
 `;
 
+/* ── ⑥ 할 일 미니 타로 카드 ───────────────────────────── */
 export const TodoListContainer = styled.div`
     display: flex;
     flex-direction: column;
     gap: 16px;
-
-    .header {
-        display: flex;
-        align-items: center;
-        border-bottom: 1px solid ${(props) => props.theme.colors.primary};
-        padding-bottom: 8px;
-
-        h3 {
-            font-family: ${(props) => props.theme.fonts.celestial};
-            font-size: 0.9rem;
-            letter-spacing: 1.5px;
-            color: ${(props) => props.theme.colors.textSecondary};
-            font-weight: 400;
-            margin: 0;
-
-            span {
-                color: ${(props) => props.theme.colors.primary};
-            }
-        }
-    }
 `;
 
 export const TodoGrid = styled.div`
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 10px;
 `;
 
 export const TodoCard = styled.div<{ $isDone: boolean }>`
+    position: relative;
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 10px 16px;
-    border: 1px solid ${(props) => props.theme.colors.primary};
-    background-color: transparent;
-    transition: all 0.15s;
+    gap: 10px;
+    padding: 12px 12px;
+    border: 1px solid ${(p) => p.theme.colors.primary}55;
     cursor: pointer;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, opacity 0.25s ease;
+    opacity: ${(p) => (p.$isDone ? 0.62 : 1)};
+
+    &::before {
+        content: "";
+        position: absolute;
+        inset: 3px;
+        border: 1px solid ${(p) => p.theme.colors.primary}15;
+        pointer-events: none;
+        transition: border-color 0.2s ease;
+    }
 
     &:hover {
-        border-color: ${(props) => props.theme.colors.primary};
-        box-shadow: 0 0 6px ${(props) => props.theme.colors.primary}55;
+        border-color: ${(p) => p.theme.colors.primary};
+        box-shadow: 0 0 7px ${(p) => p.theme.colors.primary}40;
 
+        &::before { border-color: ${(p) => p.theme.colors.primary}33; }
         .delete-btn { opacity: 1; }
     }
 
+    /* 완료 봉인 */
     .check-btn {
-        width: 16px;
-        height: 16px;
-        border: 1px solid ${(props) => props.theme.colors.primary};
-        background-color: ${(props) => props.$isDone ? props.theme.colors.primary : 'transparent'};
-        color: ${(props) => props.theme.colors.surface};
+        width: 17px;
+        height: 17px;
+        flex-shrink: 0;
         display: flex;
         align-items: center;
         justify-content: center;
+        border: 1px solid ${(p) => p.theme.colors.primary};
+        background: ${(p) => (p.$isDone ? `${p.theme.colors.primary}2e` : "transparent")};
+        color: ${(p) => p.theme.colors.primary};
+        font-size: 0.58rem;
         cursor: pointer;
-        flex-shrink: 0;
-        transition: all 0.2s;
-        font-size: 11px;
+        transition: background 0.2s ease, box-shadow 0.2s ease;
+        box-shadow: ${(p) => (p.$isDone ? `0 0 6px ${p.theme.colors.primary}77` : "none")};
+
+        &:hover {
+            box-shadow: 0 0 6px ${(p) => p.theme.colors.primary}66;
+        }
     }
 
     .todo-info {
         flex: 1;
+        min-width: 0;
         display: flex;
         flex-direction: column;
-        gap: 4px;
-        opacity: ${(props) => props.$isDone ? 0.5 : 1};
-        text-decoration: ${(props) => props.$isDone ? 'line-through' : 'none'};
+        gap: 3px;
 
         .title {
-            font-size: 0.9rem;
-            font-weight: 500;
-            color: ${(props) => props.theme.colors.text};
-            word-break: keep-all;
+            font-family: ${(p) => p.theme.fonts.body};
+            font-size: 0.85rem;
+            color: ${(p) => p.theme.colors.text};
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-decoration: ${(p) => (p.$isDone ? "line-through" : "none")};
         }
 
         .date {
-            font-family: ${(props) => props.theme.fonts.celestial};
-            font-size: 0.75rem;
-            letter-spacing: 0.3px;
-            color: ${(props) => props.theme.colors.textSecondary};
+            font-size: 0.68rem;
+            letter-spacing: 0.5px;
+            color: ${(p) => p.theme.colors.textSecondary};
         }
     }
 
     .delete-btn {
+        flex-shrink: 0;
         background: transparent;
         border: none;
-        color: ${(props) => props.theme.colors.textSecondary};
+        padding: 4px 6px;
+        color: ${(p) => p.theme.colors.textSecondary};
+        font-size: 0.85rem;
+        line-height: 1;
         cursor: pointer;
         opacity: 0;
-        padding: 6px 10px;
-        font-size: 0.75rem;
-        transition: all 0.2s;
-        flex-shrink: 0;
+        transition: opacity 0.2s ease, color 0.2s ease;
 
-        &:hover {
-            color: ${(props) => props.theme.colors.error};
-        }
+        &:hover { color: ${(p) => p.theme.colors.error}; }
     }
 `;
 
+/* 빈 상태 (테두리 상자 + 코너) */
+export const EmptyBox = styled.div`
+    position: relative;
+    padding: 34px 20px;
+    text-align: center;
+    border: 1px solid ${(p) => p.theme.colors.primary}44;
+
+    p {
+        margin: 0;
+        font-size: 0.82rem;
+        letter-spacing: 1px;
+        color: ${(p) => p.theme.colors.textSecondary};
+        line-height: 1.7;
+    }
+`;
+
+/* 선택 전 화면 */
+export const EmptyStateContainer = styled.div`
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    color: ${(p) => p.theme.colors.textSecondary};
+    font-size: 0.88rem;
+    letter-spacing: 1.5px;
+
+    svg {
+        width: 72px;
+        height: 72px;
+        opacity: 0.4;
+
+        .ring {
+            fill: none;
+            stroke: ${(p) => p.theme.colors.primary};
+            stroke-width: 1;
+            stroke-dasharray: 2 5;
+        }
+
+        .star {
+            fill: none;
+            stroke: ${(p) => p.theme.colors.primary};
+            stroke-width: 1.1;
+            stroke-linejoin: round;
+        }
+    }
+
+    p {
+        margin: 0;
+        text-align: center;
+        line-height: 1.8;
+    }
+`;
+
+/* ── 모달 (기존 유지) ─────────────────────────────────── */
 export const ModalOverlay = styled.div`
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
@@ -564,9 +728,9 @@ export const ModalOverlay = styled.div`
 `;
 
 export const ModalContent = styled.div`
+    position: relative;
     background-color: ${(props) => props.theme.colors.surface};
     border: 1px solid ${(props) => props.theme.colors.primary};
-    border-radius: 5px;
     width: 380px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
     font-family: ${(props) => props.theme.fonts.celestial};

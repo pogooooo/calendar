@@ -13,7 +13,8 @@ export const Overlay = styled(motion.div)`
 `;
 
 export const Container = styled(motion.div)<{ $maxWidth: string }>`
-    /* 위젯처럼 배경이 투명한 창에서도 내용이 읽히도록 불투명 배경을 강제한다 */
+    /* 위젯 창에서도 읽히도록 불투명 배경.
+       위젯은 surface를 transparent로 덮어쓰지만, 모달은 baseColors를 복원해 쓰므로 여기선 surface로 충분하다 */
     background-color: ${(props) => props.theme.colors.surface} !important;
     backdrop-filter: blur(14px);
     width: 90%;

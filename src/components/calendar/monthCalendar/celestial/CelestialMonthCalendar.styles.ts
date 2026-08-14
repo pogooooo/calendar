@@ -153,16 +153,21 @@ export const DayCell = styled.div<{ $isToday: boolean; $isCurrentMonth: boolean;
     position: relative;
     border-right: 1px solid ${(props) => props.theme.colors.primary};
     opacity: ${(props) => props.$isCurrentMonth ? 1 : 0.4};
-    background-color: ${(props) => props.$isSelected ? `${props.theme.colors.primary}1A` : 'transparent'};
+    /* 배경을 채우지 않는다 — 셀 내용(날짜·할 일 바)이 가려지지 않도록
+       선택/호버는 테두리로만, 오늘은 모서리 브래킷으로 표시한다 */
+    background-color: transparent;
+    box-shadow: ${(props) => props.$isSelected
+        ? `inset 0 0 0 1px ${props.theme.colors.primary}66`
+        : 'none'};
     cursor: pointer;
-    transition: background-color 0.2s ease;
+    transition: box-shadow 0.2s ease;
 
     &:last-child {
         border-right: none;
     }
 
     &:hover {
-        background-color: ${(props) => props.$isSelected ? `${props.theme.colors.primary}22` : `${props.theme.colors.primary}0D`};
+        box-shadow: inset 0 0 0 1px ${(props) => props.theme.colors.primary}8C;
     }
 
     .day-header {
@@ -191,90 +196,68 @@ export const DayCell = styled.div<{ $isToday: boolean; $isCurrentMonth: boolean;
         opacity: 1;
     }
 
-    ${(props) => props.$isToday && css`
-        &::after {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            box-shadow: inset 0 0 0 2px ${(props) => props.theme.colors.primary};
-            pointer-events: none;
-            z-index: 5;
-        }
-    `}
+`;
+
+/**
+ * 오늘 표시 — 셀 한가운데 눈금 원반.
+ * 모든 내용 뒤(z-index 0)에 깔려 날짜·할 일 바를 가리지 않고,
+ * 모서리를 비워 챌린지 단계 장식과 자리가 겹치지 않는다.
+ */
+export const TodayDisc = styled.svg`
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 60px;
+    height: 60px;
+    margin: -30px 0 0 -30px;
+    z-index: 0;
+    pointer-events: none;
+    overflow: visible;
+    fill: none;
+
+    .ring {
+        stroke: ${(props) => props.theme.colors.primary};
+        stroke-width: 1;
+        opacity: 0.38;
+        vector-effect: non-scaling-stroke;
+    }
+
+    .ring.dash {
+        stroke-dasharray: 2 3;
+        opacity: 0.24;
+    }
+
+    .tick {
+        stroke: ${(props) => props.theme.colors.primary};
+        stroke-width: 1;
+        opacity: 0.45;
+        vector-effect: non-scaling-stroke;
+    }
+
+    .core {
+        fill: ${(props) => props.theme.colors.primary};
+        stroke: none;
+        opacity: 0.8;
+    }
 `;
 
 export const DayHeaderLeft = styled.div`
     display: flex;
     align-items: center;
     gap: 4px;
+    /* 기념일 이름이 펼쳐질 때 셀 밖으로 잘려나가지 않고 말줄임되도록 */
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
 `;
 
-
-export const ChallengeGauge = styled.button<{ $complete: boolean }>`
-    width: 14px;
-    height: 14px;
-    line-height: 14px;
-    flex-shrink: 0;
-    margin-right: 0;
-    padding: 0;
-    border: none;
-    background: transparent;
-    cursor: pointer;
-    color: ${(props) => props.theme.colors.primary};
-    opacity: ${(props) => props.$complete ? 1 : 0.75};
-    transition: opacity 0.15s, filter 0.15s;
-    filter: ${(props) => props.$complete
-            ? `drop-shadow(0 0 3px ${props.theme.colors.primary}99)`
-            : 'none'};
-
-    svg {
-        width: 100%;
-        height: 100%;
-        transform: rotate(-90deg);
-        overflow: visible;
-    }
-
-    .track {
-        fill: none;
-        stroke: currentColor;
-        stroke-width: 1;
-        opacity: 0.28;
-    }
-
-    .arc {
-        fill: none;
-        stroke: currentColor;
-        stroke-width: 2;
-        stroke-linecap: butt;
-        transition: stroke-dasharray 0.3s ease;
-    }
-
-    .tick {
-        stroke: currentColor;
-        stroke-width: 1;
-        opacity: 0.45;
-    }
-
-    .pip {
-        fill: ${(props) => props.$complete ? 'currentColor' : 'none'};
-        stroke: currentColor;
-        stroke-width: 1;
-        opacity: ${(props) => props.$complete ? 1 : 0.5};
-    }
-
-    &:hover {
-        opacity: 1;
-        filter: drop-shadow(0 0 5px ${(props) => props.theme.colors.primary}CC);
-    }
-`;
 
 export const AddTodoButton = styled.button`
     position: absolute;
     top: 5px;
-    left: 26px;
+    /* 셀 오른쪽 끝에 붙인다 */
+    left: auto;
+    right: 6px;
     width: 18px;
     height: 18px;
     border-radius: 20%;
@@ -315,7 +298,8 @@ export const TodoBarSpacer = styled.div`
 `;
 
 export const TodoBarItem = styled.div<{ $isStart: boolean; $isEnd: boolean; $color?: string; $isDone?: boolean }>`
-    background-color: transparent;
+    /* 오늘 원반이 바 뒤로 지나가도록 불투명하게 (셀 배경과 같은 색이라 겉보기는 동일) */
+    background-color: ${(props) => props.theme.colors.background};
     border-top: 1px solid ${(props) => props.theme.colors.primary};
     border-bottom: 1px solid ${(props) => props.theme.colors.primary};
     border-left: ${(props) => props.$isStart ? `1px solid ${props.theme.colors.primary}` : 'none'};

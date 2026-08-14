@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import useAuthStore from "@/store/useAuthStore";
-import { api, clientHeaders } from "@/lib/apiBase";
+import { api, clientHeaders, isDesktopApp } from "@/lib/apiBase";
 
 let refreshInFlight: Promise<string | null> | null = null;
 
@@ -66,7 +66,8 @@ export const useAuthFetch = () => {
                 response = await fetch(target, { ...options, headers: newHeaders });
             } else {
                 await logout();
-                router.push("/signIn");
+                // 데스크톱 앱은 로그인 화면으로, 웹은 다운로드(랜딩) 페이지로
+                router.push(isDesktopApp() ? "/signIn" : "/download");
             }
         }
 

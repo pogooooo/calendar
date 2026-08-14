@@ -100,6 +100,7 @@ const en: Translations = {
         dailyMemo: 'Daily Memo',
         addTask: 'Add task',
         memoPlaceholder: 'Write a memo or diary entry.',
+        noChallengeToday: 'No challenges scheduled for this day.',
     },
     sidebar: {
         home: 'Home',

@@ -6,6 +6,20 @@ export const CelestialCalendarWrapper = styled.div`
     align-items: center;
     height: 100%;
     width: 100%;
+
+    /* 일간 캘린더 안의 스크롤바는 모두 감춘다 (스크롤 자체는 그대로 동작).
+       전역 GlobalScrollbar('*')보다 선택자 우선순위가 높아 여기서 덮인다 */
+    &, & * {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    &::-webkit-scrollbar,
+    & *::-webkit-scrollbar {
+        display: none;
+        width: 0;
+        height: 0;
+    }
 `;
 
 export const DateHeader = styled.div`
@@ -67,23 +81,63 @@ export const ResizeHandle = styled.div`
     }
 `;
 
-export const TimelineSection = styled.div`
+/* 카드/섹션 헤더의 접기 토글 — 헤더 전체가 버튼이다 */
+export const SectionToggle = styled.button<{ $collapsed: boolean }>`
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: transparent;
+    border: none;
+    border-bottom: ${(props) => props.$collapsed
+        ? 'none'
+        : `1px solid ${props.theme.colors.primary}`};
+    font-family: ${(props) => props.theme.fonts.celestial};
+    font-size: 0.95rem;
+    color: ${(props) => props.theme.colors.text};
+    cursor: pointer;
+    text-align: left;
+    transition: color 0.2s ease, background-color 0.2s ease;
+
+    &:hover {
+        color: ${(props) => props.theme.colors.primary};
+        background-color: ${(props) => props.theme.colors.primary}0D;
+    }
+
+    .chev {
+        flex: 0 0 auto;
+        display: flex;
+        color: ${(props) => props.theme.colors.primary};
+        transform: rotate(${(props) => (props.$collapsed ? '-90deg' : '0deg')});
+        transition: transform 0.25s ease;
+    }
+
+    .label {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .count {
+        flex: 0 0 auto;
+        font-size: 0.72rem;
+        letter-spacing: 1px;
+        color: ${(props) => props.theme.colors.primary};
+        opacity: 0.85;
+    }
+`;
+
+export const TimelineSection = styled.div<{ $collapsed?: boolean }>`
     flex: 1.5;
-    min-height: 180px;
+    min-height: ${(props) => (props.$collapsed ? '0' : '180px')};
     display: flex;
     flex-direction: column;
     border: 1px solid ${(props) => props.theme.colors.primary};
     background-color: transparent;
     overflow: hidden;
-
-    .timeline-header {
-        font-family: ${(props) => props.theme.fonts.celestial};
-        font-size: 0.95rem;
-        color: ${(props) => props.theme.colors.text};
-        padding: 8px;
-        text-align: center;
-        border-bottom: 1px solid ${(props) => props.theme.colors.primary};
-    }
 `;
 
 export const TimelineScrollArea = styled.div`
@@ -177,7 +231,7 @@ export const SideSection = styled.div`
     flex: 1;
     display: flex;
     flex-direction: column;
-    min-height: 190px;
+    min-height: 0;
 `;
 
 const BaseCard = styled.div`
@@ -195,10 +249,88 @@ const BaseCard = styled.div`
     }
 `;
 
-export const TaskCard = styled(BaseCard)`
+export const TaskCard = styled(BaseCard)<{ $collapsed?: boolean }>`
     flex: 1.2;
-    min-height: 108px;
+    min-height: ${(props) => (props.$collapsed ? '0' : '108px')};
     overflow: hidden;
+`;
+
+/* ── 오늘의 챌린지 카드 ─────────────────────────────────── */
+export const ChallengeCard = styled(BaseCard)<{ $collapsed?: boolean }>`
+    flex: 0 0 auto;
+    margin-bottom: ${(props) => (props.$collapsed ? '0' : '10px')};
+    overflow: hidden;
+`;
+
+export const ChallengeList = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px;
+    max-height: 132px;
+    overflow-y: auto;
+`;
+
+export const ChallengeItem = styled.label<{ $isDone: boolean }>`
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+
+    &:hover {
+        background-color: ${(props) => props.theme.colors.primary}1A;
+    }
+
+    input {
+        position: absolute;
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .box {
+        position: relative;
+        flex: 0 0 auto;
+        width: 16px;
+        height: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid ${(props) => props.theme.colors.primary};
+        background-color: ${(props) => (props.$isDone ? props.theme.colors.primary : 'transparent')};
+        color: ${(props) => props.theme.colors.surface};
+        box-shadow: ${(props) => (props.$isDone ? `0 0 6px ${props.theme.colors.primary}99` : 'none')};
+        transition: background-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    input:focus-visible + .box {
+        outline: 1px solid ${(props) => props.theme.colors.primary};
+        outline-offset: 2px;
+    }
+
+    .title {
+        flex: 1;
+        min-width: 0;
+        font-size: 0.85rem;
+        color: ${(props) => props.theme.colors.text};
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        opacity: ${(props) => (props.$isDone ? 0.55 : 1)};
+        text-decoration: ${(props) => (props.$isDone ? 'line-through' : 'none')};
+    }
+`;
+
+export const ChallengeEmpty = styled.div`
+    padding: 14px 12px;
+    text-align: center;
+    font-family: ${(props) => props.theme.fonts.celestial};
+    font-size: 0.78rem;
+    letter-spacing: 0.5px;
+    color: ${(props) => props.theme.colors.textSecondary};
 `;
 
 export const TaskList = styled.div`
@@ -311,9 +443,10 @@ export const TaskForm = styled.form`
     }
 `;
 
-export const MemoCard = styled(BaseCard)`
+export const MemoCard = styled(BaseCard)<{ $collapsed?: boolean }>`
     flex: 0.8;
-    min-height: 120px;
+    min-height: ${(props) => (props.$collapsed ? '0' : '120px')};
+    overflow: hidden;
 
     textarea {
         flex: 1;

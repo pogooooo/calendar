@@ -16,6 +16,12 @@ declare module 'styled-components' {
             error: string;
         };
 
+        /**
+         * 위젯 창은 surface/text를 배경에 맞게 덮어쓴다.
+         * 그 창에서도 원래 앱 색상이 필요한 요소(모달 등)를 위해 원본을 보존한다.
+         */
+        baseColors?: DefaultTheme['colors'];
+
         fontSizes: {
             h1: string;
             h2: string;

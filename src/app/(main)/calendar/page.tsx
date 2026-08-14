@@ -106,19 +106,21 @@ export default function CalendarPage() {
                         {dayCollapsed ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
                     </ToggleButton>
 
-                    <CollapsedRail $visible={dayCollapsed} aria-hidden={!dayCollapsed}>
-                        <span className="label">일간</span>
-                        <span className="star">✦</span>
-                    </CollapsedRail>
+                    <DayClip>
+                        <CollapsedRail $visible={dayCollapsed} aria-hidden={!dayCollapsed}>
+                            <span className="label">일간</span>
+                            <span className="star">✦</span>
+                        </CollapsedRail>
 
-                    <DayBody $collapsed={dayCollapsed}>
-                        <DayCalendar
-                            selectedDate={selectedDate}
-                            todos={todos}
-                            categories={categories}
-                            onDateChange={(date) => setSelectedDate(date)}
-                        />
-                    </DayBody>
+                        <DayBody $collapsed={dayCollapsed}>
+                            <DayCalendar
+                                selectedDate={selectedDate}
+                                todos={todos}
+                                categories={categories}
+                                onDateChange={(date) => setSelectedDate(date)}
+                            />
+                        </DayBody>
+                    </DayClip>
                 </DaySection>
             </CalendarContainer>
         </PageWrapper>
@@ -235,7 +237,9 @@ const ToggleButton = styled.button<{ $collapsed: boolean }>`
 
 const DayBody = styled.div<{ $collapsed: boolean }>`
     height: 100%;
-    min-width: 300px;
+    /* 폭 하한은 DaySection이 책임진다. 여기서 300px을 강제하면
+       border-left(1px)만큼 좁아진 콘텐츠 폭을 넘겨 오른쪽 끝이 잘린다 */
+    min-width: 0;
     opacity: ${(props) => (props.$collapsed ? 0 : 1)};
     transform: translateX(${(props) => (props.$collapsed ? "12px" : "0")});
     pointer-events: ${(props) => (props.$collapsed ? "none" : "auto")};
@@ -252,7 +256,9 @@ const DaySection = styled.div<{ $flex: number; $collapsed: boolean }>`
     flex: ${(props) => (props.$collapsed ? 0 : props.$flex)} 1 ${(props) => (props.$collapsed ? "34px" : "0")};
     min-width: ${(props) => (props.$collapsed ? "34px" : "300px")};
     height: 100%;
-    overflow: hidden;
+    /* 접기 애니메이션 클리핑은 DayClip이 담당한다.
+       여기서 hidden으로 두면 밖으로 나온 ToggleButton까지 잘려 안 보인다 */
+    overflow: visible;
     border-left: 1px solid ${(props) => (props.$collapsed ? `${props.theme.colors.primary}55` : "transparent")};
     transition: flex-grow 0.38s ${PANEL_EASE},
                 flex-basis 0.38s ${PANEL_EASE},
@@ -268,6 +274,18 @@ const DaySection = styled.div<{ $flex: number; $collapsed: boolean }>`
         border-top: 1px solid ${(props) => props.theme.colors.primary};
         padding-top: 24px;
         margin-top: 12px;
+    }
+`;
+
+/* 접기 애니메이션 동안 내용이 옆 패널로 새지 않도록 잘라내는 래퍼 */
+const DayClip = styled.div`
+    position: relative;
+    height: 100%;
+    overflow: hidden;
+
+    @media (max-width: 1250px) {
+        height: auto;
+        overflow: visible;
     }
 `;
 

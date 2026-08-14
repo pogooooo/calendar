@@ -10,6 +10,7 @@ import useDailyStore from "@/store/useDailyStore";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useExpandedTodos, ExpandedTodoType } from "@/hooks/useExpandedTodos";
 import useProjectStore from "@/store/useProjectStore";
+import useChallengeStore from "@/store/useChallengeStore";
 
 export interface CalendarTodoType extends ExpandedTodoType {
     isProject?: boolean;
@@ -24,9 +25,19 @@ export interface DayProps extends React.HTMLAttributes<HTMLDivElement> {
     categories?: CategoryType[];
 }
 
+export interface DayChallengeItem {
+    id: string;
+    challengeId: string;
+    title: string;
+    isDone: boolean;
+}
+
 export interface DayThemeProps {
     asChild?: boolean;
     formattedDate: string;
+    /** 선택한 날짜에 해당하는 챌린지 (없으면 빈 배열) */
+    dayChallenges: DayChallengeItem[];
+    toggleChallenge: (item: DayChallengeItem) => void;
     hours: number[];
     getSlotTodos: (hour: number, slotIdx: number) => CalendarTodoType[]; // ✨ 타입 확장
     tasks: { id: string; title: string; isDone: boolean }[];
@@ -56,6 +67,7 @@ const DayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
 
         const { tasks, memo, fetchDailyData, addDailyTask, toggleDailyTask, deleteDailyTask, updateDailyMemo } = useDailyStore();
         const { projects, fetchProjects } = useProjectStore();
+        const { challenges, fetchChallenges, toggleChallengeCompletion } = useChallengeStore();
         const authFetch = useAuthFetch();
 
         const [newTaskText, setNewTaskText] = React.useState("");
@@ -70,6 +82,7 @@ const DayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
         React.useEffect(() => {
             fetchDailyData(authFetch, selectedDate);
             fetchProjects(authFetch);
+            fetchChallenges(authFetch);
             // eslint-disable-next-line react-hooks/exhaustive-deps
         }, [selectedDate]);
 
@@ -131,6 +144,48 @@ const DayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
 
         const expandedTodos = useExpandedTodos(filteredTodos, selectedDate, selectedDate) as CalendarTodoType[];
 
+        // 선택한 날짜에 해당하는 챌린지 (월간·주간과 동일한 간격/목표횟수 규칙)
+        const dayChallenges = React.useMemo<DayChallengeItem[]>(() => {
+            const current = new Date(selectedDate);
+            current.setHours(0, 0, 0, 0);
+            const key = (d: Date) =>
+                `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            const currentStr = key(current);
+
+            return challenges.reduce<DayChallengeItem[]>((acc, challenge) => {
+                if (!selectedCategoryIds.includes(challenge.categoryId)) return acc;
+
+                const start = new Date(challenge.startAt);
+                start.setHours(0, 0, 0, 0);
+
+                const diffDays = Math.floor((current.getTime() - start.getTime()) / 86400000);
+                if (diffDays < 0 || diffDays % challenge.interval !== 0) return acc;
+
+                const occurrence = Math.floor(diffDays / challenge.interval) + 1;
+                if (challenge.targetCount != null && occurrence > challenge.targetCount) return acc;
+
+                const isDone = (challenge.completions ?? []).some(
+                    comp => key(new Date(comp.targetDate)) === currentStr
+                );
+
+                acc.push({
+                    id: `challenge-${challenge.id}-${current.getTime()}`,
+                    challengeId: challenge.id,
+                    title: challenge.title,
+                    isDone,
+                });
+                return acc;
+            }, []);
+        }, [challenges, selectedCategoryIds, selectedDate]);
+
+        const handleToggleChallenge = React.useCallback((item: DayChallengeItem) => {
+            const target = new Date(selectedDate);
+            target.setHours(0, 0, 0, 0);
+            const offset = target.getTimezoneOffset() * 60000;
+            const targetDate = new Date(target.getTime() - offset).toISOString().split('T')[0] + 'T00:00:00.000Z';
+            toggleChallengeCompletion(authFetch, item.challengeId, targetDate);
+        }, [authFetch, selectedDate, toggleChallengeCompletion]);
+
         const handleAddTask = async (e: React.FormEvent) => {
             e.preventDefault();
             if (!newTaskText.trim()) return;
@@ -183,6 +238,8 @@ const DayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
         const themeProps: DayThemeProps = {
             asChild,
             formattedDate,
+            dayChallenges,
+            toggleChallenge: handleToggleChallenge,
             hours,
             getSlotTodos,
             tasks: mappedTasks,

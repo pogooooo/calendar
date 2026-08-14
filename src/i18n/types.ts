@@ -98,6 +98,7 @@ export interface Translations {
         dailyMemo: string;
         addTask: string;
         memoPlaceholder: string;
+        noChallengeToday: string;
     };
     sidebar: {
         home: string;

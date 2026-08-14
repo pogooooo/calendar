@@ -1,7 +1,15 @@
 import * as React from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence } from "framer-motion";
+import { ThemeProvider, DefaultTheme } from "styled-components";
 import * as S from "./CelestialBaseModal.styles";
+
+/**
+ * 위젯 창은 배경이 비쳐 보이도록 surface를 transparent로, 글자색도 배경에 맞게 덮어쓴다.
+ * 모달은 그 위에 떠야 하므로 원본(baseColors) 색상을 되돌려 항상 읽히게 한다.
+ */
+const restoreBaseColors = (outer?: DefaultTheme): DefaultTheme =>
+    (outer?.baseColors ? { ...outer, colors: outer.baseColors } : outer) as DefaultTheme;
 
 export interface CelestialBaseModalProps {
     isOpen: boolean;
@@ -23,6 +31,7 @@ export default function CelestialBaseModal({ isOpen, onClose, children, maxWidth
     if (typeof document === "undefined") return null;
 
     return createPortal(
+        <ThemeProvider theme={restoreBaseColors}>
         <AnimatePresence>
             {isOpen && (
                 <S.Overlay
@@ -43,7 +52,8 @@ export default function CelestialBaseModal({ isOpen, onClose, children, maxWidth
                     </S.Container>
                 </S.Overlay>
             )}
-        </AnimatePresence>,
+        </AnimatePresence>
+        </ThemeProvider>,
         document.body,
     );
 }

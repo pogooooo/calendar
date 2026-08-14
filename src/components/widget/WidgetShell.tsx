@@ -260,6 +260,8 @@ export default function WidgetShell({ kind, title, children }: Props) {
                 surface: "transparent",
                 ...(bg.autoTextColor ? dynamicTextColor : {}),
             },
+            // 모달처럼 불투명해야 하는 요소가 되돌려 쓸 원본 색상
+            baseColors: theme?.colors,
         };
     }, [theme, bg.autoTextColor, dynamicTextColor]);
 

@@ -24,6 +24,7 @@ export async function GET(req: Request) {
 
         return NextResponse.json(tasks, { status: 200 });
     } catch (error) {
+        console.error("[DAILYTASK_GET_ERROR]", error);
         return NextResponse.json({ message: "조회 실패" }, { status: 500 });
     }
 }
@@ -50,6 +51,7 @@ export async function POST(req: Request) {
 
         return NextResponse.json(newTask, { status: 201 });
     } catch (error) {
+        console.error("[DAILYTASK_POST_ERROR]", error);
         return NextResponse.json({ message: "추가 실패" }, { status: 500 });
     }
 }
@@ -69,6 +71,7 @@ export async function PATCH(req: Request) {
 
         return NextResponse.json(updatedTask, { status: 200 });
     } catch (error) {
+        console.error("[DAILYTASK_PATCH_ERROR]", error);
         return NextResponse.json({ message: "수정 실패" }, { status: 500 });
     }
 }
@@ -86,6 +89,7 @@ export async function DELETE(req: Request) {
 
         return NextResponse.json({ message: "삭제 완료" }, { status: 200 });
     } catch (error) {
+        console.error("[DAILYTASK_DELETE_ERROR]", error);
         return NextResponse.json({ message: "삭제 실패" }, { status: 500 });
     }
 }

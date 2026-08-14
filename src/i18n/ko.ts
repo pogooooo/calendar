@@ -100,6 +100,7 @@ const ko: Translations = {
         dailyMemo: '일일 메모',
         addTask: '할 일 추가',
         memoPlaceholder: '메모나 일기를 남겨보세요.',
+        noChallengeToday: '이 날 예정된 챌린지가 없습니다.',
     },
     sidebar: {
         home: '홈',

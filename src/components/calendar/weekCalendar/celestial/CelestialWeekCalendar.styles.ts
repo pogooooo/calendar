@@ -117,6 +117,8 @@ export const Header = styled.div`
     position: relative;
     width: 100%;
     box-sizing: border-box;
+    /* 기념일 로켓이 헤더 아래(본문 영역)로 늘어지므로 본문보다 위에 그린다 */
+    z-index: 2;
 
     &::after {
         content: "";
