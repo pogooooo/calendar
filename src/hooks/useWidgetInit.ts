@@ -7,7 +7,7 @@ import useCategoryStore from "@/store/useCategoryStore";
 import useProjectStore from "@/store/useProjectStore";
 import useChallengeStore from "@/store/useChallengeStore";
 import useAnniversaryStore from "@/store/useAnniversaryStore";
-import { useAuthFetch, refreshSession } from "@/hooks/useAuthFetch";
+import { useAuthFetch, refreshSession, isTokenExpired } from "@/hooks/useAuthFetch";
 
 export type WidgetData = "todos" | "categories" | "projects" | "challenges" | "anniversaries";
 
@@ -15,8 +15,11 @@ const ALL: WidgetData[] = ["todos", "categories", "projects", "challenges", "ann
 
 export function useWidgetInit(need: WidgetData[] = ALL) {
     const [ready, setReady]   = useState(false);
-    const [authed, setAuthed] = useState(false);
     const [authChecked, setAuthChecked] = useState(false);
+
+    // 스토어에서 파생시켜야 다른 창에서 로그인/로그아웃한 결과가 이 창에도 반영된다
+    const accessToken = useAuthStore((s) => s.accessToken);
+    const authed = !!accessToken;
 
     const authFetch   = useAuthFetch();
 
@@ -38,8 +41,8 @@ export function useWidgetInit(need: WidgetData[] = ALL) {
         const attemptAuth = async () => {
             if (cancelled) return;
 
-            if (useAuthStore.getState().accessToken) {
-                setAuthed(true);
+            const current = useAuthStore.getState().accessToken;
+            if (current && !isTokenExpired(current)) {
                 setAuthChecked(true);
                 return;
             }
@@ -49,10 +52,7 @@ export function useWidgetInit(need: WidgetData[] = ALL) {
 
             setAuthChecked(true);
 
-            if (result.ok) {
-                setAuthed(true);
-                return;
-            }
+            if (result.ok) return;
             // 서버가 거부한 토큰은 다시 시도해도 소용없다
             if (result.reason === "invalid") return;
 

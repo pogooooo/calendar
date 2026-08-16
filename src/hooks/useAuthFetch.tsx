@@ -13,13 +13,75 @@ export type RefreshResult =
 
 let refreshInFlight: Promise<RefreshResult> | null = null;
 
+const LOCK_KEY = "cronos-refresh-lock";
+const LOCK_TTL = 10000;
+
 export function isWidgetWindow() {
     return typeof window !== "undefined" && window.location.pathname.startsWith("/widget");
+}
+
+/** JWT 만료 여부. 만료된 토큰으로 요청을 쏘면 창 수만큼 401 이 쏟아진다. */
+export function isTokenExpired(token: string, skewMs = 5000): boolean {
+    if (!token) return true;
+    try {
+        const payload = JSON.parse(atob(token.split(".")[1] ?? ""));
+        if (typeof payload?.exp !== "number") return false;
+        return payload.exp * 1000 - skewMs <= Date.now();
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * 단일 비행 가드는 창(웹뷰)마다 따로다. 부팅 때는 창이 여러 개 동시에 뜨므로
+ * 창 사이에서도 겹치지 않도록 localStorage 로 짧은 잠금을 건다.
+ * (리프레시 토큰은 회전되므로 동시 요청은 서로를 무효화할 수 있다)
+ */
+function acquireCrossWindowLock(): boolean {
+    try {
+        const raw = localStorage.getItem(LOCK_KEY);
+        const now = Date.now();
+        if (raw) {
+            const at = Number(raw);
+            if (Number.isFinite(at) && now - at < LOCK_TTL) return false;
+        }
+        localStorage.setItem(LOCK_KEY, String(now));
+        return true;
+    } catch {
+        return true;
+    }
+}
+
+function releaseCrossWindowLock() {
+    try { localStorage.removeItem(LOCK_KEY); } catch {}
+}
+
+/** 다른 창이 갱신을 끝내 새 토큰이 저장되기를 잠시 기다린다. */
+async function waitForOtherWindow(previous: string): Promise<RefreshResult> {
+    for (let i = 0; i < 40; i++) {
+        await new Promise(r => setTimeout(r, 250));
+        const token = useAuthStore.getState().accessToken;
+        if (token && token !== previous && !isTokenExpired(token)) {
+            return { ok: true, token };
+        }
+        try {
+            if (!localStorage.getItem(LOCK_KEY)) break;
+        } catch { break; }
+    }
+    const token = useAuthStore.getState().accessToken;
+    if (token && token !== previous) return { ok: true, token };
+    return { ok: false, reason: "network" };
 }
 
 export async function refreshSession(): Promise<RefreshResult> {
     if (!refreshInFlight) {
         refreshInFlight = (async (): Promise<RefreshResult> => {
+            const previous = useAuthStore.getState().accessToken;
+
+            if (!acquireCrossWindowLock()) {
+                return waitForOtherWindow(previous);
+            }
+
             try {
                 const stored = useAuthStore.getState().refreshToken;
 
@@ -46,6 +108,7 @@ export async function refreshSession(): Promise<RefreshResult> {
                 // fetch 자체가 실패 = 서버에 닿지도 못함. 토큰은 멀쩡할 수 있다.
                 return { ok: false, reason: "network" };
             } finally {
+                releaseCrossWindowLock();
                 refreshInFlight = null;
             }
         })();
@@ -60,7 +123,13 @@ export const useAuthFetch = () => {
     // 렌더마다 새 함수를 만들면 이 값을 의존성으로 쓰는 effect 들이 무한 반복된다.
     const authFetch = React.useCallback(async (url: string, options: RequestInit = {}) => {
         const target = api(url);
-        const accessToken = useAuthStore.getState().accessToken;
+        let accessToken = useAuthStore.getState().accessToken;
+
+        // 만료가 뻔한 토큰으로 먼저 쏘면 창 수만큼 401 이 몰린다. 미리 갱신한다.
+        if (accessToken && isTokenExpired(accessToken)) {
+            const pre = await refreshSession();
+            if (pre.ok) accessToken = pre.token;
+        }
 
         const headers = {
             ...clientHeaders(),

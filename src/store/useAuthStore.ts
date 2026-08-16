@@ -33,6 +33,11 @@ const useAuthStore = create<AuthStore>()(
 
             logout: async () => {
                 const stored = get().refreshToken;
+
+                // 먼저 비운다. 서버 응답을 기다리면 네트워크가 죽었을 때
+                // 타임아웃만큼 화면이 로그인 상태로 멈춰 있는다.
+                set({ accessToken: '', refreshToken: '', user: null });
+
                 try {
                     await fetch(api("/api/auth/logout"), {
                         method: "POST",
@@ -43,8 +48,6 @@ const useAuthStore = create<AuthStore>()(
                     });
                 } catch (err) {
                     console.error("Logout failed", err);
-                } finally {
-                    set({ accessToken: '', refreshToken: '', user: null });
                 }
             },
         }),

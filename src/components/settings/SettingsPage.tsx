@@ -163,6 +163,18 @@ export default function SettingsPage() {
     const handleWidgetOpen = (kind: string) => invokeWidget("open", kind as WidgetKind);
     const handleWidgetClose = (kind: string) => invokeWidget("close", kind as WidgetKind);
 
+    // 스위치가 OS 의 실제 등록 상태와 어긋나 있으면 실제 쪽에 맞춘다
+    React.useEffect(() => {
+        if (typeof window === "undefined" || !("__TAURI_INTERNALS__" in window)) return;
+        (async () => {
+            try {
+                const { invoke } = await import("@tauri-apps/api/core");
+                const actual = await invoke<boolean>("get_autostart");
+                if (actual !== useSettingStore.getState().autostart) setAutostart(actual);
+            } catch {}
+        })();
+    }, [setAutostart]);
+
     const handleAutostartToggle = async () => {
         const next = !autostart;
         setAutostart(next);

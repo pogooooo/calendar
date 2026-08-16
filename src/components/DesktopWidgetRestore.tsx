@@ -9,10 +9,14 @@ export default function DesktopWidgetRestore() {
         if (typeof window === "undefined" || !("__TAURI_INTERNALS__" in window)) return;
         if (window.location.pathname.startsWith("/widget")) return;
 
-        // 설정이 켜져 있으면 실제 시작프로그램 등록을 보장한다 (끄는 건 설정 토글에서만).
+        // 이미 등록돼 있으면 건드리지 않는다. 무조건 다시 쓰면 지금 실행 중인
+        // 바이너리(예: 개발 빌드)가 사용자의 시작프로그램 등록을 덮어써 버린다.
         if (useSettingStore.getState().autostart) {
-            import("@tauri-apps/api/core").then(({ invoke }) => {
-                invoke("set_autostart", { enabled: true }).catch(() => {});
+            import("@tauri-apps/api/core").then(async ({ invoke }) => {
+                try {
+                    const enabled = await invoke<boolean>("get_autostart");
+                    if (!enabled) await invoke("set_autostart", { enabled: true });
+                } catch {}
             });
         }
         if (sessionStorage.getItem("cronos-widgets-restored")) return;

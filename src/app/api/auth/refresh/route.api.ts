@@ -81,6 +81,8 @@ export async function POST(request: NextRequest) {
         });
 
     } catch (error) {
+        // 로그가 없으면 일시 장애와 진짜 만료를 구분할 근거가 사라진다
+        console.error("[auth/refresh] 실패:", error);
         return new NextResponse("Internal Server Error", { status: 500 });
     }
 }

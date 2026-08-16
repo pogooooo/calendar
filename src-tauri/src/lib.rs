@@ -58,7 +58,6 @@ mod win32 {
         pub fn SetWindowLongW(hWnd: HWND, nIndex: i32, dwNewLong: i32) -> i32;
         pub fn ShowWindow(hWnd: HWND, nCmdShow: i32) -> i32;
         pub fn IsIconic(hWnd: HWND) -> i32;
-        pub fn IsWindowVisible(hWnd: HWND) -> i32;
         pub fn SystemParametersInfoW(
             uiAction: u32,
             uiParam: u32,
@@ -342,21 +341,76 @@ fn get_wallpaper_path() -> String {
     "".to_string()
 }
 
+#[cfg(target_os = "windows")]
+const RUN_KEY: &str = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run";
+#[cfg(target_os = "windows")]
+const RUN_VALUE: &str = "CRONOS";
+
 #[tauri::command]
 fn get_autostart(app: tauri::AppHandle) -> bool {
     use tauri_plugin_autostart::ManagerExt;
     app.autolaunch().is_enabled().unwrap_or(false)
 }
 
+/// UI 스위치가 OS 의 실제 등록 상태와 어긋나지 않도록, 등록 여부와
+/// 실제로 등록된 실행 경로를 함께 돌려준다.
+#[tauri::command]
+fn autostart_status(app: tauri::AppHandle) -> serde_json::Value {
+    use tauri_plugin_autostart::ManagerExt;
+    let enabled = app.autolaunch().is_enabled().unwrap_or(false);
+    let current = std::env::current_exe()
+        .map(|p| p.to_string_lossy().to_string())
+        .unwrap_or_default();
+
+    #[cfg(target_os = "windows")]
+    let registered = unsafe { win32::read_reg_sz(RUN_KEY, RUN_VALUE) };
+    #[cfg(not(target_os = "windows"))]
+    let registered: Option<String> = None;
+
+    let normalized = registered
+        .as_deref()
+        .map(|s| s.trim().trim_matches('"').to_string());
+    let matches_current = normalized
+        .as_deref()
+        .map(|s| s.eq_ignore_ascii_case(current.trim()))
+        .unwrap_or(false);
+
+    serde_json::json!({
+        "enabled": enabled,
+        "registeredPath": normalized,
+        "currentExe": current,
+        "matchesCurrent": matches_current,
+    })
+}
+
 #[tauri::command]
 fn set_autostart(app: tauri::AppHandle, enabled: bool) -> bool {
     use tauri_plugin_autostart::ManagerExt;
     let autolaunch = app.autolaunch();
-    if enabled {
-        autolaunch.enable().is_ok()
-    } else {
-        autolaunch.disable().is_ok()
+
+    if !enabled {
+        let ok = autolaunch.disable().is_ok();
+        #[cfg(target_os = "windows")]
+        unsafe { win32::delete_reg_value(RUN_KEY, RUN_VALUE); }
+        return ok;
     }
+
+    let ok = autolaunch.enable().is_ok();
+
+    // 경로에 공백이 있으면 따옴표 없이는 Windows 가 잘못 해석한다.
+    #[cfg(target_os = "windows")]
+    unsafe {
+        if let Ok(exe) = std::env::current_exe() {
+            let quoted = format!("\"{}\" --from-autostart", exe.to_string_lossy());
+            win32::write_reg_sz(RUN_KEY, RUN_VALUE, &quoted);
+        }
+    }
+
+    ok
+}
+
+fn launched_by_autostart() -> bool {
+    std::env::args().any(|a| a == "--from-autostart")
 }
 
 #[tauri::command]
@@ -411,6 +465,7 @@ async fn open_widget(
     let webview_url = WebviewUrl::App(format!("widget/{kind}/").into());
 
     let app2 = app.clone();
+    let kind_for_cleanup = kind.clone();
     let (tx, rx) = tokio::sync::oneshot::channel::<Result<(), String>>();
 
     app.run_on_main_thread(move || {
@@ -450,6 +505,19 @@ async fn open_widget(
                         win32::set_pin_bottom(hwnd, true);
                     }
                 }
+                // 창이 어떤 경로로 닫히든 bottom 목록에서 빠지게 한다
+                {
+                    let bottom = app2.state::<BottomWidgets>().0.clone();
+                    let closed_kind = kind_for_cleanup.clone();
+                    win.on_window_event(move |event| {
+                        if matches!(event, tauri::WindowEvent::Destroyed) {
+                            if let Ok(mut set) = bottom.lock() {
+                                set.remove(&closed_kind);
+                            }
+                        }
+                    });
+                }
+
                 let _ = tx.send(Ok(()));
             }
             Err(e) => { let _ = tx.send(Err(e.to_string())); },
@@ -606,7 +674,7 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_autostart::init(
             tauri_plugin_autostart::MacosLauncher::LaunchAgent,
-            None,
+            Some(vec!["--from-autostart"]),
         ))
         .manage(bottom_widgets.clone())
         .invoke_handler(tauri::generate_handler![
@@ -619,6 +687,7 @@ pub fn run() {
             get_wallpaper_style,
             get_autostart,
             set_autostart,
+            autostart_status,
             load_widget_state,
             save_widget_state,
         ])
@@ -627,7 +696,12 @@ pub fn run() {
                 let app_handle = app.handle().clone();
                 tauri::async_runtime::spawn(async move {
                     loop {
-                        tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
+                        // 위젯이 하나도 없으면 굳이 500ms 마다 돌 필요가 없다
+                        let any_open = WIDGET_KINDS.iter().any(|k| {
+                            app_handle.get_webview_window(&format!("widget-{k}")).is_some()
+                        });
+                        let interval = if any_open { 500 } else { 3000 };
+                        tokio::time::sleep(tokio::time::Duration::from_millis(interval)).await;
 
                         for &kind in WIDGET_KINDS {
                             if let Some(win) = app_handle
@@ -636,9 +710,9 @@ pub fn run() {
                                 #[cfg(target_os = "windows")]
                                 if let Some(hwnd) = get_hwnd(&win) {
                                     unsafe {
-                                        let minimized = win32::IsIconic(hwnd as _) != 0;
-                                        let hidden    = win32::IsWindowVisible(hwnd as _) == 0;
-                                        if minimized || hidden {
+                                        // Win+D / 바탕화면 보기로 최소화된 경우만 되살린다.
+                                        // 숨김(hidden)은 앱이 의도적으로 감춘 상태일 수 있어 건드리지 않는다.
+                                        if win32::IsIconic(hwnd as _) != 0 {
                                             win32::ShowWindow(hwnd as _, win32::SW_SHOWNOACTIVATE);
                                         }
                                     }
@@ -650,8 +724,14 @@ pub fn run() {
                 });
             }
 
+            // 부팅 자동 실행이면 큰 메인 창을 띄우지 않는다 (위젯만 복원).
+            // 앱 아이콘을 다시 실행하면 single-instance 핸들러가 메인 창을 띄워준다.
             if let Some(win) = app.get_webview_window("main") {
-                let _ = win.show();
+                if launched_by_autostart() {
+                    let _ = win.hide();
+                } else {
+                    let _ = win.show();
+                }
             }
             Ok(())
         })

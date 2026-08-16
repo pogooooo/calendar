@@ -66,9 +66,14 @@ export default function UpdateNotice() {
                 }
             });
 
+            // Windows NSIS(passive)는 설치 직후 스스로 앱을 재시작한다.
+            // 여기서 relaunch 까지 부르면 인스턴스가 둘로 갈릴 수 있어 다른 OS 에서만 호출한다.
             setPhase("ready");
-            const { relaunch } = await import("@tauri-apps/plugin-process");
-            await relaunch();
+            const isWindows = navigator.userAgent.includes("Windows");
+            if (!isWindows) {
+                const { relaunch } = await import("@tauri-apps/plugin-process");
+                await relaunch();
+            }
         } catch (e) {
             setPhase("failed");
         }
