@@ -4,6 +4,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import useProjectStore, { ProjectType, ProjectTaskType } from '@/store/useProjectStore';
 import useCategoryStore from '@/store/useCategoryStore';
 import { useAuthFetch } from '@/hooks/useAuthFetch';
+import { useDialog } from '@/components/dialog/DialogProvider';
 import * as S from './styles';
 
 import ProjectHeader from '@/components/project/header/ProjectHeader';
@@ -14,6 +15,7 @@ import TaskModal from '@/components/modal/projectModal/TaskModal';
 
 export default function ProjectPage() {
     const authFetch = useAuthFetch();
+    const dialog = useDialog();
     const { projects, fetchProjects, addProject, updateProject, addProjectTask, updateProjectTaskStatus, updateProjectTask } = useProjectStore();
     const { categories, fetchCategories } = useCategoryStore();
 
@@ -80,7 +82,7 @@ export default function ProjectPage() {
     const handleSaveProject = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!projectModal.data.categoryId) {
-            alert("카테고리를 선택해주세요.");
+            await dialog.notify({ title: "카테고리를 선택해주세요", message: "프로젝트는 카테고리 안에 만들어집니다." });
             return;
         }
         const projectData = { ...projectModal.data, assignees: projectModal.data.assignees?.map(a => a.id) as any };

@@ -13,6 +13,7 @@ import useTodoStore from "@/store/useTodoStore";
 import { localDateKey } from "@/lib/dateKey";
 import useAuthStore from "@/store/useAuthStore";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
+import { useDialog } from "@/components/dialog/DialogProvider";
 import { formatDate } from "@/utils/DateUtils";
 import useProjectStore from "@/store/useProjectStore";
 import useChallengeStore, { ChallengeType } from "@/store/useChallengeStore";
@@ -104,6 +105,7 @@ const WeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
         const { deleteTodo, deleteTodoOccurrence, toggleTodo } = useTodoStore();
         // 자체 fetch 를 쓰면 토큰 갱신을 건너뛰어 1시간 뒤 모든 조작이 조용히 실패한다
         const authFetch = useAuthFetch();
+        const dialog = useDialog();
 
         const weekDates = React.useMemo(() => getWeekDates(currentDate), [currentDate]);
         const todayStr = React.useMemo(() => new Date().toDateString(), []);
@@ -265,10 +267,10 @@ const WeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
             setTodoContextMenu({ x: e.clientX, y: e.clientY, todo: todo });
         };
 
-        const handleQuickEdit = (expandedTodo: CalendarTodoType) => {
+        const handleQuickEdit = async (expandedTodo: CalendarTodoType) => {
             if (expandedTodo.isProject || expandedTodo.isProjectTask) {
-                alert("프로젝트 관련 항목은 프로젝트 메뉴에서 수정해주세요.");
                 setTodoContextMenu(null);
+                await dialog.notify({ title: "여기서는 수정할 수 없습니다", message: "프로젝트 항목은 프로젝트 화면에서 수정해주세요." });
                 return;
             }
             setModalTodo(expandedTodo.originalTodo || expandedTodo as unknown as TodoType);
@@ -277,34 +279,42 @@ const WeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
         };
 
         const handleQuickDelete = async (expandedTodo: CalendarTodoType) => {
+            setTodoContextMenu(null);
             if (expandedTodo.isProject || expandedTodo.isProjectTask) {
-                alert("프로젝트 관련 항목은 프로젝트 상세 메뉴에서 삭제해주세요.");
-                setTodoContextMenu(null);
+                await dialog.notify({ title: "여기서는 삭제할 수 없습니다", message: "프로젝트 항목은 프로젝트 상세 화면에서 삭제해주세요." });
                 return;
             }
             const actualId = expandedTodo.originalTodo?.id || expandedTodo.id;
-            if (window.confirm("정말 삭제하시겠습니까? (반복 일정 전체가 삭제됩니다)")) {
-                await deleteTodo(authFetch, actualId);
-            }
-            setTodoContextMenu(null);
+            const ok = await dialog.confirmDanger({
+                title: "일정을 삭제할까요",
+                message: "반복 일정 전체가 사라집니다. 되돌릴 수 없습니다.",
+            });
+            if (!ok) return;
+            const error = await deleteTodo(authFetch, actualId);
+            if (error) await dialog.notify({ title: "삭제하지 못했습니다", message: error });
         };
 
         const handleQuickDeleteOne = async (expandedTodo: CalendarTodoType) => {
+            setTodoContextMenu(null);
             if (expandedTodo.isProject || expandedTodo.isProjectTask) {
-                alert("프로젝트 관련 항목은 프로젝트 상세 메뉴에서 삭제해주세요.");
-                setTodoContextMenu(null);
+                await dialog.notify({ title: "여기서는 삭제할 수 없습니다", message: "프로젝트 항목은 프로젝트 상세 화면에서 삭제해주세요." });
                 return;
             }
             const actualId = expandedTodo.originalTodo?.id || expandedTodo.id;
             const occurrence = expandedTodo.date ?? new Date(expandedTodo.startAt || Date.now());
+            const ok = await dialog.confirm({
+                title: "이 날짜만 삭제할까요",
+                message: "반복 일정 중 이 하루만 사라집니다. 나머지는 그대로입니다.",
+                confirmLabel: "삭제",
+            });
+            if (!ok) return;
             await deleteTodoOccurrence(authFetch, actualId, localDateKey(occurrence));
-            setTodoContextMenu(null);
         };
 
         const handleQuickToggle = async (expandedTodo: CalendarTodoType) => {
             if (expandedTodo.isProject || expandedTodo.isProjectTask) {
-                alert("프로젝트 상태는 프로젝트 상세 메뉴에서 변경해주세요.");
                 setTodoContextMenu(null);
+                await dialog.notify({ title: "여기서는 바꿀 수 없습니다", message: "프로젝트 상태는 프로젝트 상세 화면에서 변경해주세요." });
                 return;
             }
 

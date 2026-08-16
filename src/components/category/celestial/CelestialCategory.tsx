@@ -7,6 +7,7 @@ import InlineError from "@/components/error/inlineError/InlineError";
 import { CategoryThemeProps } from "../CategoryPage";
 import { useT } from "@/i18n/useT";
 import { localDateKey, utcDayKey, dayKeyToIso } from "@/lib/dateKey";
+import { useDialog } from "@/components/dialog/DialogProvider";
 
 const ROMAN = [
     "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X",
@@ -15,6 +16,7 @@ const ROMAN = [
 
 export default function CelestialCategory(props: CategoryThemeProps) {
     const t = useT();
+    const dialog = useDialog();
 
     const {
         categories, selectedCategory, selectedCategoryId, setSelectedCategoryId,
@@ -223,11 +225,13 @@ export default function CelestialCategory(props: CategoryThemeProps) {
                                                 <button
                                                     className="delete-btn"
                                                     title={t.todo.delete}
-                                                    onClick={(e) => {
+                                                    onClick={async (e) => {
                                                         e.stopPropagation();
-                                                        if (window.confirm(t.category.deleteConfirm)) {
-                                                            deleteTodo(authFetch, todo.id);
-                                                        }
+                                                        const ok = await dialog.confirmDanger({
+                                                            title: t.category.deleteConfirm,
+                                                            message: todo.title,
+                                                        });
+                                                        if (ok) deleteTodo(authFetch, todo.id);
                                                     }}
                                                 >
                                                     ×

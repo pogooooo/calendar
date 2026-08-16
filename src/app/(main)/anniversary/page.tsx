@@ -5,6 +5,7 @@ import styled, { css, keyframes } from "styled-components";
 import { Cake, Plus, Trash2 } from "lucide-react";
 import useAnniversaryStore, { AnniversaryType } from "@/store/useAnniversaryStore";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
+import { useDialog } from "@/components/dialog/DialogProvider";
 import AnniversaryIcon, { ANNIVERSARY_ICONS } from "@/assets/celestial/AnniversaryIcons";
 
 const ROMAN = [
@@ -34,6 +35,7 @@ function ddayDiff(month: number, day: number) {
 
 export default function AnniversaryPage() {
     const authFetch = useAuthFetch();
+    const dialog = useDialog();
     const { anniversaries, fetchAnniversaries, addAnniversary, deleteAnniversary } = useAnniversaryStore();
 
     const [title, setTitle] = React.useState("");
@@ -53,14 +55,16 @@ export default function AnniversaryPage() {
         setPending(true);
         const error = await addAnniversary(authFetch, { title: title.trim(), month, day, icon });
         setPending(false);
-        if (error) { alert(error); return; }
+        if (error) { await dialog.notify({ title: "추가하지 못했습니다", message: error }); return; }
         setTitle("");
     };
 
-    const handleDelete = (a: AnniversaryType) => {
-        if (window.confirm(`'${a.title}' 기념일을 삭제할까요?`)) {
-            deleteAnniversary(authFetch, a.id);
-        }
+    const handleDelete = async (a: AnniversaryType) => {
+        const ok = await dialog.confirmDanger({
+            title: "기념일을 삭제할까요",
+            message: `'${a.title}' 기록이 사라집니다. 되돌릴 수 없습니다.`,
+        });
+        if (ok) deleteAnniversary(authFetch, a.id);
     };
 
     const sorted = [...anniversaries].sort(

@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useTheme } from "styled-components";
 import CelestialCategoryAddModal from "./celestial/CelestialCategoryAddModal";
+import { useDialog } from "@/components/dialog/DialogProvider";
 
 export interface CategoryAddModalProps {
     isOpen: boolean;
@@ -25,6 +26,7 @@ export default function CategoryAddModal(props: CategoryAddModalProps) {
     const { isOpen, onClose, onAdd } = props;
     const theme = useTheme();
     const themeName = theme?.name || "celestial";
+    const dialog = useDialog();
 
     const [name, setName] = React.useState("");
     const [color, setColor] = React.useState("");
@@ -45,7 +47,7 @@ export default function CategoryAddModal(props: CategoryAddModalProps) {
 
         const trimmedName = name.trim();
         if (!trimmedName) {
-            alert("카테고리 이름을 입력해주세요.");
+            await dialog.notify({ title: "이름을 입력해주세요", message: "카테고리를 구분할 이름이 필요합니다." });
             return;
         }
 

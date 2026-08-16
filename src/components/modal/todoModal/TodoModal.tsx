@@ -9,6 +9,7 @@ import { TodoType } from "@/store/useTodoStore";
 import useTodoStore from "@/store/useTodoStore";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useT } from "@/i18n/useT";
+import { useDialog } from "@/components/dialog/DialogProvider";
 
 export interface TodoModalProps {
     isOpen: boolean;
@@ -69,6 +70,7 @@ export default function TodoModal(props: TodoModalProps) {
 
     const { addTodo, updateTodo, deleteTodo } = useTodoStore();
     const authFetch = useAuthFetch();
+    const dialog = useDialog();
 
     const [title, setTitle] = React.useState("");
     const [categoryId, setCategoryId] = React.useState("");
@@ -154,14 +156,14 @@ export default function TodoModal(props: TodoModalProps) {
         e.preventDefault();
 
         if (!categoryId) {
-            alert(t.todo.selectCategoryAlert);
+            await dialog.notify({ title: t.todo.selectCategoryAlert });
             return;
         }
 
         const start = new Date(startAt);
         const end = new Date(endAt);
         if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-            alert("시작/종료 시간을 다시 확인해주세요.");
+            await dialog.notify({ title: "시간을 확인해주세요", message: "시작과 종료 시각이 올바른지 다시 봐주세요." });
             return;
         }
 
@@ -185,7 +187,7 @@ export default function TodoModal(props: TodoModalProps) {
             : await addTodo(authFetch, todoData);
 
         if (errorMessage) {
-            alert(errorMessage);
+            await dialog.notify({ title: "저장하지 못했습니다", message: errorMessage });
             return;
         }
 
@@ -193,11 +195,15 @@ export default function TodoModal(props: TodoModalProps) {
     };
 
     const handleDelete = async () => {
-        if (todo && window.confirm(t.todo.deleteConfirm)) {
-            const error = await deleteTodo(authFetch, todo.id);
-            if (error) { alert(error); return; }
-            onClose();
-        }
+        if (!todo) return;
+        const ok = await dialog.confirmDanger({
+            title: t.todo.deleteConfirm,
+            message: todo.title,
+        });
+        if (!ok) return;
+        const error = await deleteTodo(authFetch, todo.id);
+        if (error) { await dialog.notify({ title: "삭제하지 못했습니다", message: error }); return; }
+        onClose();
     };
 
     const handleDateChange = (setter: (val: string) => void, currentValue: string, newValue: string) => {

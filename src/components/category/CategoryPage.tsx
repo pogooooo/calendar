@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useEffect, useState, useMemo } from "react";
 import { useTheme } from "styled-components";
@@ -6,6 +6,7 @@ import useCategoryStore from "@/store/useCategoryStore";
 import useTodoStore from "@/store/useTodoStore";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { readError } from "@/lib/readError";
+import { useDialog } from "@/components/dialog/DialogProvider";
 import type { AuthFetch, CategoryType, TodoType } from "@/types";
 
 import CelestialCategory from "./celestial/CelestialCategory";
@@ -59,6 +60,7 @@ export default function CategoryPage() {
     const { categories, deleteCategory, updateCategory, addCategory, fetchCategories } = useCategoryStore();
     const { todos, toggleTodo, deleteTodo } = useTodoStore();
     const authFetch = useAuthFetch();
+    const dialog = useDialog();
 
     const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<'info' | 'todos'>('info');
@@ -105,7 +107,7 @@ export default function CategoryPage() {
 
     const handleAddCategorySubmit = async (data: { name: string; color: string; description: string }) => {
         const error = await addCategory(authFetch, data);
-        if (error) alert(error);
+        if (error) await dialog.notify({ title: "카테고리를 추가하지 못했습니다", message: error });
     };
 
     const handleInviteSubmit = async () => {
@@ -154,14 +156,14 @@ export default function CategoryPage() {
             });
 
             if (!res.ok) {
-                alert(await readError(res, "멤버를 내보내지 못했습니다."));
+                await dialog.notify({ title: "내보내지 못했습니다", message: await readError(res, "잠시 후 다시 시도해주세요.") });
                 return;
             }
             await fetchCategories(authFetch);
             closeKickModal();
         } catch (err) {
             console.error(err);
-            alert("네트워크 오류로 멤버를 내보내지 못했습니다.");
+            await dialog.notify({ title: "내보내지 못했습니다", message: "연결을 확인한 뒤 다시 시도해주세요." });
         }
     };
 
@@ -170,7 +172,7 @@ export default function CategoryPage() {
         const trimmedDesc = editDescription.trim();
         if (trimmedDesc === (selectedCategory.description || "")) return;
         const error = await updateCategory(authFetch, selectedCategory.id, { description: trimmedDesc });
-        if (error) alert(error);
+        if (error) await dialog.notify({ title: "저장하지 못했습니다", message: error });
     };
 
     const handleNameBlur = async () => {
@@ -181,14 +183,14 @@ export default function CategoryPage() {
             return;
         }
         const error = await updateCategory(authFetch, selectedCategory.id, { name: trimmedName });
-        if (error) { alert(error); setEditName(selectedCategory.name); }
+        if (error) { setEditName(selectedCategory.name); await dialog.notify({ title: "저장하지 못했습니다", message: error }); }
     };
 
     const handleColorBlur = async () => {
         if (!selectedCategory) return;
         if (editColor === selectedCategory.color) return;
         const error = await updateCategory(authFetch, selectedCategory.id, { color: editColor });
-        if (error) alert(error);
+        if (error) await dialog.notify({ title: "저장하지 못했습니다", message: error });
     };
 
     const handleNameKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -196,11 +198,14 @@ export default function CategoryPage() {
     };
 
     const handleDelete = async (categoryId: string) => {
-        if (window.confirm("이 카테고리와 그 안의 모든 할 일이 삭제됩니다. 계속할까요?")) {
-            const error = await deleteCategory(authFetch, categoryId);
-            if (error) { alert(error); return; }
-            if (selectedCategoryId === categoryId) setSelectedCategoryId(null);
-        }
+        const ok = await dialog.confirmDanger({
+            title: "카테고리를 삭제할까요",
+            message: "안에 있는 할 일이 함께 삭제됩니다. 되돌릴 수 없습니다.",
+        });
+        if (!ok) return;
+        const error = await deleteCategory(authFetch, categoryId);
+        if (error) { await dialog.notify({ title: "삭제하지 못했습니다", message: error }); return; }
+        if (selectedCategoryId === categoryId) setSelectedCategoryId(null);
     };
 
     const handleEditTodo = (todo: TodoType) => {

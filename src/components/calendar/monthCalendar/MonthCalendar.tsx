@@ -10,6 +10,7 @@ import { useExpandedTodos, ExpandedTodoType } from "@/hooks/useExpandedTodos";
 import useTodoStore from "@/store/useTodoStore";
 import { localDateKey } from "@/lib/dateKey";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
+import { useDialog } from "@/components/dialog/DialogProvider";
 import useProjectStore from "@/store/useProjectStore";
 import useChallengeStore, { ChallengeType } from "@/store/useChallengeStore";
 
@@ -95,6 +96,7 @@ const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
         const { deleteTodo, deleteTodoOccurrence, toggleTodo } = useTodoStore();
         // 자체 fetch 를 쓰면 토큰 갱신을 건너뛰어 1시간 뒤 모든 조작이 조용히 실패한다
         const authFetch = useAuthFetch();
+        const dialog = useDialog();
 
         React.useEffect(() => {
             if (categories.length > 0 && selectedCategoryIds.length === 0) {
@@ -269,16 +271,18 @@ const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
             setContextMenu({ x: e.clientX, y: e.clientY, todo: todo });
         };
 
-        const handleContextMenuChallenge = (e: React.MouseEvent, challenge: CalendarTodoType) => {
+        const handleContextMenuChallenge = async (e: React.MouseEvent, challenge: CalendarTodoType) => {
             e.preventDefault();
-            const statusText = challenge.isDone ? '완료' : '미완료';
-            alert(`🎯 챌린지: ${challenge.title}\n✅ 상태: ${statusText}\n\n세부 정보나 설정은 [챌린지] 탭을 이용해주세요.`);
+            await dialog.notify({
+                title: challenge.title,
+                message: `${challenge.isDone ? "완료" : "미완료"} · 세부 설정은 챌린지 화면에서 바꿀 수 있습니다.`,
+            });
         };
 
-        const handleQuickEdit = (expandedTodo: CalendarTodoType) => {
+        const handleQuickEdit = async (expandedTodo: CalendarTodoType) => {
             if (expandedTodo.isProject || expandedTodo.isProjectTask) {
-                alert("프로젝트 관련 항목은 프로젝트 메뉴에서 수정해주세요.");
                 setContextMenu(null);
+                await dialog.notify({ title: "여기서는 수정할 수 없습니다", message: "프로젝트 항목은 프로젝트 화면에서 수정해주세요." });
                 return;
             }
             setModalTodo(expandedTodo.originalTodo || (expandedTodo as unknown as TodoType));
@@ -287,40 +291,43 @@ const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
         };
 
         const handleQuickDelete = async (expandedTodo: CalendarTodoType) => {
+            setContextMenu(null);
             if (expandedTodo.isProject || expandedTodo.isProjectTask) {
-                alert("프로젝트 관련 항목은 프로젝트 상세 메뉴에서 삭제해주세요.");
-                setContextMenu(null);
+                await dialog.notify({ title: "여기서는 삭제할 수 없습니다", message: "프로젝트 항목은 프로젝트 상세 화면에서 삭제해주세요." });
                 return;
             }
 
             const actualId = expandedTodo.originalTodo?.id || expandedTodo.id;
-            if (window.confirm("정말 삭제하시겠습니까? (반복 일정 전체가 삭제됩니다)")) {
-                const error = await deleteTodo(authFetch, actualId);
-                if (error) alert(error);
-            }
-            setContextMenu(null);
+            const ok = await dialog.confirmDanger({
+                title: "일정을 삭제할까요",
+                message: "반복 일정 전체가 사라집니다. 되돌릴 수 없습니다.",
+            });
+            if (!ok) return;
+            const error = await deleteTodo(authFetch, actualId);
+            if (error) await dialog.notify({ title: "삭제하지 못했습니다", message: error });
         };
 
         const handleQuickDeleteOne = async (expandedTodo: CalendarTodoType) => {
+            setContextMenu(null);
             if (expandedTodo.isProject || expandedTodo.isProjectTask) {
-                alert("프로젝트 관련 항목은 프로젝트 상세 메뉴에서 삭제해주세요.");
-                setContextMenu(null);
+                await dialog.notify({ title: "여기서는 삭제할 수 없습니다", message: "프로젝트 항목은 프로젝트 상세 화면에서 삭제해주세요." });
                 return;
             }
             const actualId = expandedTodo.originalTodo?.id || expandedTodo.id;
             const occurrence = expandedTodo.date ?? new Date(expandedTodo.startAt || Date.now());
-            if (!window.confirm("이 날짜의 일정만 삭제합니다. 계속할까요?")) {
-                setContextMenu(null);
-                return;
-            }
+            const ok = await dialog.confirm({
+                title: "이 날짜만 삭제할까요",
+                message: "반복 일정 중 이 하루만 사라집니다. 나머지는 그대로입니다.",
+                confirmLabel: "삭제",
+            });
+            if (!ok) return;
             await deleteTodoOccurrence(authFetch, actualId, localDateKey(occurrence));
-            setContextMenu(null);
         };
 
         const handleQuickToggle = async (expandedTodo: CalendarTodoType) => {
             if (expandedTodo.isProject || expandedTodo.isProjectTask) {
-                alert("프로젝트 상태는 프로젝트 상세 메뉴에서 변경해주세요.");
                 setContextMenu(null);
+                await dialog.notify({ title: "여기서는 바꿀 수 없습니다", message: "프로젝트 상태는 프로젝트 상세 화면에서 변경해주세요." });
                 return;
             }
 

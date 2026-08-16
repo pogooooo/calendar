@@ -4,6 +4,7 @@ import * as React from "react";
 import { useTheme } from "styled-components";
 import CelestialChallengeModal from "./celestial/CelestialChallengeModal";
 import { CategoryType } from "@/store/useCategoryStore";
+import { useDialog } from "@/components/dialog/DialogProvider";
 
 export interface ChallengeData {
     title: string;
@@ -40,6 +41,7 @@ export default function ChallengeModal(props: ChallengeModalProps) {
     const { isOpen, onClose, categories, initialData, onSave } = props;
     const theme = useTheme();
     const themeName = theme?.name || "celestial";
+    const dialog = useDialog();
 
     const [title, setTitle] = React.useState("");
     const [description, setDescription] = React.useState("");
@@ -69,7 +71,10 @@ export default function ChallengeModal(props: ChallengeModalProps) {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!title.trim() || !categoryId) return alert("제목과 카테고리를 선택해주세요.");
+        if (!title.trim() || !categoryId) {
+            await dialog.notify({ title: "빠진 항목이 있습니다", message: "제목을 적고 카테고리를 골라주세요." });
+            return;
+        }
 
         setIsSubmitting(true);
         try {

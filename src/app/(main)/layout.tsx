@@ -6,6 +6,7 @@ import Sidebar from "@/components/sideBar/SideBar";
 import TitleBar from "@/components/titleBar/TitleBar";
 import PageTransition from "@/components/transition/PageTransition";
 import UpdateNotice from "@/components/update/UpdateNotice";
+import { DialogProvider } from "@/components/dialog/DialogProvider";
 
 interface MainLayoutProps {
     children: React.ReactNode;
@@ -13,18 +14,20 @@ interface MainLayoutProps {
 
 export default function MainLayout({ children }: MainLayoutProps) {
     return (
-        <AppShell>
-            <TitleBar />
-            <LayoutWrapper>
-                <Sidebar />
-                <MainContent>
-                    <PageTransition>
-                        {children}
-                    </PageTransition>
-                </MainContent>
-            </LayoutWrapper>
-            <UpdateNotice />
-        </AppShell>
+        <DialogProvider>
+            <AppShell>
+                <TitleBar />
+                <LayoutWrapper>
+                    <Sidebar />
+                    <MainContent>
+                        <PageTransition>
+                            {children}
+                        </PageTransition>
+                    </MainContent>
+                </LayoutWrapper>
+                <UpdateNotice />
+            </AppShell>
+        </DialogProvider>
     );
 }
 

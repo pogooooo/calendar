@@ -9,12 +9,14 @@ import useChallengeStore from "@/store/useChallengeStore";
 import useCategoryStore from "@/store/useCategoryStore";
 import { ChallengeData } from "@/components/modal/challengeModal/ChallengeModal";
 import { localDateKey } from "@/lib/dateKey";
+import { useDialog } from "@/components/dialog/DialogProvider";
 
 export default function ChallengePage() {
     const theme = useTheme();
     const themeName = theme?.name || 'celestial';
 
     const authFetch = useAuthFetch();
+    const dialog = useDialog();
     const { challenges, fetchChallenges, addChallenge, updateChallenge, deleteChallenge, toggleChallengeCompletion } = useChallengeStore();
     const { categories, fetchCategories } = useCategoryStore();
 
@@ -59,11 +61,14 @@ export default function ChallengePage() {
 
     const handleDelete = async () => {
         if (!selectedChallenge) return;
-        if (window.confirm("정말 이 챌린지를 삭제하시겠습니까?")) {
-            const error = await deleteChallenge(authFetch, selectedChallenge.id);
-            if (error) { alert(error); return; }
-            setSelectedChallengeId(null);
-        }
+        const ok = await dialog.confirmDanger({
+            title: "챌린지를 삭제할까요",
+            message: `'${selectedChallenge.title}'과 지금까지의 달성 기록이 사라집니다. 되돌릴 수 없습니다.`,
+        });
+        if (!ok) return;
+        const error = await deleteChallenge(authFetch, selectedChallenge.id);
+        if (error) { await dialog.notify({ title: "삭제하지 못했습니다", message: error }); return; }
+        setSelectedChallengeId(null);
     };
 
     const handleSaveChallenge = async (data: ChallengeData): Promise<void> => {
@@ -76,7 +81,7 @@ export default function ChallengePage() {
             error = await addChallenge(authFetch, { ...data, startAt });
         }
         // 실패했는데 모달을 닫으면 사용자는 저장된 줄 안다
-        if (error) { alert(error); return; }
+        if (error) { await dialog.notify({ title: "저장하지 못했습니다", message: error }); return; }
         setIsModalOpen(false);
     };
 

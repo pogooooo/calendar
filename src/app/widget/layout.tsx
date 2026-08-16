@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import useSettingStore from "@/store/useSettingStore";
 import type { Locale } from "@/i18n/types";
+import { DialogProvider } from "@/components/dialog/DialogProvider";
 
 export default function WidgetLayout({ children }: { children: React.ReactNode }) {
     // 개별 필드만 반영한다. 스토어 전체를 되쓰면 위젯이 들고 있던
@@ -32,15 +33,17 @@ export default function WidgetLayout({ children }: { children: React.ReactNode }
     }, [setLocale]);
 
     return (
-        <div
-            style={{
-                background: "transparent",
-                width: "100vw",
-                height: "100vh",
-                overflow: "hidden",
-            }}
-        >
-            {children}
-        </div>
+        <DialogProvider>
+            <div
+                style={{
+                    background: "transparent",
+                    width: "100vw",
+                    height: "100vh",
+                    overflow: "hidden",
+                }}
+            >
+                {children}
+            </div>
+        </DialogProvider>
     );
 }
