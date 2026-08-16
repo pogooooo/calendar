@@ -1,7 +1,6 @@
 ﻿"use client";
 
 import * as React from 'react';
-import { useTheme } from 'styled-components';
 import CelestialDropdown from './celestial/CelestialDropdown';
 
 export interface DropdownOption {
@@ -19,10 +18,7 @@ export interface DropdownProps {
     disabled?: boolean;
 }
 
-const Dropdown = React.forwardRef<HTMLDivElement, DropdownProps>((props, ref) => {
-    const theme = useTheme();
-    const themeName = theme?.name || 'celestial';
-
+const Dropdown = React.forwardRef<HTMLDivElement, DropdownProps>((props, _ref) => {
     return <CelestialDropdown {...props} />;
 });
 

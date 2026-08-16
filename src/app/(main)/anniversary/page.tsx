@@ -6,6 +6,7 @@ import { Cake, Plus, Trash2 } from "lucide-react";
 import useAnniversaryStore, { AnniversaryType } from "@/store/useAnniversaryStore";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useDialog } from "@/components/dialog/DialogProvider";
+import CelestialSelect from "@/components/input/select/CelestialSelect";
 import AnniversaryIcon, { ANNIVERSARY_ICONS } from "@/assets/celestial/AnniversaryIcons";
 
 const ROMAN = [
@@ -110,21 +111,27 @@ export default function AnniversaryPage() {
                         placeholder="기념일 이름 (예: 결혼기념일)"
                         maxLength={40}
                     />
-                    <DateSelect value={month} onChange={e => {
-                        const m = Number(e.target.value);
-                        setMonth(m);
-                        // 2월로 바꿨는데 31일이 선택돼 있으면 존재하지 않는 날짜가 된다
-                        if (day > DAYS_IN_MONTH[m - 1]) setDay(DAYS_IN_MONTH[m - 1]);
-                    }}>
-                        {Array.from({ length: 12 }, (_, i) => (
-                            <option key={i + 1} value={i + 1}>{i + 1}월</option>
-                        ))}
-                    </DateSelect>
-                    <DateSelect value={day} onChange={e => setDay(Number(e.target.value))}>
-                        {Array.from({ length: DAYS_IN_MONTH[month - 1] }, (_, i) => (
-                            <option key={i + 1} value={i + 1}>{i + 1}일</option>
-                        ))}
-                    </DateSelect>
+                    <DateField>
+                        <CelestialSelect
+                            value={String(month)}
+                            onChange={v => {
+                                const m = Number(v);
+                                setMonth(m);
+                                // 2월로 바꿨는데 31일이 선택돼 있으면 존재하지 않는 날짜가 된다
+                                if (day > DAYS_IN_MONTH[m - 1]) setDay(DAYS_IN_MONTH[m - 1]);
+                            }}
+                            options={Array.from({ length: 12 }, (_, i) => ({ value: String(i + 1), label: `${i + 1}월` }))}
+                            ariaLabel="월"
+                        />
+                    </DateField>
+                    <DateField>
+                        <CelestialSelect
+                            value={String(day)}
+                            onChange={v => setDay(Number(v))}
+                            options={Array.from({ length: DAYS_IN_MONTH[month - 1] }, (_, i) => ({ value: String(i + 1), label: `${i + 1}일` }))}
+                            ariaLabel="일"
+                        />
+                    </DateField>
                     <AddButton type="submit" disabled={!title.trim() || pending}>
                         <Plus size={14} />
                         추가
@@ -331,11 +338,9 @@ const TitleInput = styled.input`
     min-width: 180px;
 `;
 
-const DateSelect = styled.select`
-    ${inputBase}
-    cursor: pointer;
-
-    option { color: #222; }
+const DateField = styled.div`
+    width: 104px;
+    flex-shrink: 0;
 `;
 
 const AddButton = styled.button`

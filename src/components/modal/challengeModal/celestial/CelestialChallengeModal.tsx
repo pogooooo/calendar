@@ -6,6 +6,7 @@ import * as S from "./CelestialChallengeModal.styles";
 import { X, Check, Plus } from "lucide-react";
 import SecondaryButton from "@/components/button/secondary/SecondaryButton";
 import CelestialBaseModal from "@/components/modal/baseModal/celestial/CelestialBaseModal";
+import CelestialSelect from "@/components/input/select/CelestialSelect";
 
 export default function CelestialChallengeModal({
                                                     isOpen, onClose, initialData, categories,
@@ -24,9 +25,13 @@ export default function CelestialChallengeModal({
                 <S.FormArea onSubmit={handleSubmit}>
                     <div className="form-group">
                         <label>Category</label>
-                        <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} required>
-                            {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                        </select>
+                        <CelestialSelect
+                            value={categoryId}
+                            onChange={setCategoryId}
+                            options={categories.map(c => ({ value: c.id, label: c.name, color: c.color }))}
+                            placeholder="카테고리를 고르세요"
+                            ariaLabel="카테고리"
+                        />
                     </div>
                     <div className="form-group">
                         <label>Title</label>

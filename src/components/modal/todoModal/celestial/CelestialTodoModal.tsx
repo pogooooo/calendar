@@ -3,10 +3,11 @@
 import * as React from "react";
 import { TodoModalThemeProps } from "../TodoModal";
 import * as S from "./CelestialTodoModal.styles";
-import { X, ChevronDown, ChevronUp, MapPin, Repeat, AlignLeft, Clock } from 'lucide-react';
+import { X, MapPin, Repeat, AlignLeft, Clock } from 'lucide-react';
 import SecondaryButton from "@/components/button/secondary/SecondaryButton";
 import CelestialBaseModal from "@/components/modal/baseModal/celestial/CelestialBaseModal";
 import CelestialDateTimePicker from "@/components/input/dateTimePicker/CelestialDateTimePicker";
+import CelestialSelect from "@/components/input/select/CelestialSelect";
 import { useT } from "@/i18n/useT";
 
 export default function CelestialTodoModal({
@@ -14,8 +15,7 @@ export default function CelestialTodoModal({
     title, setTitle, categoryId, setCategoryId, memo, setMemo,
     startAt, setStartAt, endAt, setEndAt, isAllDay, setIsAllDay, location, setLocation,
     repeat, setRepeat, repeatEndType, setRepeatEndType, repeatEndDate, setRepeatEndDate, repeatCount, setRepeatCount,
-    isCategoryOpen, setIsCategoryOpen, isRepeatEndOpen, setIsRepeatEndOpen,
-    selectedCategory, repeatEndOptions, selectedRepeatEndLabel,
+    repeatEndOptions,
     handleDateChange, handleSubmit, handleDelete
 }: TodoModalThemeProps) {
     const t = useT();
@@ -38,37 +38,15 @@ export default function CelestialTodoModal({
                 </S.Header>
 
                 <S.ScrollBody>
-                    <S.DropdownContainer onClick={(e) => e.stopPropagation()} style={{ marginBottom: '8px', padding: '0 8px' }}>
-                        <S.DropdownHeader onClick={() => {
-                            setIsCategoryOpen(!isCategoryOpen);
-                            setIsRepeatEndOpen(false);
-                        }}>
-                            <div className="content-wrapper">
-                                <S.ColorDot $color={selectedCategory?.color || "#e0e0e0"} />
-                                <span className={!selectedCategory ? "placeholder" : ""}>
-                                    {selectedCategory ? selectedCategory.name : t.todo.categorySelect}
-                                </span>
-                            </div>
-                            {isCategoryOpen ? <ChevronUp size={18} color="#888" /> : <ChevronDown size={18} color="#888" />}
-                        </S.DropdownHeader>
-
-                        {isCategoryOpen && (
-                            <S.DropdownList>
-                                {categories.map((cat) => (
-                                    <S.DropdownItem
-                                        key={cat.id}
-                                        onClick={() => {
-                                            setCategoryId(cat.id);
-                                            setIsCategoryOpen(false);
-                                        }}
-                                    >
-                                        <S.ColorDot $color={cat.color} />
-                                        <span>{cat.name}</span>
-                                    </S.DropdownItem>
-                                ))}
-                            </S.DropdownList>
-                        )}
-                    </S.DropdownContainer>
+                    <div style={{ marginBottom: '8px', padding: '0 8px' }}>
+                        <CelestialSelect
+                            value={categoryId}
+                            onChange={setCategoryId}
+                            options={categories.map(c => ({ value: c.id, label: c.name, color: c.color }))}
+                            placeholder={t.todo.categorySelect}
+                            ariaLabel={t.todo.categorySelect}
+                        />
+                    </div>
 
                     <S.FieldRow>
                         <label><Clock size={16} /> {t.todo.allDay}</label>
@@ -125,33 +103,12 @@ export default function CelestialTodoModal({
                             <S.RepeatConditionBox>
                                 <div className="condition-title">{t.todo.repeatEndCond}</div>
 
-                                <S.DropdownContainer onClick={(e) => e.stopPropagation()}>
-                                    <S.DropdownHeader onClick={() => {
-                                        setIsRepeatEndOpen(!isRepeatEndOpen);
-                                        setIsCategoryOpen(false);
-                                    }}>
-                                        <div className="content-wrapper">
-                                            <span>{selectedRepeatEndLabel}</span>
-                                        </div>
-                                        {isRepeatEndOpen ? <ChevronUp size={18} color="#888" /> : <ChevronDown size={18} color="#888" />}
-                                    </S.DropdownHeader>
-
-                                    {isRepeatEndOpen && (
-                                        <S.DropdownList>
-                                            {repeatEndOptions.map(opt => (
-                                                <S.DropdownItem
-                                                    key={opt.value}
-                                                    onClick={() => {
-                                                        setRepeatEndType(opt.value as 'never' | 'until' | 'count');
-                                                        setIsRepeatEndOpen(false);
-                                                    }}
-                                                >
-                                                    {opt.label}
-                                                </S.DropdownItem>
-                                            ))}
-                                        </S.DropdownList>
-                                    )}
-                                </S.DropdownContainer>
+                                <CelestialSelect
+                                    value={repeatEndType}
+                                    onChange={(v) => setRepeatEndType(v as 'never' | 'until' | 'count')}
+                                    options={repeatEndOptions.map(o => ({ value: o.value, label: o.label }))}
+                                    ariaLabel={t.todo.repeatEndCond}
+                                />
 
                                 {repeatEndType === 'until' && (
                                     <CelestialDateTimePicker
