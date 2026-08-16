@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { AuthFetch, ChallengeType, ChallengeCompletionType } from '@/types';
 import { localDateKey } from '@/lib/dateKey';
+import { readError } from '@/lib/readError';
 
 export type { ChallengeType, ChallengeCompletionType };
 
@@ -10,9 +11,9 @@ interface ChallengeState {
     error: string | null;
 
     fetchChallenges: (authFetch: AuthFetch, categoryId?: string) => Promise<void>;
-    addChallenge: (authFetch: AuthFetch, data: Partial<ChallengeType>) => Promise<void>;
-    updateChallenge: (authFetch: AuthFetch, challengeId: string, data: Partial<ChallengeType>) => Promise<void>;
-    deleteChallenge: (authFetch: AuthFetch, challengeId: string) => Promise<void>;
+    addChallenge: (authFetch: AuthFetch, data: Partial<ChallengeType>) => Promise<string | null>;
+    updateChallenge: (authFetch: AuthFetch, challengeId: string, data: Partial<ChallengeType>) => Promise<string | null>;
+    deleteChallenge: (authFetch: AuthFetch, challengeId: string) => Promise<string | null>;
     toggleChallengeCompletion: (authFetch: AuthFetch, challengeId: string, targetDate: string) => Promise<void>;
 }
 
@@ -52,15 +53,19 @@ const useChallengeStore = create<ChallengeState>((set, get) => ({
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data),
             });
-            if (res.ok) {
-                const serverChallenge = await res.json();
-                set((state) => ({
-                    challenges: [...state.challenges, { ...serverChallenge, completions: serverChallenge.completions ?? [] }]
-                }));
+            if (!res.ok) {
+                set({ challenges: previous });
+                return await readError(res, "챌린지를 추가하지 못했습니다.");
             }
+            const serverChallenge = await res.json();
+            set((state) => ({
+                challenges: [...state.challenges, { ...serverChallenge, completions: serverChallenge.completions ?? [] }]
+            }));
+            return null;
         } catch (err) {
             console.error("[CHALLENGE_ADD_ERROR]", err);
             set({ challenges: previous });
+            return "네트워크 오류로 챌린지를 추가하지 못했습니다.";
         }
     },
 
@@ -76,10 +81,15 @@ const useChallengeStore = create<ChallengeState>((set, get) => ({
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ id: challengeId, ...data }),
             });
-            if (!res.ok) throw new Error();
+            if (!res.ok) {
+                set({ challenges: previous });
+                return await readError(res, "챌린지를 수정하지 못했습니다.");
+            }
+            return null;
         } catch (err) {
             console.error("[CHALLENGE_UPDATE_ERROR]", err);
             set({ challenges: previous });
+            return "네트워크 오류로 챌린지를 수정하지 못했습니다.";
         }
     },
 
@@ -89,10 +99,15 @@ const useChallengeStore = create<ChallengeState>((set, get) => ({
 
         try {
             const res = await authFetch(`/api/challenge?id=${challengeId}`, { method: 'DELETE' });
-            if (!res.ok) throw new Error();
+            if (!res.ok) {
+                set({ challenges: previous });
+                return await readError(res, "챌린지를 삭제하지 못했습니다.");
+            }
+            return null;
         } catch (err) {
             console.error("[CHALLENGE_DELETE_ERROR]", err);
             set({ challenges: previous });
+            return "네트워크 오류로 챌린지를 삭제하지 못했습니다.";
         }
     },
 

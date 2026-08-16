@@ -44,7 +44,7 @@ const Profile = () => {
     const handleLogout = async () => {
         setOpen(false);
         await logout();
-        router.push("/login");
+        router.push("/signIn");
     };
 
     return (

@@ -11,6 +11,8 @@ const ROMAN = [
     "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X",
     "XI", "XII", "XIII", "XIV", "XV", "XVI", "XVII", "XVIII", "XIX", "XX",
 ];
+// 윤년이 아닌 해도 있으므로 2월은 29일까지 허용한다
+const DAYS_IN_MONTH = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 const RING_R = 27;
 const RING_C = 2 * Math.PI * RING_R;
 
@@ -104,13 +106,18 @@ export default function AnniversaryPage() {
                         placeholder="기념일 이름 (예: 결혼기념일)"
                         maxLength={40}
                     />
-                    <DateSelect value={month} onChange={e => setMonth(Number(e.target.value))}>
+                    <DateSelect value={month} onChange={e => {
+                        const m = Number(e.target.value);
+                        setMonth(m);
+                        // 2월로 바꿨는데 31일이 선택돼 있으면 존재하지 않는 날짜가 된다
+                        if (day > DAYS_IN_MONTH[m - 1]) setDay(DAYS_IN_MONTH[m - 1]);
+                    }}>
                         {Array.from({ length: 12 }, (_, i) => (
                             <option key={i + 1} value={i + 1}>{i + 1}월</option>
                         ))}
                     </DateSelect>
                     <DateSelect value={day} onChange={e => setDay(Number(e.target.value))}>
-                        {Array.from({ length: 31 }, (_, i) => (
+                        {Array.from({ length: DAYS_IN_MONTH[month - 1] }, (_, i) => (
                             <option key={i + 1} value={i + 1}>{i + 1}일</option>
                         ))}
                     </DateSelect>

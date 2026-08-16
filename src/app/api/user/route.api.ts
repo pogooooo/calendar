@@ -109,12 +109,9 @@ export async function DELETE(request: NextRequest) {
             }
         }
 
-        // 연관 데이터 삭제 후 계정 삭제
+        // Category→Todo, User→Anniversary, User→UserSettings 는 cascade 가 걸려 있지 않다.
+        // 이것들을 먼저 지우지 않으면 외래키 제약 때문에 탈퇴가 항상 실패한다.
         await prisma.$transaction([
-            prisma.refreshToken.deleteMany({ where: { userId } }),
-            prisma.userSettings.deleteMany({ where: { userId } }),
-            prisma.dailyTask.deleteMany({ where: { userId } }),
-            prisma.dailyMemo.deleteMany({ where: { userId } }),
             prisma.user.update({
                 where: { id: userId },
                 data: {
@@ -123,6 +120,17 @@ export async function DELETE(request: NextRequest) {
                     participatingCategories: { set: [] },
                 },
             }),
+            prisma.todoCompletion.deleteMany({
+                where: { todo: { category: { creatorId: userId } } },
+            }),
+            prisma.todo.deleteMany({ where: { category: { creatorId: userId } } }),
+            // Project/Challenge 및 그 하위는 Category 삭제 시 cascade 로 함께 지워진다
+            prisma.category.deleteMany({ where: { creatorId: userId } }),
+            prisma.anniversary.deleteMany({ where: { userId } }),
+            prisma.userSettings.deleteMany({ where: { userId } }),
+            prisma.dailyTask.deleteMany({ where: { userId } }),
+            prisma.dailyMemo.deleteMany({ where: { userId } }),
+            prisma.refreshToken.deleteMany({ where: { userId } }),
             prisma.user.delete({ where: { id: userId } }),
         ]);
 

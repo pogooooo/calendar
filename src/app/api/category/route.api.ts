@@ -180,7 +180,12 @@ export const DELETE = async (request: NextRequest) => {
             return NextResponse.json({ message: "카테고리 삭제 권한은 제작자에게만 있습니다." }, { status: 403 });
         }
 
-        await prisma.category.delete({ where: { id } });
+        // Category→Todo 에 cascade 가 없어 할 일이 하나라도 있으면 삭제가 실패한다
+        await prisma.$transaction([
+            prisma.todoCompletion.deleteMany({ where: { todo: { categoryId: id } } }),
+            prisma.todo.deleteMany({ where: { categoryId: id } }),
+            prisma.category.delete({ where: { id } }),
+        ]);
         return NextResponse.json({ message: "카테고리가 삭제되었습니다." });
     } catch (error) {
         console.error("[CATEGORY_DELETE_ERROR]", error);

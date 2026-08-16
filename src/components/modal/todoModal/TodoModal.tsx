@@ -194,7 +194,8 @@ export default function TodoModal(props: TodoModalProps) {
 
     const handleDelete = async () => {
         if (todo && window.confirm(t.todo.deleteConfirm)) {
-            await deleteTodo(authFetch, todo.id);
+            const error = await deleteTodo(authFetch, todo.id);
+            if (error) { alert(error); return; }
             onClose();
         }
     };

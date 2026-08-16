@@ -79,7 +79,10 @@ export default function ProjectPage() {
 
     const handleSaveProject = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!projectModal.data.categoryId) return;
+        if (!projectModal.data.categoryId) {
+            alert("카테고리를 선택해주세요.");
+            return;
+        }
         const projectData = { ...projectModal.data, assignees: projectModal.data.assignees?.map(a => a.id) as any };
 
         if (projectModal.mode === 'add') await addProject(authFetch, projectData);

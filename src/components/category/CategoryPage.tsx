@@ -5,6 +5,7 @@ import { useTheme } from "styled-components";
 import useCategoryStore from "@/store/useCategoryStore";
 import useTodoStore from "@/store/useTodoStore";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
+import { readError } from "@/lib/readError";
 import type { AuthFetch, CategoryType, TodoType } from "@/types";
 
 import CelestialCategory from "./celestial/CelestialCategory";
@@ -55,7 +56,7 @@ export default function CategoryPage() {
     const theme = useTheme();
     const themeName = theme?.name || 'celestial';
 
-    const { categories, deleteCategory, updateCategory, addCategory } = useCategoryStore();
+    const { categories, deleteCategory, updateCategory, addCategory, fetchCategories } = useCategoryStore();
     const { todos, toggleTodo, deleteTodo } = useTodoStore();
     const authFetch = useAuthFetch();
 
@@ -103,7 +104,8 @@ export default function CategoryPage() {
     const closeKickModal = () => setKickTarget(null);
 
     const handleAddCategorySubmit = async (data: { name: string; color: string; description: string }) => {
-        await addCategory(authFetch, data);
+        const error = await addCategory(authFetch, data);
+        if (error) alert(error);
     };
 
     const handleInviteSubmit = async () => {
@@ -133,6 +135,8 @@ export default function CategoryPage() {
                 return;
             }
 
+            // 목록을 다시 받지 않으면 초대해도 화면에 멤버가 나타나지 않는다
+            await fetchCategories(authFetch);
             closeInviteModal();
         } catch (err) {
             setInviteError("서버 오류가 발생했습니다.");
@@ -149,11 +153,15 @@ export default function CategoryPage() {
                 body: JSON.stringify({ id: selectedCategory.id, removeParticipantId: kickTarget.id }),
             });
 
-            if (res.ok) {
-                closeKickModal();
+            if (!res.ok) {
+                alert(await readError(res, "멤버를 내보내지 못했습니다."));
+                return;
             }
+            await fetchCategories(authFetch);
+            closeKickModal();
         } catch (err) {
             console.error(err);
+            alert("네트워크 오류로 멤버를 내보내지 못했습니다.");
         }
     };
 
@@ -161,7 +169,8 @@ export default function CategoryPage() {
         if (!selectedCategory) return;
         const trimmedDesc = editDescription.trim();
         if (trimmedDesc === (selectedCategory.description || "")) return;
-        await updateCategory(authFetch, selectedCategory.id, { description: trimmedDesc });
+        const error = await updateCategory(authFetch, selectedCategory.id, { description: trimmedDesc });
+        if (error) alert(error);
     };
 
     const handleNameBlur = async () => {
@@ -171,13 +180,15 @@ export default function CategoryPage() {
             setEditName(selectedCategory.name);
             return;
         }
-        await updateCategory(authFetch, selectedCategory.id, { name: trimmedName });
+        const error = await updateCategory(authFetch, selectedCategory.id, { name: trimmedName });
+        if (error) { alert(error); setEditName(selectedCategory.name); }
     };
 
     const handleColorBlur = async () => {
         if (!selectedCategory) return;
         if (editColor === selectedCategory.color) return;
-        await updateCategory(authFetch, selectedCategory.id, { color: editColor });
+        const error = await updateCategory(authFetch, selectedCategory.id, { color: editColor });
+        if (error) alert(error);
     };
 
     const handleNameKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -185,8 +196,9 @@ export default function CategoryPage() {
     };
 
     const handleDelete = async (categoryId: string) => {
-        if (window.confirm("정말 이 카테고리를 삭제하시겠습니까?")) {
-            await deleteCategory(authFetch, categoryId);
+        if (window.confirm("이 카테고리와 그 안의 모든 할 일이 삭제됩니다. 계속할까요?")) {
+            const error = await deleteCategory(authFetch, categoryId);
+            if (error) { alert(error); return; }
             if (selectedCategoryId === categoryId) setSelectedCategoryId(null);
         }
     };

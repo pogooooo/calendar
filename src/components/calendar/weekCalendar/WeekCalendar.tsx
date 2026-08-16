@@ -12,7 +12,7 @@ import { useTodoLevels } from "@/hooks/useTodoLevels";
 import useTodoStore from "@/store/useTodoStore";
 import { localDateKey } from "@/lib/dateKey";
 import useAuthStore from "@/store/useAuthStore";
-import { api, clientHeaders } from "@/lib/apiBase";
+import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { formatDate } from "@/utils/DateUtils";
 import useProjectStore from "@/store/useProjectStore";
 import useChallengeStore, { ChallengeType } from "@/store/useChallengeStore";
@@ -102,11 +102,8 @@ const WeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
         const { projects, fetchProjects } = useProjectStore();
         const { challenges, fetchChallenges } = useChallengeStore();
         const { deleteTodo, deleteTodoOccurrence, toggleTodo } = useTodoStore();
-        const accessToken = useAuthStore((state) => state.accessToken);
-
-        const authFetch = React.useCallback(async (url: string, init?: RequestInit) => {
-            return fetch(api(url), { ...init, headers: { ...clientHeaders(), ...init?.headers, Authorization: `Bearer ${accessToken}` } });
-        }, [accessToken]);
+        // 자체 fetch 를 쓰면 토큰 갱신을 건너뛰어 1시간 뒤 모든 조작이 조용히 실패한다
+        const authFetch = useAuthFetch();
 
         const weekDates = React.useMemo(() => getWeekDates(currentDate), [currentDate]);
         const todayStr = React.useMemo(() => new Date().toDateString(), []);

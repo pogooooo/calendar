@@ -10,6 +10,8 @@ import useChallengeStore, { ChallengeType } from "@/store/useChallengeStore";
 import useDailyStore from "@/store/useDailyStore";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useT } from "@/i18n/useT";
+import { useCurrentDayKey } from "@/hooks/useCurrentDay";
+import { dayKeyToIso } from "@/lib/dateKey";
 import { DynamicSticker } from "@/assets/celestial/ChallengeStickers";
 import ProjectTimeline from "@/components/project/timeline/ProjectTimeline";
 
@@ -313,7 +315,10 @@ export function ProjectDetailPanel() {
     const tasks = project.tasks ?? [];
     const done = tasks.filter(t => t.status === "done").length;
     const pct = tasks.length === 0 ? 0 : (done / tasks.length) * 100;
-    const fmt = (v?: string | null) => v ? new Date(v).toLocaleDateString().slice(0, -1) : tr.home.noDate;
+    // slice(0,-1) 는 한국어 표기('2026. 8. 16.')에만 맞고 다른 로캘에선 연도를 잘라먹는다
+    const fmt = (v?: string | null) => v
+        ? new Date(v).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })
+        : tr.home.noDate;
     const assignees = (project.assignees ?? []).map(a => a.name).join(", ");
 
     return (
@@ -424,11 +429,14 @@ export function MemoPanel() {
     const tr = useT();
     const [draft, setDraft] = React.useState("");
     const [loaded, setLoaded] = React.useState(false);
+    const dayKey = useCurrentDayKey();
 
+    // 자정을 넘기면 다시 받아온다. 안 그러면 어제 내용을 오늘 날짜로 덮어쓴다.
     React.useEffect(() => {
-        fetchDailyData(authFetch, new Date()).then(() => setLoaded(true));
+        setLoaded(false);
+        fetchDailyData(authFetch, new Date(dayKeyToIso(dayKey))).then(() => setLoaded(true));
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [dayKey]);
 
     React.useEffect(() => {
         if (loaded) setDraft(memo ?? "");
@@ -439,7 +447,7 @@ export function MemoPanel() {
             value={draft}
             placeholder={tr.calendar.memoPlaceholder}
             onChange={(e) => setDraft(e.target.value)}
-            onBlur={() => updateDailyMemo(authFetch, new Date(), draft)}
+            onBlur={() => updateDailyMemo(authFetch, new Date(dayKeyToIso(dayKey)), draft)}
         />
     );
 }
@@ -449,16 +457,17 @@ export function QuickTaskPanel() {
     const authFetch = useAuthFetch();
     const tr = useT();
     const [text, setText] = React.useState("");
+    const dayKey = useCurrentDayKey();
 
     React.useEffect(() => {
-        fetchDailyData(authFetch, new Date());
+        fetchDailyData(authFetch, new Date(dayKeyToIso(dayKey)));
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [dayKey]);
 
     const submit = () => {
         const v = text.trim();
         if (!v) return;
-        addDailyTask(authFetch, new Date(), v);
+        addDailyTask(authFetch, new Date(dayKeyToIso(dayKey)), v);
         setText("");
     };
 

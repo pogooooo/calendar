@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { AuthFetch, TodoType, TodoCompletionType } from '@/types';
 import { toUtcAnchorIso, utcDayKey } from '@/lib/dateKey';
+import { readError } from '@/lib/readError';
 
 export type { TodoType, TodoCompletionType };
 
@@ -13,7 +14,7 @@ interface TodoState {
     toggleTodo: (authFetch: AuthFetch, todoId: string, targetDate: string) => Promise<void>;
     addTodo: (authFetch: AuthFetch, data: Partial<TodoType>) => Promise<string | null>;
     updateTodo: (authFetch: AuthFetch, todoId: string, data: Partial<TodoType>) => Promise<string | null>;
-    deleteTodo: (authFetch: AuthFetch, todoId: string) => Promise<void>;
+    deleteTodo: (authFetch: AuthFetch, todoId: string) => Promise<string | null>;
     deleteTodoOccurrence: (authFetch: AuthFetch, todoId: string, dateKey: string) => Promise<void>;
 }
 
@@ -160,10 +161,15 @@ const useTodoStore = create<TodoState>((set, get) => ({
 
         try {
             const res = await authFetch(`/api/todo?id=${todoId}`, { method: 'DELETE' });
-            if (!res.ok) throw new Error();
+            if (!res.ok) {
+                set({ todos: previousTodos });
+                return await readError(res, "할 일을 삭제하지 못했습니다.");
+            }
+            return null;
         } catch (err) {
             set({ todos: previousTodos });
             console.error("[TODO_DELETE_ERROR]", err);
+            return "네트워크 오류로 할 일을 삭제하지 못했습니다.";
         }
     },
 

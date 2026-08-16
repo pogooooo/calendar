@@ -9,8 +9,7 @@ import { TodoType } from "@/store/useTodoStore";
 import { useExpandedTodos, ExpandedTodoType } from "@/hooks/useExpandedTodos";
 import useTodoStore from "@/store/useTodoStore";
 import { localDateKey } from "@/lib/dateKey";
-import useAuthStore from "@/store/useAuthStore";
-import { api, clientHeaders } from "@/lib/apiBase";
+import { useAuthFetch } from "@/hooks/useAuthFetch";
 import useProjectStore from "@/store/useProjectStore";
 import useChallengeStore, { ChallengeType } from "@/store/useChallengeStore";
 
@@ -94,11 +93,8 @@ const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
         const { projects, fetchProjects } = useProjectStore();
         const { challenges, fetchChallenges, toggleChallengeCompletion } = useChallengeStore();
         const { deleteTodo, deleteTodoOccurrence, toggleTodo } = useTodoStore();
-        const accessToken = useAuthStore((state) => state.accessToken);
-
-        const authFetch = React.useCallback(async (url: string, init?: RequestInit) => {
-            return fetch(api(url), { ...init, headers: { ...clientHeaders(), ...init?.headers, Authorization: `Bearer ${accessToken}` } });
-        }, [accessToken]);
+        // 자체 fetch 를 쓰면 토큰 갱신을 건너뛰어 1시간 뒤 모든 조작이 조용히 실패한다
+        const authFetch = useAuthFetch();
 
         React.useEffect(() => {
             if (categories.length > 0 && selectedCategoryIds.length === 0) {
@@ -299,7 +295,8 @@ const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
 
             const actualId = expandedTodo.originalTodo?.id || expandedTodo.id;
             if (window.confirm("정말 삭제하시겠습니까? (반복 일정 전체가 삭제됩니다)")) {
-                await deleteTodo(authFetch, actualId);
+                const error = await deleteTodo(authFetch, actualId);
+                if (error) alert(error);
             }
             setContextMenu(null);
         };
@@ -312,6 +309,10 @@ const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
             }
             const actualId = expandedTodo.originalTodo?.id || expandedTodo.id;
             const occurrence = expandedTodo.date ?? new Date(expandedTodo.startAt || Date.now());
+            if (!window.confirm("이 날짜의 일정만 삭제합니다. 계속할까요?")) {
+                setContextMenu(null);
+                return;
+            }
             await deleteTodoOccurrence(authFetch, actualId, localDateKey(occurrence));
             setContextMenu(null);
         };

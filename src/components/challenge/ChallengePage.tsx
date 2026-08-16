@@ -8,6 +8,7 @@ import { useAuthFetch } from "@/hooks/useAuthFetch";
 import useChallengeStore from "@/store/useChallengeStore";
 import useCategoryStore from "@/store/useCategoryStore";
 import { ChallengeData } from "@/components/modal/challengeModal/ChallengeModal";
+import { localDateKey } from "@/lib/dateKey";
 
 export default function ChallengePage() {
     const theme = useTheme();
@@ -59,24 +60,27 @@ export default function ChallengePage() {
     const handleDelete = async () => {
         if (!selectedChallenge) return;
         if (window.confirm("정말 이 챌린지를 삭제하시겠습니까?")) {
-            await deleteChallenge(authFetch, selectedChallenge.id);
+            const error = await deleteChallenge(authFetch, selectedChallenge.id);
+            if (error) { alert(error); return; }
             setSelectedChallengeId(null);
         }
     };
 
     const handleSaveChallenge = async (data: ChallengeData): Promise<void> => {
+        let error: string | null;
         if (modalMode === 'edit' && selectedChallenge) {
-            await updateChallenge(authFetch, selectedChallenge.id, data);
+            error = await updateChallenge(authFetch, selectedChallenge.id, data);
         } else {
-            const now = new Date();
-            const localStartAt = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0);
-            await addChallenge(authFetch, { ...data, startAt: localStartAt.toISOString() });
+            // 정오로 저장하면 어느 시간대에서 읽어도 같은 달력일로 해석된다
+            const startAt = `${localDateKey(new Date())}T12:00:00.000Z`;
+            error = await addChallenge(authFetch, { ...data, startAt });
         }
+        // 실패했는데 모달을 닫으면 사용자는 저장된 줄 안다
+        if (error) { alert(error); return; }
         setIsModalOpen(false);
     };
 
-    const toDateKey = (d: Date) =>
-        `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    const toDateKey = (d: Date) => localDateKey(d);
 
     const todayValidSlot = React.useMemo(() => {
         if (!selectedChallenge) return null;

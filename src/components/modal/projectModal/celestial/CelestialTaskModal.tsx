@@ -9,6 +9,13 @@ import { UserType, ProjectTaskType } from "@/store/useProjectStore";
 import { X, AlignLeft, Calendar, Flag, Users, Link } from 'lucide-react';
 import * as S from "./CelestialModal.styles";
 
+/** 날짜 입력을 비우면 빈 문자열이 온다. new Date("") 는 RangeError 를 던져 입력이 먹통이 된다. */
+const toIsoOrNull = (value: string): string | null => {
+    if (!value) return null;
+    const d = new Date(value);
+    return Number.isNaN(d.getTime()) ? null : d.toISOString();
+};
+
 export default function CelestialTaskModal({
                                                isOpen, mode, data, tasks, availableAssignees,
                                                onClose, onSave, setData, toggleParticipant
@@ -35,7 +42,7 @@ export default function CelestialTaskModal({
                         <S.FieldInput
                             type="date"
                             value={data.startAt ? data.startAt.split('T')[0] : ''}
-                            onChange={e => setData({ ...data, startAt: new Date(e.target.value).toISOString() })}
+                            onChange={e => setData({ ...data, startAt: toIsoOrNull(e.target.value) })}
                         />
                     </S.FieldRow>
 
@@ -44,7 +51,7 @@ export default function CelestialTaskModal({
                         <S.FieldInput
                             type="date"
                             value={data.endAt ? data.endAt.split('T')[0] : ''}
-                            onChange={e => setData({ ...data, endAt: new Date(e.target.value).toISOString() })}
+                            onChange={e => setData({ ...data, endAt: toIsoOrNull(e.target.value) })}
                         />
                     </S.FieldRow>
 

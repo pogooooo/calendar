@@ -58,12 +58,6 @@ export default function CelestialHome() {
         if (projects.length > 0 && !selectedProjectId) setSelectedProjectId(projects[0].id);
     }, [projects, selectedProjectId]);
 
-    React.useEffect(() => {
-        if (!timelineRef.current) return;
-        const todayIdx = timelineDays.findIndex(d => d.getTime() === new Date().setHours(0, 0, 0, 0));
-        if (todayIdx >= 0) timelineRef.current.scrollLeft = todayIdx * DAY_W - 80;
-    });
-
     const today = new Date();
     const todayTime = React.useMemo(() => new Date().setHours(0, 0, 0, 0), []);
     const timelineDays = React.useMemo(() => {
@@ -72,6 +66,17 @@ export default function CelestialHome() {
         return Array.from({ length: 90 }, (_, i) => { const d = new Date(start); d.setDate(d.getDate() + i); return d; });
     }, [todayTime]);
     const timelineStart = timelineDays[0].getTime();
+
+    // 의존성 배열이 없으면 매 렌더마다 실행돼 사용자가 옮긴 가로 스크롤이 오늘로 되감긴다
+    const timelineCentered = React.useRef(false);
+    React.useEffect(() => {
+        if (timelineCentered.current || !timelineRef.current) return;
+        const todayIdx = timelineDays.findIndex(d => d.getTime() === todayTime);
+        if (todayIdx >= 0) {
+            timelineRef.current.scrollLeft = todayIdx * DAY_W - 80;
+            timelineCentered.current = true;
+        }
+    }, [timelineDays, todayTime]);
 
     const selectedProject = projects.find(p => p.id === selectedProjectId);
     const tasks = selectedProject?.tasks ?? [];
@@ -441,7 +446,11 @@ export default function CelestialHome() {
                                                         $filled={s.filled}
                                                         $today={slotDay.getTime() === nowDay.getTime()}
                                                         $future={slotDay.getTime() > nowDay.getTime()}
-                                                        onClick={() => handleToggleChallenge(stickerChallenge.id, s.date)}
+                                                        onClick={() => {
+                                                            // 아직 오지 않은 날을 달성 처리할 수는 없다
+                                                            if (slotDay.getTime() > nowDay.getTime()) return;
+                                                            handleToggleChallenge(stickerChallenge.id, s.date);
+                                                        }}
                                                         title={s.date.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })}
                                                     >
                                                         <SlotDay>{s.date.getDate()}</SlotDay>

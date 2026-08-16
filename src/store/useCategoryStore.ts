@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { AuthFetch, CategoryType, ParticipantType } from '@/types';
+import { readError } from '@/lib/readError';
 
 export type { CategoryType, ParticipantType };
 
@@ -9,15 +10,15 @@ interface CategoryState {
     error: string | null;
 
     fetchCategories: (authFetch: AuthFetch) => Promise<void>;
-    addCategory: (authFetch: AuthFetch, data: { name: string; color: string; description?: string }) => Promise<void>;
+    addCategory: (authFetch: AuthFetch, data: { name: string; color: string; description?: string }) => Promise<string | null>;
     updateCategory: (authFetch: AuthFetch, categoryId: string, data: Partial<{
         name: string;
         color: string;
         description: string;
         addParticipantEmail: string;
         removeParticipantId: string;
-    }>) => Promise<void>;
-    deleteCategory: (authFetch: AuthFetch, categoryId: string) => Promise<void>;
+    }>) => Promise<string | null>;
+    deleteCategory: (authFetch: AuthFetch, categoryId: string) => Promise<string | null>;
 }
 
 const useCategoryStore = create<CategoryState>((set, get) => ({
@@ -45,12 +46,15 @@ const useCategoryStore = create<CategoryState>((set, get) => ({
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data),
             });
-            if (res.ok) {
-                const newCat = await res.json();
-                set((state) => ({ categories: [...state.categories, newCat] }));
+            if (!res.ok) {
+                return await readError(res, "카테고리를 추가하지 못했습니다.");
             }
+            const newCat = await res.json();
+            set((state) => ({ categories: [...state.categories, newCat] }));
+            return null;
         } catch (err) {
             console.error("[CATEGORY_ADD_ERROR]", err);
+            return "네트워크 오류로 카테고리를 추가하지 못했습니다.";
         }
     },
 
@@ -70,17 +74,19 @@ const useCategoryStore = create<CategoryState>((set, get) => ({
                 body: JSON.stringify({ id, ...data }),
             });
 
-            if (res.ok) {
-                const updatedCat = await res.json();
-                set((state) => ({
-                    categories: state.categories.map(c => c.id === id ? updatedCat : c)
-                }));
-            } else {
-                throw new Error();
+            if (!res.ok) {
+                set({ categories: prev });
+                return await readError(res, "카테고리를 수정하지 못했습니다.");
             }
+            const updatedCat = await res.json();
+            set((state) => ({
+                categories: state.categories.map(c => c.id === id ? updatedCat : c)
+            }));
+            return null;
         } catch (err) {
             set({ categories: prev });
             console.error("[CATEGORY_PATCH_ERROR]", err);
+            return "네트워크 오류로 카테고리를 수정하지 못했습니다.";
         }
     },
 
@@ -90,10 +96,15 @@ const useCategoryStore = create<CategoryState>((set, get) => ({
 
         try {
             const res = await authFetch(`/api/category?id=${categoryId}`, { method: 'DELETE' });
-            if (!res.ok) throw new Error();
+            if (!res.ok) {
+                set({ categories: prev });
+                return await readError(res, "카테고리를 삭제하지 못했습니다.");
+            }
+            return null;
         } catch (err) {
             set({ categories: prev });
             console.error("[CATEGORY_DELETE_ERROR]", err);
+            return "네트워크 오류로 카테고리를 삭제하지 못했습니다.";
         }
     }
 }));

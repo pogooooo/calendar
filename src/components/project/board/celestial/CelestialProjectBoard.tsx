@@ -90,7 +90,8 @@ function TaskCard({ task, allTasks, onEdit, onMove, prevStatus, prevLabel, nextS
                 </CardActionGroup>
             </CardMain>
             <CardMeta>
-                <CardDate>{task.startAt ? new Date(task.startAt).toLocaleDateString().slice(5) : '일정 없음'}</CardDate>
+                {/* slice(5) 는 한국어 표기에만 맞아 다른 로캘에선 '/2026' 처럼 잘린다 */}
+                <CardDate>{task.startAt ? new Date(task.startAt).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : '일정 없음'}</CardDate>
                 <CardAssignees>
                     {task.assignees && task.assignees.length > 0
                         ? task.assignees.map(a => a.name).join(', ')

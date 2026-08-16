@@ -88,12 +88,20 @@ export type UpdateTodoInput = z.infer<typeof UpdateTodoSchema>;
 
 // ── Anniversary ───────────────────────────────────────────────────────────────
 
+// 2월 30일처럼 존재하지 않는 날짜를 막는다. 윤년이 아닌 해도 있으므로 2월은 29일까지 허용한다.
+const DAYS_IN_MONTH = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+const isRealDate = (v: { month?: number; day?: number }) => {
+    if (v.month === undefined || v.day === undefined) return true;
+    return v.day <= DAYS_IN_MONTH[v.month - 1];
+};
+const dateIssue = { message: "존재하지 않는 날짜입니다.", path: ["day"] };
+
 export const CreateAnniversarySchema = z.object({
     title: z.string().min(1, "기념일 이름을 입력해주세요."),
     month: z.number().int().min(1).max(12),
     day: z.number().int().min(1).max(31),
     icon: z.string().max(8).nullable().optional(),
-});
+}).refine(isRealDate, dateIssue);
 
 export const UpdateAnniversarySchema = z.object({
     id: z.string().min(1),
@@ -101,7 +109,7 @@ export const UpdateAnniversarySchema = z.object({
     month: z.number().int().min(1).max(12).optional(),
     day: z.number().int().min(1).max(31).optional(),
     icon: z.string().max(8).nullable().optional(),
-});
+}).refine(isRealDate, dateIssue);
 
 export type CreateAnniversaryInput = z.infer<typeof CreateAnniversarySchema>;
 export type UpdateAnniversaryInput = z.infer<typeof UpdateAnniversarySchema>;
