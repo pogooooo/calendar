@@ -133,6 +133,21 @@ export default function CelestialDateTimePicker({ value, onChange, mode = "datet
     const pickHour = (h: number) => onChange(emit(selected, h, minute, mode));
     const pickMinute = (m: number) => onChange(emit(selected, hour, m, mode));
 
+    // 휠을 굴리면 값이 바로 바뀐다. 굴린 뒤 다시 눌러 고를 필요가 없다.
+    const wheelHour = (e: React.WheelEvent) => {
+        e.preventDefault();
+        const step = e.deltaY > 0 ? 1 : -1;
+        pickHour((hour + step + 24) % 24);
+    };
+
+    const wheelMinute = (e: React.WheelEvent) => {
+        e.preventDefault();
+        const step = e.deltaY > 0 ? 1 : -1;
+        const idx = minutes.indexOf(minute);
+        const nextIdx = (idx + step + minutes.length) % minutes.length;
+        pickMinute(minutes[nextIdx]);
+    };
+
     const pickNow = () => {
         const now = new Date();
         now.setMinutes(Math.round(now.getMinutes() / 5) * 5, 0, 0);
@@ -212,14 +227,14 @@ export default function CelestialDateTimePicker({ value, onChange, mode = "datet
                         <TimeArea>
                             <TimeLabel><Clock size={12} /> 시간</TimeLabel>
                             <Columns>
-                                <Column ref={hourRef}>
+                                <Column ref={hourRef} onWheel={wheelHour}>
                                     {Array.from({ length: 24 }, (_, h) => (
                                         <Cell key={h} type="button" data-on={h === hour ? "1" : "0"} $on={h === hour} onClick={() => pickHour(h)}>
                                             {pad(h)}시
                                         </Cell>
                                     ))}
                                 </Column>
-                                <Column ref={minuteRef}>
+                                <Column ref={minuteRef} onWheel={wheelMinute}>
                                     {minutes.map(m => (
                                         <Cell key={m} type="button" data-on={m === minute ? "1" : "0"} $on={m === minute} onClick={() => pickMinute(m)}>
                                             {pad(m)}분
