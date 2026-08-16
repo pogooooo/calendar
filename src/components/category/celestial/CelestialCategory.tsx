@@ -6,6 +6,7 @@ import SecondaryButton from "@/components/button/secondary/SecondaryButton";
 import InlineError from "@/components/error/inlineError/InlineError";
 import { CategoryThemeProps } from "../CategoryPage";
 import { useT } from "@/i18n/useT";
+import { localDateKey, utcDayKey, dayKeyToIso } from "@/lib/dateKey";
 
 const ROMAN = [
     "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X",
@@ -194,9 +195,10 @@ export default function CelestialCategory(props: CategoryThemeProps) {
                                 {categoryTodos.length > 0 ? (
                                     <S.TodoGrid>
                                         {categoryTodos.map(todo => {
-                                            const todayStr = new Date().toISOString().split('T')[0];
+                                            // 완료는 그 일정이 놓인 날짜에 기록해야 한다. '오늘'로 찍으면 다른 날 일정의 체크가 엉뚱한 날에 남는다.
+                                            const todoDateStr = localDateKey(todo.startAt ?? new Date());
                                             const isDone = (todo.completions ?? []).some(c =>
-                                                new Date(c.targetDate).toISOString().split('T')[0] === todayStr
+                                                utcDayKey(c.targetDate) === todoDateStr
                                             );
                                             return (
                                             <S.TodoCard key={todo.id} $isDone={isDone} onClick={() => handleEditTodo(todo)}>
@@ -204,7 +206,7 @@ export default function CelestialCategory(props: CategoryThemeProps) {
                                                     className="check-btn"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        toggleTodo(authFetch, todo.id, new Date().toISOString());
+                                                        toggleTodo(authFetch, todo.id, dayKeyToIso(todoDateStr));
                                                     }}
                                                 >
                                                     {isDone && '✦'}

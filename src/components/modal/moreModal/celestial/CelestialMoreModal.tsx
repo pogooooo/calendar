@@ -7,6 +7,7 @@ import { X, Check } from 'lucide-react';
 import CelestialBaseModal from "@/components/modal/baseModal/celestial/CelestialBaseModal";
 import { isBetween, isSameDay } from "@/utils/DateUtils";
 import { useT } from "@/i18n/useT";
+import { localDateKey, utcDayKey } from "@/lib/dateKey";
 
 export default function CelestialMoreModal({
                                                isOpen,
@@ -44,9 +45,10 @@ export default function CelestialMoreModal({
                     <S.TodoList>
                         {dayTodos.map((todo) => {
                             const category = categories.find(c => c.id === todo.categoryId);
-                            const dateStr = date.toISOString().split('T')[0];
+                            // date 는 캘린더 셀의 로컬 자정이라 toISOString 하면 하루가 밀린다
+                            const dateStr = localDateKey(date);
                             const isDone = (todo.completions ?? []).some(c =>
-                                new Date(c.targetDate).toISOString().split('T')[0] === dateStr
+                                utcDayKey(c.targetDate) === dateStr
                             );
 
                             return (

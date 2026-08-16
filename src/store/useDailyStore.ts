@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import useAuthStore from '@/store/useAuthStore';
 import type { AuthFetch, DailyTaskType } from '@/types';
+import { localDateKey } from '@/lib/dateKey';
 
 export type { DailyTaskType };
 
@@ -31,7 +32,7 @@ const useDailyStore = create<DailyState>((set, get) => ({
 
         set({ isLoading: true, error: null });
         try {
-            const dateStr = date.toISOString();
+            const dateStr = localDateKey(date);
             const [taskRes, memoRes] = await Promise.all([
                 authFetch(`/api/dailyTask?date=${dateStr}`),
                 authFetch(`/api/dailyMemo?date=${dateStr}`)
@@ -62,7 +63,7 @@ const useDailyStore = create<DailyState>((set, get) => ({
             const res = await authFetch('/api/dailyTask', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text, date: date.toISOString() }),
+                body: JSON.stringify({ text, date: localDateKey(date) }),
             });
             if (res.ok) {
                 const serverTask = await res.json();
@@ -124,7 +125,7 @@ const useDailyStore = create<DailyState>((set, get) => ({
             const res = await authFetch('/api/dailyMemo', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ content, date: date.toISOString() }),
+                body: JSON.stringify({ content, date: localDateKey(date) }),
             });
             if (!res.ok) throw new Error();
             return null;

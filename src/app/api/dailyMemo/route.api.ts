@@ -3,14 +3,16 @@ import prisma from '@/lib/prisma';
 import { getUserId } from '@/lib/apiAuth';
 
 /**
- * 저장된 기존 레코드와 키가 어긋나면 안 되므로 날짜 계산 방식은 기존과 동일하게 유지한다.
- * (시간대 정규화는 별도 마이그레이션이 필요한 사안)
+ * 클라이언트는 반드시 사용자의 시간대로 계산한 날짜 키를 보낸다.
+ * 순간(instant)을 받아 서버에서 달력일을 계산하면 런타임 시간대(UTC)에 좌우돼
+ * 같은 날인데도 오전/오후에 서로 다른 레코드가 만들어진다.
  */
 function dayStart(input: unknown): Date | null {
-    if (typeof input !== "string" && typeof input !== "number") return null;
-    const d = new Date(input);
-    if (Number.isNaN(d.getTime())) return null;
-    return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    if (typeof input !== "string") return null;
+    const key = input.slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(key)) return null;
+    const d = new Date(`${key}T00:00:00.000Z`);
+    return Number.isNaN(d.getTime()) ? null : d;
 }
 
 export async function GET(req: Request) {

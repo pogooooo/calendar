@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { AuthFetch, TodoType, TodoCompletionType } from '@/types';
+import { toUtcAnchorIso, utcDayKey } from '@/lib/dateKey';
 
 export type { TodoType, TodoCompletionType };
 
@@ -53,16 +54,20 @@ const useTodoStore = create<TodoState>((set, get) => ({
         const target = previousTodos.find(t => t.id === todoId);
         if (!target) return;
 
-        const targetDateStr = new Date(targetDate).toISOString().split('T')[0];
+        // 호출부가 순간(instant)을 넘기든 날짜를 넘기든, 사용자의 시간대 기준 달력일로 통일한다.
+        // 그러지 않으면 KST 오전 9시 이전 일정이 전날로 기록돼 체크가 유지되지 않는다.
+        const anchorIso = toUtcAnchorIso(targetDate);
+        const targetDateStr = anchorIso.slice(0, 10);
+
         const isCompleted = target.completions?.some(c =>
-            new Date(c.targetDate).toISOString().split('T')[0] === targetDateStr
+            utcDayKey(c.targetDate) === targetDateStr
         );
 
         const newCompletions = isCompleted
             ? (target.completions ?? []).filter(c =>
-                new Date(c.targetDate).toISOString().split('T')[0] !== targetDateStr
+                utcDayKey(c.targetDate) !== targetDateStr
               )
-            : [...(target.completions ?? []), { targetDate }];
+            : [...(target.completions ?? []), { targetDate: anchorIso }];
 
         set((state) => ({
             todos: state.todos.map(t => t.id === todoId ? { ...t, completions: newCompletions } : t)
@@ -72,7 +77,7 @@ const useTodoStore = create<TodoState>((set, get) => ({
             const res = await authFetch('/api/todo', {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: todoId, targetDate }),
+                body: JSON.stringify({ id: todoId, targetDate: anchorIso }),
             });
             if (res.status === 401) return;
             if (!res.ok) throw new Error();

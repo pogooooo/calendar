@@ -177,8 +177,13 @@ export const PATCH = async (request: NextRequest) => {
                 return NextResponse.json({ message: "권한이 없습니다." }, { status: 403 });
             }
 
-            const dateObj = new Date(targetDate);
-            dateObj.setUTCHours(0, 0, 0, 0);
+            // 클라이언트가 사용자의 시간대로 계산한 날짜 키만 받는다.
+            // 순간(instant)을 받으면 UTC 정규화 과정에서 하루가 밀린다.
+            const dayKey = String(targetDate).slice(0, 10);
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(dayKey)) {
+                return NextResponse.json({ message: "날짜 형식이 올바르지 않습니다." }, { status: 400 });
+            }
+            const dateObj = new Date(`${dayKey}T00:00:00.000Z`);
 
             const existing = await prisma.todoCompletion.findFirst({
                 where: { todoId, targetDate: dateObj }

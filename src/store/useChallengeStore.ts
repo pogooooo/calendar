@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { AuthFetch, ChallengeType, ChallengeCompletionType } from '@/types';
+import { localDateKey } from '@/lib/dateKey';
 
 export type { ChallengeType, ChallengeCompletionType };
 
@@ -15,8 +16,8 @@ interface ChallengeState {
     toggleChallengeCompletion: (authFetch: AuthFetch, challengeId: string, targetDate: string) => Promise<void>;
 }
 
-const toDateKey = (d: Date) =>
-    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+// 사용자가 고른 시간대를 따른다. 브라우저 시간대를 쓰면 여행 중에 날짜가 어긋난다.
+const toDateKey = (d: Date) => localDateKey(d);
 
 const useChallengeStore = create<ChallengeState>((set, get) => ({
     challenges: [],
@@ -111,7 +112,8 @@ const useChallengeStore = create<ChallengeState>((set, get) => ({
         if (existingComp) {
             newCompletions = challenge.completions.filter(comp => comp.id !== existingComp.id);
         } else {
-            const safeDate = new Date(tDate.getFullYear(), tDate.getMonth(), tDate.getDate(), 12, 0, 0).toISOString();
+            // 정오로 저장하면 어느 시간대에서 읽어도 같은 달력일로 해석된다
+            const safeDate = `${dateKey}T12:00:00.000Z`;
             newCompletions = [
                 ...(challenge.completions ?? []),
                 { id: `temp-${Date.now()}`, challengeId, targetDate: safeDate }

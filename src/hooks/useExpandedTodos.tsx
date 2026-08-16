@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { TodoType } from '@/types';
-import { localDateKey, parseExcludedDates } from '@/lib/dateKey';
+import { localDateKey, utcDayKey, parseExcludedDates } from '@/lib/dateKey';
 
 export interface ExpandedTodoType extends TodoType {
     originalTodo?: TodoType;
@@ -28,8 +28,9 @@ export const useExpandedTodos = (
 
             if (!todo.repeat || todo.repeat <= 0) {
                 const dateStr = localDateKey(todo.startAt);
+                // 완료 기록은 서버가 UTC 자정으로 저장하므로 UTC 로 읽어야 키가 맞는다
                 const isDone = todo.completions?.some(c =>
-                    localDateKey(c.targetDate) === dateStr
+                    utcDayKey(c.targetDate) === dateStr
                 );
 
                 expanded.push({
@@ -51,8 +52,9 @@ export const useExpandedTodos = (
             const endDayOnly = new Date(currentEnd);
             endDayOnly.setHours(0, 0, 0, 0);
 
-            const daysBetween = Math.round((endDayOnly.getTime() - startDayOnly.getTime()) / (1000 * 60 * 60 * 24));
-            const intervalDays = daysBetween + R;
+            // UI 의 '반복 주기 N일마다' 는 발생 간격 그 자체다.
+            // 일정 길이를 더하면 날짜를 넘기는 일정의 반복이 그만큼 밀린다.
+            const intervalDays = Math.max(1, Math.round(R));
             const repeatIntervalMs = intervalDays * 24 * 60 * 60 * 1000;
 
             let globalInstanceCount = 0;
@@ -81,7 +83,7 @@ export const useExpandedTodos = (
                 if (currentEnd.getTime() >= startLimit.getTime() && !excluded.includes(localDateKey(currentStart))) {
                     const dateStr = localDateKey(currentStart);
                     const isDone = todo.completions?.some(c =>
-                        localDateKey(c.targetDate) === dateStr
+                        utcDayKey(c.targetDate) === dateStr
                     );
 
                     expanded.push({
