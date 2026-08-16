@@ -4,6 +4,7 @@ import * as React from "react";
 import styled from "styled-components";
 import { Check } from "lucide-react";
 import LocaleSelect from "@/components/LocaleSelect";
+import TimezoneSelect from "@/components/TimezoneSelect";
 import * as S from "./CelestialSettings.styles";
 import WidgetPreview from "./WidgetPreview";
 import type { SettingsThemeProps } from "../SettingsPage";
@@ -359,6 +360,13 @@ export default function CelestialSettings({
                                 <div style={{ fontSize: "0.74rem", opacity: 0.55, marginTop: 2 }}>{t.system.languageDesc}</div>
                             </div>
                             <LocaleSelect />
+                        </S.InfoRow>
+                        <S.InfoRow style={{ marginTop: 16 }}>
+                            <div>
+                                <S.InfoValue>{t.system.timezone}</S.InfoValue>
+                                <div style={{ fontSize: "0.74rem", opacity: 0.55, marginTop: 2 }}>{t.system.timezoneDesc}</div>
+                            </div>
+                            <TimezoneSelect />
                         </S.InfoRow>
                     </S.SectionBody>
                 </S.Section>

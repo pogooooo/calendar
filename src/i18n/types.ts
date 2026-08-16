@@ -78,6 +78,8 @@ export interface Translations {
         autostartDesc: string;
         language: string;
         languageDesc: string;
+        timezone: string;
+        timezoneDesc: string;
         korean: string;
         english: string;
     };

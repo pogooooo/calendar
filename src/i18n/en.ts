@@ -80,6 +80,8 @@ const en: Translations = {
         autostartDesc: 'Automatically launch CRONOS when the system starts.',
         language: 'Language',
         languageDesc: 'Select the app language.',
+        timezone: 'Time zone',
+        timezoneDesc: 'Determines when the day rolls over. Calendars and completion marks follow this zone.',
         korean: '한국어',
         english: 'English',
     },

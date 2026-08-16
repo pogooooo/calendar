@@ -2,11 +2,13 @@ import { persist } from "zustand/middleware";
 import { create } from "zustand/react";
 import type { AuthFetch } from '@/types';
 import type { Locale } from '@/i18n/types';
+import { DEFAULT_TIMEZONE, isValidTimeZone } from '@/lib/timezone';
 
 interface SettingState {
     theme: string;
     themeOptions: Record<string, string>;
     locale: Locale;
+    timezone: string;
     autostart: boolean;
     font: string;
     fontSize: string;
@@ -15,6 +17,7 @@ interface SettingState {
     setTheme: (inputTheme: string) => void;
     setThemeOption: (themeId: string, option: string) => void;
     setLocale: (locale: Locale) => void;
+    setTimezone: (tz: string) => void;
     setAutostart: (enabled: boolean) => void;
     setFont: (font: string) => void;
     setFontSize: (size: string) => void;
@@ -29,6 +32,7 @@ const useSettingStore = create<SettingState>()(
             theme: 'celestial',
             themeOptions: {},
             locale: 'ko' as Locale,
+            timezone: DEFAULT_TIMEZONE,
             autostart: true,
             font: 'default',
             fontSize: 'md',
@@ -39,6 +43,7 @@ const useSettingStore = create<SettingState>()(
             setThemeOption: (themeId, option) =>
                 set((s) => ({ themeOptions: { ...s.themeOptions, [themeId]: option } })),
             setLocale: (locale) => set({ locale }),
+            setTimezone: (tz) => set({ timezone: isValidTimeZone(tz) ? tz : DEFAULT_TIMEZONE }),
             setAutostart: (enabled) => set({ autostart: enabled }),
             setFont: (font) => set({ font }),
             setFontSize: (fontSize) => set({ fontSize }),

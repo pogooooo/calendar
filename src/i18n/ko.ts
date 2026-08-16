@@ -80,6 +80,8 @@ const ko: Translations = {
         autostartDesc: '시스템 시작 시 CRONOS를 자동으로 실행합니다.',
         language: '언어',
         languageDesc: '앱 언어를 선택합니다.',
+        timezone: '시간대',
+        timezoneDesc: '날짜가 바뀌는 기준입니다. 캘린더와 완료 표시가 이 시간대를 따릅니다.',
         korean: '한국어',
         english: 'English',
     },
