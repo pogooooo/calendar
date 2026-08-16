@@ -8,9 +8,11 @@ import { checkRateLimit } from "@/lib/rateLimiter";
 const REGISTER_LIMIT = { maxAttempts: 5, windowMs: 60 * 60 * 1000, blockMs: 60 * 60 * 1000 };
 
 function getClientIP(req: NextRequest): string {
+    // CF-Connecting-IP 는 Cloudflare 가 직접 채우므로 위조할 수 없다.
     return (
-        req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
+        req.headers.get("cf-connecting-ip") ??
         req.headers.get("x-real-ip") ??
+        req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
         "unknown"
     );
 }

@@ -27,7 +27,7 @@ const CelestialDayCalendar = React.forwardRef<HTMLDivElement, CelestialDayProps>
          dayChallenges, toggleChallenge,
          tasks, newTaskText, setNewTaskText, handleAddTask,
          toggleDailyTask, deleteDailyTask,
-         localMemo, setLocalMemo, handleMemoBlur,
+         localMemo, setLocalMemo, handleMemoBlur, memoError,
          categories, selectedCategoryIds, toggleCategory,
          showProjects, onToggleProjects,
          ...props
@@ -308,12 +308,20 @@ const CelestialDayCalendar = React.forwardRef<HTMLDivElement, CelestialDayProps>
                             </S.SectionToggle>
 
                             {!fold.memo && (
-                                <textarea
-                                    value={localMemo}
-                                    onChange={(e) => setLocalMemo(e.target.value)}
-                                    onBlur={handleMemoBlur}
-                                    placeholder={t.calendar.memoPlaceholder}
-                                />
+                                <>
+                                    <textarea
+                                        value={localMemo}
+                                        onChange={(e) => setLocalMemo(e.target.value)}
+                                        onBlur={handleMemoBlur}
+                                        placeholder={t.calendar.memoPlaceholder}
+                                    />
+                                    {memoError && (
+                                        <S.MemoError role="alert">
+                                            {memoError}
+                                            <button type="button" onClick={handleMemoBlur}>다시 시도</button>
+                                        </S.MemoError>
+                                    )}
+                                </>
                             )}
                         </S.MemoCard>
                     </S.SideSection>

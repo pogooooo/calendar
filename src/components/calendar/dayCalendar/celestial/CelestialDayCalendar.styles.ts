@@ -443,6 +443,32 @@ export const TaskForm = styled.form`
     }
 `;
 
+export const MemoError = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-shrink: 0;
+    padding: 6px 10px;
+    border-top: 1px solid #e05b5b66;
+    font-size: 0.72rem;
+    color: #e05b5b;
+
+    button {
+        flex-shrink: 0;
+        background: none;
+        border: 1px solid #e05b5b66;
+        border-radius: 3px;
+        padding: 2px 8px;
+        font-size: 0.7rem;
+        font-family: inherit;
+        color: #e05b5b;
+        cursor: pointer;
+
+        &:hover { border-color: #e05b5b; }
+    }
+`;
+
 export const MemoCard = styled(BaseCard)<{ $collapsed?: boolean }>`
     flex: 0.8;
     min-height: ${(props) => (props.$collapsed ? '0' : '120px')};

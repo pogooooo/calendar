@@ -10,9 +10,12 @@ import { checkRateLimit, resetRateLimit } from "@/lib/rateLimiter";
 const LOGIN_LIMIT = { maxAttempts: 10, windowMs: 10 * 60 * 1000, blockMs: 15 * 60 * 1000 };
 
 function getClientIP(req: NextRequest): string {
+    // CF-Connecting-IP 는 Cloudflare 가 직접 채우므로 위조할 수 없다.
+    // X-Forwarded-For 는 클라이언트가 임의로 보낼 수 있어 뒤로 미룬다.
     return (
-        req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
+        req.headers.get("cf-connecting-ip") ??
         req.headers.get("x-real-ip") ??
+        req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
         "unknown"
     );
 }

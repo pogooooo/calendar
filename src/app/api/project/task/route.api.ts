@@ -20,6 +20,26 @@ const canAccessTask = async (taskId: string, userId: string) => {
     return !!task;
 };
 
+/** blockedBy 는 검증을 거치지 않은 원본 body 에서 오므로 형태와 접근 권한을 모두 확인한다 */
+const normalizeBlockedBy = (raw: unknown): string[] | null => {
+    if (raw === undefined) return null;
+    if (!Array.isArray(raw)) return [];
+    return raw
+        .map((b) => (typeof b === "string" ? b : (b && typeof b === "object" && typeof (b as { id?: unknown }).id === "string" ? (b as { id: string }).id : null)))
+        .filter((v): v is string => !!v);
+};
+
+const assertBlockedByAccessible = async (ids: string[], userId: string) => {
+    if (ids.length === 0) return true;
+    const count = await prisma.projectTask.count({
+        where: { id: { in: ids }, project: { category: categoryAccessWhere(userId) } },
+    });
+    return count === new Set(ids).size;
+};
+
+/** 응답에 남의 태스크 전체가 실려 나가지 않도록 필요한 필드만 고른다 */
+const blockedBySelect = { select: { id: true, title: true, status: true } } as const;
+
 export async function POST(request: Request) {
     try {
         const userId = await getUserId(request);
@@ -36,7 +56,10 @@ export async function POST(request: Request) {
         if (!(await canAccessProject(projectId, userId))) {
             return NextResponse.json({ message: "프로젝트를 찾을 수 없거나 권한이 없습니다." }, { status: 403 });
         }
-        const blockedBy: { id: string }[] = body.blockedBy ?? [];
+        const blockedBy = normalizeBlockedBy(body.blockedBy) ?? [];
+        if (!(await assertBlockedByAccessible(blockedBy, userId))) {
+            return NextResponse.json({ message: "연결할 수 없는 항목이 포함돼 있습니다." }, { status: 403 });
+        }
 
         const task = await prisma.projectTask.create({
             data: {
@@ -48,13 +71,13 @@ export async function POST(request: Request) {
                 startAt: startAt ? new Date(startAt) : null,
                 endAt: endAt ? new Date(endAt) : null,
                 blockedBy: blockedBy.length > 0 ? {
-                    connect: blockedBy.map((b) => ({ id: b.id }))
+                    connect: blockedBy.map((id) => ({ id }))
                 } : undefined,
                 assignees: assignees?.length ? {
                     connect: assignees.map((id) => ({ id }))
                 } : undefined,
             },
-            include: { blockedBy: true, assignees: { select: publicUserSelect } }
+            include: { blockedBy: blockedBySelect, assignees: { select: publicUserSelect } }
         });
 
         return NextResponse.json(task, { status: 201 });
@@ -80,7 +103,10 @@ export async function PATCH(request: Request) {
         if (!(await canAccessTask(id, userId))) {
             return NextResponse.json({ message: "할 일을 찾을 수 없거나 권한이 없습니다." }, { status: 404 });
         }
-        const blockedBy: ({ id: string } | string)[] | undefined = body.blockedBy;
+        const blockedBy = normalizeBlockedBy(body.blockedBy);
+        if (blockedBy && !(await assertBlockedByAccessible(blockedBy, userId))) {
+            return NextResponse.json({ message: "연결할 수 없는 항목이 포함돼 있습니다." }, { status: 403 });
+        }
 
         const task = await prisma.projectTask.update({
             where: { id },
@@ -88,14 +114,14 @@ export async function PATCH(request: Request) {
                 ...rest,
                 ...(startAt !== undefined ? { startAt: startAt ? new Date(startAt) : null } : {}),
                 ...(endAt !== undefined ? { endAt: endAt ? new Date(endAt) : null } : {}),
-                ...(blockedBy !== undefined ? {
-                    blockedBy: { set: blockedBy.map((b) => ({ id: typeof b === 'string' ? b : b.id })) }
+                ...(blockedBy !== null ? {
+                    blockedBy: { set: blockedBy.map((id) => ({ id })) }
                 } : {}),
                 ...(assignees !== undefined ? {
                     assignees: { set: assignees.map((id) => ({ id })) }
                 } : {}),
             },
-            include: { blockedBy: true, assignees: { select: publicUserSelect } }
+            include: { blockedBy: blockedBySelect, assignees: { select: publicUserSelect } }
         });
 
         return NextResponse.json(task);

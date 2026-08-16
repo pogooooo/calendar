@@ -49,6 +49,7 @@ export interface DayThemeProps {
     localMemo: string;
     setLocalMemo: (text: string) => void;
     handleMemoBlur: () => void;
+    memoError: string | null;
 
     categories: CategoryType[];
     selectedCategoryIds: string[];
@@ -72,6 +73,7 @@ const DayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
 
         const [newTaskText, setNewTaskText] = React.useState("");
         const [localMemo, setLocalMemo] = React.useState("");
+        const [memoError, setMemoError] = React.useState<string | null>(null);
 
         React.useEffect(() => {
             if (categories.length > 0 && selectedCategoryIds.length === 0) {
@@ -196,7 +198,8 @@ const DayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
 
         const handleMemoBlur = async () => {
             if (localMemo !== memo) {
-                await updateDailyMemo(authFetch, selectedDate, localMemo);
+                const error = await updateDailyMemo(authFetch, selectedDate, localMemo);
+                setMemoError(error);
             }
         };
 
@@ -251,6 +254,7 @@ const DayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
             localMemo,
             setLocalMemo,
             handleMemoBlur,
+            memoError,
             categories,
             selectedCategoryIds,
             toggleCategory,

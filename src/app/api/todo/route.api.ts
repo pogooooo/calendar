@@ -165,6 +165,18 @@ export const PATCH = async (request: NextRequest) => {
             }
             const { id: todoId, targetDate } = toggled.data;
 
+            // 다른 분기와 달리 여기만 권한 검사가 빠져 있어, 남의 카테고리 일정도 토글됐다
+            const target = await prisma.todo.findUnique({
+                where: { id: todoId },
+                select: { categoryId: true }
+            });
+            if (!target) {
+                return NextResponse.json({ message: "대상을 찾을 수 없습니다." }, { status: 404 });
+            }
+            if (!(await checkCategoryPermission(target.categoryId, userId))) {
+                return NextResponse.json({ message: "권한이 없습니다." }, { status: 403 });
+            }
+
             const dateObj = new Date(targetDate);
             dateObj.setUTCHours(0, 0, 0, 0);
 

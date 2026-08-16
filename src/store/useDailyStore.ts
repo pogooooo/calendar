@@ -9,12 +9,13 @@ interface DailyState {
     memo: string;
     isLoading: boolean;
     error: string | null;
+    memoError: string | null;
 
     fetchDailyData: (authFetch: AuthFetch, date: Date) => Promise<void>;
     addDailyTask: (authFetch: AuthFetch, date: Date, text: string) => Promise<void>;
     toggleDailyTask: (authFetch: AuthFetch, taskId: string) => Promise<void>;
     deleteDailyTask: (authFetch: AuthFetch, taskId: string) => Promise<void>;
-    updateDailyMemo: (authFetch: AuthFetch, date: Date, content: string) => Promise<void>;
+    updateDailyMemo: (authFetch: AuthFetch, date: Date, content: string) => Promise<string | null>;
 }
 
 const useDailyStore = create<DailyState>((set, get) => ({
@@ -22,6 +23,7 @@ const useDailyStore = create<DailyState>((set, get) => ({
     memo: "",
     isLoading: false,
     error: null,
+    memoError: null,
 
     fetchDailyData: async (authFetch, date) => {
         const userId = useAuthStore.getState().user?.id;
@@ -31,8 +33,8 @@ const useDailyStore = create<DailyState>((set, get) => ({
         try {
             const dateStr = date.toISOString();
             const [taskRes, memoRes] = await Promise.all([
-                authFetch(`/api/dailyTask?date=${dateStr}&userId=${userId}`),
-                authFetch(`/api/dailyMemo?date=${dateStr}&userId=${userId}`)
+                authFetch(`/api/dailyTask?date=${dateStr}`),
+                authFetch(`/api/dailyMemo?date=${dateStr}`)
             ]);
 
             if (!taskRes.ok || !memoRes.ok) throw new Error("일간 데이터를 불러오는 데 실패했습니다.");
@@ -60,7 +62,7 @@ const useDailyStore = create<DailyState>((set, get) => ({
             const res = await authFetch('/api/dailyTask', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text, date: date.toISOString(), userId }),
+                body: JSON.stringify({ text, date: date.toISOString() }),
             });
             if (res.ok) {
                 const serverTask = await res.json();
@@ -114,21 +116,25 @@ const useDailyStore = create<DailyState>((set, get) => ({
 
     updateDailyMemo: async (authFetch, date, content) => {
         const userId = useAuthStore.getState().user?.id;
-        if (!userId) return;
+        if (!userId) return "로그인이 필요합니다.";
 
-        const previousMemo = get().memo;
-        set({ memo: content });
+        set({ memo: content, memoError: null });
 
         try {
             const res = await authFetch('/api/dailyMemo', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ content, date: date.toISOString(), userId }),
+                body: JSON.stringify({ content, date: date.toISOString() }),
             });
             if (!res.ok) throw new Error();
+            return null;
         } catch (err) {
-            set({ memo: previousMemo });
+            // 예전 내용으로 되돌리면 사용자가 방금 쓴 글이 눈앞에서 사라진다.
+            // 입력한 내용은 그대로 두고 저장 실패만 알린다.
             console.error("[DAILY_UPDATE_MEMO_ERROR]", err);
+            const message = "메모를 저장하지 못했습니다. 연결을 확인한 뒤 다시 시도해주세요.";
+            set({ memoError: message });
+            return message;
         }
     }
 }));
