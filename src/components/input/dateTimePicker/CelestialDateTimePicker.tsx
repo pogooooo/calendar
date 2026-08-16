@@ -216,8 +216,7 @@ export default function CelestialDateTimePicker({ value, onChange, mode = "datet
                                     $selected={key === selectedKey}
                                     onClick={() => pickDay(d)}
                                 >
-                                    {key === todayKey && <i>✦</i>}
-                                    {d.getDate()}
+                                    <span>{d.getDate()}</span>
                                 </Day>
                             );
                         })}
@@ -293,14 +292,15 @@ const Trigger = styled.button<{ $open: boolean }>`
     `}
 `;
 
+/* 셀렉터와 같은 규칙 — 배경은 앱 표면색, 테두리는 금색 34% */
 const Popover = styled.div<{ $up: boolean }>`
     position: fixed;
     z-index: 1100;
     width: ${POP_WIDTH}px;
     padding: 12px;
-    background: ${p => p.theme.colors.background};
-    border: 1px solid ${p => p.theme.colors.primary};
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28), 0 0 12px ${p => p.theme.colors.primary}22;
+    background: ${p => p.theme.colors.surface};
+    border: 1px solid ${p => p.theme.colors.primary}57;
+    box-shadow: 0 10px 26px -12px rgba(0, 0, 0, 0.34);
     outline: none;
     animation: ${p => (p.$up ? popInUp : popIn)} 0.18s ease-out;
 `;
@@ -354,36 +354,56 @@ const WeekHead = styled.div`
 const Grid = styled.div`
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: 1px;
 `;
 
+/**
+ * 문양 — 고른 날에 마름모 액자를 씌운다.
+ * 셀렉터·알림창에서 쓰는 마름모와 같은 표식이라 세 곳의 문법이 맞는다.
+ */
 const Day = styled.button<{ $out: boolean; $today: boolean; $selected: boolean }>`
     position: relative;
     height: 30px;
     font-size: 0.74rem;
     font-family: inherit;
     background: none;
-    border: 1px solid transparent;
+    border: 0;
     color: ${p => p.theme.colors.text};
-    opacity: ${p => (p.$out ? 0.28 : 1)};
+    opacity: ${p => (p.$out ? 0.38 : 1)};
     cursor: pointer;
-    transition: border-color 0.15s, box-shadow 0.15s;
 
-    i {
-        position: absolute;
-        top: 1px;
-        right: 2px;
-        font-size: 6px;
-        font-style: normal;
-        color: ${p => p.theme.colors.primary};
+    /* 숫자가 액자 위에 오도록 */
+    span {
+        position: relative;
+        z-index: 2;
     }
 
-    &:hover { border-color: ${p => p.theme.colors.primary}66; }
+    &:hover span { color: ${p => p.theme.colors.primary}; }
 
+    &:focus-visible {
+        outline: 2px solid ${p => p.theme.colors.primary};
+        outline-offset: -2px;
+    }
+
+    /* 오늘 — 금색 밑줄 */
+    ${p => p.$today && !p.$selected && css`
+        span {
+            text-decoration: underline;
+            text-decoration-color: ${p.theme.colors.primary};
+            text-underline-offset: 3px;
+        }
+    `}
+
+    /* 고른 날 — 마름모 액자 */
     ${p => p.$selected && css`
-        border-color: ${p.theme.colors.primary};
-        box-shadow: 0 0 6px ${p.theme.colors.primary}55;
-        color: ${p.theme.colors.primary};
+        &::after {
+            content: "";
+            position: absolute;
+            inset: 4px;
+            border: 1px solid ${p.theme.colors.primary};
+            transform: rotate(45deg);
+            z-index: 1;
+        }
+        span { color: ${p.theme.colors.primary}; font-weight: 600; }
     `}
 `;
 
