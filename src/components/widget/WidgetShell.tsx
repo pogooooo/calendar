@@ -495,9 +495,10 @@ export default function WidgetShell({ kind, title, children }: Props) {
                                 <Lock size={13} />
                             </IconBtn>
                             <IconBtn
-                                onClick={() => {
+                                onClick={async () => {
                                     try { localStorage.setItem(`cronos-widget-open:${kind}`, "0"); } catch {}
-                                    mirrorWidgetStateToFile();
+                                    // 창이 파괴되기 전에 파일 기록이 끝나야 다음 부팅에 되살아나지 않는다
+                                    await mirrorWidgetStateToFile();
                                     closeWindow();
                                 }}
                                 $danger

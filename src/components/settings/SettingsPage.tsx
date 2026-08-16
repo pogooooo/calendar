@@ -6,6 +6,7 @@ import { useTheme } from "styled-components";
 import useAuthStore from "@/store/useAuthStore";
 import useSettingStore from "@/store/useSettingStore";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
+import { mirrorWidgetStateToFile } from "@/lib/widgetStateFile";
 import { useT } from "@/i18n/useT";
 import CelestialSettings from "./celestial/CelestialSettings";
 import type { Translations } from "@/i18n/types";
@@ -78,6 +79,10 @@ async function invokeWidget(action: "open" | "close", kind: WidgetKind) {
     const isTauri = "__TAURI_INTERNALS__" in window;
     if (isTauri) {
         try {
+            // 여기서 플래그를 갱신하지 않으면 설정에서 끈 위젯이 다음 부팅에 되살아난다
+            try { localStorage.setItem(`cronos-widget-open:${kind}`, action === "open" ? "1" : "0"); } catch {}
+            await mirrorWidgetStateToFile();
+
             const { invoke } = await import("@tauri-apps/api/core");
             await invoke(action === "open" ? "open_widget" : "close_widget", { kind });
         } catch (err) {

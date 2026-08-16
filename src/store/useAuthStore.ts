@@ -12,6 +12,7 @@ interface AuthStore {
     setAccessToken: (token: string) => void;
     setRefreshToken: (token: string) => void;
     setUser: (user: User | null) => void;
+    clearSession: () => void;
     logout: () => Promise<void>;
 }
 
@@ -25,6 +26,10 @@ const useAuthStore = create<AuthStore>()(
             setAccessToken: (token: string) => set({ accessToken: token }),
             setRefreshToken: (token: string) => set({ refreshToken: token }),
             setUser: (user: User | null) => set({ user }),
+
+            // 서버 revoke 없이 이 기기의 상태만 비운다.
+            // 토큰이 실제로 거부됐을 때 쓰며, 일시적 네트워크 장애에는 쓰지 않는다.
+            clearSession: () => set({ accessToken: '', refreshToken: '', user: null }),
 
             logout: async () => {
                 const stored = get().refreshToken;

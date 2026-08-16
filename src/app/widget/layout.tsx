@@ -5,6 +5,8 @@ import useSettingStore from "@/store/useSettingStore";
 import type { Locale } from "@/i18n/types";
 
 export default function WidgetLayout({ children }: { children: React.ReactNode }) {
+    // 개별 필드만 반영한다. 스토어 전체를 되쓰면 위젯이 들고 있던
+    // 낡은 스냅샷이 사용자가 방금 바꾼 다른 설정을 되돌려 놓는다.
     const setLocale = useSettingStore((s) => s.setLocale);
 
     useEffect(() => {

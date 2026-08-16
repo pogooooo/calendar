@@ -368,6 +368,10 @@ async fn open_widget(
     w: Option<f64>,
     h: Option<f64>,
 ) -> Result<(), String> {
+    if !WIDGET_KINDS.contains(&kind.as_str()) {
+        return Err(format!("알 수 없는 위젯 종류: {kind}"));
+    }
+
     let label = format!("widget-{kind}");
 
     if let Some(win) = app.get_webview_window(&label) {
@@ -377,6 +381,24 @@ async fn open_widget(
 
     let (dw, dh) = widget_size(&kind);
     let (w, h) = (w.unwrap_or(dw), h.unwrap_or(dh));
+
+    // 저장된 좌표가 지금 연결된 모니터 밖이면 버린다 (부팅 시 모니터 구성이 다를 수 있다)
+    let pos = match (x, y) {
+        (Some(px), Some(py)) => {
+            let inside = app.available_monitors().map(|monitors| {
+                monitors.iter().any(|m| {
+                    let sf = m.scale_factor();
+                    let mx = m.position().x as f64 / sf;
+                    let my = m.position().y as f64 / sf;
+                    let mw = m.size().width as f64 / sf;
+                    let mh = m.size().height as f64 / sf;
+                    px >= mx - 8.0 && py >= my - 8.0 && px < mx + mw - 40.0 && py < my + mh - 40.0
+                })
+            }).unwrap_or(false);
+            if inside { Some((px, py)) } else { None }
+        }
+        _ => None,
+    };
 
     #[cfg(debug_assertions)]
     let webview_url = {
@@ -389,7 +411,15 @@ async fn open_widget(
     let webview_url = WebviewUrl::App(format!("widget/{kind}/").into());
 
     let app2 = app.clone();
+    let (tx, rx) = tokio::sync::oneshot::channel::<Result<(), String>>();
+
     app.run_on_main_thread(move || {
+        // 메인 스레드에서 한 번 더 확인해야 동시 호출로 두 번 만들어지지 않는다
+        if app2.get_webview_window(&label).is_some() {
+            let _ = tx.send(Ok(()));
+            return;
+        }
+
         // 로딩 중 위젯이 화면을 가리지 않도록 맨 아래에서 시작한다.
         // 실제 우선순위는 로드 후 set_widget_priority 가 다시 적용한다.
         let mut builder = WebviewWindowBuilder::new(&app2, &label, webview_url)
@@ -403,7 +433,7 @@ async fn open_widget(
             .visible(true)
             .inner_size(w, h);
 
-        if let (Some(px), Some(py)) = (x, y) {
+        if let Some((px, py)) = pos {
             builder = builder.position(px, py);
         }
 
@@ -420,12 +450,13 @@ async fn open_widget(
                         win32::set_pin_bottom(hwnd, true);
                     }
                 }
+                let _ = tx.send(Ok(()));
             }
-            Err(_) => {},
+            Err(e) => { let _ = tx.send(Err(e.to_string())); },
         }
     }).map_err(|e| e.to_string())?;
 
-    Ok(())
+    rx.await.map_err(|e| e.to_string())?
 }
 
 #[tauri::command]
@@ -524,7 +555,7 @@ async fn close_widget(
 
 #[tauri::command]
 fn list_open_widgets(app: tauri::AppHandle) -> Vec<String> {
-    ["daily", "weekly", "monthly"]
+    WIDGET_KINDS
         .iter()
         .filter(|&&k| app.get_webview_window(&format!("widget-{k}")).is_some())
         .map(|&k| k.to_string())
@@ -548,7 +579,12 @@ fn save_widget_state(app: tauri::AppHandle, state: String) -> bool {
     if let Some(dir) = path.parent() {
         let _ = std::fs::create_dir_all(dir);
     }
-    std::fs::write(path, state).is_ok()
+    // 임시 파일에 쓰고 교체해야 도중에 죽어도 반쪽짜리 JSON 이 남지 않는다
+    let tmp = path.with_extension("json.tmp");
+    if std::fs::write(&tmp, state).is_err() {
+        return false;
+    }
+    std::fs::rename(&tmp, &path).is_ok()
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -556,6 +592,14 @@ pub fn run() {
     let bottom_widgets = BottomWidgets(Arc::new(Mutex::new(HashSet::new())));
 
     tauri::Builder::default()
+        // 두 번째 인스턴스는 즉시 종료된다. 없으면 위젯이 인스턴스 수만큼 중복 생성된다.
+        .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
+            if let Some(win) = app.get_webview_window("main") {
+                let _ = win.unminimize();
+                let _ = win.show();
+                let _ = win.set_focus();
+            }
+        }))
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_process::init())
