@@ -4,15 +4,12 @@ import * as React from "react";
 import { createPortal } from "react-dom";
 import styled, { css, keyframes } from "styled-components";
 import { CalendarDays, ChevronLeft, ChevronRight, Clock } from "lucide-react";
+import CelestialTimeDial from "./CelestialTimeDial";
 
 interface CelestialDateTimePickerProps {
     value: string;
     onChange: (value: string) => void;
     mode?: "datetime" | "date";
-    /**
-     * 기간을 함께 다룰 때 쓴다. 시작·종료 어느 쪽 달력을 열어도 같은 기간이 보이고,
-     * 두 끝을 모두 여기서 잡을 수 있다.
-     */
     range?: {
         start: string;
         end: string;
@@ -52,8 +49,7 @@ function buildGrid(view: Date) {
 export default function CelestialDateTimePicker({ value, onChange, mode = "datetime", range }: CelestialDateTimePickerProps) {
     const triggerRef = React.useRef<HTMLButtonElement>(null);
     const popRef = React.useRef<HTMLDivElement>(null);
-    const hourRef = React.useRef<HTMLDivElement>(null);
-    const minuteRef = React.useRef<HTMLDivElement>(null);
+    const gridRef = React.useRef<HTMLDivElement>(null);
 
     const [open, setOpen] = React.useState(false);
     const [pos, setPos] = React.useState<{ top: number; left: number; up: boolean } | null>(null);
@@ -63,11 +59,6 @@ export default function CelestialDateTimePicker({ value, onChange, mode = "datet
 
     const hour = selected.getHours();
     const minute = selected.getMinutes();
-
-    const minutes = React.useMemo(() => {
-        const base = Array.from({ length: 12 }, (_, i) => i * 5);
-        return base.includes(minute) ? base : [...base, minute].sort((a, b) => a - b);
-    }, [minute]);
 
     const openPopover = () => {
         const rect = triggerRef.current?.getBoundingClientRect();
@@ -126,16 +117,6 @@ export default function CelestialDateTimePicker({ value, onChange, mode = "datet
         };
     }, [open]);
 
-    React.useEffect(() => {
-        if (!open) return;
-        const t = window.setTimeout(() => {
-            hourRef.current?.querySelector('[data-on="1"]')?.scrollIntoView({ block: "center" });
-            minuteRef.current?.querySelector('[data-on="1"]')?.scrollIntoView({ block: "center" });
-        }, 30);
-        return () => window.clearTimeout(t);
-    }, [open]);
-
-    /** 기간 모드에서 지금 잡고 있는 끝. 한쪽을 찍으면 반대쪽으로 넘어간다. */
     const [edge, setEdge] = React.useState<"start" | "end">(range?.edge ?? "start");
     React.useEffect(() => { if (open) setEdge(range?.edge ?? "start"); }, [open, range?.edge]);
 
@@ -151,7 +132,6 @@ export default function CelestialDateTimePicker({ value, onChange, mode = "datet
             return;
         }
 
-        // 잡고 있는 끝을 옮기고, 순서가 뒤집히면 나머지 끝을 끌어당긴다
         const picked = emit(d, hour, minute, mode);
         const otherRaw = edge === "start" ? range.end : range.start;
         const other = parseValue(otherRaw, mode);
@@ -168,24 +148,6 @@ export default function CelestialDateTimePicker({ value, onChange, mode = "datet
         }
     };
 
-    const pickHour = (h: number) => onChange(emit(selected, h, minute, mode));
-    const pickMinute = (m: number) => onChange(emit(selected, hour, m, mode));
-
-    // 휠을 굴리면 값이 바로 바뀐다. 굴린 뒤 다시 눌러 고를 필요가 없다.
-    const wheelHour = (e: React.WheelEvent) => {
-        e.preventDefault();
-        const step = e.deltaY > 0 ? 1 : -1;
-        pickHour((hour + step + 24) % 24);
-    };
-
-    const wheelMinute = (e: React.WheelEvent) => {
-        e.preventDefault();
-        const step = e.deltaY > 0 ? 1 : -1;
-        const idx = minutes.indexOf(minute);
-        const nextIdx = (idx + step + minutes.length) % minutes.length;
-        pickMinute(minutes[nextIdx]);
-    };
-
     const pickNow = () => {
         const now = new Date();
         now.setMinutes(Math.round(now.getMinutes() / 5) * 5, 0, 0);
@@ -194,18 +156,48 @@ export default function CelestialDateTimePicker({ value, onChange, mode = "datet
         if (mode === "date") setOpen(false);
     };
 
-    const moveDay = (delta: number) => {
-        const next = new Date(selected);
+    const shiftActive = (delta: number) => {
+        const base = range ? parseValue(edge === "start" ? range.start : range.end, mode) : selected;
+        const next = new Date(base);
         next.setDate(next.getDate() + delta);
         setView(new Date(next.getFullYear(), next.getMonth(), 1));
-        onChange(emit(next, hour, minute, mode));
+
+        if (!range) {
+            onChange(emit(next, hour, minute, mode));
+            return;
+        }
+
+        const picked = emit(next, hour, minute, mode);
+        if (edge === "start") {
+            const other = parseValue(range.end, mode);
+            range.onRangeChange(picked, toKey(next) > toKey(other) ? picked : range.end);
+        } else {
+            const other = parseValue(range.start, mode);
+            range.onRangeChange(toKey(next) < toKey(other) ? picked : range.start, picked);
+        }
     };
+
+    const shiftRef = React.useRef(shiftActive);
+    shiftRef.current = shiftActive;
+
+    React.useEffect(() => {
+        const el = gridRef.current;
+        if (!open || !el) return;
+
+        const onWheel = (e: WheelEvent) => {
+            e.preventDefault();
+            shiftRef.current(e.deltaY > 0 ? 1 : -1);
+        };
+
+        el.addEventListener("wheel", onWheel, { passive: false });
+        return () => el.removeEventListener("wheel", onWheel);
+    }, [open]);
 
     const onGridKey = (e: React.KeyboardEvent) => {
         const map: Record<string, number> = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 };
         if (map[e.key] !== undefined) {
             e.preventDefault();
-            moveDay(map[e.key]);
+            shiftActive(map[e.key]);
         } else if (e.key === "Enter") {
             e.preventDefault();
             setOpen(false);
@@ -253,7 +245,7 @@ export default function CelestialDateTimePicker({ value, onChange, mode = "datet
                         </EdgeTabs>
                     )}
 
-                    <Grid>
+                    <Grid ref={gridRef}>
                         {grid.map((d, i) => {
                             const key = toKey(d);
                             const isStart = !!range && key === startKey;
@@ -279,23 +271,15 @@ export default function CelestialDateTimePicker({ value, onChange, mode = "datet
 
                     {mode === "datetime" && (
                         <TimeArea>
-                            <TimeLabel><Clock size={12} /> 시간</TimeLabel>
-                            <Columns>
-                                <Column ref={hourRef} onWheel={wheelHour}>
-                                    {Array.from({ length: 24 }, (_, h) => (
-                                        <Cell key={h} type="button" data-on={h === hour ? "1" : "0"} $on={h === hour} onClick={() => pickHour(h)}>
-                                            {pad(h)}시
-                                        </Cell>
-                                    ))}
-                                </Column>
-                                <Column ref={minuteRef} onWheel={wheelMinute}>
-                                    {minutes.map(m => (
-                                        <Cell key={m} type="button" data-on={m === minute ? "1" : "0"} $on={m === minute} onClick={() => pickMinute(m)}>
-                                            {pad(m)}분
-                                        </Cell>
-                                    ))}
-                                </Column>
-                            </Columns>
+                            <TimeLabel>
+                                <Clock size={12} /> 시간
+                                <b>{pad(hour)}:{pad(minute)}</b>
+                            </TimeLabel>
+                            <CelestialTimeDial
+                                hour={hour}
+                                minute={minute}
+                                onChange={(h, m) => onChange(emit(selected, h, m, mode))}
+                            />
                         </TimeArea>
                     )}
 
@@ -347,7 +331,6 @@ const Trigger = styled.button<{ $open: boolean }>`
     `}
 `;
 
-/* 셀렉터와 같은 규칙 — 배경은 앱 표면색, 테두리는 금색 34% */
 const Popover = styled.div<{ $up: boolean }>`
     position: fixed;
     z-index: 1100;
@@ -437,10 +420,6 @@ const EdgeTabs = styled.div`
     }
 `;
 
-/**
- * 문양 — 고른 날에 마름모 액자를 씌운다.
- * 셀렉터·알림창에서 쓰는 마름모와 같은 표식이라 세 곳의 문법이 맞는다.
- */
 const Day = styled.button<{
     $out: boolean;
     $today: boolean;
@@ -459,7 +438,6 @@ const Day = styled.button<{
     opacity: ${p => (p.$out ? 0.38 : 1)};
     cursor: pointer;
 
-    /* 숫자가 액자 위에 오도록 */
     span {
         position: relative;
         z-index: 2;
@@ -472,7 +450,6 @@ const Day = styled.button<{
         outline-offset: -2px;
     }
 
-    /* 시작~종료 사이를 잇는 선 */
     ${p => (p.$inRange || p.$edgeStart || p.$edgeEnd) && css`
         &::before {
             content: "";
@@ -485,7 +462,6 @@ const Day = styled.button<{
         }
     `}
 
-    /* 오늘 — 금색 밑줄 */
     ${p => p.$today && !p.$selected && css`
         span {
             text-decoration: underline;
@@ -494,7 +470,6 @@ const Day = styled.button<{
         }
     `}
 
-    /* 고른 날 — 마름모 액자. 셀이 정사각이 아니므로 크기를 고정해야 찌그러지지 않는다 */
     ${p => p.$selected && css`
         &::after {
             content: "";
@@ -529,41 +504,6 @@ const TimeLabel = styled.div`
     color: ${p => p.theme.colors.textSecondary};
 
     svg { color: ${p => p.theme.colors.primary}; }
-`;
-
-const Columns = styled.div`
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 6px;
-`;
-
-const Column = styled.div`
-    height: 96px;
-    overflow-y: auto;
-    border: 1px solid ${p => p.theme.colors.primary}33;
-
-    &::-webkit-scrollbar { width: 3px; }
-    &::-webkit-scrollbar-thumb { background: ${p => p.theme.colors.primary}66; }
-`;
-
-const Cell = styled.button<{ $on: boolean }>`
-    display: block;
-    width: 100%;
-    padding: 5px 0;
-    font-size: 0.74rem;
-    font-family: inherit;
-    text-align: center;
-    background: none;
-    border: none;
-    color: ${p => (p.$on ? p.theme.colors.primary : p.theme.colors.text)};
-    cursor: pointer;
-    transition: color 0.15s, text-shadow 0.15s;
-
-    ${p => p.$on && css`
-        text-shadow: 0 0 6px ${p.theme.colors.primary}88;
-    `}
-
-    &:hover { color: ${p => p.theme.colors.primary}; }
 `;
 
 const Foot = styled.div`
