@@ -9,6 +9,16 @@ interface CelestialDateTimePickerProps {
     value: string;
     onChange: (value: string) => void;
     mode?: "datetime" | "date";
+    /**
+     * 기간을 함께 다룰 때 쓴다. 시작·종료 어느 쪽 달력을 열어도 같은 기간이 보이고,
+     * 두 끝을 모두 여기서 잡을 수 있다.
+     */
+    range?: {
+        start: string;
+        end: string;
+        edge: "start" | "end";
+        onRangeChange: (start: string, end: string) => void;
+    };
 }
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
@@ -39,7 +49,7 @@ function buildGrid(view: Date) {
     });
 }
 
-export default function CelestialDateTimePicker({ value, onChange, mode = "datetime" }: CelestialDateTimePickerProps) {
+export default function CelestialDateTimePicker({ value, onChange, mode = "datetime", range }: CelestialDateTimePickerProps) {
     const triggerRef = React.useRef<HTMLButtonElement>(null);
     const popRef = React.useRef<HTMLDivElement>(null);
     const hourRef = React.useRef<HTMLDivElement>(null);
@@ -125,9 +135,37 @@ export default function CelestialDateTimePicker({ value, onChange, mode = "datet
         return () => window.clearTimeout(t);
     }, [open]);
 
+    /** 기간 모드에서 지금 잡고 있는 끝. 한쪽을 찍으면 반대쪽으로 넘어간다. */
+    const [edge, setEdge] = React.useState<"start" | "end">(range?.edge ?? "start");
+    React.useEffect(() => { if (open) setEdge(range?.edge ?? "start"); }, [open, range?.edge]);
+
+    const rangeStart = range ? parseValue(range.start, mode) : null;
+    const rangeEnd = range ? parseValue(range.end, mode) : null;
+    const startKey = rangeStart ? toKey(rangeStart) : "";
+    const endKey = rangeEnd ? toKey(rangeEnd) : "";
+
     const pickDay = (d: Date) => {
-        onChange(emit(d, hour, minute, mode));
-        if (mode === "date") setOpen(false);
+        if (!range) {
+            onChange(emit(d, hour, minute, mode));
+            if (mode === "date") setOpen(false);
+            return;
+        }
+
+        // 잡고 있는 끝을 옮기고, 순서가 뒤집히면 나머지 끝을 끌어당긴다
+        const picked = emit(d, hour, minute, mode);
+        const otherRaw = edge === "start" ? range.end : range.start;
+        const other = parseValue(otherRaw, mode);
+        const inverted = edge === "start"
+            ? toKey(d) > toKey(other)
+            : toKey(d) < toKey(other);
+
+        if (edge === "start") {
+            range.onRangeChange(picked, inverted ? picked : range.end);
+            setEdge("end");
+        } else {
+            range.onRangeChange(inverted ? picked : range.start, picked);
+            setEdge("start");
+        }
     };
 
     const pickHour = (h: number) => onChange(emit(selected, h, minute, mode));
@@ -204,16 +242,33 @@ export default function CelestialDateTimePicker({ value, onChange, mode = "datet
                         {WEEKDAYS.map(w => <span key={w}>{w}</span>)}
                     </WeekHead>
 
+                    {range && (
+                        <EdgeTabs role="group" aria-label="잡을 끝">
+                            <button type="button" data-on={edge === "start" ? "1" : "0"} onClick={() => setEdge("start")}>
+                                시작 · {startKey.slice(5).replace("-", ".")}
+                            </button>
+                            <button type="button" data-on={edge === "end" ? "1" : "0"} onClick={() => setEdge("end")}>
+                                종료 · {endKey.slice(5).replace("-", ".")}
+                            </button>
+                        </EdgeTabs>
+                    )}
+
                     <Grid>
                         {grid.map((d, i) => {
                             const key = toKey(d);
+                            const isStart = !!range && key === startKey;
+                            const isEnd = !!range && key === endKey;
+                            const between = !!range && startKey < endKey && key > startKey && key < endKey;
                             return (
                                 <Day
                                     key={i}
                                     type="button"
                                     $out={d.getMonth() !== view.getMonth()}
                                     $today={key === todayKey}
-                                    $selected={key === selectedKey}
+                                    $selected={range ? (isStart || isEnd) : key === selectedKey}
+                                    $inRange={between}
+                                    $edgeStart={isStart && startKey < endKey}
+                                    $edgeEnd={isEnd && startKey < endKey}
                                     onClick={() => pickDay(d)}
                                 >
                                     <span>{d.getDate()}</span>
@@ -353,14 +408,47 @@ const WeekHead = styled.div`
 
 const Grid = styled.div`
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+`;
+
+const EdgeTabs = styled.div`
+    display: flex;
+    margin-bottom: 6px;
+    border: 1px solid ${p => p.theme.colors.primary}33;
+
+    button {
+        flex: 1;
+        background: none;
+        border: 0;
+        padding: 5px 0;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 0.68rem;
+        letter-spacing: 0.04em;
+        color: ${p => p.theme.colors.textSecondary};
+        font-variant-numeric: tabular-nums;
+    }
+
+    button + button { border-left: 1px solid ${p => p.theme.colors.primary}33; }
+
+    button[data-on="1"] {
+        background-color: ${p => p.theme.colors.primary}1F;
+        color: ${p => p.theme.colors.primary};
+    }
 `;
 
 /**
  * 문양 — 고른 날에 마름모 액자를 씌운다.
  * 셀렉터·알림창에서 쓰는 마름모와 같은 표식이라 세 곳의 문법이 맞는다.
  */
-const Day = styled.button<{ $out: boolean; $today: boolean; $selected: boolean }>`
+const Day = styled.button<{
+    $out: boolean;
+    $today: boolean;
+    $selected: boolean;
+    $inRange?: boolean;
+    $edgeStart?: boolean;
+    $edgeEnd?: boolean;
+}>`
     position: relative;
     height: 30px;
     font-size: 0.74rem;
@@ -384,6 +472,19 @@ const Day = styled.button<{ $out: boolean; $today: boolean; $selected: boolean }
         outline-offset: -2px;
     }
 
+    /* 시작~종료 사이를 잇는 선 */
+    ${p => (p.$inRange || p.$edgeStart || p.$edgeEnd) && css`
+        &::before {
+            content: "";
+            position: absolute;
+            top: 50%;
+            height: 1px;
+            background-color: ${p.theme.colors.primary}88;
+            left: ${p.$edgeStart && !p.$edgeEnd ? "50%" : "0"};
+            right: ${p.$edgeEnd && !p.$edgeStart ? "50%" : "0"};
+        }
+    `}
+
     /* 오늘 — 금색 밑줄 */
     ${p => p.$today && !p.$selected && css`
         span {
@@ -393,13 +494,18 @@ const Day = styled.button<{ $out: boolean; $today: boolean; $selected: boolean }
         }
     `}
 
-    /* 고른 날 — 마름모 액자 */
+    /* 고른 날 — 마름모 액자. 셀이 정사각이 아니므로 크기를 고정해야 찌그러지지 않는다 */
     ${p => p.$selected && css`
         &::after {
             content: "";
             position: absolute;
-            inset: 4px;
+            top: 50%;
+            left: 50%;
+            width: 22px;
+            height: 22px;
+            margin: -11px 0 0 -11px;
             border: 1px solid ${p.theme.colors.primary};
+            background-color: ${p.theme.colors.surface};
             transform: rotate(45deg);
             z-index: 1;
         }

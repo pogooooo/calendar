@@ -62,6 +62,13 @@ export default function CelestialTodoModal({
                             mode={isAllDay ? "date" : "datetime"}
                             value={isAllDay ? startAt.slice(0, 10) : startAt}
                             onChange={(v) => handleDateChange(setStartAt, startAt, v)}
+                            range={{
+                                start: startAt, end: endAt, edge: "start",
+                                onRangeChange: (s, e) => {
+                                    handleDateChange(setStartAt, startAt, s);
+                                    handleDateChange(setEndAt, endAt, e);
+                                },
+                            }}
                         />
                     </S.FieldRow>
 
@@ -71,6 +78,13 @@ export default function CelestialTodoModal({
                             mode={isAllDay ? "date" : "datetime"}
                             value={isAllDay ? endAt.slice(0, 10) : endAt}
                             onChange={(v) => handleDateChange(setEndAt, endAt, v)}
+                            range={{
+                                start: startAt, end: endAt, edge: "end",
+                                onRangeChange: (s, e) => {
+                                    handleDateChange(setStartAt, startAt, s);
+                                    handleDateChange(setEndAt, endAt, e);
+                                },
+                            }}
                         />
                     </S.FieldRow>
 
