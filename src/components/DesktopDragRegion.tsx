@@ -2,7 +2,7 @@
 
 import React from "react";
 import { usePathname } from "next/navigation";
-import styled from "styled-components";
+import styled, { createGlobalStyle } from "styled-components";
 import { isDesktopApp } from "@/lib/apiBase";
 import TitleBar from "@/components/titleBar/TitleBar";
 
@@ -22,11 +22,27 @@ export default function DesktopDragRegion() {
     if (!desktop || !DRAG_ROUTES.includes(normalized)) return null;
 
     return (
-        <Fixed>
-            <TitleBar />
-        </Fixed>
+        <>
+            {/* 타이틀바가 고정 위치라 그만큼 본문을 아래로 밀어야 화면이 잘리지 않는다 */}
+            <ReserveSpace />
+            <Fixed>
+                <TitleBar />
+            </Fixed>
+        </>
     );
 }
+
+export const TITLEBAR_HEIGHT = 36;
+
+const ReserveSpace = createGlobalStyle`
+    :root { --titlebar-h: ${TITLEBAR_HEIGHT}px; }
+
+    /* body 높이(100vh) 안에서 자리를 빼야 문서에 스크롤이 생기지 않는다 */
+    body {
+        box-sizing: border-box;
+        padding-top: var(--titlebar-h);
+    }
+`;
 
 const Fixed = styled.div`
     position: fixed;

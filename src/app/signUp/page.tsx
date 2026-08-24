@@ -101,7 +101,8 @@ const fadeUp = keyframes`
 const PageWrapper = styled.div`
     display: flex;
     width: 100vw;
-    height: 100vh;
+    /* 데스크톱 타이틀바 높이만큼 줄인다 (웹에서는 0) */
+    height: calc(100vh - var(--titlebar-h, 0px));
     background-color: ${p => p.theme.colors.surface};
     overflow: hidden;
 `;

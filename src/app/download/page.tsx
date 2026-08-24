@@ -459,7 +459,8 @@ const motionOnly = (rule: ReturnType<typeof css>) => css`
 
 const Page = styled.div`
     position: relative;
-    min-height: 100vh;
+    /* 데스크톱 타이틀바 높이는 body 에서 이미 빠진다 */
+    min-height: calc(100vh - var(--titlebar-h, 0px));
     background-color: ${p => p.theme.colors.background};
     color: ${p => p.theme.colors.text};
     overflow-x: hidden;
