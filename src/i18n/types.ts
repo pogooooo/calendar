@@ -258,6 +258,9 @@ export interface Translations {
         noAssignee: string;
         noDate: string;
         doneRatio: (done: number, total: number) => string;
+        monthLabel: (m: number) => string;
+        monthSummary: (left: number, done: number) => string;
+        noAnniversaries: string;
     };
 }
 

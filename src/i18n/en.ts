@@ -260,6 +260,9 @@ const en: Translations = {
         noAssignee: 'None',
         noDate: 'TBD',
         doneRatio: (done: number, total: number) => `${done} / ${total} done`,
+        monthLabel: (m: number) => ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'][m - 1],
+        monthSummary: (left: number, done: number) => `${left} left · ${done} done`,
+        noAnniversaries: 'No anniversaries.',
     },
 };
 

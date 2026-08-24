@@ -260,6 +260,9 @@ const ko: Translations = {
         noAssignee: '없음',
         noDate: '미정',
         doneRatio: (done: number, total: number) => `${done} / ${total} 완료`,
+        monthLabel: (m: number) => `${m}월`,
+        monthSummary: (left: number, done: number) => `남은 ${left} · 끝낸 ${done}`,
+        noAnniversaries: '기념일이 없습니다.',
     },
 };
 
