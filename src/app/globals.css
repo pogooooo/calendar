@@ -44,3 +44,23 @@ html:has([data-widget]) body {
   -webkit-user-select: none;
   user-select: none;
 }
+
+body {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+input,
+textarea,
+select,
+[contenteditable="true"],
+[data-selectable] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+img,
+a,
+svg {
+  -webkit-user-drag: none;
+}
