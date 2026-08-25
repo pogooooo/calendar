@@ -37,12 +37,18 @@ function pickAsset(assets: Asset[], platform: PlatformKey): Asset | null {
 
 export async function GET(req: NextRequest) {
     const platform = req.nextUrl.searchParams.get("platform") as PlatformKey | null;
+    const checkOnly = req.nextUrl.searchParams.get("check") === "1";
+
+    const fail = (reason: string, message: string, status: number) => {
+        if (checkOnly) return NextResponse.json({ message }, { status });
+        const back = new URL("/download", req.nextUrl.origin);
+        back.searchParams.set("dl", reason);
+        return NextResponse.redirect(back, 303);
+    };
 
     if (!platform || !(platform in MATCHERS)) {
-        return NextResponse.json({ message: "지원하지 않는 플랫폼입니다." }, { status: 400 });
+        return fail("platform", "지원하지 않는 플랫폼입니다.", 400);
     }
-
-    const checkOnly = req.nextUrl.searchParams.get("check") === "1";
 
     try {
         const release = await fetchLatestRelease();
@@ -59,19 +65,13 @@ export async function GET(req: NextRequest) {
         }
 
         if (!assets) {
-            return NextResponse.json(
-                { message: "아직 배포된 설치 파일이 없습니다.", status: "unreleased" },
-                { status: 404 },
-            );
+            return fail("unreleased", "아직 배포된 설치 파일이 없습니다.", 404);
         }
 
         const asset = pickAsset(assets, platform);
 
         if (!asset) {
-            return NextResponse.json(
-                { message: "이 운영체제용 설치 파일이 아직 없습니다.", status: "unreleased" },
-                { status: 404 },
-            );
+            return fail("unreleased", "이 운영체제용 설치 파일이 아직 없습니다.", 404);
         }
 
         const file = await fetch(asset.browser_download_url, {
@@ -80,19 +80,21 @@ export async function GET(req: NextRequest) {
         });
 
         if (!file.ok || !file.body) {
-            return NextResponse.json({ message: "파일을 가져오지 못했습니다." }, { status: 502 });
+            return fail("upstream", "파일을 가져오지 못했습니다.", 502);
         }
 
-        return new NextResponse(file.body, {
-            headers: {
-                "Content-Type": "application/octet-stream",
-                "Content-Disposition": `attachment; filename="${asset.name}"`,
-                "Content-Length": String(asset.size),
-                "Cache-Control": "public, max-age=3600",
-            },
+        const headers = new Headers({
+            "Content-Type": "application/octet-stream",
+            "Content-Disposition": `attachment; filename="${asset.name}"`,
+            "Cache-Control": "public, max-age=3600",
         });
+
+        const upstreamLength = file.headers.get("content-length");
+        if (upstreamLength) headers.set("Content-Length", upstreamLength);
+
+        return new NextResponse(file.body, { headers });
     } catch (error) {
         console.error("[DOWNLOAD_ERROR]", error);
-        return NextResponse.json({ message: "다운로드 중 오류가 발생했습니다." }, { status: 500 });
+        return fail("error", "다운로드 중 오류가 발생했습니다.", 500);
     }
 }

@@ -27,6 +27,13 @@ type PlatformInfo = {
     version: string | null;
 };
 
+const DL_MESSAGES: Record<string, string> = {
+    platform: "지원하지 않는 운영체제입니다.",
+    unreleased: "이 운영체제용 설치 파일이 아직 없습니다.",
+    upstream: "설치 파일을 가져오지 못했습니다. 잠시 후 다시 시도해주세요.",
+    error: "다운로드 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
+};
+
 const PLATFORMS: { key: PlatformKey; label: string; ext: string; note: string }[] = [
     { key: "windows", label: "Windows", ext: ".exe", note: "Windows 10 이상" },
     { key: "macos", label: "macOS", ext: ".dmg", note: "macOS 11 이상 · Apple Silicon / Intel" },
@@ -217,8 +224,21 @@ export default function DownloadPage() {
     const [mine, setMine] = React.useState<PlatformKey | null>(null);
     const [infos, setInfos] = React.useState<Partial<Record<PlatformKey, PlatformInfo>>>({});
     const [busy, setBusy] = React.useState<PlatformKey | null>(null);
+    const busyTimer = React.useRef<number | null>(null);
+    const [dlError, setDlError] = React.useState<string | null>(null);
 
     React.useEffect(() => setMine(detectPlatform()), []);
+
+    React.useEffect(() => {
+        const reason = new URLSearchParams(window.location.search).get("dl");
+        if (!reason) return;
+
+        setDlError(DL_MESSAGES[reason] ?? DL_MESSAGES.error);
+
+        const url = new URL(window.location.href);
+        url.searchParams.delete("dl");
+        window.history.replaceState(null, "", url.toString());
+    }, []);
 
     React.useEffect(() => {
         PLATFORMS.forEach(({ key }) => {
@@ -283,8 +303,29 @@ export default function DownloadPage() {
         if (!info?.available || busy) return;
         setBusy(platform);
         window.location.href = api(`/api/download?platform=${platform}`);
-        window.setTimeout(() => setBusy(null), 4000);
+        if (busyTimer.current !== null) window.clearTimeout(busyTimer.current);
+        busyTimer.current = window.setTimeout(() => {
+            busyTimer.current = null;
+            setBusy(null);
+        }, 4000);
     }, [infos, busy]);
+
+    React.useEffect(() => {
+        const reset = () => {
+            if (document.visibilityState !== "visible") return;
+            if (busyTimer.current !== null) {
+                window.clearTimeout(busyTimer.current);
+                busyTimer.current = null;
+            }
+            setBusy(null);
+        };
+
+        document.addEventListener("visibilitychange", reset);
+        return () => {
+            document.removeEventListener("visibilitychange", reset);
+            if (busyTimer.current !== null) window.clearTimeout(busyTimer.current);
+        };
+    }, []);
 
     const mineInfo = mine ? infos[mine] : undefined;
     const mineLabel = PLATFORMS.find(p => p.key === mine)?.label;
@@ -334,7 +375,10 @@ export default function DownloadPage() {
                             onClick={() => mine && download(mine)}
                             disabled={!mine || !mineInfo?.available || busy !== null}
                         >
-                            {busy ? <Spinner size={15} /> : <MonitorDown size={15} />}
+                            <IconSwap data-busy={busy ? "1" : "0"}>
+                                <Spinner size={15} className="on-busy" />
+                                <MonitorDown size={15} className="on-idle" />
+                            </IconSwap>
                             {mineLabel ? `${mineLabel}용 다운로드` : "다운로드"}
                             {mineInfo?.available && (
                                 <CtaMeta>{`v${mineInfo.version} · ${mb(mineInfo.size)}`}</CtaMeta>
@@ -346,6 +390,8 @@ export default function DownloadPage() {
                             <ArrowRight size={14} className="arrow" />
                         </GhostCta>
                     </CtaRow>
+
+                    {dlError && <DownloadNotice role="alert">{dlError}</DownloadNotice>}
 
                 </HeroText>
 
@@ -400,8 +446,9 @@ export default function DownloadPage() {
                                                 ? "준비 중"
                                                 : `${p.ext} · ${mb(info?.size)}`}
                                     </RowMeta>
-                                    <RowAction>
-                                        {busy === p.key ? <Spinner size={13} /> : <ArrowDown size={13} className="arrow" />}
+                                    <RowAction data-busy={busy === p.key ? "1" : "0"}>
+                                        <Spinner size={13} className="on-busy" />
+                                        <ArrowDown size={13} className="arrow on-idle" />
                                     </RowAction>
                                 </PlatformRow>
                             );
@@ -621,6 +668,14 @@ const Lead = styled.p`
     font-size: 0.94rem;
     line-height: 1.75;
     color: ${p => p.theme.colors.textSecondary};
+`;
+
+const DownloadNotice = styled.p`
+    margin: 14px 0 0;
+    padding: 10px 14px;
+    border-left: 2px solid ${p => p.theme.colors.error};
+    font-size: 0.82rem;
+    color: ${p => p.theme.colors.error};
 `;
 
 const CtaRow = styled.div`
@@ -1020,6 +1075,16 @@ const RowAction = styled.span`
     height: 30px;
     border: 1px solid ${p => p.theme.colors.primary}55;
     color: ${p => p.theme.colors.primary};
+
+    &[data-busy="0"] .on-busy,
+    &[data-busy="1"] .on-idle { display: none; }
+`;
+
+const IconSwap = styled.span`
+    display: contents;
+
+    &[data-busy="0"] .on-busy,
+    &[data-busy="1"] .on-idle { display: none; }
 `;
 
 const Spinner = styled(Loader2)`
