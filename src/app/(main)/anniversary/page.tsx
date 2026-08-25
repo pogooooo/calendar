@@ -172,7 +172,7 @@ export default function AnniversaryPage() {
                                     <span className="glyph"><AnniversaryIcon name={a.icon} size={20} /></span>
                                 </CardEmblem>
                                 <CardTitle>{a.title}</CardTitle>
-                                <CardDate>매년 {a.month}월 {a.day}일</CardDate>
+                                <CardDate>{`매년 ${a.month}월 ${a.day}일`}</CardDate>
                                 <CardDday $today={isToday}>
                                     <i />{isToday ? "오늘 ✦" : `D-${diff}`}<i />
                                 </CardDday>

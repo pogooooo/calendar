@@ -74,7 +74,7 @@ const Profile = () => {
                     ) : (
                         <DefaultProfile width={30} />
                     )}
-                    <UserName>{user?.name}{t.sidebar.userSuffix}</UserName>
+                    <UserName>{`${user?.name ?? ""}${t.sidebar.userSuffix}`}</UserName>
                     <ChevronDown
                         size={14}
                         style={{

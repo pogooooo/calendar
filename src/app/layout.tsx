@@ -22,8 +22,8 @@ export const metadata: Metadata = {
 export default function RootLayout({children,}: Readonly<{ children: React.ReactNode; }>) {
 
     return (
-        <html lang="en">
-        <body className={`relative ${orbit.variable}`}>
+        <html lang="ko" translate="no">
+        <body className={`relative notranslate ${orbit.variable}`}>
             <ThemeProviderWrapper>
                 <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!}>
                     <StyledComponentsRegistry>

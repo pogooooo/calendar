@@ -164,7 +164,7 @@ const WeekRow = ({
 
                             {hiddenCount > 0 && (
                                 <S.MoreButton onClick={(e) => { e.stopPropagation(); setMoreModalDate(date); }}>
-                                    +{hiddenCount} 더보기
+                                    {`+${hiddenCount} 더보기`}
                                 </S.MoreButton>
                             )}
                         </S.TodoBarList>

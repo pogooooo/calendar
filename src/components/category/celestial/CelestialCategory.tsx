@@ -211,14 +211,13 @@ export default function CelestialCategory(props: CategoryThemeProps) {
                                                         toggleTodo(authFetch, todo.id, dayKeyToIso(todoDateStr));
                                                     }}
                                                 >
-                                                    {isDone && '✦'}
+                                                    {isDone ? '✦' : ''}
                                                 </button>
 
                                                 <div className="todo-info">
                                                     <span className="title">{todo.title}</span>
                                                     <span className="date">
-                                                        {todo.startAt ? new Date(todo.startAt as string).toLocaleDateString() : t.category.noDate}
-                                                        {todo.repeat > 0 && ` (↻ ${todo.repeat}${t.todo.perNDays})`}
+                                                        {`${todo.startAt ? new Date(todo.startAt as string).toLocaleDateString() : t.category.noDate}${todo.repeat > 0 ? ` (↻ ${todo.repeat}${t.todo.perNDays})` : ''}`}
                                                     </span>
                                                 </div>
 

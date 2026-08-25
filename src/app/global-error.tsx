@@ -1,9 +1,29 @@
 "use client";
 
+import { useEffect } from "react";
+
+const RECOVER_KEY = "cronos-dom-recover";
+
+function isDomTearError(error: Error) {
+    if (error?.name === "NotFoundError") return true;
+    return /removeChild|insertBefore|not a child of this node/i.test(error?.message ?? "");
+}
+
 export default function GlobalError({ error }: { error: Error & { digest?: string } }) {
+    useEffect(() => {
+        if (!isDomTearError(error)) return;
+        try {
+            if (sessionStorage.getItem(RECOVER_KEY)) return;
+            sessionStorage.setItem(RECOVER_KEY, "1");
+        } catch {
+            return;
+        }
+        location.reload();
+    }, [error]);
+
     return (
-        <html lang="ko">
-        <body style={{ margin: 0, padding: 24, background: "#0b0e14", color: "#e6e6e6", fontFamily: "monospace" }}>
+        <html lang="ko" translate="no">
+        <body className="notranslate" style={{ margin: 0, padding: 24, background: "#0b0e14", color: "#e6e6e6", fontFamily: "monospace" }}>
             <h2 style={{ color: "#D4AF37", fontWeight: 400, letterSpacing: 2 }}>오류가 발생했습니다</h2>
             <p style={{ fontSize: 13 }}>아래 내용을 개발자에게 전달해주세요.</p>
             <pre style={{ whiteSpace: "pre-wrap", fontSize: 12, lineHeight: 1.6, border: "1px solid #D4AF3755", padding: 16 }}>

@@ -182,7 +182,7 @@ const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, CelestialWeekProp
                                                             e.stopPropagation();
                                                             setMoreModalDate(date);
                                                         }}>
-                                                            +{hiddenCount} 더보기
+                                                            {`+${hiddenCount} 더보기`}
                                                         </S.MoreButton>
                                                     )}
                                                 </S.TodoBarList>

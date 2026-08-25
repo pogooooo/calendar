@@ -282,7 +282,7 @@ export default function CelestialChallenge({
                 <S.SideSection ref={rightPanelRef} $flex={100 - leftRatio}>
                     <S.StickerBoardCard ref={stickerCardRef} $flex={topRatio}>
                         <div className="card-header">
-                            {tr.stickerBoard} {selectedChallenge && `- ${selectedChallenge.title}`}
+                            {selectedChallenge ? `${tr.stickerBoard} - ${selectedChallenge.title}` : tr.stickerBoard}
                         </div>
                         <div className="sticker-content">
                             {renderStickerBoard()}

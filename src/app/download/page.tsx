@@ -337,9 +337,7 @@ export default function DownloadPage() {
                             {busy ? <Spinner size={15} /> : <MonitorDown size={15} />}
                             {mineLabel ? `${mineLabel}용 다운로드` : "다운로드"}
                             {mineInfo?.available && (
-                                <CtaMeta>
-                                    v{mineInfo.version} · {mb(mineInfo.size)}
-                                </CtaMeta>
+                                <CtaMeta>{`v${mineInfo.version} · ${mb(mineInfo.size)}`}</CtaMeta>
                             )}
                             {mine && infos[mine] && !mineInfo?.available && <CtaMeta>준비 중</CtaMeta>}
                         </PrimaryCta>
@@ -396,9 +394,11 @@ export default function DownloadPage() {
                                     </RowName>
                                     <RowNote>{p.note}</RowNote>
                                     <RowMeta>
-                                        {info === undefined && "확인 중"}
-                                        {info !== undefined && !ready && "준비 중"}
-                                        {ready && `${p.ext} · ${mb(info?.size)}`}
+                                        {info === undefined
+                                            ? "확인 중"
+                                            : !ready
+                                                ? "준비 중"
+                                                : `${p.ext} · ${mb(info?.size)}`}
                                     </RowMeta>
                                     <RowAction>
                                         {busy === p.key ? <Spinner size={13} /> : <ArrowDown size={13} className="arrow" />}
