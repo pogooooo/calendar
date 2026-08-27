@@ -5,6 +5,7 @@ import SecondaryButton from '@/components/button/secondary/SecondaryButton';
 import { ProjectBoardProps } from '../ProjectBoard';
 import { ProjectTaskType } from '@/store/useProjectStore';
 import styled, { css } from "styled-components";
+import { TOUCH } from "@/styles/breakpoints";
 import { celestial_corner_accent } from "@/styles/celestial_theme";
 
 const CelestialProjectBoard = React.forwardRef<HTMLDivElement, ProjectBoardProps>(({
@@ -179,6 +180,7 @@ export const CardBox = styled.div<{ $isLocked?: boolean }>`
 
         .action-group {
             opacity: 1;
+            pointer-events: auto;
         }
     }
 `;
@@ -258,8 +260,14 @@ export const CardAssignees = styled.div`
 export const CardActionGroup = styled.div`
     display: flex;
     gap: 4px;
-    opacity: 0; /* 기본적으로 숨김 (일간 캘린더 디자인 참고) */
+    opacity: 0;
+    pointer-events: none;
     transition: opacity 0.2s;
+
+    ${TOUCH} {
+        opacity: 1;
+        pointer-events: auto;
+    }
 `;
 
 export const CardMoveButton = styled.button`
