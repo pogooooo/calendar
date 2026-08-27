@@ -413,6 +413,13 @@ const PageWrapper = styled.div`
     overflow: hidden;
     color: ${p => p.theme.colors.text};
     padding: 12px 0;
+
+    @media (max-width: 768px) {
+        height: auto;
+        min-height: 100%;
+        overflow: visible;
+        padding: 0;
+    }
 `;
 
 const Card = styled.div`
@@ -439,6 +446,14 @@ const Card = styled.div`
         overflow-y: auto;
         ${celestial_hide_scrollbar}
     }
+
+    @media (max-width: 768px) {
+        height: auto;
+        overflow: visible;
+        border: none;
+
+        &::before { display: none; }
+    }
 `;
 
 const Main = styled.div`
@@ -452,6 +467,10 @@ const Main = styled.div`
 const ArchWrap = styled.div`
     flex-shrink: 0;
     padding: 14px 30px 0;
+
+    @media (max-width: 768px) {
+        padding: 4px 4px 0;
+    }
 `;
 
 const Arch = styled.svg`
@@ -459,6 +478,10 @@ const Arch = styled.svg`
     width: 100%;
     height: auto;
     max-height: 210px;
+
+    @media (max-width: 768px) {
+        max-height: 170px;
+    }
 
     .basel { stroke: ${p => p.theme.colors.primary}; stroke-opacity: 0.26; stroke-width: 0.7; }
     .spoke { stroke: ${p => p.theme.colors.primary}; stroke-opacity: 0.09; stroke-width: 0.5; }
@@ -515,9 +538,13 @@ const Lists = styled.div`
     gap: 34px;
     padding: 22px 30px 20px;
 
-    @media (max-width: 640px) {
+    @media (max-width: 900px) {
         grid-template-columns: 1fr;
-        gap: 16px;
+        gap: 18px;
+    }
+
+    @media (max-width: 768px) {
+        padding: 18px 4px 6px;
     }
 `;
 
@@ -567,6 +594,11 @@ const Scroll = styled.div`
     min-height: 0;
     overflow-y: auto;
     ${celestial_hide_scrollbar}
+
+    @media (max-width: 768px) {
+        overflow: visible;
+        min-height: auto;
+    }
 `;
 
 const Empty = styled.div`
@@ -590,6 +622,11 @@ const Row = styled.div<{ $done: boolean; $soft?: boolean }>`
     align-items: center;
     gap: 11px;
     padding: ${p => (p.$soft ? "6px 0" : "7px 0")};
+
+    @media (max-width: 768px) {
+        min-height: 44px;
+        gap: 14px;
+    }
     font-size: ${p => (p.$soft ? "0.74rem" : "0.78rem")};
     color: ${p => (p.$done || p.$soft ? p.theme.colors.textSecondary : p.theme.colors.text)};
     border-bottom: 1px solid ${p => p.theme.colors.text}1A;
@@ -633,6 +670,11 @@ const Pillar = styled.aside`
     @media (max-width: 900px) {
         border-left: 0;
         border-top: 1px solid ${p => p.theme.colors.primary}42;
+    }
+
+    @media (max-width: 768px) {
+        overflow: visible;
+        padding: 16px 4px 8px;
     }
 `;
 
