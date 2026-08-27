@@ -15,7 +15,9 @@
     "deploy": "node scripts/build-cloudflare.mjs && wrangler deploy",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
-    "tauri:build": "tauri build"
+    "tauri:build": "tauri build",
+    "android:overlay": "node scripts/android-overlay.mjs",
+    "android:build": "node scripts/android-overlay.mjs && tauri android build --apk --target aarch64"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.10.0",

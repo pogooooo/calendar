@@ -1,8 +1,11 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "CRONOS desktop capability",
-  "windows": ["main", "widget-*"],
+  "description": "CRONOS shared capability",
+  "windows": [
+    "main",
+    "widget-*"
+  ],
   "permissions": [
     "core:default",
     "core:window:allow-start-dragging",
@@ -20,8 +23,6 @@
     "core:window:allow-set-always-on-top",
     "core:window:allow-set-always-on-bottom",
     "core:window:allow-set-decorations",
-    "updater:default",
-    "process:allow-restart",
     "opener:default",
     "shell:allow-open"
   ]

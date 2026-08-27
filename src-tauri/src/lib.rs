@@ -1,4 +1,6 @@
-use tauri::{Manager, WebviewWindowBuilder, WebviewUrl};
+use tauri::Manager;
+#[cfg(desktop)]
+use tauri::{WebviewWindowBuilder, WebviewUrl};
 use std::sync::{Arc, Mutex};
 use std::collections::HashSet;
 
@@ -13,22 +15,25 @@ const WIDGET_KINDS: &[&str] = &[
 ];
 
 fn widget_size(kind: &str) -> (f64, f64) {
+    const S: (f64, f64) = (200.0, 200.0);
+    const W: (f64, f64) = (416.0, 200.0);
+    const T: (f64, f64) = (200.0, 416.0);
+    const M: (f64, f64) = (416.0, 416.0);
+    const XW: (f64, f64) = (848.0, 200.0);
+
     match kind {
-        "weekly"    => (900.0, 300.0),
-        "monthly"   => (420.0, 500.0),
-        "daily"     => (400.0, 640.0),
-        "today"     => (340.0, 460.0),
-        "upcoming"  => (340.0, 420.0),
-        "stats"     => (320.0, 360.0),
-        "projectboard"  => (620.0, 420.0),
-        "projectdetail" => (360.0, 480.0),
-        "projecttimeline" => (760.0, 400.0),
-        "challenge" => (340.0, 400.0),
-        "memo"      => (380.0, 300.0),
-        "quicktask" => (340.0, 430.0),
-        "sticker"   => (430.0, 480.0),
-        "category"  => (340.0, 330.0),
-        _           => (400.0, 640.0),
+        "today"     => T,
+        "quicktask" => T,
+        "challenge" => T,
+        "projects"  => T,
+        "stats"     => S,
+        "anniversary" => S,
+        "due"       => S,
+        "memo"      => W,
+        "nownext"   => W,
+        "monthly"   => M,
+        "weekly"    => XW,
+        _           => S,
     }
 }
 
@@ -269,6 +274,7 @@ mod win32 {
         SetWindowLongW(hwnd as HWND, GWLP_HWNDPARENT, owner as i32);
     }
 
+    #[allow(dead_code)]
     pub unsafe fn set_dwm_border(hwnd: isize, show: bool) {
         let color: u32 = if show { DWMWA_COLOR_DEFAULT } else { DWMWA_COLOR_NONE };
         DwmSetWindowAttribute(
@@ -346,6 +352,7 @@ const RUN_KEY: &str = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run";
 #[cfg(target_os = "windows")]
 const RUN_VALUE: &str = "CRONOS";
 
+#[cfg(desktop)]
 #[tauri::command]
 fn get_autostart(app: tauri::AppHandle) -> bool {
     use tauri_plugin_autostart::ManagerExt;
@@ -354,6 +361,7 @@ fn get_autostart(app: tauri::AppHandle) -> bool {
 
 /// UI 스위치가 OS 의 실제 등록 상태와 어긋나지 않도록, 등록 여부와
 /// 실제로 등록된 실행 경로를 함께 돌려준다.
+#[cfg(desktop)]
 #[tauri::command]
 fn autostart_status(app: tauri::AppHandle) -> serde_json::Value {
     use tauri_plugin_autostart::ManagerExt;
@@ -383,6 +391,7 @@ fn autostart_status(app: tauri::AppHandle) -> serde_json::Value {
     })
 }
 
+#[cfg(desktop)]
 #[tauri::command]
 fn set_autostart(app: tauri::AppHandle, enabled: bool) -> bool {
     use tauri_plugin_autostart::ManagerExt;
@@ -413,6 +422,7 @@ fn launched_by_autostart() -> bool {
     std::env::args().any(|a| a == "--from-autostart")
 }
 
+#[cfg(desktop)]
 #[tauri::command]
 async fn open_widget(
     app: tauri::AppHandle,
@@ -486,7 +496,8 @@ async fn open_widget(
             .skip_taskbar(true)
             .resizable(true)
             .visible(true)
-            .inner_size(w, h);
+            .inner_size(w, h)
+            .min_inner_size(160.0, 120.0);
 
         if let Some((px, py)) = pos {
             builder = builder.position(px, py);
@@ -527,6 +538,7 @@ async fn open_widget(
     rx.await.map_err(|e| e.to_string())?
 }
 
+#[cfg(desktop)]
 #[tauri::command]
 async fn set_widget_priority(
     app: tauri::AppHandle,
@@ -564,7 +576,9 @@ async fn set_widget_priority(
                 if let Some(hwnd) = get_hwnd(&win) {
                     win.run_on_main_thread(move || unsafe {
                         win32::bypass_win_d(hwnd, true); // 바탕화면일 때만 켜기
-                        win32::set_noactivate(hwnd, true);
+                        // NOACTIVATE 를 걸면 위젯이 키보드 포커스를 못 받아 입력이 불가능해진다.
+                        // z-order 는 set_pin_bottom 의 서브클래싱이 따로 잡으므로 필요 없다.
+                        win32::set_noactivate(hwnd, false);
                         win32::set_pin_bottom(hwnd, true);
                     }).map_err(|e| e.to_string())?;
                 }
@@ -585,6 +599,7 @@ async fn set_widget_priority(
     Ok(())
 }
 
+#[cfg(desktop)]
 #[tauri::command]
 async fn set_widget_locked(
     app: tauri::AppHandle,
@@ -594,16 +609,12 @@ async fn set_widget_locked(
     let label = format!("widget-{kind}");
     let Some(win) = app.get_webview_window(&label) else { return Ok(()); };
 
-    #[cfg(target_os = "windows")]
-    if let Some(hwnd) = get_hwnd(&win) {
-        unsafe { win32::set_dwm_border(hwnd, !locked); }
-    }
-
     let _ = win;
     let _ = locked;
     Ok(())
 }
 
+#[cfg(desktop)]
 #[tauri::command]
 async fn close_widget(
     app: tauri::AppHandle,
@@ -621,6 +632,7 @@ async fn close_widget(
     Ok(())
 }
 
+#[cfg(desktop)]
 #[tauri::command]
 fn list_open_widgets(app: tauri::AppHandle) -> Vec<String> {
     WIDGET_KINDS
@@ -659,8 +671,13 @@ fn save_widget_state(app: tauri::AppHandle, state: String) -> bool {
 pub fn run() {
     let bottom_widgets = BottomWidgets(Arc::new(Mutex::new(HashSet::new())));
 
-    tauri::Builder::default()
-        // 두 번째 인스턴스는 즉시 종료된다. 없으면 위젯이 인스턴스 수만큼 중복 생성된다.
+    let builder = tauri::Builder::default()
+        .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_opener::init());
+
+    #[cfg(desktop)]
+    // 두 번째 인스턴스는 즉시 종료된다. 없으면 위젯이 인스턴스 수만큼 중복 생성된다.
+    let builder = builder
         .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
             if let Some(win) = app.get_webview_window("main") {
                 let _ = win.unminimize();
@@ -668,30 +685,45 @@ pub fn run() {
                 let _ = win.set_focus();
             }
         }))
-        .plugin(tauri_plugin_shell::init())
-        .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_autostart::init(
             tauri_plugin_autostart::MacosLauncher::LaunchAgent,
             Some(vec!["--from-autostart"]),
-        ))
+        ));
+
+    builder
         .manage(bottom_widgets.clone())
-        .invoke_handler(tauri::generate_handler![
-            open_widget,
-            close_widget,
-            list_open_widgets,
-            set_widget_priority,
-            set_widget_locked,
-            get_wallpaper_path,
-            get_wallpaper_style,
-            get_autostart,
-            set_autostart,
-            autostart_status,
-            load_widget_state,
-            save_widget_state,
-        ])
+        .invoke_handler({
+            #[cfg(desktop)]
+            {
+                tauri::generate_handler![
+                    open_widget,
+                    close_widget,
+                    list_open_widgets,
+                    set_widget_priority,
+                    set_widget_locked,
+                    get_wallpaper_path,
+                    get_wallpaper_style,
+                    get_autostart,
+                    set_autostart,
+                    autostart_status,
+                    load_widget_state,
+                    save_widget_state,
+                ]
+            }
+            #[cfg(not(desktop))]
+            {
+                tauri::generate_handler![
+                    get_wallpaper_path,
+                    get_wallpaper_style,
+                    load_widget_state,
+                    save_widget_state,
+                ]
+            }
+        })
         .setup(move |app| {
+            #[cfg(desktop)]
             {
                 let app_handle = app.handle().clone();
                 tauri::async_runtime::spawn(async move {
@@ -726,6 +758,7 @@ pub fn run() {
 
             // 부팅 자동 실행이면 큰 메인 창을 띄우지 않는다 (위젯만 복원).
             // 앱 아이콘을 다시 실행하면 single-instance 핸들러가 메인 창을 띄워준다.
+            #[cfg(desktop)]
             if let Some(win) = app.get_webview_window("main") {
                 if launched_by_autostart() {
                     let _ = win.hide();
@@ -733,6 +766,7 @@ pub fn run() {
                     let _ = win.show();
                 }
             }
+            let _ = app;
             Ok(())
         })
         .run(tauri::generate_context!())
