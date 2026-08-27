@@ -37,6 +37,14 @@ const GlobalTypography = createGlobalStyle<{ $sizePx: number; $weight: number }>
             font-weight: ${props.$weight};
         }
     `}
+
+    @media (max-width: 768px) {
+        input,
+        textarea,
+        select {
+            font-size: 16px;
+        }
+    }
 `;
 
 export default GlobalTypography;
