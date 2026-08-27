@@ -1,6 +1,7 @@
 "use client";
 
 import styled from "styled-components";
+import { MOBILE } from "@/styles/breakpoints";
 import useSettingStore from "@/store/useSettingStore";
 import { TIMEZONE_OPTIONS, detectTimeZone, isValidTimeZone } from "@/lib/timezone";
 import CelestialSelect from "@/components/input/select/CelestialSelect";
@@ -61,4 +62,6 @@ const DetectBtn = styled.button`
         border-color: ${p => p.theme.colors.primary};
         color: ${p => p.theme.colors.text};
     }
+
+    ${MOBILE} { min-height: 46px; padding: 0 12px; }
 `;

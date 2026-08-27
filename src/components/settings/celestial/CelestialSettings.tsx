@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import styled from "styled-components";
+import { MOBILE } from "@/styles/breakpoints";
 import { Check } from "lucide-react";
 import LocaleSelect from "@/components/LocaleSelect";
 import TimezoneSelect from "@/components/TimezoneSelect";
@@ -17,6 +18,12 @@ const SegmentRow = styled.div`
     gap: 14px;
     margin-bottom: 14px;
     flex-wrap: wrap;
+
+    ${MOBILE} {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
 `;
 
 const SegmentLabel = styled.span`
@@ -29,9 +36,17 @@ const SegmentLabel = styled.span`
 const SegmentGroup = styled.div`
     display: flex;
     border: 1px solid ${(props) => props.theme.colors.primary}44;
+
+    ${MOBILE} {
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: 1fr;
+    }
 `;
 
 const Segment = styled.button<{ $selected: boolean }>`
+    ${MOBILE} { min-height: 46px; padding: 0 6px; }
+
     padding: 7px 15px;
     font-size: 0.78rem;
     font-family: inherit;
@@ -57,6 +72,8 @@ const FontGrid = styled.div`
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
     gap: 12px;
+
+    ${MOBILE} { grid-template-columns: 1fr; }
 `;
 
 const FontCard = styled.button<{ $selected: boolean }>`

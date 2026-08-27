@@ -3,6 +3,7 @@
 import * as React from "react";
 import { createPortal } from "react-dom";
 import styled, { css, keyframes } from "styled-components";
+import { MOBILE, SAFE_B } from "@/styles/breakpoints";
 import { CalendarDays, ChevronLeft, ChevronRight, Clock } from "lucide-react";
 import CelestialTimeDial from "./CelestialTimeDial";
 
@@ -341,6 +342,20 @@ const Popover = styled.div<{ $up: boolean }>`
     box-shadow: 0 10px 26px -12px rgba(0, 0, 0, 0.34);
     outline: none;
     animation: ${p => (p.$up ? popInUp : popIn)} 0.18s ease-out;
+
+    ${MOBILE} {
+        top: auto !important;
+        left: 0 !important;
+        right: 0;
+        bottom: 0;
+        width: auto;
+        max-height: 88dvh;
+        overflow-y: auto;
+        padding: 14px 16px calc(14px + ${SAFE_B});
+        border: none;
+        border-top: 1px solid ${p => p.theme.colors.primary};
+        animation: ${popIn} 0.2s ease-out;
+    }
 `;
 
 const MonthNav = styled.div`

@@ -1,4 +1,5 @@
 import styled from "styled-components";
+import { MOBILE, TAB_BAR_HEIGHT, SAFE_B } from "@/styles/breakpoints";
 
 /* ── Page Layout ─────────────────────────────────────────────────────────── */
 
@@ -10,6 +11,12 @@ export const PageWrapper = styled.div`
     padding: 2.5rem 2rem 8rem;
     color: ${p => p.theme.colors.text};
     align-items: flex-start;
+
+    ${MOBILE} {
+        flex-direction: column;
+        gap: 0;
+        padding: 0 14px calc(${TAB_BAR_HEIGHT}px + 24px + ${SAFE_B});
+    }
 `;
 
 export const MainContent = styled.div`
@@ -66,6 +73,8 @@ export const ThemeGrid = styled.div`
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     border: 1px solid ${p => p.theme.colors.primary};
+
+    ${MOBILE} { grid-template-columns: 1fr; }
 `;
 
 export const ThemeCard = styled.div<{ $selected: boolean }>`
@@ -165,6 +174,13 @@ export const ThemeSubSection = styled.div`
     display: flex;
     align-items: center;
     justify-content: space-between;
+
+    ${MOBILE} {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+        padding: 14px;
+    }
 `;
 
 export const ThemeSubLabel = styled.div`
@@ -177,9 +193,17 @@ export const ModeButtonGroup = styled.div`
     display: flex;
     gap: 0;
     border: 1px solid ${p => p.theme.colors.primary};
+
+    ${MOBILE} {
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: 1fr;
+    }
 `;
 
 export const ModeButton = styled.button<{ $active: boolean }>`
+    ${MOBILE} { min-height: 46px; padding: 0 8px; }
+
     padding: 6px 18px;
     border: none;
     border-right: 1px solid ${p => p.theme.colors.primary};
@@ -205,6 +229,12 @@ export const InfoRow = styled.div`
     justify-content: space-between;
     padding: 10px 0;
     border-bottom: 1px solid ${p => p.theme.colors.primary};
+
+    ${MOBILE} {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
 
     &:last-child { border-bottom: none; }
 `;
@@ -265,6 +295,8 @@ export const ButtonRow = styled.div`
 `;
 
 export const FormButton = styled.button<{ $variant?: "primary" | "danger" | "default" }>`
+    ${MOBILE} { min-height: 46px; padding: 0 20px; }
+
     padding: 8px 20px;
     border: 1px solid ${p =>
         p.$variant === "danger"  ? "#e57373" :
@@ -314,9 +346,28 @@ export const NavPanel = styled.nav`
     position: sticky;
     top: 32px;
     align-self: flex-start;
+
+    ${MOBILE} {
+        order: -1;
+        width: auto;
+        align-self: stretch;
+        top: 0;
+        z-index: 5;
+        margin: 0 -14px;
+        padding: 0 14px;
+        background: ${p => p.theme.colors.background};
+        border-bottom: 1px solid ${p => p.theme.colors.primary};
+        display: flex;
+        overflow-x: auto;
+        scrollbar-width: none;
+
+        &::-webkit-scrollbar { display: none; }
+    }
 `;
 
 export const NavTitle = styled.div`
+    ${MOBILE} { display: none; }
+
     font-family: ${p => p.theme.fonts.celestial};
     font-size: 0.65rem;
     letter-spacing: 2.5px;
@@ -334,6 +385,18 @@ export const NavItem = styled.button<{ $active: boolean }>`
     border: none;
     border-left: 2px solid ${p =>
         p.$active ? p.theme.colors.primary : "transparent"};
+
+    ${MOBILE} {
+        display: inline-flex;
+        align-items: center;
+        width: auto;
+        min-height: 46px;
+        padding: 0 14px;
+        white-space: nowrap;
+        border-left: none;
+        border-bottom: 2px solid ${p =>
+            p.$active ? p.theme.colors.primary : "transparent"};
+    }
     background: transparent;
     color: ${p =>
         p.$active ? p.theme.colors.primary : p.theme.colors.textSecondary};

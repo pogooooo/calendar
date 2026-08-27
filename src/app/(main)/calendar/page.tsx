@@ -139,6 +139,11 @@ const PageWrapper = styled.div`
         min-height: calc(100vh - 80px);
         padding: 20px;
     }
+
+    @media (max-width: 768px) {
+        min-height: 0;
+        padding: 0;
+    }
 `;
 
 const CalendarContainer = styled.div<{ $collapsed: boolean }>`
@@ -155,6 +160,10 @@ const CalendarContainer = styled.div<{ $collapsed: boolean }>`
     @media (max-width: 1250px) {
         flex-direction: column;
         gap: 30px;
+    }
+
+    @media (max-width: 768px) {
+        gap: 18px;
     }
 `;
 

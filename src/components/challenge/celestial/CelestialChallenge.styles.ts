@@ -36,7 +36,7 @@ export const ContentLayout = styled.div`
     flex: 1;
     min-height: 0;
 
-    @media (min-width: 768px) {
+    @media (min-width: 769px) {
         flex-direction: row;
     }
 `;

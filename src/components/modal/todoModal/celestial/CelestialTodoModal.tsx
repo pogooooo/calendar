@@ -30,7 +30,6 @@ export default function CelestialTodoModal({
                         placeholder={todo?.title || t.todo.newTodo}
                         required
                         className="title-input"
-                        autoFocus
                     />
                     <button type="button" className="close-btn" onClick={onClose}>
                         <X size={22} />

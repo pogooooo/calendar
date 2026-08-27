@@ -1,4 +1,5 @@
 import styled, { css, keyframes } from "styled-components";
+import { MOBILE } from "@/styles/breakpoints";
 
 const drop = keyframes`
     from { opacity: 0; transform: translateY(-4px); }
@@ -22,6 +23,8 @@ export const Trigger = styled.button<{ $size: "sm" | "md" }>`
     font-family: inherit;
     font-size: ${p => (p.$size === "sm" ? "0.78rem" : "0.86rem")};
     padding: ${p => (p.$size === "sm" ? "6px 10px" : "8px 12px")};
+
+    ${MOBILE} { min-height: 46px; }
     cursor: pointer;
     text-align: left;
     border: 1px solid ${p => p.theme.colors.primary}57;
@@ -80,6 +83,8 @@ export const Item = styled.button<{ $on: boolean }>`
     font-family: inherit;
     font-size: 0.84rem;
     padding: 8px 12px;
+
+    ${MOBILE} { min-height: 48px; }
     text-align: left;
 
     &:hover { background-color: ${p => p.theme.colors.primary}1F; }

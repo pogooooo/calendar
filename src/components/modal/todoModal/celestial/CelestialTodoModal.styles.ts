@@ -1,10 +1,16 @@
 import styled from "styled-components";
+import { MOBILE, SAFE_B } from "@/styles/breakpoints";
 
 export const FormWrapper = styled.form`
     display: flex;
     flex-direction: column;
     width: 100%;
     max-height: 85vh;
+
+    ${MOBILE} {
+        max-height: none;
+        height: 100%;
+    }
 `;
 
 export const Header = styled.div`
@@ -13,6 +19,11 @@ export const Header = styled.div`
     align-items: center;
     padding: 20px 24px 12px 24px;
     border-bottom: 1px solid ${(props) => props.theme.colors.primary};
+
+    ${MOBILE} {
+        padding: 14px 16px 12px;
+        padding-top: calc(14px + env(safe-area-inset-top, 0px));
+    }
     background-color: ${(props) => props.theme.colors.surface};
     border-radius: 5px 5px 0 0;
 
@@ -59,6 +70,12 @@ export const Header = styled.div`
 `;
 
 export const ScrollBody = styled.div`
+    ${MOBILE} {
+        flex: 1;
+        min-height: 0;
+        padding: 14px 16px;
+    }
+
     padding: 16px 24px;
     display: flex;
     flex-direction: column;
@@ -385,6 +402,15 @@ export const Footer = styled.div`
     justify-content: flex-end;
     gap: 10px;
     padding: 16px 24px;
+
+    ${MOBILE} {
+        padding: 12px 16px calc(12px + ${SAFE_B});
+
+        & > button {
+            flex: 1;
+            min-height: 48px;
+        }
+    }
     background-color: ${(props) => props.theme.colors.surface};
     border-top: 1px solid ${(props) => props.theme.colors.primary}40;
     border-radius: 0 0 5px 5px;

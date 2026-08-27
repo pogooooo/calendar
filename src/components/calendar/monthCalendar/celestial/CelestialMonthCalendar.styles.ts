@@ -1,4 +1,5 @@
 import styled, { css } from "styled-components";
+import { MOBILE, TOUCH } from "@/styles/breakpoints";
 import { motion } from "framer-motion";
 import { celestial_hide_scrollbar } from "@/styles/celestial_theme";
 
@@ -22,6 +23,17 @@ export const DateRangeDisplay = styled.div`
     align-items: center;
     gap: 15px;
     margin-bottom: 10px;
+
+    [data-widget] & {
+        gap: 8px;
+        margin-bottom: 4px;
+        font-size: 0.68rem;
+    }
+
+    @media (max-width: 768px) {
+        gap: 8px;
+        margin-bottom: 6px;
+    }
 
     .nav-btn {
         background: transparent;
@@ -74,11 +86,12 @@ export const CalendarWindow = styled.div`
     display: flex;
     flex-direction: column;
 
-    padding-top: 15px;
-    padding-bottom: 15px;
-    margin-top: -15px;
-    margin-bottom: -15px;
     height: 100%;
+
+    [data-widget] & {
+        padding: 0;
+        margin: 0;
+    }
 `;
 
 export const Header = styled.div`
@@ -89,6 +102,12 @@ export const Header = styled.div`
     position: relative;
     width: 100%;
     box-sizing: border-box;
+
+    [data-widget] & {
+        border-left: none;
+        border-right: none;
+        border-top: none;
+    }
 
     &::after {
         content: "";
@@ -132,6 +151,17 @@ export const GridContainer = styled.div`
 
     overflow-y: auto;
     ${celestial_hide_scrollbar}
+
+    [data-widget] & {
+        border: none;
+        overflow: hidden;
+    }
+
+    ${MOBILE} {
+        display: grid;
+        grid-template-rows: repeat(6, 1fr);
+        overflow: hidden;
+    }
 `;
 
 export const WeekRowContainer = styled.div`
@@ -140,6 +170,16 @@ export const WeekRowContainer = styled.div`
     flex: 1;
     min-height: 120px;
     border-bottom: 1px solid ${(props) => props.theme.colors.primary};
+
+    [data-widget] & {
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    ${MOBILE} {
+        min-height: 0;
+        overflow: hidden;
+    }
 
     &:last-child {
         border-bottom: none;
@@ -153,6 +193,11 @@ export const DayCell = styled.div<{ $isToday: boolean; $isCurrentMonth: boolean;
     position: relative;
     border-right: 1px solid ${(props) => props.theme.colors.primary};
     opacity: ${(props) => props.$isCurrentMonth ? 1 : 0.4};
+
+    [data-widget] & {
+        overflow: hidden;
+        min-height: 0;
+    }
     /* 배경을 채우지 않는다 — 셀 내용(날짜·할 일 바)이 가려지지 않도록
        선택/호버는 테두리로만, 오늘은 모서리 브래킷으로 표시한다 */
     background-color: transparent;
@@ -275,9 +320,22 @@ export const AddTodoButton = styled.button`
     &:hover {
         transform: scale(1.1);
     }
+
+    ${TOUCH} { display: none; }
 `;
 
 export const TodoBarList = styled.div`
+    ${MOBILE} {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-content: flex-start;
+        justify-content: center;
+        gap: 3px;
+        margin: 2px 0 0;
+        padding: 0 2px;
+        overflow: hidden;
+    }
+
     position: relative;
     z-index: 1;
     display: flex;
@@ -287,9 +345,16 @@ export const TodoBarList = styled.div`
     margin-top: 5px;
     margin-bottom: 5px;
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
     ${celestial_hide_scrollbar}
+
+    [data-widget] & {
+        overflow: hidden;
+        margin-top: 2px;
+        margin-bottom: 2px;
+    }
 `;
 
 export const TodoBarSpacer = styled.div`
@@ -298,6 +363,21 @@ export const TodoBarSpacer = styled.div`
 `;
 
 export const TodoBarItem = styled.div<{ $isStart: boolean; $isEnd: boolean; $color?: string; $isDone?: boolean }>`
+    ${MOBILE} {
+        width: 6px;
+        height: 6px;
+        min-width: 0;
+        margin: 0;
+        padding: 0;
+        border: 1px solid ${(props) => props.$color || props.theme.colors.primary};
+        border-radius: 0;
+        transform: rotate(45deg);
+        background-color: ${(props) => props.$isDone ? (props.$color || props.theme.colors.primary) : "transparent"};
+        overflow: hidden;
+
+        & > * { display: none; }
+    }
+
     /* 오늘 원반이 바 뒤로 지나가도록 불투명하게 (셀 배경과 같은 색이라 겉보기는 동일) */
     background-color: ${(props) => props.theme.colors.background};
     border-top: 1px solid ${(props) => props.theme.colors.primary};

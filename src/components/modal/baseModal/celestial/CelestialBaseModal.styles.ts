@@ -10,6 +10,11 @@ export const Overlay = styled(motion.div)`
     justify-content: center;
     align-items: center;
     z-index: 1000;
+
+    @media (max-width: 768px) {
+        align-items: stretch;
+        justify-content: stretch;
+    }
 `;
 
 export const Container = styled(motion.div)<{ $maxWidth: string }>`
@@ -25,4 +30,14 @@ export const Container = styled(motion.div)<{ $maxWidth: string }>`
     overflow: hidden;
     display: flex;
     flex-direction: column;
+
+    @media (max-width: 768px) {
+        width: 100%;
+        max-width: none;
+        max-height: 100%;
+        height: 100%;
+        border: none;
+        border-top: 1px solid ${(props) => props.theme.colors.primary};
+        box-shadow: none;
+    }
 `;

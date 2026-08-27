@@ -47,6 +47,26 @@ export interface Translations {
         stickerWDesc: string;
         categoryW: string;
         categoryWDesc: string;
+        now: string;
+        next: string;
+        nothingNow: string;
+        nothingNext: string;
+        inMinutes: (m: number) => string;
+        inHours: (h: number, m: number) => string;
+        hoursLeft: (h: number) => string;
+        dueSoon: string;
+        noDue: string;
+        nowNextW: string;
+        nowNextWDesc: string;
+        dueW: string;
+        dueWDesc: string;
+        anniversaryW: string;
+        anniversaryWDesc: string;
+        projectsW: string;
+        projectsWDesc: string;
+        groupTodo: string;
+        groupCalendar: string;
+        groupRecord: string;
     };
     account: {
         email: string;
@@ -92,6 +112,9 @@ export interface Translations {
         blur: (v: number) => string;
         gloss: string;
         autoTextColor: string;
+        lock: string;
+        close: string;
+        done: string;
     };
     calendar: {
         days: string[];
@@ -114,6 +137,7 @@ export interface Translations {
         memberManagement: string;
         logout: string;
         userSuffix: string;
+        more: string;
     };
     auth: {
         signInTitle: string;
