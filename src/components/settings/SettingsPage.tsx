@@ -142,20 +142,17 @@ export default function SettingsPage() {
     ], [t]);
 
     const WIDGET_LIST = React.useMemo(() => [
-        { kind: "daily",     label: t.widget.daily,      desc: t.widget.dailyDesc },
-        { kind: "weekly",    label: t.widget.weekly,     desc: t.widget.weeklyDesc },
-        { kind: "monthly",   label: t.widget.monthly,    desc: t.widget.monthlyDesc },
-        { kind: "today",     label: t.widget.todayW,     desc: t.widget.todayWDesc },
-        { kind: "upcoming",  label: t.widget.upcomingW,  desc: t.widget.upcomingWDesc },
-        { kind: "stats",     label: t.widget.statsW,     desc: t.widget.statsWDesc },
-        { kind: "projectboard",  label: t.widget.projectBoardW,  desc: t.widget.projectBoardWDesc },
-        { kind: "projectdetail", label: t.widget.projectDetailW, desc: t.widget.projectDetailWDesc },
-        { kind: "projecttimeline", label: t.widget.projectTimelineW, desc: t.widget.projectTimelineWDesc },
-        { kind: "challenge", label: t.widget.challengeW, desc: t.widget.challengeWDesc },
-        { kind: "memo",      label: t.widget.memoW,      desc: t.widget.memoWDesc },
-        { kind: "quicktask", label: t.widget.quicktaskW, desc: t.widget.quicktaskWDesc },
-        { kind: "sticker",   label: t.widget.stickerW,   desc: t.widget.stickerWDesc },
-        { kind: "category",  label: t.widget.categoryW,  desc: t.widget.categoryWDesc },
+        { kind: "today",       label: t.widget.todayW,       desc: t.widget.todayWDesc,       group: t.widget.groupTodo },
+        { kind: "quicktask",   label: t.widget.quicktaskW,   desc: t.widget.quicktaskWDesc,   group: t.widget.groupTodo },
+        { kind: "due",         label: t.widget.dueW,         desc: t.widget.dueWDesc,         group: t.widget.groupTodo },
+        { kind: "nownext",     label: t.widget.nowNextW,     desc: t.widget.nowNextWDesc,     group: t.widget.groupCalendar },
+        { kind: "weekly",      label: t.widget.weekly,       desc: t.widget.weeklyDesc,       group: t.widget.groupCalendar },
+        { kind: "monthly",     label: t.widget.monthly,      desc: t.widget.monthlyDesc,      group: t.widget.groupCalendar },
+        { kind: "anniversary", label: t.widget.anniversaryW, desc: t.widget.anniversaryWDesc, group: t.widget.groupCalendar },
+        { kind: "projects",    label: t.widget.projectsW,    desc: t.widget.projectsWDesc,    group: t.widget.groupRecord },
+        { kind: "challenge",   label: t.widget.challengeW,   desc: t.widget.challengeWDesc,   group: t.widget.groupRecord },
+        { kind: "stats",       label: t.widget.statsW,       desc: t.widget.statsWDesc,       group: t.widget.groupRecord },
+        { kind: "memo",        label: t.widget.memoW,        desc: t.widget.memoWDesc,        group: t.widget.groupRecord },
     ], [t]);
 
     const handleThemeChange = (themeId: string) => updateTheme(authFetch, themeId);

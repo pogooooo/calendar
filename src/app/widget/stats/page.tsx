@@ -4,7 +4,7 @@ import styled from "styled-components";
 import WidgetShell from "@/components/widget/WidgetShell";
 import WidgetAuthNotice from "@/components/widget/WidgetAuthNotice";
 import { useWidgetInit } from "@/hooks/useWidgetInit";
-import { Framed, StatsPanel } from "@/components/widget/WidgetPanels";
+import { StatsPanel } from "@/components/widget/WidgetPanels";
 
 export default function StatsWidget() {
     const { ready, authed } = useWidgetInit(["todos", "categories"]);
@@ -15,9 +15,7 @@ export default function StatsWidget() {
     return (
         <WidgetShell kind="stats" title="CRONOS  ·  이번 주 통계">
             <Wrap>
-                <Framed>
-                    <StatsPanel />
-                </Framed>
+                <StatsPanel />
             </Wrap>
         </WidgetShell>
     );

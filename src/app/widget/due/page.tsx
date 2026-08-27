@@ -4,25 +4,22 @@ import styled from "styled-components";
 import WidgetShell from "@/components/widget/WidgetShell";
 import WidgetAuthNotice from "@/components/widget/WidgetAuthNotice";
 import { useWidgetInit } from "@/hooks/useWidgetInit";
-import { Framed, UpcomingPanel } from "@/components/widget/WidgetPanels";
+import { DuePanel } from "@/components/widget/WidgetPanels";
 
-export default function UpcomingWidget() {
+export default function DueWidget() {
     const { ready, authed } = useWidgetInit(["todos", "categories"]);
     if (!ready || !authed) {
-        return <WidgetAuthNotice kind="upcoming" title="CRONOS  ·  다가오는 일정" authed={authed} />;
+        return <WidgetAuthNotice kind="due" title="CRONOS  ·  마감 임박" authed={authed} />;
     }
 
     return (
-        <WidgetShell kind="upcoming" title="CRONOS  ·  다가오는 일정">
+        <WidgetShell kind="due" title="CRONOS  ·  마감 임박">
             <Wrap>
-                <Framed>
-                    <UpcomingPanel />
-                </Framed>
+                <DuePanel />
             </Wrap>
         </WidgetShell>
     );
 }
-
 
 const Wrap = styled.div`
     height: 100%;

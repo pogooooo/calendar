@@ -4,25 +4,22 @@ import styled from "styled-components";
 import WidgetShell from "@/components/widget/WidgetShell";
 import WidgetAuthNotice from "@/components/widget/WidgetAuthNotice";
 import { useWidgetInit } from "@/hooks/useWidgetInit";
-import { Framed, CategoryPanel } from "@/components/widget/WidgetPanels";
+import { NowNextPanel } from "@/components/widget/WidgetPanels";
 
-export default function CategoryWidget() {
+export default function NowNextWidget() {
     const { ready, authed } = useWidgetInit(["todos", "categories"]);
     if (!ready || !authed) {
-        return <WidgetAuthNotice kind="category" title="CRONOS  ·  카테고리 현황" authed={authed} />;
+        return <WidgetAuthNotice kind="nownext" title="CRONOS  ·  지금 · 다음" authed={authed} />;
     }
 
     return (
-        <WidgetShell kind="category" title="CRONOS  ·  카테고리 현황">
+        <WidgetShell kind="nownext" title="CRONOS  ·  지금 · 다음">
             <Wrap>
-                <Framed>
-                    <CategoryPanel />
-                </Framed>
+                <NowNextPanel />
             </Wrap>
         </WidgetShell>
     );
 }
-
 
 const Wrap = styled.div`
     height: 100%;

@@ -4,7 +4,7 @@ import styled from "styled-components";
 import WidgetShell from "@/components/widget/WidgetShell";
 import WidgetAuthNotice from "@/components/widget/WidgetAuthNotice";
 import { useWidgetInit } from "@/hooks/useWidgetInit";
-import { Framed, QuickTaskPanel } from "@/components/widget/WidgetPanels";
+import { QuickTaskPanel } from "@/components/widget/WidgetPanels";
 
 export default function QuickTaskWidget() {
     const { ready, authed } = useWidgetInit([]);
@@ -15,9 +15,7 @@ export default function QuickTaskWidget() {
     return (
         <WidgetShell kind="quicktask" title="CRONOS  ·  임시 작업">
             <Wrap>
-                <Framed>
-                    <QuickTaskPanel />
-                </Framed>
+                <QuickTaskPanel />
             </Wrap>
         </WidgetShell>
     );

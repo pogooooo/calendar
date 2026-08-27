@@ -4,23 +4,22 @@ import styled from "styled-components";
 import WidgetShell from "@/components/widget/WidgetShell";
 import WidgetAuthNotice from "@/components/widget/WidgetAuthNotice";
 import { useWidgetInit } from "@/hooks/useWidgetInit";
-import { TodayPanel } from "@/components/widget/WidgetPanels";
+import { ProjectsPanel } from "@/components/widget/WidgetPanels";
 
-export default function TodayWidget() {
-    const { ready, authed } = useWidgetInit(["todos", "categories"]);
+export default function ProjectsWidget() {
+    const { ready, authed } = useWidgetInit(["projects"]);
     if (!ready || !authed) {
-        return <WidgetAuthNotice kind="today" title="CRONOS  ·  오늘 할 일" authed={authed} />;
+        return <WidgetAuthNotice kind="projects" title="CRONOS  ·  프로젝트 진행" authed={authed} />;
     }
 
     return (
-        <WidgetShell kind="today" title="CRONOS  ·  오늘 할 일">
+        <WidgetShell kind="projects" title="CRONOS  ·  프로젝트 진행">
             <Wrap>
-                <TodayPanel />
+                <ProjectsPanel />
             </Wrap>
         </WidgetShell>
     );
 }
-
 
 const Wrap = styled.div`
     height: 100%;

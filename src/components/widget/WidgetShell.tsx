@@ -2,12 +2,11 @@
 
 import React, { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import styled, { ThemeProvider, keyframes, useTheme } from "styled-components";
-import { Settings, X, GripHorizontal, Lock } from "lucide-react";
 import useWidgetStore, { BgMode, WidgetBgSettings } from "@/store/useWidgetStore";
 import { useT } from "@/i18n/useT";
 import { invoke } from "@tauri-apps/api/core";
 import { convertFileSrc } from "@tauri-apps/api/core";
-import { getCurrentWindow, currentMonitor, LogicalSize } from "@tauri-apps/api/window";
+import { getCurrentWindow, currentMonitor } from "@tauri-apps/api/window";
 
 import type { WidgetKind } from "@/store/useWidgetStore";
 import { mirrorWidgetStateToFile } from "@/lib/widgetStateFile";
@@ -50,99 +49,6 @@ async function applyLocked(kind: string, locked: boolean) {
     try {
         await invoke("set_widget_locked", { kind, locked });
     } catch (e) {}
-}
-
-// 월간·일간은 내용이 창보다 길어 압축해서 보여주므로 자동 맞춤에서 제외한다.
-const FIXED_HEIGHT_KINDS: string[] = ["monthly", "daily"];
-const MIN_FIT_HEIGHT = 170;
-const MAX_FIT_HEIGHT = 900;
-
-function useAutoFitHeight(kind: WidgetKind, ref: React.RefObject<HTMLDivElement | null>) {
-    useEffect(() => {
-        if (!isTauri() || FIXED_HEIGHT_KINDS.includes(kind)) return;
-
-        let cancelled = false;
-        let raf = 0;
-        let busy = false;
-
-        const measure = () => {
-            const root = ref.current;
-            if (!root) return null;
-            let min = Infinity;
-            root.querySelectorAll<HTMLElement>("*").forEach((el) => {
-                const cs = getComputedStyle(el);
-                if (cs.overflowY !== "auto" && cs.overflowY !== "scroll") return;
-                if (el.clientHeight < 60 || el.children.length === 0) return;
-                const box = el.getBoundingClientRect();
-                let bottom = box.top;
-                for (const child of Array.from(el.children)) {
-                    const cb = child.getBoundingClientRect();
-                    if (cb.bottom > bottom) bottom = cb.bottom;
-                }
-                const contentHeight = bottom - box.top + (parseFloat(cs.paddingBottom) || 0);
-                const d = el.clientHeight - contentHeight;
-                if (d < min) min = d;
-            });
-            // 스크롤 영역이 없는 위젯은 내용 아래 남는 여백(음수면 넘친 양)을 함께 본다.
-            const docSlack = window.innerHeight - root.getBoundingClientRect().bottom;
-
-            return {
-                scrollSlack: Number.isFinite(min) ? min : null,
-                docSlack,
-            };
-        };
-
-        const apply = async () => {
-            if (cancelled || busy) return;
-            const m = measure();
-            if (!m) return;
-
-            // 내용이 창을 넘치면 늘리고, 아래가 남으면 그만큼 줄인다.
-            let d: number;
-            if (m.docSlack < -8) {
-                d = m.docSlack;
-            } else {
-                const spare = [m.scrollSlack, m.docSlack].filter((v): v is number => v !== null && v > 0);
-                if (spare.length === 0) return;
-                d = Math.min(...spare);
-            }
-
-            if (Math.abs(d) < 12) return;
-            busy = true;
-            try {
-                const win = getCurrentWindow();
-                const sf = await win.scaleFactor();
-                const inner = (await win.innerSize()).toLogical(sf);
-                const next = Math.max(MIN_FIT_HEIGHT, Math.min(MAX_FIT_HEIGHT, Math.round(inner.height - d)));
-                if (Math.abs(next - inner.height) >= 8) {
-                    await win.setSize(new LogicalSize(Math.round(inner.width), next));
-                }
-            } catch (e) {
-            } finally {
-                busy = false;
-            }
-        };
-
-        const schedule = () => {
-            cancelAnimationFrame(raf);
-            raf = requestAnimationFrame(() => { void apply(); });
-        };
-
-        const ro = new ResizeObserver(schedule);
-        if (ref.current) ro.observe(ref.current);
-        const mo = new MutationObserver(schedule);
-        if (ref.current) mo.observe(ref.current, { childList: true, subtree: true, characterData: true });
-
-        const timers = [120, 400, 900, 1800].map(ms => window.setTimeout(schedule, ms));
-
-        return () => {
-            cancelled = true;
-            cancelAnimationFrame(raf);
-            ro.disconnect();
-            mo.disconnect();
-            timers.forEach(clearTimeout);
-        };
-    }, [kind, ref]);
 }
 
 function getLuminance(hex: string): number {
@@ -200,8 +106,6 @@ export default function WidgetShell({ kind, title, children }: Props) {
     const monitorRef = useRef<HTMLDivElement>(null);
     const contentRef = useRef<HTMLDivElement>(null);
     const textColorRef = useRef("#ffffff");
-
-    useAutoFitHeight(kind, contentRef);
 
     React.useEffect(() => {
         if (!isTauri()) return;
@@ -479,38 +383,35 @@ export default function WidgetShell({ kind, title, children }: Props) {
 
                 {!locked && (
                     <TopBar onMouseDown={startDrag}>
-                        <GripIcon><GripHorizontal size={13} /></GripIcon>
-                        <TitleText>{title}</TitleText>
+                        <Gem $grip title={title} />
+                        <Rule />
                         <BtnGroup
                             onMouseDown={(e) => e.stopPropagation()}
                             onClick={(e) => e.stopPropagation()}
                         >
-                            <IconBtn
+                            <Gem
+                                as="button"
                                 $active={showSettings}
+                                title={t.widgetShell.background}
                                 onClick={() => setShowSettings((v) => !v)}
-                            >
-                                <Settings size={13} />
-                            </IconBtn>
-                            <IconBtn onClick={handleLock}>
-                                <Lock size={13} />
-                            </IconBtn>
-                            <IconBtn
+                            />
+                            <Gem as="button" title={t.widgetShell.lock} onClick={handleLock} />
+                            <Gem
+                                as="button"
+                                $danger
+                                title={t.widgetShell.close}
                                 onClick={async () => {
                                     try { localStorage.setItem(`cronos-widget-open:${kind}`, "0"); } catch {}
-                                    // 창이 파괴되기 전에 파일 기록이 끝나야 다음 부팅에 되살아나지 않는다
                                     await mirrorWidgetStateToFile();
                                     closeWindow();
                                 }}
-                                $danger
-                            >
-                                <X size={13} />
-                            </IconBtn>
+                            />
                         </BtnGroup>
                     </TopBar>
                 )}
 
                 {!locked && showSettings && (
-                    <SettingsPanel onClick={(e) => e.stopPropagation()}>
+                    <SettingsPanel data-settings-open onClick={(e) => e.stopPropagation()}>
                         <PanelLabel>{t.widgetShell.background}</PanelLabel>
                         <ModeRow>
                             {(["theme", "glass", "custom"] as BgMode[]).map((m) => (
@@ -574,6 +475,10 @@ export default function WidgetShell({ kind, title, children }: Props) {
                                 {bg.autoTextColor ? "ON" : "OFF"}
                             </ToggleSwitch>
                         </ToggleRow>
+
+                        <PanelDone onClick={() => setShowSettings(false)}>
+                            {t.widgetShell.done}
+                        </PanelDone>
                     </SettingsPanel>
                 )}
 
@@ -588,12 +493,14 @@ export default function WidgetShell({ kind, title, children }: Props) {
 const GLASS_MARGIN = 30;
 
 const Shell = styled.div<{ $locked?: boolean }>`
+    --widget-pad: 10px;
+
     width: 100vw;
     height: 100vh;
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    border: none;
+    border: 1px solid ${p => p.theme?.colors?.primary ?? "#D4AF37"};
     box-sizing: border-box;
     user-select: none;
     border-radius: 0;
@@ -627,8 +534,6 @@ const GlossOverlay = styled.div`
     pointer-events: none;
     z-index: 0;
     background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.03) 15%, transparent 30%);
-    border-top: 1px solid rgba(255,255,255,0.3);
-    border-left: 1px solid rgba(255,255,255,0.2);
     box-shadow: inset 0px 0px 15px rgba(255, 255, 255, 0.05);
 `;
 
@@ -647,51 +552,59 @@ const VirtualMonitor = styled.div<{ $url: string; $mw: number; $mh: number }>`
 `;
 
 const TopBar = styled.div`
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 3;
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 6px 10px;
+    gap: 8px;
+    padding: 7px 9px;
     cursor: default;
-    flex-shrink: 0;
+    opacity: 0;
+    transition: opacity 0.14s ease;
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.34), transparent);
+
     &:active { cursor: default; }
+
+    ${Shell}:hover &,
+    &:focus-within { opacity: 1; }
+
+    ${Shell}:has(> [data-settings-open]) & { opacity: 1; }
 `;
 
-const GripIcon = styled.span`
-    color: ${p => p.theme?.colors?.text ?? "#e8e0d0"};
-    opacity: 0.5;
-    display: flex;
-    align-items: center;
+const Gem = styled.span<{ $grip?: boolean; $active?: boolean; $danger?: boolean }>`
+    width: 9px;
+    height: 9px;
+    flex-shrink: 0;
+    padding: 0;
+    transform: rotate(45deg);
+    border: 1px solid ${p => p.theme?.colors?.primary ?? "#D4AF37"};
+    background: ${p => p.$active ? (p.theme?.colors?.primary ?? "#D4AF37") : "transparent"};
+    opacity: ${p => p.$grip ? 0.55 : 0.8};
+    cursor: ${p => p.$grip ? "grab" : "pointer"};
+    transition: background 0.12s, opacity 0.12s, box-shadow 0.12s;
+
+    &:hover {
+        opacity: 1;
+        background: ${p => p.$danger ? "#C8687A" : (p.theme?.colors?.primary ?? "#D4AF37")};
+        border-color: ${p => p.$danger ? "#C8687A" : (p.theme?.colors?.primary ?? "#D4AF37")};
+        box-shadow: 0 0 5px ${p => p.theme?.colors?.primary ?? "#D4AF37"}80;
+    }
 `;
 
-const TitleText = styled.span`
-    font-family: ${p => p.theme?.fonts?.celestial ?? "inherit"};
-    font-size: 0.72rem;
-    letter-spacing: 2px;
-    color: ${p => p.theme?.colors?.text ?? "#e8e0d0"};
-    opacity: 0.85;
+const Rule = styled.span`
     flex: 1;
+    height: 1px;
+    background: ${p => p.theme?.colors?.primary ?? "#D4AF37"}66;
 `;
 
 const BtnGroup = styled.div`
     display: flex;
-    gap: 4px;
-`;
-
-const IconBtn = styled.button<{ $active?: boolean; $danger?: boolean }>`
-    background: ${p => p.$active ? (p.theme?.colors?.primary ?? "#D4AF37") + "20" : "transparent"};
-    border: none;
-    cursor: pointer;
-    padding: 3px;
-    display: flex;
     align-items: center;
-    color: ${p => p.$danger ? "#e57373" : p.theme?.colors?.text ?? "#e8e0d0"};
-    opacity: 0.7;
-    border-radius: 3px;
-    transition: opacity 0.1s, background 0.1s;
-    &:hover {
-        opacity: 1;
-        background: ${p => p.$danger ? "#e5737320" : (p.theme?.colors?.primary ?? "#D4AF37") + "20"};
-    }
+    gap: 7px;
+    flex-shrink: 0;
 `;
 
 const slideDown = keyframes`
@@ -700,9 +613,51 @@ const slideDown = keyframes`
 `;
 
 const SettingsPanel = styled.div`
-    padding: 10px 12px;
+    position: absolute;
+    top: 30px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    padding: var(--widget-pad);
+    background: ${p => p.theme?.baseColors?.surface ?? p.theme?.colors?.surface ?? "#1a160e"};
+    border-top: 1px solid ${p => p.theme?.colors?.primary ?? "#D4AF37"}66;
     animation: ${slideDown} 0.15s ease;
-    flex-shrink: 0;
+
+    &, & * {
+        color: ${p => p.theme?.baseColors?.text ?? p.theme?.colors?.text} !important;
+    }
+`;
+
+const PanelDone = styled.button`
+    margin-top: auto;
+    padding-top: 10px;
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: none;
+    border: none;
+    border-top: 1px solid ${p => p.theme?.colors?.primary ?? "#D4AF37"}33;
+    cursor: pointer;
+    font-family: ${p => p.theme?.fonts?.celestial ?? "inherit"};
+    font-size: 0.7rem;
+    letter-spacing: 2px;
+    opacity: 0.75;
+
+    &:hover { opacity: 1; }
+
+    &::before {
+        content: "";
+        width: 7px;
+        height: 7px;
+        transform: rotate(45deg);
+        border: 1px solid ${p => p.theme?.colors?.primary ?? "#D4AF37"};
+    }
 `;
 
 const PanelLabel = styled.div`
@@ -799,28 +754,21 @@ const ColorHex = styled.span`
 const Content = styled.div<{ $kind?: string }>`
     flex: 1;
     min-height: 0;
-    overflow-y: ${p => p.$kind === "monthly" ? "hidden" : "auto"};
-    overflow-x: hidden;
-    padding: 10px;
+    min-width: 0;
+    overflow: hidden;
+    padding: 0;
     position: relative;
-    scrollbar-width: thin;
-    scrollbar-color: ${p => p.theme?.colors?.primary ?? "#D4AF37"}40 transparent;
 
     &, & * {
         color: ${p => p.theme?.colors?.text} !important;
     }
 
-    ${p => p.$kind === "monthly" ? `
-        & *, & *::-webkit-scrollbar {
-            scrollbar-width: none !important;
-        }
-        & *::-webkit-scrollbar {
-            display: none !important;
-            width: 0 !important;
-            height: 0 !important;
-        }
-        & * {
-            overflow-x: hidden !important;
-        }
-    ` : ""}
+    & *::-webkit-scrollbar {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+    }
+    & * {
+        scrollbar-width: none !important;
+    }
 `;

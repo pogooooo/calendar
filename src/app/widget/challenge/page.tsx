@@ -4,7 +4,7 @@ import styled from "styled-components";
 import WidgetShell from "@/components/widget/WidgetShell";
 import WidgetAuthNotice from "@/components/widget/WidgetAuthNotice";
 import { useWidgetInit } from "@/hooks/useWidgetInit";
-import { Framed, ChallengePanel } from "@/components/widget/WidgetPanels";
+import { ChallengePanel } from "@/components/widget/WidgetPanels";
 
 export default function ChallengeWidget() {
     const { ready, authed } = useWidgetInit([]);
@@ -15,9 +15,7 @@ export default function ChallengeWidget() {
     return (
         <WidgetShell kind="challenge" title="CRONOS  ·  챌린지">
             <Wrap>
-                <Framed>
-                    <ChallengePanel />
-                </Framed>
+                <ChallengePanel />
             </Wrap>
         </WidgetShell>
     );

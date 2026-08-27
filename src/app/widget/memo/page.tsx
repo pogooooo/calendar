@@ -4,7 +4,7 @@ import styled from "styled-components";
 import WidgetShell from "@/components/widget/WidgetShell";
 import WidgetAuthNotice from "@/components/widget/WidgetAuthNotice";
 import { useWidgetInit } from "@/hooks/useWidgetInit";
-import { Framed, MemoPanel } from "@/components/widget/WidgetPanels";
+import { MemoPanel } from "@/components/widget/WidgetPanels";
 
 export default function MemoWidget() {
     const { ready, authed } = useWidgetInit([]);
@@ -15,9 +15,7 @@ export default function MemoWidget() {
     return (
         <WidgetShell kind="memo" title="CRONOS  ·  일일 메모">
             <Wrap>
-                <Framed>
-                    <MemoPanel />
-                </Framed>
+                <MemoPanel />
             </Wrap>
         </WidgetShell>
     );

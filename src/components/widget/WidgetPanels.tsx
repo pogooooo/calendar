@@ -1,85 +1,21 @@
 "use client";
 
 import * as React from "react";
-import styled, { keyframes } from "styled-components";
+import styled from "styled-components";
 import { Check } from "lucide-react";
 import useTodoStore from "@/store/useTodoStore";
 import useCategoryStore from "@/store/useCategoryStore";
 import useProjectStore from "@/store/useProjectStore";
 import useChallengeStore, { ChallengeType } from "@/store/useChallengeStore";
 import useDailyStore from "@/store/useDailyStore";
+import useAnniversaryStore from "@/store/useAnniversaryStore";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useT } from "@/i18n/useT";
 import { useCurrentDayKey } from "@/hooks/useCurrentDay";
 import { dayKeyToIso } from "@/lib/dateKey";
-import { DynamicSticker } from "@/assets/celestial/ChallengeStickers";
-import ProjectTimeline from "@/components/project/timeline/ProjectTimeline";
 
-const twinkle = keyframes`
-    0%, 100% { opacity: 0.5; }
-    50% { opacity: 0.06; }
-`;
-
-const Decor = styled.div`
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    z-index: 0;
-
-    .corner {
-        position: absolute;
-        width: 16px;
-        height: 16px;
-    }
-    .corner.tl {
-        top: 0; left: 0;
-        background: linear-gradient(315deg, transparent 48%, ${p => p.theme.colors.primary} 50%, transparent 52%);
-    }
-    .corner.br {
-        bottom: 0; right: 0;
-        background: linear-gradient(135deg, transparent 48%, ${p => p.theme.colors.primary} 50%, transparent 52%);
-    }
-
-    .mote {
-        position: absolute;
-        width: 3px;
-        height: 3px;
-        background-color: ${p => p.theme.colors.primary};
-        clip-path: polygon(50% 0%, 59% 41%, 100% 50%, 59% 59%, 50% 100%, 41% 59%, 0% 50%, 41% 41%);
-        animation: ${twinkle} 4s ease-in-out infinite;
-    }
-    .mote.a { left: 16%; top: 22%; animation-duration: 3.6s; }
-    .mote.b { left: 74%; top: 40%; animation-duration: 4.8s; animation-delay: 1.3s; }
-    .mote.c { left: 38%; top: 76%; animation-duration: 3.2s; animation-delay: 2.4s; }
-`;
-
-const Stage = styled.div`
-    position: relative;
-    height: 100%;
-    min-height: 0;
-
-    & > .content {
-        position: relative;
-        z-index: 1;
-        height: 100%;
-        min-height: 0;
-    }
-`;
-
-export function Framed({ children }: { children: React.ReactNode }) {
-    return (
-        <Stage>
-            <Decor aria-hidden="true">
-                <span className="corner tl" />
-                <span className="corner br" />
-                <span className="mote a" />
-                <span className="mote b" />
-                <span className="mote c" />
-            </Decor>
-            <div className="content">{children}</div>
-        </Stage>
-    );
-}
+const ROW_PX = 32;
+const NARROW_PX = 300;
 
 const dayKey = (v: string | number | Date) => {
     const d = new Date(v);
@@ -94,62 +30,328 @@ const spansDay = (t: { startAt?: string | number | Date | null; endAt?: string |
 const doneOn = (t: { completions?: { targetDate: string | Date }[] }, key: string) =>
     (t.completions ?? []).some(c => dayKey(c.targetDate) === key);
 
+function useFrame(rowPx = ROW_PX, reserved = 0) {
+    const ref = React.useRef<HTMLDivElement>(null);
+    const [box, setBox] = React.useState({ rows: 4, width: 200, height: 200 });
+
+    React.useEffect(() => {
+        const el = ref.current;
+        if (!el) return;
+
+        const calc = () => {
+            const h = el.clientHeight - reserved;
+            setBox({
+                rows: Math.max(1, Math.floor(h / rowPx)),
+                width: el.clientWidth,
+                height: el.clientHeight,
+            });
+        };
+
+        calc();
+        const ro = new ResizeObserver(calc);
+        ro.observe(el);
+        return () => ro.disconnect();
+    }, [rowPx, reserved]);
+
+    return [ref, box] as const;
+}
+
+function useMinuteTick(ms = 30000) {
+    const [, force] = React.useReducer((n: number) => n + 1, 0);
+    React.useEffect(() => {
+        const id = window.setInterval(force, ms);
+        return () => window.clearInterval(id);
+    }, [ms]);
+}
+
 export function TodayPanel() {
+    const { todos, toggleTodo, addTodo } = useTodoStore();
+    const { categories } = useCategoryStore();
+    const authFetch = useAuthFetch();
+    const tr = useT();
+    const [ref, box] = useFrame(ROW_PX, 26 + 38);
+    const [draft, setDraft] = React.useState("");
+
+    const key = dayKey(new Date());
+    const t0 = new Date().setHours(0, 0, 0, 0);
+
+    const today = todos.filter(t => spansDay(t, key));
+    const next = todos
+        .filter(t => t.startAt && new Date(t.startAt).getTime() >= t0 + 86400000 && new Date(t.startAt).getTime() < t0 + 86400000 * 8)
+        .sort((a, b) => new Date(a.startAt!).getTime() - new Date(b.startAt!).getTime());
+
+    const hasNext = next.length > 0;
+    const budget = Math.max(1, box.rows - (hasNext ? 1 : 0));
+    const todayCap = hasNext ? Math.max(1, Math.round(budget * 0.6)) : budget;
+    const nextCap = Math.max(0, budget - todayCap);
+
+    const color = (id: string) => categories.find(c => c.id === id)?.color || "#D4AF37";
+
+    const submit = () => {
+        const v = draft.trim();
+        if (!v) return;
+
+        const cat = categories[0];
+        if (!cat) return;
+
+        const start = new Date();
+        const end = new Date(start.getTime() + 3600000);
+
+        addTodo(authFetch, {
+            title: v,
+            categoryId: cat.id,
+            startAt: start.toISOString(),
+            endAt: end.toISOString(),
+        });
+        setDraft("");
+    };
+
+    return (
+        <Pad ref={ref}>
+            <QuickInput
+                value={draft}
+                placeholder={tr.calendar.addTask}
+                onChange={(e) => setDraft(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
+            />
+            <SectionHead>{tr.home.today}</SectionHead>
+            {today.length === 0
+                ? <Thin>{tr.home.noTodayTodos}</Thin>
+                : today.slice(0, todayCap).map(t => {
+                    const done = doneOn(t, key);
+                    return (
+                        <Row key={t.id}>
+                            <Box $done={done} onClick={() => toggleTodo(authFetch, t.id, key)}>
+                                {done && <Check size={9} strokeWidth={3} />}
+                            </Box>
+                            <Mark $c={color(t.categoryId)} />
+                            <Name $done={done}>{t.title}</Name>
+                        </Row>
+                    );
+                })}
+            {today.length > todayCap && <More>{`+${today.length - todayCap}`}</More>}
+
+            {hasNext && nextCap > 0 && (
+                <>
+                    <SectionHead className="mt">{tr.home.upcoming}</SectionHead>
+                    {next.slice(0, nextCap).map(t => {
+                        const k = dayKey(t.startAt!);
+                        const done = doneOn(t, k);
+                        const d = new Date(t.startAt!);
+                        return (
+                            <Row key={t.id}>
+                                <Box $done={done} onClick={() => toggleTodo(authFetch, t.id, k)}>
+                                    {done && <Check size={9} strokeWidth={3} />}
+                                </Box>
+                                <Mark $c={color(t.categoryId)} />
+                                <Name $done={done}>{t.title}</Name>
+                                <Meta>{`${d.getMonth() + 1}/${d.getDate()}`}</Meta>
+                            </Row>
+                        );
+                    })}
+                    {next.length > nextCap && <More>{`+${next.length - nextCap}`}</More>}
+                </>
+            )}
+        </Pad>
+    );
+}
+
+export function NowNextPanel() {
+    const { todos } = useTodoStore();
+    const { categories } = useCategoryStore();
+    const tr = useT();
+    useMinuteTick();
+
+    const now = Date.now();
+    const timed = todos.filter(t => t.startAt && t.endAt && !t.isAllDay);
+
+    const current = timed
+        .filter(t => new Date(t.startAt!).getTime() <= now && now < new Date(t.endAt!).getTime())
+        .sort((a, b) => new Date(a.endAt!).getTime() - new Date(b.endAt!).getTime())[0];
+
+    const upcoming = timed
+        .filter(t => new Date(t.startAt!).getTime() > now)
+        .sort((a, b) => new Date(a.startAt!).getTime() - new Date(b.startAt!).getTime())[0];
+
+    const color = (id: string) => categories.find(c => c.id === id)?.color || "#D4AF37";
+
+    const untilText = (ms: number) => {
+        const m = Math.max(0, Math.round(ms / 60000));
+        if (m < 60) return tr.widget.inMinutes(m);
+        return tr.widget.inHours(Math.floor(m / 60), m % 60);
+    };
+
+    const hhmm = (v: string | number | Date) => {
+        const d = new Date(v);
+        return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+    };
+
+    const pct = current
+        ? Math.round(((now - new Date(current.startAt!).getTime()) /
+            Math.max(1, new Date(current.endAt!).getTime() - new Date(current.startAt!).getTime())) * 100)
+        : 0;
+
+    return (
+        <Pad>
+            <BigRow>
+                <SectionHead>{tr.widget.now}</SectionHead>
+                {current ? (
+                    <>
+                        <NowTitle><Mark $c={color(current.categoryId)} />{current.title}</NowTitle>
+                        <NowMeta>{`${hhmm(current.startAt!)} – ${hhmm(current.endAt!)} · ${untilText(new Date(current.endAt!).getTime() - now)}`}</NowMeta>
+                        <Bar><Fill $pct={pct} /></Bar>
+                    </>
+                ) : (
+                    <NowMeta>{tr.widget.nothingNow}</NowMeta>
+                )}
+            </BigRow>
+
+            <Dashed />
+
+            <BigRow>
+                <SectionHead>{tr.widget.next}</SectionHead>
+                {upcoming ? (
+                    <>
+                        <NowTitle><Mark $c={color(upcoming.categoryId)} />{upcoming.title}</NowTitle>
+                        <NowMeta>{`${hhmm(upcoming.startAt!)} · ${untilText(new Date(upcoming.startAt!).getTime() - now)}`}</NowMeta>
+                    </>
+                ) : (
+                    <NowMeta>{tr.widget.nothingNext}</NowMeta>
+                )}
+            </BigRow>
+        </Pad>
+    );
+}
+
+export function DuePanel() {
     const { todos, toggleTodo } = useTodoStore();
     const { categories } = useCategoryStore();
     const authFetch = useAuthFetch();
     const tr = useT();
+    const [ref, box] = useFrame(ROW_PX, 26);
+    useMinuteTick(60000);
 
-    const key = dayKey(new Date());
-    const list = todos.filter(t => spansDay(t, key));
+    const now = Date.now();
+    const list = todos
+        .filter(t => {
+            if (!t.endAt) return false;
+            const end = new Date(t.endAt).getTime();
+            if (end < now || end > now + 86400000 * 2) return false;
+            return !doneOn(t, dayKey(t.endAt));
+        })
+        .sort((a, b) => new Date(a.endAt!).getTime() - new Date(b.endAt!).getTime());
 
-    if (list.length === 0) return <Empty>{tr.home.noTodayTodos}</Empty>;
+    const cap = Math.max(1, box.rows);
+    const color = (id: string) => categories.find(c => c.id === id)?.color || "#D4AF37";
+
+    const left = (v: string | number | Date) => {
+        const h = Math.round((new Date(v).getTime() - now) / 3600000);
+        return h >= 24 ? `D-${Math.floor(h / 24)}` : tr.widget.hoursLeft(Math.max(0, h));
+    };
 
     return (
-        <Scroll>
-            {list.map(t => {
-                const done = doneOn(t, key);
-                const cat = categories.find(c => c.id === t.categoryId);
-                return (
-                    <Row key={t.id}>
-                        <Box $done={done} onClick={() => toggleTodo(authFetch, t.id, new Date().toISOString())}>
-                            {done && <Check size={9} strokeWidth={3} />}
-                        </Box>
-                        <Mark $c={cat?.color || "#D4AF37"} />
-                        <Name $done={done}>{t.title}</Name>
-                    </Row>
-                );
-            })}
-        </Scroll>
+        <Pad ref={ref}>
+            <SectionHead>{tr.widget.dueSoon}</SectionHead>
+            {list.length === 0
+                ? <Thin>{tr.widget.noDue}</Thin>
+                : list.slice(0, cap).map(t => {
+                    const k = dayKey(t.endAt!);
+                    return (
+                        <Row key={t.id}>
+                            <Box $done={false} onClick={() => toggleTodo(authFetch, t.id, k)} />
+                            <Mark $c={color(t.categoryId)} />
+                            <Name $done={false}>{t.title}</Name>
+                            <Meta>{left(t.endAt!)}</Meta>
+                        </Row>
+                    );
+                })}
+            {list.length > cap && <More>{`+${list.length - cap}`}</More>}
+        </Pad>
     );
 }
 
-export function UpcomingPanel() {
-    const { todos } = useTodoStore();
-    const { categories } = useCategoryStore();
+export function AnniversaryPanel() {
+    const { anniversaries, fetchAnniversaries } = useAnniversaryStore();
+    const authFetch = useAuthFetch();
     const tr = useT();
+    const [ref, box] = useFrame(ROW_PX, 26);
+
+    React.useEffect(() => {
+        fetchAnniversaries(authFetch);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const t0 = new Date().setHours(0, 0, 0, 0);
-    const list = todos
-        .filter(t => t.startAt && new Date(t.startAt).getTime() >= t0 + 86400000 && new Date(t.startAt).getTime() < t0 + 86400000 * 8)
-        .sort((a, b) => new Date(a.startAt!).getTime() - new Date(b.startAt!).getTime());
+    const year = new Date(t0).getFullYear();
 
-    if (list.length === 0) return <Empty>{tr.home.noUpcoming}</Empty>;
+    const list = anniversaries
+        .map(a => {
+            let d = new Date(year, a.month - 1, a.day).getTime();
+            if (d < t0) d = new Date(year + 1, a.month - 1, a.day).getTime();
+            return { ...a, dday: Math.round((d - t0) / 86400000) };
+        })
+        .sort((a, b) => a.dday - b.dday);
+
+    const cap = Math.max(1, box.rows);
 
     return (
-        <Scroll>
-            {list.map(t => {
-                const cat = categories.find(c => c.id === t.categoryId);
-                const d = new Date(t.startAt!);
-                return (
-                    <Row key={t.id}>
-                        <Mark $c={cat?.color || "#D4AF37"} />
-                        <Name $done={false}>{t.title}</Name>
-                        <Meta>{d.getMonth() + 1}/{d.getDate()}</Meta>
+        <Pad ref={ref}>
+            <SectionHead>{tr.sidebar.anniversary}</SectionHead>
+            {list.length === 0
+                ? <Thin>{tr.home.noAnniversaries}</Thin>
+                : list.slice(0, cap).map(a => (
+                    <Row key={a.id}>
+                        <Star>✦</Star>
+                        <Name $done={false}>{a.title}</Name>
+                        <Meta className={a.dday === 0 ? "hot" : ""}>{a.dday === 0 ? "D-DAY" : `D-${a.dday}`}</Meta>
                     </Row>
-                );
-            })}
-        </Scroll>
+                ))}
+        </Pad>
+    );
+}
+
+export function ProjectsPanel() {
+    const { projects, fetchProjects } = useProjectStore();
+    const authFetch = useAuthFetch();
+    const tr = useT();
+    const [ref, box] = useFrame(38, 26);
+
+    React.useEffect(() => {
+        fetchProjects(authFetch);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    const list = projects
+        .filter(p => p.status !== "done")
+        .sort((a, b) => {
+            const ea = a.endAt ? new Date(a.endAt).getTime() : Infinity;
+            const eb = b.endAt ? new Date(b.endAt).getTime() : Infinity;
+            return ea - eb;
+        });
+
+    const cap = Math.max(1, box.rows);
+
+    return (
+        <Pad ref={ref}>
+            <SectionHead>{tr.home.project}</SectionHead>
+            {list.length === 0
+                ? <Thin>{tr.home.noProjects}</Thin>
+                : list.slice(0, cap).map(p => {
+                    const tasks = p.tasks ?? [];
+                    const done = tasks.filter(t => t.status === "done").length;
+                    const pct = tasks.length ? Math.round((done / tasks.length) * 100) : 0;
+                    return (
+                        <ProjRow key={p.id}>
+                            <ProjTop>
+                                <Name $done={false}>{p.title}</Name>
+                                <Meta>{`${done}/${tasks.length}`}</Meta>
+                            </ProjTop>
+                            <Bar><Fill $pct={pct} /></Bar>
+                        </ProjRow>
+                    );
+                })}
+            {list.length > cap && <More>{`+${list.length - cap}`}</More>}
+        </Pad>
     );
 }
 
@@ -157,6 +359,7 @@ export function StatsPanel() {
     const { todos } = useTodoStore();
     const { categories } = useCategoryStore();
     const tr = useT();
+    const [ref, box] = useFrame(22, 96);
 
     const t0 = new Date().setHours(0, 0, 0, 0);
     const base = new Date(t0);
@@ -176,191 +379,40 @@ export function StatsPanel() {
     }
     const pct = total ? Math.round((done / total) * 100) : 0;
 
+    const key = dayKey(new Date());
     const cats = categories
-        .map(c => ({ ...c, count: todos.filter(t => t.categoryId === c.id).length }))
-        .filter(c => c.count > 0)
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 6);
-    const max = cats.length ? cats[0].count : 1;
+        .map(c => {
+            const mine = todos.filter(t => t.categoryId === c.id);
+            return { ...c, total: mine.length, done: mine.filter(t => doneOn(t, key)).length };
+        })
+        .filter(c => c.total > 0)
+        .sort((a, b) => b.total - a.total);
+
+    const max = cats.length ? cats[0].total : 1;
+    const wide = box.width >= NARROW_PX;
+    const cap = wide ? Math.max(1, Math.min(6, box.rows)) : 0;
 
     return (
-        <StatWrap>
+        <Pad ref={ref}>
             <Big>{pct}<span>%</span></Big>
             <Caption>{tr.home.doneRatio(done, total)}</Caption>
             <Bar><Fill $pct={pct} /></Bar>
-            <Dashed />
-            {cats.length === 0
-                ? <Empty>{tr.home.noData}</Empty>
-                : cats.map(c => (
-                    <CatRow key={c.id}>
-                        <Mark $c={c.color} />
-                        <CatName>{c.name}</CatName>
-                        <CatBar><CatFill $c={c.color} $pct={(c.count / max) * 100} /></CatBar>
-                        <Meta>{c.count}</Meta>
-                    </CatRow>
-                ))}
-        </StatWrap>
-    );
-}
-
-const BOARD_COLUMNS = [
-    { key: "todo", next: "in_progress" },
-    { key: "in_progress", next: "done" },
-    { key: "done", next: null },
-] as const;
-
-function useSelectedProject() {
-    const { projects, fetchProjects } = useProjectStore();
-    const authFetch = useAuthFetch();
-    const [sel, setSel] = React.useState<string | null>(null);
-
-    React.useEffect(() => {
-        fetchProjects(authFetch);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
-
-    React.useEffect(() => {
-        if (projects.length > 0 && !projects.some(p => p.id === sel)) setSel(projects[0].id);
-    }, [projects, sel]);
-
-    return { projects, project: projects.find(p => p.id === sel) ?? null, sel, setSel };
-}
-
-export function ProjectBoardPanel() {
-    const { updateProjectTaskStatus } = useProjectStore();
-    const authFetch = useAuthFetch();
-    const tr = useT();
-    const { projects, project, sel, setSel } = useSelectedProject();
-
-    if (!project) return <Empty>{tr.home.noProjects}</Empty>;
-
-    const tasks = project.tasks ?? [];
-    const columnLabel: Record<string, string> = {
-        todo: tr.home.colTodo,
-        in_progress: tr.home.colDoing,
-        done: tr.home.colDone,
-    };
-
-    return (
-        <Column>
-            <Tabs>
-                {projects.map(p => (
-                    <Tab key={p.id} $active={p.id === sel} onClick={() => setSel(p.id)}>{p.title}</Tab>
-                ))}
-            </Tabs>
-            <BoardGrid>
-                {BOARD_COLUMNS.map(col => {
-                    const list = tasks.filter(t => t.status === col.key);
-                    return (
-                        <BoardCol key={col.key}>
-                            <ColHead>
-                                <span>{columnLabel[col.key]}</span>
-                                <ColCount>{list.length}</ColCount>
-                            </ColHead>
-                            <ColBody>
-                                {list.map(t => (
-                                    <Chip
-                                        key={t.id}
-                                        $done={col.key === "done"}
-                                        $movable={col.next !== null}
-                                        onClick={() => col.next && updateProjectTaskStatus(authFetch, project.id, t.id, col.next)}
-                                    >
-                                        <ChipMark $p={t.priority} />
-                                        <ChipText>{t.title}</ChipText>
-                                    </Chip>
-                                ))}
-                            </ColBody>
-                        </BoardCol>
-                    );
-                })}
-            </BoardGrid>
-        </Column>
-    );
-}
-
-export function ProjectTimelinePanel() {
-    const { updateProjectTask } = useProjectStore();
-    const authFetch = useAuthFetch();
-    const tr = useT();
-    const { projects, project, sel, setSel } = useSelectedProject();
-
-    if (!project) return <Empty>{tr.home.noProjects}</Empty>;
-
-    return (
-        <Column>
-            <Tabs>
-                {projects.map(p => (
-                    <Tab key={p.id} $active={p.id === sel} onClick={() => setSel(p.id)}>{p.title}</Tab>
-                ))}
-            </Tabs>
-            <ProjectTimeline
-                tasks={project.tasks ?? []}
-                flex={1}
-                onEditTask={() => {}}
-                onUpdateTaskDates={(taskId, newStart, newEnd) =>
-                    updateProjectTask(authFetch, project.id, taskId, { startAt: newStart, endAt: newEnd })}
-            />
-        </Column>
-    );
-}
-
-export function ProjectDetailPanel() {
-    const { updateProjectTaskStatus } = useProjectStore();
-    const authFetch = useAuthFetch();
-    const tr = useT();
-    const { projects, project, sel, setSel } = useSelectedProject();
-
-    if (!project) return <Empty>{tr.home.noProjects}</Empty>;
-
-    const tasks = project.tasks ?? [];
-    const done = tasks.filter(t => t.status === "done").length;
-    const pct = tasks.length === 0 ? 0 : (done / tasks.length) * 100;
-    // slice(0,-1) 는 한국어 표기('2026. 8. 16.')에만 맞고 다른 로캘에선 연도를 잘라먹는다
-    const fmt = (v?: string | null) => v
-        ? new Date(v).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })
-        : tr.home.noDate;
-    const assignees = (project.assignees ?? []).map(a => a.name).join(", ");
-
-    return (
-        <Column>
-            <Tabs>
-                {projects.map(p => (
-                    <Tab key={p.id} $active={p.id === sel} onClick={() => setSel(p.id)}>{p.title}</Tab>
-                ))}
-            </Tabs>
-            <StatWrap>
-                <DetailTitle>{project.title}</DetailTitle>
-                <MetaLine>
-                    <MetaKey>{tr.home.period}</MetaKey>
-                    <span>{fmt(project.startAt)} — {fmt(project.endAt)}</span>
-                </MetaLine>
-                <MetaLine>
-                    <MetaKey>{tr.home.assignee}</MetaKey>
-                    <span>{assignees || tr.home.noAssignee}</span>
-                </MetaLine>
-
-                <Dashed />
-
-                <Caption>{tr.home.doneRatio(done, tasks.length)}</Caption>
-                <Bar><Fill $pct={pct} /></Bar>
-
-                <Dashed />
-
-                {tasks.length === 0 && <Empty>{tr.home.noTasks}</Empty>}
-                {tasks.map(t => (
-                    <Row key={t.id}>
-                        <Box
-                            $done={t.status === "done"}
-                            onClick={() => updateProjectTaskStatus(authFetch, project.id, t.id, t.status === "done" ? "todo" : "done")}
-                        >
-                            {t.status === "done" && <Check size={9} strokeWidth={3} />}
-                        </Box>
-                        <Name $done={t.status === "done"}>{t.title}</Name>
-                        <ChipMark $p={t.priority} />
-                    </Row>
-                ))}
-            </StatWrap>
-        </Column>
+            {cap > 0 && (
+                <>
+                    <Dashed />
+                    {cats.length === 0
+                        ? <Thin>{tr.home.noData}</Thin>
+                        : cats.slice(0, cap).map(c => (
+                            <CatRow key={c.id}>
+                                <Mark $c={c.color} />
+                                <CatName>{c.name}</CatName>
+                                <CatBar><CatFill $c={c.color} $pct={(c.total / max) * 100} /></CatBar>
+                                <Meta>{`${c.done}/${c.total}`}</Meta>
+                            </CatRow>
+                        ))}
+                </>
+            )}
+        </Pad>
     );
 }
 
@@ -368,6 +420,7 @@ export function ChallengePanel() {
     const { challenges, fetchChallenges, toggleChallengeCompletion } = useChallengeStore();
     const authFetch = useAuthFetch();
     const tr = useT();
+    const [ref, box] = useFrame(ROW_PX, 26);
 
     React.useEffect(() => {
         fetchChallenges(authFetch);
@@ -393,33 +446,58 @@ export function ChallengePanel() {
         return !expired(c);
     });
 
-    if (active.length === 0) return <Empty>{tr.home.noChallenges}</Empty>;
-
     const key = dayKey(today);
+    const toggle = (id: string, d: Date) => {
+        const safe = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 12, 0, 0);
+        toggleChallengeCompletion(authFetch, id, safe.toISOString());
+    };
+
+    if (active.length === 0) {
+        return <Pad ref={ref}><SectionHead>{tr.home.challenge}</SectionHead><Thin>{tr.home.noChallenges}</Thin></Pad>;
+    }
+
+    if (box.height < 260) {
+        const c = active[0];
+        const set = new Set((c.completions ?? []).map(x => dayKey(x.targetDate)));
+        const days = Array.from({ length: 14 }, (_, i) => {
+            const d = new Date(today);
+            d.setDate(d.getDate() - 13 + i);
+            return { d, on: set.has(dayKey(d)), isToday: i === 13 };
+        });
+        return (
+            <Pad ref={ref}>
+                <SectionHead>{tr.home.challenge}</SectionHead>
+                <NowTitle>{c.title}</NowTitle>
+                <NowMeta>{c.targetCount ? `${c.completions?.length ?? 0}/${c.targetCount}` : `${c.completions?.length ?? 0}`}</NowMeta>
+                <Streak>
+                    {days.map((x, i) => (
+                        <Dot key={i} $on={x.on} $today={x.isToday} onClick={() => toggle(c.id, x.d)} />
+                    ))}
+                </Streak>
+            </Pad>
+        );
+    }
+
+    const cap = Math.max(1, box.rows);
 
     return (
-        <Scroll>
-            {active.map(c => {
+        <Pad ref={ref}>
+            <SectionHead>{tr.home.challenge}</SectionHead>
+            {active.slice(0, cap).map(c => {
                 const done = (c.completions ?? []).some(cp => dayKey(cp.targetDate) === key);
                 const count = c.completions?.length ?? 0;
-                const target = c.targetCount ?? null;
                 return (
                     <Row key={c.id}>
-                        <Box
-                            $done={done}
-                            onClick={() => {
-                                const d = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 12, 0, 0);
-                                toggleChallengeCompletion(authFetch, c.id, d.toISOString());
-                            }}
-                        >
+                        <Box $done={done} onClick={() => toggle(c.id, today)}>
                             {done && <Check size={9} strokeWidth={3} />}
                         </Box>
                         <Name $done={done}>{c.title}</Name>
-                        <Meta>{target ? `${count}/${target}` : count}</Meta>
+                        <Meta>{c.targetCount ? `${count}/${c.targetCount}` : count}</Meta>
                     </Row>
                 );
             })}
-        </Scroll>
+            {active.length > cap && <More>{`+${active.length - cap}`}</More>}
+        </Pad>
     );
 }
 
@@ -429,14 +507,13 @@ export function MemoPanel() {
     const tr = useT();
     const [draft, setDraft] = React.useState("");
     const [loaded, setLoaded] = React.useState(false);
-    const dayKey = useCurrentDayKey();
+    const key = useCurrentDayKey();
 
-    // 자정을 넘기면 다시 받아온다. 안 그러면 어제 내용을 오늘 날짜로 덮어쓴다.
     React.useEffect(() => {
         setLoaded(false);
-        fetchDailyData(authFetch, new Date(dayKeyToIso(dayKey))).then(() => setLoaded(true));
+        fetchDailyData(authFetch, new Date(dayKeyToIso(key))).then(() => setLoaded(true));
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [dayKey]);
+    }, [key]);
 
     React.useEffect(() => {
         if (loaded) setDraft(memo ?? "");
@@ -447,7 +524,7 @@ export function MemoPanel() {
             value={draft}
             placeholder={tr.calendar.memoPlaceholder}
             onChange={(e) => setDraft(e.target.value)}
-            onBlur={() => updateDailyMemo(authFetch, new Date(dayKeyToIso(dayKey)), draft)}
+            onBlur={() => updateDailyMemo(authFetch, new Date(dayKeyToIso(key)), draft)}
         />
     );
 }
@@ -457,19 +534,22 @@ export function QuickTaskPanel() {
     const authFetch = useAuthFetch();
     const tr = useT();
     const [text, setText] = React.useState("");
-    const dayKey = useCurrentDayKey();
+    const key = useCurrentDayKey();
+    const [ref, box] = useFrame(ROW_PX, 4);
 
     React.useEffect(() => {
-        fetchDailyData(authFetch, new Date(dayKeyToIso(dayKey)));
+        fetchDailyData(authFetch, new Date(dayKeyToIso(key)));
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [dayKey]);
+    }, [key]);
 
     const submit = () => {
         const v = text.trim();
         if (!v) return;
-        addDailyTask(authFetch, new Date(dayKeyToIso(dayKey)), v);
+        addDailyTask(authFetch, new Date(dayKeyToIso(key)), v);
         setText("");
     };
+
+    const cap = Math.max(1, box.rows);
 
     return (
         <Column>
@@ -479,10 +559,10 @@ export function QuickTaskPanel() {
                 onChange={(e) => setText(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
             />
-            <Scroll>
+            <Fit ref={ref}>
                 {tasks.length === 0
-                    ? <Empty>{tr.home.noTodayTodos}</Empty>
-                    : tasks.map(task => (
+                    ? <Thin>{tr.home.noTodayTodos}</Thin>
+                    : tasks.slice(0, cap).map(task => (
                         <Row key={task.id}>
                             <Box $done={task.isDone} onClick={() => toggleDailyTask(authFetch, task.id)}>
                                 {task.isDone && <Check size={9} strokeWidth={3} />}
@@ -491,332 +571,82 @@ export function QuickTaskPanel() {
                             <DelBtn onClick={() => deleteDailyTask(authFetch, task.id)}>×</DelBtn>
                         </Row>
                     ))}
-            </Scroll>
+                {tasks.length > cap && <More>{`+${tasks.length - cap}`}</More>}
+            </Fit>
         </Column>
     );
 }
 
-export function StickerPanel() {
-    const { challenges, fetchChallenges } = useChallengeStore();
-    const authFetch = useAuthFetch();
-    const tr = useT();
-    const [sel, setSel] = React.useState<string | null>(null);
+const Pad = styled.div`
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    padding: var(--widget-pad);
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+`;
 
-    React.useEffect(() => {
-        fetchChallenges(authFetch);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
-
-    React.useEffect(() => {
-        if (challenges.length > 0 && !sel) setSel(challenges[0].id);
-    }, [challenges, sel]);
-
-    const c = challenges.find(x => x.id === sel);
-    if (!c) return <Empty>{tr.home.selectChallenge}</Empty>;
-
-    const start = new Date(c.startAt);
-    start.setHours(0, 0, 0, 0);
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-    const doneSet = new Set((c.completions ?? []).map(x => dayKey(x.targetDate)));
-    const count = c.targetCount ?? Math.floor(Math.max(0, now.getTime() - start.getTime()) / (86400000 * (c.interval || 1))) + 1;
-
-    return (
-        <Column>
-            <Tabs>
-                {challenges.map(ch => (
-                    <Tab key={ch.id} $active={ch.id === sel} onClick={() => setSel(ch.id)}>{ch.title}</Tab>
-                ))}
-            </Tabs>
-            <StickerWrap>
-                {Array.from({ length: count }, (_, i) => {
-                    const d = new Date(start);
-                    d.setDate(start.getDate() + i * (c.interval || 1));
-                    return (
-                        <StickerCell key={i}>
-                            <DynamicSticker isFilled={doneSet.has(dayKey(d))} idx={i} />
-                        </StickerCell>
-                    );
-                })}
-            </StickerWrap>
-        </Column>
-    );
-}
-
-export function CategoryPanel() {
-    const { todos } = useTodoStore();
-    const { categories } = useCategoryStore();
-    const tr = useT();
-
-    const key = dayKey(new Date());
-    const rows = categories.map(c => {
-        const mine = todos.filter(t => t.categoryId === c.id);
-        const done = mine.filter(t => doneOn(t, key)).length;
-        return { ...c, total: mine.length, done };
-    }).filter(c => c.total > 0);
-
-    if (rows.length === 0) return <Empty>{tr.home.noData}</Empty>;
-    const max = Math.max(...rows.map(r => r.total));
-
-    return (
-        <StatWrap>
-            {rows.map(r => (
-                <CatRow key={r.id}>
-                    <Mark $c={r.color} />
-                    <CatName>{r.name}</CatName>
-                    <CatBar><CatFill $c={r.color} $pct={(r.total / max) * 100} /></CatBar>
-                    <Meta>{r.done}/{r.total}</Meta>
-                </CatRow>
-            ))}
-        </StatWrap>
-    );
-}
+const Fit = styled.div`
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+`;
 
 const Column = styled.div`
     height: 100%;
     display: flex;
     flex-direction: column;
     min-height: 0;
+    padding: var(--widget-pad);
+    box-sizing: border-box;
 `;
 
-const MemoArea = styled.textarea`
-    width: 100%;
-    height: 100%;
-    border: none;
-    outline: none;
-    resize: none;
-    padding: 12px;
-    font-family: inherit;
-    font-size: 1rem;
-    line-height: 1.7;
-    color: ${p => p.theme.colors.text};
-    background: transparent;
-    &::placeholder { color: ${p => p.theme.colors.textSecondary}88; }
-`;
-
-const QuickInput = styled.input`
+const SectionHead = styled.div`
     flex-shrink: 0;
-    margin: 10px 12px;
-    padding: 7px 9px;
-    border: 1px solid ${p => p.theme.colors.primary}66;
-    background: transparent;
-    outline: none;
-    font-family: inherit;
-    font-size: 0.8rem;
-    color: ${p => p.theme.colors.text};
-    &:focus { border-color: ${p => p.theme.colors.primary}; }
-    &::placeholder { color: ${p => p.theme.colors.textSecondary}88; }
-`;
-
-const DelBtn = styled.button`
-    flex-shrink: 0;
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 0.95rem;
-    line-height: 1;
-    color: ${p => p.theme.colors.textSecondary};
-    &:hover { color: ${p => p.theme.colors.error}; }
-`;
-
-const Tabs = styled.div`
-    flex-shrink: 0;
-    display: flex;
-    overflow-x: auto;
-    border-bottom: 1px solid ${p => p.theme.colors.primary}55;
-`;
-
-const Tab = styled.button<{ $active: boolean }>`
-    position: relative;
-    flex-shrink: 0;
-    padding: 7px 12px 8px 20px;
-    border: none;
-    border-right: 1px solid ${p => p.theme.colors.primary}33;
-    background: transparent;
-    cursor: pointer;
-    white-space: nowrap;
     font-family: ${p => p.theme.fonts.celestial};
-    font-size: 0.72rem;
-    letter-spacing: 1px;
-    color: ${p => p.$active ? p.theme.colors.text : p.theme.colors.textSecondary};
-    opacity: ${p => p.$active ? 1 : 0.6};
-    text-shadow: ${p => p.$active ? `0 0 7px ${p.theme.colors.primary}80` : "none"};
-    transition: opacity 0.2s, color 0.2s;
-
-    &::before {
-        content: "";
-        position: absolute;
-        left: 8px;
-        top: 50%;
-        width: 7px;
-        height: 7px;
-        margin-top: -4px;
-        background-color: ${p => p.theme.colors.primary};
-        clip-path: polygon(50% 0%, 59% 41%, 100% 50%, 59% 59%, 50% 100%, 41% 59%, 0% 50%, 41% 41%);
-        transform: scale(${p => p.$active ? 1 : 0});
-        transition: transform 0.2s ease;
-    }
-
-    &::after {
-        content: "";
-        position: absolute;
-        left: 8px;
-        right: 8px;
-        bottom: 2px;
-        height: 1px;
-        background: ${p => p.theme.colors.primary};
-        transform: scaleX(${p => p.$active ? 1 : 0});
-        transform-origin: left;
-        transition: transform 0.25s ease;
-    }
-
-    &:hover { opacity: 1; }
-`;
-
-const BoardGrid = styled.div`
-    flex: 1;
-    min-height: 0;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-`;
-
-const BoardCol = styled.div`
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-    border-right: 1px solid ${p => p.theme.colors.primary}33;
-    &:last-child { border-right: none; }
-`;
-
-const ColHead = styled.div`
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 4px;
-    padding: 7px 9px;
-    border-bottom: 1px solid ${p => p.theme.colors.primary}55;
-    font-family: ${p => p.theme.fonts.celestial};
-    font-size: 0.68rem;
-    letter-spacing: 1px;
-    color: ${p => p.theme.colors.textSecondary};
-`;
-
-const ColCount = styled.span`
-    font-size: 0.62rem;
-    padding: 0 4px;
-    border: 1px solid ${p => p.theme.colors.primary}55;
+    font-size: 0.66rem;
+    letter-spacing: 2px;
     color: ${p => p.theme.colors.primary};
-`;
+    padding-bottom: 5px;
+    margin-bottom: 3px;
+    border-bottom: 1px solid ${p => p.theme.colors.primary}40;
 
-const ColBody = styled.div`
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-    padding: 7px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-`;
-
-const Chip = styled.div<{ $done: boolean; $movable: boolean }>`
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 7px;
-    border: 1px solid ${p => p.theme.colors.primary}44;
-    cursor: ${p => p.$movable ? "pointer" : "default"};
-    opacity: ${p => p.$done ? 0.65 : 1};
-    transition: border-color 0.2s, box-shadow 0.2s;
-
-    &:hover {
-        border-color: ${p => p.theme.colors.primary};
-        box-shadow: ${p => p.$movable ? `0 0 6px ${p.theme.colors.primary}40` : "none"};
-    }
-`;
-
-const ChipMark = styled.span<{ $p?: string }>`
-    width: 6px;
-    height: 6px;
-    flex-shrink: 0;
-    clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
-    background-color: ${p =>
-        p.$p === "high" ? p.theme.colors.error
-            : p.$p === "low" ? p.theme.colors.textSecondary
-                : p.theme.colors.primary};
-`;
-
-const ChipText = styled.span`
-    flex: 1;
-    min-width: 0;
-    font-size: 0.72rem;
-    line-height: 1.3;
-    color: ${p => p.theme.colors.text};
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-`;
-
-const DetailTitle = styled.div`
-    font-family: ${p => p.theme.fonts.celestial};
-    font-size: 1rem;
-    letter-spacing: 1.5px;
-    color: ${p => p.theme.colors.text};
-    margin-bottom: 10px;
-`;
-
-const MetaLine = styled.div`
-    display: flex;
-    align-items: baseline;
-    gap: 8px;
-    font-size: 0.74rem;
-    color: ${p => p.theme.colors.text};
-    padding: 2px 0;
-`;
-
-const MetaKey = styled.span`
-    flex-shrink: 0;
-    font-family: ${p => p.theme.fonts.celestial};
-    font-size: 0.68rem;
-    letter-spacing: 1px;
-    color: ${p => p.theme.colors.textSecondary};
-`;
-
-const StickerWrap = styled.div`
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-    display: flex;
-    flex-wrap: wrap;
-    align-content: flex-start;
-    gap: 8px;
-    padding: 12px;
-`;
-
-const StickerCell = styled.div`
-    width: 42px;
-    height: 42px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-`;
-
-const Scroll = styled.div`
-    height: 100%;
-    overflow-y: auto;
-    padding: 6px 0;
+    &.mt { margin-top: 10px; }
 `;
 
 const Row = styled.div`
+    flex-shrink: 0;
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 7px 12px 9px;
-    background-image: linear-gradient(${p => p.theme.colors.primary}, ${p => p.theme.colors.primary});
-    background-repeat: no-repeat;
-    background-position: 12px calc(100% - 2px);
-    background-size: 0 1px;
-    transition: background-size 0.3s ease;
-    &:hover { background-size: calc(100% - 24px) 1px; }
+    height: ${ROW_PX}px;
+    box-sizing: border-box;
+`;
+
+const ProjRow = styled.div`
+    flex-shrink: 0;
+    height: 38px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    box-sizing: border-box;
+`;
+
+const ProjTop = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+`;
+
+const More = styled.div`
+    flex-shrink: 0;
+    font-family: ${p => p.theme.fonts.celestial};
+    font-size: 0.64rem;
+    letter-spacing: 1px;
+    color: ${p => p.theme.colors.textSecondary};
+    padding-top: 2px;
 `;
 
 const Box = styled.button<{ $done: boolean }>`
@@ -841,6 +671,14 @@ const Mark = styled.div<{ $c: string }>`
     background-color: ${p => p.$c};
 `;
 
+const Star = styled.span`
+    width: 9px;
+    flex-shrink: 0;
+    text-align: center;
+    font-size: 0.62rem;
+    color: ${p => p.theme.colors.primary};
+`;
+
 const Name = styled.span<{ $done: boolean }>`
     flex: 1;
     min-width: 0;
@@ -858,26 +696,66 @@ const Meta = styled.span`
     letter-spacing: 1px;
     color: ${p => p.theme.colors.textSecondary};
     flex-shrink: 0;
+
+    &.hot { color: ${p => p.theme.colors.primary}; }
 `;
 
-const Empty = styled.div`
-    height: 100%;
+const Thin = styled.div`
+    flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
     font-family: ${p => p.theme.fonts.celestial};
-    font-size: 0.78rem;
+    font-size: 0.74rem;
     letter-spacing: 1px;
     color: ${p => p.theme.colors.textSecondary};
 `;
 
-const StatWrap = styled.div`
-    height: 100%;
-    overflow-y: auto;
-    padding: 14px 14px 16px;
+const BigRow = styled.div`
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+`;
+
+const NowTitle = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.92rem;
+    color: ${p => p.theme.colors.text};
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-top: 4px;
+`;
+
+const NowMeta = styled.div`
+    font-size: 0.7rem;
+    color: ${p => p.theme.colors.textSecondary};
+    margin-top: 3px;
+`;
+
+const Streak = styled.div`
+    display: flex;
+    gap: 5px;
+    margin-top: 10px;
+`;
+
+const Dot = styled.button<{ $on: boolean; $today: boolean }>`
+    width: 8px;
+    height: 8px;
+    padding: 0;
+    transform: rotate(45deg);
+    cursor: pointer;
+    border: 1px solid ${p => p.$today ? p.theme.colors.primary : `${p.theme.colors.primary}66`};
+    background: ${p => p.$on ? p.theme.colors.primary : "transparent"};
+    box-shadow: ${p => p.$today ? `0 0 4px ${p.theme.colors.primary}66` : "none"};
 `;
 
 const Big = styled.div`
+    flex-shrink: 0;
     font-family: ${p => p.theme.fonts.celestial};
     font-size: 2rem;
     line-height: 1;
@@ -887,14 +765,16 @@ const Big = styled.div`
 `;
 
 const Caption = styled.div`
+    flex-shrink: 0;
     font-size: 0.72rem;
     color: ${p => p.theme.colors.textSecondary};
     margin-top: 5px;
 `;
 
 const Bar = styled.div`
+    flex-shrink: 0;
     height: 1px;
-    margin-top: 10px;
+    margin-top: 8px;
     background: ${p => p.theme.colors.primary}33;
 `;
 
@@ -905,15 +785,17 @@ const Fill = styled.div<{ $pct: number }>`
 `;
 
 const Dashed = styled.div`
+    flex-shrink: 0;
     border-top: 1px dashed ${p => p.theme.colors.primary}40;
-    margin: 12px 0 10px;
+    margin: 10px 0 8px;
 `;
 
 const CatRow = styled.div`
+    flex-shrink: 0;
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 4px 0;
+    height: 22px;
 `;
 
 const CatName = styled.span`
@@ -936,4 +818,45 @@ const CatFill = styled.div<{ $c: string; $pct: number }>`
     height: 100%;
     width: ${p => p.$pct}%;
     background: ${p => p.$c};
+`;
+
+const MemoArea = styled.textarea`
+    width: 100%;
+    height: 100%;
+    border: none;
+    outline: none;
+    resize: none;
+    padding: var(--widget-pad);
+    box-sizing: border-box;
+    font-family: inherit;
+    font-size: 0.92rem;
+    line-height: 1.7;
+    color: ${p => p.theme.colors.text};
+    background: transparent;
+    &::placeholder { color: ${p => p.theme.colors.textSecondary}88; }
+`;
+
+const QuickInput = styled.input`
+    flex-shrink: 0;
+    margin-bottom: 8px;
+    padding: 7px 9px;
+    border: 1px solid ${p => p.theme.colors.primary}66;
+    background: transparent;
+    outline: none;
+    font-family: inherit;
+    font-size: 0.8rem;
+    color: ${p => p.theme.colors.text};
+    &:focus { border-color: ${p => p.theme.colors.primary}; }
+    &::placeholder { color: ${p => p.theme.colors.textSecondary}88; }
+`;
+
+const DelBtn = styled.button`
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.95rem;
+    line-height: 1;
+    color: ${p => p.theme.colors.textSecondary};
+    &:hover { color: ${p => p.theme.colors.error}; }
 `;

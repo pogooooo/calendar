@@ -21,10 +21,10 @@ export interface WidgetSettings {
 const defaultBg: WidgetBgSettings = { mode: "theme", opacity: 0.92, customColor: "#1a160e", autoTextColor: true };
 
 export type WidgetKind =
-    | "daily" | "weekly" | "monthly"
-    | "today" | "upcoming" | "stats" | "challenge"
-    | "projectboard" | "projectdetail" | "projecttimeline"
-    | "memo" | "quicktask" | "sticker" | "category";
+    | "weekly" | "monthly"
+    | "today" | "nownext" | "due" | "stats" | "challenge"
+    | "projects" | "anniversary"
+    | "memo" | "quicktask";
 
 type WidgetStore = Record<WidgetKind, WidgetSettings> & {
     update: (kind: WidgetKind, patch: Partial<WidgetSettings>) => void;
@@ -35,20 +35,17 @@ type WidgetStore = Record<WidgetKind, WidgetSettings> & {
 const useWidgetStore = create<WidgetStore>()(
     persist(
         (set) => ({
-            daily:   { bg: { ...defaultBg }, priority: "top" },
-            weekly:  { bg: { ...defaultBg }, priority: "top" },
-            monthly: { bg: { ...defaultBg }, priority: "top" },
-            today:     { bg: { ...defaultBg }, priority: "top" },
-            upcoming:  { bg: { ...defaultBg }, priority: "top" },
-            stats:     { bg: { ...defaultBg }, priority: "top" },
-            challenge: { bg: { ...defaultBg }, priority: "top" },
-            projectboard:  { bg: { ...defaultBg }, priority: "top" },
-            projectdetail: { bg: { ...defaultBg }, priority: "top" },
-            projecttimeline: { bg: { ...defaultBg }, priority: "top" },
-            memo:      { bg: { ...defaultBg }, priority: "top" },
-            quicktask: { bg: { ...defaultBg }, priority: "top" },
-            sticker:   { bg: { ...defaultBg }, priority: "top" },
-            category:  { bg: { ...defaultBg }, priority: "top" },
+            weekly:       { bg: { ...defaultBg }, priority: "top" },
+            monthly:      { bg: { ...defaultBg }, priority: "top" },
+            today:        { bg: { ...defaultBg }, priority: "top" },
+            nownext:      { bg: { ...defaultBg }, priority: "top" },
+            due:          { bg: { ...defaultBg }, priority: "top" },
+            stats:        { bg: { ...defaultBg }, priority: "top" },
+            challenge:    { bg: { ...defaultBg }, priority: "top" },
+            projects:     { bg: { ...defaultBg }, priority: "top" },
+            anniversary:  { bg: { ...defaultBg }, priority: "top" },
+            memo:         { bg: { ...defaultBg }, priority: "top" },
+            quicktask:    { bg: { ...defaultBg }, priority: "top" },
 
             update: (kind, patch) =>
                 set((s) => ({ [kind]: { ...s[kind], ...patch } })),

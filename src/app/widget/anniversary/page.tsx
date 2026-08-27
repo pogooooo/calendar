@@ -4,25 +4,22 @@ import styled from "styled-components";
 import WidgetShell from "@/components/widget/WidgetShell";
 import WidgetAuthNotice from "@/components/widget/WidgetAuthNotice";
 import { useWidgetInit } from "@/hooks/useWidgetInit";
-import { Framed, StickerPanel } from "@/components/widget/WidgetPanels";
+import { AnniversaryPanel } from "@/components/widget/WidgetPanels";
 
-export default function StickerWidget() {
-    const { ready, authed } = useWidgetInit([]);
+export default function AnniversaryWidget() {
+    const { ready, authed } = useWidgetInit(["anniversaries"]);
     if (!ready || !authed) {
-        return <WidgetAuthNotice kind="sticker" title="CRONOS  ·  스티커 보드" authed={authed} />;
+        return <WidgetAuthNotice kind="anniversary" title="CRONOS  ·  다가오는 기념일" authed={authed} />;
     }
 
     return (
-        <WidgetShell kind="sticker" title="CRONOS  ·  스티커 보드">
+        <WidgetShell kind="anniversary" title="CRONOS  ·  다가오는 기념일">
             <Wrap>
-                <Framed>
-                    <StickerPanel />
-                </Framed>
+                <AnniversaryPanel />
             </Wrap>
         </WidgetShell>
     );
 }
-
 
 const Wrap = styled.div`
     height: 100%;

@@ -45,6 +45,12 @@ html:has([data-widget]) body {
   user-select: none;
 }
 
+[data-widget] input,
+[data-widget] textarea {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
 body {
   -webkit-user-select: none;
   user-select: none;
