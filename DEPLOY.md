@@ -46,6 +46,47 @@ npx wrangler secret put GOOGLE_CLIENT_ID
 
 이메일·비밀번호 로그인은 지금도 정상 동작합니다.
 
+- 메일 시크릿 — **미설정**. 비밀번호 재설정 메일 발송에 필요합니다.
+  없으면 메일이 나가지 않고 링크가 서버 로그에만 찍히므로, 배포에서는 반드시 넣어야 합니다.
+
+### 구글 SMTP 릴레이 (현재 방식)
+
+도메인도 회사 정보도 필요 없고 무료 500통/일입니다. 구글이 직접 보내므로 SPF·DKIM 이
+정확히 맞아 스팸함 위험도 낮습니다.
+
+1. 구글 계정 → 보안 → **2단계 인증**을 켭니다 (앱 비밀번호의 전제 조건입니다).
+2. 같은 화면에서 **앱 비밀번호**를 발급합니다. 16자리 문자열이 나옵니다.
+   계정 비밀번호가 아니라 이 값을 씁니다.
+3. 시크릿을 등록합니다.
+
+```bash
+npx wrangler secret put SMTP_USER   # you@gmail.com
+npx wrangler secret put SMTP_PASS   # 앱 비밀번호 16자리
+npx wrangler secret put MAIL_FROM   # CRONOS <you@gmail.com>
+npx wrangler secret put APP_URL     # https://cronos.pogoo.workers.dev
+```
+
+- `MAIL_FROM` 의 주소는 `SMTP_USER` 와 같아야 합니다. 구글은 다른 주소로 보내는 것을 막습니다.
+- `SMTP_HOST` / `SMTP_PORT` 는 생략하면 `smtp.gmail.com:465` 입니다.
+- `APP_URL` 은 재설정 링크의 절대 주소입니다 — 설정하지 않으면 요청 origin 으로 떨어지는데,
+  Host 헤더는 위조할 수 있어 토큰이 공격자 도메인으로 새어 나갈 수 있습니다. 반드시 지정하세요.
+
+> Workers 는 아웃바운드 **25번 포트가 막혀 있어** 자체 메일 서버로 직접 배달할 수 없습니다.
+> 그래서 465(암시적 TLS)로 구글에 로그인해 대신 보내는 릴레이 방식을 씁니다.
+> 구현은 `src/lib/smtp.ts` (nodemailer 는 workerd 에서 동작하지 않아 직접 작성했습니다).
+
+### 대안 (HTTP API)
+
+`src/lib/mailer.ts` 는 세 방식을 지원하고 설정된 값을 보고 위에서부터 고릅니다.
+
+| 순위 | 설정 | 무료 한도 | 발신 인증 |
+| --- | --- | --- | --- |
+| 1 | `SMTP_USER` + `SMTP_PASS` | 500통/일 | 구글 앱 비밀번호 |
+| 2 | `BREVO_API_KEY` | 300통/일 | 발신 **주소**만 인증 |
+| 3 | `RESEND_API_KEY` | 100통/일 | 발신 **도메인** 인증 필수 |
+
+나중에 도메인을 사면 `RESEND_API_KEY` 로 바꿔 넣기만 하면 됩니다.
+
 ## 2. 데스크톱 앱 릴리스 (아직 하지 않음)
 
 설치 파일을 배포하려면 **서명 키가 필요하고, 비밀키는 직접 만드셔야 합니다.**

@@ -6,10 +6,10 @@ import styled, { createGlobalStyle } from "styled-components";
 import { isDesktopApp } from "@/lib/apiBase";
 import TitleBar from "@/components/titleBar/TitleBar";
 
-const DRAG_ROUTES = ["/signIn", "/signUp", "/download"];
+const DRAG_ROUTES = ["/signIn", "/signUp", "/download", "/forgotPassword", "/resetPassword"];
 
 /**
- * 로그인·가입·다운로드 화면은 (main) 레이아웃 밖이라 타이틀바가 없다.
+ * 로그인·가입·비밀번호 재설정·다운로드 화면은 (main) 레이아웃 밖이라 타이틀바가 없다.
  * 드래그 영역만 있으면 창을 옮길 수는 있어도 닫을 수가 없다.
  */
 export default function DesktopDragRegion() {

@@ -142,6 +142,12 @@ const SignIn = () => {
                     <GlobalError>{globalError}</GlobalError>
 
                     <SwitchLink>
+                        <TertiaryButton asChild>
+                            <a href="/forgotPassword">{t.auth.forgotPasswordLink}</a>
+                        </TertiaryButton>
+                    </SwitchLink>
+
+                    <SwitchLink>
                         {t.auth.noAccount}{" "}
                         <TertiaryButton asChild><a href="/signUp">{t.auth.signUpLink}</a></TertiaryButton>
                     </SwitchLink>

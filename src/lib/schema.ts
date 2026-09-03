@@ -26,8 +26,21 @@ export const LoginSchema = z.object({
     password: z.string().min(1, "비밀번호를 입력해주세요."),
 });
 
+export const ForgotPasswordSchema = z.object({
+    email: z.string()
+        .min(1, "이메일을 입력해주세요.")
+        .regex(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, "이메일 형식이 올바르지 않습니다."),
+});
+
+export const ResetPasswordSchema = z.object({
+    token: z.string().min(1, "재설정 링크가 올바르지 않습니다."),
+    password: passwordSchema,
+});
+
 export type RegisterInput = z.infer<typeof RegisterSchema>;
 export type LoginInput = z.infer<typeof LoginSchema>;
+export type ForgotPasswordInput = z.infer<typeof ForgotPasswordSchema>;
+export type ResetPasswordInput = z.infer<typeof ResetPasswordSchema>;
 
 // ── Category ─────────────────────────────────────────────────────────────────
 

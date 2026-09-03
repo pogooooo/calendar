@@ -154,6 +154,20 @@ export interface Translations {
         name: string;
         email: string;
         password: string;
+        forgotPasswordLink: string;
+        forgotTitle: string;
+        forgotSubtitle: string;
+        forgotSubmit: string;
+        forgotSent: string;
+        backToSignIn: string;
+        resetTitle: string;
+        resetSubtitle: string;
+        newPassword: string;
+        newPasswordConfirm: string;
+        resetSubmit: string;
+        resetDone: string;
+        resetInvalidLink: string;
+        passwordMismatch: string;
     };
     todo: {
         newTodo: string;

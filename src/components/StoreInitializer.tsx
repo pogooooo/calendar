@@ -11,8 +11,15 @@ import useSettingStore from "@/store/useSettingStore";
 import useAnniversaryStore from "@/store/useAnniversaryStore";
 import { isDesktopApp } from "@/lib/apiBase";
 
-const PUBLIC_ROUTES = ["/signIn", "/signUp", "/download"];
+const PUBLIC_ROUTES = ["/signIn", "/signUp", "/download", "/forgotPassword", "/resetPassword"];
 const NO_PREFETCH_ROUTES = PUBLIC_ROUTES;
+
+/**
+ * 로그인한 상태로 들어와도 "/" 로 되돌리지 않는 공개 경로.
+ * - /download : 소개·다운로드 랜딩
+ * - /resetPassword : 다른 기기에 세션이 남아 있어도 메일 링크는 열려야 한다.
+ */
+const STAY_WHEN_AUTHED = ["/download", "/resetPassword"];
 
 const normalizePath = (pathname: string) =>
     pathname.length > 1 ? pathname.replace(/\/$/, "") : pathname;
@@ -55,7 +62,7 @@ export default function StoreInitializer({ children }: { children: React.ReactNo
 
         const normalized = normalizePath(pathname);
         const isPublicRoute = PUBLIC_ROUTES.includes(normalized);
-        const isLandingRoute = normalized === "/download";
+        const stayWhenAuthed = STAY_WHEN_AUTHED.includes(normalized);
         const isWidgetRoute = pathname.startsWith("/widget");
 
         // 위젯 창은 자체 인증 처리 — 리디렉션 없음
@@ -65,7 +72,7 @@ export default function StoreInitializer({ children }: { children: React.ReactNo
             router.replace(isDesktopApp() ? "/signIn" : "/download");
         }
 
-        if (accessToken && isPublicRoute && !isLandingRoute) {
+        if (accessToken && isPublicRoute && !stayWhenAuthed) {
             router.replace("/");
         }
     }, [isMounted, accessToken, pathname, router]);
