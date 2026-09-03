@@ -16,8 +16,14 @@ const eslintConfig = [
       "node_modules/**",
       ".next/**",
       "out/**",
+      "out-desktop/**",
+      ".open-next/**",
       "build/**",
       "next-env.d.ts",
+      // 생성·빌드 산출물 (모두 gitignore 대상)
+      "src/generated/**",    // prisma generate
+      "src-tauri/target/**", // cargo build
+      ".wrangler/**",        // wrangler 로컬 상태·임시 번들
     ],
   },
 ];
