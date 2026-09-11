@@ -574,7 +574,7 @@ dependencies = [
 
 [[package]]
 name = "cronos"
-version = "0.1.15"
+version = "1.0.0"
 dependencies = [
  "raw-window-handle",
  "serde",
