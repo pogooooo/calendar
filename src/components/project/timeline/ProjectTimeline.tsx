@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import * as React from 'react';
-import { useTheme } from 'styled-components';
+import { usePickTheme } from "@/styles/themed";
 import CelestialProjectTimeline from './celestial/CelestialProjectTimeline';
 import { ProjectTaskType } from '@/store/useProjectStore';
 
@@ -13,10 +13,9 @@ export interface ProjectTimelineProps {
 }
 
 const ProjectTimeline = React.forwardRef<HTMLDivElement, ProjectTimelineProps>((props, ref) => {
-    const theme = useTheme();
-    const themeName = theme?.name || 'celestial';
+    const ProjectTimelineView = usePickTheme({ celestial: CelestialProjectTimeline });
 
-    return <CelestialProjectTimeline ref={ref} {...props} />;
+    return <ProjectTimelineView ref={ref} {...props} />;
 });
 
 ProjectTimeline.displayName = 'ProjectTimeline';

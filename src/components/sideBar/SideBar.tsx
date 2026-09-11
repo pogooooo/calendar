@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react";
-import {useTheme} from "styled-components";
+import { usePickTheme } from "@/styles/themed";
 import Profile from "@/components/sideBar/Profile";
 import Menu from "@/components/sideBar/Menu";
 import CelestialSidebarDesign from "@/assets/sidebarDesign/CelestialSidebarDesign";
@@ -10,8 +10,8 @@ import useCategoryStore from "@/store/useCategoryStore";
 import { useSidebarLogic } from "@/hooks/useSidebarLogic";
 
 const Sidebar = () => {
-    const theme = useTheme();
-    const themeName = theme?.name || 'celestial';
+    // 옆선 장식은 테마마다 다른 그림이다.
+    const SidebarDesign = usePickTheme({ celestial: CelestialSidebarDesign });
     const categories = useCategoryStore((state) => state.categories);
 
     const { width, isResizing, screenHeight, startResizing, sidebarRef } = useSidebarLogic();
@@ -32,7 +32,7 @@ const Sidebar = () => {
                 onMouseEnter={() => setIsContourHovered(true)}
                 onMouseLeave={() => setIsContourHovered(false)}
             >
-                {themeName.startsWith('celestial') && <CelestialSidebarDesign isHovered={isContourHovered} />}
+                <SidebarDesign isHovered={isContourHovered} />
             </SidebarContour>
 
             {isResizing && <ResizeOverlay />}

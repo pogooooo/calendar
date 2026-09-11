@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import * as React from "react";
-import { useTheme } from "styled-components";
+import { usePickTheme } from "@/styles/themed";
 import CelestialDayCalendar from "./celestial/CelestialDayCalendar";
 import { CategoryType } from "@/store/useCategoryStore";
 import { TodoType } from "@/store/useTodoStore";
@@ -11,13 +11,20 @@ import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useExpandedTodos, ExpandedTodoType } from "@/hooks/useExpandedTodos";
 import useProjectStore from "@/store/useProjectStore";
 import useChallengeStore from "@/store/useChallengeStore";
+import useTodoStore from "@/store/useTodoStore";
+import { useT } from "@/i18n/useT";
+import { useDialog } from "@/components/dialog/DialogProvider";
+import { localDateKey } from "@/lib/dateKey";
+import { isBetween } from "@/utils/DateUtils";
 
 export interface CalendarTodoType extends ExpandedTodoType {
     isProject?: boolean;
     isProjectTask?: boolean;
+    isDone?: boolean;
 }
 
-export interface DayProps extends React.HTMLAttributes<HTMLDivElement> {
+// contextMenu 는 div 의 HTML 속성 이름과 겹친다. 우리 뜻(열린 메뉴 상태)을 쓴다.
+export interface DayProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'contextMenu'> {
     asChild?: boolean;
     selectedDate?: Date;
     onDateChange?: (date: Date) => void;
@@ -56,12 +63,25 @@ export interface DayThemeProps {
     toggleCategory: (categoryId: string) => void;
     showProjects: boolean;
     onToggleProjects: () => void;
+
+    /** 이 날에 걸린 일정들. 폰에서는 이 목록이 일정을 고치는 유일한 길이다. */
+    dayTodos: CalendarTodoType[];
+    selectedDate: Date;
+    isModalOpen: boolean;
+    modalTodo: TodoType | null;
+    setIsModalOpen: (open: boolean) => void;
+    contextMenu: { x: number; y: number; todo: CalendarTodoType } | null;
+    setContextMenu: (menu: { x: number; y: number; todo: CalendarTodoType } | null) => void;
+    openTodoMenu: (e: React.MouseEvent, todo: CalendarTodoType) => void;
+    handleQuickEdit: (todo: CalendarTodoType) => void;
+    handleQuickDelete: (todo: CalendarTodoType) => void;
+    handleQuickDeleteOne: (todo: CalendarTodoType) => void;
+    handleQuickToggle: (todo: CalendarTodoType) => void;
 }
 
 const DayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
     ({ asChild = false, selectedDate = new Date(), todos = [], categories = [], onDateChange, ...props }, ref) => {
-        const theme = useTheme();
-        const themeName = theme?.name || 'celestial';
+        const DayCalendarView = usePickTheme({ celestial: CelestialDayCalendar });
 
         const [selectedCategoryIds, setSelectedCategoryIds] = React.useState<string[]>([]);
         const [showProjects, setShowProjects] = React.useState(true);
@@ -69,7 +89,10 @@ const DayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
         const { tasks, memo, fetchDailyData, addDailyTask, toggleDailyTask, deleteDailyTask, updateDailyMemo } = useDailyStore();
         const { projects, fetchProjects } = useProjectStore();
         const { challenges, fetchChallenges, toggleChallengeCompletion } = useChallengeStore();
+        const { deleteTodo, deleteTodoOccurrence, toggleTodo } = useTodoStore();
         const authFetch = useAuthFetch();
+        const dialog = useDialog();
+        const t = useT();
 
         const [newTaskText, setNewTaskText] = React.useState("");
         const [localMemo, setLocalMemo] = React.useState("");
@@ -219,14 +242,93 @@ const DayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
         }, [expandedTodos, selectedDate]);
 
         const hours = Array.from({ length: 24 }, (_, i) => i);
-        const formattedDate = `${selectedDate.getFullYear()}년 ${selectedDate.getMonth() + 1}월 ${selectedDate.getDate()}일`;
+        const formattedDate = t.calendar.dayTitle(selectedDate.getFullYear(), selectedDate.getMonth() + 1, selectedDate.getDate());
+
+        /* ── 이 날의 일정 목록 ────────────────────────────────────────────
+           폰에서는 달력 칸이 48px 라 일정이 6px 짜리 마름모로만 찍힌다.
+           고치거나 지우려면 집을 수 있는 목록이 있어야 한다. */
+        const dayTodos = React.useMemo(() => {
+            const at = (v: unknown) => new Date(v as string | number | Date).getTime();
+            // useExpandedTodos 는 반복 없는 일정을 창(window)과 무관하게 전부 돌려준다.
+            // 여기서 이 날에 걸리는 것만 골라내지 않으면 남의 날 일정까지 목록에 선다.
+            return expandedTodos
+                .filter(todo => isBetween(selectedDate, todo.startAt, todo.endAt))
+                .sort((a, b) => {
+                    if (!!a.isAllDay !== !!b.isAllDay) return a.isAllDay ? -1 : 1;
+                    return at(a.startAt) - at(b.startAt);
+                });
+        }, [expandedTodos, selectedDate]);
+
+        const [isModalOpen, setIsModalOpen] = React.useState(false);
+        const [modalTodo, setModalTodo] = React.useState<TodoType | null>(null);
+        const [contextMenu, setContextMenu] =
+            React.useState<{ x: number; y: number; todo: CalendarTodoType } | null>(null);
+
+        const openTodoMenu = (e: React.MouseEvent, todo: CalendarTodoType) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const box = (e.currentTarget as HTMLElement).getBoundingClientRect();
+            setContextMenu({ x: box.left + box.width / 2, y: box.bottom, todo });
+        };
+
+        const isForeign = (todo: CalendarTodoType) => !!todo.isProject || !!todo.isProjectTask;
+
+        const handleQuickEdit = async (todo: CalendarTodoType) => {
+            setContextMenu(null);
+            if (isForeign(todo)) {
+                await dialog.notify({ title: t.alert.editHereTitle, message: t.alert.editHereMsg });
+                return;
+            }
+            setModalTodo(todo.originalTodo || (todo as unknown as TodoType));
+            setIsModalOpen(true);
+        };
+
+        const handleQuickDelete = async (todo: CalendarTodoType) => {
+            setContextMenu(null);
+            if (isForeign(todo)) {
+                await dialog.notify({ title: t.alert.deleteHereTitle, message: t.alert.deleteHereDetailMsg });
+                return;
+            }
+            const ok = await dialog.confirmDanger({
+                title: t.alert.deleteTodoTitle,
+                message: (todo.originalTodo?.repeat ?? todo.repeat ?? 0) > 0 ? t.alert.deleteTodoMsg : t.alert.deleteTodoOnceMsg,
+            });
+            if (!ok) return;
+            const error = await deleteTodo(authFetch, todo.originalTodo?.id || todo.id);
+            if (error) await dialog.notify({ title: t.alert.deleteFailed, message: error });
+        };
+
+        const handleQuickDeleteOne = async (todo: CalendarTodoType) => {
+            setContextMenu(null);
+            if (isForeign(todo)) return;
+            const ok = await dialog.confirm({
+                title: t.alert.deleteOneDayTitle,
+                message: t.alert.deleteOneDayMsg,
+                confirmLabel: t.dialog.delete,
+            });
+            if (!ok) return;
+            // 완료·삭제 기록은 그 회차의 날짜에 붙는다. 보고 있는 날이 아니다.
+            const occurrence = todo.date ?? new Date(todo.startAt || Date.now());
+            await deleteTodoOccurrence(authFetch, todo.originalTodo?.id || todo.id, localDateKey(occurrence));
+        };
+
+        const handleQuickToggle = async (todo: CalendarTodoType) => {
+            setContextMenu(null);
+            if (isForeign(todo)) {
+                await dialog.notify({ title: t.alert.statusHereTitle, message: t.alert.statusHereMsg });
+                return;
+            }
+            const occurrence = todo.date ?? new Date(todo.startAt || Date.now());
+            await toggleTodo(authFetch, todo.originalTodo?.id || todo.id, occurrence.toISOString());
+        };
 
         const handleToggleTask = (task: { id: string; title: string; isDone: boolean }) => toggleDailyTask(authFetch, task.id);
         const handleDeleteTask = (task: { id: string; title: string; isDone: boolean }) => deleteDailyTask(authFetch, task.id);
 
-        const mappedTasks = tasks.map((t: any) => ({
+        // 서버가 title 로 주는 판과 text 로 주는 판이 섞여 있어 둘 다 받는다.
+        const mappedTasks = tasks.map((t: { id: string; title?: string; text?: string; isDone: boolean }) => ({
             id: t.id,
-            title: t.title || t.text,
+            title: t.title || t.text || "",
             isDone: t.isDone
         }));
 
@@ -259,12 +361,25 @@ const DayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
             selectedCategoryIds,
             toggleCategory,
             showProjects,
-            onToggleProjects: () => setShowProjects(prev => !prev)
+            onToggleProjects: () => setShowProjects(prev => !prev),
+
+            dayTodos,
+            selectedDate,
+            isModalOpen,
+            modalTodo,
+            setIsModalOpen,
+            contextMenu,
+            setContextMenu,
+            openTodoMenu,
+            handleQuickEdit,
+            handleQuickDelete,
+            handleQuickDeleteOne,
+            handleQuickToggle,
         };
 
         return (
             <>
-                <CelestialDayCalendar ref={ref} {...themeProps} {...props} />
+                <DayCalendarView ref={ref} {...themeProps} {...props} />
             </>
         );
     }

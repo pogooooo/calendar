@@ -1,24 +1,7 @@
 import styled from "styled-components";
-import { celestial_corner_accent } from "@/styles/celestial_theme";
-
-export const SectionWrapper = styled.div`
-    display: flex;
-    flex-direction: column;
-    min-height: 150px;
-    overflow: hidden;
-    border: 1px solid ${(props) => props.theme.colors.primary};
-    background: transparent;
-    ${celestial_corner_accent}
-`;
-
-export const SectionTitle = styled.div`
-    font-family: ${(props) => props.theme.fonts.celestial};
-    font-size: 0.9rem;
-    letter-spacing: 2px;
-    color: ${(props) => props.theme.colors.textSecondary};
-    padding: 8px 12px;
-    border-bottom: 1px solid ${(props) => props.theme.colors.primary};
-`;
+import { SectionWrapper, SectionTitle } from "@/components/project/celestial/section";
+export { SectionWrapper, SectionTitle };
+import { MOBILE } from "@/styles/breakpoints";
 
 export const TimelineLayout = styled.div`
     display: flex;

@@ -1,5 +1,6 @@
 import styled from "styled-components";
 import { celestial_corner_accent } from "@/styles/celestial_theme";
+import { MOBILE } from "@/styles/breakpoints";
 
 export const CelestialCalendarWrapper = styled.div`
     display: flex;
@@ -10,7 +11,7 @@ export const CelestialCalendarWrapper = styled.div`
 `;
 
 export const DateHeader = styled.div`
-    font-family: ${(props) => props.theme.fonts.celestial};
+    font-family: ${(props) => props.theme.fonts.display};
     font-size: 1rem;
     font-weight: 500;
     color: ${(props) => props.theme.colors.text};
@@ -94,7 +95,7 @@ export const TimelineSection = styled.div.attrs<{ $flex: number }>(props => ({
     ${celestial_corner_accent}
 
     .timeline-header {
-        font-family: ${(props) => props.theme.fonts.celestial};
+        font-family: ${(props) => props.theme.fonts.display};
         font-size: 0.95rem;
         color: ${(props) => props.theme.colors.textSecondary};
         padding: 8px 15px;
@@ -113,7 +114,7 @@ export const TimelineSection = styled.div.attrs<{ $flex: number }>(props => ({
             background: transparent;
             border: 1px solid ${(props) => props.theme.colors.primary};
             color: ${(props) => props.theme.colors.primary};
-            font-family: ${(props) => props.theme.fonts.celestial};
+            font-family: ${(props) => props.theme.fonts.display};
             letter-spacing: 1px;
             padding: 4px 8px;
             font-size: 0.8rem;
@@ -123,6 +124,8 @@ export const TimelineSection = styled.div.attrs<{ $flex: number }>(props => ({
             cursor: pointer;
             transition: all 0.2s;
             &:hover { box-shadow: 0 0 6px ${(props) => props.theme.colors.primary}66; }
+
+            ${MOBILE} { padding: 8px 12px; }
         }
     }
 `;
@@ -166,7 +169,7 @@ export const ChallengeRow = styled.div<{ $isSelected: boolean }>`
             font-size: 0.75rem;
             color: ${(props) => props.theme.colors.textSecondary};
             margin-top: 6px;
-            font-family: ${(props) => props.theme.fonts.celestial};
+            font-family: ${(props) => props.theme.fonts.display};
         }
     }
 
@@ -179,7 +182,7 @@ export const ChallengeRow = styled.div<{ $isSelected: boolean }>`
         .count {
             font-size: 0.75rem;
             color: ${(props) => props.theme.colors.textSecondary};
-            font-family: ${(props) => props.theme.fonts.celestial};
+            font-family: ${(props) => props.theme.fonts.display};
         }
     }
 `;
@@ -215,7 +218,7 @@ export const BaseCard = styled.div`
     ${celestial_corner_accent}
 
     .card-header {
-        font-family: ${(props) => props.theme.fonts.celestial};
+        font-family: ${(props) => props.theme.fonts.display};
         font-size: 0.95rem;
         color: ${(props) => props.theme.colors.textSecondary};
         padding: 8px 12px;

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useT } from "@/i18n/useT";
 import CelestialBaseModal from "@/components/modal/baseModal/celestial/CelestialBaseModal";
 import SecondaryButton from '@/components/button/secondary/SecondaryButton';
 import Dropdown from '@/components/dropdown/Dropdown';
@@ -14,6 +15,8 @@ export default function CelestialProjectModal({
                                                   isOpen, mode, data, categories, modalCategoryParticipants,
                                                   onClose, onSave, setData, toggleParticipant
                                               }: ProjectModalProps) {
+    const t = useT();
+    const f = t.form;
     return (
         <CelestialBaseModal isOpen={isOpen} onClose={onClose} maxWidth="450px">
             <S.FormWrapper onSubmit={onSave}>
@@ -21,7 +24,7 @@ export default function CelestialProjectModal({
                     <S.TitleInput
                         value={data.title || ''}
                         onChange={(e) => setData({ ...data, title: e.target.value })}
-                        placeholder={mode === 'add' ? "새 프로젝트 이름" : "프로젝트 이름"}
+                        placeholder={mode === 'add' ? f.newProjectName : f.projectName}
                         required
                         autoFocus
                     />
@@ -32,12 +35,12 @@ export default function CelestialProjectModal({
 
                 <S.ScrollBody>
                     <S.FieldRow style={{ borderBottom: 'none' }}>
-                        <S.FieldLabel><Folder size={16} /> 카테고리</S.FieldLabel>
+                        <S.FieldLabel><Folder size={16} /> {t.challenge.category}</S.FieldLabel>
                         <div style={{ width: '180px' }}>
                             <Dropdown
                                 value={data.categoryId || ''}
                                 onChange={(val: string) => setData({ ...data, categoryId: val })}
-                                placeholder="선택하세요"
+                                placeholder={f.choose}
                                 options={categories.map((c: CategoryType) => ({
                                     label: c.name,
                                     value: c.id,
@@ -49,7 +52,7 @@ export default function CelestialProjectModal({
 
                     {data.categoryId && (
                         <S.ParticipantRow>
-                            <S.FieldLabel><Users size={16} /> 프로젝트 참가자</S.FieldLabel>
+                            <S.FieldLabel><Users size={16} /> {f.participants}</S.FieldLabel>
                             <S.ParticipantPicker>
                                 {modalCategoryParticipants.map((user: UserType) => (
                                     <S.ParticipantItem
@@ -65,21 +68,21 @@ export default function CelestialProjectModal({
                     )}
 
                     <S.MemoRow>
-                        <S.FieldLabel><AlignLeft size={16} /> 설명</S.FieldLabel>
+                        <S.FieldLabel><AlignLeft size={16} /> {f.description}</S.FieldLabel>
                         <S.MemoTextArea
                             value={data.description || ''}
                             onChange={e => setData({ ...data, description: e.target.value })}
-                            placeholder="프로젝트에 대한 설명을 남겨보세요."
+                            placeholder={f.projectDescPlaceholder}
                         />
                     </S.MemoRow>
                 </S.ScrollBody>
 
                 <S.Footer>
                     <SecondaryButton type="button" onClick={onClose} $width="70px" $height="36px" $variant="default">
-                        취소
+                        {f.cancel}
                     </SecondaryButton>
                     <SecondaryButton type="submit" $width="90px" $height="36px" $variant="primary">
-                        저장하기
+                        {f.save}
                     </SecondaryButton>
                 </S.Footer>
             </S.FormWrapper>

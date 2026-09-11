@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import styled from "styled-components";
+import styled, { keyframes } from "styled-components";
 import { useRouter, usePathname } from "next/navigation";
 import { Home, Calendar, Kanban, Trophy, MoreHorizontal, Layers, Cake, Settings, MonitorDown, X } from "lucide-react";
 import { useT } from "@/i18n/useT";
@@ -112,6 +112,9 @@ const Tab = styled.button<{ $on: boolean }>`
     position: relative;
     color: ${p => (p.$on ? p.theme.colors.primary : p.theme.colors.textSecondary)};
 
+    /* 손가락에는 hover 가 없다. 눌린 걸 알려 주는 건 :active 뿐이다. */
+    &:active { background-color: ${p => p.theme.colors.primary}14; }
+
     span {
         font-size: 0.6rem;
         letter-spacing: 0.04em;
@@ -135,6 +138,16 @@ const Tab = styled.button<{ $on: boolean }>`
     }
 `;
 
+const scrimIn = keyframes`
+    from { opacity: 0; }
+    to   { opacity: 1; }
+`;
+
+const sheetUp = keyframes`
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
+`;
+
 const Sheet = styled.div`
     position: fixed;
     inset: 0;
@@ -142,6 +155,10 @@ const Sheet = styled.div`
     background: rgba(0, 0, 0, 0.5);
     display: flex;
     align-items: flex-end;
+
+    @media (prefers-reduced-motion: no-preference) {
+        animation: ${scrimIn} 0.18s ease-out both;
+    }
 `;
 
 const SheetBody = styled.div`
@@ -149,6 +166,11 @@ const SheetBody = styled.div`
     background: ${p => p.theme.colors.background};
     border-top: 1px solid ${p => p.theme.colors.primary};
     padding: 0 0 calc(${TAB_BAR_HEIGHT}px + env(safe-area-inset-bottom, 0px));
+
+    /* 아래에서 올라와야 탭바에서 자란 것으로 읽힌다 */
+    @media (prefers-reduced-motion: no-preference) {
+        animation: ${sheetUp} 0.26s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
 `;
 
 const SheetHead = styled.div`
@@ -157,7 +179,7 @@ const SheetHead = styled.div`
     gap: 10px;
     padding: 14px 18px 12px;
     border-bottom: 1px solid ${p => p.theme.colors.text}1A;
-    font-family: ${p => p.theme.fonts.celestial};
+    font-family: ${p => p.theme.fonts.display};
     font-size: 0.78rem;
     letter-spacing: 0.2em;
     color: ${p => p.theme.colors.primary};
@@ -194,4 +216,6 @@ const SheetRow = styled.button<{ $on: boolean }>`
     font-size: 0.9rem;
     text-align: left;
     color: ${p => (p.$on ? p.theme.colors.primary : p.theme.colors.text)};
+
+    &:active { background-color: ${p => p.theme.colors.primary}14; }
 `;

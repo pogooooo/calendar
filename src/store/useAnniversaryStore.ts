@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { reportSaveFailure } from "@/lib/saveError";
 import type { AuthFetch } from '@/types';
 
 export interface AnniversaryType {
@@ -58,6 +59,7 @@ const useAnniversaryStore = create<AnniversaryState>((set, get) => ({
             return body?.message ?? "기념일 등록에 실패했습니다.";
         } catch (err) {
             console.error("[ANNIVERSARY_ADD_ERROR]", err);
+            reportSaveFailure("anniversary");
             return "기념일 등록 중 오류가 발생했습니다.";
         }
     },
@@ -72,6 +74,7 @@ const useAnniversaryStore = create<AnniversaryState>((set, get) => ({
         } catch (err) {
             set({ anniversaries: previous });
             console.error("[ANNIVERSARY_DELETE_ERROR]", err);
+            reportSaveFailure("anniversary");
         }
     },
 }));

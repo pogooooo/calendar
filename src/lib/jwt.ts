@@ -26,12 +26,21 @@ async function sign(payload: Record<string, unknown>, expiresIn: string) {
         .sign(getKey());
 }
 
-export function generateAccessToken(payload: { userId: any; email: string | null }) {
+export function generateAccessToken(payload: { userId: string; email: string | null }) {
     return sign({ userId: payload.userId, email: payload.email }, "1h");
 }
 
+/**
+ * 리프레시 토큰에는 난수 jti 를 넣는다.
+ *
+ * 넣지 않으면 payload 와 iat(초 단위)가 같은 두 번의 로그인이 글자까지 똑같은
+ * 토큰을 만든다. RefreshToken.Token 이 @unique 라 같은 초에 두 번 로그인하면
+ * P2002 로 터져 500 이 나갔다. 로그인 단추를 두 번 누르거나 탭 두 개에서
+ * 동시에 들어오면 실제로 걸린다.
+ */
 export function generateRefreshToken(payload: TokenPayload) {
-    return sign({ ...payload }, "7d");
+    const jti = crypto.randomUUID();
+    return sign({ ...payload, jti }, "7d");
 }
 
 export async function verifyToken(token: string) {

@@ -1,7 +1,7 @@
 import styled, { css } from "styled-components";
 import { MOBILE, TOUCH } from "@/styles/breakpoints";
 import { motion } from "framer-motion";
-import { celestial_hide_scrollbar } from "@/styles/celestial_theme";
+import { hide_scrollbar } from "@/styles/shared";
 
 export const CelestialCalendarWrapper = styled.div`
     display: flex;
@@ -13,7 +13,7 @@ export const CelestialCalendarWrapper = styled.div`
 `;
 
 export const DateRangeDisplay = styled.div`
-    font-family: ${(props) => props.theme.fonts.celestial};
+    font-family: ${(props) => props.theme.fonts.display};
     font-size: ${(props) => props.theme.fontSizes.caption};
     color: ${(props) => props.theme.colors.text};
     letter-spacing: 2px;
@@ -63,6 +63,46 @@ export const DateRangeDisplay = styled.div`
     }
 `;
 
+/**
+ * 오늘로 되돌아가는 단추.
+ * 화살표로 몇 달 넘긴 뒤 돌아오려면 같은 횟수만큼 되짚어야 한다 — 넓은 화면도 마찬가지다.
+ * 위젯 창에만 자리가 없어 거기서 감춘다.
+ */
+export const TodayButton = styled.button`
+    display: inline-flex;
+    align-items: center;
+    flex: 0 0 auto;
+    padding: 5px 11px;
+    background: transparent;
+    border: 1px solid ${(props) => props.theme.colors.primary}66;
+    color: ${(props) => props.theme.colors.primary};
+    font-family: ${(props) => props.theme.fonts.display};
+    font-size: 0.68rem;
+    letter-spacing: 1.5px;
+    cursor: pointer;
+    transition: border-color 0.18s, box-shadow 0.18s;
+
+    &:hover:not(:disabled) {
+        border-color: ${(props) => props.theme.colors.primary};
+        box-shadow: 0 0 6px ${(props) => props.theme.colors.primary}44;
+    }
+
+    &:disabled {
+        opacity: 0.35;
+        cursor: default;
+    }
+
+    ${MOBILE} {
+        padding: 6px 12px;
+        min-height: 32px;
+        font-size: 0.7rem;
+
+        &:active { background-color: ${(props) => props.theme.colors.primary}1F; }
+    }
+
+    [data-widget] & { display: none; }
+`;
+
 export const SliderWrapper = styled.div`
     display: flex;
     align-items: flex-start;
@@ -95,7 +135,7 @@ export const CalendarWindow = styled.div`
 `;
 
 export const Header = styled.div`
-    font-family: ${(props) => props.theme.fonts.celestial};
+    font-family: ${(props) => props.theme.fonts.display};
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     border: 1px solid ${(props) => props.theme.colors.primary};
@@ -137,6 +177,16 @@ export const DayNameBox = styled.div<{ $isToday?: boolean }>`
     .day-name {
         font-size: ${(props) => props.theme.fontSizes.h4};
     }
+
+    /* 요일 줄에 50px 를 내주면 그만큼 날짜 칸이 눌린다. */
+    ${MOBILE} {
+        height: 30px;
+
+        .day-name {
+            font-size: 0.62rem;
+            letter-spacing: 0.5px;
+        }
+    }
 `;
 
 export const GridContainer = styled.div`
@@ -150,7 +200,7 @@ export const GridContainer = styled.div`
     background-color: transparent;
 
     overflow-y: auto;
-    ${celestial_hide_scrollbar}
+    ${hide_scrollbar}
 
     [data-widget] & {
         border: none;
@@ -231,7 +281,7 @@ export const DayCell = styled.div<{ $isToday: boolean; $isCurrentMonth: boolean;
             font-size: 0.95rem;
             line-height: 18px;
             display: block;
-            font-family: ${(props) => props.theme.fonts.celestial};
+            font-family: ${(props) => props.theme.fonts.display};
             font-weight: ${(props) => (props.$isToday || props.$isSelected) ? 'bold' : 'normal'};
             color: ${(props) => props.$isToday ? props.theme.colors.primary : props.theme.colors.text};
         }
@@ -241,6 +291,20 @@ export const DayCell = styled.div<{ $isToday: boolean; $isCurrentMonth: boolean;
         opacity: 1;
     }
 
+    /* 48px 짜리 칸이다. 숫자와 여백을 줄여 마름모가 들어갈 자리를 만든다. */
+    ${MOBILE} {
+        /* 눌렀다는 걸 알려 주지 않으면 일간으로 넘어가는 게 갑작스럽다. */
+        &:active { background-color: ${(props) => props.theme.colors.primary}1A; }
+
+        .day-header {
+            padding: 3px 4px 0;
+
+            .day-number {
+                font-size: 0.78rem;
+                line-height: 15px;
+            }
+        }
+    }
 `;
 
 /**
@@ -255,6 +319,13 @@ export const TodayDisc = styled.svg`
     width: 60px;
     height: 60px;
     margin: -30px 0 0 -30px;
+
+    /* 칸보다 큰 원반은 옆 칸까지 넘어가 오늘이 어디인지 되레 흐려진다. */
+    ${MOBILE} {
+        width: 38px;
+        height: 38px;
+        margin: -19px 0 0 -19px;
+    }
     z-index: 0;
     pointer-events: none;
     overflow: visible;
@@ -321,20 +392,19 @@ export const AddTodoButton = styled.button`
         transform: scale(1.1);
     }
 
-    ${TOUCH} { display: none; }
+    /* 손가락에는 hover 가 없다. 숨겨두면 영영 못 누른다. */
+    ${TOUCH} { opacity: 0.6; }
+
+    /* 폰에서는 칸이 48px 밖에 안 돼 이게 날짜를 덮는다. 대신 화면 오른쪽
+       아래 떠 있는 + 단추(캘린더 페이지의 Fab)로 일정을 만든다. */
+    ${MOBILE} {
+        display: none;
+        /* 위젯 창은 폭이 좁아도 마우스로 쓰는 데스크톱이다. 그대로 둔다. */
+        [data-widget] & { display: flex; }
+    }
 `;
 
 export const TodoBarList = styled.div`
-    ${MOBILE} {
-        flex-direction: row;
-        flex-wrap: wrap;
-        align-content: flex-start;
-        justify-content: center;
-        gap: 3px;
-        margin: 2px 0 0;
-        padding: 0 2px;
-        overflow: hidden;
-    }
 
     position: relative;
     z-index: 1;
@@ -348,35 +418,36 @@ export const TodoBarList = styled.div`
     min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
-    ${celestial_hide_scrollbar}
+    ${hide_scrollbar}
 
     [data-widget] & {
         overflow: hidden;
         margin-top: 2px;
         margin-bottom: 2px;
     }
+
+    ${MOBILE} {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-content: flex-start;
+        justify-content: center;
+        gap: 3px;
+        margin: 2px 0 0;
+        padding: 0 2px;
+        overflow: hidden;
+    }
 `;
 
 export const TodoBarSpacer = styled.div`
     height: 20px;
     width: 100%;
+
+    /* 폰에서는 할 일이 가로로 늘어선 마름모라 층을 맞출 자리표가 필요 없다.
+       그대로 두면 width:100% 라서 줄바꿈만 만들고 20px 를 잡아먹는다. */
+    ${MOBILE} { display: none; }
 `;
 
 export const TodoBarItem = styled.div<{ $isStart: boolean; $isEnd: boolean; $color?: string; $isDone?: boolean }>`
-    ${MOBILE} {
-        width: 6px;
-        height: 6px;
-        min-width: 0;
-        margin: 0;
-        padding: 0;
-        border: 1px solid ${(props) => props.$color || props.theme.colors.primary};
-        border-radius: 0;
-        transform: rotate(45deg);
-        background-color: ${(props) => props.$isDone ? (props.$color || props.theme.colors.primary) : "transparent"};
-        overflow: hidden;
-
-        & > * { display: none; }
-    }
 
     /* 오늘 원반이 바 뒤로 지나가도록 불투명하게 (셀 배경과 같은 색이라 겉보기는 동일) */
     background-color: ${(props) => props.theme.colors.background};
@@ -423,6 +494,21 @@ export const TodoBarItem = styled.div<{ $isStart: boolean; $isEnd: boolean; $col
             color: ${(props) => props.theme.colors.textSecondary};
         }
     `}
+
+    ${MOBILE} {
+        width: 6px;
+        height: 6px;
+        min-width: 0;
+        margin: 0;
+        padding: 0;
+        border: 1px solid ${(props) => props.$color || props.theme.colors.primary};
+        border-radius: 0;
+        transform: rotate(45deg);
+        background-color: ${(props) => props.$isDone ? (props.$color || props.theme.colors.primary) : "transparent"};
+        overflow: hidden;
+
+        & > * { display: none; }
+    }
 `;
 
 export const MoreButton = styled.div`
@@ -435,6 +521,19 @@ export const MoreButton = styled.div`
     cursor: pointer;
     border-radius: 4px;
     transition: all 0.2s ease;
+
+    .short { display: none; }
+
+    /* 48px 짜리 칸에 "+1 더보기" 는 너무 길다. 숫자만 남긴다. */
+    ${MOBILE} {
+        font-size: 0.62rem;
+        margin: 1px 0 0;
+        padding: 0;
+        width: 100%;
+
+        .full { display: none; }
+        .short { display: inline; }
+    }
 
     &:hover {
         background-color: ${(props) => props.theme.colors.primary}1A;
@@ -467,7 +566,7 @@ export const ModalContainer = styled(motion.div)`
 `;
 
 export const ModalHeader = styled.div`
-    font-family: ${(props) => props.theme.fonts.celestial};
+    font-family: ${(props) => props.theme.fonts.display};
     font-size: 1.1rem;
     color: ${(props) => props.theme.colors.text};
     padding: 15px 20px;

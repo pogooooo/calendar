@@ -15,6 +15,11 @@ export default function ThemeProviderWrapper({ children }: { children: React.Rea
     const fontSizeKey = useSettingStore((state) => state.fontSize);
     const fontWeightKey = useSettingStore((state) => state.fontWeight);
 
+    /**
+     * 테마 이름 규칙: 갈래 이름이 밝은 벌, 거기에 '-어두운벌' 을 붙인 것이 어두운 벌이다.
+     * (celestial / celestial-dark). 새 테마도 이 규칙을 따라 styles/theme.ts 에 등록한다.
+     * 다만 "지금 어두운 벌인가" 는 이름이 아니라 테마의 mode 값으로 판단한다.
+     */
     const option = themeOptions[themeName];
     const effectiveKey = option && option !== 'light'
         ? `${themeName}-${option}`
@@ -35,12 +40,13 @@ export default function ThemeProviderWrapper({ children }: { children: React.Rea
         document.body.style.fontFamily = fontOption.family;
     }, [fontOption]);
 
+    // 테마가 스스로 밝은 벌인지 어두운 벌인지 말해 준다.
+    // 이름이 '-dark' 로 끝나는지 보던 예전 방식은 테마 이름 규칙에 묶여 있었다.
     useEffect(() => {
-        const isDark = effectiveKey.endsWith('-dark');
         import('@tauri-apps/api/window').then(({ getCurrentWindow }) => {
-            getCurrentWindow().setTheme(isDark ? 'dark' : 'light').catch(() => {});
+            getCurrentWindow().setTheme(theme.mode).catch(() => {});
         }).catch(() => {});
-    }, [effectiveKey]);
+    }, [theme.mode]);
 
     return (
         <ThemeProvider theme={theme}>

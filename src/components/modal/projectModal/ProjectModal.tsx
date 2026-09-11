@@ -1,7 +1,8 @@
 ﻿"use client";
 
 import * as React from 'react';
-import { useTheme } from 'styled-components';
+import type { UserType } from "@/types";
+import { usePickTheme } from "@/styles/themed";
 import CelestialProjectModal from './celestial/CelestialProjectModal';
 import { ProjectType } from '@/store/useProjectStore';
 import { CategoryType } from "@/store/useCategoryStore";
@@ -11,18 +12,17 @@ export interface ProjectModalProps {
     mode: 'add' | 'edit';
     data: Partial<ProjectType>;
     categories: CategoryType[];
-    modalCategoryParticipants: any[];
+    modalCategoryParticipants: UserType[];
     onClose: () => void;
     onSave: (e: React.FormEvent) => Promise<void>;
     setData: (data: Partial<ProjectType>) => void;
-    toggleParticipant: (user: any) => void;
+    toggleParticipant: (user: UserType) => void;
 }
 
 export default function ProjectModal(props: ProjectModalProps) {
-    const theme = useTheme();
-    const themeName = theme?.name || 'celestial';
+    const ProjectModalView = usePickTheme({ celestial: CelestialProjectModal });
 
     if (!props.isOpen) return null;
 
-    return <CelestialProjectModal {...props} />;
+    return <ProjectModalView {...props} />;
 }

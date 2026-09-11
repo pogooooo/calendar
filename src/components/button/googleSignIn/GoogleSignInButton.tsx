@@ -1,6 +1,7 @@
 "use client";
 
 import styled from "styled-components";
+import { useT } from "@/i18n/useT";
 
 /* Google 공식 브랜드 가이드라인 기반 버튼
    https://developers.google.com/identity/branding-guidelines */
@@ -11,7 +12,8 @@ interface Props {
     label?: string;
 }
 
-export default function GoogleSignInButton({ onClick, disabled, label = "Google로 계속하기" }: Props) {
+export default function GoogleSignInButton({ onClick, disabled, label }: Props) {
+    const t = useT();
     return (
         <Btn onClick={onClick} disabled={disabled} type="button">
             <GoogleLogo aria-hidden="true" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -32,7 +34,7 @@ export default function GoogleSignInButton({ onClick, disabled, label = "Google�
                     fill="#EA4335"
                 />
             </GoogleLogo>
-            <Label>{label}</Label>
+            <Label>{label ?? t.auth.googleContinue}</Label>
         </Btn>
     );
 }

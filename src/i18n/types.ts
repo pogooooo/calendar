@@ -1,13 +1,22 @@
 export interface Translations {
     settings: {
         title: string;
-        onThisPage: string;
+        appearance: string;
+        account: string;
+        appearanceNote: string;
+        systemNote: string;
+        fontSize: string;
+        fontWeight: string;
+        fontSample: string;
         font: string;
         theme: string;
         themeOptions: string;
         lightMode: string;
         darkMode: string;
         widgets: string;
+        fontSizes: { sm: string; md: string; lg: string; xl: string };
+        fontWeights: { light: string; normal: string; bold: string };
+        fontNames: Record<string, string>;
         accountInfo: string;
         changeName: string;
         changePassword: string;
@@ -18,6 +27,9 @@ export interface Translations {
     widget: {
         open: string;
         close: string;
+        openFailed: string;
+        closeFailed: string;
+        popupBlocked: string;
         desc: string;
         daily: string;
         weekly: string;
@@ -67,6 +79,9 @@ export interface Translations {
         groupTodo: string;
         groupCalendar: string;
         groupRecord: string;
+        loading: string;
+        waiting: string;
+        waitingSub: string;
     };
     account: {
         email: string;
@@ -92,6 +107,14 @@ export interface Translations {
         cancel: string;
         finalDelete: string;
         processing: string;
+        nameChanged: string;
+        passwordChanged: string;
+        genericError: string;
+        connectError: string;
+        passwordMismatch: string;
+        passwordTooShort: string;
+        deleteKeyword: string;
+        typeExactly: (keyword: string) => string;
     };
     system: {
         autostart: string;
@@ -102,6 +125,9 @@ export interface Translations {
         timezoneDesc: string;
         korean: string;
         english: string;
+        timezoneAria: string;
+        timezoneAuto: string;
+        timezoneAutoHint: string;
     };
     widgetShell: {
         background: string;
@@ -124,6 +150,20 @@ export interface Translations {
         addTask: string;
         memoPlaceholder: string;
         noChallengeToday: string;
+        monthView: string;
+        dayView: string;
+        weekView: string;
+        prevDay: string;
+        nextDay: string;
+        expandDay: string;
+        collapseDay: string;
+        dayLabelShort: (m: number, d: number) => string;
+        monthTitle: (y: number, m: number) => string;
+        dayTitle: (y: number, m: number, d: number) => string;
+        more: (n: number) => string;
+        retry: string;
+        newTodo: string;
+        board: string;
     };
     sidebar: {
         home: string;
@@ -168,7 +208,20 @@ export interface Translations {
         resetDone: string;
         resetInvalidLink: string;
         passwordMismatch: string;
+        googleContinue: string;
+        googleFailed: string;
+        googleWindowClosed: string;
+        googleError: string;
+        signInFailed: string;
+        signInError: string;
+        signUpError: string;
+        networkError: string;
+        requestFailed: string;
+        requestError: string;
+        resetFailed: string;
+        passwordConfirmRequired: string;
     };
+
     todo: {
         newTodo: string;
         categorySelect: string;
@@ -216,6 +269,13 @@ export interface Translations {
         deleteConfirm: string;
         inviteTitle: string;
         inviteHint: string;
+        addFailedTitle: string;
+        emailRequired: string;
+        alreadyMember: string;
+        inviteFailed: string;
+        kickFailedTitle: string;
+        deleteTitle: string;
+        deleteMessage: string;
         cancel: string;
     };
     update: {
@@ -260,6 +320,22 @@ export interface Translations {
         notTodaySlot: string;
         edit: string;
         delete: string;
+        createTitle: string;
+        editTitle: string;
+        nameLabel: string;
+        namePlaceholder: string;
+        descLabel: string;
+        descPlaceholder: string;
+        intervalLabel: string;
+        targetLabel: string;
+        targetPlaceholder: string;
+        cancel: string;
+        submitCreate: string;
+        submitUpdate: string;
+        deleteTitle: string;
+        deleteMessage: (title: string) => string;
+        missingTitle: string;
+        missingMessage: string;
     };
     popup: {
         display: string;
@@ -299,6 +375,162 @@ export interface Translations {
         monthLabel: (m: number) => string;
         monthSummary: (left: number, done: number) => string;
         noAnniversaries: string;
+        addAnniversary: string;
+        anniversaryName: string;
+    };
+    form: {
+        startDate: string;
+        endDate: string;
+        priority: string;
+        assignees: string;
+        blockedBy: string;
+        description: string;
+        taskDescPlaceholder: string;
+        projectDescPlaceholder: string;
+        participants: string;
+        choose: string;
+        newCategoryName: string;
+        color: string;
+        categoryDescPlaceholder: string;
+        pickedEdge: string;
+        add: string;
+        save: string;
+        cancel: string;
+        newProjectName: string;
+        projectName: string;
+        newTaskName: string;
+        taskName: string;
+        noDate: string;
+        now: string;
+        today: string;
+        start: string;
+        end: string;
+        weekdays: string[];
+        timeAria: string;
+        timeValue: (h: string, m: string) => string;
+        nameRequiredTitle: string;
+        nameRequiredMsg: string;
+        timeCheckTitle: string;
+        timeCheckMsg: string;
+        categoryRequiredTitle: string;
+        categoryRequiredMsg: string;
+        time: string;
+        done: string;
+    };
+    menu: {
+        done: string;
+        edit: string;
+        delete: string;
+        deleteThisOnly: string;
+        deleteAll: string;
+    };
+    project: {
+        board: string;
+        timeline: string;
+        add: string;
+        colTodo: string;
+        colDoing: string;
+        colDone: string;
+        moveStart: string;
+        movePrev: string;
+        moveDone: string;
+        waiting: string;
+        priorityHigh: string;
+        priorityMid: string;
+        priorityLow: string;
+        noAssignee: string;
+        startLabel: string;
+        settings: string;
+        newProject: string;
+    };
+    saveError: {
+        message: (what: string) => string;
+        scopes: {
+            todo: string; category: string; project: string; challenge: string;
+            anniversary: string; daily: string; setting: string;
+        };
+    };
+    dialog: {
+        confirm: string;
+        cancel: string;
+        delete: string;
+    };
+    alert: {
+        editHereTitle: string;
+        editHereMsg: string;
+        deleteHereTitle: string;
+        deleteHereMsg: string;
+        deleteHereDetailMsg: string;
+        statusHereTitle: string;
+        statusHereMsg: string;
+        deleteTodoTitle: string;
+        deleteTodoMsg: string;
+        deleteTodoOnceMsg: string;
+        deleteOneDayTitle: string;
+        deleteOneDayMsg: string;
+        deleteFailed: string;
+        saveFailed: string;
+        addFailed: string;
+        serverError: string;
+        retryLater: string;
+        checkConnection: string;
+        challengeToggled: (state: string) => string;
+        stateDone: string;
+        stateUndone: string;
+    };
+    titleBar: {
+        minimize: string;
+        restore: string;
+        maximize: string;
+        close: string;
+    };
+    anniversaryPage: {
+        title: string;
+        formCaption: string;
+        namePlaceholder: string;
+        monthOption: (n: number) => string;
+        dayOption: (n: number) => string;
+        monthAria: string;
+        dayAria: string;
+        add: string;
+        empty: string;
+        emptyHint: string;
+        everyYear: (m: number, d: number) => string;
+        todayMark: string;
+        iconLabels: { star: string; moon: string; cake: string; ring: string; heart: string; flower: string; candle: string; gift: string };
+        deleteTitle: string;
+        deleteMessage: (title: string) => string;
+    };
+    download: {
+        openWeb: string;
+        tagline: string;
+        lead: string;
+        downloadFor: (os: string) => string;
+        download: string;
+        preparing: string;
+        checking: string;
+        useOnWeb: string;
+        featuresTitle: string;
+        platformsTitle: string;
+        myOs: string;
+        signIn: string;
+        signUp: string;
+        winNote: string;
+        macNote: string;
+        linuxNote: string;
+        androidNote: string;
+        errPlatform: string;
+        errUnreleased: string;
+        errUpstream: string;
+        errGeneric: string;
+        featCalendar: string;
+        featCalendarDesc: string;
+        featProject: string;
+        featProjectDesc: string;
+        featChallenge: string;
+        featChallengeDesc: string;
+        featWidget: string;
+        featWidgetDesc: string;
     };
 }
 

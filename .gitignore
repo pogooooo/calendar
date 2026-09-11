@@ -60,3 +60,10 @@ next-env.d.ts
 # wrangler 로컬 환경변수 (시크릿 포함)
 .dev.vars
 .dev.vars.*
+
+# 로컬에서 구운 APK (릴리스는 GitHub Actions 가 만든다)
+*.apk
+*.apk.idsig
+
+# productivity 플러그인이 만드는 대시보드 (프로젝트 코드가 아니다)
+dashboard.html

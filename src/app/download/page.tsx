@@ -10,6 +10,7 @@ import CronosOrbit from "@/assets/download/CronosOrbit";
 import CursorTrail from "@/components/download/CursorTrail";
 import useAuthStore from "@/store/useAuthStore";
 import { api } from "@/lib/apiBase";
+import { useT } from "@/i18n/useT";
 
 const HeroScene = dynamic(() => import("@/components/download/HeroScene"), {
     ssr: false,
@@ -18,7 +19,7 @@ const HeroScene = dynamic(() => import("@/components/download/HeroScene"), {
 
 const REPO = "https://github.com/pogooooo/calendar";
 
-type PlatformKey = "windows" | "macos" | "linux";
+type PlatformKey = "windows" | "macos" | "linux" | "android";
 
 type PlatformInfo = {
     available: boolean;
@@ -27,17 +28,13 @@ type PlatformInfo = {
     version: string | null;
 };
 
-const DL_MESSAGES: Record<string, string> = {
-    platform: "지원하지 않는 운영체제입니다.",
-    unreleased: "이 운영체제용 설치 파일이 아직 없습니다.",
-    upstream: "설치 파일을 가져오지 못했습니다. 잠시 후 다시 시도해주세요.",
-    error: "다운로드 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
-};
+type DlReason = "platform" | "unreleased" | "upstream" | "error";
 
-const PLATFORMS: { key: PlatformKey; label: string; ext: string; note: string }[] = [
-    { key: "windows", label: "Windows", ext: ".exe", note: "Windows 10 이상" },
-    { key: "macos", label: "macOS", ext: ".dmg", note: "macOS 11 이상 · Apple Silicon / Intel" },
-    { key: "linux", label: "Linux", ext: ".AppImage", note: "x86_64" },
+const PLATFORMS: { key: PlatformKey; label: string; ext: string }[] = [
+    { key: "windows", label: "Windows", ext: ".exe" },
+    { key: "macos", label: "macOS", ext: ".dmg" },
+    { key: "linux", label: "Linux", ext: ".AppImage" },
+    { key: "android", label: "Android", ext: ".apk" },
 ];
 
 const STARS = Array.from({ length: 42 }, (_, i) => ({
@@ -52,6 +49,8 @@ const STARS = Array.from({ length: 42 }, (_, i) => ({
 function detectPlatform(): PlatformKey | null {
     if (typeof navigator === "undefined") return null;
     const ua = navigator.userAgent;
+    // 안드로이드 UA 에도 "Linux" 가 들어 있다. 리눅스보다 먼저 봐야 한다.
+    if (/Android/i.test(ua)) return "android";
     if (/Win/i.test(ua)) return "windows";
     if (/Mac/i.test(ua)) return "macos";
     if (/Linux|X11/i.test(ua)) return "linux";
@@ -160,8 +159,6 @@ function tiltEnd(e: React.PointerEvent<HTMLElement>) {
 const FEATURES = [
     {
         key: "calendar",
-        title: "월간 · 주간 · 일간 캘린더",
-        desc: "기간이 있는 일정은 막대로 이어지고, 하루는 시간대로 나뉩니다.",
         visual: () => (
             <MiniCalendar aria-hidden="true">
                 {Array.from({ length: 28 }, (_, i) => (
@@ -173,8 +170,6 @@ const FEATURES = [
     },
     {
         key: "project",
-        title: "프로젝트 보드와 타임라인",
-        desc: "태스크를 보드에서 옮기고, 타임라인에서 선행 관계를 확인합니다.",
         visual: () => (
             <MiniBoard aria-hidden="true">
                 <span className="col"><i /><i /><i className="mover" /></span>
@@ -185,8 +180,6 @@ const FEATURES = [
     },
     {
         key: "challenge",
-        title: "챌린지",
-        desc: "반복 목표를 기록하면 달성한 날마다 별이 새겨집니다.",
         visual: () => (
             <MiniChallenge aria-hidden="true">
                 {Array.from({ length: 7 }, (_, i) => (
@@ -203,8 +196,6 @@ const FEATURES = [
     },
     {
         key: "widget",
-        title: "바탕화면 위젯",
-        desc: "오늘 할 일, 메모, 보드까지 14가지 위젯을 화면에 고정합니다.",
         visual: () => (
             <MiniWidgets aria-hidden="true">
                 <span className="pane p1" />
@@ -216,6 +207,7 @@ const FEATURES = [
 ];
 
 export default function DownloadPage() {
+    const t = useT();
     const router = useRouter();
     const pageRef = React.useRef<HTMLDivElement>(null);
     const progressRef = React.useRef<HTMLDivElement>(null);
@@ -227,13 +219,33 @@ export default function DownloadPage() {
     const busyTimer = React.useRef<number | null>(null);
     const [dlError, setDlError] = React.useState<string | null>(null);
 
+    // 문구는 언어 설정을 따른다
+    const DL_MESSAGES: Record<DlReason, string> = React.useMemo(() => ({
+        platform: t.download.errPlatform,
+        unreleased: t.download.errUnreleased,
+        upstream: t.download.errUpstream,
+        error: t.download.errGeneric,
+    }), [t]);
+    const NOTES: Record<PlatformKey, string> = {
+        windows: t.download.winNote,
+        macos: t.download.macNote,
+        linux: t.download.linuxNote,
+        android: t.download.androidNote,
+    };
+    const FEATURE_TEXT: Record<string, { title: string; desc: string }> = {
+        calendar:  { title: t.download.featCalendar,  desc: t.download.featCalendarDesc },
+        project:   { title: t.download.featProject,   desc: t.download.featProjectDesc },
+        challenge: { title: t.download.featChallenge, desc: t.download.featChallengeDesc },
+        widget:    { title: t.download.featWidget,    desc: t.download.featWidgetDesc },
+    };
+
     React.useEffect(() => setMine(detectPlatform()), []);
 
     React.useEffect(() => {
         const reason = new URLSearchParams(window.location.search).get("dl");
         if (!reason) return;
 
-        setDlError(DL_MESSAGES[reason] ?? DL_MESSAGES.error);
+        setDlError(DL_MESSAGES[reason as DlReason] ?? DL_MESSAGES.error);
 
         const url = new URL(window.location.href);
         url.searchParams.delete("dl");
@@ -354,7 +366,7 @@ export default function DownloadPage() {
                     <NavLink as="a" href={REPO} target="_blank" rel="noreferrer">GitHub</NavLink>
                     <NavCta type="button" onClick={goToWeb}>
                         <Globe size={14} />
-                        웹으로 열기
+                        {t.download.openWeb}
                     </NavCta>
                 </NavRight>
             </Nav>
@@ -362,11 +374,8 @@ export default function DownloadPage() {
             <Hero>
                 <HeroText>
                     <Brand>CRONOS</Brand>
-                    <Tagline>일정과 목표를 하나의 별자리처럼</Tagline>
-                    <Lead>
-                        캘린더 · 프로젝트 · 챌린지를 한 곳에서 관리하는 할 일 앱.
-                        웹에서 바로 쓰거나, 앱을 설치해 바탕화면 위젯까지 사용할 수 있습니다.
-                    </Lead>
+                    <Tagline>{t.download.tagline}</Tagline>
+                    <Lead>{t.download.lead}</Lead>
 
                     <CtaRow>
                         <PrimaryCta
@@ -379,14 +388,14 @@ export default function DownloadPage() {
                                 <Spinner size={15} className="on-busy" />
                                 <MonitorDown size={15} className="on-idle" />
                             </IconSwap>
-                            {mineLabel ? `${mineLabel}용 다운로드` : "다운로드"}
+                            {mineLabel ? t.download.downloadFor(mineLabel) : t.download.download}
                             {mineInfo?.available && (
                                 <CtaMeta>{`v${mineInfo.version} · ${mb(mineInfo.size)}`}</CtaMeta>
                             )}
-                            {mine && infos[mine] && !mineInfo?.available && <CtaMeta>준비 중</CtaMeta>}
+                            {mine && infos[mine] && !mineInfo?.available && <CtaMeta>{t.download.preparing}</CtaMeta>}
                         </PrimaryCta>
                         <GhostCta ref={ghostRef} type="button" onClick={goToWeb}>
-                            웹에서 바로 사용
+                            {t.download.useOnWeb}
                             <ArrowRight size={14} className="arrow" />
                         </GhostCta>
                     </CtaRow>
@@ -401,7 +410,7 @@ export default function DownloadPage() {
             </Hero>
 
             <Section>
-                <RevealTitle>기능</RevealTitle>
+                <RevealTitle>{t.download.featuresTitle}</RevealTitle>
                 <FeatureGrid>
                     {FEATURES.map((f, i) => (
                         <Reveal key={f.key} delay={i * 90}>
@@ -411,8 +420,8 @@ export default function DownloadPage() {
                                 onPointerLeave={tiltEnd}
                             >
                                 <FeatureVisual>{f.visual()}</FeatureVisual>
-                                <FeatureTitle>{f.title}</FeatureTitle>
-                                <FeatureDesc>{f.desc}</FeatureDesc>
+                                <FeatureTitle>{FEATURE_TEXT[f.key].title}</FeatureTitle>
+                                <FeatureDesc>{FEATURE_TEXT[f.key].desc}</FeatureDesc>
                             </Feature>
                         </Reveal>
                     ))}
@@ -420,7 +429,7 @@ export default function DownloadPage() {
             </Section>
 
             <Section id="all-downloads">
-                <RevealTitle>모든 플랫폼</RevealTitle>
+                <RevealTitle>{t.download.platformsTitle}</RevealTitle>
                 <Reveal delay={80}>
                     <PlatformList>
                         {PLATFORMS.map(p => {
@@ -436,14 +445,14 @@ export default function DownloadPage() {
                                 >
                                     <RowName>
                                         {p.label}
-                                        {mine === p.key && <RowMine>내 운영체제</RowMine>}
+                                        {mine === p.key && <RowMine>{t.download.myOs}</RowMine>}
                                     </RowName>
-                                    <RowNote>{p.note}</RowNote>
+                                    <RowNote>{NOTES[p.key]}</RowNote>
                                     <RowMeta>
                                         {info === undefined
-                                            ? "확인 중"
+                                            ? t.download.checking
                                             : !ready
-                                                ? "준비 중"
+                                                ? t.download.preparing
                                                 : `${p.ext} · ${mb(info?.size)}`}
                                     </RowMeta>
                                     <RowAction data-busy={busy === p.key ? "1" : "0"}>
@@ -461,8 +470,8 @@ export default function DownloadPage() {
                 <span>CRONOS</span>
                 <FootLinks>
                     <a href={REPO} target="_blank" rel="noreferrer">GitHub</a>
-                    <Link href="/signIn">로그인</Link>
-                    <Link href="/signUp">회원가입</Link>
+                    <Link href="/signIn">{t.download.signIn}</Link>
+                    <Link href="/signUp">{t.download.signUp}</Link>
                 </FootLinks>
             </Foot>
         </Page>
@@ -568,7 +577,7 @@ const Nav = styled.nav`
 `;
 
 const NavBrand = styled.span`
-    font-family: ${p => p.theme.fonts.celestial};
+    font-family: ${p => p.theme.fonts.display};
     font-size: 0.9rem;
     letter-spacing: 5px;
 `;
@@ -639,7 +648,7 @@ const HeroText = styled.div`
 
 const Brand = styled.h1`
     margin: 0;
-    font-family: ${p => p.theme.fonts.celestial};
+    font-family: ${p => p.theme.fonts.display};
     font-size: 3.2rem;
     font-weight: 400;
     letter-spacing: 12px;
@@ -656,7 +665,7 @@ const Brand = styled.h1`
 
 const Tagline = styled.p`
     margin: 12px 0 0;
-    font-family: ${p => p.theme.fonts.celestial};
+    font-family: ${p => p.theme.fonts.display};
     font-size: 1rem;
     letter-spacing: 3px;
     color: ${p => p.theme.colors.primary};
@@ -786,7 +795,7 @@ const SectionTitle = styled.h2`
     align-items: center;
     gap: 16px;
     margin: 0 0 26px;
-    font-family: ${p => p.theme.fonts.celestial};
+    font-family: ${p => p.theme.fonts.display};
     font-size: 1.05rem;
     font-weight: 400;
     letter-spacing: 5px;
@@ -1035,7 +1044,7 @@ const RowName = styled.span`
     align-items: center;
     gap: 10px;
     min-width: 150px;
-    font-family: ${p => p.theme.fonts.celestial};
+    font-family: ${p => p.theme.fonts.display};
     font-size: 0.98rem;
     letter-spacing: 2px;
     white-space: nowrap;
@@ -1104,7 +1113,7 @@ const Foot = styled.footer`
     margin: 0 auto;
     padding: 20px 28px 36px;
     border-top: 1px solid ${p => p.theme.colors.primary}33;
-    font-family: ${p => p.theme.fonts.celestial};
+    font-family: ${p => p.theme.fonts.display};
     font-size: 0.74rem;
     letter-spacing: 3px;
     color: ${p => p.theme.colors.textSecondary};

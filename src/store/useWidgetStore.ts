@@ -20,11 +20,9 @@ export interface WidgetSettings {
 
 const defaultBg: WidgetBgSettings = { mode: "theme", opacity: 0.92, customColor: "#1a160e", autoTextColor: true };
 
-export type WidgetKind =
-    | "weekly" | "monthly"
-    | "today" | "nownext" | "due" | "stats" | "challenge"
-    | "projects" | "anniversary"
-    | "memo" | "quicktask";
+// 목록은 lib/widgetKinds.ts 한 곳에서만 정한다.
+export type { WidgetKind } from "@/lib/widgetKinds";
+import type { WidgetKind } from "@/lib/widgetKinds";
 
 type WidgetStore = Record<WidgetKind, WidgetSettings> & {
     update: (kind: WidgetKind, patch: Partial<WidgetSettings>) => void;

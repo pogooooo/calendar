@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useT } from "@/i18n/useT";
 import { CategoryAddThemeProps } from "../CategoryAddModal";
 import * as S from "./CelestialCategoryAddModal.styles";
 import { X, Palette, AlignLeft } from 'lucide-react';
@@ -14,6 +15,7 @@ export default function CelestialCategoryAddModal({
                                                       description, setDescription,
                                                       isSubmitting, handleSubmit
                                                   }: CategoryAddThemeProps) {
+    const f = useT().form;
 
     return (
         <CelestialBaseModal isOpen={isOpen} onClose={onClose} maxWidth="400px">
@@ -22,7 +24,7 @@ export default function CelestialCategoryAddModal({
                     <input
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        placeholder="새 카테고리 이름"
+                        placeholder={f.newCategoryName}
                         required
                         className="title-input"
                         autoFocus
@@ -34,7 +36,7 @@ export default function CelestialCategoryAddModal({
 
                 <S.ScrollBody>
                     <S.FieldRow>
-                        <label><Palette size={16} /> 색상</label>
+                        <label><Palette size={16} /> {f.color}</label>
                         <div className="color-picker-wrapper">
                             <span className="hex-text">{color.toUpperCase()}</span>
                             <input
@@ -46,11 +48,11 @@ export default function CelestialCategoryAddModal({
                     </S.FieldRow>
 
                     <S.MemoRow>
-                        <label><AlignLeft size={16} /> 설명</label>
+                        <label><AlignLeft size={16} /> {f.description}</label>
                         <textarea
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
-                            placeholder="카테고리에 대한 설명을 적어주세요 (선택)"
+                            placeholder={f.categoryDescPlaceholder}
                             rows={3}
                         />
                     </S.MemoRow>
@@ -58,7 +60,7 @@ export default function CelestialCategoryAddModal({
 
                 <S.Footer>
                     <SecondaryButton type="submit" $width="90px" $height="40px" disabled={isSubmitting}>
-                        추가하기
+                        {f.add}
                     </SecondaryButton>
                 </S.Footer>
             </S.FormWrapper>

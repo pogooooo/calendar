@@ -2,6 +2,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import useAuthStore from "@/store/useAuthStore";
 import { api, clientHeaders, isDesktopApp } from "@/lib/apiBase";
+import { kindFromUrl, notifyDataChange } from "@/lib/dataSync";
 
 /**
  * 갱신 실패를 원인별로 구분한다. 이 구분이 없으면 부팅 직후 네트워크가
@@ -159,6 +160,17 @@ export const useAuthFetch = () => {
             }
             // network / server 는 일시적 장애다. 토큰을 그대로 두고
             // 401 응답을 반환해 호출자가 나중에 다시 시도하게 한다.
+        }
+
+        /**
+         * 자료를 바꾸는 요청이 성공하면 다른 창에 알린다.
+         * 스토어마다 일일이 심지 않고 여기 한 곳에서 하는 이유: 모든 인증 요청이
+         * 이 문을 지나므로 새 기능을 넣어도 알림을 빠뜨릴 일이 없다.
+         */
+        const method = (options.method ?? "GET").toUpperCase();
+        if (response.ok && method !== "GET" && method !== "HEAD") {
+            const kind = kindFromUrl(url);
+            if (kind) notifyDataChange(kind);
         }
 
         return response;

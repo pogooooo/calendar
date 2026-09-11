@@ -65,7 +65,7 @@ export const SettingsPopover = styled.div<{ $openUp?: boolean }>`
 `;
 
 export const PopoverLabel = styled.div`
-    font-family: ${(props) => props.theme.fonts.celestial};
+    font-family: ${(props) => props.theme.fonts.display};
     font-size: 0.66rem;
     letter-spacing: 2px;
     color: ${(props) => props.theme.colors.textSecondary};

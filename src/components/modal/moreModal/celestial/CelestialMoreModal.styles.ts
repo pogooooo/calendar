@@ -32,7 +32,7 @@ export const Header = styled.div`
         font-size: 0.95rem;
         letter-spacing: 1.5px;
         color: ${(props) => props.theme.colors.text};
-        font-family: ${(props) => props.theme.fonts.celestial};
+        font-family: ${(props) => props.theme.fonts.display};
         min-width: 0;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -60,7 +60,7 @@ export const Header = styled.div`
 
 export const CountLabel = styled.div`
     flex-shrink: 0;
-    font-family: ${(props) => props.theme.fonts.celestial};
+    font-family: ${(props) => props.theme.fonts.display};
     font-size: 0.66rem;
     letter-spacing: 2px;
     color: ${(props) => props.theme.colors.textSecondary};
@@ -83,7 +83,7 @@ export const TodoList = styled.div`
 export const SectionLabel = styled.div`
     margin-top: 14px;
     padding-bottom: 6px;
-    font-family: ${(props) => props.theme.fonts.celestial};
+    font-family: ${(props) => props.theme.fonts.display};
     font-size: 0.7rem;
     letter-spacing: 2px;
     color: ${(props) => props.theme.colors.textSecondary};
@@ -141,7 +141,7 @@ export const ChallengeItem = styled.div<{ $isDone: boolean }>`
 export const EmptyText = styled.div`
     padding: 24px 0;
     text-align: center;
-    font-family: ${(props) => props.theme.fonts.celestial};
+    font-family: ${(props) => props.theme.fonts.display};
     font-size: 0.82rem;
     letter-spacing: 1px;
     color: ${(props) => props.theme.colors.textSecondary};
@@ -164,6 +164,14 @@ export const TodoItem = styled.div<{ $color?: string; $isDone?: boolean }>`
 
     &:last-child {
         border-bottom: none;
+    }
+
+    /* 손가락으로 짚을 만한 높이 + 눌렸다는 표시 */
+    @media (hover: none) {
+        min-height: 48px;
+        padding: 10px 6px;
+
+        &:active { background-color: ${(props) => props.theme.colors.primary}14; }
     }
 
     &:hover {

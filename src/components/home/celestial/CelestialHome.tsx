@@ -1,16 +1,20 @@
 "use client";
 
 import * as React from "react";
-import styled from "styled-components";
 import { useRouter } from "next/navigation";
 
 import useTodoStore from "@/store/useTodoStore";
 import useProjectStore from "@/store/useProjectStore";
 import useChallengeStore from "@/store/useChallengeStore";
 import useAnniversaryStore from "@/store/useAnniversaryStore";
+import useCategoryStore from "@/store/useCategoryStore";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
-import { celestial_hide_scrollbar } from "@/styles/celestial_theme";
 import { useT } from "@/i18n/useT";
+import { localDateKey, utcDayKey } from "@/lib/dateKey";
+import { Plus } from "lucide-react";
+import ChallengeModal, { type ChallengeData } from "@/components/modal/challengeModal/ChallengeModal";
+import { useDialog } from "@/components/dialog/DialogProvider";
+import * as S from "./CelestialHome.styles";
 
 const CX = 120;
 const CY = 122;
@@ -18,10 +22,6 @@ const R = 104;
 const MAX_LOAD = 6;
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
-const dayKey = (v: string | number | Date) => {
-    const d = new Date(v);
-    return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
-};
 
 const polar = (r: number, deg: number): [number, number] => {
     const a = ((deg - 90) * Math.PI) / 180;
@@ -44,18 +44,21 @@ const starPath = (x: number, y: number, s: number) =>
 const SPOKES = Array.from({ length: 45 }, (_, i) => -88 + i * 4);
 
 export default function CelestialHome() {
-    const { todos, toggleTodo } = useTodoStore();
+    const { todos, toggleTodo, addTodo } = useTodoStore();
     const { projects, fetchProjects } = useProjectStore();
-    const { challenges, fetchChallenges, toggleChallengeCompletion } = useChallengeStore();
-    const { anniversaries, fetchAnniversaries } = useAnniversaryStore();
+    const { challenges, fetchChallenges, toggleChallengeCompletion, addChallenge } = useChallengeStore();
+    const { anniversaries, fetchAnniversaries, addAnniversary } = useAnniversaryStore();
+    const { categories, fetchCategories } = useCategoryStore();
     const authFetch = useAuthFetch();
     const router = useRouter();
     const t = useT();
+    const dialog = useDialog();
 
     React.useEffect(() => {
         fetchProjects(authFetch);
         fetchChallenges(authFetch);
         fetchAnniversaries(authFetch);
+        fetchCategories(authFetch);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
@@ -65,19 +68,19 @@ export default function CelestialHome() {
     const month = today.getMonth();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const todayIdx = today.getDate() - 1;
-    const todayKey = dayKey(today);
+    const todayKey = localDateKey(today);
 
     const spansDay = React.useCallback(
         (t2: { startAt?: string | number | Date | null; endAt?: string | number | Date | null }, key: string) => {
             if (!t2.startAt || !t2.endAt) return false;
-            return dayKey(t2.startAt) <= key && key <= dayKey(t2.endAt);
+            return localDateKey(t2.startAt) <= key && key <= localDateKey(t2.endAt);
         },
         []
     );
 
     const isDoneOn = React.useCallback(
         (t2: { completions?: { targetDate: string | Date }[] }, key: string) =>
-            (t2.completions ?? []).some(c => dayKey(c.targetDate) === key),
+            (t2.completions ?? []).some(c => utcDayKey(c.targetDate) === key),
         []
     );
 
@@ -177,7 +180,71 @@ export default function CelestialHome() {
         [daysInMonth]
     );
 
-    const handleToggleTodo = (id: string) => toggleTodo(authFetch, id, todayKey);
+    const handleToggleTodo = (id: string) => toggleTodo(authFetch, id, today.toISOString());
+
+    /* ── 홈에서 바로 만들기 ───────────────────────────────────────────────
+       챌린지는 물어볼 것이 많아 기존 창을 그대로 띄우고,
+       기념일은 이름과 날짜뿐이라 그 자리에서 한 줄로 받는다. */
+    const [challengeOpen, setChallengeOpen] = React.useState(false);
+    const [anvOpen, setAnvOpen] = React.useState(false);
+    const [anvTitle, setAnvTitle] = React.useState("");
+    const [anvDate, setAnvDate] = React.useState(() => localDateKey(new Date()));
+    const [anvPending, setAnvPending] = React.useState(false);
+
+    const handleSaveChallenge = async (data: ChallengeData) => {
+        // 서버가 시작일을 요구한다. 홈에서 만들면 오늘부터 시작이다.
+        // (정오로 저장해야 어느 시간대에서 읽어도 같은 달력일로 해석된다)
+        const startAt = `${localDateKey(new Date())}T12:00:00.000Z`;
+        const error = await addChallenge(authFetch, { ...data, startAt });
+        if (error) { await dialog.notify({ title: t.saveError.scopes.challenge, message: error }); return; }
+        setChallengeOpen(false);
+    };
+
+    const handleAddAnniversary = async (e: React.FormEvent) => {
+        e.preventDefault();
+        const title = anvTitle.trim();
+        const m = anvDate.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (!title || !m || anvPending) return;
+
+        setAnvPending(true);
+        const error = await addAnniversary(authFetch, { title, month: Number(m[2]), day: Number(m[3]) });
+        setAnvPending(false);
+        if (error) { await dialog.notify({ title: t.saveError.scopes.anniversary, message: error }); return; }
+        setAnvTitle("");
+        setAnvOpen(false);
+    };
+
+    /* ── 오늘 한 줄 추가 ──────────────────────────────────────────────────
+       홈에서 할 수 있는 일이 눈으로 보는 것뿐이면 굳이 홈에 올 이유가 없다.
+       가장 자주 하는 일(오늘 할 일 적기)을 여기서 바로 끝낸다. */
+    const [quick, setQuick] = React.useState("");
+    const [quickPending, setQuickPending] = React.useState(false);
+    const [quickError, setQuickError] = React.useState<string | null>(null);
+    const quickCategory = categories[0];
+
+    const handleQuickAdd = async (e: React.FormEvent) => {
+        e.preventDefault();
+        const title = quick.trim();
+        if (!title || quickPending) return;
+        if (!quickCategory) { setQuickError(t.category.selectOrAdd); return; }
+
+        setQuickPending(true);
+        setQuickError(null);
+        // 하루 종일 일정으로 넣는다. 시간을 물으면 한 줄 추가가 아니게 된다.
+        const start = new Date(todayTime);
+        const end = new Date(todayTime);
+        end.setHours(23, 59, 0, 0);
+        const error = await addTodo(authFetch, {
+            title,
+            categoryId: quickCategory.id,
+            startAt: start.toISOString(),
+            endAt: end.toISOString(),
+            isAllDay: true,
+        });
+        setQuickPending(false);
+        if (error) { setQuickError(error); return; }
+        setQuick("");
+    };
 
     const handleToggleChallenge = (id: string, d: Date) => {
         const safe = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 12, 0, 0);
@@ -185,11 +252,11 @@ export default function CelestialHome() {
     };
 
     const streakOf = (completions?: { targetDate: string | Date }[]) => {
-        const set = new Set((completions ?? []).map(c => dayKey(c.targetDate)));
+        const set = new Set((completions ?? []).map(c => utcDayKey(c.targetDate)));
         return Array.from({ length: 7 }, (_, i) => {
             const d = new Date(todayTime);
             d.setDate(d.getDate() - 6 + i);
-            return { date: d, done: set.has(dayKey(d)), isToday: i === 6 };
+            return { date: d, done: set.has(localDateKey(d)), isToday: i === 6 };
         });
     };
 
@@ -198,11 +265,11 @@ export default function CelestialHome() {
     const [crossBX, crossBY] = polar((R - 1) * 0.62, dayDeg(todayIdx) + 3.4);
 
     return (
-        <PageWrapper>
-            <Card>
-                <Main>
-                    <ArchWrap>
-                        <Arch viewBox="0 0 240 132" aria-hidden="true">
+        <S.PageWrapper>
+            <S.Card>
+                <S.Main>
+                    <S.ArchWrap>
+                        <S.Arch viewBox="0 0 240 132" aria-hidden="true">
                             <line className="basel" x1={CX - R - 4} y1={CY} x2={CX + R + 4} y2={CY} />
 
                             {SPOKES.map(deg => {
@@ -260,9 +327,9 @@ export default function CelestialHome() {
                             <line className="ncross" x1={crossAX} y1={crossAY} x2={crossBX} y2={crossBY} />
                             <rect className="ncap" {...diamond(rayTipX, rayTipY, 7.4)} />
                             <rect className="fin" {...diamond(CX, CY, 7)} />
-                        </Arch>
+                        </S.Arch>
 
-                        <ArchFoot>
+                        <S.ArchFoot>
                             <span className="edge">1</span>
                             <span className="center">
                                 <i>✦</i>
@@ -270,107 +337,134 @@ export default function CelestialHome() {
                                 <i>✦</i>
                             </span>
                             <span className="edge">{daysInMonth}</span>
-                        </ArchFoot>
-                    </ArchWrap>
+                        </S.ArchFoot>
+                    </S.ArchWrap>
 
-                    <Lists>
-                        <ListCol>
-                            <SectionHead>
+                    <S.Lists>
+                        <S.ListCol>
+                            <S.SectionHead>
                                 <i className="hd" />
                                 {t.home.today}
                                 <span className="hr" />
                                 <b>{todayTodos.length}</b>
-                            </SectionHead>
-                            <Scroll>
+                            </S.SectionHead>
+                            <S.QuickForm onSubmit={handleQuickAdd}>
+                                <i className="dot" style={quickCategory ? { background: quickCategory.color } : undefined} />
+                                <input
+                                    value={quick}
+                                    onChange={(e) => { setQuick(e.target.value); setQuickError(null); }}
+                                    placeholder={t.calendar.addTask}
+                                    maxLength={120}
+                                    aria-label={t.calendar.addTask}
+                                />
+                                <button type="submit" disabled={!quick.trim() || quickPending} aria-label={t.calendar.newTodo}>
+                                    <Plus size={16} strokeWidth={2.5} />
+                                </button>
+                            </S.QuickForm>
+                            {quickError && <S.QuickError role="alert">{quickError}</S.QuickError>}
+
+                            <S.Scroll>
                                 {todayTodos.length === 0 ? (
-                                    <Empty>{t.home.noTodayTodos}</Empty>
+                                    <S.Empty>{t.home.noTodayTodos}</S.Empty>
                                 ) : (
                                     todayTodos.map(todo => {
                                         const done = isDoneOn(todo, todayKey);
                                         return (
-                                            <Row key={todo.id} $done={done} onClick={() => handleToggleTodo(todo.id)}>
-                                                <Mark $on={done} />
+                                            <S.Row key={todo.id} $done={done} onClick={() => handleToggleTodo(todo.id)}>
+                                                <S.Mark $on={done} />
                                                 <span className="name">{todo.title}</span>
-                                            </Row>
+                                            </S.Row>
                                         );
                                     })
                                 )}
-                            </Scroll>
-                        </ListCol>
+                            </S.Scroll>
+                        </S.ListCol>
 
-                        <ListCol>
-                            <SectionHead>
+                        <S.ListCol>
+                            <S.SectionHead>
                                 <i className="hd" />
                                 {t.home.thisWeek}
                                 <span className="hr" />
                                 <b>{upcomingTodos.length}</b>
-                            </SectionHead>
-                            <Scroll>
+                            </S.SectionHead>
+                            <S.Scroll>
                                 {upcomingTodos.length === 0 ? (
-                                    <Empty>{t.home.noUpcoming}</Empty>
+                                    <S.Empty>{t.home.noUpcoming}</S.Empty>
                                 ) : (
                                     upcomingTodos.map(todo => {
-                                        const key = dayKey(todo.startAt!);
+                                        const key = localDateKey(todo.startAt!);
                                         const done = isDoneOn(todo, key);
                                         return (
-                                            <Row key={todo.id} $done={done} $soft onClick={() => router.push("/calendar")}>
-                                                <Mark $on={done} />
+                                            // 그 날로 데려간다. 그냥 /calendar 로 보내면 오늘이 열려 다시 찾아야 한다.
+                                            <S.Row key={todo.id} $done={done} $soft onClick={() => router.push(`/calendar?date=${key}`)}>
+                                                <S.Mark $on={done} />
                                                 <span className="name">{todo.title}</span>
                                                 <em>{t.calendar.days[new Date(todo.startAt!).getDay()]}</em>
-                                            </Row>
+                                            </S.Row>
                                         );
                                     })
                                 )}
-                            </Scroll>
-                        </ListCol>
-                    </Lists>
-                </Main>
+                            </S.Scroll>
+                        </S.ListCol>
+                    </S.Lists>
+                </S.Main>
 
-                <Pillar>
-                    <Crest>✦</Crest>
+                <S.Pillar>
+                    <S.Crest>✦</S.Crest>
 
-                    <PillarHead onClick={() => router.push("/project")}>
+                    <S.PillarHead onClick={() => router.push("/project")}>
                         <span className="idx">I</span>
                         {t.home.project}
                         <i className="rule" />
-                    </PillarHead>
+                    </S.PillarHead>
                     {activeProjects.length === 0 ? (
-                        <Empty>{t.home.noProjects}</Empty>
+                        <S.Empty>{t.home.noProjects}</S.Empty>
                     ) : (
                         activeProjects.map(p => {
                             const tasks = p.tasks ?? [];
                             const done = tasks.filter(task => task.status === "done").length;
                             const pct = tasks.length ? Math.round((done / tasks.length) * 100) : 0;
                             return (
-                                <ProjectRow key={p.id}>
+                                <S.ProjectRow key={p.id} role="button" tabIndex={0}
+                                    onClick={() => router.push("/project")}
+                                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") router.push("/project"); }}>
                                     <span className="name">{p.title}</span>
                                     <i className="bar">
                                         <b style={{ width: `${pct}%` }} />
                                     </i>
                                     <em>{done}/{tasks.length}</em>
-                                </ProjectRow>
+                                </S.ProjectRow>
                             );
                         })
                     )}
 
-                    <PillarHead className="mt" onClick={() => router.push("/challenge")}>
-                        <span className="idx">II</span>
-                        {t.home.challenge}
-                        <i className="rule" />
-                    </PillarHead>
+                    <S.PillarHeadRow className="mt">
+                        <S.PillarHead onClick={() => router.push("/challenge")}>
+                            <span className="idx">II</span>
+                            {t.home.challenge}
+                            <i className="rule" />
+                        </S.PillarHead>
+                        <S.PillarAdd
+                            type="button"
+                            aria-label={t.challenge.createTitle}
+                            onClick={() => setChallengeOpen(true)}
+                        >
+                            <Plus size={13} strokeWidth={2.5} />
+                        </S.PillarAdd>
+                    </S.PillarHeadRow>
                     {activeChallenges.length === 0 ? (
-                        <Empty>{t.home.noChallenges}</Empty>
+                        <S.Empty>{t.home.noChallenges}</S.Empty>
                     ) : (
                         activeChallenges.map(c => {
                             const slots = streakOf(c.completions);
                             const count = c.completions?.length ?? 0;
                             return (
-                                <ChallengeRow key={c.id}>
+                                <S.ChallengeRow key={c.id}>
                                     <span className="name">{c.title}</span>
                                     <em>{count}{c.targetCount ? `/${c.targetCount}` : ""}</em>
                                     <span className="streak">
                                         {slots.map((s, i) => (
-                                            <Slot
+                                            <S.Slot
                                                 key={i}
                                                 type="button"
                                                 $on={s.done}
@@ -379,467 +473,64 @@ export default function CelestialHome() {
                                             />
                                         ))}
                                     </span>
-                                </ChallengeRow>
+                                </S.ChallengeRow>
                             );
                         })
                     )}
 
-                    <PillarHead className="mt" onClick={() => router.push("/anniversary")}>
-                        <span className="idx">III</span>
-                        {t.sidebar.anniversary}
-                        <i className="rule" />
-                    </PillarHead>
+                    <S.PillarHeadRow className="mt">
+                        <S.PillarHead onClick={() => router.push("/anniversary")}>
+                            <span className="idx">III</span>
+                            {t.sidebar.anniversary}
+                            <i className="rule" />
+                        </S.PillarHead>
+                        <S.PillarAdd
+                            type="button"
+                            aria-label={t.home.addAnniversary}
+                            onClick={() => setAnvOpen(v => !v)}
+                        >
+                            <Plus size={13} strokeWidth={2.5} />
+                        </S.PillarAdd>
+                    </S.PillarHeadRow>
+
+                    {anvOpen && (
+                        <S.AnvForm onSubmit={handleAddAnniversary}>
+                            <input
+                                value={anvTitle}
+                                onChange={(e) => setAnvTitle(e.target.value)}
+                                placeholder={t.home.anniversaryName}
+                                maxLength={40}
+                                autoFocus
+                            />
+                            <input type="date" value={anvDate} onChange={(e) => setAnvDate(e.target.value)} />
+                            <button type="submit" disabled={!anvTitle.trim() || anvPending}>
+                                <Plus size={14} strokeWidth={2.5} />
+                            </button>
+                        </S.AnvForm>
+                    )}
                     {upcomingAnniversaries.length === 0 ? (
-                        <Empty>{t.home.noAnniversaries}</Empty>
+                        <S.Empty>{t.home.noAnniversaries}</S.Empty>
                     ) : (
                         upcomingAnniversaries.map(a => (
-                            <AnniversaryRow key={a.id}>
+                            <S.AnniversaryRow key={a.id} role="button" tabIndex={0}
+                                onClick={() => router.push("/anniversary")}
+                                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") router.push("/anniversary"); }}>
                                 <span className="star">✦</span>
                                 <span className="name">{a.title}</span>
                                 <em>{a.dday === 0 ? "D-DAY" : `D-${a.dday}`}</em>
-                            </AnniversaryRow>
+                            </S.AnniversaryRow>
                         ))
                     )}
-                </Pillar>
-            </Card>
-        </PageWrapper>
+                </S.Pillar>
+            </S.Card>
+
+            <ChallengeModal
+                isOpen={challengeOpen}
+                onClose={() => setChallengeOpen(false)}
+                categories={categories}
+                initialData={null}
+                onSave={handleSaveChallenge}
+            />
+        </S.PageWrapper>
     );
 }
-
-const PageWrapper = styled.div`
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    overflow: hidden;
-    color: ${p => p.theme.colors.text};
-    padding: 12px 0;
-
-    @media (max-width: 768px) {
-        height: auto;
-        min-height: 100%;
-        overflow: visible;
-        padding: 0;
-    }
-`;
-
-const Card = styled.div`
-    position: relative;
-    width: min(1120px, 100%);
-    height: 100%;
-    min-height: 0;
-    display: grid;
-    grid-template-columns: 1fr 236px;
-    border: 1px solid ${p => p.theme.colors.primary}75;
-    overflow: hidden;
-
-    &::before {
-        content: "";
-        position: absolute;
-        inset: 5px;
-        border: 1px solid ${p => p.theme.colors.primary}24;
-        pointer-events: none;
-        z-index: 5;
-    }
-
-    @media (max-width: 900px) {
-        grid-template-columns: 1fr;
-        overflow-y: auto;
-        ${celestial_hide_scrollbar}
-    }
-
-    @media (max-width: 768px) {
-        height: auto;
-        overflow: visible;
-        border: none;
-
-        &::before { display: none; }
-    }
-`;
-
-const Main = styled.div`
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-    min-height: 0;
-    padding-top: 8px;
-`;
-
-const ArchWrap = styled.div`
-    flex-shrink: 0;
-    padding: 14px 30px 0;
-
-    @media (max-width: 768px) {
-        padding: 4px 4px 0;
-    }
-`;
-
-const Arch = styled.svg`
-    display: block;
-    width: 100%;
-    height: auto;
-    max-height: 210px;
-
-    @media (max-width: 768px) {
-        max-height: 170px;
-    }
-
-    .basel { stroke: ${p => p.theme.colors.primary}; stroke-opacity: 0.26; stroke-width: 0.7; }
-    .spoke { stroke: ${p => p.theme.colors.primary}; stroke-opacity: 0.09; stroke-width: 0.5; }
-    .base { fill: none; stroke: ${p => p.theme.colors.primary}; stroke-opacity: 0.3; stroke-width: 0.8; }
-    .base2 { fill: none; stroke: ${p => p.theme.colors.primary}; stroke-opacity: 0.14; stroke-width: 0.6; }
-    .tick { stroke: ${p => p.theme.colors.primary}; stroke-width: 1.2; }
-    .major { stroke: ${p => p.theme.colors.primary}; stroke-opacity: 0.4; stroke-width: 0.7; }
-    .mkline { stroke: ${p => p.theme.colors.primary}; stroke-opacity: 0.36; stroke-width: 0.7; }
-    .mkanv { fill: ${p => p.theme.colors.primary}; }
-    .mkdue { fill: ${p => p.theme.colors.background}; stroke: ${p => p.theme.colors.primary}; stroke-width: 1; }
-    .nray { stroke: ${p => p.theme.colors.primary}; stroke-width: 0.9; }
-    .ncross { stroke: ${p => p.theme.colors.primary}; stroke-width: 1.1; }
-    .ncap,
-    .fin { fill: ${p => p.theme.colors.background}; stroke: ${p => p.theme.colors.primary}; stroke-width: 1.1; }
-`;
-
-const ArchFoot = styled.div`
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    border-top: 1px solid ${p => p.theme.colors.primary}42;
-    padding-top: 9px;
-    margin-top: 6px;
-
-    .edge {
-        font-size: 0.58rem;
-        letter-spacing: 0.14em;
-        color: ${p => p.theme.colors.textSecondary};
-        font-variant-numeric: tabular-nums;
-    }
-
-    .center {
-        display: flex;
-        align-items: center;
-        gap: 11px;
-        font-family: ${p => p.theme.fonts.celestial};
-        font-size: 0.8rem;
-        letter-spacing: 0.16em;
-        color: ${p => p.theme.colors.primary};
-    }
-
-    .center i {
-        font-style: normal;
-        font-size: 0.56rem;
-    }
-`;
-
-const Lists = styled.div`
-    flex: 1;
-    min-height: 0;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 34px;
-    padding: 22px 30px 20px;
-
-    @media (max-width: 900px) {
-        grid-template-columns: 1fr;
-        gap: 18px;
-    }
-
-    @media (max-width: 768px) {
-        padding: 18px 4px 6px;
-    }
-`;
-
-const ListCol = styled.div`
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-    min-width: 0;
-`;
-
-const SectionHead = styled.div`
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-shrink: 0;
-    font-family: ${p => p.theme.fonts.celestial};
-    font-size: 0.74rem;
-    letter-spacing: 0.2em;
-    color: ${p => p.theme.colors.primary};
-    margin-bottom: 12px;
-
-    .hd {
-        width: 7px;
-        height: 7px;
-        flex-shrink: 0;
-        transform: rotate(45deg);
-        border: 1px solid ${p => p.theme.colors.primary};
-    }
-
-    .hr {
-        flex: 1;
-        height: 1px;
-        background: ${p => p.theme.colors.primary}42;
-    }
-
-    b {
-        font-weight: 500;
-        font-size: 0.66rem;
-        letter-spacing: 0;
-        color: ${p => p.theme.colors.textSecondary};
-        font-variant-numeric: tabular-nums;
-    }
-`;
-
-const Scroll = styled.div`
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-    ${celestial_hide_scrollbar}
-
-    @media (max-width: 768px) {
-        overflow: visible;
-        min-height: auto;
-    }
-`;
-
-const Empty = styled.div`
-    font-size: 0.72rem;
-    color: ${p => p.theme.colors.textSecondary};
-    padding: 8px 0;
-`;
-
-const Mark = styled.span<{ $on: boolean }>`
-    width: 8px;
-    height: 8px;
-    flex-shrink: 0;
-    transform: rotate(45deg);
-    border: 1px solid ${p => p.theme.colors.primary}75;
-    background: ${p => (p.$on ? p.theme.colors.primary : "transparent")};
-    transition: border-color 0.18s, box-shadow 0.18s;
-`;
-
-const Row = styled.div<{ $done: boolean; $soft?: boolean }>`
-    display: flex;
-    align-items: center;
-    gap: 11px;
-    padding: ${p => (p.$soft ? "6px 0" : "7px 0")};
-
-    @media (max-width: 768px) {
-        min-height: 44px;
-        gap: 14px;
-    }
-    font-size: ${p => (p.$soft ? "0.74rem" : "0.78rem")};
-    color: ${p => (p.$done || p.$soft ? p.theme.colors.textSecondary : p.theme.colors.text)};
-    border-bottom: 1px solid ${p => p.theme.colors.text}1A;
-    cursor: pointer;
-
-    .name {
-        min-width: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        text-decoration: ${p => (p.$done ? "line-through" : "none")};
-        text-decoration-color: ${p => p.theme.colors.primary}75;
-    }
-
-    em {
-        margin-left: auto;
-        font-style: normal;
-        font-size: 0.6rem;
-        letter-spacing: 0.12em;
-        color: ${p => p.theme.colors.textSecondary};
-        flex-shrink: 0;
-    }
-
-    &:hover {
-        color: ${p => p.theme.colors.primary};
-    }
-
-    &:hover ${Mark} {
-        border-color: ${p => p.theme.colors.primary};
-        box-shadow: 0 0 5px ${p => p.theme.colors.primary}75;
-    }
-`;
-
-const Pillar = styled.aside`
-    border-left: 1px solid ${p => p.theme.colors.primary}42;
-    padding: 16px 22px 18px;
-    min-height: 0;
-    overflow-y: auto;
-    ${celestial_hide_scrollbar}
-
-    @media (max-width: 900px) {
-        border-left: 0;
-        border-top: 1px solid ${p => p.theme.colors.primary}42;
-    }
-
-    @media (max-width: 768px) {
-        overflow: visible;
-        padding: 16px 4px 8px;
-    }
-`;
-
-const Crest = styled.div`
-    text-align: center;
-    color: ${p => p.theme.colors.primary};
-    font-size: 0.66rem;
-    letter-spacing: 0.4em;
-    margin-bottom: 14px;
-`;
-
-const PillarHead = styled.button`
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    width: 100%;
-    background: none;
-    border: none;
-    padding: 0;
-    cursor: pointer;
-    font-family: ${p => p.theme.fonts.celestial};
-    font-size: 0.72rem;
-    letter-spacing: 0.2em;
-    color: ${p => p.theme.colors.primary};
-    margin-bottom: 11px;
-
-    &.mt { margin-top: 22px; }
-
-    .idx {
-        font-size: 0.56rem;
-        letter-spacing: 0.14em;
-        line-height: 1.5;
-        padding: 0 4px;
-        color: ${p => p.theme.colors.textSecondary};
-        border: 1px solid ${p => p.theme.colors.primary}42;
-    }
-
-    .rule {
-        flex: 1;
-        height: 1px;
-        background: ${p => p.theme.colors.primary}42;
-    }
-
-    &:hover .rule { background: ${p => p.theme.colors.primary}; }
-`;
-
-const ProjectRow = styled.div`
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 5px 9px;
-    padding: 7.5px 0;
-    font-size: 0.73rem;
-    border-bottom: 1px solid ${p => p.theme.colors.text}1A;
-
-    .name {
-        flex: 1 0 100%;
-        min-width: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    .bar {
-        position: relative;
-        flex: 1;
-        height: 3px;
-        background: repeating-linear-gradient(
-            to right,
-            ${p => p.theme.colors.primary}42 0 1px,
-            transparent 1px 5px
-        );
-    }
-
-    .bar b {
-        position: absolute;
-        left: 0;
-        top: 1px;
-        height: 1px;
-        background: ${p => p.theme.colors.primary};
-    }
-
-    em {
-        font-style: normal;
-        font-size: 0.62rem;
-        color: ${p => p.theme.colors.textSecondary};
-        font-variant-numeric: tabular-nums;
-        flex-shrink: 0;
-    }
-`;
-
-const ChallengeRow = styled.div`
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 5px 8px;
-    padding: 7.5px 0;
-    font-size: 0.73rem;
-    border-bottom: 1px solid ${p => p.theme.colors.text}1A;
-
-    .name {
-        flex: 1;
-        min-width: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    em {
-        font-style: normal;
-        font-size: 0.62rem;
-        color: ${p => p.theme.colors.textSecondary};
-        font-variant-numeric: tabular-nums;
-    }
-
-    .streak {
-        flex: 1 0 100%;
-        display: flex;
-        gap: 5px;
-    }
-`;
-
-const Slot = styled.button<{ $on: boolean; $today: boolean }>`
-    width: 7px;
-    height: 7px;
-    padding: 0;
-    transform: rotate(45deg);
-    cursor: pointer;
-    border: 1px solid ${p => (p.$today ? p.theme.colors.primary : `${p.theme.colors.primary}75`)};
-    background: ${p => (p.$on ? p.theme.colors.primary : "transparent")};
-    box-shadow: ${p => (p.$today ? `0 0 4px ${p.theme.colors.primary}75` : "none")};
-    transition: box-shadow 0.18s;
-
-    &:hover { box-shadow: 0 0 5px ${p => p.theme.colors.primary}; }
-`;
-
-const AnniversaryRow = styled.div`
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 7px 0;
-    font-size: 0.73rem;
-    border-bottom: 1px solid ${p => p.theme.colors.text}1A;
-
-    .star {
-        width: 9px;
-        flex-shrink: 0;
-        text-align: center;
-        font-size: 0.62rem;
-        color: ${p => p.theme.colors.primary};
-    }
-
-    .name {
-        min-width: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    em {
-        margin-left: auto;
-        font-style: normal;
-        font-size: 0.62rem;
-        letter-spacing: 0.1em;
-        color: ${p => p.theme.colors.primary};
-        flex-shrink: 0;
-    }
-`;

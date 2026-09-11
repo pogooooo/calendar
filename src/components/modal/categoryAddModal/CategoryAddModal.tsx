@@ -1,9 +1,10 @@
 "use client";
 
 import * as React from "react";
-import { useTheme } from "styled-components";
+import { usePickTheme } from "@/styles/themed";
 import CelestialCategoryAddModal from "./celestial/CelestialCategoryAddModal";
 import { useDialog } from "@/components/dialog/DialogProvider";
+import { useT } from "@/i18n/useT";
 
 export interface CategoryAddModalProps {
     isOpen: boolean;
@@ -24,9 +25,9 @@ export interface CategoryAddThemeProps extends CategoryAddModalProps {
 
 export default function CategoryAddModal(props: CategoryAddModalProps) {
     const { isOpen, onClose, onAdd } = props;
-    const theme = useTheme();
-    const themeName = theme?.name || "celestial";
+    const CategoryAddModalView = usePickTheme({ celestial: CelestialCategoryAddModal });
     const dialog = useDialog();
+    const t = useT();
 
     const [name, setName] = React.useState("");
     const [color, setColor] = React.useState("");
@@ -47,7 +48,7 @@ export default function CategoryAddModal(props: CategoryAddModalProps) {
 
         const trimmedName = name.trim();
         if (!trimmedName) {
-            await dialog.notify({ title: "이름을 입력해주세요", message: "카테고리를 구분할 이름이 필요합니다." });
+            await dialog.notify({ title: t.form.nameRequiredTitle, message: t.form.nameRequiredMsg });
             return;
         }
 
@@ -72,10 +73,5 @@ export default function CategoryAddModal(props: CategoryAddModalProps) {
         isSubmitting, handleSubmit
     };
 
-    switch (themeName) {
-        case "celestial":
-            return <CelestialCategoryAddModal {...themeProps} />;
-        default:
-            return <CelestialCategoryAddModal {...themeProps} />;
-    }
+    return <CategoryAddModalView {...themeProps} />;
 }

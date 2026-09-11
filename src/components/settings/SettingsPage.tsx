@@ -1,28 +1,28 @@
 ﻿"use client";
 
 import * as React from "react";
+import { usePickTheme } from "@/styles/themed";
 import { useRouter } from "next/navigation";
-import { useTheme } from "styled-components";
 import useAuthStore from "@/store/useAuthStore";
 import useSettingStore from "@/store/useSettingStore";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { mirrorWidgetStateToFile } from "@/lib/widgetStateFile";
 import { useT } from "@/i18n/useT";
+import useIsMobile from "@/hooks/useIsMobile";
+import { isDesktopShell } from "@/lib/platform";
+import { WIDGET_KINDS } from "@/lib/widgetKinds";
+import { useDialog } from "@/components/dialog/DialogProvider";
 import CelestialSettings from "./celestial/CelestialSettings";
 import type { Translations } from "@/i18n/types";
+import { listThemes, type ThemeChoice } from "@/styles/theme";
 
-export type ThemeDef = {
-    id: string;
-    label: string;
-    description: string;
-    preview: { bar: string; dot: string; line1: string; line2: string };
-    options: readonly string[];
-};
+// 테마 목록의 모양은 styles/theme.ts 가 정한다.
+export type { ThemeChoice as ThemeDef } from "@/styles/theme";
 
 export interface SettingsThemeProps {
     currentTheme: string;
     onThemeChange: (themeId: string) => void;
-    themes: ThemeDef[];
+    themes: ThemeChoice[];
     themeOptions: Record<string, string>;
     onThemeOptionChange: (themeId: string, opt: string) => void;
     fontKey: string;
@@ -31,12 +31,15 @@ export interface SettingsThemeProps {
     onFontSizeChange: (key: string) => void;
     fontWeightKey: string;
     onFontWeightChange: (key: string) => void;
-    navSections: { id: string; label: string }[];
-    widgetList: { kind: string; label: string; desc: string }[];
+    widgetList: { kind: string; label: string; desc: string; group: string }[];
     onWidgetOpen: (kind: string) => void;
     onWidgetClose: (kind: string) => void;
     autostart: boolean;
     onAutostartToggle: () => void;
+    /** 위젯을 띄울 창이 있는 환경인가 (폰에는 없다) */
+    showWidgets: boolean;
+    /** OS 시작 등록이 되는 환경인가 (데스크톱 앱만) */
+    showAutostart: boolean;
     user: { email?: string | null; name?: string | null } | null;
     t: Translations;
     newName: string;
@@ -62,21 +65,18 @@ export interface SettingsThemeProps {
     onDeleteCancel: () => void;
 }
 
-const THEMES: ThemeDef[] = [
-    {
-        id: "celestial",
-        label: "Celestial",
-        description: "Gold accents, Orbit typeface",
-        preview: { bar: "#D4AF37", dot: "#FAE7B5", line1: "#D4AF37", line2: "#FAE7B5" },
-        options: ["light", "dark"] as const,
-    },
-];
-
 import type { WidgetKind } from "@/store/useWidgetStore";
+import { useWidgetMeta } from "@/hooks/useWidgetMeta";
 
-async function invokeWidget(action: "open" | "close", kind: WidgetKind) {
-    if (typeof window === "undefined") return;
+/**
+ * 실패하면 그 까닭을 글로 돌려준다.
+ * 예전에는 console.error 로만 남겨서, 열리지 않는 위젯이
+ * 사용자에게는 "눌러도 아무 일이 없는 단추"로 보였다.
+ */
+async function invokeWidget(action: "open" | "close", kind: WidgetKind): Promise<string | null> {
+    if (typeof window === "undefined") return null;
     const isTauri = "__TAURI_INTERNALS__" in window;
+
     if (isTauri) {
         try {
             // 여기서 플래그를 갱신하지 않으면 설정에서 끈 위젯이 다음 부팅에 되살아난다
@@ -85,15 +85,20 @@ async function invokeWidget(action: "open" | "close", kind: WidgetKind) {
 
             const { invoke } = await import("@tauri-apps/api/core");
             await invoke(action === "open" ? "open_widget" : "close_widget", { kind });
+            return null;
         } catch (err) {
             console.error("[Widget] invoke 실패:", err);
-        }
-    } else {
-        if (action === "open") {
-            window.open(`/widget/${kind}`, `widget_${kind}`,
-                "width=400,height=520,menubar=no,toolbar=no,location=no");
+            return err instanceof Error ? err.message : String(err);
         }
     }
+
+    if (action === "open") {
+        const win = window.open(`/widget/${kind}`, `widget_${kind}`,
+            "width=400,height=520,menubar=no,toolbar=no,location=no");
+        // 팝업이 막히면 window.open 이 null 을 돌려준다. 이것도 알려야 한다.
+        if (!win) return "popupBlocked";
+    }
+    return null;
 }
 
 async function invokeAutostart(enabled: boolean): Promise<void> {
@@ -108,19 +113,30 @@ async function invokeAutostart(enabled: boolean): Promise<void> {
 }
 
 export default function SettingsPage() {
-    const theme = useTheme();
-    const themeName = theme?.name || "celestial";
+    const SettingsView = usePickTheme({ celestial: CelestialSettings });
     const router = useRouter();
     const t = useT();
+    const isMobile = useIsMobile();
+
+    /**
+     * 위젯 열기·닫기와 자동 시작은 데스크톱 전용 Tauri 명령이다
+     * (lib.rs 에서 #[cfg(desktop)] 로 묶여 있어 안드로이드에는 등록조차 안 된다).
+     * 폰에서 그 단추를 내보이면 눌러도 아무 일이 없다.
+     */
+    const [desktopShell, setDesktopShell] = React.useState(false);
+    React.useEffect(() => setDesktopShell(isDesktopShell()), []);
+    // 데스크톱 웹에서는 위젯이 새 창으로 뜨므로 그대로 쓸 수 있다.
+    const showWidgets = !isMobile;
+    const showAutostart = desktopShell;
     const user = useAuthStore((s) => s.user);
     const setUser = useAuthStore((s) => s.setUser);
     const logout = useAuthStore((s) => s.logout);
     const authFetch = useAuthFetch();
+    const dialog = useDialog();
 
     const { theme: currentTheme, updateTheme } = useSettingStore();
     const themeOptions = useSettingStore((s) => s.themeOptions);
     const setThemeOption = useSettingStore((s) => s.setThemeOption);
-    const locale = useSettingStore((s) => s.locale);
     const autostart = useSettingStore((s) => s.autostart);
     const setAutostart = useSettingStore((s) => s.setAutostart);
     const fontKey = useSettingStore((s) => s.font);
@@ -130,35 +146,30 @@ export default function SettingsPage() {
     const fontWeightKey = useSettingStore((s) => s.fontWeight);
     const setFontWeight = useSettingStore((s) => s.setFontWeight);
 
-    const NAV_SECTIONS = React.useMemo(() => [
-        { id: "sec-theme",        label: t.settings.theme },
-        { id: "sec-font",         label: t.settings.font },
-        { id: "sec-widgets",      label: t.settings.widgets },
-        { id: "sec-system",       label: t.settings.system },
-        { id: "sec-account-info", label: t.settings.accountInfo },
-        { id: "sec-name",         label: t.settings.changeName },
-        { id: "sec-password",     label: t.settings.changePassword },
-        { id: "sec-delete",       label: t.settings.deleteAccount },
-    ], [t]);
-
-    const WIDGET_LIST = React.useMemo(() => [
-        { kind: "today",       label: t.widget.todayW,       desc: t.widget.todayWDesc,       group: t.widget.groupTodo },
-        { kind: "quicktask",   label: t.widget.quicktaskW,   desc: t.widget.quicktaskWDesc,   group: t.widget.groupTodo },
-        { kind: "due",         label: t.widget.dueW,         desc: t.widget.dueWDesc,         group: t.widget.groupTodo },
-        { kind: "nownext",     label: t.widget.nowNextW,     desc: t.widget.nowNextWDesc,     group: t.widget.groupCalendar },
-        { kind: "weekly",      label: t.widget.weekly,       desc: t.widget.weeklyDesc,       group: t.widget.groupCalendar },
-        { kind: "monthly",     label: t.widget.monthly,      desc: t.widget.monthlyDesc,      group: t.widget.groupCalendar },
-        { kind: "anniversary", label: t.widget.anniversaryW, desc: t.widget.anniversaryWDesc, group: t.widget.groupCalendar },
-        { kind: "projects",    label: t.widget.projectsW,    desc: t.widget.projectsWDesc,    group: t.widget.groupRecord },
-        { kind: "challenge",   label: t.widget.challengeW,   desc: t.widget.challengeWDesc,   group: t.widget.groupRecord },
-        { kind: "stats",       label: t.widget.statsW,       desc: t.widget.statsWDesc,       group: t.widget.groupRecord },
-        { kind: "memo",        label: t.widget.memoW,        desc: t.widget.memoWDesc,        group: t.widget.groupRecord },
-    ], [t]);
+    /**
+     * 목록은 WIDGET_KINDS 를 따라 만든다. Record 라서 새 위젯을 더하면
+     * 여기 설명을 빠뜨렸을 때 컴파일이 멈춘다.
+     */
+    const widgetMeta = useWidgetMeta();
+    const WIDGET_LIST = React.useMemo(
+        () => WIDGET_KINDS.map((kind) => ({ kind, ...widgetMeta[kind] })),
+        [widgetMeta],
+    );
 
     const handleThemeChange = (themeId: string) => updateTheme(authFetch, themeId);
     const handleThemeOptionChange = (themeId: string, opt: string) => setThemeOption(themeId, opt);
-    const handleWidgetOpen = (kind: string) => invokeWidget("open", kind as WidgetKind);
-    const handleWidgetClose = (kind: string) => invokeWidget("close", kind as WidgetKind);
+
+    const runWidget = async (action: "open" | "close", kind: string) => {
+        const error = await invokeWidget(action, kind as WidgetKind);
+        if (!error) return;
+        await dialog.notify({
+            title: action === "open" ? t.widget.openFailed : t.widget.closeFailed,
+            message: error === "popupBlocked" ? t.widget.popupBlocked : error,
+        });
+    };
+
+    const handleWidgetOpen = (kind: string) => { void runWidget("open", kind); };
+    const handleWidgetClose = (kind: string) => { void runWidget("close", kind); };
 
     // 스위치가 OS 의 실제 등록 상태와 어긋나 있으면 실제 쪽에 맞춘다
     React.useEffect(() => {
@@ -193,13 +204,13 @@ export default function SettingsPage() {
             });
             const data = await res.json();
             if (!res.ok) {
-                setNameStatus({ type: "error", msg: data.message ?? "오류가 발생했습니다." });
+                setNameStatus({ type: "error", msg: data.message ?? t.account.genericError });
             } else {
                 setUser({ ...user!, name: data.user.name });
-                setNameStatus({ type: "success", msg: "이름이 변경되었습니다." });
+                setNameStatus({ type: "success", msg: t.account.nameChanged });
             }
         } catch {
-            setNameStatus({ type: "error", msg: "서버와 연결할 수 없습니다." });
+            setNameStatus({ type: "error", msg: t.account.connectError });
         } finally {
             setNamePending(false);
         }
@@ -214,8 +225,8 @@ export default function SettingsPage() {
     };
 
     const handlePasswordSave = async () => {
-        if (pwForm.next !== pwForm.confirm) { setPwStatus({ type: "error", msg: "새 비밀번호가 일치하지 않습니다." }); return; }
-        if (pwForm.next.length < 8)         { setPwStatus({ type: "error", msg: "새 비밀번호는 8자 이상이어야 합니다." }); return; }
+        if (pwForm.next !== pwForm.confirm) { setPwStatus({ type: "error", msg: t.account.passwordMismatch }); return; }
+        if (pwForm.next.length < 8)         { setPwStatus({ type: "error", msg: t.account.passwordTooShort }); return; }
         setPwPending(true); setPwStatus(null);
         try {
             const res = await authFetch("/api/user", {
@@ -225,13 +236,13 @@ export default function SettingsPage() {
             });
             const data = await res.json();
             if (!res.ok) {
-                setPwStatus({ type: "error", msg: data.message ?? "오류가 발생했습니다." });
+                setPwStatus({ type: "error", msg: data.message ?? t.account.genericError });
             } else {
-                setPwStatus({ type: "success", msg: "비밀번호가 변경되었습니다." });
+                setPwStatus({ type: "success", msg: t.account.passwordChanged });
                 setPwForm({ current: "", next: "", confirm: "" });
             }
         } catch {
-            setPwStatus({ type: "error", msg: "서버와 연결할 수 없습니다." });
+            setPwStatus({ type: "error", msg: t.account.connectError });
         } finally {
             setPwPending(false);
         }
@@ -243,11 +254,11 @@ export default function SettingsPage() {
     const [deletePending, setDeletePending] = React.useState(false);
     const [showDeleteForm, setShowDeleteForm] = React.useState(false);
 
-    const deleteKeyword = locale === "en" ? "delete" : "탈퇴";
+    const deleteKeyword = t.account.deleteKeyword;
 
     const handleDelete = async () => {
         if (deleteConfirm !== deleteKeyword) {
-            setDeleteStatus({ type: "error", msg: locale === "en" ? `Please type "${deleteKeyword}" exactly.` : `"${deleteKeyword}" 를 정확히 입력해주세요.` });
+            setDeleteStatus({ type: "error", msg: t.account.typeExactly(deleteKeyword) });
             return;
         }
         setDeletePending(true); setDeleteStatus(null);
@@ -259,13 +270,14 @@ export default function SettingsPage() {
             });
             const data = await res.json();
             if (!res.ok) {
-                setDeleteStatus({ type: "error", msg: data.message ?? "오류가 발생했습니다." });
+                setDeleteStatus({ type: "error", msg: data.message ?? t.account.genericError });
             } else {
                 await logout();
-                router.push("/login");
+                // 라우트 이름은 /signIn 이다. /login 으로 보내면 탈퇴 직후 404 가 뜬다.
+                router.push("/signIn");
             }
         } catch {
-            setDeleteStatus({ type: "error", msg: "서버와 연결할 수 없습니다." });
+            setDeleteStatus({ type: "error", msg: t.account.connectError });
         } finally {
             setDeletePending(false);
         }
@@ -281,7 +293,7 @@ export default function SettingsPage() {
     const themeProps: SettingsThemeProps = {
         currentTheme,
         onThemeChange: handleThemeChange,
-        themes: THEMES,
+        themes: listThemes(),
         themeOptions,
         onThemeOptionChange: handleThemeOptionChange,
         fontKey,
@@ -290,12 +302,13 @@ export default function SettingsPage() {
         onFontSizeChange: setFontSize,
         fontWeightKey,
         onFontWeightChange: setFontWeight,
-        navSections: NAV_SECTIONS,
         widgetList: WIDGET_LIST,
         onWidgetOpen: handleWidgetOpen,
         onWidgetClose: handleWidgetClose,
         autostart,
         onAutostartToggle: handleAutostartToggle,
+        showWidgets,
+        showAutostart,
         user,
         t,
         newName,
@@ -321,5 +334,5 @@ export default function SettingsPage() {
         onDeleteCancel: handleDeleteCancel,
     };
 
-    return <CelestialSettings {...themeProps} />;
+    return <SettingsView {...themeProps} />;
 }

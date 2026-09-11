@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import * as React from 'react';
-import { useTheme } from 'styled-components';
+import { usePickTheme } from "@/styles/themed";
 import CelestialProjectBoard from './celestial/CelestialProjectBoard';
 import { ProjectTaskType } from '@/store/useProjectStore';
 
@@ -14,10 +14,9 @@ export interface ProjectBoardProps {
 }
 
 const ProjectBoard = React.forwardRef<HTMLDivElement, ProjectBoardProps>((props, ref) => {
-    const theme = useTheme();
-    const themeName = theme?.name || 'celestial';
+    const ProjectBoardView = usePickTheme({ celestial: CelestialProjectBoard });
 
-    return <CelestialProjectBoard ref={ref} {...props} />;
+    return <ProjectBoardView ref={ref} {...props} />;
 });
 
 ProjectBoard.displayName = 'ProjectBoard';

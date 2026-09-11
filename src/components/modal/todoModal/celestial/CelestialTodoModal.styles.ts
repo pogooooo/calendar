@@ -7,9 +7,12 @@ export const FormWrapper = styled.form`
     width: 100%;
     max-height: 85vh;
 
+    /* 폰에서는 바깥 시트(Container)가 높이를 정한다. 여기서 100% 로 못 박으면
+       내용이 짧아도 시트가 화면 끝까지 늘어난다. */
     ${MOBILE} {
         max-height: none;
-        height: 100%;
+        height: auto;
+        min-height: 0;
     }
 `;
 
@@ -35,7 +38,7 @@ export const Header = styled.div`
         font-weight: 600;
         color: ${(props) => props.theme.colors.text};
         outline: none;
-        font-family: ${(props) => props.theme.fonts.celestial};
+        font-family: ${(props) => props.theme.fonts.display};
         margin-right: 15px;
         padding: 4px 0;
         border-bottom: 2px solid transparent;
@@ -70,11 +73,6 @@ export const Header = styled.div`
 `;
 
 export const ScrollBody = styled.div`
-    ${MOBILE} {
-        flex: 1;
-        min-height: 0;
-        padding: 14px 16px;
-    }
 
     padding: 16px 24px;
     display: flex;
@@ -83,6 +81,11 @@ export const ScrollBody = styled.div`
     overflow-y: auto;
     background-color: ${(props) => props.theme.colors.surface};
 
+    ${MOBILE} {
+        flex: 1;
+        min-height: 0;
+        padding: 14px 16px;
+    }
 `;
 
 export const FieldRow = styled.div`

@@ -1,15 +1,15 @@
 "use client";
 
 import * as React from "react";
-import styled from "styled-components";
 import CelestialSelect from "@/components/input/select/CelestialSelect";
 import type { DropdownProps } from "../Dropdown";
+import * as S from "./CelestialDropdown.styles";
 
 export default function CelestialDropdown({
     value, options, onChange, placeholder, width, disabled,
 }: DropdownProps) {
     return (
-        <Sized $width={width}>
+        <S.Sized $width={width}>
             <CelestialSelect
                 value={value}
                 onChange={onChange}
@@ -17,11 +17,6 @@ export default function CelestialDropdown({
                 placeholder={placeholder}
                 disabled={disabled}
             />
-        </Sized>
+        </S.Sized>
     );
 }
-
-const Sized = styled.div<{ $width?: string }>`
-    width: ${p => p.$width ?? "100%"};
-    min-width: 0;
-`;

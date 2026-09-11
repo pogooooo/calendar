@@ -12,10 +12,12 @@ import ProjectBoard from '@/components/project/board/ProjectBoard';
 import ProjectTimeline from '@/components/project/timeline/ProjectTimeline';
 import ProjectModal from '@/components/modal/projectModal/ProjectModal';
 import TaskModal from '@/components/modal/projectModal/TaskModal';
+import { useT } from "@/i18n/useT";
 
 export default function ProjectPage() {
     const authFetch = useAuthFetch();
     const dialog = useDialog();
+    const t = useT();
     const { projects, fetchProjects, addProject, updateProject, addProjectTask, updateProjectTaskStatus, updateProjectTask } = useProjectStore();
     const { categories, fetchCategories } = useCategoryStore();
 
@@ -82,10 +84,10 @@ export default function ProjectPage() {
     const handleSaveProject = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!projectModal.data.categoryId) {
-            await dialog.notify({ title: "카테고리를 선택해주세요", message: "프로젝트는 카테고리 안에 만들어집니다." });
+            await dialog.notify({ title: t.form.categoryRequiredTitle, message: t.form.categoryRequiredMsg });
             return;
         }
-        const projectData = { ...projectModal.data, assignees: projectModal.data.assignees?.map(a => a.id) as any };
+        const projectData = { ...projectModal.data, assignees: projectModal.data.assignees?.map(a => a.id) as unknown as ProjectType["assignees"] };
 
         if (projectModal.mode === 'add') await addProject(authFetch, projectData);
         else if (projectModal.data.id) await updateProject(authFetch, projectModal.data.id, projectData);
@@ -95,7 +97,7 @@ export default function ProjectPage() {
     const handleSaveTask = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!selectedProjectId) return;
-        const taskData = { ...taskModal.data, assignees: taskModal.data.assignees?.map(a => a.id) as any };
+        const taskData = { ...taskModal.data, assignees: taskModal.data.assignees?.map(a => a.id) as unknown as ProjectTaskType["assignees"] };
         if (taskModal.mode === 'add') await addProjectTask(authFetch, selectedProjectId, taskData);
         else if (taskModal.data.id) await updateProjectTask(authFetch, selectedProjectId, taskModal.data.id, taskData);
         setTaskModal(prev => ({ ...prev, isOpen: false }));

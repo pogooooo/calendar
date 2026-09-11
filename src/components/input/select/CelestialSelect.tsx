@@ -3,6 +3,7 @@
 import * as React from "react";
 import { createPortal } from "react-dom";
 import * as S from "./CelestialSelect.styles";
+import { useT } from "@/i18n/useT";
 
 export interface SelectOption {
     value: string;
@@ -25,9 +26,11 @@ interface Props {
 const MENU_GAP = 4;
 
 export default function CelestialSelect({
-    value, onChange, options, placeholder = "선택하세요",
+    value, onChange, options, placeholder,
     disabled, size = "md", ariaLabel, className,
 }: Props) {
+    const t = useT();
+    const hint = placeholder ?? t.form.choose;
     const triggerRef = React.useRef<HTMLButtonElement>(null);
     const menuRef = React.useRef<HTMLDivElement>(null);
     const [open, setOpen] = React.useState(false);
@@ -129,7 +132,7 @@ export default function CelestialSelect({
                 onKeyDown={onTriggerKey}
             >
                 {mark(selected, true)}
-                <S.Value $placeholder={!selected}>{selected ? selected.label : placeholder}</S.Value>
+                <S.Value $placeholder={!selected}>{selected ? selected.label : hint}</S.Value>
                 <S.Chev $open={open} aria-hidden="true">▾</S.Chev>
             </S.Trigger>
 

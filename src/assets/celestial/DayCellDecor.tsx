@@ -1,62 +1,8 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import styled, { keyframes } from "styled-components";
+import * as S from "./DayCellDecor.styles";
 
-const appear = keyframes`
-    from { opacity: 0; }
-    to { opacity: 1; }
-`;
-
-/* 단계별 프레임 (할 일 바와 같은 골드 라인아트) */
-const FrameWrap = styled.div`
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    z-index: 0;
-    color: ${(props) => props.theme.colors.primary};
-    --mx: 50%;
-    --my: 50%;
-    --glow: 0;
-
-    .fr-svg {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        overflow: visible;
-    }
-
-    .fr-line {
-        stroke: currentColor;
-        fill: none;
-        vector-effect: non-scaling-stroke;
-    }
-    .f-out { stroke-width: 1; }
-    .f-in { stroke-width: 0.8; opacity: 0.4; }
-    .corner { stroke-width: 1; stroke-linecap: round; }
-
-    .fr-base { animation: ${appear} 0.55s ease-out both; }
-
-    /* 호버 시 커서 주변 프레임만 빛나는 레이어 */
-    .fr-glow {
-        opacity: var(--glow, 0);
-        transition: opacity 0.18s ease;
-        filter:
-            drop-shadow(0 0 3px rgba(212, 175, 55, 0.95))
-            drop-shadow(0 0 7px rgba(212, 175, 55, 0.55));
-        -webkit-mask: radial-gradient(
-            circle 46px at var(--mx) var(--my),
-            #000 0%, #000 20%, transparent 72%
-        );
-        mask: radial-gradient(
-            circle 46px at var(--mx) var(--my),
-            #000 0%, #000 20%, transparent 72%
-        );
-    }
-    .fr-glow .fr-line { stroke-width: 1.6; opacity: 1; }
-
-`;
 
 /* 연결 여부에 따라 변을 열어 그린다 (연속된 같은 단계는 프레임이 이어짐) */
 const buildFrame = (inset: number, connectLeft: boolean, connectRight: boolean) => {
@@ -140,7 +86,7 @@ const FrameDecor = ({
     }, []);
 
     return (
-        <FrameWrap ref={rootRef} className="cell-decor" aria-hidden="true">
+        <S.FrameWrap ref={rootRef} className="cell-decor" aria-hidden="true">
             <svg
                 className="fr-svg"
                 viewBox="0 0 110 130"
@@ -161,7 +107,7 @@ const FrameDecor = ({
                 <FrameShapes level={level} connectLeft={connectLeft} connectRight={connectRight} />
             </svg>
 
-        </FrameWrap>
+        </S.FrameWrap>
     );
 };
 

@@ -13,7 +13,7 @@ const RINGS = [
 export default function HeroScene() {
     const mountRef = React.useRef<HTMLDivElement>(null);
     const theme = useTheme();
-    const gold = theme?.colors?.primary ?? "#D4AF37";
+    const gold = theme.colors.primary;
 
     React.useEffect(() => {
         const mount = mountRef.current;

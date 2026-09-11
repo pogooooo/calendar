@@ -6,6 +6,7 @@ import Sidebar from "@/components/sideBar/SideBar";
 import TitleBar from "@/components/titleBar/TitleBar";
 import PageTransition from "@/components/transition/PageTransition";
 import UpdateNotice from "@/components/update/UpdateNotice";
+import SaveFailureNotice from "@/components/SaveFailureNotice";
 import { DialogProvider } from "@/components/dialog/DialogProvider";
 import MobileTabBar, { MOBILE_BREAKPOINT, TAB_BAR_HEIGHT } from "@/components/mobile/MobileTabBar";
 
@@ -28,6 +29,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 </LayoutWrapper>
                 <MobileTabBar />
                 <UpdateNotice />
+                <SaveFailureNotice />
             </AppShell>
         </DialogProvider>
     );
@@ -41,6 +43,18 @@ const AppShell = styled.div`
     overflow: hidden;
     background-color: ${(props) => props.theme.colors.background};
     color: ${(props) => props.theme.colors.text};
+
+    /* 탭바 자리는 여기서 뗀다.
+       스크롤 영역(main)의 padding-bottom 으로 떼면, 안쪽 내용이 부모 높이를
+       넘어 흘러넘칠 때 그 padding 이 스크롤 범위에 안 들어가서
+       화면 맨 아래가 탭바에 가린 채 끝까지 내려가지지 않는다. */
+    /* 위쪽은 상태 표시줄(시계·배터리) 자리다. 안드로이드 15 부터는 앱이 화면
+       끝까지 그려지므로, 여기서 비켜 주지 않으면 첫 줄이 시계에 깔린다. */
+    @media (max-width: ${MOBILE_BREAKPOINT}px) {
+        height: 100dvh;
+        padding-top: env(safe-area-inset-top, 0px);
+        padding-bottom: calc(${TAB_BAR_HEIGHT}px + env(safe-area-inset-bottom, 0px));
+    }
 `;
 
 const LayoutWrapper = styled.div`
@@ -60,7 +74,8 @@ const MainContent = styled.main`
     position: relative;
 
     @media (max-width: ${MOBILE_BREAKPOINT}px) {
-        padding: 12px 12px calc(${TAB_BAR_HEIGHT}px + 12px + env(safe-area-inset-bottom, 0px));
+        padding: 12px 12px 16px;
         -webkit-overflow-scrolling: touch;
+        overscroll-behavior-y: contain;
     }
 `;

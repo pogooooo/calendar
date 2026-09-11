@@ -145,7 +145,7 @@ export default function WidgetShell({ kind, title, children }: Props) {
             window.clearTimeout(timer);
         };
     }, [kind]);
-    const surfaceColor = theme?.colors?.surface ?? "#1a160e";
+    const surfaceColor = theme?.colors?.surface;
     const bgStyle = buildBackground(bg, surfaceColor);
 
     const bgRef = useRef(bg);
@@ -453,7 +453,7 @@ export default function WidgetShell({ kind, title, children }: Props) {
 
                         {bg.mode === "custom" && (
                             <>
-                                <PanelLabel>색상</PanelLabel>
+                                <PanelLabel>{t.widgetShell.color}</PanelLabel>
                                 <ColorRow>
                                     <ColorPicker
                                         type="color"
@@ -500,7 +500,7 @@ const Shell = styled.div<{ $locked?: boolean }>`
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    border: 1px solid ${p => p.theme?.colors?.primary ?? "#D4AF37"};
+    border: 1px solid ${p => p.theme?.colors?.primary};
     box-sizing: border-box;
     user-select: none;
     border-radius: 0;
@@ -551,8 +551,13 @@ const VirtualMonitor = styled.div<{ $url: string; $mw: number; $mh: number }>`
     will-change: transform;
 `;
 
+/** 상단 바 높이. 내용과 설정 패널이 이 값만큼 비켜선다. */
+const TOP_BAR_H = 24;
+
 const TopBar = styled.div`
     position: absolute;
+    height: ${TOP_BAR_H}px;
+    box-sizing: border-box;
     top: 0;
     left: 0;
     right: 0;
@@ -580,24 +585,24 @@ const Gem = styled.span<{ $grip?: boolean; $active?: boolean; $danger?: boolean 
     flex-shrink: 0;
     padding: 0;
     transform: rotate(45deg);
-    border: 1px solid ${p => p.theme?.colors?.primary ?? "#D4AF37"};
-    background: ${p => p.$active ? (p.theme?.colors?.primary ?? "#D4AF37") : "transparent"};
+    border: 1px solid ${p => p.theme?.colors?.primary};
+    background: ${p => p.$active ? (p.theme?.colors?.primary) : "transparent"};
     opacity: ${p => p.$grip ? 0.55 : 0.8};
     cursor: ${p => p.$grip ? "grab" : "pointer"};
     transition: background 0.12s, opacity 0.12s, box-shadow 0.12s;
 
     &:hover {
         opacity: 1;
-        background: ${p => p.$danger ? "#C8687A" : (p.theme?.colors?.primary ?? "#D4AF37")};
-        border-color: ${p => p.$danger ? "#C8687A" : (p.theme?.colors?.primary ?? "#D4AF37")};
-        box-shadow: 0 0 5px ${p => p.theme?.colors?.primary ?? "#D4AF37"}80;
+        background: ${p => p.$danger ? "#C8687A" : (p.theme?.colors?.primary)};
+        border-color: ${p => p.$danger ? "#C8687A" : (p.theme?.colors?.primary)};
+        box-shadow: 0 0 5px ${p => p.theme?.colors?.primary}80;
     }
 `;
 
 const Rule = styled.span`
     flex: 1;
     height: 1px;
-    background: ${p => p.theme?.colors?.primary ?? "#D4AF37"}66;
+    background: ${p => p.theme?.colors?.primary}66;
 `;
 
 const BtnGroup = styled.div`
@@ -614,7 +619,9 @@ const slideDown = keyframes`
 
 const SettingsPanel = styled.div`
     position: absolute;
-    top: 30px;
+    /* 상단 바 바로 아래에서 시작한다. 예전에는 30px 로 못 박혀 있어
+       200px 짜리 위젯에서 내용(176px)이 칸(167px)을 넘어 잘렸다. */
+    top: ${TOP_BAR_H}px;
     left: 0;
     right: 0;
     bottom: 0;
@@ -623,8 +630,8 @@ const SettingsPanel = styled.div`
     flex-direction: column;
     overflow-y: auto;
     padding: var(--widget-pad);
-    background: ${p => p.theme?.baseColors?.surface ?? p.theme?.colors?.surface ?? "#1a160e"};
-    border-top: 1px solid ${p => p.theme?.colors?.primary ?? "#D4AF37"}66;
+    background: ${p => p.theme?.baseColors?.surface ?? p.theme?.colors?.surface};
+    border-top: 1px solid ${p => p.theme?.colors?.primary}66;
     animation: ${slideDown} 0.15s ease;
 
     &, & * {
@@ -633,6 +640,15 @@ const SettingsPanel = styled.div`
 `;
 
 const PanelDone = styled.button`
+    /**
+     * 패널 안이 넘쳐 굴려야 할 때도 이 단추는 늘 아래에 붙어 있어야 한다.
+     * 예전에는 목록 끝에 매달려 있어서, 작은 위젯에서는 끝까지 굴려야 나왔다.
+     */
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    background-color: ${p => p.theme?.baseColors?.surface ?? p.theme?.colors?.surface};
+
     margin-top: auto;
     padding-top: 10px;
     align-self: stretch;
@@ -642,9 +658,9 @@ const PanelDone = styled.button`
     gap: 8px;
     background: none;
     border: none;
-    border-top: 1px solid ${p => p.theme?.colors?.primary ?? "#D4AF37"}33;
+    border-top: 1px solid ${p => p.theme?.colors?.primary}33;
     cursor: pointer;
-    font-family: ${p => p.theme?.fonts?.celestial ?? "inherit"};
+    font-family: ${p => p.theme?.fonts?.display};
     font-size: 0.7rem;
     letter-spacing: 2px;
     opacity: 0.75;
@@ -656,14 +672,14 @@ const PanelDone = styled.button`
         width: 7px;
         height: 7px;
         transform: rotate(45deg);
-        border: 1px solid ${p => p.theme?.colors?.primary ?? "#D4AF37"};
+        border: 1px solid ${p => p.theme?.colors?.primary};
     }
 `;
 
 const PanelLabel = styled.div`
     font-size: 0.68rem;
     letter-spacing: 1px;
-    color: ${p => p.theme?.colors?.text ?? "#e8e0d0"};
+    color: ${p => p.theme?.colors?.text};
     opacity: 0.6;
     margin: 8px 0 4px;
     &:first-child { margin-top: 0; }
@@ -671,7 +687,7 @@ const PanelLabel = styled.div`
 
 const PanelDivider = styled.div`
     height: 1px;
-    background: ${p => p.theme?.colors?.primary ?? "#D4AF37"}20;
+    background: ${p => p.theme?.colors?.primary}20;
     margin: 10px 0 8px;
 `;
 
@@ -684,7 +700,7 @@ const ToggleRow = styled.div`
 
 const ToggleLabel = styled.span`
     font-size: 0.68rem;
-    color: ${p => p.theme?.colors?.text ?? "#e8e0d0"};
+    color: ${p => p.theme?.colors?.text};
     opacity: 0.85;
     letter-spacing: 0.3px;
 `;
@@ -694,10 +710,10 @@ const ToggleSwitch = styled.button<{ $on: boolean }>`
     font-size: 0.62rem;
     letter-spacing: 0.5px;
     border: 1px solid ${p => p.$on
-            ? p.theme?.colors?.primary ?? "#D4AF37"
-            : (p.theme?.colors?.primary ?? "#D4AF37") + "50"};
-    background: ${p => p.$on ? (p.theme?.colors?.primary ?? "#D4AF37") + "25" : "transparent"};
-    color: ${p => p.theme?.colors?.text ?? "#e8e0d0"};
+            ? p.theme?.colors?.primary
+            : (p.theme?.colors?.primary) + "50"};
+    background: ${p => p.$on ? (p.theme?.colors?.primary) + "25" : "transparent"};
+    color: ${p => p.theme?.colors?.text};
     cursor: pointer;
     transition: all 0.12s;
     opacity: ${p => p.$on ? 1 : 0.5};
@@ -712,10 +728,10 @@ const ModeChip = styled.button<{ $active: boolean }>`
     padding: 3px 10px;
     font-size: 0.7rem;
     border: 1px solid ${p => p.$active
-            ? p.theme?.colors?.primary ?? "#D4AF37"
-            : (p.theme?.colors?.primary ?? "#D4AF37") + "40"};
-    background: ${p => p.$active ? (p.theme?.colors?.primary ?? "#D4AF37") + "20" : "transparent"};
-    color: ${p => p.theme?.colors?.text ?? "#e8e0d0"};
+            ? p.theme?.colors?.primary
+            : (p.theme?.colors?.primary) + "40"};
+    background: ${p => p.$active ? (p.theme?.colors?.primary) + "20" : "transparent"};
+    color: ${p => p.theme?.colors?.text};
     cursor: pointer;
     letter-spacing: 0.5px;
     transition: all 0.12s;
@@ -724,7 +740,7 @@ const ModeChip = styled.button<{ $active: boolean }>`
 
 const Slider = styled.input`
     width: 100%;
-    accent-color: ${p => p.theme?.colors?.primary ?? "#D4AF37"};
+    accent-color: ${p => p.theme?.colors?.primary};
     cursor: pointer;
 `;
 
@@ -737,7 +753,7 @@ const ColorRow = styled.div`
 const ColorPicker = styled.input`
     width: 32px;
     height: 24px;
-    border: 1px solid ${p => p.theme?.colors?.primary ?? "#D4AF37"}60;
+    border: 1px solid ${p => p.theme?.colors?.primary}60;
     background: transparent;
     cursor: pointer;
     padding: 1px;
@@ -745,7 +761,7 @@ const ColorPicker = styled.input`
 
 const ColorHex = styled.span`
     font-size: 0.72rem;
-    color: ${p => p.theme?.colors?.text ?? "#e8e0d0"};
+    color: ${p => p.theme?.colors?.text};
     opacity: 0.7;
     letter-spacing: 1px;
     font-family: monospace;
@@ -758,6 +774,18 @@ const Content = styled.div<{ $kind?: string }>`
     overflow: hidden;
     padding: 0;
     position: relative;
+
+    /**
+     * 상단 바는 내용 위에 떠 있다. 마우스를 올려 바가 나타나면 내용의 첫 줄이
+     * 그 밑에 깔렸다 — 위젯마다 제목이 잘려 보였다.
+     * 바가 보이는 동안만 그만큼 아래로 민다. 평소에는 위젯을 꽉 채운다.
+     */
+    transition: padding-top 0.14s ease;
+
+    ${Shell}:hover &,
+    ${Shell}:focus-within & {
+        padding-top: ${TOP_BAR_H}px;
+    }
 
     &, & * {
         color: ${p => p.theme?.colors?.text} !important;

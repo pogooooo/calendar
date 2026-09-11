@@ -3,7 +3,7 @@ import styled from "styled-components";
 export const DropdownContainer = styled.div<{ $width?: string }>`
     position: relative;
     width: ${(props) => props.$width || '100%'};
-    font-family: ${(props) => props.theme.fonts.celestial};
+    font-family: ${(props) => props.theme.fonts.display};
 `;
 
 export const DropdownHeader = styled.div<{ $disabled?: boolean }>`
@@ -76,4 +76,9 @@ export const ColorDot = styled.div<{ $color: string }>`
     height: 10px;
     border-radius: 50%;
     flex-shrink: 0;
+`;
+
+export const Sized = styled.div<{ $width?: string }>`
+    width: ${p => p.$width ?? "100%"};
+    min-width: 0;
 `;

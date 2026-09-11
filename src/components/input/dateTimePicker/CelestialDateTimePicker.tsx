@@ -1,11 +1,11 @@
 "use client";
 
 import * as React from "react";
+import { useT } from "@/i18n/useT";
 import { createPortal } from "react-dom";
-import styled, { css, keyframes } from "styled-components";
-import { MOBILE, SAFE_B } from "@/styles/breakpoints";
 import { CalendarDays, ChevronLeft, ChevronRight, Clock } from "lucide-react";
 import CelestialTimeDial from "./CelestialTimeDial";
+import * as S from "./CelestialDateTimePicker.styles";
 
 interface CelestialDateTimePickerProps {
     value: string;
@@ -19,8 +19,6 @@ interface CelestialDateTimePickerProps {
     };
 }
 
-const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
-const POP_WIDTH = 272;
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
@@ -48,6 +46,8 @@ function buildGrid(view: Date) {
 }
 
 export default function CelestialDateTimePicker({ value, onChange, mode = "datetime", range }: CelestialDateTimePickerProps) {
+    const f = useT().form;
+    const WEEKDAYS = f.weekdays;
     const triggerRef = React.useRef<HTMLButtonElement>(null);
     const popRef = React.useRef<HTMLDivElement>(null);
     const gridRef = React.useRef<HTMLDivElement>(null);
@@ -65,7 +65,7 @@ export default function CelestialDateTimePicker({ value, onChange, mode = "datet
         const rect = triggerRef.current?.getBoundingClientRect();
         if (!rect) return;
 
-        const left = Math.max(8, Math.min(rect.left, window.innerWidth - POP_WIDTH - 8));
+        const left = Math.max(8, Math.min(rect.left, window.innerWidth - S.POP_WIDTH - 8));
 
         setView(new Date(selected.getFullYear(), selected.getMonth(), 1));
         setPos({ top: rect.bottom + 6, left, up: false });
@@ -214,14 +214,14 @@ export default function CelestialDateTimePicker({ value, onChange, mode = "datet
 
     return (
         <>
-            <Trigger ref={triggerRef} type="button" $open={open} onClick={() => (open ? setOpen(false) : openPopover())}>
+            <S.Trigger ref={triggerRef} type="button" $open={open} onClick={() => (open ? setOpen(false) : openPopover())}>
                 <CalendarDays size={14} />
                 <span>{label}</span>
-            </Trigger>
+            </S.Trigger>
 
             {open && pos && typeof document !== "undefined" && createPortal(
-                <Popover ref={popRef} $up={pos.up} style={{ top: pos.top, left: pos.left }} onKeyDown={onGridKey} tabIndex={-1}>
-                    <MonthNav>
+                <S.Popover ref={popRef} $up={pos.up} style={{ top: pos.top, left: pos.left }} onKeyDown={onGridKey} tabIndex={-1}>
+                    <S.MonthNav>
                         <button type="button" onClick={() => setView(v => new Date(v.getFullYear(), v.getMonth() - 1, 1))}>
                             <ChevronLeft size={15} />
                         </button>
@@ -229,31 +229,31 @@ export default function CelestialDateTimePicker({ value, onChange, mode = "datet
                         <button type="button" onClick={() => setView(v => new Date(v.getFullYear(), v.getMonth() + 1, 1))}>
                             <ChevronRight size={15} />
                         </button>
-                    </MonthNav>
+                    </S.MonthNav>
 
-                    <WeekHead>
+                    <S.WeekHead>
                         {WEEKDAYS.map(w => <span key={w}>{w}</span>)}
-                    </WeekHead>
+                    </S.WeekHead>
 
                     {range && (
-                        <EdgeTabs role="group" aria-label="잡을 끝">
+                        <S.EdgeTabs role="group" aria-label={f.pickedEdge}>
                             <button type="button" data-on={edge === "start" ? "1" : "0"} onClick={() => setEdge("start")}>
-                                시작 · {startKey.slice(5).replace("-", ".")}
+                                {f.start} · {startKey.slice(5).replace("-", ".")}
                             </button>
                             <button type="button" data-on={edge === "end" ? "1" : "0"} onClick={() => setEdge("end")}>
-                                종료 · {endKey.slice(5).replace("-", ".")}
+                                {f.end} · {endKey.slice(5).replace("-", ".")}
                             </button>
-                        </EdgeTabs>
+                        </S.EdgeTabs>
                     )}
 
-                    <Grid ref={gridRef}>
+                    <S.Grid ref={gridRef}>
                         {grid.map((d, i) => {
                             const key = toKey(d);
                             const isStart = !!range && key === startKey;
                             const isEnd = !!range && key === endKey;
                             const between = !!range && startKey < endKey && key > startKey && key < endKey;
                             return (
-                                <Day
+                                <S.Day
                                     key={i}
                                     type="button"
                                     $out={d.getMonth() !== view.getMonth()}
@@ -265,290 +265,32 @@ export default function CelestialDateTimePicker({ value, onChange, mode = "datet
                                     onClick={() => pickDay(d)}
                                 >
                                     <span>{d.getDate()}</span>
-                                </Day>
+                                </S.Day>
                             );
                         })}
-                    </Grid>
+                    </S.Grid>
 
                     {mode === "datetime" && (
-                        <TimeArea>
-                            <TimeLabel>
-                                <Clock size={12} /> 시간
+                        <S.TimeArea>
+                            <S.TimeLabel>
+                                <Clock size={12} /> {f.time}
                                 <b>{pad(hour)}:{pad(minute)}</b>
-                            </TimeLabel>
+                            </S.TimeLabel>
                             <CelestialTimeDial
                                 hour={hour}
                                 minute={minute}
                                 onChange={(h, m) => onChange(emit(selected, h, m, mode))}
                             />
-                        </TimeArea>
+                        </S.TimeArea>
                     )}
 
-                    <Foot>
-                        <button type="button" onClick={pickNow}>{mode === "datetime" ? "지금" : "오늘"}</button>
-                        <button type="button" className="ok" onClick={() => setOpen(false)}>완료 ✦</button>
-                    </Foot>
-                </Popover>,
+                    <S.Foot>
+                        <button type="button" onClick={pickNow}>{mode === "datetime" ? f.now : f.today}</button>
+                        <button type="button" className="ok" onClick={() => setOpen(false)}>{f.done} ✦</button>
+                    </S.Foot>
+                </S.Popover>,
                 document.body,
             )}
         </>
     );
 }
-
-const popIn = keyframes`
-    from { opacity: 0; transform: translateY(-5px); }
-    to   { opacity: 1; transform: none; }
-`;
-
-const popInUp = keyframes`
-    from { opacity: 0; transform: translateY(5px); }
-    to   { opacity: 1; transform: none; }
-`;
-
-const Trigger = styled.button<{ $open: boolean }>`
-    flex: 1;
-    min-width: 0;
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    padding: 8px 11px;
-    font-size: 0.82rem;
-    font-family: inherit;
-    letter-spacing: 0.3px;
-    text-align: left;
-    color: ${p => p.theme.colors.text};
-    background: none;
-    border: 1px solid ${p => p.theme.colors.primary}${p => (p.$open ? "" : "44")};
-    cursor: pointer;
-    transition: border-color 0.2s, box-shadow 0.2s;
-
-    svg { color: ${p => p.theme.colors.primary}; flex: 0 0 auto; }
-    span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-
-    &:hover { border-color: ${p => p.theme.colors.primary}; }
-
-    ${p => p.$open && css`
-        box-shadow: 0 0 8px ${p.theme.colors.primary}44;
-    `}
-`;
-
-const Popover = styled.div<{ $up: boolean }>`
-    position: fixed;
-    z-index: 1100;
-    width: ${POP_WIDTH}px;
-    padding: 12px;
-    background: ${p => p.theme.colors.surface};
-    border: 1px solid ${p => p.theme.colors.primary}57;
-    box-shadow: 0 10px 26px -12px rgba(0, 0, 0, 0.34);
-    outline: none;
-    animation: ${p => (p.$up ? popInUp : popIn)} 0.18s ease-out;
-
-    ${MOBILE} {
-        top: auto !important;
-        left: 0 !important;
-        right: 0;
-        bottom: 0;
-        width: auto;
-        max-height: 88dvh;
-        overflow-y: auto;
-        padding: 14px 16px calc(14px + ${SAFE_B});
-        border: none;
-        border-top: 1px solid ${p => p.theme.colors.primary};
-        animation: ${popIn} 0.2s ease-out;
-    }
-`;
-
-const MonthNav = styled.div`
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 8px;
-
-    strong {
-        font-family: ${p => p.theme.fonts.celestial};
-        font-size: 0.92rem;
-        font-weight: 400;
-        letter-spacing: 2px;
-    }
-
-    button {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 24px;
-        height: 24px;
-        background: none;
-        border: 1px solid ${p => p.theme.colors.primary}33;
-        color: ${p => p.theme.colors.textSecondary};
-        cursor: pointer;
-        transition: border-color 0.2s, color 0.2s;
-
-        &:hover { border-color: ${p => p.theme.colors.primary}; color: ${p => p.theme.colors.primary}; }
-    }
-`;
-
-const WeekHead = styled.div`
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    margin-bottom: 3px;
-    padding-bottom: 4px;
-    border-bottom: 1px solid ${p => p.theme.colors.primary}44;
-
-    span {
-        text-align: center;
-        font-size: 0.64rem;
-        letter-spacing: 1px;
-        color: ${p => p.theme.colors.textSecondary};
-    }
-
-    span:first-child { color: #d97878; }
-`;
-
-const Grid = styled.div`
-    display: grid;
-    grid-template-columns: repeat(7, minmax(0, 1fr));
-`;
-
-const EdgeTabs = styled.div`
-    display: flex;
-    margin-bottom: 6px;
-    border: 1px solid ${p => p.theme.colors.primary}33;
-
-    button {
-        flex: 1;
-        background: none;
-        border: 0;
-        padding: 5px 0;
-        cursor: pointer;
-        font-family: inherit;
-        font-size: 0.68rem;
-        letter-spacing: 0.04em;
-        color: ${p => p.theme.colors.textSecondary};
-        font-variant-numeric: tabular-nums;
-    }
-
-    button + button { border-left: 1px solid ${p => p.theme.colors.primary}33; }
-
-    button[data-on="1"] {
-        background-color: ${p => p.theme.colors.primary}1F;
-        color: ${p => p.theme.colors.primary};
-    }
-`;
-
-const Day = styled.button<{
-    $out: boolean;
-    $today: boolean;
-    $selected: boolean;
-    $inRange?: boolean;
-    $edgeStart?: boolean;
-    $edgeEnd?: boolean;
-}>`
-    position: relative;
-    height: 30px;
-    font-size: 0.74rem;
-    font-family: inherit;
-    background: none;
-    border: 0;
-    color: ${p => p.theme.colors.text};
-    opacity: ${p => (p.$out ? 0.38 : 1)};
-    cursor: pointer;
-
-    span {
-        position: relative;
-        z-index: 2;
-    }
-
-    &:hover span { color: ${p => p.theme.colors.primary}; }
-
-    &:focus-visible {
-        outline: 2px solid ${p => p.theme.colors.primary};
-        outline-offset: -2px;
-    }
-
-    ${p => (p.$inRange || p.$edgeStart || p.$edgeEnd) && css`
-        &::before {
-            content: "";
-            position: absolute;
-            top: 50%;
-            height: 1px;
-            background-color: ${p.theme.colors.primary}88;
-            left: ${p.$edgeStart && !p.$edgeEnd ? "50%" : "0"};
-            right: ${p.$edgeEnd && !p.$edgeStart ? "50%" : "0"};
-        }
-    `}
-
-    ${p => p.$today && !p.$selected && css`
-        span {
-            text-decoration: underline;
-            text-decoration-color: ${p.theme.colors.primary};
-            text-underline-offset: 3px;
-        }
-    `}
-
-    ${p => p.$selected && css`
-        &::after {
-            content: "";
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 22px;
-            height: 22px;
-            margin: -11px 0 0 -11px;
-            border: 1px solid ${p.theme.colors.primary};
-            background-color: ${p.theme.colors.surface};
-            transform: rotate(45deg);
-            z-index: 1;
-        }
-        span { color: ${p.theme.colors.primary}; font-weight: 600; }
-    `}
-`;
-
-const TimeArea = styled.div`
-    margin-top: 10px;
-    padding-top: 8px;
-    border-top: 1px dashed ${p => p.theme.colors.primary}44;
-`;
-
-const TimeLabel = styled.div`
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    margin-bottom: 6px;
-    font-size: 0.68rem;
-    letter-spacing: 1px;
-    color: ${p => p.theme.colors.textSecondary};
-
-    svg { color: ${p => p.theme.colors.primary}; }
-`;
-
-const Foot = styled.div`
-    display: flex;
-    justify-content: space-between;
-    margin-top: 10px;
-    padding-top: 8px;
-    border-top: 1px solid ${p => p.theme.colors.primary}44;
-
-    button {
-        padding: 5px 12px;
-        font-size: 0.72rem;
-        font-family: inherit;
-        letter-spacing: 1px;
-        background: none;
-        border: 1px solid ${p => p.theme.colors.primary}44;
-        color: ${p => p.theme.colors.textSecondary};
-        cursor: pointer;
-        transition: border-color 0.2s, color 0.2s, box-shadow 0.2s;
-
-        &:hover {
-            border-color: ${p => p.theme.colors.primary};
-            color: ${p => p.theme.colors.primary};
-        }
-    }
-
-    .ok {
-        border-color: ${p => p.theme.colors.primary};
-        color: ${p => p.theme.colors.text};
-
-        &:hover { box-shadow: 0 0 8px ${p => p.theme.colors.primary}55; }
-    }
-`;

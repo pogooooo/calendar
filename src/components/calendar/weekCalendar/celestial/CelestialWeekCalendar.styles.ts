@@ -21,7 +21,7 @@ export const CelestialCalendarWrapper = styled.div`
 `;
 
 export const DateRangeDisplay = styled.div`
-    font-family: ${(props) => props.theme.fonts.celestial};
+    font-family: ${(props) => props.theme.fonts.display};
     font-size: ${(props) => props.theme.fontSizes.caption};
     color: ${(props) => props.theme.colors.text};
     letter-spacing: 2px;
@@ -110,7 +110,7 @@ export const CalendarWindow = styled.div`
 `;
 
 export const Header = styled.div`
-    font-family: ${(props) => props.theme.fonts.celestial};
+    font-family: ${(props) => props.theme.fonts.display};
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     border: 1px solid ${(props) => props.theme.colors.primary};
@@ -378,7 +378,7 @@ export const ModalContainer = styled(motion.div)`
 `;
 
 export const ModalHeader = styled.div`
-    font-family: ${(props) => props.theme.fonts.celestial};
+    font-family: ${(props) => props.theme.fonts.display};
     font-size: 1.1rem;
     color: ${(props) => props.theme.colors.text};
     padding: 15px 20px;

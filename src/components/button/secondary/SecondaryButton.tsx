@@ -1,14 +1,13 @@
 "use client";
 
 import * as React from 'react';
-import {useTheme} from 'styled-components';
+import { usePickTheme } from "@/styles/themed";
 import CelestialSecondaryButton, { ButtonProps } from "./Celestial_SecondaryButton";
 
 const SecondaryButton = React.forwardRef<HTMLButtonElement, ButtonProps>(({ asChild = false, ...props }, ref) => {
-    const theme = useTheme();
-    const themeName = theme?.name || 'celestial';
+    const SecondaryButtonView = usePickTheme({ celestial: CelestialSecondaryButton });
 
-    return <CelestialSecondaryButton ref={ref} {...props} />;
+    return <SecondaryButtonView ref={ref} {...props} />;
 });
 
 SecondaryButton.displayName = 'SecButton';

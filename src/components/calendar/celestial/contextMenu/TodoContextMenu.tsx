@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { TodoType } from "@/store/useTodoStore";
 import * as S from "./TodoContextMenu.styles";
+import { useT } from "@/i18n/useT";
 
 export interface ContextMenuTodo extends TodoType {
     originalTodo?: TodoType;
@@ -21,6 +22,7 @@ interface TodoContextMenuProps {
 }
 
 export default function TodoContextMenu({ menuState, onClose, onToggle, onEdit, onDelete, onDeleteOne }: TodoContextMenuProps) {
+    const m = useT().menu;
     const menuRef = React.useRef<HTMLDivElement>(null);
     const [pos, setPos] = React.useState<{ left: number; top: number } | null>(null);
 
@@ -73,18 +75,18 @@ export default function TodoContextMenu({ menuState, onClose, onToggle, onEdit, 
                     style={{ top: pos ? pos.top : menuState.y, left: pos ? pos.left : menuState.x }}
                     onClick={(e: React.MouseEvent) => e.stopPropagation()}
                 >
-                    <button onClick={() => onToggle(menuState.todo)}>완료</button>
+                    <button onClick={() => onToggle(menuState.todo)}>{m.done}</button>
                     <div className="divider" />
-                    <button onClick={() => onEdit(menuState.todo)}>수정</button>
+                    <button onClick={() => onEdit(menuState.todo)}>{m.edit}</button>
                     <div className="divider" />
                     {isRepeat && onDeleteOne ? (
                         <>
-                            <button className="danger" onClick={() => onDeleteOne(menuState.todo)}>이 일정만 삭제</button>
+                            <button className="danger" onClick={() => onDeleteOne(menuState.todo)}>{m.deleteThisOnly}</button>
                             <div className="divider" />
-                            <button className="danger" onClick={() => onDelete(menuState.todo)}>전체 삭제</button>
+                            <button className="danger" onClick={() => onDelete(menuState.todo)}>{m.deleteAll}</button>
                         </>
                     ) : (
-                        <button className="danger" onClick={() => onDelete(menuState.todo)}>삭제</button>
+                        <button className="danger" onClick={() => onDelete(menuState.todo)}>{m.delete}</button>
                     )}
                 </S.FloatingContextMenu>
             )}

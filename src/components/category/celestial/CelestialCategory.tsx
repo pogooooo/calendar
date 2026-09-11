@@ -217,7 +217,7 @@ export default function CelestialCategory(props: CategoryThemeProps) {
                                                 <div className="todo-info">
                                                     <span className="title">{todo.title}</span>
                                                     <span className="date">
-                                                        {`${todo.startAt ? new Date(todo.startAt as string).toLocaleDateString() : t.category.noDate}${todo.repeat > 0 ? ` (↻ ${todo.repeat}${t.todo.perNDays})` : ''}`}
+                                                        {`${todo.startAt ? (() => { const d = new Date(todo.startAt as string); return t.calendar.dayTitle(d.getFullYear(), d.getMonth() + 1, d.getDate()); })() : t.category.noDate}${todo.repeat > 0 ? ` (↻ ${todo.repeat}${t.todo.perNDays})` : ''}`}
                                                     </span>
                                                 </div>
 

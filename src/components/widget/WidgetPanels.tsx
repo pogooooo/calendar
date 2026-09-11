@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import styled from "styled-components";
+import styled, { useTheme } from "styled-components";
 import { Check } from "lucide-react";
 import useTodoStore from "@/store/useTodoStore";
 import useCategoryStore from "@/store/useCategoryStore";
@@ -12,23 +12,18 @@ import useAnniversaryStore from "@/store/useAnniversaryStore";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useT } from "@/i18n/useT";
 import { useCurrentDayKey } from "@/hooks/useCurrentDay";
-import { dayKeyToIso } from "@/lib/dateKey";
+import { dayKeyToIso, localDateKey, utcDayKey } from "@/lib/dateKey";
 
 const ROW_PX = 32;
 const NARROW_PX = 300;
 
-const dayKey = (v: string | number | Date) => {
-    const d = new Date(v);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-};
-
 const spansDay = (t: { startAt?: string | number | Date | null; endAt?: string | number | Date | null }, key: string) => {
     if (!t.startAt || !t.endAt) return false;
-    return dayKey(t.startAt) <= key && key <= dayKey(t.endAt);
+    return localDateKey(t.startAt) <= key && key <= localDateKey(t.endAt);
 };
 
 const doneOn = (t: { completions?: { targetDate: string | Date }[] }, key: string) =>
-    (t.completions ?? []).some(c => dayKey(c.targetDate) === key);
+    (t.completions ?? []).some(c => utcDayKey(c.targetDate) === key);
 
 function useFrame(rowPx = ROW_PX, reserved = 0) {
     const ref = React.useRef<HTMLDivElement>(null);
@@ -72,7 +67,7 @@ export function TodayPanel() {
     const [ref, box] = useFrame(ROW_PX, 26 + 38);
     const [draft, setDraft] = React.useState("");
 
-    const key = dayKey(new Date());
+    const key = localDateKey(new Date());
     const t0 = new Date().setHours(0, 0, 0, 0);
 
     const today = todos.filter(t => spansDay(t, key));
@@ -85,7 +80,8 @@ export function TodayPanel() {
     const todayCap = hasNext ? Math.max(1, Math.round(budget * 0.6)) : budget;
     const nextCap = Math.max(0, budget - todayCap);
 
-    const color = (id: string) => categories.find(c => c.id === id)?.color || "#D4AF37";
+    const theme = useTheme();
+    const color = (id: string) => categories.find(c => c.id === id)?.color || theme.colors.primary;
 
     const submit = () => {
         const v = draft.trim();
@@ -135,7 +131,7 @@ export function TodayPanel() {
                 <>
                     <SectionHead className="mt">{tr.home.upcoming}</SectionHead>
                     {next.slice(0, nextCap).map(t => {
-                        const k = dayKey(t.startAt!);
+                        const k = localDateKey(t.startAt!);
                         const done = doneOn(t, k);
                         const d = new Date(t.startAt!);
                         return (
@@ -173,7 +169,8 @@ export function NowNextPanel() {
         .filter(t => new Date(t.startAt!).getTime() > now)
         .sort((a, b) => new Date(a.startAt!).getTime() - new Date(b.startAt!).getTime())[0];
 
-    const color = (id: string) => categories.find(c => c.id === id)?.color || "#D4AF37";
+    const theme = useTheme();
+    const color = (id: string) => categories.find(c => c.id === id)?.color || theme.colors.primary;
 
     const untilText = (ms: number) => {
         const m = Math.max(0, Math.round(ms / 60000));
@@ -237,12 +234,13 @@ export function DuePanel() {
             if (!t.endAt) return false;
             const end = new Date(t.endAt).getTime();
             if (end < now || end > now + 86400000 * 2) return false;
-            return !doneOn(t, dayKey(t.endAt));
+            return !doneOn(t, localDateKey(t.endAt));
         })
         .sort((a, b) => new Date(a.endAt!).getTime() - new Date(b.endAt!).getTime());
 
     const cap = Math.max(1, box.rows);
-    const color = (id: string) => categories.find(c => c.id === id)?.color || "#D4AF37";
+    const theme = useTheme();
+    const color = (id: string) => categories.find(c => c.id === id)?.color || theme.colors.primary;
 
     const left = (v: string | number | Date) => {
         const h = Math.round((new Date(v).getTime() - now) / 3600000);
@@ -255,7 +253,7 @@ export function DuePanel() {
             {list.length === 0
                 ? <Thin>{tr.widget.noDue}</Thin>
                 : list.slice(0, cap).map(t => {
-                    const k = dayKey(t.endAt!);
+                    const k = localDateKey(t.endAt!);
                     return (
                         <Row key={t.id}>
                             <Box $done={false} onClick={() => toggleTodo(authFetch, t.id, k)} />
@@ -370,7 +368,7 @@ export function StatsPanel() {
     for (let i = 0; i < 7; i++) {
         const d = new Date(base);
         d.setDate(base.getDate() + i);
-        const k = dayKey(d);
+        const k = localDateKey(d);
         todos.forEach(t => {
             if (!spansDay(t, k)) return;
             total += 1;
@@ -379,7 +377,7 @@ export function StatsPanel() {
     }
     const pct = total ? Math.round((done / total) * 100) : 0;
 
-    const key = dayKey(new Date());
+    const key = localDateKey(new Date());
     const cats = categories
         .map(c => {
             const mine = todos.filter(t => t.categoryId === c.id);
@@ -446,7 +444,7 @@ export function ChallengePanel() {
         return !expired(c);
     });
 
-    const key = dayKey(today);
+    const key = localDateKey(today);
     const toggle = (id: string, d: Date) => {
         const safe = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 12, 0, 0);
         toggleChallengeCompletion(authFetch, id, safe.toISOString());
@@ -458,11 +456,11 @@ export function ChallengePanel() {
 
     if (box.height < 260) {
         const c = active[0];
-        const set = new Set((c.completions ?? []).map(x => dayKey(x.targetDate)));
+        const set = new Set((c.completions ?? []).map(x => utcDayKey(x.targetDate)));
         const days = Array.from({ length: 14 }, (_, i) => {
             const d = new Date(today);
             d.setDate(d.getDate() - 13 + i);
-            return { d, on: set.has(dayKey(d)), isToday: i === 13 };
+            return { d, on: set.has(localDateKey(d)), isToday: i === 13 };
         });
         return (
             <Pad ref={ref}>
@@ -484,7 +482,7 @@ export function ChallengePanel() {
         <Pad ref={ref}>
             <SectionHead>{tr.home.challenge}</SectionHead>
             {active.slice(0, cap).map(c => {
-                const done = (c.completions ?? []).some(cp => dayKey(cp.targetDate) === key);
+                const done = (c.completions ?? []).some(cp => utcDayKey(cp.targetDate) === key);
                 const count = c.completions?.length ?? 0;
                 return (
                     <Row key={c.id}>
@@ -604,7 +602,7 @@ const Column = styled.div`
 
 const SectionHead = styled.div`
     flex-shrink: 0;
-    font-family: ${p => p.theme.fonts.celestial};
+    font-family: ${p => p.theme.fonts.display};
     font-size: 0.66rem;
     letter-spacing: 2px;
     color: ${p => p.theme.colors.primary};
@@ -642,7 +640,7 @@ const ProjTop = styled.div`
 
 const More = styled.div`
     flex-shrink: 0;
-    font-family: ${p => p.theme.fonts.celestial};
+    font-family: ${p => p.theme.fonts.display};
     font-size: 0.64rem;
     letter-spacing: 1px;
     color: ${p => p.theme.colors.textSecondary};
@@ -691,7 +689,7 @@ const Name = styled.span<{ $done: boolean }>`
 `;
 
 const Meta = styled.span`
-    font-family: ${p => p.theme.fonts.celestial};
+    font-family: ${p => p.theme.fonts.display};
     font-size: 0.68rem;
     letter-spacing: 1px;
     color: ${p => p.theme.colors.textSecondary};
@@ -705,7 +703,7 @@ const Thin = styled.div`
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: ${p => p.theme.fonts.celestial};
+    font-family: ${p => p.theme.fonts.display};
     font-size: 0.74rem;
     letter-spacing: 1px;
     color: ${p => p.theme.colors.textSecondary};
@@ -756,7 +754,7 @@ const Dot = styled.button<{ $on: boolean; $today: boolean }>`
 
 const Big = styled.div`
     flex-shrink: 0;
-    font-family: ${p => p.theme.fonts.celestial};
+    font-family: ${p => p.theme.fonts.display};
     font-size: 2rem;
     line-height: 1;
     letter-spacing: 2px;

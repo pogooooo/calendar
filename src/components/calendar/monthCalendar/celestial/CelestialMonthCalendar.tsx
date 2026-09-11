@@ -18,6 +18,7 @@ import MoreModal from "@/components/modal/moreModal/MoreModal";
 import TodoContextMenu from "@/components/calendar/celestial/contextMenu/TodoContextMenu";
 import DayCellDecor from "@/assets/celestial/DayCellDecor";
 import { useT } from "@/i18n/useT";
+import useSwipe from "@/hooks/useSwipe";
 import useAnniversaryStore from "@/store/useAnniversaryStore";
 import { anniversariesOn } from "@/lib/anniversary";
 import AnniversaryCrown from "@/components/calendar/celestial/anniversary/AnniversaryCrown";
@@ -46,6 +47,7 @@ const WeekRow = ({
                      handleCreateTodo, handleContextMenu, handleContextMenuChallenge, handleQuickToggleChallenge,
                      selectedDate, onCellClick, setMoreModalDate
                  }: WeekRowProps) => {
+    const t = useT();
 
     const weekTodos = React.useMemo(() => {
         return todos.filter((todo: CalendarTodoType) => {
@@ -164,7 +166,8 @@ const WeekRow = ({
 
                             {hiddenCount > 0 && (
                                 <S.MoreButton onClick={(e) => { e.stopPropagation(); setMoreModalDate(date); }}>
-                                    {`+${hiddenCount} 더보기`}
+                                    <span className="full">{t.calendar.more(hiddenCount)}</span>
+                                    <span className="short">{`+${hiddenCount}`}</span>
                                 </S.MoreButton>
                             )}
                         </S.TodoBarList>
@@ -189,7 +192,7 @@ const CelestialMonthCalendar = React.forwardRef<HTMLDivElement, CelestialMonthPr
          isModalOpen, modalTodo, selectedDateForModal, contextMenu,
          moreModalDate, weeks, expandedTodos, challengeTodos, todayStr, dateRangeText,
          categories, selectedDate, onDateChange,
-         handlePrevMonth, handleNextMonth, toggleCategory, handleContextMenu,
+         handlePrevMonth, handleNextMonth, handleToday, isOnToday, toggleCategory, handleContextMenu,
          handleQuickEdit, handleQuickDelete, handleQuickDeleteOne, handleQuickToggle, handleCreateTodo,
          handleContextMenuChallenge, handleQuickToggleChallenge,
          setIsModalOpen, setMoreModalDate, setContextMenu, showProjects, onToggleProjects,
@@ -198,6 +201,8 @@ const CelestialMonthCalendar = React.forwardRef<HTMLDivElement, CelestialMonthPr
      }, ref) => {
         const Component = asChild ? Slot : 'div';
         const t = useT();
+        // 손가락으로는 작은 화살표보다 쓸어 넘기는 쪽이 빠르다.
+        const swipe = useSwipe(handleNextMonth, handlePrevMonth);
 
         return (
             <S.CelestialCalendarWrapper as={Component} ref={ref} {...props}>
@@ -205,6 +210,9 @@ const CelestialMonthCalendar = React.forwardRef<HTMLDivElement, CelestialMonthPr
                     <button className="nav-btn" onClick={handlePrevMonth}><ChevronLeft size={24} /></button>
                     <AnimatedDateText text={dateRangeText} direction={direction} />
                     <button className="nav-btn" onClick={handleNextMonth}><ChevronRight size={24} /></button>
+                    <S.TodayButton type="button" onClick={handleToday} disabled={isOnToday}>
+                        {t.home.today}
+                    </S.TodayButton>
                     <hr/>
                     <CategoryFilter
                         categories={categories}
@@ -217,7 +225,7 @@ const CelestialMonthCalendar = React.forwardRef<HTMLDivElement, CelestialMonthPr
                     />
                 </S.DateRangeDisplay>
 
-                <S.SliderWrapper>
+                <S.SliderWrapper {...swipe}>
                     <S.CalendarWindow>
                         <AnimatePresence initial={false} custom={direction} mode="popLayout">
                             <motion.div

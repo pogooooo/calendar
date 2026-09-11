@@ -1,6 +1,7 @@
 "use client";
 
 import styled, { keyframes } from "styled-components";
+import { MOBILE } from "@/styles/breakpoints";
 import { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -25,7 +26,6 @@ const ForgotPassword = () => {
 
     const [globalError, setGlobalError] = useState<string>(" ");
     const [sent, setSent] = useState(false);
-    const [email, setEmail] = useState("");
 
     const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<ForgotFormData>({
         resolver: zodResolver(ForgotPasswordSchema),
@@ -42,13 +42,13 @@ const ForgotPassword = () => {
             });
             const data = await res.json();
             if (!res.ok) {
-                setGlobalError(data.message || "요청에 실패했습니다.");
+                setGlobalError(data.message || t.auth.requestFailed);
                 return;
             }
             // 계정 존재 여부와 무관하게 같은 화면을 보여준다.
             setSent(true);
         } catch (err) {
-            setGlobalError(err instanceof Error ? err.message : "요청 중 오류 발생");
+            setGlobalError(err instanceof Error ? err.message : t.auth.requestError);
         }
     };
 
@@ -69,8 +69,10 @@ const ForgotPassword = () => {
                         <SentNotice>{t.auth.forgotSent}</SentNotice>
                     ) : (
                         <form onSubmit={handleSubmit(handleForgot)} style={{ width: "100%" }}>
-                            <SingleInput type="text" $width={300} $height={40} label={t.auth.email} value={email}
-                                {...register("email")} onChange={(e) => setEmail(e.target.value)} />
+                            {/* onChange 를 따로 주면 register 가 붙여둔 onChange 를 덮어써서
+                                react-hook-form 이 입력을 못 본다. 값은 폼이 알아서 들고 있는다. */}
+                            <SingleInput type="text" $width={300} $height={40} label={t.auth.email}
+                                {...register("email")} />
                             <InlineError>{errors.email?.message}</InlineError>
 
                             <SecondaryButton type="submit" $width={300} $height={40} disabled={isSubmitting}>
@@ -102,6 +104,12 @@ const PageWrapper = styled.div`
     height: calc(100vh - var(--titlebar-h, 0px));
     background-color: ${p => p.theme.colors.surface};
     overflow: hidden;
+
+    /* 폰에서는 화면 위쪽이 상태 표시줄 자리다. 비켜 주지 않으면 언어 고르개가 시계에 깔린다. */
+    ${MOBILE} {
+        height: 100dvh;
+        padding-top: env(safe-area-inset-top, 0px);
+    }
 `;
 
 const FormPanel = styled.div`
@@ -112,6 +120,12 @@ const FormPanel = styled.div`
     justify-content: center;
     background-color: ${p => p.theme.colors.surface};
     position: relative;
+
+    /* 폰에서는 배경 그림 패널이 숨으므로 폼이 화면 전체를 쓴다. */
+    ${MOBILE} {
+        width: 100%;
+        padding: 0 20px;
+    }
 `;
 
 const LangToggle = styled.div`
@@ -127,10 +141,19 @@ const FormInner = styled.div`
     gap: 1rem;
     width: 300px;
     animation: ${fadeUp} 0.6s ease 0.15s both;
+
+    /* 폰에서는 폭을 고정하지 않는다. 300px 로 못 박으면 좁은 화면에서 치우친다. */
+    ${MOBILE} {
+        width: 100%;
+        max-width: 340px;
+
+        /* 제출 단추만 넓힌다. form button 으로 잡으면 입력칸 안의 눈 아이콘까지 늘어난다. */
+        form > button, & > button { width: 100%; }
+    }
 `;
 
 const FormTitle = styled.h2`
-    font-family: ${p => p.theme.fonts.celestial};
+    font-family: ${p => p.theme.fonts.display};
     font-size: 1.1rem;
     font-weight: 400;
     letter-spacing: 3px;

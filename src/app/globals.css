@@ -70,3 +70,22 @@ a,
 svg {
   -webkit-user-drag: none;
 }
+
+/* ── 손가락으로 쓰는 화면 ───────────────────────────────────────────────
+   기본 탭 하이라이트는 누른 자리에 네모난 회색 판을 깔아 테마와 겉돈다.
+   대신 각 단추가 :active 로 제 색을 낸다. */
+@media (hover: none) {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* 두 번 톡톡 쳤을 때 화면이 확대되지 않게 (안드로이드 웹뷰) */
+  html {
+    touch-action: manipulation;
+  }
+
+  /* 목록 끝에서 더 당겨도 뒤 화면이 따라 늘어나지 않는다 */
+  body {
+    overscroll-behavior: none;
+  }
+}

@@ -2,31 +2,28 @@
 
 import * as React from "react";
 
+/** 번역표(anniversaryPage.iconLabels)의 열쇠와 짝을 이룬다 */
+export type AnniversaryIconKey =
+    "star" | "moon" | "cake" | "ring" | "heart" | "flower" | "candle" | "gift";
+
 export interface AnniversaryIconDef {
-    key: string;
-    label: string;
+    key: AnniversaryIconKey;
     draw: React.ReactNode;
 }
 
 export const ANNIVERSARY_ICONS: AnniversaryIconDef[] = [
     {
-        key: "star",
-        label: "별",
-        draw: (
+        key: "star",        draw: (
             <path d="M12 2.4C12.8 8.4 15.6 11.2 21.6 12C15.6 12.8 12.8 15.6 12 21.6C11.2 15.6 8.4 12.8 2.4 12C8.4 11.2 11.2 8.4 12 2.4Z" />
         ),
     },
     {
-        key: "moon",
-        label: "달",
-        draw: (
+        key: "moon",        draw: (
             <path d="M16.4 3.6A9 9 0 1 0 20.4 14.6A7 7 0 1 1 16.4 3.6Z" />
         ),
     },
     {
-        key: "cake",
-        label: "케이크",
-        draw: (
+        key: "cake",        draw: (
             <>
                 <path d="M3.6 20.6h16.8" />
                 <path d="M5 20.6v-7.2h14v7.2" />
@@ -37,9 +34,7 @@ export const ANNIVERSARY_ICONS: AnniversaryIconDef[] = [
         ),
     },
     {
-        key: "ring",
-        label: "반지",
-        draw: (
+        key: "ring",        draw: (
             <>
                 <circle cx="12" cy="15.2" r="5.6" />
                 <path d="M12 2.8 14.6 6.1 12 9.4 9.4 6.1Z" />
@@ -48,16 +43,12 @@ export const ANNIVERSARY_ICONS: AnniversaryIconDef[] = [
         ),
     },
     {
-        key: "heart",
-        label: "하트",
-        draw: (
+        key: "heart",        draw: (
             <path d="M12 20.4C4.4 15.2 3.2 11 5.7 8.5c1.9-1.9 4.6-1.3 6.3.8 1.7-2.1 4.4-2.7 6.3-.8 2.5 2.5 1.3 6.7-6.3 11.9Z" />
         ),
     },
     {
-        key: "flower",
-        label: "꽃",
-        draw: (
+        key: "flower",        draw: (
             <>
                 {[0, 60, 120, 180, 240, 300].map(deg => (
                     <ellipse key={deg} cx="12" cy="7.2" rx="2.1" ry="3.5" transform={`rotate(${deg} 12 12)`} />
@@ -67,9 +58,7 @@ export const ANNIVERSARY_ICONS: AnniversaryIconDef[] = [
         ),
     },
     {
-        key: "candle",
-        label: "촛불",
-        draw: (
+        key: "candle",        draw: (
             <>
                 <path d="M8.6 20.8h6.8" />
                 <path d="M9.8 20.8v-8.6h4.4v8.6" />
@@ -78,9 +67,7 @@ export const ANNIVERSARY_ICONS: AnniversaryIconDef[] = [
         ),
     },
     {
-        key: "gift",
-        label: "선물",
-        draw: (
+        key: "gift",        draw: (
             <>
                 <path d="M4.4 11.4h15.2v9.2H4.4z" />
                 <path d="M3.2 7.6h17.6v3.8H3.2z" />

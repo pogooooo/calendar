@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { reportSaveFailure } from "@/lib/saveError";
 import type { AuthFetch, TodoType, TodoCompletionType } from '@/types';
 import { toUtcAnchorIso, utcDayKey } from '@/lib/dateKey';
 import { readError } from '@/lib/readError';
@@ -85,6 +86,7 @@ const useTodoStore = create<TodoState>((set, get) => ({
         } catch (err) {
             set({ todos: previousTodos });
             console.error("[TODO_TOGGLE_ERROR]", err);
+            reportSaveFailure("todo");
         }
     },
 
@@ -128,6 +130,7 @@ const useTodoStore = create<TodoState>((set, get) => ({
         } catch (err) {
             set({ todos: previousTodos });
             console.error("[TODO_ADD_ERROR]", err);
+            reportSaveFailure("todo");
             return "할 일 등록 중 오류가 발생했습니다.";
         }
     },
@@ -151,6 +154,7 @@ const useTodoStore = create<TodoState>((set, get) => ({
         } catch (err) {
             set({ todos: previousTodos });
             console.error("[TODO_UPDATE_ERROR]", err);
+            reportSaveFailure("todo");
             return "할 일 수정 중 오류가 발생했습니다.";
         }
     },
@@ -169,6 +173,7 @@ const useTodoStore = create<TodoState>((set, get) => ({
         } catch (err) {
             set({ todos: previousTodos });
             console.error("[TODO_DELETE_ERROR]", err);
+            reportSaveFailure("todo");
             return "네트워크 오류로 할 일을 삭제하지 못했습니다.";
         }
     },
@@ -201,6 +206,7 @@ const useTodoStore = create<TodoState>((set, get) => ({
         } catch (err) {
             set({ todos: previousTodos });
             console.error("[TODO_DELETE_OCCURRENCE_ERROR]", err);
+            reportSaveFailure("todo");
         }
     }
 }));

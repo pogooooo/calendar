@@ -73,7 +73,7 @@ export const Pip = styled.i`
 `;
 
 export const Numeral = styled.div`
-    font-family: ${p => p.theme.fonts.celestial};
+    font-family: ${p => p.theme.fonts.display};
     font-size: 0.78rem;
     letter-spacing: 0.34em;
     color: ${p => p.theme.colors.primary};
@@ -88,7 +88,7 @@ export const ArcanaName = styled.div`
 `;
 
 export const Title = styled.h2`
-    font-family: ${p => p.theme.fonts.celestial};
+    font-family: ${p => p.theme.fonts.display};
     font-weight: 400;
     letter-spacing: 0.05em;
     margin: 0;

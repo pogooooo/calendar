@@ -1,0 +1,96 @@
+# Tasks
+
+CRONOS 점검(2026-09-09)에서 나온 항목들. 데스크톱 · 웹 · 안드로이드를 한 저장소에서 훑었다.
+자세한 근거와 재현 내용은 점검 기록 아티팩트 참고.
+
+## Active
+
+없음. 아래 "Waiting On" 하나와 "Someday" 하나만 남았다.
+
+## Waiting On
+
+- [ ] **B-09가 어느 화면인지 확인** - since 2026-09-09
+  - "위젯 설정 화면이 제대로 안 보이고 상단 바가 내용과 겹친다"는 말씀 중, 겹침은 재현되지 않았다
+  - 재현되지 않은 채로 두지 않고, 상단 바 높이(24px)만큼 내용을 밀어 두는 쪽으로 고쳐 두었다 (아래 Done B-09)
+  - 그래도 겹치는 위젯이 있으면 스크린샷이나 어떤 위젯이었는지 알려주시면 정확히 짚겠다
+
+## Someday
+
+- [ ] **README·DEPLOY 문서가 현재 코드와 다르다** - Botanical 테마와 `CELESTIAL_DESIGN.md`는 없고, README는 D1이 아니라 SQLite 기준으로 쓰여 있다
+- [ ] **서버 메타데이터(브라우저 탭 제목)는 아직 한국어** - `app/(main)/{settings,category,challenge}/page.tsx` 의 `metadata`
+  - 언어 설정은 로그인한 사람마다 다른데 이 값은 서버가 그린다. 웹에서만 보이고 데스크톱·앱에서는 안 보인다
+  - 고치려면 언어를 쿠키로도 들고 있어야 한다
+
+## Done
+
+- [x] ~~**B-01 위젯 4종이 데스크톱에서 열리지 않는다**~~ (2026-09-11)
+  - 목록이 세 곳(TS·Rust·화면 폴더)에 따로 있어 어긋났다. `src/lib/widgetKinds.ts` 를 유일한 출처로 만들고 `src-tauri/src/lib.rs` 를 11종으로 맞췄다
+  - `scripts/check-widget-kinds.mjs` 를 만들어 `build:desktop` · `build:cloudflare` 앞에 걸었다. 다시 어긋나면 빌드가 멈춘다
+  - 실패는 이제 `dialog.notify` 로 화면에 뜬다 (`invokeWidget` 이 까닭을 글로 돌려준다)
+- [x] ~~**B-02 Rust에만 있고 화면이 없는 위젯 7종 정리**~~ (2026-09-11) - B-01 과 같은 뿌리. Rust 목록에서 걷어냈다
+- [x] ~~**B-03 홈·위젯의 날짜 계산이 시간대 설정을 무시한다**~~ (2026-09-11)
+  - `CelestialHome.tsx` · `WidgetPanels.tsx` 의 지역 `dayKey` 를 지우고 `localDateKey`(날짜) / `utcDayKey`(완료 기록)로 통일
+- [x] ~~**B-04 저장 실패가 조용히 되돌아간다**~~ (2026-09-11)
+  - `src/lib/saveError.ts` (알림 통로) + `src/components/SaveFailureNotice.tsx` (아래에서 5초 떴다 사라지는 띠)
+  - 7개 스토어의 되돌리기 지점 25곳에 `reportSaveFailure(scope)` 를 넣었다
+- [x] ~~**B-05 프로젝트 화면이 저장 실패를 무시한다**~~ (2026-09-11) - `addProject` / `addProjectTask` 의 반환 오류를 받아 창을 열어 둔 채 알린다
+- [x] ~~**B-06 영어로 바꾸면 화면이 반만 번역된다**~~ (2026-09-11)
+  - 새 묶음: `dialog` `alert` `titleBar` `anniversaryPage` `download`, 그리고 `auth` `form` `calendar` `category` `account` `project` `system` `settings` 확장
+  - 다이얼로그 기본 단추(확인·취소·삭제)까지 `DialogProvider` 한 곳에서 번역표를 읽는다
+  - 위젯 창 제목은 `src/hooks/useWidgetMeta.ts` 하나에서 나온다 (설정 목록과 같은 출처. `Record<WidgetKind, …>` 라 위젯을 늘리면 컴파일이 멈춘다)
+  - 기념일 아이콘 이름, 글자 크기·두께·글꼴 이름도 번역표로 옮겼다
+  - 카드의 날짜가 브라우저 언어를 따르던 것도 앱 언어를 따르게 고쳤다
+  - 확인: 영어로 바꾸고 홈·캘린더·프로젝트·챌린지·기념일·설정을 훑어 한국어로 남은 것은 사용자가 넣은 자료뿐
+- [x] ~~**B-07 반복 없는 일정을 기간과 무관하게 전부 펼친다**~~ (2026-09-11) - `useExpandedTodos` 의 반복 없는 갈래도 창 밖이면 건너뛴다
+- [x] ~~**B-08 위젯 설정 패널이 작은 위젯에 안 들어간다**~~ (2026-09-11)
+  - 패널은 상단 바 아래(`top: 24px`)에서 시작하고, `완료` 단추를 `position: sticky; bottom: 0` 으로 바닥에 붙였다
+- [x] ~~**B-09 상단 바가 위젯 내용 위에 겹친다**~~ (2026-09-11)
+  - `TOP_BAR_H = 24` 를 상단 바 높이로 못 박고, 바가 떠 있을 때만 `Content` 에 그만큼 위 여백을 준다
+- [x] ~~**D-01 홈에서 챌린지·기념일도 만들 수 있게**~~ (2026-09-11)
+  - 기둥 머리글 오른쪽에 `+` 를 달았다. 챌린지는 기존 창을 띄우고, 기념일은 이름·날짜뿐이라 그 자리에서 한 줄로 받는다
+  - 서버가 챌린지에 시작일을 요구해서 홈에서 만들면 오늘 정오로 넣는다 (어느 시간대에서 읽어도 같은 달력일)
+  - 확인: 홈에서 만든 챌린지·기념일이 서버에 남고 목록에 바로 뜬다
+- [x] ~~**D-02 데스크톱에도 "오늘로" 단추**~~ (2026-09-11)
+- [x] ~~**D-03 프로젝트 화면 밀도·마감 다듬기**~~ (2026-09-11) - 인라인 `style` 로 박아 둔 단추 크기를 `AddTaskButton` 으로 뺐다
+- [x] ~~**D-04 `SectionWrapper` 중복 정의 합치기**~~ (2026-09-11) - `project/celestial/section.ts` 하나로. 높이만 `$mobileHeight` 로 받는다
+- [x] ~~**D-05 스타일 두는 자리 통일**~~ (2026-09-11)
+  - 규칙: **테마 갈래 컴포넌트(.tsx)는 JSX 만 들고, styled-components 는 같은 이름의 `*.styles.ts` 에 두고 `import * as S` 로 쓴다**
+  - 20개 파일 190여 개 정의를 옮겼다. 모양이 기대는 상수(`ROW`, `DURATION`, `ButtonProps` 같은)도 모양 곁으로 따라갔다
+  - `scripts/check-theme-styles.mjs` 를 만들어 빌드 앞에 걸었다. 테마 폴더 안에 styled 가 남으면 빌드가 멈춘다
+  - 이제 새 테마 폴더는 `X.tsx` + `X.styles.ts` 한 쌍이라는 게 파일 이름만으로 드러난다
+- [x] ~~**D-06 `ThemeAWrapper` 죽은 코드 삭제**~~ (2026-09-11)
+- [x] ~~**D-07 주간 달력을 본 앱에 넣기**~~ (2026-09-11) - 폰에서 월간 / 주간 / 일간 3칸 전환
+- [x] ~~**D-08 폰 화면 전환 1.45초 줄이기**~~ (2026-09-11) - 폰에서는 0.55초. 데스크톱은 그대로 두고 `--cronos-transition` 으로 갈랐다
+- [x] ~~**T-01 갈래(dispatch) 패턴을 하나로**~~ (2026-09-09)
+  - 세 가지가 섞여 있었다 — 17곳은 `themeName` 을 구해 놓고 쓰지 않았고, 5곳만 `switch`, 1곳(`RulerScroll`)은 `if` 양쪽 결과가 같았다
+  - `src/styles/themed.ts` 추가 — `THEME_FAMILIES` / `useThemeFamily()` / `usePickTheme()`
+  - 23곳 전부 `const XView = usePickTheme({ celestial: CelestialX })` 한 줄로 통일. 컴포넌트를 감싸지 않고 타입 그대로 돌려주므로 ref 전달도 그대로 동작한다
+  - **`ThemeImpls` 를 `Record<ThemeFamily, T>`(전부 채워야 하는 형태)로 둔 게 핵심.** `THEME_FAMILIES` 에 `"botanical"` 을 넣어 확인해 보니 23곳에서 정확히 컴파일 오류가 났다 — 그 목록이 곧 "아직 안 만든 화면"이다
+- [x] ~~**T-02 토큰 이름에서 테마 이름 떼기**~~ (2026-09-09)
+  - `fonts.celestial` → `fonts.display`. 36개 파일 96곳 치환, `styled.d.ts` 와 `theme.ts` 도 함께
+  - 확인: 화면에서 `font-family` 가 `Orbit, serif` 로 그대로 나온다
+- [x] ~~**T-03 밝음/어둠을 이름 문자열이 아니라 값으로**~~ (2026-09-09)
+  - 테마에 `family` 와 `mode: 'light' | 'dark'` 를 넣었다
+  - `ThemeProviderWrapper` 의 `effectiveKey.endsWith('-dark')` → `theme.mode`
+  - `RulerScroll` 의 `startsWith("celestial")` → `usePickTheme`
+  - `Celestial_SidebarMenuButton` 의 `switch (theme.name)`(양쪽 결과 같음)도 제거
+  - 확인: 설정에서 Celestial 다크로 바꾸니 배경이 `#111111` / 글자가 `#E8E8E8` 로 바뀌고, 되돌리면 흰 배경으로 돌아온다
+- [x] ~~**T-04 테마 목록이 두 곳에 있다**~~ (2026-09-11)
+  - 미리보기 색을 테마 정의(`preview.cell` / `preview.event`)에 넣고 `listThemes()` 하나가 설정 화면 목록을 만든다
+  - `SettingsPage` 의 `THEMES` 배열은 지웠다
+- [x] ~~**T-05 공용 믹스인이 `celestial_` 이름을 달고 있다**~~ (2026-09-11)
+  - 모든 테마가 함께 쓰는 `hide_scrollbar` 를 `src/styles/shared.ts` 로 옮겼다
+- [x] ~~**T-06 컴포넌트에 박힌 색값**~~ (2026-09-11)
+  - `WidgetShell` 의 `?? "#D4AF37"` 같은 기본값 32곳, `CelestialAuthPanel` 의 SVG 금색 22곳(`--auth-ink` 하나로), 타이틀바·프로필도 팔레트를 읽는다
+  - 예외로 둔 것: `GoogleSignInButton` 9곳(구글 브랜드색이라 그대로가 맞다)
+- [x] ~~**T-07 팔레트에 없는 색을 쓰는 곳**~~ (2026-09-11) - `weekend` 토큰과 `preview` 토큰을 테마에 넣었다
+- [x] ~~**F-01 부팅할 때마다 터미널 창이 뜨던 문제**~~ (2026-09-09)
+  - 시작 프로그램에 개발 빌드(`target/debug/cronos.exe`)가 등록돼 있었다. 콘솔 숨김은 릴리스 빌드에만 걸려 있어 검은 창이 같이 떴다
+  - 레지스트리 값 제거 + `lib.rs`에 3중 방어: 개발 빌드는 등록 안 함, 경로가 다르면 릴리스가 고쳐 씀, 파일이 없으면 항목 삭제
+- [x] ~~**F-02 위젯끼리 화면이 따로 놀던 문제**~~ (2026-09-09)
+  - 창마다 스토어가 따로였고 시작할 때 한 번만 받아 왔다
+  - `src/lib/dataSync.ts` 추가 — `storage` 이벤트로 변경을 알리고, `useAuthFetch` 한 곳에서 신호를 낸다
+  - 창 두 개로 확인: 한쪽에서 일정을 넣자 다른 쪽 월간 달력이 바로 반영됨
+- [x] ~~**F-03 홈의 단추 안에 단추가 들어 있었다**~~ (2026-09-11)
+  - D-01 로 머리글에 `+` 를 붙이면서 `<button>` 안에 `<button>` 이 됐다. HTML 규칙 위반이라 React 가 하이드레이션 오류를 냈다
+  - 머리글과 `+` 를 `PillarHeadRow` 로 나란히 세워 풀었다

@@ -187,7 +187,7 @@ const LogoRow = styled.div`
 
 const Logo = styled.div`
     color: ${(props) => props.theme.colors.primary};
-    font-family: ${(props) => props.theme.fonts.celestial};
+    font-family: ${(props) => props.theme.fonts.display};
     font-size: clamp(0.85rem, 13cqw, ${(props) => props.theme.fontSizes.h3});
     line-height: 1.2;
     white-space: nowrap;
@@ -318,7 +318,7 @@ const StarDivider = styled.div`
 `;
 
 const SectionLabel = styled.div`
-    font-family: ${(props) => props.theme.fonts.celestial};
+    font-family: ${(props) => props.theme.fonts.display};
     font-size: 0.68rem;
     letter-spacing: 2px;
     color: ${(props) => props.theme.colors.textSecondary};
@@ -355,7 +355,7 @@ const PopupItem = styled.button<{ $danger?: boolean }>`
     padding: 11px 14px 13px;
     box-sizing: border-box;
     border: none;
-    color: ${(props) => props.$danger ? "#e57373" : props.theme.colors.text};
+    color: ${(props) => props.$danger ? props.theme.colors.error : props.theme.colors.text};
     font-size: 0.87rem;
     letter-spacing: 0.3px;
     font-family: inherit;
@@ -364,8 +364,8 @@ const PopupItem = styled.button<{ $danger?: boolean }>`
 
     background-color: transparent;
     background-image: linear-gradient(
-        ${(props) => props.$danger ? "#e57373" : props.theme.colors.primary},
-        ${(props) => props.$danger ? "#e57373" : props.theme.colors.primary}
+        ${(props) => props.$danger ? props.theme.colors.error : props.theme.colors.primary},
+        ${(props) => props.$danger ? props.theme.colors.error : props.theme.colors.primary}
     );
     background-repeat: no-repeat;
     background-position: 24px calc(100% - 5px);
@@ -389,7 +389,7 @@ const PopupItem = styled.button<{ $danger?: boolean }>`
         position: absolute;
         bottom: 2px;
         ${celestial_star}
-        background-color: ${(props) => props.$danger ? "#e57373" : props.theme.colors.primary};
+        background-color: ${(props) => props.$danger ? props.theme.colors.error : props.theme.colors.primary};
         transform: scale(0) rotate(-45deg);
         transition: transform 0.35s ease 0.08s;
     }

@@ -3,6 +3,7 @@
 import * as React from "react";
 import CelestialDialog, { type DialogRequest } from "./CelestialDialog";
 import type { DialogKind, DialogVariant } from "./arcana";
+import { useT } from "@/i18n/useT";
 
 interface AskOptions {
     title: string;
@@ -31,6 +32,7 @@ interface Pending extends DialogRequest {
 }
 
 export function DialogProvider({ children }: { children: React.ReactNode }) {
+    const t = useT();
     // 여러 곳에서 연달아 부를 수 있으므로 대기열로 처리한다
     const [queue, setQueue] = React.useState<Pending[]>([]);
 
@@ -46,7 +48,7 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
                 kind: o.kind ?? "info",
                 title: o.title,
                 message: o.message,
-                confirmLabel: o.confirmLabel ?? "확인",
+                confirmLabel: o.confirmLabel ?? t.dialog.confirm,
                 variant: o.variant,
             });
         },
@@ -54,16 +56,16 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
             kind: o.kind ?? "confirm",
             title: o.title,
             message: o.message,
-            confirmLabel: o.confirmLabel ?? "확인",
-            cancelLabel: o.cancelLabel ?? "취소",
+            confirmLabel: o.confirmLabel ?? t.dialog.confirm,
+            cancelLabel: o.cancelLabel ?? t.dialog.cancel,
             variant: o.variant,
         }),
         confirmDanger: (o) => push({
             kind: "danger",
             title: o.title,
             message: o.message,
-            confirmLabel: o.confirmLabel ?? "삭제",
-            cancelLabel: o.cancelLabel ?? "취소",
+            confirmLabel: o.confirmLabel ?? t.dialog.delete,
+            cancelLabel: o.cancelLabel ?? t.dialog.cancel,
             variant: o.variant,
         }),
         done: async (o) => {
@@ -71,11 +73,11 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
                 kind: "ok",
                 title: o.title,
                 message: o.message,
-                confirmLabel: o.confirmLabel ?? "확인",
+                confirmLabel: o.confirmLabel ?? t.dialog.confirm,
                 variant: o.variant,
             });
         },
-    }), [push]);
+    }), [push, t]);
 
     const current = queue[0];
 

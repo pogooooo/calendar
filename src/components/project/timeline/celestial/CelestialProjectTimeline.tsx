@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from 'react';
+import { useT } from "@/i18n/useT";
 import { ProjectTimelineProps } from '../ProjectTimeline';
 import type { ProjectTaskType } from '@/types';
 import * as S from "./CelestialTimeline.styles";
@@ -22,6 +23,7 @@ interface DragState {
 
 const CelestialProjectTimeline = React.forwardRef<HTMLDivElement, ProjectTimelineProps>(
     ({ tasks, flex, onEditTask, onUpdateTaskDates }, ref) => {
+    const tr = useT().project;
 
     // ── Ref 기반 드래그 — mousemove에서 React 리렌더 없음 ───────────────────
     const draggingRef     = React.useRef<DragState | null>(null);
@@ -179,8 +181,8 @@ const CelestialProjectTimeline = React.forwardRef<HTMLDivElement, ProjectTimelin
     }, [draggingTaskId, tasks, onUpdateTaskDates, getBaseTaskBounds]);
 
     return (
-        <S.SectionWrapper ref={ref} style={{ flex }}>
-            <S.SectionTitle>타임라인</S.SectionTitle>
+        <S.SectionWrapper ref={ref} style={{ flex }} $mobileHeight="340px">
+            <S.SectionTitle>{tr.timeline}</S.SectionTitle>
             <S.TimelineLayout>
                 <S.TimelineGridArea ref={scrollRef}>
                     <S.TimelineContent>

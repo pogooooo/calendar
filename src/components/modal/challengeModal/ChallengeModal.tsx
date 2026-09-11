@@ -1,10 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { useTheme } from "styled-components";
+import { usePickTheme } from "@/styles/themed";
 import CelestialChallengeModal from "./celestial/CelestialChallengeModal";
 import { CategoryType } from "@/store/useCategoryStore";
 import { useDialog } from "@/components/dialog/DialogProvider";
+import { useT } from "@/i18n/useT";
 
 export interface ChallengeData {
     title: string;
@@ -39,9 +40,9 @@ export interface ChallengeThemeProps extends ChallengeModalProps {
 
 export default function ChallengeModal(props: ChallengeModalProps) {
     const { isOpen, onClose, categories, initialData, onSave } = props;
-    const theme = useTheme();
-    const themeName = theme?.name || "celestial";
+    const ChallengeModalView = usePickTheme({ celestial: CelestialChallengeModal });
     const dialog = useDialog();
+    const t = useT();
 
     const [title, setTitle] = React.useState("");
     const [description, setDescription] = React.useState("");
@@ -72,7 +73,7 @@ export default function ChallengeModal(props: ChallengeModalProps) {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!title.trim() || !categoryId) {
-            await dialog.notify({ title: "빠진 항목이 있습니다", message: "제목을 적고 카테고리를 골라주세요." });
+            await dialog.notify({ title: t.challenge.missingTitle, message: t.challenge.missingMessage });
             return;
         }
 
@@ -102,10 +103,5 @@ export default function ChallengeModal(props: ChallengeModalProps) {
         isSubmitting, handleSubmit
     };
 
-    switch (themeName) {
-        case "celestial":
-            return <CelestialChallengeModal {...themeProps} />;
-        default:
-            return <CelestialChallengeModal {...themeProps} />;
-    }
+    return <ChallengeModalView {...themeProps} />;
 }

@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { reportSaveFailure } from "@/lib/saveError";
 import useAuthStore from '@/store/useAuthStore';
 import type { AuthFetch, DailyTaskType } from '@/types';
 import { localDateKey } from '@/lib/dateKey';
@@ -76,6 +77,7 @@ const useDailyStore = create<DailyState>((set, get) => ({
         } catch (err) {
             set({ tasks: previousTasks });
             console.error("[DAILY_ADD_TASK_ERROR]", err);
+            reportSaveFailure("daily");
         }
     },
 
@@ -99,6 +101,7 @@ const useDailyStore = create<DailyState>((set, get) => ({
         } catch (err) {
             set({ tasks: previousTasks });
             console.error("[DAILY_TOGGLE_TASK_ERROR]", err);
+            reportSaveFailure("daily");
         }
     },
 
@@ -112,6 +115,7 @@ const useDailyStore = create<DailyState>((set, get) => ({
         } catch (err) {
             set({ tasks: previousTasks });
             console.error("[DAILY_DELETE_TASK_ERROR]", err);
+            reportSaveFailure("daily");
         }
     },
 
@@ -133,6 +137,7 @@ const useDailyStore = create<DailyState>((set, get) => ({
             // 예전 내용으로 되돌리면 사용자가 방금 쓴 글이 눈앞에서 사라진다.
             // 입력한 내용은 그대로 두고 저장 실패만 알린다.
             console.error("[DAILY_UPDATE_MEMO_ERROR]", err);
+            reportSaveFailure("daily");
             const message = "메모를 저장하지 못했습니다. 연결을 확인한 뒤 다시 시도해주세요.";
             set({ memoError: message });
             return message;

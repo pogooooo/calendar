@@ -2,10 +2,12 @@
 
 import * as React from "react";
 import styled, { css, keyframes } from "styled-components";
+import { MOBILE } from "@/styles/breakpoints";
 import { Cake, Plus, Trash2 } from "lucide-react";
 import useAnniversaryStore, { AnniversaryType } from "@/store/useAnniversaryStore";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useDialog } from "@/components/dialog/DialogProvider";
+import { useT } from "@/i18n/useT";
 import CelestialSelect from "@/components/input/select/CelestialSelect";
 import AnniversaryIcon, { ANNIVERSARY_ICONS } from "@/assets/celestial/AnniversaryIcons";
 
@@ -37,6 +39,7 @@ function ddayDiff(month: number, day: number) {
 export default function AnniversaryPage() {
     const authFetch = useAuthFetch();
     const dialog = useDialog();
+    const t = useT();
     const { anniversaries, fetchAnniversaries, addAnniversary, deleteAnniversary } = useAnniversaryStore();
 
     const [title, setTitle] = React.useState("");
@@ -56,14 +59,14 @@ export default function AnniversaryPage() {
         setPending(true);
         const error = await addAnniversary(authFetch, { title: title.trim(), month, day, icon });
         setPending(false);
-        if (error) { await dialog.notify({ title: "추가하지 못했습니다", message: error }); return; }
+        if (error) { await dialog.notify({ title: t.alert.addFailed, message: error }); return; }
         setTitle("");
     };
 
     const handleDelete = async (a: AnniversaryType) => {
         const ok = await dialog.confirmDanger({
-            title: "기념일을 삭제할까요",
-            message: `'${a.title}' 기록이 사라집니다. 되돌릴 수 없습니다.`,
+            title: t.anniversaryPage.deleteTitle,
+            message: t.anniversaryPage.deleteMessage(a.title),
         });
         if (ok) deleteAnniversary(authFetch, a.id);
     };
@@ -84,19 +87,19 @@ export default function AnniversaryPage() {
 
             <PageHeader>
                 <i />
-                <span>기념일</span>
+                <span>{t.anniversaryPage.title}</span>
                 <hr />
             </PageHeader>
 
             <AddForm onSubmit={handleAdd}>
                 <Corners><i /><i /><i /><i /></Corners>
-                <FormCaption>새로운 날을 새기다</FormCaption>
+                <FormCaption>{t.anniversaryPage.formCaption}</FormCaption>
                 <IconRow>
                     {ANNIVERSARY_ICONS.map(i => (
                         <IconChoice
                             key={i.key}
                             type="button"
-                            title={i.label}
+                            title={t.anniversaryPage.iconLabels[i.key]}
                             $selected={icon === i.key}
                             onClick={() => setIcon(i.key)}
                         >
@@ -108,7 +111,7 @@ export default function AnniversaryPage() {
                     <TitleInput
                         value={title}
                         onChange={e => setTitle(e.target.value)}
-                        placeholder="기념일 이름 (예: 결혼기념일)"
+                        placeholder={t.anniversaryPage.namePlaceholder}
                         maxLength={40}
                     />
                     <DateField>
@@ -120,21 +123,21 @@ export default function AnniversaryPage() {
                                 // 2월로 바꿨는데 31일이 선택돼 있으면 존재하지 않는 날짜가 된다
                                 if (day > DAYS_IN_MONTH[m - 1]) setDay(DAYS_IN_MONTH[m - 1]);
                             }}
-                            options={Array.from({ length: 12 }, (_, i) => ({ value: String(i + 1), label: `${i + 1}월` }))}
-                            ariaLabel="월"
+                            options={Array.from({ length: 12 }, (_, i) => ({ value: String(i + 1), label: t.anniversaryPage.monthOption(i + 1) }))}
+                            ariaLabel={t.anniversaryPage.monthAria}
                         />
                     </DateField>
                     <DateField>
                         <CelestialSelect
                             value={String(day)}
                             onChange={v => setDay(Number(v))}
-                            options={Array.from({ length: DAYS_IN_MONTH[month - 1] }, (_, i) => ({ value: String(i + 1), label: `${i + 1}일` }))}
-                            ariaLabel="일"
+                            options={Array.from({ length: DAYS_IN_MONTH[month - 1] }, (_, i) => ({ value: String(i + 1), label: t.anniversaryPage.dayOption(i + 1) }))}
+                            ariaLabel={t.anniversaryPage.dayAria}
                         />
                     </DateField>
                     <AddButton type="submit" disabled={!title.trim() || pending}>
                         <Plus size={14} />
-                        추가
+                        {t.anniversaryPage.add}
                     </AddButton>
                 </FormRow>
             </AddForm>
@@ -142,7 +145,7 @@ export default function AnniversaryPage() {
             {sorted.length === 0 ? (
                 <Empty>
                     <Cake size={28} strokeWidth={1.2} />
-                    <p>등록된 기념일이 없습니다.<br />매년 축하하고 싶은 날을 추가해보세요.</p>
+                    <p>{t.anniversaryPage.empty}<br />{t.anniversaryPage.emptyHint}</p>
                 </Empty>
             ) : (
                 <CardGrid>
@@ -172,9 +175,9 @@ export default function AnniversaryPage() {
                                     <span className="glyph"><AnniversaryIcon name={a.icon} size={20} /></span>
                                 </CardEmblem>
                                 <CardTitle>{a.title}</CardTitle>
-                                <CardDate>{`매년 ${a.month}월 ${a.day}일`}</CardDate>
+                                <CardDate>{t.anniversaryPage.everyYear(a.month, a.day)}</CardDate>
                                 <CardDday $today={isToday}>
-                                    <i />{isToday ? "오늘 ✦" : `D-${diff}`}<i />
+                                    <i />{isToday ? t.anniversaryPage.todayMark : `D-${diff}`}<i />
                                 </CardDday>
                             </Card>
                         );
@@ -194,6 +197,10 @@ const Page = styled.div`
     position: relative;
     max-width: 860px;
     margin: 0 auto;
+
+    /* 배경 별자리는 화면 밖으로 걸치라고 둔 장식이다. 폰 폭에서는 그 삐져나온
+       만큼이 가로 스크롤이 되어 화면이 좌우로 흔들린다. 여기서 잘라낸다. */
+    ${MOBILE} { overflow-x: clip; }
 `;
 
 const Zodiac = styled.svg`
@@ -230,7 +237,7 @@ const PageHeader = styled.div`
     }
 
     span {
-        font-family: ${p => p.theme.fonts.celestial};
+        font-family: ${p => p.theme.fonts.display};
         font-size: 1.3rem;
         letter-spacing: 5px;
         white-space: nowrap;
@@ -278,7 +285,7 @@ const FormCaption = styled.span`
     transform: translateX(-50%);
     padding: 0 14px;
     background: ${p => p.theme.colors.background};
-    font-family: ${p => p.theme.fonts.celestial};
+    font-family: ${p => p.theme.fonts.display};
     font-size: 0.72rem;
     letter-spacing: 4px;
     color: ${p => p.theme.colors.primary};
@@ -288,6 +295,8 @@ const FormCaption = styled.span`
 const IconRow = styled.div`
     display: flex;
     gap: 6px;
+
+    ${MOBILE} { gap: 5px; }
 `;
 
 const IconChoice = styled.button<{ $selected: boolean }>`
@@ -311,12 +320,31 @@ const IconChoice = styled.button<{ $selected: boolean }>`
         border-color: ${p => p.theme.colors.primary};
         color: ${p => p.theme.colors.primary};
     }
+
+    /* 여덟 칸이 폭을 나눠 가지면 손가락이 닿을 만큼 커진다 */
+    ${MOBILE} {
+        flex: 1;
+        width: auto;
+        min-width: 0;
+        height: 42px;
+    }
 `;
 
 const FormRow = styled.div`
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
+
+    /* 폰에서 그냥 흘려 두면 [이름][월] / [일][추가] 로 섞여 접힌다.
+       월과 일은 한 쌍이므로 이름 → 월·일 → 추가 순으로 못 박는다. */
+    ${MOBILE} {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+
+        > input { grid-column: 1 / -1; }
+        > button { grid-column: 1 / -1; justify-content: center; }
+    }
 `;
 
 const inputBase = css`
@@ -336,11 +364,16 @@ const TitleInput = styled.input`
     ${inputBase}
     flex: 1;
     min-width: 180px;
+
+    /* 옆의 고르개(46px)와 키를 맞춘다 */
+    ${MOBILE} { min-width: 0; min-height: 46px; }
 `;
 
 const DateField = styled.div`
     width: 104px;
     flex-shrink: 0;
+
+    ${MOBILE} { width: auto; }
 `;
 
 const AddButton = styled.button`
@@ -359,6 +392,9 @@ const AddButton = styled.button`
 
     &:hover:not(:disabled) { box-shadow: 0 0 10px ${p => p.theme.colors.primary}55; }
     &:disabled { opacity: 0.45; cursor: default; }
+    &:active:not(:disabled) { background-color: ${p => p.theme.colors.primary}1F; }
+
+    ${MOBILE} { min-height: 46px; }
 `;
 
 const Empty = styled.div`
@@ -436,7 +472,7 @@ const CardDelete = styled.button`
 `;
 
 const CardNumeral = styled.span`
-    font-family: ${p => p.theme.fonts.celestial};
+    font-family: ${p => p.theme.fonts.display};
     font-size: 0.72rem;
     letter-spacing: 3px;
     color: ${p => p.theme.colors.primary};
@@ -504,7 +540,7 @@ const CardDday = styled.span<{ $today: boolean }>`
     align-items: center;
     gap: 8px;
     margin-top: 2px;
-    font-family: ${p => p.theme.fonts.celestial};
+    font-family: ${p => p.theme.fonts.display};
     font-size: 0.8rem;
     letter-spacing: 2px;
     white-space: nowrap;

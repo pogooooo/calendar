@@ -1,6 +1,7 @@
 "use client";
 
 import styled, { keyframes } from "styled-components";
+import { MOBILE } from "@/styles/breakpoints";
 import { useGoogleLogin } from "@react-oauth/google";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -55,7 +56,6 @@ const SignIn = () => {
     const setUser = useAuthStore((state) => state.setUser);
 
     const [globalError, setGlobalError] = useState<string>(" ");
-    const [email, setEmail] = useState("");
     const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
     const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<LoginFormData>({
@@ -72,21 +72,21 @@ const SignIn = () => {
                 body: JSON.stringify({ accessToken }),
             });
             const data = await res.json();
-            if (!res.ok) { setGlobalError(data.message || "구글 로그인 실패"); setIsGoogleLoading(false); return; }
+            if (!res.ok) { setGlobalError(data.message || t.auth.googleFailed); setIsGoogleLoading(false); return; }
             setTheme(data.user.theme);
             setAccessToken(data.accessToken);
             if (data.refreshToken) setRefreshToken(data.refreshToken);
             setUser(data.user);
             router.push("/");
         } catch {
-            setGlobalError("구글 로그인 중 오류가 발생했습니다.");
+            setGlobalError(t.auth.googleError);
             setIsGoogleLoading(false);
         }
     };
 
     const handleGoogleError = () => {
         setIsGoogleLoading(false);
-        setGlobalError("구글 로그인 창이 닫혔거나 오류가 발생했습니다.");
+        setGlobalError(t.auth.googleWindowClosed);
     };
 
     const handleEmailLogin = async (formData: LoginFormData) => {
@@ -98,14 +98,14 @@ const SignIn = () => {
                 body: JSON.stringify(formData),
             });
             const data = await res.json();
-            if (!res.ok) { setGlobalError(data.message || "로그인에 실패했습니다."); return; }
+            if (!res.ok) { setGlobalError(data.message || t.auth.signInFailed); return; }
             setTheme(data.user.theme);
             setAccessToken(data.accessToken);
             if (data.refreshToken) setRefreshToken(data.refreshToken);
             setUser(data.user);
             router.push("/");
         } catch (err) {
-            setGlobalError(err instanceof Error ? err.message : "로그인 중 오류 발생");
+            setGlobalError(err instanceof Error ? err.message : t.auth.signInError);
         }
     };
 
@@ -127,8 +127,10 @@ const SignIn = () => {
                     )}
 
                     <form onSubmit={handleSubmit(handleEmailLogin)} style={{ width: "100%" }}>
-                        <SingleInput type="text" $width={300} $height={40} label={t.auth.email} value={email}
-                            {...register("email")} onChange={(e) => setEmail(e.target.value)} />
+                        {/* onChange 를 따로 주면 register 가 붙여둔 onChange 를 덮어써서
+                            react-hook-form 이 입력을 못 본다. 값은 폼이 알아서 들고 있는다. */}
+                        <SingleInput type="text" $width={300} $height={40} label={t.auth.email}
+                            {...register("email")} />
                         <InlineError>{errors.email?.message}</InlineError>
 
                         <PasswordInput $width={300} $height={40} label={t.auth.password} {...register("password")} />
@@ -169,6 +171,12 @@ const PageWrapper = styled.div`
     height: calc(100vh - var(--titlebar-h, 0px));
     background-color: ${p => p.theme.colors.surface};
     overflow: hidden;
+
+    /* 폰에서는 화면 위쪽이 상태 표시줄 자리다. 비켜 주지 않으면 언어 고르개가 시계에 깔린다. */
+    ${MOBILE} {
+        height: 100dvh;
+        padding-top: env(safe-area-inset-top, 0px);
+    }
 `;
 
 const FormPanel = styled.div`
@@ -179,6 +187,12 @@ const FormPanel = styled.div`
     justify-content: center;
     background-color: ${p => p.theme.colors.surface};
     position: relative;
+
+    /* 폰에서는 배경 그림 패널이 숨으므로 폼이 화면 전체를 쓴다. */
+    ${MOBILE} {
+        width: 100%;
+        padding: 0 20px;
+    }
 `;
 
 const LangToggle = styled.div`
@@ -194,10 +208,19 @@ const FormInner = styled.div`
     gap: 1rem;
     width: 300px;
     animation: ${fadeUp} 0.6s ease 0.15s both;
+
+    /* 폰에서는 폭을 고정하지 않는다. 300px 로 못 박으면 좁은 화면에서 치우친다. */
+    ${MOBILE} {
+        width: 100%;
+        max-width: 340px;
+
+        /* 제출 단추만 넓힌다. form button 으로 잡으면 입력칸 안의 눈 아이콘까지 늘어난다. */
+        form > button, & > button { width: 100%; }
+    }
 `;
 
 const FormTitle = styled.h2`
-    font-family: ${p => p.theme.fonts.celestial};
+    font-family: ${p => p.theme.fonts.display};
     font-size: 1.1rem;
     font-weight: 400;
     letter-spacing: 3px;

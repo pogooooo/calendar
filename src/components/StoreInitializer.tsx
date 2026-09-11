@@ -10,6 +10,7 @@ import useDailyStore from "@/store/useDailyStore";
 import useSettingStore from "@/store/useSettingStore";
 import useAnniversaryStore from "@/store/useAnniversaryStore";
 import { isDesktopApp } from "@/lib/apiBase";
+import { subscribeDataChange, type DataKind } from "@/lib/dataSync";
 
 const PUBLIC_ROUTES = ["/signIn", "/signUp", "/download", "/forgotPassword", "/resetPassword"];
 const NO_PREFETCH_ROUTES = PUBLIC_ROUTES;
@@ -56,6 +57,36 @@ export default function StoreInitializer({ children }: { children: React.ReactNo
             fetchAnniversaries(authFetch)
         ]);
     }, [isMounted, accessToken, pathname, authFetch, fetchTodos, fetchCategories]);
+
+    /**
+     * 위젯 창에서 무언가를 바꾸면 본 창도 따라 바뀌어야 한다.
+     * (반대 방향은 useWidgetInit 이 맡는다)
+     */
+    useEffect(() => {
+        if (!isMounted || !accessToken) return;
+        if (pathname.startsWith("/widget")) return;
+
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        const pending = new Set<DataKind>();
+
+        const flush = () => {
+            const kinds = new Set(pending);
+            pending.clear();
+            if (kinds.has("todos")) fetchTodos(authFetch);
+            if (kinds.has("categories")) fetchCategories(authFetch);
+            if (kinds.has("anniversaries")) fetchAnniversaries(authFetch);
+            if (kinds.has("daily")) fetchDailyData(authFetch, new Date());
+        };
+
+        const stop = subscribeDataChange((kind) => {
+            pending.add(kind);
+            clearTimeout(timer);
+            timer = setTimeout(flush, 180);
+        });
+
+        return () => { stop(); clearTimeout(timer); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isMounted, accessToken, pathname]);
 
     useEffect(() => {
         if (!isMounted) return;

@@ -7,11 +7,17 @@ use std::collections::HashSet;
 #[cfg(debug_assertions)]
 const BASE_URL: &str = "http://localhost:3000";
 
+/// 열 수 있는 위젯 종류.
+///
+/// src/lib/widgetKinds.ts 와 src/app/widget/* 폴더와 반드시 같아야 한다.
+/// 예전에는 여기에 화면 없는 이름(daily·upcoming·projectboard…)이 남아 있고
+/// 정작 쓰는 이름(due·nownext·anniversary·projects)이 빠져 있어서,
+/// 설정에서 그 넷을 열면 open_widget 이 조용히 거부했다.
+/// 어긋나면 scripts/check-widget-kinds.mjs 가 빌드를 멈춘다.
 const WIDGET_KINDS: &[&str] = &[
-    "daily", "weekly", "monthly",
-    "today", "upcoming", "stats", "challenge",
-    "projectboard", "projectdetail", "projecttimeline",
-    "memo", "quicktask", "sticker", "category",
+    "today", "quicktask", "due", "nownext",
+    "weekly", "monthly", "anniversary",
+    "projects", "challenge", "stats", "memo",
 ];
 
 fn widget_size(kind: &str) -> (f64, f64) {
@@ -352,6 +358,66 @@ const RUN_KEY: &str = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run";
 #[cfg(target_os = "windows")]
 const RUN_VALUE: &str = "CRONOS";
 
+/// Run 키에 들어가는 값은 `"C:\...\CRONOS.exe" --from-autostart` 꼴이다.
+/// 경로만 떼어낸다. 예전 코드는 trim_matches('"') 로 잘라서 뒤쪽 인자가
+/// 그대로 붙어 있었고, 그래서 "지금 실행 파일과 같은지" 판정이 늘 거짓이었다.
+#[cfg(target_os = "windows")]
+fn exe_from_run_value(value: &str) -> String {
+    let v = value.trim();
+    if let Some(rest) = v.strip_prefix('"') {
+        if let Some(end) = rest.find('"') {
+            return rest[..end].to_string();
+        }
+    }
+    v.split_whitespace().next().unwrap_or("").to_string()
+}
+
+/// 부팅 자동 실행에 등록해도 되는 빌드인가.
+///
+/// 개발 빌드는 콘솔 프로그램이다 (windows_subsystem="windows" 를 릴리스에만
+/// 걸어 두었다). 그걸 등록하면 컴퓨터를 켤 때마다 검은 터미널 창이 같이 뜬다.
+/// 게다가 경로가 target/debug 라서 프로젝트를 옮기거나 지우면 부팅 때마다
+/// 실패만 남는다. 그래서 개발 빌드는 아예 등록하지 않는다.
+#[cfg(desktop)]
+fn autostart_registrable() -> bool {
+    !cfg!(debug_assertions)
+}
+
+/// 이미 등록돼 있는 자동 실행 항목이 엉뚱한 곳을 가리키면 바로잡는다.
+///
+/// - 릴리스로 돌고 있는데 등록된 경로가 다르면(업데이트·이사·개발 빌드 흔적)
+///   지금 실행 파일로 다시 쓴다.
+/// - 등록된 파일이 아예 없으면 지운다. 남겨 둬 봐야 부팅 때 오류만 난다.
+#[cfg(all(desktop, target_os = "windows"))]
+fn repair_autostart_entry() {
+    let raw = match unsafe { win32::read_reg_sz(RUN_KEY, RUN_VALUE) } {
+        Some(v) if !v.trim().is_empty() => v,
+        _ => return,
+    };
+
+    let registered = exe_from_run_value(&raw);
+    let current = std::env::current_exe()
+        .map(|p| p.to_string_lossy().to_string())
+        .unwrap_or_default();
+
+    if registered.eq_ignore_ascii_case(current.trim()) {
+        return;
+    }
+
+    if !std::path::Path::new(&registered).exists() {
+        unsafe { win32::delete_reg_value(RUN_KEY, RUN_VALUE); }
+        return;
+    }
+
+    if autostart_registrable() && !current.is_empty() {
+        let quoted = format!("\"{current}\" --from-autostart");
+        unsafe { win32::write_reg_sz(RUN_KEY, RUN_VALUE, &quoted); }
+    }
+}
+
+#[cfg(all(desktop, not(target_os = "windows")))]
+fn repair_autostart_entry() {}
+
 #[cfg(desktop)]
 #[tauri::command]
 fn get_autostart(app: tauri::AppHandle) -> bool {
@@ -375,9 +441,7 @@ fn autostart_status(app: tauri::AppHandle) -> serde_json::Value {
     #[cfg(not(target_os = "windows"))]
     let registered: Option<String> = None;
 
-    let normalized = registered
-        .as_deref()
-        .map(|s| s.trim().trim_matches('"').to_string());
+    let normalized = registered.as_deref().map(exe_from_run_value);
     let matches_current = normalized
         .as_deref()
         .map(|s| s.eq_ignore_ascii_case(current.trim()))
@@ -402,6 +466,14 @@ fn set_autostart(app: tauri::AppHandle, enabled: bool) -> bool {
         #[cfg(target_os = "windows")]
         unsafe { win32::delete_reg_value(RUN_KEY, RUN_VALUE); }
         return ok;
+    }
+
+    // 개발 빌드를 등록하면 부팅 때마다 터미널 창이 뜬다. 켜 주지 않는다.
+    if !autostart_registrable() {
+        let _ = autolaunch.disable();
+        #[cfg(target_os = "windows")]
+        unsafe { win32::delete_reg_value(RUN_KEY, RUN_VALUE); }
+        return false;
     }
 
     let ok = autolaunch.enable().is_ok();
@@ -723,6 +795,10 @@ pub fn run() {
             }
         })
         .setup(move |app| {
+            // 남아 있는 자동 실행 항목이 엉뚱한 실행 파일을 가리키면 여기서 바로잡는다.
+            #[cfg(desktop)]
+            repair_autostart_entry();
+
             #[cfg(desktop)]
             {
                 let app_handle = app.handle().clone();

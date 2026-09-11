@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useEffect, useState, useMemo } from "react";
-import { useTheme } from "styled-components";
+import { usePickTheme } from "@/styles/themed";
 import useCategoryStore from "@/store/useCategoryStore";
 import useTodoStore from "@/store/useTodoStore";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { readError } from "@/lib/readError";
 import { useDialog } from "@/components/dialog/DialogProvider";
+import { useT } from "@/i18n/useT";
 import type { AuthFetch, CategoryType, TodoType } from "@/types";
 
 import CelestialCategory from "./celestial/CelestialCategory";
@@ -54,13 +55,13 @@ export interface CategoryThemeProps {
 }
 
 export default function CategoryPage() {
-    const theme = useTheme();
-    const themeName = theme?.name || 'celestial';
+    const CategoryView = usePickTheme({ celestial: CelestialCategory });
 
     const { categories, deleteCategory, updateCategory, addCategory, fetchCategories } = useCategoryStore();
     const { todos, toggleTodo, deleteTodo } = useTodoStore();
     const authFetch = useAuthFetch();
     const dialog = useDialog();
+    const t = useT();
 
     const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<'info' | 'todos'>('info');
@@ -107,7 +108,7 @@ export default function CategoryPage() {
 
     const handleAddCategorySubmit = async (data: { name: string; color: string; description: string }) => {
         const error = await addCategory(authFetch, data);
-        if (error) await dialog.notify({ title: "카테고리를 추가하지 못했습니다", message: error });
+        if (error) await dialog.notify({ title: t.category.addFailedTitle, message: error });
     };
 
     const handleInviteSubmit = async () => {
@@ -116,11 +117,11 @@ export default function CategoryPage() {
 
         const email = inviteEmail.trim();
         if (!email) {
-            setInviteError("이메일을 입력해주세요.");
+            setInviteError(t.category.emailRequired);
             return;
         }
         if (selectedCategory.participants?.some((p: { email: string }) => p.email === email)) {
-            setInviteError("이미 참여 중인 멤버입니다.");
+            setInviteError(t.category.alreadyMember);
             return;
         }
 
@@ -133,7 +134,7 @@ export default function CategoryPage() {
 
             if (!res.ok) {
                 const errorData = await res.json();
-                setInviteError(errorData.message || "초대에 실패했습니다.");
+                setInviteError(errorData.message || t.category.inviteFailed);
                 return;
             }
 
@@ -141,7 +142,7 @@ export default function CategoryPage() {
             await fetchCategories(authFetch);
             closeInviteModal();
         } catch (err) {
-            setInviteError("서버 오류가 발생했습니다.");
+            setInviteError(t.alert.serverError);
         }
     };
 
@@ -156,14 +157,14 @@ export default function CategoryPage() {
             });
 
             if (!res.ok) {
-                await dialog.notify({ title: "내보내지 못했습니다", message: await readError(res, "잠시 후 다시 시도해주세요.") });
+                await dialog.notify({ title: t.category.kickFailedTitle, message: await readError(res, t.alert.retryLater) });
                 return;
             }
             await fetchCategories(authFetch);
             closeKickModal();
         } catch (err) {
             console.error(err);
-            await dialog.notify({ title: "내보내지 못했습니다", message: "연결을 확인한 뒤 다시 시도해주세요." });
+            await dialog.notify({ title: t.category.kickFailedTitle, message: t.alert.checkConnection });
         }
     };
 
@@ -172,7 +173,7 @@ export default function CategoryPage() {
         const trimmedDesc = editDescription.trim();
         if (trimmedDesc === (selectedCategory.description || "")) return;
         const error = await updateCategory(authFetch, selectedCategory.id, { description: trimmedDesc });
-        if (error) await dialog.notify({ title: "저장하지 못했습니다", message: error });
+        if (error) await dialog.notify({ title: t.alert.saveFailed, message: error });
     };
 
     const handleNameBlur = async () => {
@@ -183,14 +184,14 @@ export default function CategoryPage() {
             return;
         }
         const error = await updateCategory(authFetch, selectedCategory.id, { name: trimmedName });
-        if (error) { setEditName(selectedCategory.name); await dialog.notify({ title: "저장하지 못했습니다", message: error }); }
+        if (error) { setEditName(selectedCategory.name); await dialog.notify({ title: t.alert.saveFailed, message: error }); }
     };
 
     const handleColorBlur = async () => {
         if (!selectedCategory) return;
         if (editColor === selectedCategory.color) return;
         const error = await updateCategory(authFetch, selectedCategory.id, { color: editColor });
-        if (error) await dialog.notify({ title: "저장하지 못했습니다", message: error });
+        if (error) await dialog.notify({ title: t.alert.saveFailed, message: error });
     };
 
     const handleNameKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -199,12 +200,12 @@ export default function CategoryPage() {
 
     const handleDelete = async (categoryId: string) => {
         const ok = await dialog.confirmDanger({
-            title: "카테고리를 삭제할까요",
-            message: "안에 있는 할 일이 함께 삭제됩니다. 되돌릴 수 없습니다.",
+            title: t.category.deleteTitle,
+            message: t.category.deleteMessage,
         });
         if (!ok) return;
         const error = await deleteCategory(authFetch, categoryId);
-        if (error) { await dialog.notify({ title: "삭제하지 못했습니다", message: error }); return; }
+        if (error) { await dialog.notify({ title: t.alert.deleteFailed, message: error }); return; }
         if (selectedCategoryId === categoryId) setSelectedCategoryId(null);
     };
 
@@ -227,7 +228,7 @@ export default function CategoryPage() {
 
     return (
         <>
-            <CelestialCategory {...themeProps} />
+            <CategoryView {...themeProps} />
 
             <CategoryAddModal
                 isOpen={isAddModalOpen}

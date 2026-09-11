@@ -25,7 +25,7 @@ export const TitleInput = styled.input`
     font-size: 1.1rem;
     color: ${(props) => props.theme.colors.text};
     outline: none;
-    font-family: ${(props) => props.theme.fonts.celestial};
+    font-family: ${(props) => props.theme.fonts.display};
     margin-right: 15px;
     padding: 4px 0;
     border-bottom: 1px solid transparent;
@@ -76,7 +76,7 @@ export const FieldRow = styled.div`
 `;
 
 export const FieldLabel = styled.label`
-    font-family: ${(props) => props.theme.fonts.celestial};
+    font-family: ${(props) => props.theme.fonts.display};
     font-size: 0.85rem;
     color: ${(props) => props.theme.colors.textSecondary};
     display: flex;

@@ -3,6 +3,7 @@
 import styled from "styled-components";
 import WidgetShell from "@/components/widget/WidgetShell";
 import type { WidgetKind } from "@/store/useWidgetStore";
+import { useT } from "@/i18n/useT";
 
 /**
  * 인증 전/실패 상태에서도 셸(제목줄·닫기 버튼)을 그린다.
@@ -17,11 +18,12 @@ export default function WidgetAuthNotice({
     title: string;
     authed: boolean;
 }) {
+    const t = useT();
     return (
         <WidgetShell kind={kind} title={title}>
             <Center>
-                {authed ? "로딩 중..." : "연결을 기다리는 중입니다"}
-                {!authed && <Sub>네트워크가 연결되면 자동으로 다시 시도합니다</Sub>}
+                {authed ? t.widget.loading : t.widget.waiting}
+                {!authed && <Sub>{t.widget.waitingSub}</Sub>}
             </Center>
         </WidgetShell>
     );

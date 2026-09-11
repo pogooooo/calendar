@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { reportSaveFailure } from "@/lib/saveError";
 import type { AuthFetch, ChallengeType, ChallengeCompletionType } from '@/types';
 import { localDateKey } from '@/lib/dateKey';
 import { readError } from '@/lib/readError';
@@ -64,6 +65,7 @@ const useChallengeStore = create<ChallengeState>((set, get) => ({
             return null;
         } catch (err) {
             console.error("[CHALLENGE_ADD_ERROR]", err);
+            reportSaveFailure("challenge");
             set({ challenges: previous });
             return "네트워크 오류로 챌린지를 추가하지 못했습니다.";
         }
@@ -88,6 +90,7 @@ const useChallengeStore = create<ChallengeState>((set, get) => ({
             return null;
         } catch (err) {
             console.error("[CHALLENGE_UPDATE_ERROR]", err);
+            reportSaveFailure("challenge");
             set({ challenges: previous });
             return "네트워크 오류로 챌린지를 수정하지 못했습니다.";
         }
@@ -106,6 +109,7 @@ const useChallengeStore = create<ChallengeState>((set, get) => ({
             return null;
         } catch (err) {
             console.error("[CHALLENGE_DELETE_ERROR]", err);
+            reportSaveFailure("challenge");
             set({ challenges: previous });
             return "네트워크 오류로 챌린지를 삭제하지 못했습니다.";
         }
@@ -157,6 +161,7 @@ const useChallengeStore = create<ChallengeState>((set, get) => ({
             }));
         } catch (err) {
             console.error("[CHALLENGE_TOGGLE_ERROR]", err);
+            reportSaveFailure("challenge");
             set({ challenges: previous });
         }
     }

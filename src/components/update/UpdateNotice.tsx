@@ -166,7 +166,7 @@ const Head = styled.div`
 `;
 
 const Label = styled.span`
-    font-family: ${p => p.theme.fonts.celestial};
+    font-family: ${p => p.theme.fonts.display};
     font-size: 0.72rem;
     letter-spacing: 2px;
     color: ${p => p.theme.colors.textSecondary};
@@ -184,7 +184,7 @@ const CloseBtn = styled.button`
 
 const Version = styled.div`
     margin-top: 6px;
-    font-family: ${p => p.theme.fonts.celestial};
+    font-family: ${p => p.theme.fonts.display};
     font-size: 1rem;
     letter-spacing: 1px;
     color: ${p => p.theme.colors.text};

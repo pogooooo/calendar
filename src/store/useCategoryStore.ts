@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { reportSaveFailure } from "@/lib/saveError";
 import type { AuthFetch, CategoryType, ParticipantType } from '@/types';
 import { readError } from '@/lib/readError';
 
@@ -54,6 +55,7 @@ const useCategoryStore = create<CategoryState>((set, get) => ({
             return null;
         } catch (err) {
             console.error("[CATEGORY_ADD_ERROR]", err);
+            reportSaveFailure("category");
             return "네트워크 오류로 카테고리를 추가하지 못했습니다.";
         }
     },
@@ -86,6 +88,7 @@ const useCategoryStore = create<CategoryState>((set, get) => ({
         } catch (err) {
             set({ categories: prev });
             console.error("[CATEGORY_PATCH_ERROR]", err);
+            reportSaveFailure("category");
             return "네트워크 오류로 카테고리를 수정하지 못했습니다.";
         }
     },
@@ -104,6 +107,7 @@ const useCategoryStore = create<CategoryState>((set, get) => ({
         } catch (err) {
             set({ categories: prev });
             console.error("[CATEGORY_DELETE_ERROR]", err);
+            reportSaveFailure("category");
             return "네트워크 오류로 카테고리를 삭제하지 못했습니다.";
         }
     }

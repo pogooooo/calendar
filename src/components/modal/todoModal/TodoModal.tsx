@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useTheme } from "styled-components";
+import { usePickTheme } from "@/styles/themed";
 import CelestialTodoModal from "./celestial/CelestialTodoModal";
 import { CategoryType } from "@/types/calendar";
 import { TodoType } from "@/store/useTodoStore";
@@ -64,8 +64,7 @@ const getLocalDatetimeString = (date: Date) => {
 
 export default function TodoModal(props: TodoModalProps) {
     const { isOpen, onClose, todo, categories, selectedDate } = props;
-    const theme = useTheme();
-    const themeName = theme?.name || "celestial";
+    const TodoModalView = usePickTheme({ celestial: CelestialTodoModal });
     const t = useT();
 
     const { addTodo, updateTodo, deleteTodo } = useTodoStore();
@@ -163,7 +162,7 @@ export default function TodoModal(props: TodoModalProps) {
         const start = new Date(startAt);
         const end = new Date(endAt);
         if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-            await dialog.notify({ title: "시간을 확인해주세요", message: "시작과 종료 시각이 올바른지 다시 봐주세요." });
+            await dialog.notify({ title: t.form.timeCheckTitle, message: t.form.timeCheckMsg });
             return;
         }
 
@@ -187,7 +186,7 @@ export default function TodoModal(props: TodoModalProps) {
             : await addTodo(authFetch, todoData);
 
         if (errorMessage) {
-            await dialog.notify({ title: "저장하지 못했습니다", message: errorMessage });
+            await dialog.notify({ title: t.alert.saveFailed, message: errorMessage });
             return;
         }
 
@@ -202,7 +201,7 @@ export default function TodoModal(props: TodoModalProps) {
         });
         if (!ok) return;
         const error = await deleteTodo(authFetch, todo.id);
-        if (error) { await dialog.notify({ title: "삭제하지 못했습니다", message: error }); return; }
+        if (error) { await dialog.notify({ title: t.alert.deleteFailed, message: error }); return; }
         onClose();
     };
 
@@ -244,10 +243,5 @@ export default function TodoModal(props: TodoModalProps) {
         handleDateChange, handleSubmit, handleDelete
     };
 
-    switch (themeName) {
-        case "celestial":
-            return <CelestialTodoModal {...themeProps} />;
-        default:
-            return <CelestialTodoModal {...themeProps} />;
-    }
+    return <TodoModalView {...themeProps} />;
 }

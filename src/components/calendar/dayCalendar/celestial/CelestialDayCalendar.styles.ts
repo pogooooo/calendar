@@ -1,4 +1,5 @@
 import styled, { css, keyframes } from "styled-components";
+import { MOBILE } from "@/styles/breakpoints";
 
 export const CelestialCalendarWrapper = styled.div`
     display: flex;
@@ -23,7 +24,7 @@ export const CelestialCalendarWrapper = styled.div`
 `;
 
 export const DateHeader = styled.div`
-    font-family: ${(props) => props.theme.fonts.celestial};
+    font-family: ${(props) => props.theme.fonts.display};
     font-size: 1rem;
     font-weight: 500;
     color: ${(props) => props.theme.colors.text};
@@ -33,6 +34,13 @@ export const DateHeader = styled.div`
     align-items: center;
     gap: 15px;
     margin-bottom: 15px;
+
+    /* 폰에서는 바로 위 줄이 이미 날짜를 보여준다. 여기서는 갈래 고르개만 남긴다. */
+    ${MOBILE} {
+        gap: 10px;
+        margin-bottom: 10px;
+        & > span { display: none; }
+    }
 
     & > hr {
         flex: 1;
@@ -60,6 +68,7 @@ export const ResizeHandle = styled.div`
     height: 15px;
     flex-shrink: 0;
     cursor: ns-resize;
+
     display: flex;
     align-items: center;
     justify-content: center;
@@ -79,6 +88,9 @@ export const ResizeHandle = styled.div`
         background: ${(props) => props.theme.colors.primary}90;
         transform: scale(1.3);
     }
+
+    /* 마우스로만 끌 수 있는 손잡이다. 폰에서는 자리만 먹는다. */
+    ${MOBILE} { display: none; }
 `;
 
 /* 카드/섹션 헤더의 접기 토글 — 헤더 전체가 버튼이다 */
@@ -93,7 +105,7 @@ export const SectionToggle = styled.button<{ $collapsed: boolean }>`
     border-bottom: ${(props) => props.$collapsed
         ? 'none'
         : `1px solid ${props.theme.colors.primary}`};
-    font-family: ${(props) => props.theme.fonts.celestial};
+    font-family: ${(props) => props.theme.fonts.display};
     font-size: 0.95rem;
     color: ${(props) => props.theme.colors.text};
     cursor: pointer;
@@ -138,6 +150,13 @@ export const TimelineSection = styled.div<{ $collapsed?: boolean }>`
     border: 1px solid ${(props) => props.theme.colors.primary};
     background-color: transparent;
     overflow: hidden;
+
+    /* 폰에서는 네 칸을 한 화면에 욱여넣지 않는다. 세로로 늘어놓고 페이지를 굴린다.
+       비율은 인라인 style 로 들어오므로 !important 로만 덮을 수 있다. */
+    ${MOBILE} {
+        flex: none !important;
+        height: ${(props) => (props.$collapsed ? 'auto' : '320px')};
+    }
 `;
 
 export const TimelineScrollArea = styled.div`
@@ -157,7 +176,7 @@ export const TimeRow = styled.div`
         display: flex;
         justify-content: center;
         align-items: center;
-        font-family: ${(props) => props.theme.fonts.celestial};
+        font-family: ${(props) => props.theme.fonts.display};
         font-size: 0.75rem;
         color: ${(props) => props.theme.colors.text};
         border-right: 1px solid ${(props) => props.theme.colors.primary}; /* ✨ 원래의 진한 선 복구 */
@@ -232,6 +251,11 @@ export const SideSection = styled.div`
     display: flex;
     flex-direction: column;
     min-height: 0;
+
+    ${MOBILE} {
+        flex: none !important;
+        margin-top: 10px;
+    }
 `;
 
 const BaseCard = styled.div`
@@ -241,7 +265,7 @@ const BaseCard = styled.div`
     flex-direction: column;
 
     .card-header {
-        font-family: ${(props) => props.theme.fonts.celestial};
+        font-family: ${(props) => props.theme.fonts.display};
         font-size: 0.95rem;
         color: ${(props) => props.theme.colors.text};
         padding: 8px 12px;
@@ -253,6 +277,11 @@ export const TaskCard = styled(BaseCard)<{ $collapsed?: boolean }>`
     flex: 1.2;
     min-height: ${(props) => (props.$collapsed ? '0' : '108px')};
     overflow: hidden;
+
+    ${MOBILE} {
+        flex: none !important;
+        height: ${(props) => (props.$collapsed ? 'auto' : '200px')};
+    }
 `;
 
 /* ── 오늘의 챌린지 카드 ─────────────────────────────────── */
@@ -327,10 +356,107 @@ export const ChallengeItem = styled.label<{ $isDone: boolean }>`
 export const ChallengeEmpty = styled.div`
     padding: 14px 12px;
     text-align: center;
-    font-family: ${(props) => props.theme.fonts.celestial};
+    font-family: ${(props) => props.theme.fonts.display};
     font-size: 0.78rem;
     letter-spacing: 0.5px;
     color: ${(props) => props.theme.colors.textSecondary};
+`;
+
+/* ── 이 날의 일정 (폰 전용) ──────────────────────────────────────────
+   달력 칸이 좁아 일정이 점으로만 찍히는 폰에서, 손으로 집을 수 있는 목록.
+   넓은 화면에는 월간 달력의 막대가 있으므로 내보내지 않는다. */
+export const TodoCard = styled(BaseCard)`
+    display: none;
+
+    ${MOBILE} {
+        display: flex;
+        flex: none;
+        margin-bottom: 10px;
+        max-height: 260px;
+        overflow: hidden;
+    }
+`;
+
+export const TodoCardHead = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-bottom: 1px solid ${(props) => props.theme.colors.primary};
+    font-family: ${(props) => props.theme.fonts.display};
+    font-size: 0.95rem;
+    color: ${(props) => props.theme.colors.text};
+
+    i {
+        width: 7px;
+        height: 7px;
+        transform: rotate(45deg);
+        border: 1px solid ${(props) => props.theme.colors.primary};
+    }
+
+    .count {
+        margin-left: auto;
+        font-size: 0.72rem;
+        letter-spacing: 1px;
+        color: ${(props) => props.theme.colors.primary};
+        opacity: 0.85;
+    }
+`;
+
+export const TodoList = styled.div`
+    min-height: 0;
+    overflow-y: auto;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+`;
+
+export const TodoRow = styled.button<{ $isDone: boolean }>`
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 44px;
+    padding: 8px 10px;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid ${(props) => props.theme.colors.text}12;
+    text-align: left;
+    cursor: pointer;
+    font-family: inherit;
+
+    &:last-child { border-bottom: none; }
+    &:active { background-color: ${(props) => props.theme.colors.primary}14; }
+
+    .dot {
+        flex: 0 0 auto;
+        width: 7px;
+        height: 7px;
+        transform: rotate(45deg);
+        background-color: ${(props) => props.theme.colors.primary};
+    }
+
+    .title {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 0.88rem;
+        color: ${(props) => props.theme.colors.text};
+        text-decoration: ${(props) => (props.$isDone ? "line-through" : "none")};
+        opacity: ${(props) => (props.$isDone ? 0.55 : 1)};
+    }
+
+    .time {
+        flex: 0 0 auto;
+        font-family: ${(props) => props.theme.fonts.display};
+        font-size: 0.68rem;
+        letter-spacing: 0.5px;
+        font-variant-numeric: tabular-nums;
+        color: ${(props) => props.theme.colors.textSecondary};
+    }
 `;
 
 export const TaskList = styled.div`
@@ -473,6 +599,11 @@ export const MemoCard = styled(BaseCard)<{ $collapsed?: boolean }>`
     flex: 0.8;
     min-height: ${(props) => (props.$collapsed ? '0' : '120px')};
     overflow: hidden;
+
+    ${MOBILE} {
+        flex: none !important;
+        height: ${(props) => (props.$collapsed ? 'auto' : '170px')};
+    }
 
     textarea {
         flex: 1;

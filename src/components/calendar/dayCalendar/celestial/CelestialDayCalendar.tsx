@@ -8,9 +8,13 @@ import * as S from "./CelestialDayCalendar.styles";
 import { DayThemeProps } from "../DayCalendar";
 
 import CategoryFilter from "@/components/calendar/celestial/categoryFilter/CategoryFilter";
+import RulerScroll from "@/components/scroll/RulerScroll";
+import TodoContextMenu from "@/components/calendar/celestial/contextMenu/TodoContextMenu";
+import TodoModal from "@/components/modal/todoModal/TodoModal";
 import { useT } from "@/i18n/useT";
 
-type CelestialDayProps = DayThemeProps & React.HTMLAttributes<HTMLDivElement>;
+// contextMenu 는 div 의 HTML 속성 이름과 겹친다. 우리 뜻(열린 메뉴 상태)을 쓴다.
+type CelestialDayProps = DayThemeProps & Omit<React.HTMLAttributes<HTMLDivElement>, "contextMenu">;
 
 const STORAGE_MAIN = 'cronos-day-main-split';
 const STORAGE_SIDE = 'cronos-day-side-split';
@@ -30,6 +34,9 @@ const CelestialDayCalendar = React.forwardRef<HTMLDivElement, CelestialDayProps>
          localMemo, setLocalMemo, handleMemoBlur, memoError,
          categories, selectedCategoryIds, toggleCategory,
          showProjects, onToggleProjects,
+         dayTodos, selectedDate, isModalOpen, modalTodo, setIsModalOpen,
+         contextMenu, setContextMenu, openTodoMenu,
+         handleQuickEdit, handleQuickDelete, handleQuickDeleteOne, handleQuickToggle,
          ...props
      }, ref) => {
         const Component = asChild ? Slot : 'div';
@@ -132,6 +139,42 @@ const CelestialDayCalendar = React.forwardRef<HTMLDivElement, CelestialDayProps>
                 </S.DateHeader>
 
                 <S.ContentLayout ref={contentRef}>
+                    {/* 폰에서만 나온다. 달력 칸이 좁아 일정이 점으로만 찍히므로,
+                        고치고 지우려면 손으로 집을 수 있는 목록이 있어야 한다. */}
+                    <S.TodoCard>
+                        <S.TodoCardHead>
+                            <i />
+                            <span>{t.home.tasks}</span>
+                            {dayTodos.length > 0 && <span className="count">{dayTodos.length}</span>}
+                        </S.TodoCardHead>
+
+                        {dayTodos.length > 0 ? (
+                            <S.TodoList>
+                                {dayTodos.map((todo) => {
+                                    const color = categories.find(c => c.id === todo.categoryId)?.color;
+                                    const start = todo.startAt ? new Date(todo.startAt as string) : null;
+                                    const time = todo.isAllDay || !start
+                                        ? null
+                                        : `${String(start.getHours()).padStart(2, "0")}:${String(start.getMinutes()).padStart(2, "0")}`;
+                                    return (
+                                        <S.TodoRow
+                                            key={todo.id}
+                                            type="button"
+                                            $isDone={!!todo.isDone}
+                                            onClick={(e) => openTodoMenu(e, todo)}
+                                        >
+                                            <span className="dot" style={color ? { backgroundColor: color } : undefined} />
+                                            <span className="title">{todo.title}</span>
+                                            <span className="time">{time ?? t.todo.allDay}</span>
+                                        </S.TodoRow>
+                                    );
+                                })}
+                            </S.TodoList>
+                        ) : (
+                            <S.ChallengeEmpty>{t.home.noTodayTodos}</S.ChallengeEmpty>
+                        )}
+                    </S.TodoCard>
+
                     <S.TimelineSection
                         $collapsed={fold.timeline}
                         style={fold.timeline ? { flex: '0 0 auto' } : { flex: mainSplit }}
@@ -146,9 +189,16 @@ const CelestialDayCalendar = React.forwardRef<HTMLDivElement, CelestialDayProps>
                             <span className="label">{t.calendar.timeline}</span>
                         </S.SectionToggle>
                         {!fold.timeline && (
-                        <S.TimelineScrollArea>
+                        <RulerScroll flagFor={(r) => `${Math.round(r * 23).toString().padStart(2, "0")}:00`}>
                             {hours.map((hour) => (
-                                <S.TimeRow key={hour}>
+                                <S.TimeRow
+                                    key={hour}
+                                    data-ruler-tick
+                                    data-ruler-label={hour.toString().padStart(2, "0")}
+                                    {...(Array.from({ length: 6 }).some((_, s) => getSlotTodos(hour, s).length > 0)
+                                        ? { "data-ruler-mark": "" }
+                                        : {})}
+                                >
                                     <div className="time-label">
                                         {hour.toString().padStart(2, '0')}:00
                                     </div>
@@ -193,7 +243,7 @@ const CelestialDayCalendar = React.forwardRef<HTMLDivElement, CelestialDayProps>
                                     </div>
                                 </S.TimeRow>
                             ))}
-                        </S.TimelineScrollArea>
+                        </RulerScroll>
                         )}
                     </S.TimelineSection>
 
@@ -318,7 +368,7 @@ const CelestialDayCalendar = React.forwardRef<HTMLDivElement, CelestialDayProps>
                                     {memoError && (
                                         <S.MemoError role="alert">
                                             {memoError}
-                                            <button type="button" onClick={handleMemoBlur}>다시 시도</button>
+                                            <button type="button" onClick={handleMemoBlur}>{t.calendar.retry}</button>
                                         </S.MemoError>
                                     )}
                                 </>
@@ -326,6 +376,23 @@ const CelestialDayCalendar = React.forwardRef<HTMLDivElement, CelestialDayProps>
                         </S.MemoCard>
                     </S.SideSection>
                 </S.ContentLayout>
+
+                <TodoContextMenu
+                    menuState={contextMenu}
+                    onClose={() => setContextMenu(null)}
+                    onToggle={handleQuickToggle}
+                    onEdit={handleQuickEdit}
+                    onDelete={handleQuickDelete}
+                    onDeleteOne={handleQuickDeleteOne}
+                />
+
+                <TodoModal
+                    isOpen={isModalOpen}
+                    onClose={() => setIsModalOpen(false)}
+                    todo={modalTodo}
+                    categories={categories}
+                    selectedDate={selectedDate}
+                />
             </S.CelestialCalendarWrapper>
         );
     }

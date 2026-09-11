@@ -3,12 +3,13 @@ import { NextRequest, NextResponse } from "next/server";
 const REPO = "pogooooo/calendar";
 const RELEASE_API = `https://api.github.com/repos/${REPO}/releases/latest`;
 
-type PlatformKey = "windows" | "macos" | "linux";
+type PlatformKey = "windows" | "macos" | "linux" | "android";
 
 const MATCHERS: Record<PlatformKey, RegExp[]> = {
     windows: [/\.exe$/i, /\.msi$/i],
     macos: [/\.dmg$/i, /\.app\.tar\.gz$/i],
     linux: [/\.AppImage$/i, /\.deb$/i, /\.rpm$/i],
+    android: [/\.apk$/i],
 };
 
 type Asset = { name: string; browser_download_url: string; size: number };

@@ -1,6 +1,7 @@
 "use client";
 
 import styled, { keyframes } from "styled-components";
+import { MOBILE } from "@/styles/breakpoints";
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { z } from "zod";
@@ -20,15 +21,17 @@ import PasswordInput from "@/components/input/password/PasswordInput";
 import CelestialAuthPanel from "@/components/auth/CelestialAuthPanel";
 
 // 서버로는 token + password 만 보내고, 확인란은 화면에서만 검증한다.
-const ResetFormSchema = z.object({
-    password: passwordSchema,
-    passwordConfirm: z.string().min(1, "비밀번호를 한 번 더 입력해주세요."),
-}).refine((v) => v.password === v.passwordConfirm, {
-    message: "비밀번호가 일치하지 않습니다.",
-    path: ["passwordConfirm"],
-});
+// 문구가 언어를 따라야 해서 화면 안에서 만든다.
+const makeResetFormSchema = (required: string, mismatch: string) =>
+    z.object({
+        password: passwordSchema,
+        passwordConfirm: z.string().min(1, required),
+    }).refine((v) => v.password === v.passwordConfirm, {
+        message: mismatch,
+        path: ["passwordConfirm"],
+    });
 
-type ResetFormData = z.infer<typeof ResetFormSchema>;
+type ResetFormData = z.infer<ReturnType<typeof makeResetFormSchema>>;
 
 const ResetPasswordForm = () => {
     const t = useT();
@@ -39,7 +42,9 @@ const ResetPasswordForm = () => {
     const [done, setDone] = useState(false);
 
     const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<ResetFormData>({
-        resolver: zodResolver(ResetFormSchema),
+        resolver: zodResolver(
+            makeResetFormSchema(t.auth.passwordConfirmRequired, t.auth.passwordMismatch),
+        ),
         defaultValues: { password: "", passwordConfirm: "" },
     });
 
@@ -53,14 +58,14 @@ const ResetPasswordForm = () => {
             });
             const data = await res.json();
             if (!res.ok) {
-                setGlobalError(data.message || "비밀번호 변경에 실패했습니다.");
+                setGlobalError(data.message || t.auth.resetFailed);
                 return;
             }
             setDone(true);
             // 비밀번호가 바뀌면 기존 세션이 모두 끊기므로 로그인 화면으로 보낸다.
             setTimeout(() => router.push("/signIn"), 1800);
         } catch (err) {
-            setGlobalError(err instanceof Error ? err.message : "요청 중 오류 발생");
+            setGlobalError(err instanceof Error ? err.message : t.auth.requestError);
         }
     };
 
@@ -125,6 +130,12 @@ const PageWrapper = styled.div`
     height: calc(100vh - var(--titlebar-h, 0px));
     background-color: ${p => p.theme.colors.surface};
     overflow: hidden;
+
+    /* 폰에서는 화면 위쪽이 상태 표시줄 자리다. 비켜 주지 않으면 언어 고르개가 시계에 깔린다. */
+    ${MOBILE} {
+        height: 100dvh;
+        padding-top: env(safe-area-inset-top, 0px);
+    }
 `;
 
 const FormPanel = styled.div`
@@ -135,6 +146,12 @@ const FormPanel = styled.div`
     justify-content: center;
     background-color: ${p => p.theme.colors.surface};
     position: relative;
+
+    /* 폰에서는 배경 그림 패널이 숨으므로 폼이 화면 전체를 쓴다. */
+    ${MOBILE} {
+        width: 100%;
+        padding: 0 20px;
+    }
 `;
 
 const LangToggle = styled.div`
@@ -150,10 +167,19 @@ const FormInner = styled.div`
     gap: 1rem;
     width: 300px;
     animation: ${fadeUp} 0.6s ease 0.15s both;
+
+    /* 폰에서는 폭을 고정하지 않는다. 300px 로 못 박으면 좁은 화면에서 치우친다. */
+    ${MOBILE} {
+        width: 100%;
+        max-width: 340px;
+
+        /* 제출 단추만 넓힌다. form button 으로 잡으면 입력칸 안의 눈 아이콘까지 늘어난다. */
+        form > button, & > button { width: 100%; }
+    }
 `;
 
 const FormTitle = styled.h2`
-    font-family: ${p => p.theme.fonts.celestial};
+    font-family: ${p => p.theme.fonts.display};
     font-size: 1.1rem;
     font-weight: 400;
     letter-spacing: 3px;

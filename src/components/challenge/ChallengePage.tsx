@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import * as React from "react";
-import { useTheme } from "styled-components";
+import { usePickTheme } from "@/styles/themed";
 import CelestialChallenge from "./celestial/CelestialChallenge";
 
 import { useAuthFetch } from "@/hooks/useAuthFetch";
@@ -10,13 +10,14 @@ import useCategoryStore from "@/store/useCategoryStore";
 import { ChallengeData } from "@/components/modal/challengeModal/ChallengeModal";
 import { localDateKey } from "@/lib/dateKey";
 import { useDialog } from "@/components/dialog/DialogProvider";
+import { useT } from "@/i18n/useT";
 
 export default function ChallengePage() {
-    const theme = useTheme();
-    const themeName = theme?.name || 'celestial';
+    const ChallengeView = usePickTheme({ celestial: CelestialChallenge });
 
     const authFetch = useAuthFetch();
     const dialog = useDialog();
+    const t = useT();
     const { challenges, fetchChallenges, addChallenge, updateChallenge, deleteChallenge, toggleChallengeCompletion } = useChallengeStore();
     const { categories, fetchCategories } = useCategoryStore();
 
@@ -62,12 +63,12 @@ export default function ChallengePage() {
     const handleDelete = async () => {
         if (!selectedChallenge) return;
         const ok = await dialog.confirmDanger({
-            title: "챌린지를 삭제할까요",
-            message: `'${selectedChallenge.title}'과 지금까지의 달성 기록이 사라집니다. 되돌릴 수 없습니다.`,
+            title: t.challenge.deleteTitle,
+            message: t.challenge.deleteMessage(selectedChallenge.title),
         });
         if (!ok) return;
         const error = await deleteChallenge(authFetch, selectedChallenge.id);
-        if (error) { await dialog.notify({ title: "삭제하지 못했습니다", message: error }); return; }
+        if (error) { await dialog.notify({ title: t.alert.deleteFailed, message: error }); return; }
         setSelectedChallengeId(null);
     };
 
@@ -81,7 +82,7 @@ export default function ChallengePage() {
             error = await addChallenge(authFetch, { ...data, startAt });
         }
         // 실패했는데 모달을 닫으면 사용자는 저장된 줄 안다
-        if (error) { await dialog.notify({ title: "저장하지 못했습니다", message: error }); return; }
+        if (error) { await dialog.notify({ title: t.alert.saveFailed, message: error }); return; }
         setIsModalOpen(false);
     };
 
@@ -144,5 +145,5 @@ export default function ChallengePage() {
         isModalOpen, setIsModalOpen, modalMode, handleSaveChallenge,
     };
 
-    return <CelestialChallenge {...themeProps} />;
+    return <ChallengeView {...themeProps} />;
 }

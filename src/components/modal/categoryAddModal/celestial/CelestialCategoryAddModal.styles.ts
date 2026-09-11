@@ -22,7 +22,7 @@ export const Header = styled.div`
         font-weight: 600;
         color: ${(props) => props.theme.colors.text};
         outline: none;
-        font-family: ${(props) => props.theme.fonts.celestial};
+        font-family: ${(props) => props.theme.fonts.display};
         margin-right: 15px;
 
         &::placeholder {

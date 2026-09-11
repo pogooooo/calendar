@@ -1,160 +1,40 @@
 "use client";
 
 import * as React from "react";
-import styled from "styled-components";
-import { MOBILE } from "@/styles/breakpoints";
-import { Check } from "lucide-react";
 import LocaleSelect from "@/components/LocaleSelect";
 import TimezoneSelect from "@/components/TimezoneSelect";
 import * as S from "./CelestialSettings.styles";
+import * as L from "./CelestialSettings.layout";
 import WidgetPreview from "./WidgetPreview";
+import StarField from "./StarField";
 import type { SettingsThemeProps } from "../SettingsPage";
 import { FONT_OPTIONS, ensureFontLoaded } from "@/lib/fonts";
 import { FONT_SIZE_OPTIONS, FONT_WEIGHT_OPTIONS } from "@/styles/GlobalTypography";
 
-const SegmentRow = styled.div`
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    margin-bottom: 14px;
-    flex-wrap: wrap;
+/**
+ * 설정은 판(pane) 넷으로 나뉜다. 예전에는 여덟 조각이 세로로 이어져 있어
+ * 오른쪽에 목차를 따로 둬야 했는데, 목차가 필요했다는 것 자체가 화면이
+ * 너무 길다는 뜻이었다. 왼쪽 성좌가 곧 목차다.
+ */
+type TabId = "look" | "widget" | "system" | "account";
 
-    ${MOBILE} {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 8px;
-    }
-`;
+/**
+ * 성좌 좌표. 일직선이 아니라 좌우로 꺾여야 별자리로 읽힌다.
+ * 판이 몇 개인지는 환경에 따라 달라지므로(폰에서는 위젯 판이 빠진다)
+ * 자리마다 x 를 미리 정해 두고 순서대로 꽂는다.
+ */
+const MARK_X = [30, 51, 26, 47];
+const MARK_Y0 = 67;
+const MARK_DY = 74;
 
-const SegmentLabel = styled.span`
-    min-width: 68px;
-    font-size: 0.8rem;
-    letter-spacing: 1px;
-    color: ${(props) => props.theme.colors.textSecondary};
-`;
+const ROMAN = ["I", "II", "III", "IV"];
 
-const SegmentGroup = styled.div`
-    display: flex;
-    border: 1px solid ${(props) => props.theme.colors.primary}44;
-
-    ${MOBILE} {
-        display: grid;
-        grid-auto-flow: column;
-        grid-auto-columns: 1fr;
-    }
-`;
-
-const Segment = styled.button<{ $selected: boolean }>`
-    ${MOBILE} { min-height: 46px; padding: 0 6px; }
-
-    padding: 7px 15px;
-    font-size: 0.78rem;
-    font-family: inherit;
-    letter-spacing: 0.5px;
-    background: none;
-    border: none;
-    border-right: 1px solid ${(props) => props.theme.colors.primary}33;
-    color: ${(props) => (props.$selected ? props.theme.colors.primary : props.theme.colors.textSecondary)};
-    cursor: pointer;
-    transition: color 0.2s, box-shadow 0.2s;
-
-    &:last-child { border-right: none; }
-
-    ${(props) => props.$selected && `
-        box-shadow: inset 0 -2px 0 ${props.theme.colors.primary};
-        text-shadow: 0 0 6px ${props.theme.colors.primary}55;
-    `}
-
-    &:hover { color: ${(props) => props.theme.colors.primary}; }
-`;
-
-const FontGrid = styled.div`
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
-    gap: 12px;
-
-    ${MOBILE} { grid-template-columns: 1fr; }
-`;
-
-const FontCard = styled.button<{ $selected: boolean }>`
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding: 14px;
-    text-align: left;
-    background: none;
-    color: inherit;
-    font-family: inherit;
-    border: 1px solid ${(props) => props.theme.colors.primary}${(props) => (props.$selected ? "" : "55")};
-    cursor: pointer;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
-
-    &:hover {
-        border-color: ${(props) => props.theme.colors.primary};
-        box-shadow: 0 0 8px ${(props) => props.theme.colors.primary}33;
-    }
-`;
-
-const FontPreview = styled.div<{ $family: string }>`
-    font-family: ${(props) => props.$family};
-    font-size: 1.05rem;
-    line-height: 1.5;
-    color: ${(props) => props.theme.colors.text};
-`;
-
-const FontMeta = styled.div`
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-`;
-
-const WidgetBoard = styled.div`
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
-    gap: 12px;
-`;
-
-const WidgetCard = styled.div`
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    padding: 12px;
-    border: 1px solid ${(props) => props.theme.colors.primary}55;
-    transition: border-color 0.2s ease;
-
-    &:hover {
-        border-color: ${(props) => props.theme.colors.primary};
-    }
-`;
-
-const CardLabel = styled.div`
-    font-family: ${(props) => props.theme.fonts.celestial};
-    font-size: 0.85rem;
-    letter-spacing: 1px;
-    color: ${(props) => props.theme.colors.text};
-    margin-top: 4px;
-`;
-
-const CardDesc = styled.div`
-    font-size: 0.72rem;
-    line-height: 1.45;
-    opacity: 0.55;
-    flex: 1;
-`;
-
-const CardActions = styled.div`
-    display: flex;
-    gap: 6px;
-    margin-top: 6px;
-
-    & > button {
-        flex: 1;
-        min-width: 0;
-        padding: 5px 0;
-        font-size: 0.72rem;
-    }
-`;
+/** 축소판 달력 한 판. 오늘 하루와 일정 사흘이 들어간다. */
+const CELL_PLAN = [
+    "", "", "event", "", "", "", "",
+    "", "today", "", "event", "", "", "",
+    "", "", "", "", "event", "", "",
+] as const;
 
 export default function CelestialSettings({
     currentTheme, onThemeChange,
@@ -162,9 +42,10 @@ export default function CelestialSettings({
     fontKey, onFontChange,
     fontSizeKey, onFontSizeChange,
     fontWeightKey, onFontWeightChange,
-    navSections, widgetList,
+    widgetList,
     onWidgetOpen, onWidgetClose,
     autostart, onAutostartToggle,
+    showWidgets, showAutostart,
     user, t,
     newName, onNewNameChange, onNameSave, namePending, nameStatus,
     pwForm, onPwFormChange, onPasswordSave, pwPending, pwStatus,
@@ -173,371 +54,427 @@ export default function CelestialSettings({
     deleteKeyword, deleteStatus, deletePending,
     showDeleteForm, onShowDeleteForm, onDelete, onDeleteCancel,
 }: SettingsThemeProps) {
-    const [activeId, setActiveId] = React.useState<string>("sec-theme");
+    const [tab, setTab] = React.useState<TabId>("look");
 
     React.useEffect(() => {
         FONT_OPTIONS.forEach(ensureFontLoaded);
     }, []);
 
-    React.useEffect(() => {
-        const observer = new IntersectionObserver(
-            (entries) => {
-                const visible = entries
-                    .filter((e) => e.isIntersecting)
-                    .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
-                if (visible.length > 0) setActiveId(visible[0].target.id);
-            },
-            { rootMargin: "-10% 0px -60% 0px", threshold: 0 }
-        );
-        navSections.forEach(({ id }) => {
-            const el = document.getElementById(id);
-            if (el) observer.observe(el);
-        });
-        return () => observer.disconnect();
-    }, [navSections]);
+    const TABS: { id: TabId; label: string; note: string; count: string }[] = [
+        { id: "look",    label: t.settings.appearance,  note: t.settings.appearanceNote,  count: "2" },
+        ...(showWidgets
+            ? [{ id: "widget" as TabId, label: t.settings.widgets, note: t.widget.desc, count: String(widgetList.length) }]
+            : []),
+        { id: "system",  label: t.settings.system,      note: t.settings.systemNote,      count: showAutostart ? "3" : "2" },
+        { id: "account", label: t.settings.account,     note: user?.email ?? "",          count: "4" },
+    ];
 
-    const scrollTo = (id: string) => {
-        const el = document.getElementById(id);
-        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    const TAB_MARKS = TABS.map((x, i) => ({
+        id: x.id,
+        x: MARK_X[i % MARK_X.length],
+        y: MARK_Y0 + i * MARK_DY,
+    }));
+
+    // 위젯 판이 사라진 뒤에도 그 판이 골라져 있으면 빈 화면이 남는다.
+    React.useEffect(() => {
+        if (!TABS.some((x) => x.id === tab)) setTab("look");
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [showWidgets, tab]);
+
+    const active = TABS.find((x) => x.id === tab) ?? TABS[0];
+    const activeIndex = TABS.findIndex((x) => x.id === tab);
+
+    // 위젯은 kind 마다 group 이 붙어 있다. 평평하게 늘어놓으면 그 정보가 버려진다.
+    const widgetGroups = React.useMemo(() => {
+        const order: string[] = [];
+        const bucket = new Map<string, typeof widgetList>();
+        widgetList.forEach((w) => {
+            if (!bucket.has(w.group)) { bucket.set(w.group, []); order.push(w.group); }
+            bucket.get(w.group)!.push(w);
+        });
+        return order.map((name) => ({ name, items: bucket.get(name)! }));
+    }, [widgetList]);
+
+    const optionLabels: Record<string, string> = {
+        light: t.settings.lightMode,
+        dark: t.settings.darkMode,
     };
 
+    // 테마 하나가 여러 벌을 품고 있으면 조합마다 카드를 낸다.
+    const themeCards = themes.flatMap((th) => {
+        const opts = th.options.length > 0 ? th.options : ([""] as const);
+        return opts.map((option) => ({
+            theme: th,
+            option: option as string,
+            selected:
+                currentTheme === th.id &&
+                (option === "" || (themeOptions[th.id] ?? th.options[0]) === option),
+        }));
+    });
+
     return (
-        <S.PageWrapper>
-            <S.MainContent>
-                <S.PageHeader>
-                    <span>{t.settings.title}</span>
-                    <hr />
-                </S.PageHeader>
+        <L.Shell>
+            <StarField />
 
-                <S.Section id="sec-theme">
-                    <S.SectionTitle>{t.settings.theme}</S.SectionTitle>
-                    <S.ThemeGrid>
-                        {themes.map((th) => {
-                            const selected = currentTheme === th.id;
-                            return (
-                                <S.ThemeCard key={th.id} $selected={selected} onClick={() => onThemeChange(th.id)}>
-                                    <S.ThemePreview>
-                                        <S.PreviewBar $color={th.preview.bar} />
-                                        <S.PreviewRow>
-                                            <S.PreviewDot $color={th.preview.dot} />
-                                            <S.PreviewLines>
-                                                <S.PreviewLine $color={th.preview.line1} $w={55} />
-                                                <S.PreviewLine $color={th.preview.line2} $w={35} />
-                                            </S.PreviewLines>
-                                        </S.PreviewRow>
-                                        <S.PreviewRow>
-                                            <S.PreviewDot $color={th.preview.dot} />
-                                            <S.PreviewLines>
-                                                <S.PreviewLine $color={th.preview.line1} $w={40} />
-                                                <S.PreviewLine $color={th.preview.line2} $w={60} />
-                                            </S.PreviewLines>
-                                        </S.PreviewRow>
-                                    </S.ThemePreview>
-                                    <S.ThemeInfo>
-                                        <S.ThemeLabelGroup>
-                                            <S.ThemeLabel>{th.label}</S.ThemeLabel>
-                                            <S.ThemeDesc>{th.description}</S.ThemeDesc>
-                                        </S.ThemeLabelGroup>
-                                        {selected && <S.CheckMark><Check size={12} strokeWidth={3} /></S.CheckMark>}
-                                    </S.ThemeInfo>
-                                </S.ThemeCard>
-                            );
-                        })}
-                    </S.ThemeGrid>
-                    {(() => {
-                        const activeDef = themes.find(th => th.id === currentTheme);
-                        if (!activeDef || activeDef.options.length === 0) return null;
-                        const currentOption = themeOptions[currentTheme] ?? activeDef.options[0];
-                        const optionLabels: Record<string, string> = {
-                            light: t.settings.lightMode,
-                            dark: t.settings.darkMode,
-                        };
-                        return (
-                            <S.ThemeSubSection>
-                                <S.ThemeSubLabel>{t.settings.themeOptions}</S.ThemeSubLabel>
-                                <S.ModeButtonGroup>
-                                    {activeDef.options.map((opt) => (
-                                        <S.ModeButton
-                                            key={opt}
-                                            $active={currentOption === opt}
-                                            onClick={() => onThemeOptionChange(currentTheme, opt)}
-                                        >
-                                            {optionLabels[opt] ?? opt}
-                                        </S.ModeButton>
-                                    ))}
-                                </S.ModeButtonGroup>
-                            </S.ThemeSubSection>
-                        );
-                    })()}
-                </S.Section>
+            <L.Frame>
+                <L.Constellation>
+                    <L.ConstellationArt viewBox="0 0 210 340" aria-hidden="true">
+                        <polyline
+                            points={TAB_MARKS.map((m) => `${m.x},${m.y}`).join(" ")}
+                            fill="none" strokeWidth="1"
+                        />
+                        {/* 이름 없는 잔별. 성좌는 표지별만으로 이뤄지지 않는다. */}
+                        <circle cx="72" cy="104" r="1.1" /><circle cx="16" cy="176" r="1.1" /><circle cx="66" cy="248" r="1.1" />
+                    </L.ConstellationArt>
 
-                <S.Section id="sec-font">
-                    <S.SectionTitle>{t.settings.font}</S.SectionTitle>
-
-                    <SegmentRow>
-                        <SegmentLabel>글자 크기</SegmentLabel>
-                        <SegmentGroup>
-                            {FONT_SIZE_OPTIONS.map((o) => (
-                                <Segment
-                                    key={o.key}
-                                    type="button"
-                                    $selected={fontSizeKey === o.key}
-                                    onClick={() => onFontSizeChange(o.key)}
-                                >
-                                    {o.label}
-                                </Segment>
-                            ))}
-                        </SegmentGroup>
-                    </SegmentRow>
-
-                    <SegmentRow>
-                        <SegmentLabel>글자 두께</SegmentLabel>
-                        <SegmentGroup>
-                            {FONT_WEIGHT_OPTIONS.map((o) => (
-                                <Segment
-                                    key={o.key}
-                                    type="button"
-                                    $selected={fontWeightKey === o.key}
-                                    onClick={() => onFontWeightChange(o.key)}
-                                    style={o.weight > 0 ? { fontWeight: o.weight } : undefined}
-                                >
-                                    {o.label}
-                                </Segment>
-                            ))}
-                        </SegmentGroup>
-                    </SegmentRow>
-
-                    <FontGrid>
-                        {FONT_OPTIONS.map((f) => {
-                            const selected = fontKey === f.key;
-                            return (
-                                <FontCard
-                                    key={f.key}
-                                    type="button"
-                                    $selected={selected}
-                                    onClick={() => onFontChange(f.key)}
-                                >
-                                    <FontPreview $family={f.family}>
-                                        일정과 목표를 하나의 별자리처럼 ✦
-                                    </FontPreview>
-                                    <FontMeta>
-                                        <CardLabel>{f.label}</CardLabel>
-                                        {selected && <S.CheckMark><Check size={12} strokeWidth={3} /></S.CheckMark>}
-                                    </FontMeta>
-                                </FontCard>
-                            );
-                        })}
-                    </FontGrid>
-                </S.Section>
-
-                <S.Section id="sec-widgets">
-                    <S.SectionTitle>{t.settings.widgets}</S.SectionTitle>
-                    <S.SectionBody>
-                        <S.WarningText style={{ marginBottom: 16 }}>
-                            {t.widget.desc}
-                        </S.WarningText>
-                        <WidgetBoard>
-                            {widgetList.map(({ kind, label, desc }) => (
-                                <WidgetCard key={kind}>
-                                    <WidgetPreview kind={kind} />
-                                    <CardLabel>{label}</CardLabel>
-                                    <CardDesc>{desc}</CardDesc>
-                                    <CardActions>
-                                        <S.FormButton $variant="primary" onClick={() => onWidgetOpen(kind)}>
-                                            {t.widget.open}
-                                        </S.FormButton>
-                                        <S.FormButton $variant="default" onClick={() => onWidgetClose(kind)}>
-                                            {t.widget.close}
-                                        </S.FormButton>
-                                    </CardActions>
-                                </WidgetCard>
-                            ))}
-                        </WidgetBoard>
-                    </S.SectionBody>
-                </S.Section>
-
-                <S.Section id="sec-system">
-                    <S.SectionTitle>{t.settings.system}</S.SectionTitle>
-                    <S.SectionBody>
-                        <S.InfoRow>
-                            <div>
-                                <S.InfoValue>{t.system.autostart}</S.InfoValue>
-                                <div style={{ fontSize: "0.74rem", opacity: 0.55, marginTop: 2 }}>{t.system.autostartDesc}</div>
-                            </div>
-                            <S.FormButton
-                                $variant={autostart ? "primary" : "default"}
-                                onClick={onAutostartToggle}
+                    <L.TabList role="tablist" aria-orientation="vertical">
+                        {TABS.map((x) => (
+                            <L.TabButton
+                                key={x.id}
+                                role="tab"
+                                type="button"
+                                aria-selected={tab === x.id}
+                                $active={tab === x.id}
+                                onClick={() => setTab(x.id)}
                             >
-                                {autostart ? "ON" : "OFF"}
-                            </S.FormButton>
-                        </S.InfoRow>
-                        <S.InfoRow style={{ marginTop: 16 }}>
-                            <div>
-                                <S.InfoValue>{t.system.language}</S.InfoValue>
-                                <div style={{ fontSize: "0.74rem", opacity: 0.55, marginTop: 2 }}>{t.system.languageDesc}</div>
-                            </div>
-                            <LocaleSelect />
-                        </S.InfoRow>
-                        <S.InfoRow style={{ marginTop: 16 }}>
-                            <div>
-                                <S.InfoValue>{t.system.timezone}</S.InfoValue>
-                                <div style={{ fontSize: "0.74rem", opacity: 0.55, marginTop: 2 }}>{t.system.timezoneDesc}</div>
-                            </div>
-                            <TimezoneSelect />
-                        </S.InfoRow>
-                    </S.SectionBody>
-                </S.Section>
+                                <span className="lbl">{x.label}</span>
+                                <span className="cnt">{x.count}</span>
+                            </L.TabButton>
+                        ))}
+                        {TAB_MARKS.map((m) => (
+                            <L.Mark key={m.id} $x={m.x} $y={m.y} $on={tab === m.id} aria-hidden="true" />
+                        ))}
+                    </L.TabList>
+                </L.Constellation>
 
-                <S.Section id="sec-account-info">
-                    <S.SectionTitle>{t.settings.accountInfo}</S.SectionTitle>
-                    <S.SectionBody>
-                        <S.InfoRow>
-                            <S.InfoLabel>{t.account.email}</S.InfoLabel>
-                            <S.InfoValue>{user?.email ?? "—"}</S.InfoValue>
-                        </S.InfoRow>
-                        <S.InfoRow>
-                            <S.InfoLabel>{t.account.name}</S.InfoLabel>
-                            <S.InfoValue>{user?.name ?? "—"}</S.InfoValue>
-                        </S.InfoRow>
-                    </S.SectionBody>
-                </S.Section>
+                <L.Pane>
+                    <L.PaneHeader>
+                        {tab === "look" && (
+                            <L.Orbit viewBox="0 0 200 200" aria-hidden="true" fill="none" strokeWidth=".6">
+                                <ellipse cx="100" cy="100" rx="80" ry="31" opacity=".55" />
+                                <ellipse cx="100" cy="100" rx="80" ry="31" opacity=".55" transform="rotate(60 100 100)" />
+                                <ellipse cx="100" cy="100" rx="80" ry="31" opacity=".55" transform="rotate(120 100 100)" />
+                                <circle cx="100" cy="100" r="10" opacity=".85" />
+                                <circle className="pip" cx="180" cy="100" r="3.2" />
+                                <circle className="pip" cx="60" cy="31" r="2.4" />
+                            </L.Orbit>
+                        )}
+                        <L.Eyebrow>{ROMAN[activeIndex]}</L.Eyebrow>
+                        <L.PaneTitle>{active.label}</L.PaneTitle>
+                        {active.note && <L.PaneNote>{active.note}</L.PaneNote>}
+                    </L.PaneHeader>
 
-                <S.Section id="sec-name">
-                    <S.SectionTitle>{t.settings.changeName}</S.SectionTitle>
-                    <S.SectionBody>
-                        <S.FormRow>
-                            <S.FormLabel>{t.account.newName}</S.FormLabel>
-                            <S.FormInput
-                                value={newName}
-                                onChange={(e) => onNewNameChange(e.target.value)}
-                                placeholder={t.account.newNamePlaceholder}
-                                maxLength={30}
-                            />
-                        </S.FormRow>
-                        <S.ButtonRow>
-                            <S.FormButton
-                                $variant="primary"
-                                onClick={onNameSave}
-                                disabled={namePending || !newName.trim() || newName.trim() === user?.name}
-                            >
-                                {namePending ? t.account.saving : t.account.save}
-                            </S.FormButton>
-                        </S.ButtonRow>
-                        {nameStatus && <S.StatusMessage $type={nameStatus.type}>{nameStatus.msg}</S.StatusMessage>}
-                    </S.SectionBody>
-                </S.Section>
-
-                <S.Section id="sec-password">
-                    <S.SectionTitle>{t.settings.changePassword}</S.SectionTitle>
-                    <S.SectionBody>
-                        <S.FormRow>
-                            <S.FormLabel>{t.account.currentPassword}</S.FormLabel>
-                            <S.FormInput
-                                type="password"
-                                value={pwForm.current}
-                                onChange={(e) => onPwFormChange("current", e.target.value)}
-                                placeholder={t.account.currentPassword}
-                                autoComplete="current-password"
-                            />
-                        </S.FormRow>
-                        <S.FormRow>
-                            <S.FormLabel>{t.account.newPassword}</S.FormLabel>
-                            <S.FormInput
-                                type="password"
-                                value={pwForm.next}
-                                onChange={(e) => onPwFormChange("next", e.target.value)}
-                                placeholder={t.account.newPasswordPlaceholder}
-                                autoComplete="new-password"
-                            />
-                        </S.FormRow>
-                        <S.FormRow>
-                            <S.FormLabel>{t.account.confirmPassword}</S.FormLabel>
-                            <S.FormInput
-                                type="password"
-                                value={pwForm.confirm}
-                                onChange={(e) => onPwFormChange("confirm", e.target.value)}
-                                placeholder={t.account.confirmPasswordPlaceholder}
-                                autoComplete="new-password"
-                            />
-                        </S.FormRow>
-                        <S.ButtonRow>
-                            <S.FormButton
-                                $variant="primary"
-                                onClick={onPasswordSave}
-                                disabled={pwPending || !pwForm.current || !pwForm.next || !pwForm.confirm}
-                            >
-                                {pwPending ? t.account.changing : t.account.changePassword}
-                            </S.FormButton>
-                        </S.ButtonRow>
-                        {pwStatus && <S.StatusMessage $type={pwStatus.type}>{pwStatus.msg}</S.StatusMessage>}
-                    </S.SectionBody>
-                </S.Section>
-
-                <S.Section id="sec-delete">
-                    <S.SectionTitle>{t.settings.deleteAccount}</S.SectionTitle>
-                    <S.SectionBody>
-                        {!showDeleteForm ? (
+                    <L.PaneBody key={tab}>
+                        {/* ── 모양 ──────────────────────────────────────────── */}
+                        {tab === "look" && (
                             <>
-                                <S.WarningText>
-                                    {t.account.deleteWarning}
-                                </S.WarningText>
-                                <S.FormButton $variant="danger" onClick={() => onShowDeleteForm(true)}>
-                                    {t.account.proceed}
-                                </S.FormButton>
-                            </>
-                        ) : (
-                            <>
-                                <S.WarningText>
-                                    {t.account.deleteInstructions}
-                                </S.WarningText>
-                                <S.FormRow>
-                                    <S.FormLabel>{t.account.passwordConfirm}</S.FormLabel>
-                                    <S.FormInput
-                                        type="password"
-                                        value={deletePassword}
-                                        onChange={(e) => onDeletePasswordChange(e.target.value)}
-                                        placeholder={t.account.passwordConfirmPlaceholder}
-                                    />
-                                </S.FormRow>
-                                <S.FormRow>
-                                    <S.FormLabel>{t.account.deleteConfirmLabel}</S.FormLabel>
-                                    <S.FormInput
-                                        value={deleteConfirm}
-                                        onChange={(e) => onDeleteConfirmChange(e.target.value)}
-                                        placeholder={t.account.deleteConfirmPlaceholder}
-                                    />
-                                </S.FormRow>
-                                <S.ButtonRow>
-                                    <S.FormButton $variant="default" onClick={onDeleteCancel}>
-                                        {t.account.cancel}
-                                    </S.FormButton>
-                                    <S.FormButton
-                                        $variant="danger"
-                                        onClick={onDelete}
-                                        disabled={deletePending || deleteConfirm !== deleteKeyword}
-                                    >
-                                        {deletePending ? t.account.processing : t.account.finalDelete}
-                                    </S.FormButton>
-                                </S.ButtonRow>
-                                {deleteStatus && <S.StatusMessage $type={deleteStatus.type}>{deleteStatus.msg}</S.StatusMessage>}
+                                <L.Block>
+                                    <L.BlockHead><h2>{t.settings.theme}</h2></L.BlockHead>
+                                    <L.ThemeRow>
+                                        {themeCards.map(({ theme: th, option, selected }) => {
+                                            const g = th.grounds[option] ?? th.grounds[th.options[0]];
+                                            return (
+                                                <L.ThemeCard
+                                                    key={`${th.id}-${option}`}
+                                                    type="button"
+                                                    $selected={selected}
+                                                    onClick={() => {
+                                                        if (currentTheme !== th.id) onThemeChange(th.id);
+                                                        onThemeOptionChange(th.id, option);
+                                                    }}
+                                                >
+                                                    <L.Mini $bg={g.bg}>
+                                                        <L.MiniRail $bg={g.rail}>
+                                                            <i style={{ background: g.accent, width: "66%" }} />
+                                                            <i style={{ background: g.dimInk, width: "90%" }} />
+                                                            <i style={{ background: g.dimInk, width: "58%" }} />
+                                                            <i style={{ background: g.dimInk, width: "78%" }} />
+                                                            <i style={{ background: g.dimInk, width: "68%" }} />
+                                                        </L.MiniRail>
+                                                        <L.MiniBody>
+                                                            <div className="title" style={{ background: g.ink }} />
+                                                            <div className="week">
+                                                                {Array.from({ length: 7 }, (_, i) => (
+                                                                    <b key={i} style={{ background: g.dimInk }} />
+                                                                ))}
+                                                            </div>
+                                                            <div className="grid">
+                                                                {CELL_PLAN.map((kind, i) => (
+                                                                    <span
+                                                                        key={i}
+                                                                        style={{
+                                                                            background:
+                                                                                kind === "today" ? g.accent
+                                                                                    : kind === "event" ? g.event
+                                                                                        : g.cell,
+                                                                        }}
+                                                                    />
+                                                                ))}
+                                                            </div>
+                                                        </L.MiniBody>
+                                                    </L.Mini>
+                                                    <L.ThemeMeta>
+                                                        <L.ThemeName>
+                                                            <L.Star $on={selected} />
+                                                            {th.label}{option !== th.options[0] ? ` ${optionLabels[option] ?? option}` : ""}
+                                                        </L.ThemeName>
+                                                        <L.ThemeDesc>{th.description}</L.ThemeDesc>
+                                                    </L.ThemeMeta>
+                                                </L.ThemeCard>
+                                            );
+                                        })}
+                                    </L.ThemeRow>
+                                </L.Block>
+
+                                <L.Block>
+                                    <L.BlockHead><h2>{t.settings.font}</h2></L.BlockHead>
+
+                                    <L.SegRow>
+                                        <L.SegLabel>{t.settings.fontSize}</L.SegLabel>
+                                        <L.SegGroup>
+                                            {FONT_SIZE_OPTIONS.map((o) => (
+                                                <L.Seg
+                                                    key={o.key} type="button"
+                                                    $selected={fontSizeKey === o.key}
+                                                    onClick={() => onFontSizeChange(o.key)}
+                                                >
+                                                    <L.Star $on={fontSizeKey === o.key} $small />
+                                                    {t.settings.fontSizes[o.key]}
+                                                    <em>{o.px}</em>
+                                                </L.Seg>
+                                            ))}
+                                        </L.SegGroup>
+                                    </L.SegRow>
+
+                                    <L.SegRow>
+                                        <L.SegLabel>{t.settings.fontWeight}</L.SegLabel>
+                                        <L.SegGroup>
+                                            {FONT_WEIGHT_OPTIONS.map((o) => (
+                                                <L.Seg
+                                                    key={o.key} type="button"
+                                                    $selected={fontWeightKey === o.key}
+                                                    onClick={() => onFontWeightChange(o.key)}
+                                                    style={o.weight > 0 ? { fontWeight: o.weight } : undefined}
+                                                >
+                                                    <L.Star $on={fontWeightKey === o.key} $small />
+                                                    {t.settings.fontWeights[o.key]}
+                                                </L.Seg>
+                                            ))}
+                                        </L.SegGroup>
+                                    </L.SegRow>
+
+                                    <L.FontGrid>
+                                        {FONT_OPTIONS.map((f) => (
+                                            <L.FontCard
+                                                key={f.key} type="button"
+                                                $selected={fontKey === f.key}
+                                                onClick={() => onFontChange(f.key)}
+                                            >
+                                                <L.FontPreview $family={f.family}>
+                                                    {t.settings.fontSample}
+                                                </L.FontPreview>
+                                                <L.CardFoot>
+                                                    <L.Star $on={fontKey === f.key} />
+                                                    <L.CardName>{t.settings.fontNames[f.key] ?? f.label}</L.CardName>
+                                                </L.CardFoot>
+                                            </L.FontCard>
+                                        ))}
+                                    </L.FontGrid>
+                                </L.Block>
                             </>
                         )}
-                    </S.SectionBody>
-                </S.Section>
-            </S.MainContent>
 
-            <S.NavPanel>
-                <S.NavTitle>{t.settings.onThisPage}</S.NavTitle>
-                {navSections.map(({ id, label }) => (
-                    <S.NavItem
-                        key={id}
-                        $active={activeId === id}
-                        onClick={() => scrollTo(id)}
-                    >
-                        {label}
-                    </S.NavItem>
-                ))}
-            </S.NavPanel>
-        </S.PageWrapper>
+                        {/* ── 위젯 ──────────────────────────────────────────── */}
+                        {tab === "widget" && widgetGroups.map(({ name, items }) => (
+                            <L.Block key={name}>
+                                <L.BlockHead><h2>{name}</h2></L.BlockHead>
+                                <L.WidgetGallery>
+                                    {items.map(({ kind, label, desc }) => (
+                                        <L.WidgetCard key={kind}>
+                                            <L.WidgetFrame>
+                                                <WidgetPreview kind={kind} />
+                                            </L.WidgetFrame>
+                                            <L.WidgetBody>
+                                                <L.CardName as="h4">{label}</L.CardName>
+                                                <L.WidgetDesc>{desc}</L.WidgetDesc>
+                                                <L.WidgetActions>
+                                                    <S.FormButton $variant="primary" onClick={() => onWidgetOpen(kind)}>
+                                                        {t.widget.open}
+                                                    </S.FormButton>
+                                                    <S.FormButton $variant="default" onClick={() => onWidgetClose(kind)}>
+                                                        {t.widget.close}
+                                                    </S.FormButton>
+                                                </L.WidgetActions>
+                                            </L.WidgetBody>
+                                        </L.WidgetCard>
+                                    ))}
+                                </L.WidgetGallery>
+                            </L.Block>
+                        ))}
+
+                        {/* ── 시스템 ────────────────────────────────────────── */}
+                        {tab === "system" && (
+                            <>
+                                {/* 자동 시작은 창을 띄우는 OS 에만 있다. 폰에서는 눌러도 아무 일이 없다. */}
+                                {showAutostart && (
+                                    <S.InfoRow>
+                                        <div>
+                                            <S.InfoValue>{t.system.autostart}</S.InfoValue>
+                                            <L.RowNote>{t.system.autostartDesc}</L.RowNote>
+                                        </div>
+                                        <S.FormButton
+                                            $variant={autostart ? "primary" : "default"}
+                                            onClick={onAutostartToggle}
+                                        >
+                                            {autostart ? "ON" : "OFF"}
+                                        </S.FormButton>
+                                    </S.InfoRow>
+                                )}
+                                <S.InfoRow style={showAutostart ? { marginTop: 16 } : undefined}>
+                                    <div>
+                                        <S.InfoValue>{t.system.language}</S.InfoValue>
+                                        <L.RowNote>{t.system.languageDesc}</L.RowNote>
+                                    </div>
+                                    <LocaleSelect />
+                                </S.InfoRow>
+                                <S.InfoRow style={{ marginTop: 16 }}>
+                                    <div>
+                                        <S.InfoValue>{t.system.timezone}</S.InfoValue>
+                                        <L.RowNote>{t.system.timezoneDesc}</L.RowNote>
+                                    </div>
+                                    <TimezoneSelect />
+                                </S.InfoRow>
+                            </>
+                        )}
+
+                        {/* ── 계정 ──────────────────────────────────────────── */}
+                        {tab === "account" && (
+                            <>
+                                <L.Block>
+                                    <L.BlockHead><h2>{t.settings.accountInfo}</h2></L.BlockHead>
+                                    <S.InfoRow>
+                                        <S.InfoLabel>{t.account.email}</S.InfoLabel>
+                                        <S.InfoValue>{user?.email ?? "—"}</S.InfoValue>
+                                    </S.InfoRow>
+                                    <S.InfoRow>
+                                        <S.InfoLabel>{t.account.name}</S.InfoLabel>
+                                        <S.InfoValue>{user?.name ?? "—"}</S.InfoValue>
+                                    </S.InfoRow>
+                                </L.Block>
+
+                                <L.Block>
+                                    <L.BlockHead><h2>{t.settings.changeName}</h2></L.BlockHead>
+                                    <S.FormRow>
+                                        <S.FormLabel>{t.account.newName}</S.FormLabel>
+                                        <S.FormInput
+                                            value={newName}
+                                            onChange={(e) => onNewNameChange(e.target.value)}
+                                            placeholder={t.account.newNamePlaceholder}
+                                            maxLength={30}
+                                        />
+                                    </S.FormRow>
+                                    <S.ButtonRow>
+                                        <S.FormButton
+                                            $variant="primary"
+                                            onClick={onNameSave}
+                                            disabled={namePending || !newName.trim() || newName.trim() === user?.name}
+                                        >
+                                            {namePending ? t.account.saving : t.account.save}
+                                        </S.FormButton>
+                                    </S.ButtonRow>
+                                    {nameStatus && <S.StatusMessage $type={nameStatus.type}>{nameStatus.msg}</S.StatusMessage>}
+                                </L.Block>
+
+                                <L.Block>
+                                    <L.BlockHead><h2>{t.settings.changePassword}</h2></L.BlockHead>
+                                    <S.FormRow>
+                                        <S.FormLabel>{t.account.currentPassword}</S.FormLabel>
+                                        <S.FormInput
+                                            type="password" value={pwForm.current}
+                                            onChange={(e) => onPwFormChange("current", e.target.value)}
+                                            placeholder={t.account.currentPassword}
+                                            autoComplete="current-password"
+                                        />
+                                    </S.FormRow>
+                                    <S.FormRow>
+                                        <S.FormLabel>{t.account.newPassword}</S.FormLabel>
+                                        <S.FormInput
+                                            type="password" value={pwForm.next}
+                                            onChange={(e) => onPwFormChange("next", e.target.value)}
+                                            placeholder={t.account.newPasswordPlaceholder}
+                                            autoComplete="new-password"
+                                        />
+                                    </S.FormRow>
+                                    <S.FormRow>
+                                        <S.FormLabel>{t.account.confirmPassword}</S.FormLabel>
+                                        <S.FormInput
+                                            type="password" value={pwForm.confirm}
+                                            onChange={(e) => onPwFormChange("confirm", e.target.value)}
+                                            placeholder={t.account.confirmPasswordPlaceholder}
+                                            autoComplete="new-password"
+                                        />
+                                    </S.FormRow>
+                                    <S.ButtonRow>
+                                        <S.FormButton
+                                            $variant="primary"
+                                            onClick={onPasswordSave}
+                                            disabled={pwPending || !pwForm.current || !pwForm.next || !pwForm.confirm}
+                                        >
+                                            {pwPending ? t.account.changing : t.account.changePassword}
+                                        </S.FormButton>
+                                    </S.ButtonRow>
+                                    {pwStatus && <S.StatusMessage $type={pwStatus.type}>{pwStatus.msg}</S.StatusMessage>}
+                                </L.Block>
+
+                                <L.DangerBlock>
+                                    <L.BlockHead $danger><h2>{t.settings.deleteAccount}</h2></L.BlockHead>
+                                    {!showDeleteForm ? (
+                                        <>
+                                            <S.WarningText>{t.account.deleteWarning}</S.WarningText>
+                                            <S.FormButton $variant="danger" onClick={() => onShowDeleteForm(true)}>
+                                                {t.account.proceed}
+                                            </S.FormButton>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <S.WarningText>{t.account.deleteInstructions}</S.WarningText>
+                                            <S.FormRow>
+                                                <S.FormLabel>{t.account.passwordConfirm}</S.FormLabel>
+                                                <S.FormInput
+                                                    type="password" value={deletePassword}
+                                                    onChange={(e) => onDeletePasswordChange(e.target.value)}
+                                                    placeholder={t.account.passwordConfirmPlaceholder}
+                                                />
+                                            </S.FormRow>
+                                            <S.FormRow>
+                                                <S.FormLabel>{t.account.deleteConfirmLabel}</S.FormLabel>
+                                                <S.FormInput
+                                                    value={deleteConfirm}
+                                                    onChange={(e) => onDeleteConfirmChange(e.target.value)}
+                                                    placeholder={t.account.deleteConfirmPlaceholder}
+                                                />
+                                            </S.FormRow>
+                                            <S.ButtonRow>
+                                                <S.FormButton $variant="default" onClick={onDeleteCancel}>
+                                                    {t.account.cancel}
+                                                </S.FormButton>
+                                                <S.FormButton
+                                                    $variant="danger"
+                                                    onClick={onDelete}
+                                                    disabled={deletePending || deleteConfirm !== deleteKeyword}
+                                                >
+                                                    {deletePending ? t.account.processing : t.account.finalDelete}
+                                                </S.FormButton>
+                                            </S.ButtonRow>
+                                            {deleteStatus && <S.StatusMessage $type={deleteStatus.type}>{deleteStatus.msg}</S.StatusMessage>}
+                                        </>
+                                    )}
+                                </L.DangerBlock>
+                            </>
+                        )}
+                    </L.PaneBody>
+                </L.Pane>
+            </L.Frame>
+        </L.Shell>
     );
 }

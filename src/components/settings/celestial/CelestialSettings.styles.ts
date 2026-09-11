@@ -25,7 +25,7 @@ export const MainContent = styled.div`
 `;
 
 export const PageHeader = styled.div`
-    font-family: ${p => p.theme.fonts.celestial};
+    font-family: ${p => p.theme.fonts.display};
     font-size: 1rem;
     font-weight: 500;
     color: ${p => p.theme.colors.text};
@@ -53,7 +53,7 @@ export const Section = styled.section`
 `;
 
 export const SectionTitle = styled.div`
-    font-family: ${p => p.theme.fonts.celestial};
+    font-family: ${p => p.theme.fonts.display};
     font-size: 0.85rem;
     color: ${p => p.theme.colors.textSecondary};
     padding: 8px 14px;
@@ -141,7 +141,7 @@ export const ThemeLabelGroup = styled.div`
 `;
 
 export const ThemeLabel = styled.div`
-    font-family: ${p => p.theme.fonts.celestial};
+    font-family: ${p => p.theme.fonts.display};
     font-size: 0.88rem;
     color: ${p => p.theme.colors.text};
     letter-spacing: 1px;
@@ -209,7 +209,7 @@ export const ModeButton = styled.button<{ $active: boolean }>`
     border-right: 1px solid ${p => p.theme.colors.primary};
     background: ${p => p.$active ? p.theme.colors.primary : 'transparent'};
     color: ${p => p.$active ? p.theme.colors.surface : p.theme.colors.primary};
-    font-family: ${p => p.theme.fonts.celestial};
+    font-family: ${p => p.theme.fonts.display};
     font-size: 0.75rem;
     letter-spacing: 1.5px;
     cursor: pointer;
@@ -305,7 +305,7 @@ export const FormButton = styled.button<{ $variant?: "primary" | "danger" | "def
     color: ${p =>
         p.$variant === "danger" ? "#e57373" :
         p.theme.colors.primary};
-    font-family: ${p => p.theme.fonts.celestial};
+    font-family: ${p => p.theme.fonts.display};
     font-size: 0.78rem;
     letter-spacing: 1.5px;
     cursor: pointer;
@@ -368,7 +368,7 @@ export const NavPanel = styled.nav`
 export const NavTitle = styled.div`
     ${MOBILE} { display: none; }
 
-    font-family: ${p => p.theme.fonts.celestial};
+    font-family: ${p => p.theme.fonts.display};
     font-size: 0.65rem;
     letter-spacing: 2.5px;
     color: ${p => p.theme.colors.textSecondary};

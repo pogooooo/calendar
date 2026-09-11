@@ -11,8 +11,10 @@ export const Overlay = styled(motion.div)`
     align-items: center;
     z-index: 1000;
 
+    /* 폰에서는 아래에서 올라오는 시트로 띄운다. 손가락이 닿는 자리에 단추가 오고,
+       짧은 내용일 때 텅 빈 화면 하나를 통째로 쓰지 않는다. */
     @media (max-width: 768px) {
-        align-items: stretch;
+        align-items: flex-end;
         justify-content: stretch;
     }
 `;
@@ -34,10 +36,13 @@ export const Container = styled(motion.div)<{ $maxWidth: string }>`
     @media (max-width: 768px) {
         width: 100%;
         max-width: none;
-        max-height: 100%;
-        height: 100%;
+        /* 내용만큼만 자라고, 길면 이 선에서 멈춰 안에서 굴린다.
+           위를 조금 남겨 뒤 화면이 비쳐야 시트라는 게 읽힌다. */
+        max-height: 92%;
+        height: auto;
         border: none;
         border-top: 1px solid ${(props) => props.theme.colors.primary};
-        box-shadow: none;
+        box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.45);
+        padding-bottom: env(safe-area-inset-bottom, 0px);
     }
 `;

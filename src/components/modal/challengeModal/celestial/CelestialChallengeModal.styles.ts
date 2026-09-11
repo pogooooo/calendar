@@ -1,7 +1,7 @@
 import styled from "styled-components";
 
 export const ModalHeader = styled.div`
-    font-family: ${(props) => props.theme.fonts.celestial};
+    font-family: ${(props) => props.theme.fonts.display};
     font-size: 1.1rem;
     color: ${(props) => props.theme.colors.text};
     padding: 15px 20px;

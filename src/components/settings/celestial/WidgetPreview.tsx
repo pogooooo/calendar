@@ -1,19 +1,7 @@
 "use client";
 
-import styled from "styled-components";
+import * as S from "./WidgetPreview.styles";
 
-const Frame = styled.svg`
-    width: 100%;
-    height: 62px;
-    flex-shrink: 0;
-    color: ${(props) => props.theme.colors.primary};
-    border: 1px solid ${(props) => props.theme.colors.primary}55;
-
-    .ln { stroke: currentColor; fill: none; stroke-width: 1; vector-effect: non-scaling-stroke; }
-    .dim { opacity: 0.4; }
-    .fill { fill: currentColor; stroke: none; }
-    .fill-dim { fill: currentColor; stroke: none; opacity: 0.35; }
-`;
 
 const shapes: Record<string, React.ReactNode> = {
     daily: (
@@ -113,6 +101,37 @@ const shapes: Record<string, React.ReactNode> = {
             <path className="ln" d="M10 16 H80 M10 26 H74 M10 36 H82 M10 46 H52" />
         </>
     ),
+    due: (
+        <>
+            <path className="ln dim" d="M10 12 H82" />
+            <rect className="fill" x="10" y="20" width="3" height="9" />
+            <path className="ln" d="M19 24.5 H62" />
+            <rect className="fill-dim" x="10" y="33" width="3" height="9" />
+            <path className="ln" d="M19 37.5 H50" />
+            <rect className="fill-dim" x="10" y="46" width="3" height="9" />
+            <path className="ln dim" d="M19 50.5 H56" />
+        </>
+    ),
+    nownext: (
+        <>
+            <path className="ln" d="M6 31 H86" />
+            <circle className="fill" cx="10" cy="31" r="2.6" />
+            <rect className="ln" x="17" y="14" width="36" height="10" />
+            <rect className="ln dim" x="17" y="38" width="28" height="10" />
+            <path className="ln dim" d="M58 43 H82" />
+        </>
+    ),
+    anniversary: (
+        <>
+            <rect className="fill" x="11" y="16" width="6" height="6" transform="rotate(45 14 19)" />
+            <path className="ln" d="M25 19 H58" />
+            <path className="ln dim" d="M66 19 H82" />
+            <rect className="fill" x="11" y="33" width="6" height="6" transform="rotate(45 14 36)" />
+            <path className="ln" d="M25 36 H50" />
+            <path className="ln dim" d="M66 36 H82" />
+            <path className="ln dim" d="M11 50 H82" />
+        </>
+    ),
     quicktask: (
         <>
             <rect className="ln dim" x="10" y="10" width="72" height="12" />
@@ -146,10 +165,26 @@ const shapes: Record<string, React.ReactNode> = {
     ),
 };
 
+/**
+ * 위젯 kind 와 그림 이름이 다른 것들을 이어 준다.
+ * 이게 없으면 shapes[kind] 가 비어 today 그림이 대신 나간다.
+ */
+const ALIAS: Record<string, string> = {
+    projects: "projectboard",
+};
+
 export default function WidgetPreview({ kind }: { kind: string }) {
+    const shape = shapes[ALIAS[kind] ?? kind];
+
+    // 그림이 없으면 엉뚱한 그림을 내놓는 대신 빈 칸을 둔다.
+    // 조용히 today 로 떨어지면 잘못된 것을 알아채지 못한다.
+    if (!shape && process.env.NODE_ENV === "development") {
+        console.warn(`WidgetPreview: "${kind}" 그림이 없습니다.`);
+    }
+
     return (
-        <Frame viewBox="0 0 92 62" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            {shapes[kind] ?? shapes.today}
-        </Frame>
+        <S.Frame viewBox="0 0 92 62" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            {shape}
+        </S.Frame>
     );
 }

@@ -1,13 +1,14 @@
 ﻿"use client";
 
 import * as React from "react";
-import { useTheme } from "styled-components";
+import { usePickTheme } from "@/styles/themed";
 import CelestialMonthCalendar from "./celestial/CelestialMonthCalendar";
 import { CategoryType } from "@/store/useCategoryStore";
 import { TodoType } from "@/store/useTodoStore";
 
 import { useExpandedTodos, ExpandedTodoType } from "@/hooks/useExpandedTodos";
 import useTodoStore from "@/store/useTodoStore";
+import { useT } from "@/i18n/useT";
 import { localDateKey } from "@/lib/dateKey";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useDialog } from "@/components/dialog/DialogProvider";
@@ -28,6 +29,12 @@ export interface MonthProps extends Omit<React.HTMLAttributes<HTMLDivElement>, '
     onDateChange?: (date: Date) => void;
     todos?: TodoType[];
     categories?: CategoryType[];
+    /**
+     * 켜면 보여 주는 달이 고른 날짜를 따라간다.
+     * 폰처럼 월간·일간을 갈아 끼우는 화면에서, 일간에서 10월로 넘어간 뒤
+     * 월간으로 돌아왔는데 9월이 떠 있는 일을 막는다.
+     */
+    followSelectedDate?: boolean;
 }
 
 export interface MonthThemeProps {
@@ -48,6 +55,8 @@ export interface MonthThemeProps {
 
     handlePrevMonth: () => void;
     handleNextMonth: () => void;
+    handleToday: () => void;
+    isOnToday: boolean;
     toggleCategory: (categoryId: string) => void;
     handleContextMenu: (e: React.MouseEvent, todo: CalendarTodoType) => void;
     handleQuickEdit: (todo: CalendarTodoType) => void;
@@ -73,11 +82,11 @@ export interface MonthThemeProps {
 }
 
 const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
-    ({ asChild = false, todos = [], categories = [], selectedDate, onDateChange, ...props }, ref) => {
-        const theme = useTheme();
-        const themeName = theme?.name || 'celestial';
+    ({ asChild = false, todos = [], categories = [], selectedDate, onDateChange, followSelectedDate = false, ...props }, ref) => {
+        const MonthCalendarView = usePickTheme({ celestial: CelestialMonthCalendar });
 
-        const [currentDate, setCurrentDate] = React.useState(new Date());
+        const [currentDate, setCurrentDate] = React.useState(
+            () => (followSelectedDate && selectedDate ? new Date(selectedDate) : new Date()));
         const [direction, setDirection] = React.useState(0);
         const [selectedCategoryIds, setSelectedCategoryIds] = React.useState<string[]>([]);
 
@@ -97,6 +106,7 @@ const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
         // 자체 fetch 를 쓰면 토큰 갱신을 건너뛰어 1시간 뒤 모든 조작이 조용히 실패한다
         const authFetch = useAuthFetch();
         const dialog = useDialog();
+        const t = useT();
 
         React.useEffect(() => {
             if (categories.length > 0 && selectedCategoryIds.length === 0) {
@@ -126,7 +136,7 @@ const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
                 chunked.push(allDates.slice(i, i + 7));
             }
             return chunked;
-        }, [currentDate]);
+        }, [currentDate, t]);
 
         const flatDates = React.useMemo(() => weeks.flat(), [weeks]);
 
@@ -245,7 +255,7 @@ const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
 
         const todayStr = React.useMemo(() => new Date().toDateString(), []);
         const dateRangeText = React.useMemo(() => {
-            return `${currentDate.getFullYear()}년 ${currentDate.getMonth() + 1}월`;
+            return t.calendar.monthTitle(currentDate.getFullYear(), currentDate.getMonth() + 1);
         }, [currentDate]);
 
         const handlePrevMonth = () => {
@@ -257,6 +267,30 @@ const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
             setDirection(1);
             setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
         };
+
+        const handleToday = () => {
+            const today = new Date();
+            setDirection(
+                today.getFullYear() * 12 + today.getMonth()
+                    < currentDate.getFullYear() * 12 + currentDate.getMonth() ? -1 : 1);
+            setCurrentDate(new Date(today.getFullYear(), today.getMonth(), 1));
+            onDateChange?.(today);
+        };
+
+        const isOnToday = React.useMemo(() => {
+            const today = new Date();
+            return currentDate.getFullYear() === today.getFullYear()
+                && currentDate.getMonth() === today.getMonth();
+        }, [currentDate]);
+
+        // 고른 날짜가 다른 달로 넘어가면 보여 주는 달도 따라간다.
+        React.useEffect(() => {
+            if (!followSelectedDate || !selectedDate) return;
+            setCurrentDate(prev =>
+                (prev.getFullYear() === selectedDate.getFullYear() && prev.getMonth() === selectedDate.getMonth())
+                    ? prev
+                    : new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1));
+        }, [followSelectedDate, selectedDate]);
 
         const toggleCategory = (categoryId: string) => {
             setSelectedCategoryIds(prev =>
@@ -275,14 +309,14 @@ const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
             e.preventDefault();
             await dialog.notify({
                 title: challenge.title,
-                message: `${challenge.isDone ? "완료" : "미완료"} · 세부 설정은 챌린지 화면에서 바꿀 수 있습니다.`,
+                message: t.alert.challengeToggled(challenge.isDone ? t.alert.stateDone : t.alert.stateUndone),
             });
         };
 
         const handleQuickEdit = async (expandedTodo: CalendarTodoType) => {
             if (expandedTodo.isProject || expandedTodo.isProjectTask) {
                 setContextMenu(null);
-                await dialog.notify({ title: "여기서는 수정할 수 없습니다", message: "프로젝트 항목은 프로젝트 화면에서 수정해주세요." });
+                await dialog.notify({ title: t.alert.editHereTitle, message: t.alert.editHereMsg });
                 return;
             }
             setModalTodo(expandedTodo.originalTodo || (expandedTodo as unknown as TodoType));
@@ -293,32 +327,32 @@ const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
         const handleQuickDelete = async (expandedTodo: CalendarTodoType) => {
             setContextMenu(null);
             if (expandedTodo.isProject || expandedTodo.isProjectTask) {
-                await dialog.notify({ title: "여기서는 삭제할 수 없습니다", message: "프로젝트 항목은 프로젝트 상세 화면에서 삭제해주세요." });
+                await dialog.notify({ title: t.alert.deleteHereTitle, message: t.alert.deleteHereDetailMsg });
                 return;
             }
 
             const actualId = expandedTodo.originalTodo?.id || expandedTodo.id;
             const ok = await dialog.confirmDanger({
-                title: "일정을 삭제할까요",
-                message: "반복 일정 전체가 사라집니다. 되돌릴 수 없습니다.",
+                title: t.alert.deleteTodoTitle,
+                message: (expandedTodo.originalTodo?.repeat ?? expandedTodo.repeat ?? 0) > 0 ? t.alert.deleteTodoMsg : t.alert.deleteTodoOnceMsg,
             });
             if (!ok) return;
             const error = await deleteTodo(authFetch, actualId);
-            if (error) await dialog.notify({ title: "삭제하지 못했습니다", message: error });
+            if (error) await dialog.notify({ title: t.alert.deleteFailed, message: error });
         };
 
         const handleQuickDeleteOne = async (expandedTodo: CalendarTodoType) => {
             setContextMenu(null);
             if (expandedTodo.isProject || expandedTodo.isProjectTask) {
-                await dialog.notify({ title: "여기서는 삭제할 수 없습니다", message: "프로젝트 항목은 프로젝트 상세 화면에서 삭제해주세요." });
+                await dialog.notify({ title: t.alert.deleteHereTitle, message: t.alert.deleteHereDetailMsg });
                 return;
             }
             const actualId = expandedTodo.originalTodo?.id || expandedTodo.id;
             const occurrence = expandedTodo.date ?? new Date(expandedTodo.startAt || Date.now());
             const ok = await dialog.confirm({
-                title: "이 날짜만 삭제할까요",
-                message: "반복 일정 중 이 하루만 사라집니다. 나머지는 그대로입니다.",
-                confirmLabel: "삭제",
+                title: t.alert.deleteOneDayTitle,
+                message: t.alert.deleteOneDayMsg,
+                confirmLabel: t.dialog.delete,
             });
             if (!ok) return;
             await deleteTodoOccurrence(authFetch, actualId, localDateKey(occurrence));
@@ -327,7 +361,7 @@ const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
         const handleQuickToggle = async (expandedTodo: CalendarTodoType) => {
             if (expandedTodo.isProject || expandedTodo.isProjectTask) {
                 setContextMenu(null);
-                await dialog.notify({ title: "여기서는 바꿀 수 없습니다", message: "프로젝트 상태는 프로젝트 상세 화면에서 변경해주세요." });
+                await dialog.notify({ title: t.alert.statusHereTitle, message: t.alert.statusHereMsg });
                 return;
             }
 
@@ -378,6 +412,8 @@ const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
             onDateChange,
             handlePrevMonth,
             handleNextMonth,
+            handleToday,
+            isOnToday,
             toggleCategory,
             handleContextMenu,
             handleQuickEdit,
@@ -398,7 +434,7 @@ const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
 
         return (
             <>
-                <CelestialMonthCalendar ref={ref} {...themeProps} {...props} />
+                <MonthCalendarView ref={ref} {...themeProps} {...props} />
             </>
         );
     }

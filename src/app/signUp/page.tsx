@@ -1,6 +1,7 @@
 "use client";
 
 import styled, { keyframes } from "styled-components";
+import { MOBILE } from "@/styles/breakpoints";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
@@ -46,10 +47,10 @@ const SignUp = () => {
                 router.push("/signIn");
             } else {
                 const errorData = await res.json();
-                setRegisterError(errorData.message || "회원가입 중 오류가 발생했습니다.");
+                setRegisterError(errorData.message || t.auth.signUpError);
             }
         } catch {
-            setRegisterError("네트워크 오류가 발생했습니다.");
+            setRegisterError(t.auth.networkError);
         }
     };
 
@@ -105,6 +106,12 @@ const PageWrapper = styled.div`
     height: calc(100vh - var(--titlebar-h, 0px));
     background-color: ${p => p.theme.colors.surface};
     overflow: hidden;
+
+    /* 폰에서는 화면 위쪽이 상태 표시줄 자리다. 비켜 주지 않으면 언어 고르개가 시계에 깔린다. */
+    ${MOBILE} {
+        height: 100dvh;
+        padding-top: env(safe-area-inset-top, 0px);
+    }
 `;
 
 const FormPanel = styled.div`
@@ -115,6 +122,12 @@ const FormPanel = styled.div`
     justify-content: center;
     background-color: ${p => p.theme.colors.surface};
     position: relative;
+
+    /* 폰에서는 배경 그림 패널이 숨으므로 폼이 화면 전체를 쓴다. */
+    ${MOBILE} {
+        width: 100%;
+        padding: 0 20px;
+    }
 `;
 
 const LangToggle = styled.div`
@@ -130,10 +143,19 @@ const FormInner = styled.div`
     gap: 1rem;
     width: 300px;
     animation: ${fadeUp} 0.6s ease 0.15s both;
+
+    /* 폰에서는 폭을 고정하지 않는다. 300px 로 못 박으면 좁은 화면에서 치우친다. */
+    ${MOBILE} {
+        width: 100%;
+        max-width: 340px;
+
+        /* 제출 단추만 넓힌다. form button 으로 잡으면 입력칸 안의 눈 아이콘까지 늘어난다. */
+        form > button, & > button { width: 100%; }
+    }
 `;
 
 const FormTitle = styled.h2`
-    font-family: ${p => p.theme.fonts.celestial};
+    font-family: ${p => p.theme.fonts.display};
     font-size: 1.1rem;
     font-weight: 400;
     letter-spacing: 3px;

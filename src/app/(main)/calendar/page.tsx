@@ -1,12 +1,18 @@
 "use client";
 
 import React, { useState } from "react";
-import styled from "styled-components";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import styled, { keyframes } from "styled-components";
+import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import useCategoryStore from "@/store/useCategoryStore";
 import useTodoStore from "@/store/useTodoStore";
 import MonthCalendar from "@/components/calendar/monthCalendar/MonthCalendar";
 import DayCalendar from "@/components/calendar/dayCalendar/DayCalendar";
+import WeekCalendar from "@/components/calendar/weekCalendar/WeekCalendar";
+import TodoModal from "@/components/modal/todoModal/TodoModal";
+import useIsMobile from "@/hooks/useIsMobile";
+import useSwipe from "@/hooks/useSwipe";
+import { useT } from "@/i18n/useT";
+import { TAB_BAR_HEIGHT, SAFE_B } from "@/styles/breakpoints";
 
 const DAY_COLLAPSE_KEY = "cronos-day-collapsed";
 
@@ -16,6 +22,12 @@ const MAX_RATIO = 82;
 export default function CalendarPage() {
     const { categories } = useCategoryStore();
     const { todos } = useTodoStore();
+    const t = useT();
+    const isMobile = useIsMobile();
+
+    /** 폰에서는 두 달력을 한 화면에 같이 두지 않는다. 하나씩 갈아 끼운다. */
+    const [mobileView, setMobileView] = useState<"month" | "week" | "day">("month");
+    const [addOpen, setAddOpen] = useState(false);
 
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
     const [monthRatio, setMonthRatio] = useState(70);
@@ -25,6 +37,21 @@ export default function CalendarPage() {
         try {
             setDayCollapsed(localStorage.getItem(DAY_COLLAPSE_KEY) === "1");
         } catch {}
+    }, []);
+
+    /**
+     * 홈의 "이번 주" 줄에서 넘어올 때 ?date=YYYY-MM-DD 를 달고 온다.
+     * useSearchParams 는 정적 내보내기에서 Suspense 를 요구하므로 여기서는 직접 읽는다.
+     */
+    React.useEffect(() => {
+        if (typeof window === "undefined") return;
+        const raw = new URLSearchParams(window.location.search).get("date");
+        const m = raw?.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (!m) return;
+        const picked = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+        if (Number.isNaN(picked.getTime())) return;
+        setSelectedDate(picked);
+        setMobileView("day");
     }, []);
 
     const toggleDay = React.useCallback(() => {
@@ -75,6 +102,100 @@ export default function CalendarPage() {
         if (dayRef.current) dayRef.current.style.flex = "";
     }, []);
 
+    const stepDay = React.useCallback((delta: number) =>
+        setSelectedDate(prev => new Date(prev.getFullYear(), prev.getMonth(), prev.getDate() + delta)), []);
+
+    const nextDay = React.useCallback(() => stepDay(1), [stepDay]);
+    const prevDay = React.useCallback(() => stepDay(-1), [stepDay]);
+    const daySwipe = useSwipe(nextDay, prevDay);
+
+    if (isMobile) {
+        // 일간 화면 안의 날짜 줄은 폰에서 숨기므로, 날짜는 여기서만 보여준다.
+        const dayLabel = t.calendar.dayLabelShort(selectedDate.getMonth() + 1, selectedDate.getDate())
+            + ` · ${t.calendar.days[selectedDate.getDay()]}`;
+        const isToday = selectedDate.toDateString() === new Date().toDateString();
+
+        return (
+            <MobileWrapper>
+                <ViewSwitch role="tablist">
+                    {([
+                        ["month", t.calendar.monthView],
+                        ["week", t.calendar.weekView],
+                        ["day", t.calendar.dayView],
+                    ] as const).map(([id, label]) => (
+                        <SwitchButton
+                            key={id}
+                            type="button" role="tab"
+                            aria-selected={mobileView === id}
+                            $on={mobileView === id}
+                            onClick={() => setMobileView(id)}
+                        >
+                            {label}
+                        </SwitchButton>
+                    ))}
+                </ViewSwitch>
+
+                {mobileView === "day" && (
+                    <DayStepper>
+                        <button type="button" onClick={() => stepDay(-1)} aria-label={t.calendar.prevDay}>
+                            <ChevronLeft size={16} />
+                        </button>
+                        {/* key 를 붙여야 날짜가 바뀔 때마다 다시 들어오는 몸짓이 재생된다 */}
+                        <span className="label" key={dayLabel}>{dayLabel}</span>
+                        {!isToday && (
+                            <button type="button" className="today" onClick={() => setSelectedDate(new Date())}>
+                                {t.home.today}
+                            </button>
+                        )}
+                        <button type="button" onClick={() => stepDay(1)} aria-label={t.calendar.nextDay}>
+                            <ChevronRight size={16} />
+                        </button>
+                    </DayStepper>
+                )}
+
+                <MobilePane key={mobileView} $forward={mobileView !== "month"} {...(mobileView === "day" ? daySwipe : {})}>
+                    {mobileView === "week" ? (
+                        <WeekCalendar
+                            todos={todos}
+                            categories={categories}
+                            selectedDate={selectedDate}
+                            onDateChange={(date) => { setSelectedDate(date); setMobileView("day"); }}
+                        />
+                    ) : mobileView === "month" ? (
+                        <MonthCalendar
+                            todos={todos}
+                            categories={categories}
+                            selectedDate={selectedDate}
+                            followSelectedDate
+                            /* 날짜를 누르면 그 날로 넘어간다. 폰에서는 이게 일간 달력을 여는 길이다. */
+                            onDateChange={(date) => { setSelectedDate(date); setMobileView("day"); }}
+                        />
+                    ) : (
+                        <DayCalendar
+                            selectedDate={selectedDate}
+                            todos={todos}
+                            categories={categories}
+                            onDateChange={(date) => setSelectedDate(date)}
+                        />
+                    )}
+                </MobilePane>
+
+                {/* 손가락에는 hover 가 없어서 달력 칸의 작은 + 가 뜨지 않는다.
+                    폰에서는 이 단추가 일정 추가로 가는 유일한 길이다. */}
+                <Fab type="button" onClick={() => setAddOpen(true)} aria-label={t.calendar.newTodo}>
+                    <Plus size={22} strokeWidth={2} />
+                </Fab>
+
+                <TodoModal
+                    isOpen={addOpen}
+                    onClose={() => setAddOpen(false)}
+                    categories={categories}
+                    selectedDate={selectedDate}
+                />
+            </MobileWrapper>
+        );
+    }
+
     return (
         <PageWrapper>
             <CalendarContainer ref={containerRef} $collapsed={dayCollapsed}>
@@ -101,14 +222,14 @@ export default function CalendarPage() {
                         type="button"
                         onClick={toggleDay}
                         $collapsed={dayCollapsed}
-                        title={dayCollapsed ? "일간 캘린더 펼치기" : "일간 캘린더 접기"}
+                        title={dayCollapsed ? t.calendar.expandDay : t.calendar.collapseDay}
                     >
                         {dayCollapsed ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
                     </ToggleButton>
 
                     <DayClip>
                         <CollapsedRail $visible={dayCollapsed} aria-hidden={!dayCollapsed}>
-                            <span className="label">일간</span>
+                            <span className="label">{t.calendar.dayView}</span>
                             <span className="star">✦</span>
                         </CollapsedRail>
 
@@ -126,6 +247,145 @@ export default function CalendarPage() {
         </PageWrapper>
     );
 }
+
+/* ── 폰 전용 ─────────────────────────────────────────────────────────── */
+
+const MobileWrapper = styled.div`
+    display: flex;
+    flex-direction: column;
+    /* 높이를 못 박아야 아래 달력이 남은 칸을 정확히 채운다.
+       min-height 로 두면 달력이 제 내용만큼 자라 화면 밖으로 조금씩 새어 나간다. */
+    height: 100%;
+    gap: 10px;
+`;
+
+const ViewSwitch = styled.div`
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border: 1px solid ${(props) => props.theme.colors.primary}66;
+    flex: none;
+`;
+
+const SwitchButton = styled.button<{ $on: boolean }>`
+    padding: 12px 0;
+    background: ${(props) => (props.$on ? `${props.theme.colors.primary}1F` : "transparent")};
+    border: none;
+    border-right: 1px solid ${(props) => props.theme.colors.primary}33;
+    color: ${(props) => (props.$on ? props.theme.colors.primary : props.theme.colors.textSecondary)};
+    font-family: ${(props) => props.theme.fonts.display};
+    font-size: 0.82rem;
+    letter-spacing: 3px;
+    cursor: pointer;
+
+    &:last-child { border-right: none; }
+    &:active { background-color: ${(props) => props.theme.colors.primary}2E; }
+`;
+
+const labelIn = keyframes`
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+`;
+
+const DayStepper = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: none;
+    padding: 0 4px;
+
+    .label {
+        flex: 1;
+        min-width: 0;
+        text-align: center;
+        font-family: ${(props) => props.theme.fonts.display};
+        font-size: 0.9rem;
+        letter-spacing: 2px;
+        color: ${(props) => props.theme.colors.text};
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+
+        /* 날짜가 바뀌었다는 걸 글자가 스스로 알려 준다 */
+        @media (prefers-reduced-motion: no-preference) {
+            animation: ${labelIn} 0.24s ease-out both;
+        }
+    }
+
+    button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 auto;
+        width: 38px;
+        height: 38px;
+        background: transparent;
+        border: 1px solid ${(props) => props.theme.colors.primary}44;
+        color: ${(props) => props.theme.colors.primary};
+        cursor: pointer;
+
+        &:active { background-color: ${(props) => props.theme.colors.primary}1F; }
+    }
+
+    /* 며칠씩 넘기다 보면 오늘로 돌아올 길이 필요하다. 오늘이면 나오지 않는다. */
+    button.today {
+        width: auto;
+        padding: 0 12px;
+        font-family: ${(props) => props.theme.fonts.display};
+        font-size: 0.7rem;
+        letter-spacing: 1.5px;
+    }
+`;
+
+/* 갈아 끼울 때 어느 쪽에서 왔는지 보여 준다. 월간→일간은 오른쪽에서,
+   일간→월간은 왼쪽에서 들어온다. */
+const paneIn = (from: string) => keyframes`
+    from { opacity: 0; transform: translateX(${from}); }
+    to   { opacity: 1; transform: translateX(0); }
+`;
+
+/* 달력 한 짝이 남은 높이를 다 쓴다. 스크롤은 각 달력이 알아서 한다. */
+const MobilePane = styled.div<{ $forward: boolean }>`
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+
+    & > * { flex: 1; min-height: 0; }
+
+    @media (prefers-reduced-motion: no-preference) {
+        animation: ${(props) => paneIn(props.$forward ? "26px" : "-26px")}
+                   0.26s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+`;
+
+const fabIn = keyframes`
+    from { opacity: 0; transform: scale(0.6) translateY(10px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+`;
+
+const Fab = styled.button`
+    position: fixed;
+    right: 16px;
+    bottom: calc(${TAB_BAR_HEIGHT}px + ${SAFE_B} + 16px);
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    background-color: ${(props) => props.theme.colors.background};
+    border: 1px solid ${(props) => props.theme.colors.primary};
+    color: ${(props) => props.theme.colors.primary};
+    box-shadow: 0 0 12px ${(props) => props.theme.colors.primary}55;
+    cursor: pointer;
+    transition: transform 0.12s ease;
+
+    &:active { transform: scale(0.9); }
+
+    @media (prefers-reduced-motion: no-preference) {
+        animation: ${fabIn} 0.34s cubic-bezier(0.2, 1.3, 0.4, 1) 0.1s both;
+    }
+`;
 
 const PageWrapper = styled.div`
     display: flex;
@@ -196,7 +456,7 @@ const CollapsedRail = styled.div<{ $visible: boolean }>`
     transition: opacity 0.25s ${(props) => (props.$visible ? "0.15s" : "0s")} ease;
 
     .label {
-        font-family: ${(props) => props.theme.fonts.celestial};
+        font-family: ${(props) => props.theme.fonts.display};
         font-size: 0.78rem;
         letter-spacing: 3px;
         white-space: nowrap;

@@ -1,33 +1,22 @@
 "use client";
 
 import * as React from 'react';
-import styled from 'styled-components';
-import {Slot} from "@radix-ui/react-slot";
+import { Slot } from "@radix-ui/react-slot";
+import * as S from "./Celestial_teritaryButton.styles";
+import type { ButtonProps } from "./Celestial_teritaryButton.styles";
 
-export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-    asChild?: boolean;
-    $label?: string;
-}
+export type { ButtonProps } from "./Celestial_teritaryButton.styles";
 
-const TertiaryButton = styled.button`
-    color: ${(props) => props.theme.colors.primary};
-    cursor: pointer;
-    font-weight: 500;
-    &:hover {
-        text-decoration: underline;
-    }
-`
-
-const CelestialTertiaryButton = React.forwardRef<HTMLButtonElement, ButtonProps>(({asChild, ...props}, ref) => {
+const CelestialTertiaryButton = React.forwardRef<HTMLButtonElement, ButtonProps>(({ asChild, ...props }, ref) => {
     if (asChild) {
         return (
-            <TertiaryButton as={Slot} ref={ref} {...props}>
+            <S.TertiaryButton as={Slot} ref={ref} {...props}>
                 {props.children}
-            </TertiaryButton>
+            </S.TertiaryButton>
         );
     }
 
-    return <TertiaryButton ref={ref} {...props} />;
+    return <S.TertiaryButton ref={ref} {...props} />;
 })
 
 CelestialTertiaryButton.displayName = 'TertiaryButton';

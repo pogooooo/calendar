@@ -1,12 +1,11 @@
 "use client";
 
 import * as React from 'react';
-import {useTheme} from 'styled-components';
+import { usePickTheme } from "@/styles/themed";
 import CelestialSidebarMenuButton, { ButtonProps } from "./Celestial_SidebarMenuButton";
 
 const Sidebar_MenuButton = React.forwardRef<HTMLButtonElement, ButtonProps>(({ asChild = false, ...props }, ref) => {
-    const theme = useTheme();
-    const themeName = theme?.name || 'celestial';
+    const SidebarMenuButtonView = usePickTheme({ celestial: CelestialSidebarMenuButton });
 
     const handleArrowClick = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -20,7 +19,7 @@ const Sidebar_MenuButton = React.forwardRef<HTMLButtonElement, ButtonProps>(({ a
         $onArrowClick: props.$onArrowClick ? handleArrowClick : undefined
     };
 
-    return <CelestialSidebarMenuButton ref={ref} {...props} />;
+    return <SidebarMenuButtonView ref={ref} {...props} />;
 });
 
 Sidebar_MenuButton.displayName = 'Sidebar_MenuButton';

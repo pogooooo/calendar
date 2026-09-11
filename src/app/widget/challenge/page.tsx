@@ -3,17 +3,19 @@
 import styled from "styled-components";
 import WidgetShell from "@/components/widget/WidgetShell";
 import WidgetAuthNotice from "@/components/widget/WidgetAuthNotice";
+import { useWidgetTitle } from "@/hooks/useWidgetMeta";
 import { useWidgetInit } from "@/hooks/useWidgetInit";
 import { ChallengePanel } from "@/components/widget/WidgetPanels";
 
 export default function ChallengeWidget() {
+    const title = useWidgetTitle("challenge");
     const { ready, authed } = useWidgetInit([]);
     if (!ready || !authed) {
-        return <WidgetAuthNotice kind="challenge" title="CRONOS  ·  챌린지" authed={authed} />;
+        return <WidgetAuthNotice kind="challenge" title={title} authed={authed} />;
     }
 
     return (
-        <WidgetShell kind="challenge" title="CRONOS  ·  챌린지">
+        <WidgetShell kind="challenge" title={title}>
             <Wrap>
                 <ChallengePanel />
             </Wrap>

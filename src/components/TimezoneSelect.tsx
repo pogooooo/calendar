@@ -5,8 +5,10 @@ import { MOBILE } from "@/styles/breakpoints";
 import useSettingStore from "@/store/useSettingStore";
 import { TIMEZONE_OPTIONS, detectTimeZone, isValidTimeZone } from "@/lib/timezone";
 import CelestialSelect from "@/components/input/select/CelestialSelect";
+import { useT } from "@/i18n/useT";
 
 export default function TimezoneSelect({ size = "md" }: { size?: "sm" | "md" }) {
+    const t = useT();
     const timezone = useSettingStore((s) => s.timezone);
     const setTimezone = useSettingStore((s) => s.setTimezone);
 
@@ -23,15 +25,15 @@ export default function TimezoneSelect({ size = "md" }: { size?: "sm" | "md" }) 
                     value={timezone}
                     onChange={setTimezone}
                     options={options}
-                    ariaLabel="시간대"
+                    ariaLabel={t.system.timezoneAria}
                 />
             </Field>
             <DetectBtn
                 type="button"
                 onClick={() => setTimezone(detectTimeZone())}
-                title="이 기기의 시간대로 맞춥니다"
+                title={t.system.timezoneAutoHint}
             >
-                자동
+                {t.system.timezoneAuto}
             </DetectBtn>
         </Row>
     );

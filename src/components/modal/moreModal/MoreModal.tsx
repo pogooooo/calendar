@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useTheme } from "styled-components";
+import { usePickTheme } from "@/styles/themed";
 import CelestialMoreModal from "./celestial/CelestialMoreModal";
 import { CategoryType } from "@/store/useCategoryStore";
 import {TodoType} from "@/store/useTodoStore";
@@ -25,15 +25,9 @@ export interface MoreModalProps {
 }
 
 export default function MoreModal(props: MoreModalProps) {
-    const theme = useTheme();
-    const themeName = theme?.name || "celestial";
+    const MoreModalView = usePickTheme({ celestial: CelestialMoreModal });
 
     if (!props.isOpen) return null;
 
-    switch (themeName) {
-        case "celestial":
-            return <CelestialMoreModal {...props} />;
-        default:
-            return <CelestialMoreModal {...props} />;
-    }
+    return <MoreModalView {...props} />;
 }

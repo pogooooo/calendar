@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { reportSaveFailure } from "@/lib/saveError";
 import type { AuthFetch, ProjectType, ProjectTaskType, UserType } from '@/types';
 
 export type { ProjectType, ProjectTaskType, UserType };
@@ -82,6 +83,7 @@ const useProjectStore = create<ProjectState>((set, get) => ({
             if (isSessionExpired(err)) return;
             set({ projects: previousProjects });
             console.error("[PROJECT_ADD_ERROR]", err);
+            reportSaveFailure("project");
         }
     },
 
@@ -103,6 +105,7 @@ const useProjectStore = create<ProjectState>((set, get) => ({
             if (isSessionExpired(err)) return;
             set({ projects: previousProjects });
             console.error("[PROJECT_UPDATE_ERROR]", err);
+            reportSaveFailure("project");
         }
     },
 
@@ -118,6 +121,7 @@ const useProjectStore = create<ProjectState>((set, get) => ({
             if (isSessionExpired(err)) return;
             set({ projects: previousProjects });
             console.error("[PROJECT_DELETE_ERROR]", err);
+            reportSaveFailure("project");
         }
     },
 
@@ -161,6 +165,7 @@ const useProjectStore = create<ProjectState>((set, get) => ({
             if (isSessionExpired(err)) return;
             set({ projects: previousProjects });
             console.error("[PROJECT_TASK_ADD_ERROR]", err);
+            reportSaveFailure("project");
         }
     },
 
@@ -186,6 +191,7 @@ const useProjectStore = create<ProjectState>((set, get) => ({
             if (isSessionExpired(err)) return;
             set({ projects: previousProjects });
             console.error("[PROJECT_TASK_STATUS_ERROR]", err);
+            reportSaveFailure("project");
         }
     },
 
@@ -219,6 +225,7 @@ const useProjectStore = create<ProjectState>((set, get) => ({
             if (isSessionExpired(err)) return;
             set({ projects: previousProjects });
             console.error("[PROJECT_TASK_UPDATE_ERROR]", err);
+            reportSaveFailure("project");
         }
     }
 }));

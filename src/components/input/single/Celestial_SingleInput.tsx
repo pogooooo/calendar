@@ -1,48 +1,27 @@
 "use client";
 
-import React, { forwardRef, InputHTMLAttributes } from 'react';
-import styled from 'styled-components';
+import { forwardRef } from 'react';
 import { Slot } from "@radix-ui/react-slot";
-import {
-    celestial_singleInput_input,
-    celestial_singleInput_label,
-    celestial_singleInput_wrapper
-} from "@/styles/celestial_theme";
+import * as S from "./Celestial_SingleInput.styles";
+import type { InputProps } from "./Celestial_SingleInput.styles";
 
-interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
-    asChild?: boolean;
-    $width?: string | number;
-    $height?: string | number;
-    label?: string;
-}
-
-const CelestialWrapper = styled.div`
-    ${celestial_singleInput_wrapper}
-`
-const CelestialLabel = styled.div`
-    ${celestial_singleInput_label}
-`
-const CelestialInput = styled.input<InputProps>`
-    width: ${({ $width }) => (typeof $width === 'number' ? `${$width}px` : $width || '100%')};
-    height: ${({ $height }) => (typeof $height === 'number' ? `${$height}px` : $height || 'auto')};
-    ${celestial_singleInput_input}
-`
+export type { InputProps } from "./Celestial_SingleInput.styles";
 
 const CelestialSingleInput = forwardRef<HTMLInputElement, InputProps>(({ asChild, label, ...props }, ref) => {
-    const Component = asChild ? Slot : CelestialInput;
+    const Component = asChild ? Slot : S.CelestialInput;
 
     return (
-        <CelestialWrapper>
-            <CelestialInput
+        <S.CelestialWrapper>
+            <S.CelestialInput
                 as={Component}
                 ref={ref}
                 placeholder=" "
                 {...props}
             >
                 {asChild ? props.children : null}
-            </CelestialInput>
-            {label && <CelestialLabel className="input-label">{label}</CelestialLabel>}
-        </CelestialWrapper>
+            </S.CelestialInput>
+            {label && <S.CelestialLabel className="input-label">{label}</S.CelestialLabel>}
+        </S.CelestialWrapper>
     );
 });
 

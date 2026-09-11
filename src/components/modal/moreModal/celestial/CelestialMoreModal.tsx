@@ -57,6 +57,8 @@ export default function CelestialMoreModal({
                                     $color={category?.color}
                                     $isDone={isDone}
                                     onContextMenu={(e) => handleContextMenu(e, todo)}
+                                    /* 손가락에는 오른쪽 클릭이 없다. 그냥 누르면 같은 차림표가 뜬다. */
+                                    onClick={(e) => { if (matchMedia("(hover: none)").matches) handleContextMenu(e, todo); }}
                                 >
                                     <div className="color-bar" />
                                     <span className="todo-title">{todo.title}</span>

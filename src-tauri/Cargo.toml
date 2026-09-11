@@ -12,6 +12,11 @@ icon = ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/i
 name = "cronos_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
+[features]
+# 이게 꺼져 있으면 tauri 는 dev 로 보고 frontendDist 를 바이너리에 넣지 않는다.
+# 그러면 릴리스 빌드가 조용히 빈 화면으로 나온다 (CLI 없이 cargo 로 직접 구울 때 특히).
+custom-protocol = ["tauri/custom-protocol"]
+
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 

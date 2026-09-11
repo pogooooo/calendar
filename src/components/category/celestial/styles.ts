@@ -1,4 +1,5 @@
 import styled, { css, keyframes } from "styled-components";
+import { MOBILE } from "@/styles/breakpoints";
 
 /* ── 등장 모션 (한 번만, 잔잔하게) ─────────────────────── */
 const fadeUp = keyframes`
@@ -26,7 +27,7 @@ export const CategoryWrapper = styled.div`
     height: 100%;
     width: 100%;
     background-color: ${(props) => props.theme.colors.background};
-    font-family: ${(props) => props.theme.fonts.celestial};
+    font-family: ${(props) => props.theme.fonts.display};
 `;
 
 export const CenterWrapper = styled.div`
@@ -37,6 +38,10 @@ export const CenterWrapper = styled.div`
     width: 100%;
     max-width: 1100px;
     padding: 0 clamp(8px, 2vw, 24px);
+
+    /* 배경 별자리는 화면 밖으로 걸치라고 둔 장식이다. 폰 폭에서는 그 삐져나온
+       만큼이 가로 스크롤이 되어 화면이 좌우로 흔들린다. 여기서 잘라낸다. */
+    ${MOBILE} { overflow-x: clip; }
 `;
 
 /* 배경 별자리 워터마크 (기념일 화면과 동일 언어) */
@@ -73,7 +78,7 @@ export const PageHeader = styled.div`
     }
 
     span {
-        font-family: ${(p) => p.theme.fonts.celestial};
+        font-family: ${(p) => p.theme.fonts.display};
         font-size: 1.3rem;
         letter-spacing: 5px;
         color: ${(p) => p.theme.colors.text};
@@ -94,6 +99,13 @@ export const BodyRow = styled.div`
     flex: 1;
     min-height: 0;
     gap: 28px;
+
+    /* 폰에서는 좌우로 나눌 폭이 없다. 230px 를 떼어 주면 목록은 눌리고
+       오른쪽 상세는 텅 빈 채 "왼쪽에서 고르세요"만 남는다. 위아래로 쌓는다. */
+    ${MOBILE} {
+        flex-direction: column;
+        gap: 14px;
+    }
 `;
 
 /* ── ① 좌측: 카드 덱 ──────────────────────────────────── */
@@ -103,6 +115,12 @@ export const SidebarContainer = styled.div`
     min-width: 150px;
     display: flex;
     flex-direction: column;
+
+    ${MOBILE} {
+        flex: none;
+        width: 100%;
+        min-width: 0;
+    }
 `;
 
 export const CategoryList = styled.div`
@@ -111,6 +129,22 @@ export const CategoryList = styled.div`
     gap: 8px;
     padding: 4px 8px 12px 2px;
     overflow-y: auto;
+
+    /* 세로로 쌓으면 카테고리 몇 개만 있어도 화면을 다 먹는다.
+       옆으로 넘기는 덱으로 눕혀 상세가 들어설 자리를 남긴다. */
+    ${MOBILE} {
+        flex-direction: row;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding: 4px 2px 10px;
+        scroll-snap-type: x proximity;
+
+        & > * {
+            flex: 0 0 auto;
+            min-width: 148px;
+            scroll-snap-align: start;
+        }
+    }
 `;
 
 export const DeckCard = styled.button<{ $color: string; $isSelected: boolean }>`
@@ -170,7 +204,7 @@ export const DeckCard = styled.button<{ $color: string; $isSelected: boolean }>`
     .nm {
         flex: 1;
         min-width: 0;
-        font-family: ${(p) => p.theme.fonts.celestial};
+        font-family: ${(p) => p.theme.fonts.display};
         font-size: 0.85rem;
         letter-spacing: 0.5px;
         color: ${(p) => (p.$isSelected ? p.theme.colors.primary : p.theme.colors.text)};
@@ -310,7 +344,7 @@ export const PlateText = styled.div`
     }
 
     .title-input {
-        font-family: ${(p) => p.theme.fonts.celestial};
+        font-family: ${(p) => p.theme.fonts.display};
         font-size: 1.35rem;
         letter-spacing: 3px;
         color: ${(p) => p.theme.colors.text};
@@ -347,7 +381,7 @@ export const DetailHeader = styled.div<{ $activeTab: string }>`
         background: transparent;
         border: none;
         padding: 4px 2px 8px;
-        font-family: ${(p) => p.theme.fonts.celestial};
+        font-family: ${(p) => p.theme.fonts.display};
         font-size: 0.85rem;
         letter-spacing: 2px;
         color: ${(p) => p.theme.colors.textSecondary};
@@ -733,7 +767,7 @@ export const ModalContent = styled.div`
     border: 1px solid ${(props) => props.theme.colors.primary};
     width: 380px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-    font-family: ${(props) => props.theme.fonts.celestial};
+    font-family: ${(props) => props.theme.fonts.display};
 
     .modal-header {
         padding: 16px 24px;

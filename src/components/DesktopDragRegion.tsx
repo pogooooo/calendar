@@ -3,7 +3,7 @@
 import React from "react";
 import { usePathname } from "next/navigation";
 import styled, { createGlobalStyle } from "styled-components";
-import { isDesktopApp } from "@/lib/apiBase";
+import { isDesktopShell } from "@/lib/platform";
 import TitleBar from "@/components/titleBar/TitleBar";
 
 const DRAG_ROUTES = ["/signIn", "/signUp", "/download", "/forgotPassword", "/resetPassword"];
@@ -16,7 +16,8 @@ export default function DesktopDragRegion() {
     const pathname = usePathname();
     const [desktop, setDesktop] = React.useState(false);
 
-    React.useEffect(() => setDesktop(isDesktopApp()), []);
+    // 폰(안드로이드)에는 옮길 창이 없다. 자리만 차지하고 화면을 밀어낸다.
+    React.useEffect(() => setDesktop(isDesktopShell()), []);
 
     const normalized = pathname.length > 1 ? pathname.replace(/\/$/, "") : pathname;
     if (!desktop || !DRAG_ROUTES.includes(normalized)) return null;

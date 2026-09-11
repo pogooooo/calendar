@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import * as React from "react";
-import { useTheme } from "styled-components";
+import { usePickTheme } from "@/styles/themed";
 import CelestialWeekCalendar from "./celestial/CelestialWeekCalendar";
 import { CategoryType } from "@/store/useCategoryStore";
 import { TodoType } from "@/store/useTodoStore";
@@ -10,6 +10,7 @@ import { useExpandedTodos, ExpandedTodoType } from "@/hooks/useExpandedTodos";
 import { getWeekDates, isSameDay } from "@/utils/DateUtils";
 import { useTodoLevels } from "@/hooks/useTodoLevels";
 import useTodoStore from "@/store/useTodoStore";
+import { useT } from "@/i18n/useT";
 import { localDateKey } from "@/lib/dateKey";
 import useAuthStore from "@/store/useAuthStore";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
@@ -84,8 +85,7 @@ export interface WeekThemeProps {
 
 const WeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
     ({ asChild = false, todos = [], categories = [], selectedDate, onDateChange, ...props }, ref) => {
-        const theme = useTheme();
-        const themeName = theme?.name || 'celestial';
+        const WeekCalendarView = usePickTheme({ celestial: CelestialWeekCalendar });
 
         const [currentDate, setCurrentDate] = React.useState(new Date());
         const [direction, setDirection] = React.useState(0);
@@ -106,6 +106,7 @@ const WeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
         // 자체 fetch 를 쓰면 토큰 갱신을 건너뛰어 1시간 뒤 모든 조작이 조용히 실패한다
         const authFetch = useAuthFetch();
         const dialog = useDialog();
+        const t = useT();
 
         const weekDates = React.useMemo(() => getWeekDates(currentDate), [currentDate]);
         const todayStr = React.useMemo(() => new Date().toDateString(), []);
@@ -270,7 +271,7 @@ const WeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
         const handleQuickEdit = async (expandedTodo: CalendarTodoType) => {
             if (expandedTodo.isProject || expandedTodo.isProjectTask) {
                 setTodoContextMenu(null);
-                await dialog.notify({ title: "여기서는 수정할 수 없습니다", message: "프로젝트 항목은 프로젝트 화면에서 수정해주세요." });
+                await dialog.notify({ title: t.alert.editHereTitle, message: t.alert.editHereMsg });
                 return;
             }
             setModalTodo(expandedTodo.originalTodo || expandedTodo as unknown as TodoType);
@@ -281,31 +282,31 @@ const WeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
         const handleQuickDelete = async (expandedTodo: CalendarTodoType) => {
             setTodoContextMenu(null);
             if (expandedTodo.isProject || expandedTodo.isProjectTask) {
-                await dialog.notify({ title: "여기서는 삭제할 수 없습니다", message: "프로젝트 항목은 프로젝트 상세 화면에서 삭제해주세요." });
+                await dialog.notify({ title: t.alert.deleteHereTitle, message: t.alert.deleteHereDetailMsg });
                 return;
             }
             const actualId = expandedTodo.originalTodo?.id || expandedTodo.id;
             const ok = await dialog.confirmDanger({
-                title: "일정을 삭제할까요",
-                message: "반복 일정 전체가 사라집니다. 되돌릴 수 없습니다.",
+                title: t.alert.deleteTodoTitle,
+                message: (expandedTodo.originalTodo?.repeat ?? expandedTodo.repeat ?? 0) > 0 ? t.alert.deleteTodoMsg : t.alert.deleteTodoOnceMsg,
             });
             if (!ok) return;
             const error = await deleteTodo(authFetch, actualId);
-            if (error) await dialog.notify({ title: "삭제하지 못했습니다", message: error });
+            if (error) await dialog.notify({ title: t.alert.deleteFailed, message: error });
         };
 
         const handleQuickDeleteOne = async (expandedTodo: CalendarTodoType) => {
             setTodoContextMenu(null);
             if (expandedTodo.isProject || expandedTodo.isProjectTask) {
-                await dialog.notify({ title: "여기서는 삭제할 수 없습니다", message: "프로젝트 항목은 프로젝트 상세 화면에서 삭제해주세요." });
+                await dialog.notify({ title: t.alert.deleteHereTitle, message: t.alert.deleteHereDetailMsg });
                 return;
             }
             const actualId = expandedTodo.originalTodo?.id || expandedTodo.id;
             const occurrence = expandedTodo.date ?? new Date(expandedTodo.startAt || Date.now());
             const ok = await dialog.confirm({
-                title: "이 날짜만 삭제할까요",
-                message: "반복 일정 중 이 하루만 사라집니다. 나머지는 그대로입니다.",
-                confirmLabel: "삭제",
+                title: t.alert.deleteOneDayTitle,
+                message: t.alert.deleteOneDayMsg,
+                confirmLabel: t.dialog.delete,
             });
             if (!ok) return;
             await deleteTodoOccurrence(authFetch, actualId, localDateKey(occurrence));
@@ -314,7 +315,7 @@ const WeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
         const handleQuickToggle = async (expandedTodo: CalendarTodoType) => {
             if (expandedTodo.isProject || expandedTodo.isProjectTask) {
                 setTodoContextMenu(null);
-                await dialog.notify({ title: "여기서는 바꿀 수 없습니다", message: "프로젝트 상태는 프로젝트 상세 화면에서 변경해주세요." });
+                await dialog.notify({ title: t.alert.statusHereTitle, message: t.alert.statusHereMsg });
                 return;
             }
 
@@ -373,7 +374,7 @@ const WeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
 
         return (
             <>
-                <CelestialWeekCalendar ref={ref} {...themeProps} {...props} />
+                <WeekCalendarView ref={ref} {...themeProps} {...props} />
             </>
         );
     }

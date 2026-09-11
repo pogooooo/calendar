@@ -1,4 +1,5 @@
 import { persist } from "zustand/middleware";
+import { reportSaveFailure } from "@/lib/saveError";
 import { create } from "zustand/react";
 import type { AuthFetch } from '@/types';
 import type { Locale } from '@/i18n/types';
@@ -75,6 +76,7 @@ const useSettingStore = create<SettingState>()(
                     });
                 } catch (err) {
                     console.error("[SETTINGS_UPDATE_ERROR]", err);
+            reportSaveFailure("setting");
                 }
             }
         }),

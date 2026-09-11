@@ -2,16 +2,21 @@
 
 import { useEffect, useState } from "react";
 import styled from "styled-components";
+import { isDesktopShell } from "@/lib/platform";
+import { useT } from "@/i18n/useT";
 
 export default function TitleBar() {
+    const t = useT();
     const [isMaximized, setIsMaximized] = useState(false);
     const [isDesktop, setIsDesktop] = useState(false);
 
     useEffect(() => {
-        setIsDesktop(typeof window !== "undefined" && "__TAURI_INTERNALS__" in window);
+        // 안드로이드도 Tauri 라서 "__TAURI_INTERNALS__" 만 보면 폰에 창 단추가 뜬다.
+        setIsDesktop(isDesktopShell());
     }, []);
 
     useEffect(() => {
+        if (!isDesktop) return;
         let unlisten: (() => void) | undefined;
 
         import("@tauri-apps/api/window").then(({ getCurrentWindow }) => {
@@ -23,7 +28,7 @@ export default function TitleBar() {
         }).catch(() => {});
 
         return () => { unlisten?.(); };
-    }, []);
+    }, [isDesktop]);
 
     const handleMinimize = () => {
         import("@tauri-apps/api/window").then(({ getCurrentWindow }) => {
@@ -52,10 +57,10 @@ export default function TitleBar() {
         <Bar data-tauri-drag-region>
             <Title data-tauri-drag-region>CRONOS</Title>
             <Controls>
-                <Btn onClick={handleMinimize} title="최소화">
+                <Btn onClick={handleMinimize} title={t.titleBar.minimize}>
                     <svg width="10" height="1" viewBox="0 0 10 1"><line x1="0" y1="0.5" x2="10" y2="0.5" stroke="currentColor" strokeWidth="1.5"/></svg>
                 </Btn>
-                <Btn onClick={handleMaximize} title={isMaximized ? "이전 크기로" : "최대화"}>
+                <Btn onClick={handleMaximize} title={isMaximized ? t.titleBar.restore : t.titleBar.maximize}>
                     {isMaximized ? (
                         <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
                             <rect x="2" y="0" width="8" height="8" stroke="currentColor" strokeWidth="1.2"/>
@@ -67,7 +72,7 @@ export default function TitleBar() {
                         </svg>
                     )}
                 </Btn>
-                <CloseBtn onClick={handleClose} title="닫기">
+                <CloseBtn onClick={handleClose} title={t.titleBar.close}>
                     <svg width="10" height="10" viewBox="0 0 10 10"><line x1="0" y1="0" x2="10" y2="10" stroke="currentColor" strokeWidth="1.5"/><line x1="10" y1="0" x2="0" y2="10" stroke="currentColor" strokeWidth="1.5"/></svg>
                 </CloseBtn>
             </Controls>
@@ -89,7 +94,7 @@ const Bar = styled.div`
 `;
 
 const Title = styled.span`
-    font-family: ${(p) => p.theme.fonts.celestial};
+    font-family: ${(p) => p.theme.fonts.display};
     font-size: 0.7rem;
     letter-spacing: 3px;
     color: ${(p) => p.theme.colors.primary};
