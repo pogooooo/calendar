@@ -300,6 +300,12 @@ const en: Translations = {
         downloading: (pct: number) => `Downloading ${pct}%`,
         restarting: 'Finishing up and restarting...',
         failed: 'The update could not be completed. Please try again later.',
+        check: 'Check for updates',
+        checking: 'Checking...',
+        checkDesc: 'Checked on launch and every 6 hours. You can also check right now.',
+        upToDate: (v: string) => `You are on the latest version (v${v}).`,
+        found: (v: string) => `Version v${v} is available. Install it from the notice at the bottom right.`,
+        checkFailed: (reason: string) => `Could not reach the update server. ${reason}`,
     },
     challenge: {
         title: 'Challenges',

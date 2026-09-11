@@ -88,7 +88,26 @@ jobs:
           releaseBody: "아래에서 운영체제에 맞는 설치 파일을 내려받으세요. 이미 설치한 앱은 실행 시 자동으로 업데이트를 확인합니다."
           releaseDraft: false
           prerelease: false
-          includeUpdaterJson: true
-          # 다운로드 페이지가 NSIS(.exe)를 배포하므로 업데이트도 같은 형식으로 맞춘다.
-          updaterJsonPreferNsis: true
+          # latest.json 은 여기서 만들지 않는다. 세 OS 가 나란히 끝나면 서로 덮어써서
+          # 윈도우 항목이 빠진 채 올라간 적이 있다 (v1.0.0). 아래 updater-json 이 한 번에 쓴다.
+          includeUpdaterJson: false
           args: ${{ matrix.args }}
+
+  # 세 빌드가 모두 끝난 뒤, 릴리스 자산을 보고 완전한 latest.json 을 한 번만 올린다.
+  updater-json:
+    needs: build
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Build latest.json from release assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          node scripts/build-updater-json.mjs "${{ github.ref_name }}" > latest.json
+          cat latest.json
+          gh release upload "${{ github.ref_name }}" latest.json --clobber

@@ -27,7 +27,6 @@ export interface CalendarTodoType extends ExpandedTodoType {
 export interface DayProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'contextMenu'> {
     asChild?: boolean;
     selectedDate?: Date;
-    onDateChange?: (date: Date) => void;
     todos?: TodoType[];
     categories?: CategoryType[];
 }

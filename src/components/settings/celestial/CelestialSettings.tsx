@@ -45,7 +45,7 @@ export default function CelestialSettings({
     widgetList,
     onWidgetOpen, onWidgetClose,
     autostart, onAutostartToggle,
-    showWidgets, showAutostart,
+    showWidgets, showAutostart, onCheckUpdate, updateChecking,
     user, t,
     newName, onNewNameChange, onNameSave, namePending, nameStatus,
     pwForm, onPwFormChange, onPasswordSave, pwPending, pwStatus,
@@ -65,7 +65,7 @@ export default function CelestialSettings({
         ...(showWidgets
             ? [{ id: "widget" as TabId, label: t.settings.widgets, note: t.widget.desc, count: String(widgetList.length) }]
             : []),
-        { id: "system",  label: t.settings.system,      note: t.settings.systemNote,      count: showAutostart ? "3" : "2" },
+        { id: "system",  label: t.settings.system,      note: t.settings.systemNote,      count: showAutostart ? "4" : "2" },
         { id: "account", label: t.settings.account,     note: user?.email ?? "",          count: "4" },
     ];
 
@@ -344,6 +344,18 @@ export default function CelestialSettings({
                                     </div>
                                     <TimezoneSelect />
                                 </S.InfoRow>
+                                {/* 업데이트는 설치한 앱에만 있다. 결과를 말로 돌려줘야 "안 되는 건가" 하고 넘기지 않는다. */}
+                                {showAutostart && (
+                                    <S.InfoRow style={{ marginTop: 16 }}>
+                                        <div>
+                                            <S.InfoValue>{t.update.title}</S.InfoValue>
+                                            <L.RowNote>{t.update.checkDesc}</L.RowNote>
+                                        </div>
+                                        <S.FormButton onClick={onCheckUpdate} disabled={updateChecking}>
+                                            {updateChecking ? t.update.checking : t.update.check}
+                                        </S.FormButton>
+                                    </S.InfoRow>
+                                )}
                             </>
                         )}
 

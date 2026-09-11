@@ -288,8 +288,15 @@ export interface Translations {
         downloading: (pct: number) => string;
         restarting: string;
         failed: string;
+        check: string;
+        checking: string;
+        checkDesc: string;
+        upToDate: (v: string) => string;
+        found: (v: string) => string;
+        checkFailed: (reason: string) => string;
     };
     challenge: {
+
         title: string;
         myChallenges: string;
         new: string;

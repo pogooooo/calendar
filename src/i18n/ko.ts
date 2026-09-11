@@ -300,6 +300,12 @@ const ko: Translations = {
         downloading: (pct: number) => `내려받는 중 ${pct}%`,
         restarting: '설치를 마치고 다시 시작합니다...',
         failed: '업데이트를 마치지 못했습니다. 잠시 후 다시 시도해주세요.',
+        check: '업데이트 확인',
+        checking: '확인 중...',
+        checkDesc: '켜질 때와 6시간마다 스스로 확인합니다. 지금 바로 볼 수도 있습니다.',
+        upToDate: (v: string) => `최신 버전입니다 (v${v}).`,
+        found: (v: string) => `새 버전 v${v} 이 있습니다. 오른쪽 아래 알림에서 설치하세요.`,
+        checkFailed: (reason: string) => `업데이트 서버에 닿지 못했습니다. ${reason}`,
     },
     challenge: {
         title: '챌린지',

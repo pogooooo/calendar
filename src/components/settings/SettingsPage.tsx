@@ -10,6 +10,7 @@ import { mirrorWidgetStateToFile } from "@/lib/widgetStateFile";
 import { useT } from "@/i18n/useT";
 import useIsMobile from "@/hooks/useIsMobile";
 import { isDesktopShell } from "@/lib/platform";
+import { checkForUpdate } from "@/lib/updater";
 import { WIDGET_KINDS } from "@/lib/widgetKinds";
 import { useDialog } from "@/components/dialog/DialogProvider";
 import CelestialSettings from "./celestial/CelestialSettings";
@@ -40,6 +41,9 @@ export interface SettingsThemeProps {
     showWidgets: boolean;
     /** OS 시작 등록이 되는 환경인가 (데스크톱 앱만) */
     showAutostart: boolean;
+    /** 업데이트 확인 단추 (데스크톱 앱만) */
+    onCheckUpdate: () => void;
+    updateChecking: boolean;
     user: { email?: string | null; name?: string | null } | null;
     t: Translations;
     newName: string;
@@ -128,11 +132,31 @@ export default function SettingsPage() {
     // 데스크톱 웹에서는 위젯이 새 창으로 뜨므로 그대로 쓸 수 있다.
     const showWidgets = !isMobile;
     const showAutostart = desktopShell;
+    const dialog = useDialog();
+
+    const [updateChecking, setUpdateChecking] = React.useState(false);
+    const handleCheckUpdate = React.useCallback(async () => {
+        if (updateChecking) return;
+        setUpdateChecking(true);
+        try {
+            const result = await checkForUpdate();
+            const { getVersion } = await import("@tauri-apps/api/app");
+            const current = await getVersion().catch(() => "");
+            if (result.status === "available") {
+                await dialog.notify({ title: t.update.title, message: t.update.found(result.update.version) });
+            } else if (result.status === "latest") {
+                await dialog.notify({ title: t.update.title, message: t.update.upToDate(current) });
+            } else if (result.status === "error") {
+                await dialog.notify({ title: t.update.title, message: t.update.checkFailed(result.message) });
+            }
+        } finally {
+            setUpdateChecking(false);
+        }
+    }, [updateChecking, dialog, t]);
     const user = useAuthStore((s) => s.user);
     const setUser = useAuthStore((s) => s.setUser);
     const logout = useAuthStore((s) => s.logout);
     const authFetch = useAuthFetch();
-    const dialog = useDialog();
 
     const { theme: currentTheme, updateTheme } = useSettingStore();
     const themeOptions = useSettingStore((s) => s.themeOptions);
@@ -309,6 +333,8 @@ export default function SettingsPage() {
         onAutostartToggle: handleAutostartToggle,
         showWidgets,
         showAutostart,
+        onCheckUpdate: handleCheckUpdate,
+        updateChecking,
         user,
         t,
         newName,

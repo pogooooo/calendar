@@ -175,7 +175,6 @@ export default function CalendarPage() {
                             selectedDate={selectedDate}
                             todos={todos}
                             categories={categories}
-                            onDateChange={(date) => setSelectedDate(date)}
                         />
                     )}
                 </MobilePane>
@@ -238,7 +237,6 @@ export default function CalendarPage() {
                                 selectedDate={selectedDate}
                                 todos={todos}
                                 categories={categories}
-                                onDateChange={(date) => setSelectedDate(date)}
                             />
                         </DayBody>
                     </DayClip>

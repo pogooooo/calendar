@@ -4,6 +4,7 @@ import * as React from "react";
 import styled, { keyframes } from "styled-components";
 import { X, Download } from "lucide-react";
 import { useT } from "@/i18n/useT";
+import { checkForUpdate, UPDATE_FOUND_EVENT, type FoundUpdate } from "@/lib/updater";
 
 type Phase = "idle" | "available" | "downloading" | "ready" | "failed";
 
@@ -12,36 +13,31 @@ interface UpdateInfo {
     notes?: string;
 }
 
-const isTauri = () => typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
-
 export default function UpdateNotice() {
     const t = useT();
     const [phase, setPhase] = React.useState<Phase>("idle");
     const [info, setInfo] = React.useState<UpdateInfo | null>(null);
     const [percent, setPercent] = React.useState(0);
-    const updateRef = React.useRef<{
-        version: string;
-        body?: string;
-        downloadAndInstall: (cb: (event: { event: string; data?: { contentLength?: number; chunkLength?: number } }) => void) => Promise<void>;
-    } | null>(null);
+    const updateRef = React.useRef<FoundUpdate | null>(null);
 
     React.useEffect(() => {
-        if (!isTauri()) return;
+        // 어디서 찾았든(켜질 때·6시간마다·설정의 확인 단추) 여기로 모인다
+        const onFound = (e: Event) => {
+            const update = (e as CustomEvent<FoundUpdate>).detail;
+            updateRef.current = update;
+            setInfo({ version: update.version, notes: update.body });
+            setPhase((p) => (p === "idle" || p === "failed" ? "available" : p));
+        };
+        window.addEventListener(UPDATE_FOUND_EVENT, onFound);
 
-        let cancelled = false;
+        // 켜질 때 한 번, 그 뒤로는 6시간마다. 앱을 며칠씩 켜 두는 사람이 새 버전을 놓치지 않게.
+        checkForUpdate();
+        const timer = window.setInterval(() => { checkForUpdate(); }, 6 * 60 * 60 * 1000);
 
-        (async () => {
-            try {
-                const { check } = await import("@tauri-apps/plugin-updater");
-                const found = await check();
-                if (cancelled || !found) return;
-                updateRef.current = found as never;
-                setInfo({ version: found.version, notes: found.body });
-                setPhase("available");
-            } catch {}
-        })();
-
-        return () => { cancelled = true; };
+        return () => {
+            window.removeEventListener(UPDATE_FOUND_EVENT, onFound);
+            window.clearInterval(timer);
+        };
     }, []);
 
     const handleInstall = React.useCallback(async () => {
