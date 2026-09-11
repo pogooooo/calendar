@@ -361,7 +361,9 @@ const RUN_VALUE: &str = "CRONOS";
 /// Run 키에 들어가는 값은 `"C:\...\CRONOS.exe" --from-autostart` 꼴이다.
 /// 경로만 떼어낸다. 예전 코드는 trim_matches('"') 로 잘라서 뒤쪽 인자가
 /// 그대로 붙어 있었고, 그래서 "지금 실행 파일과 같은지" 판정이 늘 거짓이었다.
-#[cfg(target_os = "windows")]
+/// 문자열만 다루는 함수라 어느 데스크톱에서나 컴파일된다 — autostart_status 가
+/// 맥·리눅스에서도 부르므로 windows 로만 묶으면 거기서 빌드가 깨진다.
+#[cfg(desktop)]
 fn exe_from_run_value(value: &str) -> String {
     let v = value.trim();
     if let Some(rest) = v.strip_prefix('"') {
