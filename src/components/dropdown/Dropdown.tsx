@@ -18,7 +18,7 @@ export interface DropdownProps {
     disabled?: boolean;
 }
 
-const Dropdown = React.forwardRef<HTMLDivElement, DropdownProps>((props, _ref) => {
+const Dropdown = React.forwardRef<HTMLDivElement, DropdownProps>((props) => {
     return <CelestialDropdown {...props} />;
 });
 

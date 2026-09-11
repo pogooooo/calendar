@@ -39,7 +39,7 @@ export interface ChallengeThemeProps extends ChallengeModalProps {
 }
 
 export default function ChallengeModal(props: ChallengeModalProps) {
-    const { isOpen, onClose, categories, initialData, onSave } = props;
+    const { isOpen, categories, initialData, onSave } = props;
     const ChallengeModalView = usePickTheme({ celestial: CelestialChallengeModal });
     const dialog = useDialog();
     const t = useT();

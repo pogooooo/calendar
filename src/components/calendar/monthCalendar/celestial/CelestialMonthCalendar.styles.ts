@@ -1,5 +1,5 @@
 import styled, { css } from "styled-components";
-import { MOBILE, TOUCH } from "@/styles/breakpoints";
+import { NOT_WIDGET, MOBILE, TOUCH } from "@/styles/breakpoints";
 import { motion } from "framer-motion";
 import { hide_scrollbar } from "@/styles/shared";
 
@@ -426,15 +426,19 @@ export const TodoBarList = styled.div`
         margin-bottom: 2px;
     }
 
+    /* 폰에서는 바 대신 마름모를 가로로 늘어놓는다.
+       위젯 창은 폭이 좁아도 마우스로 쓰는 데스크톱이라 바를 그대로 둔다. */
     ${MOBILE} {
-        flex-direction: row;
-        flex-wrap: wrap;
-        align-content: flex-start;
-        justify-content: center;
-        gap: 3px;
-        margin: 2px 0 0;
-        padding: 0 2px;
-        overflow: hidden;
+        ${NOT_WIDGET} & {
+            flex-direction: row;
+            flex-wrap: wrap;
+            align-content: flex-start;
+            justify-content: center;
+            gap: 3px;
+            margin: 2px 0 0;
+            padding: 0 2px;
+            overflow: hidden;
+        }
     }
 `;
 
@@ -496,18 +500,20 @@ export const TodoBarItem = styled.div<{ $isStart: boolean; $isEnd: boolean; $col
     `}
 
     ${MOBILE} {
-        width: 6px;
-        height: 6px;
-        min-width: 0;
-        margin: 0;
-        padding: 0;
-        border: 1px solid ${(props) => props.$color || props.theme.colors.primary};
-        border-radius: 0;
-        transform: rotate(45deg);
-        background-color: ${(props) => props.$isDone ? (props.$color || props.theme.colors.primary) : "transparent"};
-        overflow: hidden;
+        ${NOT_WIDGET} & {
+            width: 6px;
+            height: 6px;
+            min-width: 0;
+            margin: 0;
+            padding: 0;
+            border: 1px solid ${(props) => props.$color || props.theme.colors.primary};
+            border-radius: 0;
+            transform: rotate(45deg);
+            background-color: ${(props) => props.$isDone ? (props.$color || props.theme.colors.primary) : "transparent"};
+            overflow: hidden;
 
-        & > * { display: none; }
+            & > * { display: none; }
+        }
     }
 `;
 

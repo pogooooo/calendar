@@ -1,7 +1,8 @@
 # CRONOS 배포 가이드
 
 - **웹**: Cloudflare Workers + D1 에 배포되어 있습니다. 화면과 API를 모두 제공합니다.
-- **데스크톱 앱**: 화면을 앱 안에 정적으로 담고(번들), 데이터만 배포된 서버의 API를 호출합니다.
+- **데스크톱 앱**: 화면을 앱 안에 정적으로 담고(번들), 데이터만 배포된 서버의 API를 호출합니다. GitHub 릴리스로 배포하고 자동 업데이트합니다.
+- **안드로이드 앱**: 같은 Tauri 프로젝트. 로컬에서 APK 를 굽고 같은 GitHub 릴리스에 올립니다.
 
 ## 배포 현황
 
@@ -87,9 +88,9 @@ npx wrangler secret put APP_URL     # https://cronos.pogoo.workers.dev
 
 나중에 도메인을 사면 `RESEND_API_KEY` 로 바꿔 넣기만 하면 됩니다.
 
-## 2. 데스크톱 앱 릴리스 (아직 하지 않음)
+## 2. 데스크톱 앱 릴리스
 
-설치 파일을 배포하려면 **서명 키가 필요하고, 비밀키는 직접 만드셔야 합니다.**
+서명 키와 저장소 시크릿은 설정돼 있습니다. 처음부터 다시 만들어야 할 때만 아래를 따릅니다.
 
 ```bash
 npx tauri signer generate -w "$HOME/.tauri/cronos.key"
@@ -103,10 +104,25 @@ npx tauri signer generate -w "$HOME/.tauri/cronos.key"
 4. 버전을 올리고 태그를 밀면 `.github/workflows/release.yml` 이 Windows·macOS·Linux 설치 파일을 만들어 서명하고, 업데이트 정보(`latest.json`)와 함께 GitHub 릴리스에 올립니다.
 
 ```bash
-git commit -am "release: v0.1.1" && git tag v0.1.1 && git push --follow-tags
+git commit -am "release: v1.0.1" && git tag v1.0.1 && git push origin master v1.0.1
 ```
 
-릴리스가 올라가면 `/download` 페이지의 다운로드 버튼이 그 파일을 가리킵니다.
+> `--follow-tags` 는 경량 태그를 밀지 않습니다. 태그를 따로 밀어야 워크플로가 돕니다.
+
+릴리스가 올라가면 `/download` 페이지의 다운로드 버튼이 그 파일을 가리킵니다. 다운로드 API 는 GitHub `releases/latest` 를 10분 캐시하므로 잠깐 옛 버전을 말할 수 있습니다.
+
+## 2-1. 안드로이드 APK
+
+워크플로에는 안드로이드가 없습니다. 윈도우에서는 `tauri android build` 가 심볼릭 링크에서 실패하므로 손으로 굽습니다 — 순서는 `scripts/`, 앱 아이콘은 `design/icons/` 참고.
+
+```bash
+npm run build:desktop                      # out-desktop/ 갱신 (dev 서버가 죽으니 뒤에 다시 켠다)
+# src-tauri 에서 NDK 링커를 지정해 cargo build --lib --release --target aarch64-linux-android --features tauri/custom-protocol
+# .so 를 gen/android/app/src/main/jniLibs/arm64-v8a/ 로 복사, gradlew assembleArm64Release -x rustBuildArm64Release
+# zipalign → apksigner → gh release upload vX.Y.Z CRONOS-X.Y.Z-arm64.apk
+```
+
+`--features tauri/custom-protocol` 을 빠뜨리면 화면이 빠진 빈 앱이 나옵니다. `gen/android/app/tauri.properties` 의 versionCode 는 손으로 올립니다.
 
 ## 3. 자동 업데이트 동작
 
@@ -146,5 +162,4 @@ API 핸들러는 `route.api.ts` 입니다. 데스크톱 정적 빌드에서는 �
 ## 남은 작업
 
 - 구글 로그인 시크릿 설정
-- 데스크톱 설치 파일 릴리스 (서명 키 필요)
 - 오프라인 사용: 화면은 앱 안에 있어 열리지만 데이터는 서버에서 오므로, 로컬 캐시 + 동기화 큐가 필요합니다.

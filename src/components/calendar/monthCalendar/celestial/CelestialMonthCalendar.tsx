@@ -44,7 +44,7 @@ const MAX_VISIBLE_LEVELS = 2;
 
 const WeekRow = ({
                      dates, todos, challengeTodos, categories, todayStr, currentMonth,
-                     handleCreateTodo, handleContextMenu, handleContextMenuChallenge, handleQuickToggleChallenge,
+                     handleCreateTodo, handleContextMenu,
                      selectedDate, onCellClick, setMoreModalDate
                  }: WeekRowProps) => {
     const t = useT();

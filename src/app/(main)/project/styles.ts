@@ -1,4 +1,4 @@
-import styled, { css } from "styled-components";
+import styled from "styled-components";
 import { MOBILE } from "@/styles/breakpoints";
 
 export const PageContainer = styled.div`

@@ -1,7 +1,6 @@
 import styled from "styled-components";
 import { SectionWrapper, SectionTitle } from "@/components/project/celestial/section";
 export { SectionWrapper, SectionTitle };
-import { MOBILE } from "@/styles/breakpoints";
 
 export const TimelineLayout = styled.div`
     display: flex;

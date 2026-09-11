@@ -4,7 +4,7 @@ import * as React from 'react';
 import { usePickTheme } from "@/styles/themed";
 import CelestialSidebarMenuButton, { ButtonProps } from "./Celestial_SidebarMenuButton";
 
-const Sidebar_MenuButton = React.forwardRef<HTMLButtonElement, ButtonProps>(({ asChild = false, ...props }, ref) => {
+const Sidebar_MenuButton = React.forwardRef<HTMLButtonElement, ButtonProps>((props, ref) => {
     const SidebarMenuButtonView = usePickTheme({ celestial: CelestialSidebarMenuButton });
 
     const handleArrowClick = (e: React.MouseEvent) => {
@@ -19,7 +19,7 @@ const Sidebar_MenuButton = React.forwardRef<HTMLButtonElement, ButtonProps>(({ a
         $onArrowClick: props.$onArrowClick ? handleArrowClick : undefined
     };
 
-    return <SidebarMenuButtonView ref={ref} {...props} />;
+    return <SidebarMenuButtonView ref={ref} {...extendedProps} />;
 });
 
 Sidebar_MenuButton.displayName = 'Sidebar_MenuButton';

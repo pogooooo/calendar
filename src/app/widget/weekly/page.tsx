@@ -33,8 +33,9 @@ export default function WeeklyWidget() {
 
 
 const CalendarWrap = styled.div`
-    /* 주간 캘린더는 내용 높이가 정해져 있어 창을 억지로 채우지 않는다 */
-    height: auto;
+    /* 창 높이를 그대로 넘겨준다. 달력이 그 안에서 칸 높이를 맞춘다. */
+    height: 100%;
+    min-height: 0;
     & * { background-color: transparent !important; }
     scrollbar-width: thin;
     scrollbar-color: ${p => p.theme.colors.primary}40 transparent;

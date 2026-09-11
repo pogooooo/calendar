@@ -7,12 +7,11 @@ import { CategoryType } from "@/store/useCategoryStore";
 import { TodoType } from "@/store/useTodoStore";
 
 import { useExpandedTodos, ExpandedTodoType } from "@/hooks/useExpandedTodos";
-import { getWeekDates, isSameDay } from "@/utils/DateUtils";
+import { getWeekDates } from "@/utils/DateUtils";
 import { useTodoLevels } from "@/hooks/useTodoLevels";
 import useTodoStore from "@/store/useTodoStore";
 import { useT } from "@/i18n/useT";
 import { localDateKey } from "@/lib/dateKey";
-import useAuthStore from "@/store/useAuthStore";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useDialog } from "@/components/dialog/DialogProvider";
 import { formatDate } from "@/utils/DateUtils";
@@ -115,6 +114,9 @@ const WeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
             if (categories.length > 0 && selectedCategoryIds.length === 0) {
                 setSelectedCategoryIds(categories.map(c => c.id));
             }
+        // 카테고리가 처음 도착했을 때 한 번만 전부 고른다. 고른 개수를 의존성에 넣으면
+        // 사용자가 다 해제한 순간 도로 전부 골라 버린다.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         }, [categories]);
 
         React.useEffect(() => {

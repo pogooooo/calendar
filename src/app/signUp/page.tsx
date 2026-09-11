@@ -10,7 +10,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 
 import { RegisterSchema } from "@/lib/schema";
 import { api, clientHeaders } from "@/lib/apiBase";
-import useSettingStore from "@/store/useSettingStore";
 import { useT } from "@/i18n/useT";
 import LocaleSelect from "@/components/LocaleSelect";
 

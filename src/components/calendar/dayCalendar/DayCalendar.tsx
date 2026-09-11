@@ -80,7 +80,7 @@ export interface DayThemeProps {
 }
 
 const DayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
-    ({ asChild = false, selectedDate = new Date(), todos = [], categories = [], onDateChange, ...props }, ref) => {
+    ({ asChild = false, selectedDate = new Date(), todos = [], categories = [], ...props }, ref) => {
         const DayCalendarView = usePickTheme({ celestial: CelestialDayCalendar });
 
         const [selectedCategoryIds, setSelectedCategoryIds] = React.useState<string[]>([]);
@@ -102,6 +102,9 @@ const DayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
             if (categories.length > 0 && selectedCategoryIds.length === 0) {
                 setSelectedCategoryIds(categories.map(c => c.id));
             }
+        // 카테고리가 처음 도착했을 때 한 번만 전부 고른다. 고른 개수를 의존성에 넣으면
+        // 사용자가 다 해제한 순간 도로 전부 골라 버린다.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         }, [categories]);
 
         React.useEffect(() => {

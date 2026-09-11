@@ -24,7 +24,7 @@ async function startDrag() {
     try {
         const win = getCurrentWindow();
         await win.startDragging();
-    } catch (e) {}
+    } catch {}
 }
 
 async function closeWindow() {
@@ -32,7 +32,7 @@ async function closeWindow() {
     try {
         const win = getCurrentWindow();
         await win.close();
-    } catch (e) {
+    } catch {
         window.close();
     }
 }
@@ -41,14 +41,14 @@ async function applyPriority(kind: string, priority: string) {
     if (!isTauri()) return;
     try {
         await invoke("set_widget_priority", { kind, priority });
-    } catch (e) {}
+    } catch {}
 }
 
 async function applyLocked(kind: string, locked: boolean) {
     if (!isTauri()) return;
     try {
         await invoke("set_widget_locked", { kind, locked });
-    } catch (e) {}
+    } catch {}
 }
 
 function getLuminance(hex: string): number {
@@ -101,7 +101,8 @@ export default function WidgetShell({ kind, title, children }: Props) {
     const [showSettings, setShowSettings] = useState(false);
     const [locked, setLocked] = useState(false);
     const [wallpaper, setWallpaper] = useState({ url: "", mw: 1920, mh: 1080 });
-    const [dynamicTextColor, setDynamicTextColor] = useState({ text: "#ffffff", textSecondary: "#dddddd" });
+    // 벽지를 읽어 정한 글자색. 아직 못 읽었으면 null 이고, 그때는 아래 baseline 을 쓴다.
+    const [dynamicTextColor, setDynamicTextColor] = useState<{ text: string; textSecondary: string } | null>(null);
 
     const monitorRef = useRef<HTMLDivElement>(null);
     const contentRef = useRef<HTMLDivElement>(null);
@@ -156,18 +157,35 @@ export default function WidgetShell({ kind, title, children }: Props) {
         surfaceColorRef.current = surfaceColor;
     }, [bg, surfaceColor]);
 
+    /**
+     * 벽지를 아직 못 읽었을 때(브라우저·첫 프레임·벽지 읽기 실패) 쓰는 글자색.
+     *
+     * 예전에는 흰색으로 시작해서, 밝은 테마 위젯이 흰 바탕에 흰 글씨로 떴다.
+     * 바탕색만으로도 밝고 어두움은 알 수 있으니 그걸로 먼저 정하고,
+     * 벽지를 읽고 나면 그 값으로 바꾼다. 유리 모드는 벽지를 모르면 테마 글자색을 둔다.
+     */
+    const baselineTextColor = useMemo(() => {
+        const lum = bg.mode === "custom" ? getLuminance(bg.customColor)
+            : bg.mode === "theme" ? getLuminance(surfaceColor || "#ffffff")
+            : null;
+        if (lum === null) return {};
+        return lum > 0.179
+            ? { text: "#1a1a1a", textSecondary: "#555555" }
+            : { text: "#ffffff", textSecondary: "#dddddd" };
+    }, [bg.mode, bg.customColor, surfaceColor]);
+
     const widgetTheme = useMemo(() => {
         return {
             ...theme,
             colors: {
                 ...theme?.colors,
                 surface: "transparent",
-                ...(bg.autoTextColor ? dynamicTextColor : {}),
+                ...(bg.autoTextColor ? (dynamicTextColor ?? baselineTextColor) : {}),
             },
             // 모달처럼 불투명해야 하는 요소가 되돌려 쓸 원본 색상
             baseColors: theme?.colors,
         };
-    }, [theme, bg.autoTextColor, dynamicTextColor]);
+    }, [theme, bg.autoTextColor, dynamicTextColor, baselineTextColor]);
 
     const handleModeChange = useCallback((mode: BgMode) => {
         updateBg(kind, { mode });
@@ -220,7 +238,7 @@ export default function WidgetShell({ kind, title, children }: Props) {
                     const res = await fetch(assetUrl);
                     const blob = await res.blob();
                     objUrl = URL.createObjectURL(blob);
-                } catch (e) {}
+                } catch {}
 
                 const img = new Image();
                 img.crossOrigin = "anonymous";
@@ -340,7 +358,7 @@ export default function WidgetShell({ kind, title, children }: Props) {
                 unlistenMove = await win.onMoved(async () => {
                     await syncOffset();
                 });
-            } catch (e) {}
+            } catch {}
         }
 
         setupWallpaperSync();
@@ -482,7 +500,7 @@ export default function WidgetShell({ kind, title, children }: Props) {
                     </SettingsPanel>
                 )}
 
-                <Content ref={contentRef} $kind={kind}>
+                <Content ref={contentRef} $kind={kind} $locked={locked}>
                     {children}
                 </Content>
             </ThemeProvider>
@@ -567,9 +585,10 @@ const TopBar = styled.div`
     gap: 8px;
     padding: 7px 9px;
     cursor: default;
-    opacity: 0;
+    opacity: 0.45;
     transition: opacity 0.14s ease;
-    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.34), transparent);
+    /* 유리 배경에서도 보석이 읽히도록 살짝만 어둡게 */
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.18), transparent);
 
     &:active { cursor: default; }
 
@@ -767,25 +786,22 @@ const ColorHex = styled.span`
     font-family: monospace;
 `;
 
-const Content = styled.div<{ $kind?: string }>`
+const Content = styled.div<{ $kind?: string; $locked?: boolean }>`
     flex: 1;
     min-height: 0;
     min-width: 0;
     overflow: hidden;
-    padding: 0;
     position: relative;
 
     /**
-     * 상단 바는 내용 위에 떠 있다. 마우스를 올려 바가 나타나면 내용의 첫 줄이
-     * 그 밑에 깔렸다 — 위젯마다 제목이 잘려 보였다.
-     * 바가 보이는 동안만 그만큼 아래로 민다. 평소에는 위젯을 꽉 채운다.
+     * 상단 바 자리는 잠기지 않은 동안 늘 비워 둔다.
+     *
+     * 예전에는 마우스를 올릴 때만 바 높이만큼 내용을 밀었다. 그러면 바가 내용을
+     * 덮진 않지만, 위젯에 마우스가 닿을 때마다 안의 내용이 24px 씩 들썩였다.
+     * 자리를 고정해 두면 바가 나타나도 내용은 그대로다. 잠그면 바가 없으니
+     * 그 자리도 내용에 돌려준다.
      */
-    transition: padding-top 0.14s ease;
-
-    ${Shell}:hover &,
-    ${Shell}:focus-within & {
-        padding-top: ${TOP_BAR_H}px;
-    }
+    padding: ${p => p.$locked ? 0 : TOP_BAR_H}px 0 0;
 
     &, & * {
         color: ${p => p.theme?.colors?.text} !important;

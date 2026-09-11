@@ -6,13 +6,11 @@ import Profile from "@/components/sideBar/Profile";
 import Menu from "@/components/sideBar/Menu";
 import CelestialSidebarDesign from "@/assets/sidebarDesign/CelestialSidebarDesign";
 import styled from "styled-components";
-import useCategoryStore from "@/store/useCategoryStore";
 import { useSidebarLogic } from "@/hooks/useSidebarLogic";
 
 const Sidebar = () => {
     // 옆선 장식은 테마마다 다른 그림이다.
     const SidebarDesign = usePickTheme({ celestial: CelestialSidebarDesign });
-    const categories = useCategoryStore((state) => state.categories);
 
     const { width, isResizing, screenHeight, startResizing, sidebarRef } = useSidebarLogic();
 
@@ -22,7 +20,7 @@ const Sidebar = () => {
         <SideBarWrapper ref={sidebarRef} $width={width} $isResizing={isResizing}>
             <Content>
                 <Profile />
-                <Menu categories={categories} />
+                <Menu />
             </Content>
 
             <SidebarContour

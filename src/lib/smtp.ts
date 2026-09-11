@@ -52,7 +52,7 @@ function wrap76(input: string): string {
 
 /** 비ASCII 헤더는 그대로 못 넣는다 (RFC 2047). */
 function encodeHeader(value: string): string {
-    // eslint-disable-next-line no-control-regex
+     
     return /^[\x00-\x7F]*$/.test(value) ? value : `=?UTF-8?B?${b64(value)}?=`;
 }
 

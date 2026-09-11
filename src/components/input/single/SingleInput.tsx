@@ -3,7 +3,6 @@
 import React, { forwardRef, InputHTMLAttributes } from 'react';
 import { usePickTheme } from "@/styles/themed";
 
-import { Slot } from "@radix-ui/react-slot";
 import CelestialSingleInput from './Celestial_SingleInput';
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {

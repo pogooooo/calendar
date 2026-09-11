@@ -95,6 +95,8 @@ export default function CategoryPage() {
             setEditColor(selectedCategory.color);
             setEditDescription(selectedCategory.description || "");
         }
+    // 객체 참조가 아니라 실제로 바뀐 값에만 반응한다 (저장 응답으로 객체가 새로 와도 입력 중인 내용을 덮지 않게)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedCategory?.id, selectedCategory?.name, selectedCategory?.color, selectedCategory?.description]);
 
     const openInviteModal = () => {
@@ -141,7 +143,7 @@ export default function CategoryPage() {
             // 목록을 다시 받지 않으면 초대해도 화면에 멤버가 나타나지 않는다
             await fetchCategories(authFetch);
             closeInviteModal();
-        } catch (err) {
+        } catch {
             setInviteError(t.alert.serverError);
         }
     };

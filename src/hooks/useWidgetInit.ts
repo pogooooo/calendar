@@ -76,7 +76,7 @@ export function useWidgetInit(need: WidgetData[] = ALL) {
             clearTimeout(timer);
             window.removeEventListener("online", retryNow);
         };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
     }, []);
 
     useEffect(() => {

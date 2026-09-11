@@ -56,7 +56,7 @@ export default function StoreInitializer({ children }: { children: React.ReactNo
             fetchDailyData(authFetch, new Date()),
             fetchAnniversaries(authFetch)
         ]);
-    }, [isMounted, accessToken, pathname, authFetch, fetchTodos, fetchCategories]);
+    }, [isMounted, accessToken, pathname, authFetch, fetchTodos, fetchCategories, fetchSettings, fetchDailyData, fetchAnniversaries]);
 
     /**
      * 위젯 창에서 무언가를 바꾸면 본 창도 따라 바뀌어야 한다.

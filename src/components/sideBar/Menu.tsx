@@ -2,14 +2,13 @@ import { useEffect, useState } from "react";
 import styled from "styled-components";
 import SidebarMenuButton from "@/components/button/sidebarMenu/SidebarMenuButton";
 import { useRouter, usePathname } from "next/navigation";
-import { CategoryType } from "@/store/useCategoryStore";
 import { Layers, Calendar, Kanban, Trophy, Cake, MonitorDown } from "lucide-react";
 import { useT } from "@/i18n/useT";
 import { isDesktopApp } from "@/lib/apiBase";
 
 const ROMAN = ["I", "II", "III", "IV", "V", "VI"];
 
-const Menu = (props: { categories: CategoryType[] }) => {
+const Menu = () => {
     const router = useRouter();
     const pathname = usePathname();
     const t = useT();

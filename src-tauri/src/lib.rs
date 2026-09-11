@@ -14,12 +14,14 @@ const BASE_URL: &str = "http://localhost:3000";
 /// 정작 쓰는 이름(due·nownext·anniversary·projects)이 빠져 있어서,
 /// 설정에서 그 넷을 열면 open_widget 이 조용히 거부했다.
 /// 어긋나면 scripts/check-widget-kinds.mjs 가 빌드를 멈춘다.
+#[cfg(desktop)]
 const WIDGET_KINDS: &[&str] = &[
     "today", "quicktask", "due", "nownext",
     "weekly", "monthly", "anniversary",
     "projects", "challenge", "stats", "memo",
 ];
 
+#[cfg(desktop)]
 fn widget_size(kind: &str) -> (f64, f64) {
     const S: (f64, f64) = (200.0, 200.0);
     const W: (f64, f64) = (416.0, 200.0);
@@ -492,6 +494,7 @@ fn set_autostart(app: tauri::AppHandle, enabled: bool) -> bool {
     ok
 }
 
+#[cfg(desktop)]
 fn launched_by_autostart() -> bool {
     std::env::args().any(|a| a == "--from-autostart")
 }

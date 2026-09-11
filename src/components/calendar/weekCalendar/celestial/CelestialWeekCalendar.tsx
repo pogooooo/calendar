@@ -18,7 +18,6 @@ import TodoContextMenu from "@/components/calendar/celestial/contextMenu/TodoCon
 import AnniversaryLocket from "@/components/calendar/celestial/anniversary/AnniversaryLocket";
 import useAnniversaryStore from "@/store/useAnniversaryStore";
 import { anniversariesOn } from "@/lib/anniversary";
-import { TodoType } from "@/store/useTodoStore";
 import { useT } from "@/i18n/useT";
 
 import DayCellDecor from "@/assets/celestial/DayCellDecor";
@@ -42,10 +41,10 @@ type CelestialWeekProps = WeekThemeProps & Omit<React.HTMLAttributes<HTMLDivElem
 
 const CelestialWeekCalendar = React.forwardRef<HTMLDivElement, CelestialWeekProps>(
     ({
-         asChild, currentDate, direction, selectedCategoryIds,
+         asChild, direction, selectedCategoryIds,
          isModalOpen, modalTodo, selectedDateForModal, todoContextMenu,
          moreModalDate, weekDates, expandedTodos, challengeTodos, todayStr, dateRangeText,
-         todoLevels, maxLevel, categories, selectedDate, onDateChange,
+         todoLevels, maxLevel, categories, onDateChange,
          handlePrevWeek, handleNextWeek, toggleCategory, handleContextMenu,
          handleQuickEdit, handleQuickDelete, handleQuickDeleteOne, handleQuickToggle, handleCreateTodo,
          setIsModalOpen, setMoreModalDate, setTodoContextMenu,

@@ -21,8 +21,9 @@ export const viewport = {
 };
 
 export const metadata: Metadata = {
-    title: "Cronos",
-    description: "Calendar todo service"
+    title: "CRONOS",
+    applicationName: "CRONOS",
+    description: "일정과 목표를 하나의 별자리처럼 — 캘린더 · 프로젝트 · 챌린지를 한 곳에서 관리하는 할 일 앱",
 }
 
 export default function RootLayout({children,}: Readonly<{ children: React.ReactNode; }>) {

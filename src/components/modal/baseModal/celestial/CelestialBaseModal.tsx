@@ -30,6 +30,8 @@ export default function CelestialBaseModal({ isOpen, onClose, children, maxWidth
     const isMobile = React.useMemo(
         () => typeof window !== "undefined"
             && window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`).matches,
+        // isOpen 은 "열릴 때마다 다시 재라"는 신호다. 값은 안 쓰지만 의존성이 맞다.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         [isOpen],
     );
 

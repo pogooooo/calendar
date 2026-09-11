@@ -10,7 +10,7 @@ const getUserId = async (request: NextRequest): Promise<string | null> => {
         if (!token) return null;
         const decoded = await verifyToken(token) as { userId: string } | null;
         return decoded?.userId || null;
-    } catch (error) {
+    } catch {
         return null;
     }
 };

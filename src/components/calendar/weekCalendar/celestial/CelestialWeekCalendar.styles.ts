@@ -18,6 +18,13 @@ export const CelestialCalendarWrapper = styled.div`
     flex-direction: column;
     align-items: center;
     width: 100%;
+
+    /* 위젯 창(848×200)에서는 130px 짜리 칸이 창보다 커서 아래가 잘렸다.
+       창 높이를 따라가게 해서, 사용자가 창을 늘리고 줄이는 대로 칸이 맞춰진다. */
+    [data-widget] & {
+        height: 100%;
+        min-height: 0;
+    }
 `;
 
 export const DateRangeDisplay = styled.div`
@@ -82,11 +89,21 @@ export const SliderWrapper = styled.div`
     display: flex;
     flex-direction: column;
     width: 100%;
+
+    [data-widget] & {
+        flex: 1;
+        min-height: 0;
+    }
 `;
 
 export const CalendarRow = styled.div`
     position: relative;
     width: 100%;
+
+    [data-widget] & {
+        flex: 1;
+        min-height: 0;
+    }
 `;
 
 export const ArrowWrapper = styled.div<{ $side: "left" | "right" }>`
@@ -107,6 +124,11 @@ export const CalendarWindow = styled.div`
     padding: 15px 8px;
     margin: -15px -8px;
     box-sizing: border-box;
+
+    /* 음수 margin 만큼 더해야 줄 높이를 꽉 채운다 */
+    [data-widget] & {
+        height: calc(100% + 30px);
+    }
 `;
 
 export const Header = styled.div`
@@ -213,6 +235,12 @@ export const BarContainer = styled.div`
     height: 130px;
     box-sizing: border-box;
     position: relative;
+
+    [data-widget] & {
+        flex: 1;
+        min-height: 0;
+        height: auto;
+    }
     border: 1px solid ${(props) => props.theme.colors.primary};
     border-top: none;
 
@@ -270,6 +298,12 @@ export const DaySlot = styled.div<{ $isToday: boolean }>`
     height: 130px;
     min-width: 0;
     position: relative;
+
+    [data-widget] & {
+        height: auto;
+        min-height: 0;
+        overflow: hidden;
+    }
     top: 0;
     /* 투명 left border로 right border(구분선)와 대칭 → 콘텐츠 정확히 가운데 */
     border-right: 1px solid ${(props) => props.theme.colors.primary};

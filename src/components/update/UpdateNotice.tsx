@@ -38,7 +38,7 @@ export default function UpdateNotice() {
                 updateRef.current = found as never;
                 setInfo({ version: found.version, notes: found.body });
                 setPhase("available");
-            } catch (e) {}
+            } catch {}
         })();
 
         return () => { cancelled = true; };
@@ -74,7 +74,7 @@ export default function UpdateNotice() {
                 const { relaunch } = await import("@tauri-apps/plugin-process");
                 await relaunch();
             }
-        } catch (e) {
+        } catch {
             setPhase("failed");
         }
     }, []);

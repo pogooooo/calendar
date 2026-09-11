@@ -250,7 +250,7 @@ export default function DownloadPage() {
         const url = new URL(window.location.href);
         url.searchParams.delete("dl");
         window.history.replaceState(null, "", url.toString());
-    }, []);
+    }, [DL_MESSAGES]);
 
     React.useEffect(() => {
         PLATFORMS.forEach(({ key }) => {
