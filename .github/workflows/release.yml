@@ -104,10 +104,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Build latest.json from release assets
+      - name: Build latest.json and release notes
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           node scripts/build-updater-json.mjs "${{ github.ref_name }}" > latest.json
           cat latest.json
           gh release upload "${{ github.ref_name }}" latest.json --clobber
+          # 릴리스 본문도 같은 패치 노트로 (src/lib/release-notes.json)
+          node scripts/build-updater-json.mjs "${{ github.ref_name }}" --release-body > notes.md
+          gh release edit "${{ github.ref_name }}" --notes-file notes.md

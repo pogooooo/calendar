@@ -93,6 +93,14 @@ export default function UpdateNotice() {
 
             {phase === "available" && (
                 <>
+                    {/* latest.json 의 notes — 릴리스 스크립트가 그 판의 패치 노트를 넣는다. 한 줄에 하나씩. */}
+                    {info.notes && info.notes.trim() && (
+                        <Notes>
+                            {info.notes.split(/\r?\n/).map(l => l.replace(/^[•\-]\s*/, "").trim()).filter(Boolean).slice(0, 6).map((line, i) => (
+                                <li key={i}>{line}</li>
+                            ))}
+                        </Notes>
+                    )}
                     <Desc>{t.update.description}</Desc>
                     <Row>
                         <GhostBtn onClick={() => setPhase("idle")}>{t.update.later}</GhostBtn>
@@ -184,6 +192,19 @@ const Version = styled.div`
     font-size: 1rem;
     letter-spacing: 1px;
     color: ${p => p.theme.colors.text};
+`;
+
+const Notes = styled.ul`
+    margin: 8px 0 0;
+    padding-left: 16px;
+    max-height: 132px;
+    overflow-y: auto;
+    font-size: 0.76rem;
+    line-height: 1.5;
+    color: ${p => p.theme.colors.text};
+
+    li + li { margin-top: 3px; }
+    li::marker { color: ${p => p.theme.colors.primary}; }
 `;
 
 const Desc = styled.p`

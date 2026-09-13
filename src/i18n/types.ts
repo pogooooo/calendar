@@ -17,6 +17,11 @@ export interface Translations {
         fontSizes: { sm: string; md: string; lg: string; xl: string };
         fontWeights: { light: string; normal: string; bold: string };
         fontNames: Record<string, string>;
+        about: string;
+        aboutNote: string;
+        currentVersion: string;
+        releaseNotes: string;
+        thisVersion: string;
         accountInfo: string;
         changeName: string;
         changePassword: string;

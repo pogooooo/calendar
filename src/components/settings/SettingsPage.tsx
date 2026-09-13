@@ -11,6 +11,7 @@ import { useT } from "@/i18n/useT";
 import useIsMobile from "@/hooks/useIsMobile";
 import { isDesktopShell } from "@/lib/platform";
 import { checkForUpdate } from "@/lib/updater";
+import { RELEASE_NOTES, type ReleaseNote } from "@/lib/releaseNotes";
 import { WIDGET_KINDS } from "@/lib/widgetKinds";
 import { useDialog } from "@/components/dialog/DialogProvider";
 import CelestialSettings from "./celestial/CelestialSettings";
@@ -44,6 +45,10 @@ export interface SettingsThemeProps {
     /** 업데이트 확인 단추 (데스크톱 앱만) */
     onCheckUpdate: () => void;
     updateChecking: boolean;
+    /** 지금 쓰는 판 (package.json) */
+    appVersion: string;
+    releaseNotes: ReleaseNote[];
+    locale: "ko" | "en";
     user: { email?: string | null; name?: string | null } | null;
     t: Translations;
     newName: string;
@@ -132,6 +137,7 @@ export default function SettingsPage() {
     // 데스크톱 웹에서는 위젯이 새 창으로 뜨므로 그대로 쓸 수 있다.
     const showWidgets = !isMobile;
     const showAutostart = desktopShell;
+    const locale = useSettingStore((s) => s.locale);
     const dialog = useDialog();
 
     const [updateChecking, setUpdateChecking] = React.useState(false);
@@ -335,6 +341,9 @@ export default function SettingsPage() {
         showAutostart,
         onCheckUpdate: handleCheckUpdate,
         updateChecking,
+        appVersion: process.env.NEXT_PUBLIC_APP_VERSION ?? "",
+        releaseNotes: RELEASE_NOTES,
+        locale,
         user,
         t,
         newName,

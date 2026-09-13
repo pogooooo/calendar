@@ -12,6 +12,7 @@
  * 서명(.sig)은 tauri-action 이 이미 자산으로 올려 두었으므로 그 내용을 그대로 담는다.
  */
 import { execFileSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 
 const tag = process.argv[2];
 if (!tag) { console.error("usage: build-updater-json.mjs <tag>"); process.exit(1); }
@@ -19,6 +20,21 @@ const repo = process.env.GITHUB_REPOSITORY ?? "pogooooo/calendar";
 const version = tag.replace(/^v/, "");
 
 const gh = (args) => execFileSync("gh", args, { encoding: "utf8" });
+
+// 패치 노트: src/lib/release-notes.json 의 해당 판. 앱의 설정 > 정보 탭과 같은 글이다.
+const NOTES = JSON.parse(readFileSync(new URL("../src/lib/release-notes.json", import.meta.url), "utf8"));
+const note = NOTES.find((n) => n.version === version);
+const notesText = note
+    ? note.notes.ko.map((l) => `• ${l}`).join("\n")
+    : "";
+// --release-body 를 주면 latest.json 대신 GitHub 릴리스 본문(마크다운)을 찍는다
+if (process.argv.includes("--release-body")) {
+    const body = note
+        ? [`## v${note.version} · ${note.date}`, "", ...note.notes.ko.map((l) => `- ${l}`), "", "---", "", ...note.notes.en.map((l) => `- ${l}`)].join("\n")
+        : "아래에서 운영체제에 맞는 설치 파일을 내려받으세요. 이미 설치한 앱은 실행 시 자동으로 업데이트를 확인합니다.";
+    process.stdout.write(body + "\n");
+    process.exit(0);
+}
 const release = JSON.parse(gh(["api", `repos/${repo}/releases/tags/${tag}`]));
 const assets = release.assets.map(a => a.name);
 const url = (name) => `https://github.com/${repo}/releases/download/${tag}/${name}`;
@@ -53,7 +69,7 @@ if (missing.length) console.error(`참고: 빠진 플랫폼 ${missing.join(", ")
 
 process.stdout.write(JSON.stringify({
     version,
-    notes: release.body ?? "",
+    notes: notesText || (release.body ?? ""),
     pub_date: new Date().toISOString(),
     platforms,
 }, null, 2) + "\n");

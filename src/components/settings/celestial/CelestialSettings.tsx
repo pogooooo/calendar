@@ -16,7 +16,7 @@ import { FONT_SIZE_OPTIONS, FONT_WEIGHT_OPTIONS } from "@/styles/GlobalTypograph
  * 오른쪽에 목차를 따로 둬야 했는데, 목차가 필요했다는 것 자체가 화면이
  * 너무 길다는 뜻이었다. 왼쪽 성좌가 곧 목차다.
  */
-type TabId = "look" | "widget" | "system" | "account";
+type TabId = "look" | "widget" | "system" | "account" | "about";
 
 /**
  * 성좌 좌표. 일직선이 아니라 좌우로 꺾여야 별자리로 읽힌다.
@@ -45,7 +45,7 @@ export default function CelestialSettings({
     widgetList,
     onWidgetOpen, onWidgetClose,
     autostart, onAutostartToggle,
-    showWidgets, showAutostart, onCheckUpdate, updateChecking,
+    showWidgets, showAutostart, onCheckUpdate, updateChecking, appVersion, releaseNotes, locale,
     user, t,
     newName, onNewNameChange, onNameSave, namePending, nameStatus,
     pwForm, onPwFormChange, onPasswordSave, pwPending, pwStatus,
@@ -65,8 +65,9 @@ export default function CelestialSettings({
         ...(showWidgets
             ? [{ id: "widget" as TabId, label: t.settings.widgets, note: t.widget.desc, count: String(widgetList.length) }]
             : []),
-        { id: "system",  label: t.settings.system,      note: t.settings.systemNote,      count: showAutostart ? "4" : "2" },
+        { id: "system",  label: t.settings.system,      note: t.settings.systemNote,      count: showAutostart ? "3" : "2" },
         { id: "account", label: t.settings.account,     note: user?.email ?? "",          count: "4" },
+        { id: "about",   label: t.settings.about,       note: t.settings.aboutNote,       count: String(releaseNotes.length) },
     ];
 
     const TAB_MARKS = TABS.map((x, i) => ({
@@ -344,18 +345,45 @@ export default function CelestialSettings({
                                     </div>
                                     <TimezoneSelect />
                                 </S.InfoRow>
-                                {/* 업데이트는 설치한 앱에만 있다. 결과를 말로 돌려줘야 "안 되는 건가" 하고 넘기지 않는다. */}
-                                {showAutostart && (
-                                    <S.InfoRow style={{ marginTop: 16 }}>
+                            </>
+                        )}
+
+                        {/* ── 정보 ──────────────────────────────────────────── */}
+                        {tab === "about" && (
+                            <>
+                                <L.Block>
+                                    <L.BlockHead><h2>{t.settings.currentVersion}</h2></L.BlockHead>
+                                    <S.InfoRow>
                                         <div>
-                                            <S.InfoValue>{t.update.title}</S.InfoValue>
-                                            <L.RowNote>{t.update.checkDesc}</L.RowNote>
+                                            <S.InfoValue>CRONOS v{appVersion}</S.InfoValue>
+                                            {/* 업데이트는 설치한 앱에만 있다. 결과를 말로 돌려줘야 "안 되는 건가" 하고 넘기지 않는다. */}
+                                            {showAutostart && <L.RowNote>{t.update.checkDesc}</L.RowNote>}
                                         </div>
-                                        <S.FormButton onClick={onCheckUpdate} disabled={updateChecking}>
-                                            {updateChecking ? t.update.checking : t.update.check}
-                                        </S.FormButton>
+                                        {showAutostart && (
+                                            <S.FormButton onClick={onCheckUpdate} disabled={updateChecking}>
+                                                {updateChecking ? t.update.checking : t.update.check}
+                                            </S.FormButton>
+                                        )}
                                     </S.InfoRow>
-                                )}
+                                </L.Block>
+
+                                <L.Block>
+                                    <L.BlockHead><h2>{t.settings.releaseNotes}</h2></L.BlockHead>
+                                    <L.NoteList>
+                                        {releaseNotes.map((n) => (
+                                            <L.Note key={n.version} $current={n.version === appVersion}>
+                                                <L.NoteHead>
+                                                    <span className="ver">v{n.version}</span>
+                                                    <span className="date">{n.date}</span>
+                                                    {n.version === appVersion && <em>{t.settings.thisVersion}</em>}
+                                                </L.NoteHead>
+                                                <ul>
+                                                    {n.notes[locale].map((line, i) => <li key={i}>{line}</li>)}
+                                                </ul>
+                                            </L.Note>
+                                        ))}
+                                    </L.NoteList>
+                                </L.Block>
                             </>
                         )}
 

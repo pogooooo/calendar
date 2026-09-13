@@ -561,3 +561,60 @@ export const WidgetActions = styled.div`
 
     & > button { flex: 1; min-width: 0; padding: 5px 0; font-size: 0.72rem; }
 `;
+
+/* ── 정보 탭: 패치 노트 ────────────────────────────────────────────────── */
+export const NoteList = styled.ol`
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+`;
+
+export const Note = styled.li<{ $current: boolean }>`
+    position: relative;
+    padding-left: 18px;
+    border-left: 1px solid ${(p) => (p.$current ? p.theme.colors.primary : `${p.theme.colors.primary}33`)};
+
+    ul {
+        margin: 8px 0 0;
+        padding-left: 18px;
+        list-style: disc;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        font-size: 0.86rem;
+        line-height: 1.55;
+        color: ${(p) => p.theme.colors.text};
+        max-width: 64ch;
+    }
+    li::marker { color: ${(p) => p.theme.colors.primary}; }
+`;
+
+export const NoteHead = styled.div`
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    flex-wrap: wrap;
+
+    .ver {
+        font-family: ${(p) => p.theme.fonts.display};
+        font-size: 0.86rem;
+        letter-spacing: 2px;
+        color: ${(p) => p.theme.colors.text};
+    }
+    .date {
+        font-size: 0.72rem;
+        color: ${(p) => p.theme.colors.textSecondary};
+        font-variant-numeric: tabular-nums;
+    }
+    em {
+        font-style: normal;
+        font-size: 0.64rem;
+        letter-spacing: 1.5px;
+        padding: 1px 7px;
+        border: 1px solid ${(p) => p.theme.colors.primary}66;
+        color: ${(p) => p.theme.colors.primary};
+    }
+`;
