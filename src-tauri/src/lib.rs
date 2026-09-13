@@ -499,6 +499,55 @@ fn launched_by_autostart() -> bool {
     std::env::args().any(|a| a == "--from-autostart")
 }
 
+/// 열려 있는 위젯 창이 하나라도 있는가.
+#[cfg(desktop)]
+fn any_widget_open(app: &tauri::AppHandle) -> bool {
+    WIDGET_KINDS.iter().any(|k| app.get_webview_window(&format!("widget-{k}")).is_some())
+}
+
+/// 메인 창을 앞으로 가져온다. 없으면(닫혔으면) 설정 그대로 다시 만든다.
+///
+/// 위젯이 떠 있는 동안 메인 창을 닫으면 프로세스는 위젯 때문에 살아 있다.
+/// 그 상태에서 앱 아이콘을 누르면 두 번째 인스턴스가 여기로 넘겨주는데,
+/// 예전에는 "main" 이 없으면 아무것도 하지 않아서 앱이 안 켜지는 것처럼 보였다.
+#[cfg(desktop)]
+fn show_main_window(app: &tauri::AppHandle) {
+    if let Some(win) = app.get_webview_window("main") {
+        let _ = win.unminimize();
+        let _ = win.show();
+        let _ = win.set_focus();
+        return;
+    }
+    let Some(cfg) = app.config().app.windows.first().cloned() else { return; };
+    match tauri::WebviewWindowBuilder::from_config(app, &cfg) {
+        Ok(builder) => match builder.build() {
+            Ok(win) => {
+                let _ = win.show();
+                let _ = win.set_focus();
+                attach_main_close_guard(app, &win);
+            }
+            Err(e) => eprintln!("[main] 창을 다시 만들지 못했다: {e}"),
+        },
+        Err(e) => eprintln!("[main] 창 설정을 읽지 못했다: {e}"),
+    }
+}
+
+/// 메인 창의 닫기: 위젯이 떠 있으면 숨기기만 한다 (위젯이 계속 살아야 하니까).
+/// 위젯이 없으면 그대로 닫히고, 마지막 창이라 앱이 끝난다.
+#[cfg(desktop)]
+fn attach_main_close_guard(app: &tauri::AppHandle, win: &tauri::WebviewWindow) {
+    let app = app.clone();
+    let me = win.clone();
+    win.on_window_event(move |event| {
+        if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+            if any_widget_open(&app) {
+                api.prevent_close();
+                let _ = me.hide();
+            }
+        }
+    });
+}
+
 #[cfg(desktop)]
 #[tauri::command]
 async fn open_widget(
@@ -597,10 +646,25 @@ async fn open_widget(
                 {
                     let bottom = app2.state::<BottomWidgets>().0.clone();
                     let closed_kind = kind_for_cleanup.clone();
+                    let app_for_exit = app2.clone();
                     win.on_window_event(move |event| {
                         if matches!(event, tauri::WindowEvent::Destroyed) {
                             if let Ok(mut set) = bottom.lock() {
                                 set.remove(&closed_kind);
+                            }
+                            // 마지막 위젯이 닫혔고 메인 창은 숨어 있다면, 보이지 않는 프로세스만
+                            // 남는다. 그건 사용자가 끈 것이나 마찬가지이므로 앱을 끝낸다.
+                            let main_hidden = app_for_exit
+                                .get_webview_window("main")
+                                .map(|w| !w.is_visible().unwrap_or(true))
+                                .unwrap_or(true);
+                            // 지금 닫히는 창은 아직 목록에 남아 있을 수 있어 이름으로 뺀다
+                            let others_open = WIDGET_KINDS.iter().any(|k| {
+                                *k != closed_kind.as_str()
+                                    && app_for_exit.get_webview_window(&format!("widget-{k}")).is_some()
+                            });
+                            if main_hidden && !others_open {
+                                app_for_exit.exit(0);
                             }
                         }
                     });
@@ -744,6 +808,30 @@ fn save_widget_state(app: tauri::AppHandle, state: String) -> bool {
     std::fs::rename(&tmp, &path).is_ok()
 }
 
+/// 안드로이드 홈 위젯이 읽는 자료 (오늘 할 일·챌린지·문구).
+///
+/// 홈 위젯은 WebView 를 담을 수 없어 네이티브(RemoteViews)로 그린다. 그 재료를
+/// 앱(JS)이 여기로 넘기면 파일에 두고, Kotlin 쪽(CronosWidgetProvider)이 읽어 그린다.
+/// 데스크톱에서는 부르지 않지만 명령이 있어도 해가 없다.
+fn widget_snapshot_path(app: &tauri::AppHandle) -> Option<std::path::PathBuf> {
+    app.path().app_config_dir().ok().map(|d| d.join("widget-snapshot.json"))
+}
+
+#[tauri::command]
+fn save_widget_snapshot(app: tauri::AppHandle, snapshot: String) -> bool {
+    let Some(path) = widget_snapshot_path(&app) else { return false };
+    if let Some(dir) = path.parent() {
+        let _ = std::fs::create_dir_all(dir);
+    }
+    // 임시 파일에 쓰고 교체한다. 위젯이 반쪽짜리 JSON 을 읽지 않고, MainActivity 의
+    // FileObserver 가 MOVED_TO 한 번으로 "바뀌었다" 를 안다.
+    let tmp = path.with_extension("json.tmp");
+    if std::fs::write(&tmp, snapshot).is_err() {
+        return false;
+    }
+    std::fs::rename(&tmp, &path).is_ok()
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let bottom_widgets = BottomWidgets(Arc::new(Mutex::new(HashSet::new())));
@@ -756,11 +844,7 @@ pub fn run() {
     // 두 번째 인스턴스는 즉시 종료된다. 없으면 위젯이 인스턴스 수만큼 중복 생성된다.
     let builder = builder
         .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
-            if let Some(win) = app.get_webview_window("main") {
-                let _ = win.unminimize();
-                let _ = win.show();
-                let _ = win.set_focus();
-            }
+            show_main_window(app);
         }))
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
@@ -787,6 +871,7 @@ pub fn run() {
                     autostart_status,
                     load_widget_state,
                     save_widget_state,
+                    save_widget_snapshot,
                 ]
             }
             #[cfg(not(desktop))]
@@ -796,6 +881,7 @@ pub fn run() {
                     get_wallpaper_style,
                     load_widget_state,
                     save_widget_state,
+                    save_widget_snapshot,
                 ]
             }
         })
@@ -841,6 +927,7 @@ pub fn run() {
             // 앱 아이콘을 다시 실행하면 single-instance 핸들러가 메인 창을 띄워준다.
             #[cfg(desktop)]
             if let Some(win) = app.get_webview_window("main") {
+                attach_main_close_guard(&app.handle().clone(), &win);
                 if launched_by_autostart() {
                     let _ = win.hide();
                 } else {

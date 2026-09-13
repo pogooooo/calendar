@@ -8,6 +8,13 @@ export const CelestialCalendarWrapper = styled.div`
     align-items: center;
     height: 100%;
     width: 100%;
+
+    /* 폰에서는 세 칸을 나란히 세워 화면을 나눠 갖지 않고, 내용만큼 자란 뒤 화면이 굴러간다.
+       전에는 목록 칸이 화면의 절반을 빈 채로 차지했다. */
+    ${MOBILE} {
+        height: auto;
+        min-height: 100%;
+    }
 `;
 
 export const DateHeader = styled.div`
@@ -40,6 +47,11 @@ export const ContentLayout = styled.div`
     @media (min-width: 769px) {
         flex-direction: row;
     }
+
+    ${MOBILE} {
+        flex: none;
+        gap: 12px;
+    }
 `;
 
 export const HResizer = styled.div`
@@ -61,6 +73,9 @@ export const HResizer = styled.div`
     &:hover .handle {
         background-color: ${(props) => props.theme.colors.primary};
     }
+
+    /* 마우스 손잡이는 폰에 없다 */
+    ${MOBILE} { display: none; }
 `;
 
 export const VResizer = styled.div`
@@ -82,6 +97,9 @@ export const VResizer = styled.div`
     &:hover .handle {
         background-color: ${(props) => props.theme.colors.primary};
     }
+
+    /* 마우스 손잡이는 폰에 없다 */
+    ${MOBILE} { display: none; }
 `;
 
 export const TimelineSection = styled.div.attrs<{ $flex: number }>(props => ({
@@ -128,12 +146,21 @@ export const TimelineSection = styled.div.attrs<{ $flex: number }>(props => ({
             ${MOBILE} { padding: 8px 12px; }
         }
     }
+
+    ${MOBILE} {
+        flex: none !important;
+        min-height: 0;
+    }
 `;
 
 export const TimelineScrollArea = styled.div`
     flex: 1;
     overflow-y: auto;
 
+    ${MOBILE} {
+        flex: none;
+        overflow: visible;
+    }
 `;
 
 export const ChallengeRow = styled.div<{ $isSelected: boolean }>`
@@ -207,6 +234,12 @@ export const SideSection = styled.div.attrs<{ $flex: number }>(props => ({
     display: flex;
     flex-direction: column;
     min-height: 250px;
+
+    ${MOBILE} {
+        flex: none !important;
+        min-height: 0;
+        gap: 12px;
+    }
 `;
 
 export const BaseCard = styled.div`
@@ -245,6 +278,12 @@ export const StickerBoardCard = styled(BaseCard).attrs<{ $flex: number }>(props 
         }
 
     }
+
+    ${MOBILE} {
+        flex: none !important;
+        min-height: 0;
+        .sticker-content { min-height: 120px; }
+    }
 `;
 
 export const StickerGrid = styled.div`
@@ -272,6 +311,12 @@ export const TaskCard = styled(BaseCard).attrs<{ $flex: number }>(props => ({
     min-height: 100px;
     overflow-y: auto;
 
+
+    ${MOBILE} {
+        flex: none !important;
+        min-height: 0;
+        .placeholder { padding: 24px 0; }
+    }
 `;
 
 export const DetailArea = styled.div`

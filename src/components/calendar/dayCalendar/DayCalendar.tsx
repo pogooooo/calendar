@@ -151,7 +151,11 @@ const DayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
                                     categoryId: proj.categoryId,
                                     startAt: task.startAt ? new Date(task.startAt).toISOString() : null,
                                     endAt: task.endAt ? new Date(task.endAt).toISOString() : null,
-                                    isAllDay: false, // ✨ 중요: 일간 타임라인에 보이려면 false여야 시간 계산이 됨
+                                    // 하루 안에 시작해 끝나는 태스크만 시간대에 놓는다. 며칠에 걸친 태스크를
+                                    // 시간대에 넣으면 그 기간 매일 00~24시가 막대로 꽉 차서 타임라인이 쓸모없어진다.
+                                    // 그런 건 위 "할 일" 목록에 '하루 종일' 로 선다.
+                                    isAllDay: !task.startAt || !task.endAt
+                                        || localDateKey(task.startAt) !== localDateKey(task.endAt),
                                     repeat: 0,
                                     memo: task.description || null,
                                     check: isTaskCompleted ? 'done' : 'none',

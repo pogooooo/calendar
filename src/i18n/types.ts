@@ -153,8 +153,11 @@ export interface Translations {
         monthView: string;
         dayView: string;
         weekView: string;
+        weekDayView: string;
         prevDay: string;
         nextDay: string;
+        prevWeek: string;
+        nextWeek: string;
         expandDay: string;
         collapseDay: string;
         dayLabelShort: (m: number, d: number) => string;

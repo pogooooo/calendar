@@ -7,7 +7,7 @@ import useCategoryStore from "@/store/useCategoryStore";
 import useTodoStore from "@/store/useTodoStore";
 import MonthCalendar from "@/components/calendar/monthCalendar/MonthCalendar";
 import DayCalendar from "@/components/calendar/dayCalendar/DayCalendar";
-import WeekCalendar from "@/components/calendar/weekCalendar/WeekCalendar";
+import WeekStrip from "@/components/calendar/weekStrip/WeekStrip";
 import TodoModal from "@/components/modal/todoModal/TodoModal";
 import useIsMobile from "@/hooks/useIsMobile";
 import useSwipe from "@/hooks/useSwipe";
@@ -26,7 +26,8 @@ export default function CalendarPage() {
     const isMobile = useIsMobile();
 
     /** 폰에서는 두 달력을 한 화면에 같이 두지 않는다. 하나씩 갈아 끼운다. */
-    const [mobileView, setMobileView] = useState<"month" | "week" | "day">("month");
+    // 폰은 두 화면이다: 월간, 그리고 주간 띠 + 그날 일간 (주간·일간을 합쳤다)
+    const [mobileView, setMobileView] = useState<"month" | "week">("month");
     const [addOpen, setAddOpen] = useState(false);
 
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -51,7 +52,7 @@ export default function CalendarPage() {
         const picked = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
         if (Number.isNaN(picked.getTime())) return;
         setSelectedDate(picked);
-        setMobileView("day");
+        setMobileView("week");
     }, []);
 
     const toggleDay = React.useCallback(() => {
@@ -110,18 +111,12 @@ export default function CalendarPage() {
     const daySwipe = useSwipe(nextDay, prevDay);
 
     if (isMobile) {
-        // 일간 화면 안의 날짜 줄은 폰에서 숨기므로, 날짜는 여기서만 보여준다.
-        const dayLabel = t.calendar.dayLabelShort(selectedDate.getMonth() + 1, selectedDate.getDate())
-            + ` · ${t.calendar.days[selectedDate.getDay()]}`;
-        const isToday = selectedDate.toDateString() === new Date().toDateString();
-
         return (
             <MobileWrapper>
                 <ViewSwitch role="tablist">
                     {([
                         ["month", t.calendar.monthView],
-                        ["week", t.calendar.weekView],
-                        ["day", t.calendar.dayView],
+                        ["week", t.calendar.weekDayView],
                     ] as const).map(([id, label]) => (
                         <SwitchButton
                             key={id}
@@ -135,40 +130,26 @@ export default function CalendarPage() {
                     ))}
                 </ViewSwitch>
 
-                {mobileView === "day" && (
-                    <DayStepper>
-                        <button type="button" onClick={() => stepDay(-1)} aria-label={t.calendar.prevDay}>
-                            <ChevronLeft size={16} />
-                        </button>
-                        {/* key 를 붙여야 날짜가 바뀔 때마다 다시 들어오는 몸짓이 재생된다 */}
-                        <span className="label" key={dayLabel}>{dayLabel}</span>
-                        {!isToday && (
-                            <button type="button" className="today" onClick={() => setSelectedDate(new Date())}>
-                                {t.home.today}
-                            </button>
-                        )}
-                        <button type="button" onClick={() => stepDay(1)} aria-label={t.calendar.nextDay}>
-                            <ChevronRight size={16} />
-                        </button>
-                    </DayStepper>
+                {/* 주간 띠는 날짜를 고르는 곳, 그 아래 일간이 내용을 보여주는 곳.
+                    띠에서는 좌우로 쓸어 주를 넘기고, 일간에서는 쓸어 하루를 넘긴다. */}
+                {mobileView === "week" && (
+                    <WeekStrip
+                        selectedDate={selectedDate}
+                        onSelect={setSelectedDate}
+                        todos={todos}
+                        categories={categories}
+                    />
                 )}
 
-                <MobilePane key={mobileView} $forward={mobileView !== "month"} {...(mobileView === "day" ? daySwipe : {})}>
-                    {mobileView === "week" ? (
-                        <WeekCalendar
-                            todos={todos}
-                            categories={categories}
-                            selectedDate={selectedDate}
-                            onDateChange={(date) => { setSelectedDate(date); setMobileView("day"); }}
-                        />
-                    ) : mobileView === "month" ? (
+                <MobilePane key={mobileView} $forward={mobileView !== "month"} {...(mobileView === "week" ? daySwipe : {})}>
+                    {mobileView === "month" ? (
                         <MonthCalendar
                             todos={todos}
                             categories={categories}
                             selectedDate={selectedDate}
                             followSelectedDate
-                            /* 날짜를 누르면 그 날로 넘어간다. 폰에서는 이게 일간 달력을 여는 길이다. */
-                            onDateChange={(date) => { setSelectedDate(date); setMobileView("day"); }}
+                            /* 날짜를 누르면 그 날로 넘어간다. 폰에서는 이게 일간을 여는 길이다. */
+                            onDateChange={(date) => { setSelectedDate(date); setMobileView("week"); }}
                         />
                     ) : (
                         <DayCalendar
@@ -259,7 +240,7 @@ const MobileWrapper = styled.div`
 
 const ViewSwitch = styled.div`
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     border: 1px solid ${(props) => props.theme.colors.primary}66;
     flex: none;
 `;
@@ -277,61 +258,6 @@ const SwitchButton = styled.button<{ $on: boolean }>`
 
     &:last-child { border-right: none; }
     &:active { background-color: ${(props) => props.theme.colors.primary}2E; }
-`;
-
-const labelIn = keyframes`
-    from { opacity: 0; transform: translateY(-4px); }
-    to   { opacity: 1; transform: translateY(0); }
-`;
-
-const DayStepper = styled.div`
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex: none;
-    padding: 0 4px;
-
-    .label {
-        flex: 1;
-        min-width: 0;
-        text-align: center;
-        font-family: ${(props) => props.theme.fonts.display};
-        font-size: 0.9rem;
-        letter-spacing: 2px;
-        color: ${(props) => props.theme.colors.text};
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-
-        /* 날짜가 바뀌었다는 걸 글자가 스스로 알려 준다 */
-        @media (prefers-reduced-motion: no-preference) {
-            animation: ${labelIn} 0.24s ease-out both;
-        }
-    }
-
-    button {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex: 0 0 auto;
-        width: 38px;
-        height: 38px;
-        background: transparent;
-        border: 1px solid ${(props) => props.theme.colors.primary}44;
-        color: ${(props) => props.theme.colors.primary};
-        cursor: pointer;
-
-        &:active { background-color: ${(props) => props.theme.colors.primary}1F; }
-    }
-
-    /* 며칠씩 넘기다 보면 오늘로 돌아올 길이 필요하다. 오늘이면 나오지 않는다. */
-    button.today {
-        width: auto;
-        padding: 0 12px;
-        font-family: ${(props) => props.theme.fonts.display};
-        font-size: 0.7rem;
-        letter-spacing: 1.5px;
-    }
 `;
 
 /* 갈아 끼울 때 어느 쪽에서 왔는지 보여 준다. 월간→일간은 오른쪽에서,

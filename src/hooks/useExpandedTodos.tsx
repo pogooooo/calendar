@@ -8,12 +8,15 @@ export interface ExpandedTodoType extends TodoType {
     isDone?: boolean;
 }
 
-export const useExpandedTodos = (
+/**
+ * 반복 일정을 창 안의 발생으로 펼친다 (훅이 아니라 순수 함수).
+ * 화면은 useExpandedTodos 로, 안드로이드 위젯 자료처럼 렌더 밖에서 쓰는 곳은 이걸 직접 부른다.
+ */
+export function expandTodos(
     todos: TodoType[],
     windowStart: Date | undefined,
     windowEnd: Date | undefined
-) => {
-    return useMemo(() => {
+): ExpandedTodoType[] {
         const expanded: ExpandedTodoType[] = [];
 
         if (!todos || todos.length === 0 || !windowStart || !windowEnd) return expanded;
@@ -118,5 +121,12 @@ export const useExpandedTodos = (
         });
 
         return expanded;
-    }, [todos, windowStart, windowEnd]);
+}
+
+export const useExpandedTodos = (
+    todos: TodoType[],
+    windowStart: Date | undefined,
+    windowEnd: Date | undefined
+) => {
+    return useMemo(() => expandTodos(todos, windowStart, windowEnd), [todos, windowStart, windowEnd]);
 };

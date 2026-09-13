@@ -7,6 +7,7 @@ import TitleBar from "@/components/titleBar/TitleBar";
 import PageTransition from "@/components/transition/PageTransition";
 import UpdateNotice from "@/components/update/UpdateNotice";
 import SaveFailureNotice from "@/components/SaveFailureNotice";
+import AndroidWidgetSync from "@/components/AndroidWidgetSync";
 import { DialogProvider } from "@/components/dialog/DialogProvider";
 import MobileTabBar, { MOBILE_BREAKPOINT, TAB_BAR_HEIGHT } from "@/components/mobile/MobileTabBar";
 
@@ -30,6 +31,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 <MobileTabBar />
                 <UpdateNotice />
                 <SaveFailureNotice />
+                <AndroidWidgetSync />
             </AppShell>
         </DialogProvider>
     );
