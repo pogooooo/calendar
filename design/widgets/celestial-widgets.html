@@ -1,0 +1,808 @@
+<title>CRONOS 위젯 시안</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbit&family=Inter:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --bg: #F7F5EF;
+    --ink: #26231C;
+    --muted: #6E685C;
+    --rule: #E3DDCF;
+    --gold: #B8962E;
+    --gold-soft: #D4AF37;
+    --panel: #FFFFFF;
+    --chip: #EFE9DA;
+    /* 시안 안의 위젯은 제 팔레트를 갖는다 (Celestial 밝은 벌 / 어두운 벌) — 페이지 테마와 무관 */
+    --wl-bg: rgba(255,255,255,var(--alpha, 0.88));
+    --wl-ink: #2E2E2E;
+    --wl-muted: #7A7A7A;
+    --wl-gold: #D4AF37;
+    --wl-gold-text: #B8962E;
+    --wl-line: rgba(212,175,55,0.55);
+    --wl-weekend: #C4696E;
+    --wd-bg: rgba(17,17,17,var(--alpha, 0.88));
+    --wd-ink: #E8E8E8;
+    --wd-muted: #8E8E8E;
+    --wd-gold: #D4AF37;
+    --wd-gold-text: #D4AF37;
+    --wd-line: rgba(212,175,55,0.5);
+    --wd-weekend: #D98A8E;
+    --wall-light: linear-gradient(160deg, #dfe6f0 0%, #f2efe8 55%, #e9dcc7 100%);
+    --wall-dark: radial-gradient(120% 90% at 20% 0%, #24304a 0%, #0f1220 45%, #07080e 100%);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #141310; --ink: #ECE6D6; --muted: #9B947F; --rule: #2C2922; --gold: #D4AF37; --gold-soft: #D4AF37; --panel: #1B1915; --chip: #26231C;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #141310; --ink: #ECE6D6; --muted: #9B947F; --rule: #2C2922; --gold: #D4AF37; --gold-soft: #D4AF37; --panel: #1B1915; --chip: #26231C;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', 'Pretendard', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+    font-size: 14px;
+    line-height: 1.55;
+    padding: 0 20px;
+    padding-block: 36px 80px;
+  }
+  .page { max-width: 1040px; margin: 0 auto; }
+  h1, h2, h3 { font-family: 'Orbit', 'Inter', sans-serif; font-weight: 400; letter-spacing: 0.08em; text-wrap: balance; margin: 0; }
+  h1 { font-size: 1.9rem; }
+  h2 { font-size: 1.15rem; color: var(--gold); letter-spacing: 0.18em; }
+  h3 { font-size: 1rem; }
+  p { margin: 0; max-width: 68ch; }
+  .muted { color: var(--muted); }
+  .eyebrow { font-family: 'Orbit', sans-serif; font-size: 0.72rem; letter-spacing: 0.28em; color: var(--gold); }
+  .intro { display: grid; gap: 14px; margin-bottom: 40px; }
+  .intro .lede { font-size: 1rem; max-width: 60ch; }
+  .legend { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 0.78rem; color: var(--muted); }
+  .legend b { color: var(--ink); font-weight: 500; }
+
+  .toc { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 34px; padding: 0; list-style: none; }
+  .toc a { display: inline-block; padding: 5px 10px; border: 1px solid var(--rule); border-radius: 999px; color: var(--ink); text-decoration: none; font-size: 0.78rem; background: var(--panel); }
+  .toc a:hover, .toc a:focus-visible { border-color: var(--gold); outline: none; }
+  .toc a b { color: var(--gold); font-weight: 500; margin-right: 6px; font-variant-numeric: tabular-nums; }
+
+  section.kind { padding-block: 30px; border-top: 1px solid var(--rule); }
+  .kind-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px 14px; margin-bottom: 6px; }
+  .kind-head .num { font-family: 'Orbit', sans-serif; color: var(--gold); font-size: 0.85rem; letter-spacing: 0.2em; }
+  .chip { display: inline-block; font-size: 0.7rem; letter-spacing: 0.08em; padding: 2px 8px; border-radius: 999px; background: var(--chip); color: var(--muted); font-variant-numeric: tabular-nums; }
+  .chip.new { color: var(--gold); border: 1px solid var(--gold); background: transparent; }
+  .kind-desc { max-width: 70ch; color: var(--muted); margin-bottom: 18px; }
+
+  .pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; align-items: start; }
+  .wall { border-radius: 22px; padding: 26px 22px; display: grid; place-items: center; min-height: 160px; position: relative; overflow: hidden; }
+  .wall.light { background: var(--wall-light); }
+  .wall.dark { background: var(--wall-dark); }
+  .wall .tag { position: absolute; left: 14px; top: 10px; font-size: 0.66rem; letter-spacing: 0.16em; text-transform: uppercase; font-family: 'Orbit', sans-serif; }
+  .wall.light .tag { color: #6f6a5c; }
+  .wall.dark .tag { color: #8f8a7a; }
+
+  .notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px 22px; margin-top: 16px; font-size: 0.8rem; }
+  .notes div { display: grid; gap: 2px; }
+  .notes dt { color: var(--muted); font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase; }
+  .notes dd { margin: 0; }
+  dl { margin: 0; }
+
+  /* ── 위젯 공통 ────────────────────────────────────────────── */
+  .w {
+    --cw: 80px; --ch: 72px;
+    width: calc(var(--cols) * var(--cw));
+    height: calc(var(--rows) * var(--ch));
+    max-width: 100%;
+    border-radius: 18px;
+    border: 1px solid var(--line);
+    background: var(--wbg);
+    color: var(--wink);
+    padding: 12px 14px;
+    display: flex; flex-direction: column;
+    font-family: 'Inter', 'Pretendard', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+    font-size: 12.5px;
+    line-height: 1.3;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 6px 22px rgba(0,0,0,0.12);
+    font-variant-numeric: tabular-nums;
+  }
+  .w.l { --wbg: var(--wl-bg); --wink: var(--wl-ink); --wmuted: var(--wl-muted); --wgold: var(--wl-gold); --wgoldt: var(--wl-gold-text); --line: var(--wl-line); --wweekend: var(--wl-weekend); }
+  .w.d { --wbg: var(--wd-bg); --wink: var(--wd-ink); --wmuted: var(--wd-muted); --wgold: var(--wd-gold); --wgoldt: var(--wd-gold-text); --line: var(--wd-line); --wweekend: var(--wd-weekend); }
+  /* 왼쪽 위 귀퉁이 표식 — 앱의 알림 패널과 같은 말 */
+  .w::before { content: ""; position: absolute; left: 0; top: 0; width: 14px; height: 14px; background: linear-gradient(315deg, transparent 48%, var(--wgold) 50%, transparent 52%); opacity: 0.9; }
+  .w-hd { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--line); margin-bottom: 6px; }
+  .w-title { font-family: 'Orbit', sans-serif; font-size: 11px; letter-spacing: 0.2em; color: var(--wgoldt); white-space: nowrap; }
+  .w-sub { font-family: 'Orbit', sans-serif; font-size: 10px; letter-spacing: 0.14em; color: var(--wmuted); white-space: nowrap; }
+  .w-sub b { color: var(--wgoldt); font-weight: 400; }
+  .w-rows { display: flex; flex-direction: column; gap: 0; flex: 1; min-height: 0; }
+  .row { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
+  .row .t { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row .s { color: var(--wmuted); font-size: 11px; letter-spacing: 0.02em; white-space: nowrap; }
+  .row.done .t { color: var(--wmuted); text-decoration: line-through; text-decoration-color: var(--wgold); }
+  .dia { width: 7px; height: 7px; transform: rotate(45deg); border: 1px solid var(--c, var(--wgold)); background: transparent; flex: none; }
+  .dia.fill { background: var(--c, var(--wgold)); }
+  .rail { position: relative; height: 1px; background: var(--line); margin-top: auto; }
+  .rail .fill { position: absolute; left: 0; top: 0; height: 100%; background: var(--wgold); box-shadow: 0 0 6px var(--wgold); }
+  .rail .mark { position: absolute; top: 50%; width: 7px; height: 7px; transform: translate(-50%, -50%) rotate(45deg); background: var(--wgold); }
+  .w-ft { display: flex; justify-content: space-between; align-items: baseline; margin-top: 6px; font-size: 10px; color: var(--wmuted); letter-spacing: 0.06em; }
+  .w-ft .star { color: var(--wgold); }
+  .empty { color: var(--wmuted); font-size: 12px; padding: 8px 0; }
+
+  /* 지금·다음 */
+  .now-big { font-size: 15px; font-weight: 500; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .now-meta { display: flex; justify-content: space-between; font-size: 11px; color: var(--wmuted); margin-top: 2px; }
+  .now-meta b { color: var(--wgoldt); font-weight: 500; }
+  .kicker { font-family: 'Orbit', sans-serif; font-size: 9.5px; letter-spacing: 0.24em; color: var(--wgoldt); }
+  .next-line { display: flex; align-items: center; gap: 8px; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line); }
+  .next-line .t { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .next-line .s { color: var(--wmuted); font-size: 11px; white-space: nowrap; }
+
+  /* 챌린지 */
+  .ch { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; align-items: center; padding: 5px 0; }
+  .ch .t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ch .cnt { font-size: 11px; color: var(--wmuted); }
+  .ch .cnt b { color: var(--wgoldt); font-weight: 500; }
+  .ch .bar { grid-column: 1 / -1; height: 2px; background: var(--line); position: relative; }
+  .ch .bar i { position: absolute; left: 0; top: 0; height: 100%; background: var(--wgold); }
+  .ch.today .t::after { content: " ✦"; color: var(--wgold); font-size: 10px; }
+
+  /* 주간 띠 */
+  .week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; flex: 1; align-items: stretch; }
+  .day { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; border-radius: 8px; padding: 4px 0; }
+  .day .n { font-family: 'Orbit', sans-serif; font-size: 8.5px; letter-spacing: 0.1em; color: var(--wmuted); }
+  .day .num { font-size: 13px; line-height: 20px; width: 22px; text-align: center; border-radius: 50%; }
+  .day.today .num { border: 1px solid var(--wgold); color: var(--wgoldt); }
+  .day.selected { background: color-mix(in srgb, var(--wgold) 12%, transparent); border: 1px solid var(--wgold); }
+  .day.wk .num { color: var(--wweekend); }
+  .day .dots { display: flex; gap: 2px; min-height: 6px; }
+  .day .dots i { width: 4px; height: 4px; transform: rotate(45deg); display: block; background: var(--c, var(--wgold)); }
+  .day .dots em { font-style: normal; font-size: 8px; color: var(--wmuted); line-height: 6px; }
+
+  /* 월간 */
+  .month { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px 2px; flex: 1; align-content: start; }
+  .month .hn { font-family: 'Orbit', sans-serif; font-size: 8px; letter-spacing: 0.08em; color: var(--wmuted); text-align: center; padding-bottom: 2px; }
+  .month { row-gap: 0; grid-template-rows: auto repeat(5, 1fr); align-content: stretch; }
+  .month .c { display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 12.5px; line-height: 18px; padding: 0; }
+  .month .c.pad { color: transparent; }
+  .month .c.wk { color: var(--wweekend); }
+  .month .c.today { color: var(--wgoldt); }
+  .month .c.today > span:first-child { border: 1px solid var(--wgold); border-radius: 50%; width: 20px; height: 20px; line-height: 18px; display: inline-block; text-align: center; }
+  .month .c .dt { display: flex; gap: 2px; height: 5px; margin-top: 1px; }
+  .month .c .dt i { width: 4px; height: 4px; transform: rotate(45deg); background: var(--c, var(--wgold)); display: block; }
+
+  /* D-day / 링 */
+  .dday { display: flex; flex-direction: column; justify-content: center; align-items: flex-start; flex: 1; gap: 2px; }
+  .dday .big { font-family: 'Orbit', sans-serif; font-size: 30px; letter-spacing: 0.06em; color: var(--wgoldt); line-height: 1; }
+  .dday .name { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+  .dday .date { font-size: 10px; color: var(--wmuted); letter-spacing: 0.04em; }
+  .ring-wrap { display: flex; align-items: center; gap: 10px; flex: 1; }
+  .ring-wrap svg { flex: none; }
+  .ring-wrap .txt { display: grid; gap: 2px; min-width: 0; }
+  .ring-wrap .txt .k { font-family: 'Orbit', sans-serif; font-size: 9px; letter-spacing: 0.2em; color: var(--wgoldt); }
+  .ring-wrap .txt .v { font-size: 16px; font-weight: 500; line-height: 1.1; }
+  .ring-wrap .txt .m { font-size: 10px; color: var(--wmuted); }
+
+  /* 빠른 추가 */
+  .quick { display: flex; align-items: center; gap: 10px; flex: 1; }
+  .quick .field { flex: 1; display: flex; align-items: center; gap: 8px; border: 1px solid var(--line); border-radius: 10px; padding: 7px 10px; color: var(--wmuted); font-size: 12px; }
+  .quick .plus { width: 30px; height: 30px; border: 1px solid var(--wgold); border-radius: 8px; display: grid; place-items: center; color: var(--wgoldt); font-size: 18px; line-height: 1; font-family: 'Orbit', sans-serif; }
+  .quick .cnt { font-family: 'Orbit', sans-serif; font-size: 10px; letter-spacing: 0.14em; color: var(--wmuted); white-space: nowrap; }
+  .quick .cnt b { color: var(--wgoldt); font-weight: 400; }
+
+  /* 메모 */
+  .memo { flex: 1; display: flex; gap: 10px; min-height: 0; }
+  .memo .bar { width: 1px; background: var(--wgold); flex: none; }
+  .memo .txt { font-size: 12px; line-height: 1.5; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; }
+  .memo .txt.empty { color: var(--wmuted); }
+
+  /* 프로젝트 */
+  .proj { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; align-items: baseline; padding: 4px 0; }
+  .proj .t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .proj .dd { font-family: 'Orbit', sans-serif; font-size: 10px; letter-spacing: 0.12em; color: var(--wgoldt); }
+  .proj .bar { grid-column: 1 / -1; height: 2px; background: var(--line); position: relative; }
+  .proj .bar i { position: absolute; left: 0; top: 0; height: 100%; background: var(--wgold); }
+  .proj .bar em { position: absolute; right: 0; top: -13px; font-style: normal; font-size: 9px; color: var(--wmuted); }
+
+  /* 게이지 */
+  .gauge { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; min-height: 0; }
+  .gauge svg { width: 100%; height: 100%; }
+  .gauge-ft { display: grid; grid-template-columns: auto 1fr auto; align-items: baseline; width: 100%; font-family: 'Orbit', sans-serif; font-size: 9.5px; letter-spacing: 0.18em; color: var(--wmuted); margin-top: 2px; }
+  .gauge-ft .mid { text-align: center; color: var(--wgoldt); }
+
+  /* 위젯마다 붙는 설정 줄 — 실제 앱에서는 위젯을 놓을 때 뜨는 설정 화면(길게 눌러 다시 열 수 있다) */
+  .cfg { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; margin-top: 12px; padding: 10px 14px; border: 1px dashed var(--rule); border-radius: 12px; font-size: 0.78rem; color: var(--muted); }
+  .cfg label { display: inline-flex; align-items: center; gap: 8px; }
+  .cfg input[type="range"] { width: 160px; accent-color: var(--gold); }
+  .cfg output { font-variant-numeric: tabular-nums; color: var(--ink); min-width: 3.2em; }
+  .cfg .hint { flex-basis: 100%; font-size: 0.72rem; }
+
+  /* 기념일 */
+  .ann { flex: 1; display: grid; grid-template-columns: 1fr; align-content: center; justify-items: center; text-align: center; gap: 2px; min-width: 0; }
+  .ann .big { font-family: 'Orbit', sans-serif; font-size: 28px; letter-spacing: 0.08em; color: var(--wgoldt); line-height: 1; display: flex; align-items: center; gap: 8px; }
+  .ann .big i { width: 6px; height: 6px; transform: rotate(45deg); border: 1px solid var(--wgold); display: inline-block; }
+  .ann .name { font-size: 12.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; display: inline-flex; align-items: center; gap: 5px; }
+  .ann .name svg { flex: none; }
+  .ann .date { font-family: 'Orbit', sans-serif; font-size: 9px; letter-spacing: 0.16em; color: var(--wmuted); white-space: nowrap; }
+  .ann-wide { flex: 1; display: grid; grid-template-columns: 0.95fr 1px 1.25fr; gap: 0 10px; min-height: 0; }
+  .ann-wide .vr { background: var(--line); }
+  .ann-wide .list { display: flex; flex-direction: column; justify-content: center; gap: 2px; min-width: 0; }
+  .ann-wide .row { padding: 3px 0; }
+  .ann-wide .row .dd { font-family: 'Orbit', sans-serif; font-size: 10px; letter-spacing: 0.12em; color: var(--wgoldt); width: 34px; flex: none; }
+  .ann-wide .row .dd.past { color: var(--wmuted); }
+  .ann-wide .row svg { flex: none; }
+  .ann-wide .row .t { font-size: 12px; }
+  .ann-wide .row .s { font-size: 10px; }
+  .w .ann + .rail { margin-top: 8px; }
+
+  /* 스택 (지금·다음 + 게이지 조합 등) */
+  .stack { display: grid; gap: 14px; justify-items: center; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th { font-weight: 500; color: var(--muted); font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase; }
+  td.k { font-family: 'Orbit', sans-serif; color: var(--gold); letter-spacing: 0.12em; white-space: nowrap; }
+  .tbl-wrap { overflow-x: auto; margin-top: 14px; }
+  .plan { display: grid; gap: 16px; margin-top: 18px; }
+  .plan ol { margin: 0; padding-left: 20px; display: grid; gap: 8px; max-width: 72ch; }
+  .plan li::marker { color: var(--gold); }
+  .callout { border-left: 2px solid var(--gold); padding: 8px 14px; background: var(--panel); border-radius: 0 10px 10px 0; max-width: 72ch; }
+  code { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.86em; background: var(--chip); padding: 1px 5px; border-radius: 4px; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .rail .fill { transition: width 0.4s ease; }
+  }
+  @media (max-width: 420px) {
+    .w { --cw: 74px; --ch: 68px; }
+    .wall { padding: 22px 12px; }
+  }
+</style>
+
+<div class="page">
+  <header class="intro">
+    <span class="eyebrow">CRONOS · ANDROID HOME WIDGETS</span>
+    <h1>위젯 시안 — Celestial</h1>
+    <p class="lede">홈 화면 위젯 11종을 Celestial 테마의 말로 다시 그렸다. 앱의 마름모·금빛 실선·Orbit 글꼴·월 게이지를 그대로 가져오고, 밝은 벌과 어두운 벌을 각각 두었다. 위젯은 앱의 테마(밝음·어두움)를 따르고, 테마 갈래가 늘면(다음: Maple) 위젯도 그 갈래의 옷을 입는다.</p>
+    <div class="legend">
+      <span><b>칸</b> 4×2 = 가로 4칸 × 세로 2칸. 이 페이지에서 1칸 = 80×72</span>
+      <span><b>✦</b> 오늘 끝냄 · <b>◇</b> 할 일 · <b>◆</b> 끝낸 일</span>
+      <span><b>새 종류</b> 지금 없는 위젯</span>
+    </div>
+  </header>
+
+  <ul class="toc">
+    <li><a href="#k1"><b>I</b>오늘 할 일</a></li>
+    <li><a href="#k2"><b>II</b>지금 · 다음</a></li>
+    <li><a href="#k3"><b>III</b>챌린지</a></li>
+    <li><a href="#k4"><b>IV</b>월 게이지</a></li>
+    <li><a href="#k5"><b>V</b>주간 띠</a></li>
+    <li><a href="#k6"><b>VI</b>월간 달력</a></li>
+    <li><a href="#k7"><b>VII</b>기념일 D-day</a></li>
+    <li><a href="#k8"><b>VIII</b>하루 진행</a></li>
+    <li><a href="#k9"><b>IX</b>빠른 추가</a></li>
+    <li><a href="#k10"><b>X</b>오늘 메모</a></li>
+    <li><a href="#k11"><b>XI</b>프로젝트</a></li>
+    <li><a href="#plan"><b>▸</b>만드는 법 · 목록</a></li>
+  </ul>
+
+  <!-- I. 오늘 할 일 -->
+  <section class="kind" id="k1">
+    <div class="kind-head"><span class="num">I</span><h3>오늘 할 일</h3><span class="chip">4 × 3</span><span class="chip">지금 있음 · 다시 그림</span></div>
+    <p class="kind-desc">머리글에 날짜와 "끝낸 수 / 전체", 줄마다 카테고리 색 마름모. 끝낸 일은 금빛 줄로 긋고 뒤로 보낸다. 바닥의 실선이 오늘의 진행(끝낸 비율)이다.</p>
+    <div class="pair">
+      <div class="wall light"><span class="tag">Light</span>
+        <div class="w l" style="--cols:4; --rows:3">
+          <div class="w-hd"><span class="w-title">오늘 할 일</span><span class="w-sub">9월 14일 · 월 &nbsp;<b>2</b>/5</span></div>
+          <div class="w-rows">
+            <div class="row"><i class="dia" style="--c:#7FB2E5"></i><span class="t">팀 회의 — 분기 계획</span><span class="s">10:00–11:00</span></div>
+            <div class="row"><i class="dia" style="--c:#E58A7F"></i><span class="t">민이와 점심</span><span class="s">12:30–13:30</span></div>
+            <div class="row"><i class="dia" style="--c:#9FD48A"></i><span class="t">책 30쪽</span><span class="s">하루 종일</span></div>
+            <div class="row done"><i class="dia fill" style="--c:#7FB2E5"></i><span class="t">아침 달리기</span><span class="s">07:00–08:00</span></div>
+            <div class="row done"><i class="dia fill" style="--c:#D4AF37"></i><span class="t">영양제</span><span class="s">하루 종일</span></div>
+          </div>
+          <div class="rail"><div class="fill" style="width:40%"></div><i class="mark" style="left:40%"></i></div>
+          <div class="w-ft"><span>남은 3</span><span><span class="star">✦</span> 끝낸 2</span></div>
+        </div>
+      </div>
+      <div class="wall dark"><span class="tag">Dark</span>
+        <div class="w d" style="--cols:4; --rows:3">
+          <div class="w-hd"><span class="w-title">오늘 할 일</span><span class="w-sub">9월 14일 · 월 &nbsp;<b>2</b>/5</span></div>
+          <div class="w-rows">
+            <div class="row"><i class="dia" style="--c:#7FB2E5"></i><span class="t">팀 회의 — 분기 계획</span><span class="s">10:00–11:00</span></div>
+            <div class="row"><i class="dia" style="--c:#E58A7F"></i><span class="t">민이와 점심</span><span class="s">12:30–13:30</span></div>
+            <div class="row"><i class="dia" style="--c:#9FD48A"></i><span class="t">책 30쪽</span><span class="s">하루 종일</span></div>
+            <div class="row done"><i class="dia fill" style="--c:#7FB2E5"></i><span class="t">아침 달리기</span><span class="s">07:00–08:00</span></div>
+            <div class="row done"><i class="dia fill" style="--c:#D4AF37"></i><span class="t">영양제</span><span class="s">하루 종일</span></div>
+          </div>
+          <div class="rail"><div class="fill" style="width:40%"></div><i class="mark" style="left:40%"></i></div>
+          <div class="w-ft"><span>남은 3</span><span><span class="star">✦</span> 끝낸 2</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="cfg" data-cfg="k1">
+      <label>배경 투명도 <input type="range" id="alpha-k1" min="20" max="100" value="88" step="1"> <output for="alpha-k1" id="alpha-k1-out">88%</output></label>
+      <span class="hint">실제 앱에서는 위젯을 놓을 때 설정 화면이 한 번 뜨고(투명도·벌), 놓인 뒤에도 길게 눌러 다시 연다. 위젯마다 따로 저장된다.</span>
+    </div>
+    <dl class="notes">
+      <div><dt>자료</dt><dd>오늘에 걸친 할 일(반복 펼침) · 완료 여부 · 카테고리 색</dd></div>
+      <div><dt>누르면</dt><dd>줄 → 그 할 일 열기 · 머리글 → 홈</dd></div>
+      <div><dt>크기 대응</dt><dd>3×2 는 줄 3개, 4×4 는 줄 8개 + 내일 미리보기</dd></div>
+    </dl>
+  </section>
+
+  <!-- II. 지금 · 다음 -->
+  <section class="kind" id="k2">
+    <div class="kind-head"><span class="num">II</span><h3>지금 · 다음</h3><span class="chip">4 × 2</span><span class="chip">지금 있음 · 다시 그림</span></div>
+    <p class="kind-desc">지금 하는 일을 크게, 얼마나 지났는지를 실선으로. 아래는 다음 일정과 "몇 분 뒤". 일정이 없으면 다음 일정까지 남은 시간만 조용히 센다.</p>
+    <div class="pair">
+      <div class="wall light"><span class="tag">Light</span>
+        <div class="w l" style="--cols:4; --rows:2">
+          <div class="kicker">지금 · 10:00–11:00</div>
+          <div class="now-big">팀 회의 — 분기 계획</div>
+          <div class="rail" style="margin-top:6px"><div class="fill" style="width:62%"></div><i class="mark" style="left:62%"></i></div>
+          <div class="now-meta"><span>37분 지남</span><b>23분 남음</b></div>
+          <div class="next-line"><i class="dia" style="--c:#E58A7F"></i><span class="t"><span class="kicker" style="margin-right:6px">다음</span>민이와 점심</span><span class="s">1시간 53분 뒤 · 12:30</span></div>
+        </div>
+      </div>
+      <div class="wall dark"><span class="tag">Dark</span>
+        <div class="w d" style="--cols:4; --rows:2">
+          <div class="kicker">지금 · 10:00–11:00</div>
+          <div class="now-big">팀 회의 — 분기 계획</div>
+          <div class="rail" style="margin-top:6px"><div class="fill" style="width:62%"></div><i class="mark" style="left:62%"></i></div>
+          <div class="now-meta"><span>37분 지남</span><b>23분 남음</b></div>
+          <div class="next-line"><i class="dia" style="--c:#E58A7F"></i><span class="t"><span class="kicker" style="margin-right:6px">다음</span>민이와 점심</span><span class="s">1시간 53분 뒤 · 12:30</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="pair" style="margin-top:14px">
+      <div class="wall light"><span class="tag">Light · 비었을 때</span>
+        <div class="w l" style="--cols:4; --rows:2">
+          <div class="kicker">지금</div>
+          <div class="now-big" style="color:var(--wmuted); font-weight:400">진행 중인 일정이 없습니다</div>
+          <div class="rail" style="margin-top:6px"></div>
+          <div class="now-meta"><span>&nbsp;</span></div>
+          <div class="next-line"><i class="dia" style="--c:#7FB2E5"></i><span class="t"><span class="kicker" style="margin-right:6px">다음</span>치과</span><span class="s">내일 14:00</span></div>
+        </div>
+      </div>
+      <div class="wall dark"><span class="tag">Dark · 비었을 때</span>
+        <div class="w d" style="--cols:4; --rows:2">
+          <div class="kicker">지금</div>
+          <div class="now-big" style="color:var(--wmuted); font-weight:400">진행 중인 일정이 없습니다</div>
+          <div class="rail" style="margin-top:6px"></div>
+          <div class="now-meta"><span>&nbsp;</span></div>
+          <div class="next-line"><i class="dia" style="--c:#7FB2E5"></i><span class="t"><span class="kicker" style="margin-right:6px">다음</span>치과</span><span class="s">내일 14:00</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="cfg" data-cfg="k2">
+      <label>배경 투명도 <input type="range" id="alpha-k2" min="20" max="100" value="88" step="1"> <output for="alpha-k2" id="alpha-k2-out">88%</output></label>
+    </div>
+    <dl class="notes">
+      <div><dt>자료</dt><dd>시각이 있는 할 일 중 지금 진행·다음 하나씩. 진행 비율은 그릴 때 계산</dd></div>
+      <div><dt>다시 그리는 때</dt><dd>일정의 시작·끝 (알람) + 진행 중일 때는 5분마다 실선을 밀어 준다</dd></div>
+      <div><dt>누르면</dt><dd>그 할 일 열기</dd></div>
+    </dl>
+  </section>
+
+  <!-- III. 챌린지 -->
+  <section class="kind" id="k3">
+    <div class="kind-head"><span class="num">III</span><h3>챌린지</h3><span class="chip">4 × 3</span><span class="chip">지금 있음 · 다시 그림</span></div>
+    <p class="kind-desc">챌린지마다 가는 진행선. 오늘 한 것에는 ✦. 목표가 없는 챌린지는 횟수만. 머리글 오른쪽은 "오늘 남은 수" — 위젯을 보는 이유가 그것이다.</p>
+    <div class="pair">
+      <div class="wall light"><span class="tag">Light</span>
+        <div class="w l" style="--cols:4; --rows:3">
+          <div class="w-hd"><span class="w-title">챌린지</span><span class="w-sub">오늘 남은 <b>2</b></span></div>
+          <div class="w-rows">
+            <div class="ch today"><span class="t">일찍 일어나기</span><span class="cnt"><b>12</b>/30</span><div class="bar"><i style="width:40%"></i></div></div>
+            <div class="ch"><span class="t">스트레칭 10분</span><span class="cnt"><b>4</b>/21</span><div class="bar"><i style="width:19%"></i></div></div>
+            <div class="ch"><span class="t">물 2L 마시기</span><span class="cnt"><b>40</b></span><div class="bar"><i style="width:100%; opacity:.35"></i></div></div>
+            <div class="ch today"><span class="t">영어 단어 20개</span><span class="cnt"><b>27</b>/30</span><div class="bar"><i style="width:90%"></i></div></div>
+          </div>
+          <div class="w-ft"><span>오늘 <span class="star">✦</span> 2</span><span>가장 긴 연속 9일</span></div>
+        </div>
+      </div>
+      <div class="wall dark"><span class="tag">Dark</span>
+        <div class="w d" style="--cols:4; --rows:3">
+          <div class="w-hd"><span class="w-title">챌린지</span><span class="w-sub">오늘 남은 <b>2</b></span></div>
+          <div class="w-rows">
+            <div class="ch today"><span class="t">일찍 일어나기</span><span class="cnt"><b>12</b>/30</span><div class="bar"><i style="width:40%"></i></div></div>
+            <div class="ch"><span class="t">스트레칭 10분</span><span class="cnt"><b>4</b>/21</span><div class="bar"><i style="width:19%"></i></div></div>
+            <div class="ch"><span class="t">물 2L 마시기</span><span class="cnt"><b>40</b></span><div class="bar"><i style="width:100%; opacity:.35"></i></div></div>
+            <div class="ch today"><span class="t">영어 단어 20개</span><span class="cnt"><b>27</b>/30</span><div class="bar"><i style="width:90%"></i></div></div>
+          </div>
+          <div class="w-ft"><span>오늘 <span class="star">✦</span> 2</span><span>가장 긴 연속 9일</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="cfg" data-cfg="k3">
+      <label>배경 투명도 <input type="range" id="alpha-k3" min="20" max="100" value="88" step="1"> <output for="alpha-k3" id="alpha-k3-out">88%</output></label>
+    </div>
+    <dl class="notes">
+      <div><dt>자료</dt><dd>진행 중 챌린지 · 횟수/목표 · 오늘 완료 여부 · 연속 일수(있으면)</dd></div>
+      <div><dt>누르면</dt><dd>줄 → 챌린지 화면의 그 항목. 앱에서 체크하면 위젯이 곧 따라온다</dd></div>
+      <div><dt>다음 단계</dt><dd>위젯에서 바로 체크(원격 완료)는 API 호출이 필요해 따로</dd></div>
+    </dl>
+  </section>
+
+  <!-- IV. 월 게이지 -->
+  <section class="kind" id="k4">
+    <div class="kind-head"><span class="num">IV</span><h3>월 게이지</h3><span class="chip">4 × 2</span><span class="chip new">새 종류</span></div>
+    <p class="kind-desc">홈 화면 맨 위의 반원 눈금을 그대로 위젯으로. 바늘이 오늘, 눈금 하나가 하루. 아래에 "9월 · 남은 16 · 끝낸 4". Celestial 을 가장 잘 알아보게 하는 그림이라 첫 화면용으로 좋다.</p>
+    <div class="pair">
+      <div class="wall light"><span class="tag">Light</span>
+        <div class="w l" style="--cols:4; --rows:2">
+          <div class="gauge">
+            <svg viewBox="0 0 300 152" role="img" aria-label="9월 게이지, 14일">
+              <path d="M22 146 A128 128 0 0 1 278 146" fill="none" stroke="#D4AF37" stroke-opacity=".7" stroke-width="1"/>
+              <path d="M78 146 A72 72 0 0 1 222 146" fill="none" stroke="#D4AF37" stroke-opacity=".4" stroke-width="1"/>
+              <line x1="36.0" y1="146.0" x2="24.0" y2="146.0" stroke="#D4AF37" stroke-opacity="0.9" stroke-width="1.2"/><line x1="30.7" y1="133.5" x2="24.7" y2="132.8" stroke="#D4AF37" stroke-opacity="0.8" stroke-width="0.8"/><line x1="32.6" y1="121.1" x2="26.8" y2="119.8" stroke="#D4AF37" stroke-opacity="0.8" stroke-width="0.8"/><line x1="35.9" y1="108.9" x2="30.2" y2="107.1" stroke="#D4AF37" stroke-opacity="0.8" stroke-width="0.8"/><line x1="40.4" y1="97.2" x2="34.9" y2="94.8" stroke="#D4AF37" stroke-opacity="0.8" stroke-width="0.8"/><line x1="51.3" y1="89.0" x2="40.9" y2="83.0" stroke="#D4AF37" stroke-opacity="0.9" stroke-width="1.2"/><line x1="52.9" y1="75.5" x2="48.1" y2="71.9" stroke="#D4AF37" stroke-opacity="0.8" stroke-width="0.8"/><line x1="60.8" y1="65.7" x2="56.4" y2="61.7" stroke="#D4AF37" stroke-opacity="0.8" stroke-width="0.8"/><line x1="69.7" y1="56.8" x2="65.7" y2="52.4" stroke="#D4AF37" stroke-opacity="0.8" stroke-width="0.8"/><line x1="79.5" y1="48.9" x2="75.9" y2="44.1" stroke="#D4AF37" stroke-opacity="0.8" stroke-width="0.8"/><line x1="93.0" y1="47.3" x2="87.0" y2="36.9" stroke="#D4AF37" stroke-opacity="0.9" stroke-width="1.2"/><line x1="101.2" y1="36.4" x2="98.8" y2="30.9" stroke="#D4AF37" stroke-opacity="0.8" stroke-width="0.8"/><line x1="112.9" y1="31.9" x2="111.1" y2="26.2" stroke="#D4AF37" stroke-opacity="0.8" stroke-width="0.8"/><line x1="125.1" y1="28.6" x2="123.8" y2="22.8" stroke="#D4AF37" stroke-opacity="0.8" stroke-width="0.8"/><line x1="137.5" y1="26.7" x2="136.8" y2="20.7" stroke="#D4AF37" stroke-opacity="0.8" stroke-width="0.8"/><line x1="150.0" y1="32.0" x2="150.0" y2="20.0" stroke="#D4AF37" stroke-opacity="0.7" stroke-width="1.2"/><line x1="162.5" y1="26.7" x2="163.2" y2="20.7" stroke="#D4AF37" stroke-opacity="0.4" stroke-width="0.8"/><line x1="174.9" y1="28.6" x2="176.2" y2="22.8" stroke="#D4AF37" stroke-opacity="0.4" stroke-width="0.8"/><line x1="187.1" y1="31.9" x2="188.9" y2="26.2" stroke="#D4AF37" stroke-opacity="0.4" stroke-width="0.8"/><line x1="198.8" y1="36.4" x2="201.2" y2="30.9" stroke="#D4AF37" stroke-opacity="0.4" stroke-width="0.8"/><line x1="207.0" y1="47.3" x2="213.0" y2="36.9" stroke="#D4AF37" stroke-opacity="0.7" stroke-width="1.2"/><line x1="220.5" y1="48.9" x2="224.1" y2="44.1" stroke="#D4AF37" stroke-opacity="0.4" stroke-width="0.8"/><line x1="230.3" y1="56.8" x2="234.3" y2="52.4" stroke="#D4AF37" stroke-opacity="0.4" stroke-width="0.8"/><line x1="239.2" y1="65.7" x2="243.6" y2="61.7" stroke="#D4AF37" stroke-opacity="0.4" stroke-width="0.8"/><line x1="247.1" y1="75.5" x2="251.9" y2="71.9" stroke="#D4AF37" stroke-opacity="0.4" stroke-width="0.8"/><line x1="248.7" y1="89.0" x2="259.1" y2="83.0" stroke="#D4AF37" stroke-opacity="0.7" stroke-width="1.2"/><line x1="259.6" y1="97.2" x2="265.1" y2="94.8" stroke="#D4AF37" stroke-opacity="0.4" stroke-width="0.8"/><line x1="264.1" y1="108.9" x2="269.8" y2="107.1" stroke="#D4AF37" stroke-opacity="0.4" stroke-width="0.8"/><line x1="267.4" y1="121.1" x2="273.2" y2="119.8" stroke="#D4AF37" stroke-opacity="0.4" stroke-width="0.8"/><line x1="269.3" y1="133.5" x2="275.3" y2="132.8" stroke="#D4AF37" stroke-opacity="0.4" stroke-width="0.8"/><line x1="264.0" y1="146.0" x2="276.0" y2="146.0" stroke="#D4AF37" stroke-opacity="0.7" stroke-width="1.2"/>
+              <line x1="150" y1="146" x2="138.7" y2="38.6" stroke="#D4AF37" stroke-width="1.2"/>
+              <rect x="134.7" y="34.6" width="8" height="8" transform="rotate(45 138.7 38.6)" fill="none" stroke="#D4AF37" stroke-width="1.2"/>
+              <rect x="146" y="142" width="8" height="8" transform="rotate(45 150 146)" fill="#D4AF37"/>
+              <text x="14" y="149" font-size="8" fill="#7A7A7A" font-family="Orbit, sans-serif">1</text>
+              <text x="272" y="149" font-size="8" fill="#7A7A7A" font-family="Orbit, sans-serif">30</text>
+            </svg>
+          </div>
+          <div class="gauge-ft"><span>IX</span><span class="mid">✦ 9월 · 남은 16 · 끝낸 4 ✦</span><span>14</span></div>
+        </div>
+      </div>
+      <div class="wall dark"><span class="tag">Dark</span>
+        <div class="w d" style="--cols:4; --rows:2">
+          <div class="gauge">
+            <svg viewBox="0 0 300 152" role="img" aria-label="9월 게이지, 14일">
+              <path d="M22 146 A128 128 0 0 1 278 146" fill="none" stroke="#D4AF37" stroke-opacity=".45" stroke-width="1"/>
+              <path d="M78 146 A72 72 0 0 1 222 146" fill="none" stroke="#D4AF37" stroke-opacity=".25" stroke-width="1"/>
+              <line x1="36.0" y1="146.0" x2="24.0" y2="146.0" stroke="#D4AF37" stroke-opacity="0.9" stroke-width="1.2"/><line x1="30.7" y1="133.5" x2="24.7" y2="132.8" stroke="#D4AF37" stroke-opacity="0.55" stroke-width="0.8"/><line x1="32.6" y1="121.1" x2="26.8" y2="119.8" stroke="#D4AF37" stroke-opacity="0.55" stroke-width="0.8"/><line x1="35.9" y1="108.9" x2="30.2" y2="107.1" stroke="#D4AF37" stroke-opacity="0.55" stroke-width="0.8"/><line x1="40.4" y1="97.2" x2="34.9" y2="94.8" stroke="#D4AF37" stroke-opacity="0.55" stroke-width="0.8"/><line x1="51.3" y1="89.0" x2="40.9" y2="83.0" stroke="#D4AF37" stroke-opacity="0.9" stroke-width="1.2"/><line x1="52.9" y1="75.5" x2="48.1" y2="71.9" stroke="#D4AF37" stroke-opacity="0.55" stroke-width="0.8"/><line x1="60.8" y1="65.7" x2="56.4" y2="61.7" stroke="#D4AF37" stroke-opacity="0.55" stroke-width="0.8"/><line x1="69.7" y1="56.8" x2="65.7" y2="52.4" stroke="#D4AF37" stroke-opacity="0.55" stroke-width="0.8"/><line x1="79.5" y1="48.9" x2="75.9" y2="44.1" stroke="#D4AF37" stroke-opacity="0.55" stroke-width="0.8"/><line x1="93.0" y1="47.3" x2="87.0" y2="36.9" stroke="#D4AF37" stroke-opacity="0.9" stroke-width="1.2"/><line x1="101.2" y1="36.4" x2="98.8" y2="30.9" stroke="#D4AF37" stroke-opacity="0.55" stroke-width="0.8"/><line x1="112.9" y1="31.9" x2="111.1" y2="26.2" stroke="#D4AF37" stroke-opacity="0.55" stroke-width="0.8"/><line x1="125.1" y1="28.6" x2="123.8" y2="22.8" stroke="#D4AF37" stroke-opacity="0.55" stroke-width="0.8"/><line x1="137.5" y1="26.7" x2="136.8" y2="20.7" stroke="#D4AF37" stroke-opacity="0.55" stroke-width="0.8"/><line x1="150.0" y1="32.0" x2="150.0" y2="20.0" stroke="#D4AF37" stroke-opacity="0.45" stroke-width="1.2"/><line x1="162.5" y1="26.7" x2="163.2" y2="20.7" stroke="#D4AF37" stroke-opacity="0.22" stroke-width="0.8"/><line x1="174.9" y1="28.6" x2="176.2" y2="22.8" stroke="#D4AF37" stroke-opacity="0.22" stroke-width="0.8"/><line x1="187.1" y1="31.9" x2="188.9" y2="26.2" stroke="#D4AF37" stroke-opacity="0.22" stroke-width="0.8"/><line x1="198.8" y1="36.4" x2="201.2" y2="30.9" stroke="#D4AF37" stroke-opacity="0.22" stroke-width="0.8"/><line x1="207.0" y1="47.3" x2="213.0" y2="36.9" stroke="#D4AF37" stroke-opacity="0.45" stroke-width="1.2"/><line x1="220.5" y1="48.9" x2="224.1" y2="44.1" stroke="#D4AF37" stroke-opacity="0.22" stroke-width="0.8"/><line x1="230.3" y1="56.8" x2="234.3" y2="52.4" stroke="#D4AF37" stroke-opacity="0.22" stroke-width="0.8"/><line x1="239.2" y1="65.7" x2="243.6" y2="61.7" stroke="#D4AF37" stroke-opacity="0.22" stroke-width="0.8"/><line x1="247.1" y1="75.5" x2="251.9" y2="71.9" stroke="#D4AF37" stroke-opacity="0.22" stroke-width="0.8"/><line x1="248.7" y1="89.0" x2="259.1" y2="83.0" stroke="#D4AF37" stroke-opacity="0.45" stroke-width="1.2"/><line x1="259.6" y1="97.2" x2="265.1" y2="94.8" stroke="#D4AF37" stroke-opacity="0.22" stroke-width="0.8"/><line x1="264.1" y1="108.9" x2="269.8" y2="107.1" stroke="#D4AF37" stroke-opacity="0.22" stroke-width="0.8"/><line x1="267.4" y1="121.1" x2="273.2" y2="119.8" stroke="#D4AF37" stroke-opacity="0.22" stroke-width="0.8"/><line x1="269.3" y1="133.5" x2="275.3" y2="132.8" stroke="#D4AF37" stroke-opacity="0.22" stroke-width="0.8"/><line x1="264.0" y1="146.0" x2="276.0" y2="146.0" stroke="#D4AF37" stroke-opacity="0.45" stroke-width="1.2"/>
+              <line x1="150" y1="146" x2="138.7" y2="38.6" stroke="#D4AF37" stroke-width="1.2"/>
+              <rect x="134.7" y="34.6" width="8" height="8" transform="rotate(45 138.7 38.6)" fill="none" stroke="#D4AF37" stroke-width="1.2"/>
+              <rect x="146" y="142" width="8" height="8" transform="rotate(45 150 146)" fill="#D4AF37"/>
+              <text x="14" y="149" font-size="8" fill="#8E8E8E" font-family="Orbit, sans-serif">1</text>
+              <text x="272" y="149" font-size="8" fill="#8E8E8E" font-family="Orbit, sans-serif">30</text>
+            </svg>
+          </div>
+          <div class="gauge-ft"><span>IX</span><span class="mid">✦ 9월 · 남은 16 · 끝낸 4 ✦</span><span>14</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="cfg" data-cfg="k4">
+      <label>배경 투명도 <input type="range" id="alpha-k4" min="20" max="100" value="88" step="1"> <output for="alpha-k4" id="alpha-k4-out">88%</output></label>
+      <span class="hint">바탕을 거의 없애면(20%) 눈금만 벽지 위에 떠 있는 모양이 된다 — 이 위젯은 그게 잘 어울린다.</span>
+    </div>
+    <dl class="notes">
+      <div><dt>자료</dt><dd>이 달의 날짜 수 · 오늘 · 이 달에 남은/끝낸 할 일 수</dd></div>
+      <div><dt>그리기</dt><dd>눈금과 바늘은 앱이 Canvas 로 그린 그림 한 장 (RemoteViews 의 ImageView)</dd></div>
+      <div><dt>누르면</dt><dd>홈</dd></div>
+    </dl>
+  </section>
+
+  <!-- V. 주간 띠 -->
+  <section class="kind" id="k5">
+    <div class="kind-head"><span class="num">V</span><h3>주간 띠</h3><span class="chip">4 × 2</span><span class="chip new">새 종류</span></div>
+    <p class="kind-desc">폰 달력 화면의 주간 띠와 같은 눈. 날마다 일정 개수만큼 마름모, 셋을 넘으면 +N. 오늘은 금빛 고리. 날짜를 누르면 앱이 그날 일간 화면으로 열린다.</p>
+    <div class="pair">
+      <div class="wall light"><span class="tag">Light</span>
+        <div class="w l" style="--cols:4; --rows:2">
+          <div class="w-hd"><span class="w-title">이번 주</span><span class="w-sub">9월 · 일정 <b>11</b></span></div>
+          <div class="week">
+            <div class="day wk"><span class="n">일</span><span class="num">13</span><div class="dots"><i style="--c:#9FD48A"></i></div></div>
+            <div class="day today"><span class="n">월</span><span class="num">14</span><div class="dots"><i style="--c:#7FB2E5"></i><i style="--c:#E58A7F"></i><i style="--c:#9FD48A"></i><em>+2</em></div></div>
+            <div class="day"><span class="n">화</span><span class="num">15</span><div class="dots"><i style="--c:#7FB2E5"></i></div></div>
+            <div class="day"><span class="n">수</span><span class="num">16</span><div class="dots"></div></div>
+            <div class="day"><span class="n">목</span><span class="num">17</span><div class="dots"><i style="--c:#D4AF37"></i><i style="--c:#7FB2E5"></i></div></div>
+            <div class="day"><span class="n">금</span><span class="num">18</span><div class="dots"><i style="--c:#E58A7F"></i></div></div>
+            <div class="day wk"><span class="n">토</span><span class="num">19</span><div class="dots"><i style="--c:#9FD48A"></i><i style="--c:#9FD48A"></i></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="wall dark"><span class="tag">Dark</span>
+        <div class="w d" style="--cols:4; --rows:2">
+          <div class="w-hd"><span class="w-title">이번 주</span><span class="w-sub">9월 · 일정 <b>11</b></span></div>
+          <div class="week">
+            <div class="day wk"><span class="n">일</span><span class="num">13</span><div class="dots"><i style="--c:#9FD48A"></i></div></div>
+            <div class="day today"><span class="n">월</span><span class="num">14</span><div class="dots"><i style="--c:#7FB2E5"></i><i style="--c:#E58A7F"></i><i style="--c:#9FD48A"></i><em>+2</em></div></div>
+            <div class="day"><span class="n">화</span><span class="num">15</span><div class="dots"><i style="--c:#7FB2E5"></i></div></div>
+            <div class="day"><span class="n">수</span><span class="num">16</span><div class="dots"></div></div>
+            <div class="day"><span class="n">목</span><span class="num">17</span><div class="dots"><i style="--c:#D4AF37"></i><i style="--c:#7FB2E5"></i></div></div>
+            <div class="day"><span class="n">금</span><span class="num">18</span><div class="dots"><i style="--c:#E58A7F"></i></div></div>
+            <div class="day wk"><span class="n">토</span><span class="num">19</span><div class="dots"><i style="--c:#9FD48A"></i><i style="--c:#9FD48A"></i></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="cfg" data-cfg="k5">
+      <label>배경 투명도 <input type="range" id="alpha-k5" min="20" max="100" value="88" step="1"> <output for="alpha-k5" id="alpha-k5-out">88%</output></label>
+    </div>
+    <dl class="notes">
+      <div><dt>자료</dt><dd>이번 주 7일의 일정 개수와 카테고리 색 (스냅샷을 앞으로 이레까지 넘기고 있어 그대로 쓴다)</dd></div>
+      <div><dt>누르면</dt><dd>날짜 칸 → 그날 일간 화면 (칸마다 PendingIntent)</dd></div>
+      <div><dt>크기 대응</dt><dd>4×1 이면 머리글 없이 띠만</dd></div>
+    </dl>
+  </section>
+
+  <!-- VI. 월간 달력 -->
+  <section class="kind" id="k6">
+    <div class="kind-head"><span class="num">VI</span><h3>월간 달력</h3><span class="chip">4 × 4</span><span class="chip new">새 종류</span></div>
+    <p class="kind-desc">한 달을 한눈에. 일정이 있는 날에 작은 마름모(카테고리 색, 최대 3), 오늘은 금빛 고리, 주말은 앱과 같은 붉은 기. 큰 위젯이라 홈의 한 면을 통째로 쓰는 사람에게.</p>
+    <div class="pair">
+      <div class="wall light"><span class="tag">Light</span>
+        <div class="w l" style="--cols:4; --rows:4">
+          <div class="w-hd"><span class="w-title">9월</span><span class="w-sub">2026 · 일정 <b>23</b></span></div>
+          <div class="month"><span class="hn">일</span><span class="hn">월</span><span class="hn">화</span><span class="hn">수</span><span class="hn">목</span><span class="hn">금</span><span class="hn">토</span><span class="c pad"><span>0</span><span class="dt"></span></span><span class="c pad"><span>0</span><span class="dt"></span></span><span class="c"><span>1</span><span class="dt"></span></span><span class="c"><span>2</span><span class="dt"><i style="--c:#7FB2E5"></i></span></span><span class="c"><span>3</span><span class="dt"></span></span><span class="c"><span>4</span><span class="dt"><i style="--c:#9FD48A"></i><i style="--c:#7FB2E5"></i></span></span><span class="c wk"><span>5</span><span class="dt"></span></span><span class="c wk"><span>6</span><span class="dt"></span></span><span class="c"><span>7</span><span class="dt"><i style="--c:#E58A7F"></i></span></span><span class="c"><span>8</span><span class="dt"></span></span><span class="c"><span>9</span><span class="dt"><i style="--c:#D4AF37"></i></span></span><span class="c"><span>10</span><span class="dt"></span></span><span class="c"><span>11</span><span class="dt"><i style="--c:#7FB2E5"></i><i style="--c:#7FB2E5"></i><i style="--c:#9FD48A"></i></span></span><span class="c wk"><span>12</span><span class="dt"></span></span><span class="c wk"><span>13</span><span class="dt"></span></span><span class="c today"><span>14</span><span class="dt"><i style="--c:#7FB2E5"></i><i style="--c:#E58A7F"></i><i style="--c:#9FD48A"></i></span></span><span class="c"><span>15</span><span class="dt"><i style="--c:#7FB2E5"></i></span></span><span class="c"><span>16</span><span class="dt"></span></span><span class="c"><span>17</span><span class="dt"><i style="--c:#D4AF37"></i><i style="--c:#7FB2E5"></i></span></span><span class="c"><span>18</span><span class="dt"><i style="--c:#E58A7F"></i></span></span><span class="c wk"><span>19</span><span class="dt"><i style="--c:#9FD48A"></i><i style="--c:#9FD48A"></i></span></span><span class="c wk"><span>20</span><span class="dt"></span></span><span class="c"><span>21</span><span class="dt"></span></span><span class="c"><span>22</span><span class="dt"><i style="--c:#7FB2E5"></i></span></span><span class="c"><span>23</span><span class="dt"></span></span><span class="c"><span>24</span><span class="dt"></span></span><span class="c"><span>25</span><span class="dt"></span></span><span class="c wk"><span>26</span><span class="dt"><i style="--c:#D4AF37"></i></span></span><span class="c wk"><span>27</span><span class="dt"></span></span><span class="c"><span>28</span><span class="dt"><i style="--c:#9FD48A"></i></span></span><span class="c"><span>29</span><span class="dt"></span></span><span class="c"><span>30</span><span class="dt"><i style="--c:#7FB2E5"></i><i style="--c:#E58A7F"></i></span></span></div>
+        </div>
+      </div>
+      <div class="wall dark"><span class="tag">Dark</span>
+        <div class="w d" style="--cols:4; --rows:4">
+          <div class="w-hd"><span class="w-title">9월</span><span class="w-sub">2026 · 일정 <b>23</b></span></div>
+          <div class="month"><span class="hn">일</span><span class="hn">월</span><span class="hn">화</span><span class="hn">수</span><span class="hn">목</span><span class="hn">금</span><span class="hn">토</span><span class="c pad"><span>0</span><span class="dt"></span></span><span class="c pad"><span>0</span><span class="dt"></span></span><span class="c"><span>1</span><span class="dt"></span></span><span class="c"><span>2</span><span class="dt"><i style="--c:#7FB2E5"></i></span></span><span class="c"><span>3</span><span class="dt"></span></span><span class="c"><span>4</span><span class="dt"><i style="--c:#9FD48A"></i><i style="--c:#7FB2E5"></i></span></span><span class="c wk"><span>5</span><span class="dt"></span></span><span class="c wk"><span>6</span><span class="dt"></span></span><span class="c"><span>7</span><span class="dt"><i style="--c:#E58A7F"></i></span></span><span class="c"><span>8</span><span class="dt"></span></span><span class="c"><span>9</span><span class="dt"><i style="--c:#D4AF37"></i></span></span><span class="c"><span>10</span><span class="dt"></span></span><span class="c"><span>11</span><span class="dt"><i style="--c:#7FB2E5"></i><i style="--c:#7FB2E5"></i><i style="--c:#9FD48A"></i></span></span><span class="c wk"><span>12</span><span class="dt"></span></span><span class="c wk"><span>13</span><span class="dt"></span></span><span class="c today"><span>14</span><span class="dt"><i style="--c:#7FB2E5"></i><i style="--c:#E58A7F"></i><i style="--c:#9FD48A"></i></span></span><span class="c"><span>15</span><span class="dt"><i style="--c:#7FB2E5"></i></span></span><span class="c"><span>16</span><span class="dt"></span></span><span class="c"><span>17</span><span class="dt"><i style="--c:#D4AF37"></i><i style="--c:#7FB2E5"></i></span></span><span class="c"><span>18</span><span class="dt"><i style="--c:#E58A7F"></i></span></span><span class="c wk"><span>19</span><span class="dt"><i style="--c:#9FD48A"></i><i style="--c:#9FD48A"></i></span></span><span class="c wk"><span>20</span><span class="dt"></span></span><span class="c"><span>21</span><span class="dt"></span></span><span class="c"><span>22</span><span class="dt"><i style="--c:#7FB2E5"></i></span></span><span class="c"><span>23</span><span class="dt"></span></span><span class="c"><span>24</span><span class="dt"></span></span><span class="c"><span>25</span><span class="dt"></span></span><span class="c wk"><span>26</span><span class="dt"><i style="--c:#D4AF37"></i></span></span><span class="c wk"><span>27</span><span class="dt"></span></span><span class="c"><span>28</span><span class="dt"><i style="--c:#9FD48A"></i></span></span><span class="c"><span>29</span><span class="dt"></span></span><span class="c"><span>30</span><span class="dt"><i style="--c:#7FB2E5"></i><i style="--c:#E58A7F"></i></span></span></div>
+        </div>
+      </div>
+    </div>
+    <div class="cfg" data-cfg="k6">
+      <label>배경 투명도 <input type="range" id="alpha-k6" min="20" max="100" value="88" step="1"> <output for="alpha-k6" id="alpha-k6-out">88%</output></label>
+    </div>
+    <dl class="notes">
+      <div><dt>자료</dt><dd>이 달 전체의 일정 → 스냅샷 창을 "이 달 끝까지" 로 넓혀야 한다 (지금은 이레)</dd></div>
+      <div><dt>누르면</dt><dd>날짜 → 그날 일간 · 머리글 → 월간 화면</dd></div>
+      <div><dt>그리기</dt><dd>42칸 GridLayout 도 되지만, 그림 한 장이 더 가볍고 어느 런처에서나 같다</dd></div>
+    </dl>
+  </section>
+
+  <!-- VII. 기념일 -->
+  <section class="kind" id="k7">
+    <div class="kind-head"><span class="num">VII</span><h3>기념일 D-day</h3><span class="chip">2 × 2</span><span class="chip">4 × 2 (목록)</span><span class="chip new">새 종류</span></div>
+    <p class="kind-desc">가장 가까운 기념일을 앞세운다. 작은 것은 D-day 를 마름모 사이에 크게, 아래 실선은 지난 기념일부터 이번까지 얼마나 왔는지(한 해의 진행). 넓은 것은 왼쪽에 그 하나, 오른쪽에 다음 둘 — 기념일 종류 아이콘(반지·케이크·별)은 앱의 기념일 아이콘을 그대로 쓴다. 지난 것은 "+N" 로 흐리게.</p>
+    <div class="pair">
+      <div class="wall light"><span class="tag">Light</span>
+        <div class="stack">
+          <div class="w l" style="--cols:2; --rows:2">
+            <div class="w-hd" style="border-bottom:0; margin-bottom:0; padding-bottom:0"><span class="w-title">기념일</span><span class="w-sub">9·26</span></div>
+            <div class="ann">
+              <span class="big"><i></i>D-12<i></i></span>
+              <span class="name" style="color:var(--wgoldt)"><svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="7" r="4" fill="none" stroke="currentColor" stroke-width="1"/><rect x="4.6" y="0.4" width="2.8" height="2.8" transform="rotate(45 6 1.8)" fill="none" stroke="currentColor" stroke-width="1"/></svg><span style="color:var(--wink)">결혼기념일</span></span>
+              <span class="date">토요일 · 3주년</span>
+            </div>
+            <div class="rail"><div class="fill" style="width:96.7%"></div><i class="mark" style="left:96.7%"></i></div>
+          </div>
+          <div class="w l" style="--cols:4; --rows:2">
+            <div class="w-hd"><span class="w-title">기념일</span><span class="w-sub">다가오는 <b>3</b></span></div>
+            <div class="ann-wide">
+              <div class="ann" style="justify-items:start; text-align:left">
+                <span class="big">D-12</span>
+                <span class="name" style="color:var(--wgoldt)"><svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="7" r="4" fill="none" stroke="currentColor" stroke-width="1"/><rect x="4.6" y="0.4" width="2.8" height="2.8" transform="rotate(45 6 1.8)" fill="none" stroke="currentColor" stroke-width="1"/></svg><span style="color:var(--wink)">결혼기념일</span></span>
+                <span class="date">9월 26일 · 토 · 3주년</span>
+              </div>
+              <div class="vr"></div>
+              <div class="list">
+                <div class="row"><span class="dd">D-30</span><span style="color:var(--wgoldt)"><svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 10.5h8M2.5 10.5V6.5a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v4M6 5.5V3.2M6 1.6v.4" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg></span><span class="t">어머니 생신</span></div>
+                <div class="row"><span class="dd">D-58</span><span style="color:var(--wgoldt)"><svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1C6 5 6 5 10 6C6 7 6 7 6 11C6 7 6 7 2 6C6 5 6 5 6 1Z" fill="none" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/></svg></span><span class="t">첫 출근 기념</span></div>
+                <div class="row"><span class="dd past">+41</span><span style="color:var(--wmuted)"><svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1C6 5 6 5 10 6C6 7 6 7 6 11C6 7 6 7 2 6C6 5 6 5 6 1Z" fill="none" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/></svg></span><span class="t" style="color:var(--wmuted)">입사</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="wall dark"><span class="tag">Dark</span>
+        <div class="stack">
+          <div class="w d" style="--cols:2; --rows:2">
+            <div class="w-hd" style="border-bottom:0; margin-bottom:0; padding-bottom:0"><span class="w-title">기념일</span><span class="w-sub">9·26</span></div>
+            <div class="ann">
+              <span class="big"><i></i>D-12<i></i></span>
+              <span class="name" style="color:var(--wgoldt)"><svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="7" r="4" fill="none" stroke="currentColor" stroke-width="1"/><rect x="4.6" y="0.4" width="2.8" height="2.8" transform="rotate(45 6 1.8)" fill="none" stroke="currentColor" stroke-width="1"/></svg><span style="color:var(--wink)">결혼기념일</span></span>
+              <span class="date">토요일 · 3주년</span>
+            </div>
+            <div class="rail"><div class="fill" style="width:96.7%"></div><i class="mark" style="left:96.7%"></i></div>
+          </div>
+          <div class="w d" style="--cols:4; --rows:2">
+            <div class="w-hd"><span class="w-title">기념일</span><span class="w-sub">다가오는 <b>3</b></span></div>
+            <div class="ann-wide">
+              <div class="ann" style="justify-items:start; text-align:left">
+                <span class="big">D-12</span>
+                <span class="name" style="color:var(--wgoldt)"><svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="7" r="4" fill="none" stroke="currentColor" stroke-width="1"/><rect x="4.6" y="0.4" width="2.8" height="2.8" transform="rotate(45 6 1.8)" fill="none" stroke="currentColor" stroke-width="1"/></svg><span style="color:var(--wink)">결혼기념일</span></span>
+                <span class="date">9월 26일 · 토 · 3주년</span>
+              </div>
+              <div class="vr"></div>
+              <div class="list">
+                <div class="row"><span class="dd">D-30</span><span style="color:var(--wgoldt)"><svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 10.5h8M2.5 10.5V6.5a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v4M6 5.5V3.2M6 1.6v.4" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg></span><span class="t">어머니 생신</span></div>
+                <div class="row"><span class="dd">D-58</span><span style="color:var(--wgoldt)"><svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1C6 5 6 5 10 6C6 7 6 7 6 11C6 7 6 7 2 6C6 5 6 5 6 1Z" fill="none" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/></svg></span><span class="t">첫 출근 기념</span></div>
+                <div class="row"><span class="dd past">+41</span><span style="color:var(--wmuted)"><svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1C6 5 6 5 10 6C6 7 6 7 6 11C6 7 6 7 2 6C6 5 6 5 6 1Z" fill="none" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/></svg></span><span class="t" style="color:var(--wmuted)">입사</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="cfg" data-cfg="k7">
+      <label>배경 투명도 <input type="range" id="alpha-k7" min="20" max="100" value="88" step="1"> <output for="alpha-k7" id="alpha-k7-out">88%</output></label>
+    </div>
+    <dl class="notes">
+      <div><dt>자료</dt><dd>기념일 목록 (스냅샷에 새로 넣어야 한다) · 해마다 반복이면 다음 날짜로</dd></div>
+      <div><dt>누르면</dt><dd>기념일 화면</dd></div>
+      <div><dt>다시 그리는 때</dt><dd>자정 (D-day 가 하루 줄어든다)</dd></div>
+    </dl>
+  </section>
+
+  <!-- VIII. 하루 진행 -->
+  <section class="kind" id="k8">
+    <div class="kind-head"><span class="num">VIII</span><h3>하루 진행</h3><span class="chip">2 × 2</span><span class="chip new">새 종류</span></div>
+    <p class="kind-desc">작은 고리 하나. 바깥 고리는 하루가 얼마나 지났는지, 안쪽은 오늘 할 일을 얼마나 끝냈는지. 숫자는 "끝낸/전체". 작은 자리에 놓는 위젯.</p>
+    <div class="pair">
+      <div class="wall light"><span class="tag">Light</span>
+        <div class="w l" style="--cols:2; --rows:2">
+          <div class="ring-wrap">
+            <svg width="62" height="62" viewBox="0 0 62 62" role="img" aria-label="하루 진행 45%, 할 일 2/5">
+              <circle cx="31" cy="31" r="27" fill="none" stroke="#D4AF37" stroke-opacity=".25" stroke-width="1.5"/>
+              <circle cx="31" cy="31" r="27" fill="none" stroke="#D4AF37" stroke-width="1.5" stroke-dasharray="169.6" stroke-dashoffset="93.3" stroke-linecap="butt" transform="rotate(-90 31 31)"/>
+              <circle cx="31" cy="31" r="20" fill="none" stroke="#D4AF37" stroke-opacity=".2" stroke-width="3"/>
+              <circle cx="31" cy="31" r="20" fill="none" stroke="#D4AF37" stroke-width="3" stroke-dasharray="125.7" stroke-dashoffset="75.4" transform="rotate(-90 31 31)"/>
+              <rect x="27" y="27" width="8" height="8" transform="rotate(45 31 31)" fill="#D4AF37"/>
+            </svg>
+            <div class="txt"><span class="k">오늘</span><span class="v">2 / 5</span><span class="m">10:37 · 45%</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="wall dark"><span class="tag">Dark</span>
+        <div class="w d" style="--cols:2; --rows:2">
+          <div class="ring-wrap">
+            <svg width="62" height="62" viewBox="0 0 62 62" role="img" aria-label="하루 진행 45%, 할 일 2/5">
+              <circle cx="31" cy="31" r="27" fill="none" stroke="#D4AF37" stroke-opacity=".25" stroke-width="1.5"/>
+              <circle cx="31" cy="31" r="27" fill="none" stroke="#D4AF37" stroke-width="1.5" stroke-dasharray="169.6" stroke-dashoffset="93.3" transform="rotate(-90 31 31)"/>
+              <circle cx="31" cy="31" r="20" fill="none" stroke="#D4AF37" stroke-opacity=".2" stroke-width="3"/>
+              <circle cx="31" cy="31" r="20" fill="none" stroke="#D4AF37" stroke-width="3" stroke-dasharray="125.7" stroke-dashoffset="75.4" transform="rotate(-90 31 31)"/>
+              <rect x="27" y="27" width="8" height="8" transform="rotate(45 31 31)" fill="#D4AF37"/>
+            </svg>
+            <div class="txt"><span class="k">오늘</span><span class="v">2 / 5</span><span class="m">10:37 · 45%</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="cfg" data-cfg="k8">
+      <label>배경 투명도 <input type="range" id="alpha-k8" min="20" max="100" value="88" step="1"> <output for="alpha-k8" id="alpha-k8-out">88%</output></label>
+    </div>
+    <dl class="notes">
+      <div><dt>자료</dt><dd>오늘 할 일 수와 끝낸 수 · 시각</dd></div>
+      <div><dt>다시 그리는 때</dt><dd>15분마다(바깥 고리) + 할 일이 바뀔 때</dd></div>
+      <div><dt>누르면</dt><dd>홈</dd></div>
+    </dl>
+  </section>
+
+  <!-- IX. 빠른 추가 -->
+  <section class="kind" id="k9">
+    <div class="kind-head"><span class="num">IX</span><h3>빠른 추가</h3><span class="chip">4 × 1</span><span class="chip new">새 종류</span></div>
+    <p class="kind-desc">한 줄짜리. 누르면 앱이 "할 일 추가" 창을 연 채로 뜬다. 오른쪽에 오늘 남은 수를 작게 — 안 눌러도 쓸모가 있게.</p>
+    <div class="pair">
+      <div class="wall light"><span class="tag">Light</span>
+        <div class="w l" style="--cols:4; --rows:1; padding: 10px 14px">
+          <div class="quick"><span class="field"><i class="dia"></i>할 일 추가…</span><span class="cnt">오늘 남은 <b>3</b></span><span class="plus">+</span></div>
+        </div>
+      </div>
+      <div class="wall dark"><span class="tag">Dark</span>
+        <div class="w d" style="--cols:4; --rows:1; padding: 10px 14px">
+          <div class="quick"><span class="field"><i class="dia"></i>할 일 추가…</span><span class="cnt">오늘 남은 <b>3</b></span><span class="plus">+</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="cfg" data-cfg="k9">
+      <label>배경 투명도 <input type="range" id="alpha-k9" min="20" max="100" value="88" step="1"> <output for="alpha-k9" id="alpha-k9-out">88%</output></label>
+    </div>
+    <dl class="notes">
+      <div><dt>누르면</dt><dd>앱을 <code>cronos://todo/new</code> 로 열어 추가 창이 바로 뜬다 (딥링크 하나 새로)</dd></div>
+      <div><dt>자료</dt><dd>오늘 남은 할 일 수</dd></div>
+    </dl>
+  </section>
+
+  <!-- X. 오늘 메모 -->
+  <section class="kind" id="k10">
+    <div class="kind-head"><span class="num">X</span><h3>오늘 메모</h3><span class="chip">4 × 2</span><span class="chip new">새 종류</span></div>
+    <p class="kind-desc">앱의 하루 메모(dailyMemo)를 홈에 붙여 둔다. 금빛 세로줄 하나로 "적어 둔 말" 이라는 걸 알린다. 비어 있으면 적으라고 조용히 권한다.</p>
+    <div class="pair">
+      <div class="wall light"><span class="tag">Light</span>
+        <div class="w l" style="--cols:4; --rows:2">
+          <div class="w-hd"><span class="w-title">오늘 메모</span><span class="w-sub">9월 14일</span></div>
+          <div class="memo"><span class="bar"></span><p class="txt">회의 전에 지난 분기 숫자 다시 보기. 점심은 12시 반, 민이가 예약함. 저녁에 달리기 대신 스트레칭.</p></div>
+        </div>
+      </div>
+      <div class="wall dark"><span class="tag">Dark · 비었을 때</span>
+        <div class="w d" style="--cols:4; --rows:2">
+          <div class="w-hd"><span class="w-title">오늘 메모</span><span class="w-sub">9월 14일</span></div>
+          <div class="memo"><span class="bar" style="opacity:.4"></span><p class="txt empty">오늘 적어 둘 말이 없습니다. 눌러서 적기.</p></div>
+        </div>
+      </div>
+    </div>
+    <div class="cfg" data-cfg="k10">
+      <label>배경 투명도 <input type="range" id="alpha-k10" min="20" max="100" value="88" step="1"> <output for="alpha-k10" id="alpha-k10-out">88%</output></label>
+    </div>
+    <dl class="notes">
+      <div><dt>자료</dt><dd>오늘의 메모 본문 (스냅샷에 새로)</dd></div>
+      <div><dt>누르면</dt><dd>홈의 메모 칸으로</dd></div>
+    </dl>
+  </section>
+
+  <!-- XI. 프로젝트 -->
+  <section class="kind" id="k11">
+    <div class="kind-head"><span class="num">XI</span><h3>프로젝트</h3><span class="chip">4 × 2</span><span class="chip new">새 종류</span></div>
+    <p class="kind-desc">진행 중 프로젝트 셋. 태스크 완료 비율의 진행선과 마감 D-day. 마감이 가까운 순.</p>
+    <div class="pair">
+      <div class="wall light"><span class="tag">Light</span>
+        <div class="w l" style="--cols:4; --rows:2">
+          <div class="w-hd"><span class="w-title">프로젝트</span><span class="w-sub">진행 중 <b>3</b></span></div>
+          <div class="w-rows">
+            <div class="proj"><span class="t">CRONOS 1.1 배포</span><span class="dd">D-5</span><div class="bar"><i style="width:72%"></i><em>13/18</em></div></div>
+            <div class="proj"><span class="t">가을 테마 (Maple)</span><span class="dd">D-21</span><div class="bar"><i style="width:15%"></i><em>3/20</em></div></div>
+            <div class="proj"><span class="t">포트폴리오 정리</span><span class="dd" style="color:var(--wmuted)">—</span><div class="bar"><i style="width:40%"></i><em>2/5</em></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="wall dark"><span class="tag">Dark</span>
+        <div class="w d" style="--cols:4; --rows:2">
+          <div class="w-hd"><span class="w-title">프로젝트</span><span class="w-sub">진행 중 <b>3</b></span></div>
+          <div class="w-rows">
+            <div class="proj"><span class="t">CRONOS 1.1 배포</span><span class="dd">D-5</span><div class="bar"><i style="width:72%"></i><em>13/18</em></div></div>
+            <div class="proj"><span class="t">가을 테마 (Maple)</span><span class="dd">D-21</span><div class="bar"><i style="width:15%"></i><em>3/20</em></div></div>
+            <div class="proj"><span class="t">포트폴리오 정리</span><span class="dd" style="color:var(--wmuted)">—</span><div class="bar"><i style="width:40%"></i><em>2/5</em></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="cfg" data-cfg="k11">
+      <label>배경 투명도 <input type="range" id="alpha-k11" min="20" max="100" value="88" step="1"> <output for="alpha-k11" id="alpha-k11-out">88%</output></label>
+    </div>
+    <dl class="notes">
+      <div><dt>자료</dt><dd>프로젝트 · 태스크 완료 수 · 마감 (스냅샷에 새로)</dd></div>
+      <div><dt>누르면</dt><dd>줄 → 그 프로젝트 보드</dd></div>
+    </dl>
+  </section>
+
+  <!-- 만드는 법 -->
+  <section class="kind" id="plan">
+    <div class="kind-head"><span class="num">▸</span><h3>만드는 법 · 목록</h3></div>
+    <div class="plan">
+      <div class="callout">
+        <p><b>왜 지금 위젯이 밋밋한가.</b> 안드로이드 홈 위젯은 앱의 화면(WebView)을 못 싣고, 쓸 수 있는 뷰가 TextView·ImageView·LinearLayout 정도뿐이다. 글꼴도 시스템 글꼴만 된다. 그래서 첫 판은 "글줄 + 점" 으로만 그렸다.</p>
+        <p style="margin-top:8px"><b>어떻게 이 시안대로 그리나.</b> 앱(Kotlin)이 <b>Canvas 로 위젯을 그림 한 장으로 그려서</b> ImageView 에 얹는다. 그러면 Orbit 글꼴(앱에 TTF 동봉), 마름모, 반원 눈금, 진행선까지 앱 화면과 똑같이 낼 수 있다. 누르는 자리는 그림 위에 투명한 칸을 겹쳐 PendingIntent 를 단다. 테마는 스냅샷에 <code>theme: { family, mode, colors }</code> 를 실어 보내, 갈래(celestial/maple)마다 다른 화가(<code>WidgetPainter</code>)가 그린다.</p>
+      </div>
+      <ol>
+        <li><b>스냅샷 넓히기</b> — 이 달 끝까지의 일정, 기념일, 프로젝트, 오늘 메모, 테마 색을 <code>widget-snapshot.json</code> 에 더한다 (<code>src/lib/widgetSnapshot.ts</code>).</li>
+        <li><b>화가</b> — <code>CelestialWidgetPainter</code>: 종류·크기(칸 수는 <code>onAppWidgetOptionsChanged</code> 로 안다)·테마를 받아 Bitmap 을 돌려준다. 글꼴은 <code>assets/fonts/Orbit-Regular.ttf</code>.</li>
+        <li><b>종류 늘리기</b> — Provider 클래스 8개 추가 + 위젯 고르기용 미리보기. 크기별 줄 수는 화가가 정한다.</li>
+        <li><b>누르는 자리</b> — 줄·날짜 칸마다 투명 뷰 + PendingIntent. 앱 쪽은 <code>cronos://</code> 딥링크로 "그 할 일 열기 / 그날 일간 / 추가 창" 을 받는다.</li>
+        <li><b>다시 그리는 때</b> — 지금처럼 파일 변경·앱 이탈·시각 경계 알람. "지금·다음" 과 "하루 진행" 은 진행 중일 때만 짧은 주기를 하나 더.</li>
+        <li><b>위젯 설정 화면</b> — 놓을 때 한 번 뜨는 <code>WidgetConfigActivity</code>(투명도 슬라이더 · 벌: 앱 따라감/밝음/어둠). 안드로이드 12+ 는 <code>widgetFeatures="reconfigurable"</code> 로 길게 눌러 다시 연다. 값은 위젯 id 마다 SharedPreferences 에 두고, 화가가 바탕을 칠할 때 그 알파를 쓴다.</li>
+        <li><b>Maple 테마</b> — 갈래가 생기면 <code>MapleWidgetPainter</code> 를 하나 더. 종이 질감·단풍 마름모·먹색 글자로 같은 자료를 다르게 그린다.</li>
+      </ol>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>#</th><th>종류</th><th>칸</th><th>자료 출처</th><th>누르면</th><th>순서 제안</th></tr></thead>
+          <tbody>
+            <tr><td class="k">I</td><td>오늘 할 일</td><td>4×3 · 3×2 · 4×4</td><td>todos</td><td>할 일 / 홈</td><td>1 (있는 것을 다시 그림)</td></tr>
+            <tr><td class="k">II</td><td>지금 · 다음</td><td>4×2</td><td>todos</td><td>할 일</td><td>1</td></tr>
+            <tr><td class="k">III</td><td>챌린지</td><td>4×3</td><td>challenges</td><td>챌린지</td><td>1</td></tr>
+            <tr><td class="k">IV</td><td>월 게이지</td><td>4×2</td><td>todos(이 달)</td><td>홈</td><td>2 — Celestial 의 얼굴</td></tr>
+            <tr><td class="k">V</td><td>주간 띠</td><td>4×2 · 4×1</td><td>todos(이레)</td><td>그날 일간</td><td>2</td></tr>
+            <tr><td class="k">VI</td><td>월간 달력</td><td>4×4</td><td>todos(이 달)</td><td>그날 일간</td><td>3</td></tr>
+            <tr><td class="k">VII</td><td>기념일 D-day</td><td>2×2 · 4×2</td><td>anniversaries (새)</td><td>기념일</td><td>3</td></tr>
+            <tr><td class="k">VIII</td><td>하루 진행</td><td>2×2</td><td>todos</td><td>홈</td><td>3</td></tr>
+            <tr><td class="k">IX</td><td>빠른 추가</td><td>4×1</td><td>todos(수만)</td><td>추가 창 (딥링크)</td><td>2 — 만들기 쉽고 자주 쓴다</td></tr>
+            <tr><td class="k">X</td><td>오늘 메모</td><td>4×2</td><td>dailyMemo (새)</td><td>홈 메모</td><td>4</td></tr>
+            <tr><td class="k">XI</td><td>프로젝트</td><td>4×2</td><td>projects (새)</td><td>프로젝트 보드</td><td>4</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="muted" style="font-size:0.8rem">정해진 것: 11종 전부 · 귀퉁이 표식 유지 · 바탕 투명도는 위젯마다 설정(기본 88%).</p>
+    </div>
+  </section>
+</div>
+
+<script>
+  // 종류마다 배경 투명도 — 그 섹션의 두 위젯(밝음·어두움)에 같이 먹는다
+  document.querySelectorAll('.cfg[data-cfg]').forEach(cfg => {
+    const section = cfg.closest('section');
+    const range = cfg.querySelector('input[type="range"]');
+    const out = cfg.querySelector('output');
+    const apply = () => {
+      section.style.setProperty('--alpha', (range.value / 100).toFixed(2));
+      out.textContent = range.value + '%';
+    };
+    range.addEventListener('input', apply);
+    apply();
+  });
+</script>
