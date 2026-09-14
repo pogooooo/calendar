@@ -92,13 +92,16 @@ export const Day = styled.button<{ $selected: boolean; $today: boolean; $weekend
 
     .num {
         font-size: 1rem;
-        line-height: 1.1;
         font-variant-numeric: tabular-nums;
+        /* 날마다 같은 26px 상자에 숫자를 둔다 — 오늘만 고리를 두르면 그 칸만 8px 커져
+           아래 점들의 높이가 달라졌다. 상자는 늘 같고, 고리는 오늘만 보인다. */
+        width: 26px; height: 26px; line-height: 24px;
+        text-align: center;
+        border: 1px solid transparent;
+        border-radius: 50%;
         /* 오늘은 금빛 고리로 표시한다 — 월간 달력의 오늘 원반과 같은 말 */
         ${p => p.$today && `
-            width: 26px; height: 26px; line-height: 24px;
-            border: 1px solid ${p.theme.colors.primary};
-            border-radius: 50%;
+            border-color: ${p.theme.colors.primary};
             color: ${p.theme.colors.primary};
         `}
     }

@@ -42,9 +42,9 @@ interface WeekRowProps {
     setMoreModalDate: (date: Date | null) => void;
 }
 
-/** 데스크톱은 바 두 층까지, 폰은 마름모라 작으니 여덟까지 (그 뒤는 +N) */
+/** 데스크톱은 바 두 층까지, 폰은 마름모라 작으니 여섯까지 — 두 줄 (그 뒤는 +N) */
 const MAX_VISIBLE_LEVELS = 2;
-const MAX_VISIBLE_LEVELS_MOBILE = 8;
+const MAX_VISIBLE_LEVELS_MOBILE = 6;
 
 const WeekRow = ({
                      dates, todos, challengeTodos, categories, todayStr, currentMonth,

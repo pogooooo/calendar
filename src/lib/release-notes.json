@@ -12,7 +12,8 @@
         "며칠짜리 프로젝트 태스크가 일간 시간대를 막대로 채우던 것을 고쳤습니다.",
         "시간 다이얼을 시계 용두처럼 돌리게 했습니다 — 짚어도 값이 튀지 않고, 바깥 고리는 빠르게(한 바퀴 6시간), 안쪽 고리는 천천히(한 바퀴 1시간). 밑에 시 ±1 · 분 ±5 단추를 달았습니다.",
         "폰 월간 달력의 할 일 마름모가 귀퉁이가 잘려 납작해 보이던 것을 고치고, 한 칸에 여덟 개까지 보입니다.",
-        "홈의 빠른 추가 옆에 \"자세히\" 단추가 생겼습니다 — 적던 제목 그대로 시간·카테고리·반복을 정할 수 있습니다."
+        "홈의 빠른 추가 옆에 \"자세히\" 단추가 생겼습니다 — 적던 제목 그대로 시간·카테고리·반복을 정할 수 있습니다.",
+        "폰 월간 달력의 칸이 세로로 길게 찌그러지지 않고, 주간 띠의 날짜 칸 높이가 오늘·선택한 날도 같습니다."
       ],
       "en": [
         "Settings has a new 'About' tab: current version, an update check, and these release notes.",
@@ -23,7 +24,8 @@
         "Multi-day project tasks no longer fill every hour of the day timeline.",
         "The time dial now turns like a watch crown — tapping no longer jumps the value; the outer ring moves fast (6 h per turn), the inner ring slowly (1 h per turn), with ±1 h / ±5 min buttons below.",
         "On phones, the month calendar’s to-do diamonds no longer get their corners clipped, and a day shows up to eight of them.",
-        "The quick-add on Home has a new “Details” button — set the time, category and repeat while keeping the title you typed."
+        "The quick-add on Home has a new “Details” button — set the time, category and repeat while keeping the title you typed.",
+        "On phones the month cells are no longer stretched tall, and week-strip day cells keep the same height whether or not they are today or selected."
       ]
     }
   },

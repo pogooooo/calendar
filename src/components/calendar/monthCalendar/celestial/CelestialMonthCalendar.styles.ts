@@ -209,8 +209,12 @@ export const GridContainer = styled.div`
 
     ${MOBILE} {
         display: grid;
-        grid-template-rows: repeat(6, 1fr);
+        grid-template-rows: repeat(6, minmax(0, 1fr));
         overflow: hidden;
+        /* 여섯 줄이 남은 높이를 다 나눠 가지면 칸이 세로로 두 배쯤 길어져 찌그러진다.
+           칸 폭(화면 폭 − 좌우 여백 24px 을 7로 나눈 것)의 1.3배까지만 키운다. 남는 자리는 비워 둔다. */
+        max-height: calc((100vw - 24px) / 7 * 1.3 * 6);
+        flex: none;
     }
 `;
 
