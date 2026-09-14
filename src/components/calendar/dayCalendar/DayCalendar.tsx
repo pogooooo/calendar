@@ -106,12 +106,16 @@ const DayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
         // eslint-disable-next-line react-hooks/exhaustive-deps
         }, [categories]);
 
+        // 날짜가 바뀔 때는 그날 자료만. 프로젝트·챌린지는 날짜와 상관없으니 처음 한 번
         React.useEffect(() => {
             fetchDailyData(authFetch, selectedDate);
+            // eslint-disable-next-line react-hooks/exhaustive-deps
+        }, [selectedDate]);
+        React.useEffect(() => {
             fetchProjects(authFetch);
             fetchChallenges(authFetch);
             // eslint-disable-next-line react-hooks/exhaustive-deps
-        }, [selectedDate]);
+        }, []);
 
         React.useEffect(() => {
             setLocalMemo(memo || "");

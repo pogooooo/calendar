@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { coalesce, READ_TTL } from "@/lib/fetchOnce";
 import { reportSaveFailure } from "@/lib/saveError";
 import type { AuthFetch, ChallengeType, ChallengeCompletionType } from '@/types';
 import { localDateKey } from '@/lib/dateKey';
@@ -27,23 +28,26 @@ const useChallengeStore = create<ChallengeState>((set, get) => ({
     error: null,
 
     fetchChallenges: async (authFetch, categoryId) => {
-        set({ isLoading: true, error: null });
-        try {
-            let url = '/api/challenge';
-            if (categoryId) url += `?${new URLSearchParams({ categoryId })}`;
-
-            const res = await authFetch(url);
-            if (res.status === 401) { set({ isLoading: false }); return; }
-            if (!res.ok) throw new Error("챌린지 데이터를 불러오는 데 실패했습니다.");
-
-            const data = await res.json();
-            const challenges = data.map((c: ChallengeType) => ({ ...c, completions: c.completions ?? [] }));
-            set({ challenges, isLoading: false });
-        } catch (err: unknown) {
-            const message = err instanceof Error ? err.message : "알 수 없는 오류가 발생했습니다.";
-            if (message === "Session expired") return set({ isLoading: false });
-            set({ error: message, isLoading: false });
-        }
+        // 같은 읽기가 겹치면 하나만 (src/lib/fetchOnce.ts)
+        await coalesce(`challenge:${categoryId ?? ""}`, READ_TTL, async () => {
+            set({ isLoading: true, error: null });
+            try {
+                let url = '/api/challenge';
+                if (categoryId) url += `?${new URLSearchParams({ categoryId })}`;
+    
+                const res = await authFetch(url);
+                if (res.status === 401) { set({ isLoading: false }); return; }
+                if (!res.ok) throw new Error("챌린지 데이터를 불러오는 데 실패했습니다.");
+    
+                const data = await res.json();
+                const challenges = data.map((c: ChallengeType) => ({ ...c, completions: c.completions ?? [] }));
+                set({ challenges, isLoading: false });
+            } catch (err: unknown) {
+                const message = err instanceof Error ? err.message : "알 수 없는 오류가 발생했습니다.";
+                if (message === "Session expired") return set({ isLoading: false });
+                set({ error: message, isLoading: false });
+            }
+        });
     },
 
     addChallenge: async (authFetch, data) => {

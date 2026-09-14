@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { coalesce, READ_TTL } from "@/lib/fetchOnce";
 import { reportSaveFailure } from "@/lib/saveError";
 import useAuthStore from '@/store/useAuthStore';
 import type { AuthFetch, DailyTaskType } from '@/types';
@@ -31,34 +32,37 @@ const useDailyStore = create<DailyState>((set, get) => ({
     memoError: null,
 
     fetchDailyData: async (authFetch, date) => {
-        const userId = useAuthStore.getState().user?.id;
-        if (!userId) return;
-
-        set({ isLoading: true, error: null });
-        try {
-            const dateStr = localDateKey(date);
-            // 켤 때는 요청 여덟 개가 한꺼번에 나가 이 둘 중 하나가 간혹 떨어진다 (폰 앱에서 실제로 봤다).
-            // 한 번은 다시 묻는다 — 안 그러면 오늘 메모가 홈 위젯에 안 실린 채로 남는다.
-            const load = () => Promise.all([
-                authFetch(`/api/dailyTask?date=${dateStr}`),
-                authFetch(`/api/dailyMemo?date=${dateStr}`)
-            ]);
-            let [taskRes, memoRes] = await load().catch(() => [null, null] as const);
-            if (!taskRes?.ok || !memoRes?.ok) {
-                await new Promise(r => setTimeout(r, 1500));
-                [taskRes, memoRes] = await load();
+        // 같은 읽기가 겹치면 하나만 (src/lib/fetchOnce.ts)
+        await coalesce(`daily:${localDateKey(date)}`, READ_TTL, async () => {
+            const userId = useAuthStore.getState().user?.id;
+            if (!userId) return;
+    
+            set({ isLoading: true, error: null });
+            try {
+                const dateStr = localDateKey(date);
+                // 켤 때는 요청 여덟 개가 한꺼번에 나가 이 둘 중 하나가 간혹 떨어진다 (폰 앱에서 실제로 봤다).
+                // 한 번은 다시 묻는다 — 안 그러면 오늘 메모가 홈 위젯에 안 실린 채로 남는다.
+                const load = () => Promise.all([
+                    authFetch(`/api/dailyTask?date=${dateStr}`),
+                    authFetch(`/api/dailyMemo?date=${dateStr}`)
+                ]);
+                let [taskRes, memoRes] = await load().catch(() => [null, null] as const);
+                if (!taskRes?.ok || !memoRes?.ok) {
+                    await new Promise(r => setTimeout(r, 1500));
+                    [taskRes, memoRes] = await load();
+                }
+    
+                if (!taskRes.ok || !memoRes.ok) throw new Error("일간 데이터를 불러오는 데 실패했습니다.");
+    
+                const tasks = await taskRes.json();
+                const memoData = await memoRes.json();
+                set({ tasks, memo: memoData.content, memoDate: dateStr, isLoading: false });
+            } catch (err: unknown) {
+                const message = err instanceof Error ? err.message : "알 수 없는 오류가 발생했습니다.";
+                set({ error: message, isLoading: false, tasks: [], memo: "" });
+                console.error("[DAILY_FETCH_ERROR]", err);
             }
-
-            if (!taskRes.ok || !memoRes.ok) throw new Error("일간 데이터를 불러오는 데 실패했습니다.");
-
-            const tasks = await taskRes.json();
-            const memoData = await memoRes.json();
-            set({ tasks, memo: memoData.content, memoDate: dateStr, isLoading: false });
-        } catch (err: unknown) {
-            const message = err instanceof Error ? err.message : "알 수 없는 오류가 발생했습니다.";
-            set({ error: message, isLoading: false, tasks: [], memo: "" });
-            console.error("[DAILY_FETCH_ERROR]", err);
-        }
+        });
     },
 
     addDailyTask: async (authFetch, date, text) => {

@@ -200,6 +200,8 @@ const ko: Translations = {
         dayView: '일간',
         weekView: '주간',
         weekDayView: '주간 · 일간',
+        openDay: '일간',
+        peekEmpty: '이 날은 일정이 없습니다.',
         prevDay: '이전 날',
         nextDay: '다음 날',
         prevWeek: '지난 주',

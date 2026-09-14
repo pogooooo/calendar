@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { coalesce, READ_TTL } from "@/lib/fetchOnce";
 import { reportSaveFailure } from "@/lib/saveError";
 import type { AuthFetch, TodoType, TodoCompletionType } from '@/types';
 import { toUtcAnchorIso, utcDayKey } from '@/lib/dateKey';
@@ -25,30 +26,33 @@ const useTodoStore = create<TodoState>((set, get) => ({
     error: null,
 
     fetchTodos: async (authFetch, params) => {
-        set({ isLoading: true, error: null });
-        try {
-            let url = '/api/todo';
-            if (params) {
-                const query = new URLSearchParams();
-                if (params.start) query.append('start', params.start);
-                if (params.end) query.append('end', params.end);
-                if (params.categoryId) query.append('categoryId', params.categoryId);
-                const qs = query.toString();
-                if (qs) url += `?${qs}`;
+        // 같은 읽기가 겹치면 하나만 (src/lib/fetchOnce.ts)
+        await coalesce(`todo:${JSON.stringify(params ?? {})}`, READ_TTL, async () => {
+            set({ isLoading: true, error: null });
+            try {
+                let url = '/api/todo';
+                if (params) {
+                    const query = new URLSearchParams();
+                    if (params.start) query.append('start', params.start);
+                    if (params.end) query.append('end', params.end);
+                    if (params.categoryId) query.append('categoryId', params.categoryId);
+                    const qs = query.toString();
+                    if (qs) url += `?${qs}`;
+                }
+    
+                const res = await authFetch(url);
+                if (res.status === 401) { set({ isLoading: false }); return; }
+                if (!res.ok) throw new Error("할 일 데이터를 불러오는 데 실패했습니다.");
+    
+                const todos = await res.json();
+                set({ todos, isLoading: false });
+            } catch (err: unknown) {
+                const message = err instanceof Error ? err.message : "알 수 없는 오류가 발생했습니다.";
+                if (message === "Session expired") { set({ isLoading: false }); return; }
+                set({ error: message, isLoading: false });
+                console.error("[TODO_FETCH_ERROR]", err);
             }
-
-            const res = await authFetch(url);
-            if (res.status === 401) { set({ isLoading: false }); return; }
-            if (!res.ok) throw new Error("할 일 데이터를 불러오는 데 실패했습니다.");
-
-            const todos = await res.json();
-            set({ todos, isLoading: false });
-        } catch (err: unknown) {
-            const message = err instanceof Error ? err.message : "알 수 없는 오류가 발생했습니다.";
-            if (message === "Session expired") { set({ isLoading: false }); return; }
-            set({ error: message, isLoading: false });
-            console.error("[TODO_FETCH_ERROR]", err);
-        }
+        });
     },
 
     toggleTodo: async (authFetch, todoId, targetDate) => {

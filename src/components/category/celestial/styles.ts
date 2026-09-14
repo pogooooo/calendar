@@ -138,12 +138,18 @@ export const CategoryList = styled.div`
         overflow-y: hidden;
         padding: 4px 2px 10px;
         scroll-snap-type: x proximity;
+        overflow-anchor: none;
 
         & > * {
             flex: 0 0 auto;
             min-width: 148px;
             scroll-snap-align: start;
         }
+
+        /* 카테고리가 도착하기 전엔 "+" 카드 하나뿐이라 그게 스냅 대상이 되고, 카드들이 그 앞에
+           끼워지면 브라우저가 "+" 를 계속 붙들어(re-snap) 목록이 끝까지 밀려 첫 카드들이 화면 밖에 있었다.
+           "+" 는 스냅 대상에서 뺀다. */
+        & > *:last-child { scroll-snap-align: none; }
     }
 `;
 

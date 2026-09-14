@@ -1,6 +1,5 @@
 ﻿"use client";
 
-import * as React from 'react';
 import CelestialDropdown from './celestial/CelestialDropdown';
 
 export interface DropdownOption {
@@ -18,10 +17,7 @@ export interface DropdownProps {
     disabled?: boolean;
 }
 
-const Dropdown = React.forwardRef<HTMLDivElement, DropdownProps>((props) => {
+/* forwardRef 였는데 ref 를 받지도 넘기지도 않아 React 가 매번 경고했다. 아무도 ref 를 주지 않으니 평범한 컴포넌트로 */
+export default function Dropdown(props: DropdownProps) {
     return <CelestialDropdown {...props} />;
-});
-
-Dropdown.displayName = 'Dropdown';
-
-export default Dropdown;
+}

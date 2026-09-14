@@ -188,6 +188,9 @@ export interface Translations {
         dayView: string;
         weekView: string;
         weekDayView: string;
+        /** 폰 월간 아래 고른 날 목록: "일간" 으로 가는 단추, 빈 문구 */
+        openDay: string;
+        peekEmpty: string;
         prevDay: string;
         nextDay: string;
         prevWeek: string;

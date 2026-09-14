@@ -12,6 +12,7 @@ import useAnniversaryStore from "@/store/useAnniversaryStore";
 import { isDesktopApp } from "@/lib/apiBase";
 import { subscribeDataChange, type DataKind } from "@/lib/dataSync";
 import { getRemember, isFreshLaunch } from "@/lib/session";
+import { bustFetchCache } from "@/lib/fetchOnce";
 
 const PUBLIC_ROUTES = ["/signIn", "/signUp", "/download", "/forgotPassword", "/resetPassword"];
 const NO_PREFETCH_ROUTES = PUBLIC_ROUTES;
@@ -103,6 +104,8 @@ export default function StoreInitializer({ children }: { children: React.ReactNo
         const flush = () => {
             const kinds = new Set(pending);
             pending.clear();
+            // 다른 창이 바꾼 것이다 — 방금 읽었더라도 다시 읽어야 한다
+            bustFetchCache();
             if (kinds.has("todos")) fetchTodos(authFetch);
             if (kinds.has("categories")) fetchCategories(authFetch);
             if (kinds.has("anniversaries")) fetchAnniversaries(authFetch);

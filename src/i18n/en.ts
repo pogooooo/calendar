@@ -200,6 +200,8 @@ const en: Translations = {
         dayView: 'Day',
         weekView: 'Week',
         weekDayView: 'Week · Day',
+        openDay: 'Day',
+        peekEmpty: 'Nothing scheduled on this day.',
         prevDay: 'Previous day',
         nextDay: 'Next day',
         prevWeek: 'Previous week',

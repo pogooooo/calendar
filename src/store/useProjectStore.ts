@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { coalesce, READ_TTL } from "@/lib/fetchOnce";
 import { reportSaveFailure } from "@/lib/saveError";
 import type { AuthFetch, ProjectType, ProjectTaskType, UserType } from '@/types';
 
@@ -28,23 +29,26 @@ const useProjectStore = create<ProjectState>((set, get) => ({
     error: null,
 
     fetchProjects: async (authFetch, categoryId) => {
-        set({ isLoading: true, error: null });
-        try {
-            let url = '/api/project';
-            if (categoryId) url += `?${new URLSearchParams({ categoryId })}`;
-
-            const res = await authFetch(url);
-            if (res.status === 401) { set({ isLoading: false }); return; }
-            if (!res.ok) throw new Error("프로젝트 데이터를 불러오는 데 실패했습니다.");
-
-            const projects = await res.json();
-            set({ projects, isLoading: false });
-        } catch (err: unknown) {
-            if (isSessionExpired(err)) { set({ isLoading: false }); return; }
-            const message = err instanceof Error ? err.message : "알 수 없는 오류가 발생했습니다.";
-            set({ error: message, isLoading: false });
-            console.error("[PROJECT_FETCH_ERROR]", err);
-        }
+        // 같은 읽기가 겹치면 하나만 (src/lib/fetchOnce.ts)
+        await coalesce(`project:${categoryId ?? ""}`, READ_TTL, async () => {
+            set({ isLoading: true, error: null });
+            try {
+                let url = '/api/project';
+                if (categoryId) url += `?${new URLSearchParams({ categoryId })}`;
+    
+                const res = await authFetch(url);
+                if (res.status === 401) { set({ isLoading: false }); return; }
+                if (!res.ok) throw new Error("프로젝트 데이터를 불러오는 데 실패했습니다.");
+    
+                const projects = await res.json();
+                set({ projects, isLoading: false });
+            } catch (err: unknown) {
+                if (isSessionExpired(err)) { set({ isLoading: false }); return; }
+                const message = err instanceof Error ? err.message : "알 수 없는 오류가 발생했습니다.";
+                set({ error: message, isLoading: false });
+                console.error("[PROJECT_FETCH_ERROR]", err);
+            }
+        });
     },
 
     addProject: async (authFetch, data) => {

@@ -213,7 +213,8 @@ export const GridContainer = styled.div`
         overflow: hidden;
         /* 여섯 줄이 남은 높이를 다 나눠 가지면 칸이 세로로 두 배쯤 길어져 찌그러진다.
            칸 폭(화면 폭 − 좌우 여백 24px 을 7로 나눈 것)의 1.3배까지만 키운다. 남는 자리는 비워 둔다. */
-        max-height: calc((100vw - 24px) / 7 * 1.3 * 6);
+        height: calc((100vw - 24px) / 7 * 1.3 * 6);
+        max-height: 62dvh;
         flex: none;
     }
 `;

@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { coalesce, READ_TTL } from "@/lib/fetchOnce";
 import { reportSaveFailure } from "@/lib/saveError";
 import type { AuthFetch } from '@/types';
 
@@ -24,19 +25,22 @@ const useAnniversaryStore = create<AnniversaryState>((set, get) => ({
     isLoading: false,
 
     fetchAnniversaries: async (authFetch) => {
-        set({ isLoading: true });
-        try {
-            const res = await authFetch('/api/anniversary');
-            if (res.ok) {
-                const data = await res.json();
-                set({ anniversaries: data, isLoading: false });
-            } else {
+        // 같은 읽기가 겹치면 하나만 (src/lib/fetchOnce.ts)
+        await coalesce("anniversary", READ_TTL, async () => {
+            set({ isLoading: true });
+            try {
+                const res = await authFetch('/api/anniversary');
+                if (res.ok) {
+                    const data = await res.json();
+                    set({ anniversaries: data, isLoading: false });
+                } else {
+                    set({ isLoading: false });
+                }
+            } catch (err) {
+                console.error("[ANNIVERSARY_FETCH_ERROR]", err);
                 set({ isLoading: false });
             }
-        } catch (err) {
-            console.error("[ANNIVERSARY_FETCH_ERROR]", err);
-            set({ isLoading: false });
-        }
+        });
     },
 
     addAnniversary: async (authFetch, data) => {

@@ -8,6 +8,7 @@ import useTodoStore from "@/store/useTodoStore";
 import MonthCalendar from "@/components/calendar/monthCalendar/MonthCalendar";
 import DayCalendar from "@/components/calendar/dayCalendar/DayCalendar";
 import WeekStrip from "@/components/calendar/weekStrip/WeekStrip";
+import DayPeek from "@/components/calendar/dayPeek/DayPeek";
 import TodoModal from "@/components/modal/todoModal/TodoModal";
 import useIsMobile from "@/hooks/useIsMobile";
 import useSwipe from "@/hooks/useSwipe";
@@ -156,14 +157,27 @@ export default function CalendarPage() {
 
                 <MobilePane key={mobileView} $forward={mobileView !== "month"} {...(mobileView === "week" ? daySwipe : {})}>
                     {mobileView === "month" ? (
-                        <MonthCalendar
-                            todos={todos}
-                            categories={categories}
-                            selectedDate={selectedDate}
-                            followSelectedDate
-                            /* 날짜를 누르면 그 날로 넘어간다. 폰에서는 이게 일간을 여는 길이다. */
-                            onDateChange={(date) => { setSelectedDate(date); setMobileView("week"); }}
-                        />
+                        <>
+                            <MonthArea>
+                                <MonthCalendar
+                                    todos={todos}
+                                    categories={categories}
+                                    selectedDate={selectedDate}
+                                    followSelectedDate
+                                    /* 날짜를 누르면 아래 목록이 그 날로 바뀐다. 이미 고른 날을 또 누르면 일간으로. */
+                                    onDateChange={(date) => {
+                                        if (date.toDateString() === selectedDate.toDateString()) setMobileView("week");
+                                        else setSelectedDate(date);
+                                    }}
+                                />
+                            </MonthArea>
+                            <DayPeek
+                                date={selectedDate}
+                                todos={todos}
+                                categories={categories}
+                                onOpenDay={() => setMobileView("week")}
+                            />
+                        </>
                     ) : (
                         <DayCalendar
                             selectedDate={selectedDate}
@@ -293,6 +307,14 @@ const MobilePane = styled.div<{ $forward: boolean }>`
         animation: ${(props) => paneIn(props.$forward ? "26px" : "-26px")}
                    0.26s cubic-bezier(0.22, 1, 0.36, 1) both;
     }
+`;
+
+/* 월간 격자는 제 높이(칸 폭의 1.3배 × 6)만 쓰고, 남은 자리는 아래 고른 날 목록(DayPeek)이 쓴다 */
+const MonthArea = styled.div`
+    flex: none !important;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
 `;
 
 const fabIn = keyframes`

@@ -5,6 +5,7 @@
  * 새 테마 폴더를 만들 때 어떤 파일을 만들어야 하는지가 파일 이름만으로 드러난다.
  */
 import styled, { css, keyframes } from "styled-components";
+import { MOBILE, NOT_WIDGET } from "@/styles/breakpoints";
 
 export const ROW = 14; // 이름 한 줄 높이 (스크롤 스냅 단위)
 
@@ -80,6 +81,15 @@ export const Ring = styled.span`
     width: 30px;
     height: 30px;
     flex: 0 0 auto;
+
+    /* 폰 월간 칸은 머리글이 18px 남짓이라 30px 관이 잘려 조각만 보였다. 숫자를 감싸는 작은 고리로 줄인다 */
+    ${MOBILE} {
+        ${NOT_WIDGET} & {
+            width: 20px;
+            height: 20px;
+            margin: -1px 0;
+        }
+    }
 
     svg {
         position: absolute;
@@ -249,5 +259,10 @@ export const Reveal = styled.span<{ $multi: boolean; $flip: boolean }>`
         font-size: 0.47rem;
         letter-spacing: 0.5px;
         opacity: 0.6;
+    }
+
+    /* 이름 펼침(호버)은 폰에 없다 — 자리도 차지하지 않게. 뒤에 두어야 위의 display 를 이긴다 */
+    ${MOBILE} {
+        ${NOT_WIDGET} & { display: none; }
     }
 `;

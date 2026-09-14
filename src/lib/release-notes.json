@@ -13,7 +13,10 @@
         "시간 다이얼을 시계 용두처럼 돌리게 했습니다 — 짚어도 값이 튀지 않고, 바깥 고리는 빠르게(한 바퀴 6시간), 안쪽 고리는 천천히(한 바퀴 1시간). 밑에 시 ±1 · 분 ±5 단추를 달았습니다.",
         "폰 월간 달력의 할 일 마름모가 귀퉁이가 잘려 납작해 보이던 것을 고치고, 한 칸에 여덟 개까지 보입니다.",
         "홈의 빠른 추가 옆에 \"자세히\" 단추가 생겼습니다 — 적던 제목 그대로 시간·카테고리·반복을 정할 수 있습니다.",
-        "폰 월간 달력의 칸이 세로로 길게 찌그러지지 않고, 주간 띠의 날짜 칸 높이가 오늘·선택한 날도 같습니다."
+        "폰 월간 달력의 칸이 세로로 길게 찌그러지지 않고, 주간 띠의 날짜 칸 높이가 오늘·선택한 날도 같습니다.",
+        "폰 월간 달력 아래에 고른 날의 일정 목록이 생겼습니다. 날짜를 누르면 목록이 바뀌고, 한 번 더 누르면 일간으로 갑니다.",
+        "폰 카테고리 화면에서 카테고리 카드가 화면 밖에 밀려 있던 것, 월간 달력의 기념일 표시가 잘려 조각만 보이던 것을 고쳤습니다.",
+        "켤 때 같은 자료를 여러 번 읽어 오던 것을 한 번으로 줄였습니다 — 폰에서 첫 화면이 빨라집니다."
       ],
       "en": [
         "Settings has a new 'About' tab: current version, an update check, and these release notes.",
@@ -25,7 +28,10 @@
         "The time dial now turns like a watch crown — tapping no longer jumps the value; the outer ring moves fast (6 h per turn), the inner ring slowly (1 h per turn), with ±1 h / ±5 min buttons below.",
         "On phones, the month calendar’s to-do diamonds no longer get their corners clipped, and a day shows up to eight of them.",
         "The quick-add on Home has a new “Details” button — set the time, category and repeat while keeping the title you typed.",
-        "On phones the month cells are no longer stretched tall, and week-strip day cells keep the same height whether or not they are today or selected."
+        "On phones the month cells are no longer stretched tall, and week-strip day cells keep the same height whether or not they are today or selected.",
+        "On phones, the month calendar now lists the selected day’s schedule below the grid; tap a day to see it, tap again to open the day view.",
+        "Fixed the phone category deck starting scrolled off-screen, and the anniversary mark in month cells being clipped.",
+        "Startup no longer fetches the same data several times — the first screen loads faster on phones."
       ]
     }
   },

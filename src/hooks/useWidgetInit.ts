@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { bustFetchCache } from "@/lib/fetchOnce";
 import useAuthStore from "@/store/useAuthStore";
 import useTodoStore from "@/store/useTodoStore";
 import useCategoryStore from "@/store/useCategoryStore";
@@ -115,6 +116,8 @@ export function useWidgetInit(need: WidgetData[] = ALL) {
         const flush = () => {
             const kinds = new Set(pending);
             pending.clear();
+            // 다른 창이 바꾼 것이다 — 방금 읽었더라도 다시 읽어야 한다
+            bustFetchCache();
             if (kinds.has("todos") && wanted.includes("todos")) fetchTodos(authFetch);
             if (kinds.has("categories") && wanted.includes("categories")) fetchCategories(authFetch);
             if (kinds.has("projects") && wanted.includes("projects")) fetchProjects(authFetch);

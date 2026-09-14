@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { coalesce, READ_TTL } from "@/lib/fetchOnce";
 import { reportSaveFailure } from "@/lib/saveError";
 import type { AuthFetch, CategoryType, ParticipantType } from '@/types';
 import { readError } from '@/lib/readError';
@@ -28,16 +29,19 @@ const useCategoryStore = create<CategoryState>((set, get) => ({
     error: null,
 
     fetchCategories: async (authFetch) => {
-        set({ isLoading: true, error: null });
-        try {
-            const res = await authFetch('/api/category');
-            if (!res.ok) throw new Error("카테고리 로드 실패");
-            const categories = await res.json();
-            set({ categories, isLoading: false });
-        } catch (err: unknown) {
-            const message = err instanceof Error ? err.message : "카테고리 로딩 중 오류 발생";
-            set({ error: message, isLoading: false });
-        }
+        // 같은 읽기가 겹치면 하나만 (src/lib/fetchOnce.ts)
+        await coalesce("category", READ_TTL, async () => {
+            set({ isLoading: true, error: null });
+            try {
+                const res = await authFetch('/api/category');
+                if (!res.ok) throw new Error("카테고리 로드 실패");
+                const categories = await res.json();
+                set({ categories, isLoading: false });
+            } catch (err: unknown) {
+                const message = err instanceof Error ? err.message : "카테고리 로딩 중 오류 발생";
+                set({ error: message, isLoading: false });
+            }
+        });
     },
 
     addCategory: async (authFetch, data) => {
