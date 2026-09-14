@@ -5,9 +5,15 @@ CRONOS 점검(2026-09-09)에서 나온 항목들. 데스크톱 · 웹 · 안드�
 
 ## Active
 
-없음. 아래 "Waiting On" 둘과 "Someday" 하나만 남았다.
+없음. 아래 "Waiting On" 셋과 "Someday" 하나만 남았다.
 
 ## Waiting On
+
+- [ ] **GitHub 계정이 숨겨진 상태(flagged 로 보임) — 데스크톱 1.0.2 배포 막힘** - since 2026-09-14
+  - 태그 v1.0.2 를 밀자 release 워크플로가 시작되자마자 취소됐고, 그 뒤로 `github.com/pogooooo` 와 저장소가 로그인 없이는 404, REST 의 runs·releases 목록이 비어 있다. Actions 도 안 돈다
+  - 그래서 지금: 웹 1.0.2 는 배포됨 · 안드로이드 APK 는 만들어 Downloads 에 둠 · 데스크톱은 워크플로가 못 돌아 GitHub 릴리스가 없다. 기존 데스크톱 앱의 자동 업데이트(latest.json)도 404 라 계정이 풀릴 때까지 멈춘다
+  - 풀리면: `git tag -f v1.0.2 && git push -f origin v1.0.2` 로 워크플로 다시 → latest.json 의 windows 항목 확인 → `gh release upload v1.0.2 Downloads/CRONOS-1.0.2-arm64.apk`
+  - 로컬로 구운 `Downloads/CRONOS_1.0.2_x64-setup.exe` 는 새로 설치할 때만 쓴다 (서명 키가 GitHub 시크릿에만 있어 자동 업데이트 서명이 안 맞는다)
 
 - [ ] **Maple(단풍) 테마 — 그림 에셋** - since 2026-09-14
   - 발주서 `design/themes/maple/ASSETS.md` (48개, 프롬프트·검수 기준·우선순위). 그림은 다른 채팅의 이미지 모델로 뽑아 `design/themes/maple/raw/` 에 넣어 주시면 된다
