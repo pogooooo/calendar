@@ -405,6 +405,7 @@ const ko: Translations = {
         dayTodosTitle: (d: Date) => `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일 일정`,
     },
     home: {
+        quickDetail: '자세히 (시간·카테고리·반복)',
         project: '프로젝트',
         challenge: '챌린지',
         tasks: '할 일',

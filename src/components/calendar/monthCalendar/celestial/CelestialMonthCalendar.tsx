@@ -18,6 +18,8 @@ import MoreModal from "@/components/modal/moreModal/MoreModal";
 import TodoContextMenu from "@/components/calendar/celestial/contextMenu/TodoContextMenu";
 import DayCellDecor from "@/assets/celestial/DayCellDecor";
 import { useT } from "@/i18n/useT";
+import useIsMobile from "@/hooks/useIsMobile";
+import { isWidgetWindow } from "@/hooks/useAuthFetch";
 import useSwipe from "@/hooks/useSwipe";
 import useAnniversaryStore from "@/store/useAnniversaryStore";
 import { anniversariesOn } from "@/lib/anniversary";
@@ -40,7 +42,9 @@ interface WeekRowProps {
     setMoreModalDate: (date: Date | null) => void;
 }
 
+/** 데스크톱은 바 두 층까지, 폰은 마름모라 작으니 여덟까지 (그 뒤는 +N) */
 const MAX_VISIBLE_LEVELS = 2;
+const MAX_VISIBLE_LEVELS_MOBILE = 8;
 
 const WeekRow = ({
                      dates, todos, challengeTodos, categories, todayStr, currentMonth,
@@ -48,6 +52,9 @@ const WeekRow = ({
                      selectedDate, onCellClick, setMoreModalDate
                  }: WeekRowProps) => {
     const t = useT();
+    // 위젯 창은 폭이 좁아도 바를 그대로 두므로(styles 의 NOT_WIDGET) 층 수도 데스크톱 것을 쓴다
+    const isMobile = useIsMobile() && !isWidgetWindow();
+    const maxLevels = isMobile ? MAX_VISIBLE_LEVELS_MOBILE : MAX_VISIBLE_LEVELS;
 
     const weekTodos = React.useMemo(() => {
         return todos.filter((todo: CalendarTodoType) => {
@@ -85,7 +92,7 @@ const WeekRow = ({
                     return isBetween(date, todo.startAt, todo.endAt);
                 });
 
-                const hiddenCount = dayTodos.filter((t: CalendarTodoType) => todoLevels[t.id] >= MAX_VISIBLE_LEVELS).length;
+                const hiddenCount = dayTodos.filter((t: CalendarTodoType) => todoLevels[t.id] >= maxLevels).length;
 
                 const tier = dayTiers[idx];
                 const connectLeft = tier > 0 && idx > 0 && dayTiers[idx - 1] === tier;
@@ -136,7 +143,7 @@ const WeekRow = ({
 
 
                         <S.TodoBarList>
-                            {Array.from({ length: Math.min(maxLevel, MAX_VISIBLE_LEVELS) }).map((_, levelIndex) => {
+                            {Array.from({ length: Math.min(maxLevel, maxLevels) }).map((_, levelIndex) => {
                                 const todoAtThisLevel = dayTodos.find((t: CalendarTodoType) => todoLevels[t.id] === levelIndex);
 
                                 if (todoAtThisLevel && todoAtThisLevel.startAt && todoAtThisLevel.endAt) {

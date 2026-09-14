@@ -427,17 +427,19 @@ export const TodoBarList = styled.div`
     }
 
     /* 폰에서는 바 대신 마름모를 가로로 늘어놓는다.
-       위젯 창은 폭이 좁아도 마우스로 쓰는 데스크톱이라 바를 그대로 둔다. */
+       위젯 창은 폭이 좁아도 마우스로 쓰는 데스크톱이라 바를 그대로 둔다.
+       마름모는 네모를 45° 돌린 것이라 제 상자 밖으로 귀퉁이가 1~2px 나간다 —
+       overflow: hidden 이면 그 귀퉁이가 잘려 납작해 보였다. 상자에 여유를 주고 잘라내지 않는다. */
     ${MOBILE} {
         ${NOT_WIDGET} & {
             flex-direction: row;
             flex-wrap: wrap;
             align-content: flex-start;
             justify-content: center;
-            gap: 3px;
-            margin: 2px 0 0;
-            padding: 0 2px;
-            overflow: hidden;
+            gap: 4px 5px;
+            margin: 3px 0 0;
+            padding: 2px 3px 3px;
+            overflow: visible;
         }
     }
 `;
@@ -501,8 +503,8 @@ export const TodoBarItem = styled.div<{ $isStart: boolean; $isEnd: boolean; $col
 
     ${MOBILE} {
         ${NOT_WIDGET} & {
-            width: 6px;
-            height: 6px;
+            width: 7px;
+            height: 7px;
             min-width: 0;
             margin: 0;
             padding: 0;
@@ -510,7 +512,8 @@ export const TodoBarItem = styled.div<{ $isStart: boolean; $isEnd: boolean; $col
             border-radius: 0;
             transform: rotate(45deg);
             background-color: ${(props) => props.$isDone ? (props.$color || props.theme.colors.primary) : "transparent"};
-            overflow: hidden;
+            overflow: visible;
+            opacity: 1;
 
             & > * { display: none; }
         }

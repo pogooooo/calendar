@@ -247,6 +247,10 @@ export const QuickForm = styled.form`
         &:disabled { opacity: 0.3; cursor: default; }
         &:not(:disabled):hover { background-color: ${p => p.theme.colors.primary}17; }
         &:not(:disabled):active { background-color: ${p => p.theme.colors.primary}2E; }
+
+        /* "자세히" — 시간·카테고리·반복을 정하고 싶을 때. + 보다 조용하게 */
+        &.detail { color: ${p => p.theme.colors.textSecondary}; }
+        &.detail:hover { color: ${p => p.theme.colors.primary}; }
     }
 
     @media (max-width: 768px) {

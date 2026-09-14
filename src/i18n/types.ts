@@ -395,6 +395,8 @@ export interface Translations {
         dayTodosTitle: (d: Date) => string;
     };
     home: {
+        /** 홈 빠른 추가 옆 단추: 제목을 들고 할 일 창을 연다 */
+        quickDetail: string;
         project: string;
         challenge: string;
         tasks: string;

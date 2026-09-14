@@ -405,6 +405,7 @@ const en: Translations = {
         dayTodosTitle: (d: Date) => d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
     },
     home: {
+        quickDetail: 'Details (time, category, repeat)',
         project: 'Project',
         challenge: 'Challenge',
         tasks: 'Tasks',

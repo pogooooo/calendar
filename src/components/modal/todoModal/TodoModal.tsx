@@ -17,6 +17,8 @@ export interface TodoModalProps {
     todo?: TodoType | null;
     categories: CategoryType[];
     selectedDate?: Date;
+    /** 새로 만들 때 제목을 미리 채운다 (홈의 빠른 추가에서 "자세히" 로 넘어올 때) */
+    initialTitle?: string;
 }
 
 export interface TodoModalThemeProps extends TodoModalProps {
@@ -63,7 +65,7 @@ const getLocalDatetimeString = (date: Date) => {
 };
 
 export default function TodoModal(props: TodoModalProps) {
-    const { isOpen, onClose, todo, categories, selectedDate } = props;
+    const { isOpen, onClose, todo, categories, selectedDate, initialTitle } = props;
     const TodoModalView = usePickTheme({ celestial: CelestialTodoModal });
     const t = useT();
 
@@ -124,7 +126,7 @@ export default function TodoModal(props: TodoModalProps) {
                     setRepeatEndDate("");
                 }
             } else {
-                setTitle("");
+                setTitle(initialTitle ?? "");
                 setCategoryId(categories.length > 0 ? categories[0].id : "");
                 setMemo("");
                 setIsAllDay(false);
@@ -140,7 +142,7 @@ export default function TodoModal(props: TodoModalProps) {
                 setEndAt(getLocalDatetimeString(defaultEndDate));
             }
         }
-    }, [isOpen, todo, categories, selectedDate]);
+    }, [isOpen, todo, categories, selectedDate, initialTitle]);
 
     React.useEffect(() => {
         const closeDropdowns = () => {

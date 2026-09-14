@@ -11,8 +11,9 @@ import useCategoryStore from "@/store/useCategoryStore";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useT } from "@/i18n/useT";
 import { localDateKey, utcDayKey } from "@/lib/dateKey";
-import { Plus } from "lucide-react";
+import { Plus, SlidersHorizontal } from "lucide-react";
 import ChallengeModal, { type ChallengeData } from "@/components/modal/challengeModal/ChallengeModal";
+import TodoModal from "@/components/modal/todoModal/TodoModal";
 import { useDialog } from "@/components/dialog/DialogProvider";
 import * as S from "./CelestialHome.styles";
 
@@ -221,6 +222,10 @@ export default function CelestialHome() {
     const [quickPending, setQuickPending] = React.useState(false);
     const [quickError, setQuickError] = React.useState<string | null>(null);
     const quickCategory = categories[0];
+    // "자세히": 적던 제목을 들고 할 일 창(시간·카테고리·반복·메모)을 연다. 빠른 추가는 하루 종일로만 넣기 때문
+    const [detailOpen, setDetailOpen] = React.useState(false);
+    const openDetail = () => { setQuickError(null); setDetailOpen(true); };
+    const closeDetail = () => { setDetailOpen(false); setQuick(""); };
 
     const handleQuickAdd = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -357,6 +362,9 @@ export default function CelestialHome() {
                                     maxLength={120}
                                     aria-label={t.calendar.addTask}
                                 />
+                                <button type="button" className="detail" onClick={openDetail} aria-label={t.home.quickDetail} title={t.home.quickDetail}>
+                                    <SlidersHorizontal size={15} strokeWidth={2} />
+                                </button>
                                 <button type="submit" disabled={!quick.trim() || quickPending} aria-label={t.calendar.newTodo}>
                                     <Plus size={16} strokeWidth={2.5} />
                                 </button>
@@ -523,6 +531,13 @@ export default function CelestialHome() {
                     )}
                 </S.Pillar>
             </S.Card>
+
+            <TodoModal
+                isOpen={detailOpen}
+                onClose={closeDetail}
+                categories={categories}
+                initialTitle={quick}
+            />
 
             <ChallengeModal
                 isOpen={challengeOpen}
