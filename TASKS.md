@@ -5,7 +5,7 @@ CRONOS 점검(2026-09-09)에서 나온 항목들. 데스크톱 · 웹 · 안드�
 
 ## Active
 
-없음. 아래 "Waiting On" 둘과 "Someday" 하나만 남았다. (1.0.2 는 로컬에 준비만 해 두었고, 배포하라는 말씀이 있을 때 낸다)
+없음. 아래 "Waiting On" 둘과 "Someday" 하나만 남았다.
 
 ## Waiting On
 
@@ -26,13 +26,13 @@ CRONOS 점검(2026-09-09)에서 나온 항목들. 데스크톱 · 웹 · 안드�
 
 ## Done
 
-- [x] ~~**안드로이드 홈 위젯 11종 (Celestial)**~~ (2026-09-14, 미배포) - 시안(design/widgets/celestial-widgets.html)대로. 앱이 Canvas 로 그림 한 장을 그려 ImageView 에 얹는다(`CelestialPainter`, Orbit 글꼴 동봉). 종류: 오늘 할 일 · 지금/다음 · 챌린지 · 월 게이지 · 주간 띠 · 월간 · 기념일 D-day · 하루 진행 · 빠른 추가 · 오늘 메모 · 프로젝트. 놓을 때 설정 화면(투명도·벌, 길게 눌러 다시 열기), 줄·날짜 칸마다 `cronos://` 딥링크(MainActivity → pending-link.txt → JS). 스냅샷 v2(이 달 전체 일정·기념일·프로젝트·메모·테마 색). 에뮬레이터에서 11종 그리기·설정 화면·딥링크(기념일·그날 일간·빠른 추가)·주간 칸 누르기까지 확인
+- [x] ~~**안드로이드 홈 위젯 11종 (Celestial)**~~ (2026-09-14, 1.0.2) - 시안(design/widgets/celestial-widgets.html)대로. 앱이 Canvas 로 그림 한 장을 그려 ImageView 에 얹는다(`CelestialPainter`, Orbit 글꼴 동봉). 종류: 오늘 할 일 · 지금/다음 · 챌린지 · 월 게이지 · 주간 띠 · 월간 · 기념일 D-day · 하루 진행 · 빠른 추가 · 오늘 메모 · 프로젝트. 놓을 때 설정 화면(투명도·벌, 길게 눌러 다시 열기), 줄·날짜 칸마다 `cronos://` 딥링크(MainActivity → pending-link.txt → JS). 스냅샷 v2(이 달 전체 일정·기념일·프로젝트·메모·테마 색). 에뮬레이터에서 11종 그리기·설정 화면·딥링크(기념일·그날 일간·빠른 추가)·주간 칸 누르기까지 확인
   - 미리보기 그림(res/drawable-nodpi)은 디버그 빌드의 `PreviewRenderReceiver` 로 에뮬레이터에서 만들어 가져온다 (adb broadcast RENDER_PREVIEWS)
   - 폰 앱이 켤 때 요청 하나가 간혹 "Failed to fetch" 로 떨어지던 것(서버는 멀쩡) → GET 은 한 번 더 묻는다 (useAuthFetch)
   - Maple 테마 위젯은 화가(`MapleWidgetPainter`)만 더 두면 된다 — 에셋이 오면
-- [x] ~~**로그인 유지 선택**~~ (2026-09-14, 미배포) - 로그인 화면의 체크. 켜면 30일, 끄면 앱(브라우저)을 닫을 때 로그아웃 — 웹은 sessionStorage + 세션 쿠키, 데스크톱·안드로이드는 프로세스가 새로 켜졌는지(`launch_id`)로 판단해 서버 토큰까지 지운다. 서버 쪽은 로컬에서 curl 로 확인(세션 쿠키 / Max-Age 30일 / 갱신 때 모드 유지)
-- [x] ~~**안드로이드 위젯이 시각 경계에서 늦게 바뀌던 것**~~ (2026-09-14, 미배포) - 다음 일정의 시작·끝과 자정에 AlarmManager 로 한 번씩 다시 그린다. 에뮬레이터에서 2분 뒤 일정으로 확인: 경계 뒤 1분 남짓 안에 "지금" 으로 바뀜 (느슨한 알람이라 몇 초~1분 늦을 수 있다)
-- [x] ~~**패치 노트**~~ (2026-09-14, 미배포) - `src/lib/release-notes.json` 하나가 출처. 설정 > 정보 탭(지금 버전 + 업데이트 확인 + 판마다 달라진 점), 업데이트 알림(그 판의 노트), GitHub 릴리스 본문(CI 가 씀)이 다 여기서 읽는다
+- [x] ~~**로그인 유지 선택**~~ (2026-09-14, 1.0.2) - 로그인 화면의 체크. 켜면 30일, 끄면 앱(브라우저)을 닫을 때 로그아웃 — 웹은 sessionStorage + 세션 쿠키, 데스크톱·안드로이드는 프로세스가 새로 켜졌는지(`launch_id`)로 판단해 서버 토큰까지 지운다. 서버 쪽은 로컬에서 curl 로 확인(세션 쿠키 / Max-Age 30일 / 갱신 때 모드 유지)
+- [x] ~~**안드로이드 위젯이 시각 경계에서 늦게 바뀌던 것**~~ (2026-09-14, 1.0.2) - 다음 일정의 시작·끝과 자정에 AlarmManager 로 한 번씩 다시 그린다. 에뮬레이터에서 2분 뒤 일정으로 확인: 경계 뒤 1분 남짓 안에 "지금" 으로 바뀜 (느슨한 알람이라 몇 초~1분 늦을 수 있다)
+- [x] ~~**패치 노트**~~ (2026-09-14, 1.0.2) - `src/lib/release-notes.json` 하나가 출처. 설정 > 정보 탭(지금 버전 + 업데이트 확인 + 판마다 달라진 점), 업데이트 알림(그 판의 노트), GitHub 릴리스 본문(CI 가 씀)이 다 여기서 읽는다
 - [x] ~~**A-01 안드로이드 홈 위젯이 늘 빈 그림이던 문제**~~ (2026-09-14, 에뮬레이터로 확인) - 화면 밖 WebView 로 위젯 페이지를 찍으려 했는데, 그 WebView 는 Tauri 가 만든 게 아니라 `tauri.localhost` 를 못 연다. 앱(JS)이 재료를 `widget-snapshot.json` 에 쓰고(`src/lib/widgetSnapshot.ts`), Kotlin 이 RemoteViews 로 그린다. 파일이 바뀌면 FileObserver 가 곧바로 다시 그린다. 에뮬레이터(AVD `cronos34`, AEHD 가속)에 x86_64 디버그 APK 를 올려 세 위젯을 홈 화면에 놓고 확인했다: 앱에서 할 일을 더하면 위젯이 곧바로 따라온다, 위젯을 누르면 앱이 열린다
   - 처음 올렸을 때 "Can't load widget" 이었다. RemoteViews 는 맨 `<View>` 를 못 부풀린다 (제목 밑줄) → ImageView 로. 마름모 점은 `<rotate>` 를 ImageView 가 키우면서 귀퉁이가 잘려 팔각형이 됐다 → vector 경로로
   - 위젯 고르기 화면에서 셋 다 "CRONOS" 로만 보이던 것: receiver 에 `android:label`, info 에 `description`·`previewLayout`(견본 레이아웃) 을 넣었다. 지금·다음은 4×2 로
