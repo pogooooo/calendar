@@ -30,10 +30,26 @@ const MIN_TICKS = Array.from({ length: 12 }, (_, i) => i);
 const HOUR_LABELS = HOUR_TICKS.filter(i => i % 2 === 0);
 const MIN_LABELS = [0, 15, 30, 45];
 
+/** 바깥 고리(시)와 안쪽 고리(분)의 경계 — viewBox 단위. 안쪽 테두리 27, 바깥 46 의 사이 */
+const RING_SPLIT = 31;
+/** 손가락 한 바퀴에 흐르는 분. 바깥 고리는 멀리 갈 때, 안쪽 고리는 맞출 때 */
+const MINUTES_PER_TURN = { outer: 360, inner: 60 } as const;
+
+/**
+ * 시각 다이얼 — 시계 용두를 돌리듯 쓴다.
+ *
+ * 짚는다고 값이 튀지 않는다. 손가락을 둘레로 돌린 각도만큼 시각이 흐른다:
+ * 바깥 고리에서 한 바퀴 6시간(멀리 갈 때), 안쪽 고리에서 한 바퀴 1시간(맞출 때 — 5분이 30°).
+ *
+ * 왜 이렇게 — 예전에는 "짚은 각도 = 하루 중 시각" 이었다. 한 바퀴가 24시간이라 5분이 1.25°,
+ * 다이얼 가장자리에서 2px 였다. 데스크톱은 휠로 5분씩 맞출 수 있었지만 폰에는 휠이 없어
+ * 짚는 순간 ±50분이 흔들렸다. 그림(로마 숫자 고리·두 바늘)은 그대로 두고 손맛만 바꿨다.
+ * 다이얼 밑의 단추(시 ±1 · 분 ±5)는 마지막 한 칸을 맞추는 용도다. 휠(5분)은 그대로.
+ */
 export default function CelestialTimeDial({ hour, minute, onChange, step = 5 }: Props) {
     const f = useT().form;
     const svgRef = React.useRef<SVGSVGElement>(null);
-    const dragging = React.useRef(false);
+    const [grab, setGrab] = React.useState<"outer" | "inner" | null>(null);
 
     const total = hour * 60 + minute;
     const targetHourAngle = (total / 1440) * 360;
@@ -45,8 +61,15 @@ export default function CelestialTimeDial({ hour, minute, onChange, step = 5 }: 
         m: continueAngle(angles.current.m, targetMinAngle),
     };
 
-    const wheelRef = React.useRef({ total, step, onChange });
-    wheelRef.current = { total, step, onChange };
+    // 이벤트 핸들러는 한 번만 붙이고, 최신 값은 ref 로 본다
+    const live = React.useRef({ total, step, onChange });
+    live.current = { total, step, onChange };
+
+    const emitTotal = React.useCallback((next: number) => {
+        const t = ((next % 1440) + 1440) % 1440;
+        live.current.total = t;
+        live.current.onChange(Math.floor(t / 60), t % 60);
+    }, []);
 
     React.useEffect(() => {
         const el = svgRef.current;
@@ -54,25 +77,65 @@ export default function CelestialTimeDial({ hour, minute, onChange, step = 5 }: 
 
         const onWheel = (e: WheelEvent) => {
             e.preventDefault();
-            const { total: cur, step: s, onChange: cb } = wheelRef.current;
-            const next = ((cur + (e.deltaY > 0 ? s : -s)) % 1440 + 1440) % 1440;
-            wheelRef.current.total = next;
-            cb(Math.floor(next / 60), next % 60);
+            const { total: cur, step: s } = live.current;
+            emitTotal(cur + (e.deltaY > 0 ? s : -s));
         };
 
         el.addEventListener("wheel", onWheel, { passive: false });
         return () => el.removeEventListener("wheel", onWheel);
-    }, []);
+    }, [emitTotal]);
 
-    const apply = React.useCallback((clientX: number, clientY: number) => {
+    /** 손가락 자리 → 중심 기준 각도(0~360)와 거리(viewBox 단위) */
+    const locate = React.useCallback((clientX: number, clientY: number) => {
         const rect = svgRef.current?.getBoundingClientRect();
-        if (!rect) return;
+        if (!rect) return null;
         const dx = clientX - (rect.left + rect.width / 2);
         const dy = clientY - (rect.top + rect.height / 2);
-        const ang = ((Math.atan2(dx, -dy) * 180) / Math.PI + 360) % 360;
-        const mins = (Math.round((ang / 360) * 1440 / step) * step) % 1440;
-        onChange(Math.floor(mins / 60), mins % 60);
-    }, [onChange, step]);
+        return {
+            ang: ((Math.atan2(dx, -dy) * 180) / Math.PI + 360) % 360,
+            dist: Math.hypot(dx, dy) / (rect.width / 100),
+        };
+    }, []);
+
+    // 돌리는 동안의 상태: 마지막 각도, 아직 한 칸(step)이 안 된 자투리 분, 잡은 고리
+    const drag = React.useRef<{ last: number; acc: number; ring: "outer" | "inner" } | null>(null);
+
+    const onPointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
+        e.preventDefault();
+        const at = locate(e.clientX, e.clientY);
+        if (!at) return;
+        e.currentTarget.setPointerCapture(e.pointerId);
+        const ring = at.dist > RING_SPLIT ? "outer" : "inner";
+        drag.current = { last: at.ang, acc: 0, ring };
+        setGrab(ring);
+    };
+
+    const onPointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
+        const d = drag.current;
+        if (!d) return;
+        const at = locate(e.clientX, e.clientY);
+        if (!at) return;
+        // 0°/360° 경계를 넘어도 짧은 쪽으로 잰다
+        let delta = at.ang - d.last;
+        if (delta > 180) delta -= 360;
+        if (delta < -180) delta += 360;
+        d.last = at.ang;
+
+        d.acc += (delta * MINUTES_PER_TURN[d.ring]) / 360;
+        const { step: s } = live.current;
+        const steps = Math.trunc(d.acc / s);
+        if (steps !== 0) {
+            d.acc -= steps * s;
+            emitTotal(live.current.total + steps * s);
+        }
+    };
+
+    const endDrag = () => {
+        drag.current = null;
+        setGrab(null);
+    };
+
+    const bump = (minutes: number) => emitTotal(live.current.total + minutes);
 
     return (
         <S.Wrap>
@@ -82,15 +145,12 @@ export default function CelestialTimeDial({ hour, minute, onChange, step = 5 }: 
                 role="slider"
                 aria-label={f.timeAria}
                 aria-valuetext={f.timeValue(pad(hour), pad(minute))}
-                onPointerDown={(e) => {
-                    e.preventDefault();
-                    dragging.current = true;
-                    e.currentTarget.setPointerCapture(e.pointerId);
-                    apply(e.clientX, e.clientY);
-                }}
-                onPointerMove={(e) => { if (dragging.current) apply(e.clientX, e.clientY); }}
-                onPointerUp={() => { dragging.current = false; }}
-                onPointerCancel={() => { dragging.current = false; }}
+                data-grab={grab ?? undefined}
+                className={grab ? "dragging" : undefined}
+                onPointerDown={onPointerDown}
+                onPointerMove={onPointerMove}
+                onPointerUp={endDrag}
+                onPointerCancel={endDrag}
             >
                 <circle cx="50" cy="50" r="46" className="rim" />
                 {HOUR_TICKS.map(i => {
@@ -135,6 +195,20 @@ export default function CelestialTimeDial({ hour, minute, onChange, step = 5 }: 
 
                 <rect x="47.4" y="47.4" width="5.2" height="5.2" transform="rotate(45 50 50)" className="hub" />
             </S.Dial>
+
+            {/* 마지막 한 칸을 맞추는 단추. 시는 한 시간, 분은 한 칸(step) */}
+            <S.Steps>
+                <S.StepGroup role="group" aria-label={f.hourStep}>
+                    <button type="button" onClick={() => bump(-60)} aria-label={f.stepDown(f.hourStep)}>−</button>
+                    <span>{f.hourStep}</span>
+                    <button type="button" onClick={() => bump(60)} aria-label={f.stepUp(f.hourStep)}>+</button>
+                </S.StepGroup>
+                <S.StepGroup role="group" aria-label={f.minuteStep}>
+                    <button type="button" onClick={() => bump(-step)} aria-label={f.stepDown(f.minuteStep)}>−</button>
+                    <span>{f.minuteStep}</span>
+                    <button type="button" onClick={() => bump(step)} aria-label={f.stepUp(f.minuteStep)}>+</button>
+                </S.StepGroup>
+            </S.Steps>
         </S.Wrap>
     );
 }

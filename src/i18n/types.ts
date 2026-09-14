@@ -455,6 +455,11 @@ export interface Translations {
         weekdays: string[];
         timeAria: string;
         timeValue: (h: string, m: string) => string;
+        /** 다이얼 밑 단추: "시" "분" 과 그 단추의 읽어 주는 이름 */
+        hourStep: string;
+        minuteStep: string;
+        stepUp: (unit: string) => string;
+        stepDown: (unit: string) => string;
         nameRequiredTitle: string;
         nameRequiredMsg: string;
         timeCheckTitle: string;
