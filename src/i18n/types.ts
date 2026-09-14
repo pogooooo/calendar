@@ -29,6 +29,35 @@ export interface Translations {
         system: string;
         language: string;
     };
+    /** 안드로이드 홈 위젯이 쓰는 글. {n} 같은 자리는 Kotlin 이 채운다. dateFmt·monthFmt 는 SimpleDateFormat 패턴. */
+    homeWidget: {
+        left: string;
+        done: string;
+        events: string;
+        todayLeft: string;
+        upcoming: string;
+        thisWeek: string;
+        anniversary: string;
+        memo: string;
+        noMemo: string;
+        project: string;
+        inProgress: string;
+        noProjects: string;
+        noAnniversaries: string;
+        quickAdd: string;
+        dayProgress: string;
+        elapsedMin: string;
+        leftMin: string;
+        inMin: string;
+        inHourMin: string;
+        tomorrow: string;
+        dday: string;
+        dToday: string;
+        dPast: string;
+        dateFmt: string;
+        monthFmt: string;
+        gaugeSummary: string;
+    };
     widget: {
         open: string;
         close: string;

@@ -1,26 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- 홈 위젯 고르기 화면의 이름·설명과 위젯 설정 화면의 글. 위젯 안의 내용은 앱 언어(스냅샷 labels)를 따른다. -->
 <resources>
     <string name="widget_today_label">오늘 할 일</string>
-    <string name="widget_today_desc">오늘 해야 할 일을 한눈에 봅니다.</string>
+    <string name="widget_today_desc">오늘 해야 할 일을 한눈에.</string>
     <string name="widget_nownext_label">지금 · 다음</string>
     <string name="widget_nownext_desc">지금 하는 일과 바로 다음 일정.</string>
     <string name="widget_challenge_label">챌린지</string>
-    <string name="widget_challenge_desc">오늘의 챌린지 진행 상황.</string>
+    <string name="widget_challenge_desc">오늘의 챌린지 진행.</string>
+    <string name="widget_monthgauge_label">월 게이지</string>
+    <string name="widget_monthgauge_desc">한 달을 눈금으로. 오늘이 어디쯤인지.</string>
+    <string name="widget_week_label">주간 띠</string>
+    <string name="widget_week_desc">이번 주 7일과 날마다의 일정.</string>
+    <string name="widget_month_label">월간 달력</string>
+    <string name="widget_month_desc">한 달을 한눈에. 일정이 있는 날에 표시.</string>
+    <string name="widget_anniversary_label">기념일 D-day</string>
+    <string name="widget_anniversary_desc">다음 기념일까지 며칠.</string>
+    <string name="widget_dayprogress_label">하루 진행</string>
+    <string name="widget_dayprogress_desc">하루가 얼마나 지났고 얼마나 끝냈는지.</string>
+    <string name="widget_quickadd_label">빠른 추가</string>
+    <string name="widget_quickadd_desc">한 번 눌러 할 일 추가.</string>
+    <string name="widget_memo_label">오늘 메모</string>
+    <string name="widget_memo_desc">오늘 적어 둔 말을 홈 화면에.</string>
+    <string name="widget_project_label">프로젝트</string>
+    <string name="widget_project_desc">프로젝트의 진행과 마감.</string>
 
-    <string name="widget_preview_today_title">오늘 할 일</string>
-    <string name="widget_preview_row1">아침 달리기</string>
-    <string name="widget_preview_row1_side">07:00–08:00</string>
-    <string name="widget_preview_row2">팀 회의</string>
-    <string name="widget_preview_row2_side">10:00–11:00</string>
-    <string name="widget_preview_row3">책 읽기</string>
-    <string name="widget_preview_row3_side">종일</string>
-    <string name="widget_preview_nownext_title">지금 · 다음</string>
-    <string name="widget_preview_now">지금 · 팀 회의</string>
-    <string name="widget_preview_next">다음 · 민이와 점심</string>
-    <string name="widget_preview_next_side">12:30–13:30</string>
-    <string name="widget_preview_challenge_title">챌린지</string>
-    <string name="widget_preview_ch1">일찍 일어나기</string>
-    <string name="widget_preview_ch1_side">✦ 12/30</string>
-    <string name="widget_preview_ch2">스트레칭 10분</string>
-    <string name="widget_preview_ch2_side">4/21</string>
+    <string name="widget_config_title">위젯 설정</string>
+    <string name="widget_config_alpha">배경 불투명도</string>
+    <string name="widget_config_mode">벌</string>
+    <string name="widget_config_mode_app">앱 테마 따라감</string>
+    <string name="widget_config_mode_light">밝게</string>
+    <string name="widget_config_mode_dark">어둡게</string>
+    <string name="widget_config_ok">확인</string>
+    <string name="widget_config_cancel">취소</string>
 </resources>

@@ -1,7 +1,9 @@
 package com.cronos.todoapp
 
+import android.content.Intent
 import android.os.Bundle
 import android.os.FileObserver
+import android.util.Log
 import androidx.activity.enableEdgeToEdge
 import com.cronos.todoapp.widget.CronosWidgetProvider
 import com.cronos.todoapp.widget.WidgetRefresh
@@ -14,6 +16,32 @@ class MainActivity : TauriActivity() {
     enableEdgeToEdge()
     super.onCreate(savedInstanceState)
     watchWidgetSnapshot()
+    stashDeepLink(intent)
+  }
+
+  /** 켜져 있는 앱을 위젯이 다시 부르면(singleTask) 여기로 온다 */
+  override fun onNewIntent(intent: Intent) {
+    super.onNewIntent(intent)
+    setIntent(intent)
+    stashDeepLink(intent)
+  }
+
+  /**
+   * 위젯이 보낸 `cronos://…` 를 파일에 적어 둔다. JS(AndroidWidgetSync)가 켜질 때·다시 보일 때
+   * take_pending_link 로 가져가 화면을 옮긴다. Kotlin 에서 웹뷰의 JS 를 바로 부를 길이 없어 파일로 건넨다.
+   */
+  private fun stashDeepLink(intent: Intent?) {
+    val uri = intent?.data
+    Log.i("CronosLink", "intent action=${intent?.action} data=$uri")
+    if (uri == null || uri.scheme != "cronos") return
+    try {
+      val dir = File(applicationInfo.dataDir)
+      val tmp = File(dir, "pending-link.txt.tmp")
+      tmp.writeText(uri.toString())
+      tmp.renameTo(File(dir, "pending-link.txt"))
+    } catch (e: Throwable) { Log.w("CronosLink", "링크를 못 남겼다", e) }
+    // 한 번 쓴 링크가 다음 켤 때 또 잡히지 않게
+    intent.data = null
   }
 
   /**

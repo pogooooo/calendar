@@ -41,18 +41,31 @@ export default function CalendarPage() {
     }, []);
 
     /**
-     * 홈의 "이번 주" 줄에서 넘어올 때 ?date=YYYY-MM-DD 를 달고 온다.
+     * 홈의 "이번 주" 줄이나 안드로이드 홈 위젯에서 넘어올 때 ?date=YYYY-MM-DD 를 달고 온다.
+     * ?add=1 이면 할 일 추가 창을 열어 둔다 (위젯의 "빠른 추가").
      * useSearchParams 는 정적 내보내기에서 Suspense 를 요구하므로 여기서는 직접 읽는다.
+     * 이미 이 화면에 있을 때 위젯이 또 부르면 mount 가 다시 안 되므로 cronos-link 이벤트도 듣는다.
      */
     React.useEffect(() => {
         if (typeof window === "undefined") return;
-        const raw = new URLSearchParams(window.location.search).get("date");
-        const m = raw?.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-        if (!m) return;
-        const picked = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
-        if (Number.isNaN(picked.getTime())) return;
-        setSelectedDate(picked);
-        setMobileView("week");
+        const readQuery = (e?: Event) => {
+            const detail = (e as CustomEvent<string> | undefined)?.detail;
+            const search = typeof detail === "string" ? (detail.split("?")[1] ?? "") : window.location.search;
+            const params = new URLSearchParams(search);
+            const raw = params.get("date");
+            const m = raw?.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            if (m) {
+                const picked = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+                if (!Number.isNaN(picked.getTime())) {
+                    setSelectedDate(picked);
+                    setMobileView("week");
+                }
+            }
+            if (params.get("add") === "1") setAddOpen(true);
+        };
+        readQuery();
+        window.addEventListener("cronos-link", readQuery);
+        return () => window.removeEventListener("cronos-link", readQuery);
     }, []);
 
     const toggleDay = React.useCallback(() => {

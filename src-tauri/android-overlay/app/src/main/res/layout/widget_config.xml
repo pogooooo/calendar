@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 위젯 설정 화면 (WidgetConfigActivity). 앱의 밤 팔레트로 그린다 -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#111111"
+    android:fillViewport="true">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/widget_config_title"
+            android:textColor="#D4AF37"
+            android:textSize="13sp"
+            android:letterSpacing="0.2"
+            android:paddingBottom="16dp" />
+
+        <ImageView
+            android:id="@+id/cfg_preview"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:adjustViewBounds="true"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="20dp"
+            android:contentDescription="@string/widget_config_title" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/widget_config_alpha"
+            android:textColor="#ECE6D6"
+            android:textSize="14sp" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+            <SeekBar
+                android:id="@+id/cfg_alpha"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:progressTint="#D4AF37"
+                android:thumbTint="#D4AF37" />
+            <TextView
+                android:id="@+id/cfg_alpha_value"
+                android:layout_width="48dp"
+                android:layout_height="wrap_content"
+                android:gravity="end"
+                android:textColor="#9B947F"
+                android:textSize="13sp" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/widget_config_mode"
+            android:textColor="#ECE6D6"
+            android:textSize="14sp" />
+        <RadioGroup
+            android:id="@+id/cfg_mode"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+            <RadioButton android:id="@+id/cfg_mode_app" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/widget_config_mode_app" android:textColor="#ECE6D6" android:buttonTint="#D4AF37" />
+            <RadioButton android:id="@+id/cfg_mode_light" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/widget_config_mode_light" android:textColor="#ECE6D6" android:buttonTint="#D4AF37" />
+            <RadioButton android:id="@+id/cfg_mode_dark" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/widget_config_mode_dark" android:textColor="#ECE6D6" android:buttonTint="#D4AF37" />
+        </RadioGroup>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:orientation="horizontal"
+            android:gravity="end">
+            <TextView
+                android:id="@+id/cfg_cancel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="12dp"
+                android:text="@string/widget_config_cancel"
+                android:textColor="#9B947F"
+                android:textSize="14sp"
+                android:clickable="true"
+                android:focusable="true" />
+            <TextView
+                android:id="@+id/cfg_ok"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:padding="12dp"
+                android:background="@drawable/widget_config_button"
+                android:text="@string/widget_config_ok"
+                android:textColor="#ECE6D6"
+                android:textSize="14sp"
+                android:clickable="true"
+                android:focusable="true" />
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

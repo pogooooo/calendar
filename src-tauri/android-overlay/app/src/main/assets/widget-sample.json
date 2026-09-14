@@ -1,0 +1,243 @@
+{
+ "version": 2,
+ "generatedAt": "2026-09-14T03:23:31.347Z",
+ "date": "2026-09-14",
+ "locale": "ko",
+ "theme": {
+  "family": "celestial",
+  "mode": "light",
+  "colors": {
+   "background": "#FFFFFF",
+   "surface": "#F9F9F9",
+   "primary": "#D4AF37",
+   "accent": "#FAE7B5",
+   "text": "#2E2E2E",
+   "textSecondary": "#7A7A7A",
+   "weekend": "#C4696E"
+  }
+ },
+ "todos": [
+  {
+   "id": "a",
+   "title": "아침 달리기",
+   "startAt": "2026-09-13T22:00:00.000Z",
+   "endAt": "2026-09-13T23:00:00.000Z",
+   "allDay": false,
+   "done": true,
+   "color": "#7FB2E5"
+  },
+  {
+   "id": "b",
+   "title": "팀 회의 — 분기 계획",
+   "startAt": "2026-09-14T01:00:00.000Z",
+   "endAt": "2026-09-14T02:00:00.000Z",
+   "allDay": false,
+   "done": false,
+   "color": "#7FB2E5"
+  },
+  {
+   "id": "c",
+   "title": "민이와 점심",
+   "startAt": "2026-09-14T03:30:00.000Z",
+   "endAt": "2026-09-14T04:30:00.000Z",
+   "allDay": false,
+   "done": false,
+   "color": "#E58A7F"
+  },
+  {
+   "id": "d",
+   "title": "책 30쪽",
+   "startAt": "2026-09-13T15:00:00.000Z",
+   "endAt": "2026-09-14T14:59:00.000Z",
+   "allDay": true,
+   "done": false,
+   "color": "#9FD48A"
+  },
+  {
+   "id": "e",
+   "title": "영양제",
+   "startAt": "2026-09-13T15:00:00.000Z",
+   "endAt": "2026-09-14T14:59:00.000Z",
+   "allDay": true,
+   "done": true,
+   "color": "#D4AF37"
+  },
+  {
+   "id": "f",
+   "title": "치과",
+   "startAt": "2026-09-15T05:00:00.000Z",
+   "endAt": "2026-09-15T06:00:00.000Z",
+   "allDay": false,
+   "done": false,
+   "color": "#7FB2E5"
+  },
+  {
+   "id": "g",
+   "title": "요가",
+   "startAt": "2026-09-16T10:00:00.000Z",
+   "endAt": "2026-09-16T11:00:00.000Z",
+   "allDay": false,
+   "done": false,
+   "color": "#9FD48A"
+  },
+  {
+   "id": "h",
+   "title": "발표 준비",
+   "startAt": "2026-09-17T00:00:00.000Z",
+   "endAt": "2026-09-17T03:00:00.000Z",
+   "allDay": false,
+   "done": false,
+   "color": "#D4AF37"
+  },
+  {
+   "id": "i",
+   "title": "친구 생일",
+   "startAt": "2026-09-18T15:00:00.000Z",
+   "endAt": "2026-09-19T14:59:00.000Z",
+   "allDay": true,
+   "done": false,
+   "color": "#E58A7F"
+  },
+  {
+   "id": "j",
+   "title": "장보기",
+   "startAt": "2026-09-11T08:00:00.000Z",
+   "endAt": "2026-09-11T09:00:00.000Z",
+   "allDay": false,
+   "done": true,
+   "color": "#9FD48A"
+  },
+  {
+   "id": "k",
+   "title": "독서 모임",
+   "startAt": "2026-09-08T11:00:00.000Z",
+   "endAt": "2026-09-08T12:30:00.000Z",
+   "allDay": false,
+   "done": true,
+   "color": "#7FB2E5"
+  },
+  {
+   "id": "l",
+   "title": "은행",
+   "startAt": "2026-09-22T02:00:00.000Z",
+   "endAt": "2026-09-22T02:30:00.000Z",
+   "allDay": false,
+   "done": false,
+   "color": "#D4AF37"
+  }
+ ],
+ "challenges": [
+  {
+   "id": "c1",
+   "title": "일찍 일어나기",
+   "count": 12,
+   "target": 30,
+   "doneToday": true
+  },
+  {
+   "id": "c2",
+   "title": "스트레칭 10분",
+   "count": 4,
+   "target": 21,
+   "doneToday": false
+  },
+  {
+   "id": "c3",
+   "title": "물 2L 마시기",
+   "count": 40,
+   "target": null,
+   "doneToday": false
+  },
+  {
+   "id": "c4",
+   "title": "영어 단어 20개",
+   "count": 27,
+   "target": 30,
+   "doneToday": true
+  }
+ ],
+ "anniversaries": [
+  {
+   "id": "n1",
+   "title": "결혼기념일",
+   "icon": "ring",
+   "month": 9,
+   "day": 26
+  },
+  {
+   "id": "n2",
+   "title": "어머니 생신",
+   "icon": "cake",
+   "month": 10,
+   "day": 14
+  },
+  {
+   "id": "n3",
+   "title": "입사",
+   "icon": "star",
+   "month": 8,
+   "day": 4
+  }
+ ],
+ "projects": [
+  {
+   "id": "p1",
+   "title": "CRONOS 1.1 배포",
+   "done": 13,
+   "total": 18,
+   "endAt": "2026-09-19"
+  },
+  {
+   "id": "p2",
+   "title": "가을 테마 (Maple)",
+   "done": 3,
+   "total": 20,
+   "endAt": "2026-10-05"
+  },
+  {
+   "id": "p3",
+   "title": "포트폴리오 정리",
+   "done": 2,
+   "total": 5,
+   "endAt": null
+  }
+ ],
+ "memo": "회의 전에 지난 분기 숫자 다시 보기. 점심은 12시 반, 민이가 예약함. 저녁에 달리기 대신 스트레칭.",
+ "labels": {
+  "today": "오늘 할 일",
+  "noTodayTodos": "오늘 할 일이 없습니다.",
+  "now": "지금",
+  "next": "다음",
+  "nothingNow": "진행 중인 일정이 없습니다",
+  "nothingNext": "예정된 일정이 없습니다",
+  "challenge": "챌린지",
+  "noChallenges": "진행 중인 챌린지가 없습니다.",
+  "allDay": "하루 종일",
+  "left": "남은",
+  "done": "끝낸",
+  "events": "일정",
+  "todayLeft": "오늘 남은",
+  "upcoming": "다가오는",
+  "thisWeek": "이번 주",
+  "anniversary": "기념일",
+  "memo": "오늘 메모",
+  "noMemo": "오늘 적어 둘 말이 없습니다. 눌러서 적기.",
+  "project": "프로젝트",
+  "inProgress": "진행 중",
+  "noProjects": "진행 중인 프로젝트가 없습니다",
+  "noAnniversaries": "기념일이 없습니다",
+  "quickAdd": "할 일 추가…",
+  "dayProgress": "오늘",
+  "elapsedMin": "{n}분 지남",
+  "leftMin": "{n}분 남음",
+  "inMin": "{n}분 뒤",
+  "inHourMin": "{h}시간 {m}분 뒤",
+  "tomorrow": "내일",
+  "dday": "D-{n}",
+  "dToday": "D-DAY",
+  "dPast": "+{n}",
+  "dateFmt": "M월 d일 · E",
+  "monthFmt": "M월",
+  "gaugeSummary": "{month} · 남은 {left} · 끝낸 {done}"
+ }
+}

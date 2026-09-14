@@ -1,15 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- nownext 위젯. 이름(label)은 매니페스트의 receiver 에 있다 (scripts/android-overlay.mjs). -->
+<!-- nownext 위젯. 이름(label)은 매니페스트의 receiver 에 있다 (scripts/android-overlay.mjs).
+     configure: 놓을 때 설정 화면(투명도·벌). reconfigurable: 안드로이드 12+ 에서 길게 눌러 다시 연다. -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:minWidth="250dp"
     android:minHeight="110dp"
     android:minResizeWidth="110dp"
-    android:minResizeHeight="70dp"
+    android:minResizeHeight="40dp"
     android:targetCellWidth="4"
     android:targetCellHeight="2"
     android:updatePeriodMillis="1800000"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen"
-    android:initialLayout="@layout/widget_cronos"
-    android:previewLayout="@layout/widget_preview_nownext"
+    android:widgetFeatures="reconfigurable"
+    android:configure="com.cronos.todoapp.widget.WidgetConfigActivity"
+    android:initialLayout="@layout/widget_canvas"
+    android:previewImage="@drawable/widget_preview_nownext"
     android:description="@string/widget_nownext_desc" />

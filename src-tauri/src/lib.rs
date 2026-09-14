@@ -832,6 +832,18 @@ fn save_widget_snapshot(app: tauri::AppHandle, snapshot: String) -> bool {
     std::fs::rename(&tmp, &path).is_ok()
 }
 
+/// 안드로이드 홈 위젯이 앱을 열며 남긴 `cronos://…` 링크를 가져오고 지운다.
+/// MainActivity(Kotlin)가 pending-link.txt 에 적고, JS(AndroidWidgetSync)가 켜질 때·다시 보일 때 가져간다.
+/// Kotlin → JS 로 바로 부를 길이 없어 파일로 건넨다. 데스크톱에서는 늘 None.
+#[tauri::command]
+fn take_pending_link(app: tauri::AppHandle) -> Option<String> {
+    let path = app.path().app_config_dir().ok()?.join("pending-link.txt");
+    let link = std::fs::read_to_string(&path).ok()?;
+    let _ = std::fs::remove_file(&path);
+    let link = link.trim().to_string();
+    if link.is_empty() { None } else { Some(link) }
+}
+
 /// 이 프로세스가 켜진 순간에 정해지는 값. 모든 창(메인·위젯)이 같은 값을 받는다.
 ///
 /// "로그인 유지" 를 끈 사람은 앱을 다시 켤 때 로그아웃돼 있어야 한다. 그런데 창이 새로 뜨는
@@ -891,6 +903,7 @@ pub fn run() {
                     save_widget_state,
                     save_widget_snapshot,
                     launch_id,
+                    take_pending_link,
                 ]
             }
             #[cfg(not(desktop))]
@@ -902,6 +915,7 @@ pub fn run() {
                     save_widget_state,
                     save_widget_snapshot,
                     launch_id,
+                    take_pending_link,
                 ]
             }
         })

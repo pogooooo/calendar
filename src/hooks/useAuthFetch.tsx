@@ -138,7 +138,22 @@ export const useAuthFetch = () => {
             Authorization: accessToken ? `Bearer ${accessToken}` : "",
         };
 
-        let response = await fetch(target, { ...options, headers });
+        /**
+         * 폰 앱은 켤 때 요청 여덟 개가 한꺼번에 나가는데, 안드로이드 WebView 에서 그중 하나가 간혹
+         * "Failed to fetch" 로 떨어졌다 (서버는 멀쩡했다). 읽기(GET)는 한 번 더 물어도 해가 없으니 한 번 더.
+         */
+        const method = (options.method ?? "GET").toUpperCase();
+        const send = async (h: HeadersInit) => {
+            try {
+                return await fetch(target, { ...options, headers: h });
+            } catch (err) {
+                if (method !== "GET") throw err;
+                await new Promise(r => setTimeout(r, 800));
+                return fetch(target, { ...options, headers: h });
+            }
+        };
+
+        let response = await send(headers);
 
         if (response.status === 401) {
             const result = await refreshSession();
@@ -149,7 +164,7 @@ export const useAuthFetch = () => {
                     ...options.headers,
                     Authorization: `Bearer ${result.token}`,
                 };
-                response = await fetch(target, { ...options, headers: newHeaders });
+                response = await send(newHeaders);
             } else if (result.reason === "invalid") {
                 // 서버가 실제로 거부한 경우에만 세션을 버린다.
                 // 서버 revoke 는 하지 않는다 — 다른 창의 세션까지 죽이기 때문.
@@ -167,7 +182,6 @@ export const useAuthFetch = () => {
          * 스토어마다 일일이 심지 않고 여기 한 곳에서 하는 이유: 모든 인증 요청이
          * 이 문을 지나므로 새 기능을 넣어도 알림을 빠뜨릴 일이 없다.
          */
-        const method = (options.method ?? "GET").toUpperCase();
         if (response.ok && method !== "GET" && method !== "HEAD") {
             const kind = kindFromUrl(url);
             if (kind) notifyDataChange(kind);

@@ -6,14 +6,16 @@
       "ko": [
         "설정에 '정보' 탭이 생겼습니다. 지금 버전, 업데이트 확인, 그리고 이 패치 노트를 볼 수 있습니다.",
         "업데이트 알림에 그 판에서 달라진 점이 함께 나옵니다.",
-        "안드로이드 홈 위젯을 다시 만들었습니다. 오늘 할 일 · 지금/다음 · 챌린지 세 가지가 앱 자료를 그대로 보여주고, 앱에서 바꾸면 곧바로 따라옵니다.",
+        "로그인 화면에 \"로그인 유지\" 가 생겼습니다. 끄면 앱(브라우저)을 닫을 때 로그아웃됩니다.",
+        "안드로이드 홈 위젯이 11종이 됐습니다 — 오늘 할 일 · 지금/다음 · 챌린지 · 월 게이지 · 주간 · 월간 · 기념일 D-day · 하루 진행 · 빠른 추가 · 오늘 메모 · 프로젝트. 앱과 같은 글꼴과 모양으로 그리고, 위젯마다 배경 투명도와 밝기를 정할 수 있습니다. 누르면 앱의 그 자리로 갑니다.",
         "폰에서 주간과 일간을 합쳤습니다. 위에 한 주, 아래 그날 일정입니다.",
         "며칠짜리 프로젝트 태스크가 일간 시간대를 막대로 채우던 것을 고쳤습니다."
       ],
       "en": [
         "Settings has a new 'About' tab: current version, an update check, and these release notes.",
         "The update notice now lists what changed in that version.",
-        "Android home-screen widgets were rebuilt. Today, Now/Next and Challenges show the app's own data and follow changes right away.",
+        "The sign-in screen has a \"Keep me signed in\" option. Turn it off to be signed out when you close the app or browser.",
+        "Android home-screen widgets now come in 11 kinds — Today, Now/Next, Challenges, Month gauge, Week, Month, Anniversary D-day, Day progress, Quick add, Today’s memo, Projects. Drawn in the app’s own typeface and look, each with its own background opacity and light/dark setting; tapping opens the matching screen.",
         "On phones, week and day views are merged: the week on top, that day's schedule below.",
         "Multi-day project tasks no longer fill every hour of the day timeline."
       ]

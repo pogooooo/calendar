@@ -9,6 +9,8 @@ export type { DailyTaskType };
 interface DailyState {
     tasks: DailyTaskType[];
     memo: string;
+    /** memo 가 어느 날짜(YYYY-MM-DD) 것인지. 홈 위젯은 오늘 것일 때만 쓴다 */
+    memoDate: string;
     isLoading: boolean;
     error: string | null;
     memoError: string | null;
@@ -23,6 +25,7 @@ interface DailyState {
 const useDailyStore = create<DailyState>((set, get) => ({
     tasks: [],
     memo: "",
+    memoDate: "",
     isLoading: false,
     error: null,
     memoError: null,
@@ -34,16 +37,23 @@ const useDailyStore = create<DailyState>((set, get) => ({
         set({ isLoading: true, error: null });
         try {
             const dateStr = localDateKey(date);
-            const [taskRes, memoRes] = await Promise.all([
+            // 켤 때는 요청 여덟 개가 한꺼번에 나가 이 둘 중 하나가 간혹 떨어진다 (폰 앱에서 실제로 봤다).
+            // 한 번은 다시 묻는다 — 안 그러면 오늘 메모가 홈 위젯에 안 실린 채로 남는다.
+            const load = () => Promise.all([
                 authFetch(`/api/dailyTask?date=${dateStr}`),
                 authFetch(`/api/dailyMemo?date=${dateStr}`)
             ]);
+            let [taskRes, memoRes] = await load().catch(() => [null, null] as const);
+            if (!taskRes?.ok || !memoRes?.ok) {
+                await new Promise(r => setTimeout(r, 1500));
+                [taskRes, memoRes] = await load();
+            }
 
             if (!taskRes.ok || !memoRes.ok) throw new Error("일간 데이터를 불러오는 데 실패했습니다.");
 
             const tasks = await taskRes.json();
             const memoData = await memoRes.json();
-            set({ tasks, memo: memoData.content, isLoading: false });
+            set({ tasks, memo: memoData.content, memoDate: dateStr, isLoading: false });
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : "알 수 없는 오류가 발생했습니다.";
             set({ error: message, isLoading: false, tasks: [], memo: "" });
@@ -123,7 +133,7 @@ const useDailyStore = create<DailyState>((set, get) => ({
         const userId = useAuthStore.getState().user?.id;
         if (!userId) return "로그인이 필요합니다.";
 
-        set({ memo: content, memoError: null });
+        set({ memo: content, memoDate: localDateKey(date), memoError: null });
 
         try {
             const res = await authFetch('/api/dailyMemo', {

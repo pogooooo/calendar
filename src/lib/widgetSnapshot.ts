@@ -4,18 +4,25 @@
  * 홈 위젯은 WebView 를 담을 수 없다. 예전에는 앱 안에서 화면 밖 WebView 로 위젯
  * 페이지를 찍어 그림으로 넘기려 했는데, 그 WebView 는 Tauri 가 만든 게 아니라
  * `tauri.localhost` 를 못 열어 늘 빈 그림이었다. 이제는 앱이 여기서 재료(JSON)를
- * 만들어 파일로 두고, Kotlin(CronosWidgetProvider)이 그걸로 네이티브 위젯을 그린다.
+ * 만들어 파일로 두고, Kotlin(CronosWidgetProvider → WidgetPainter)이 그걸로
+ * 위젯을 그림 한 장으로 그린다.
  *
  * 규칙은 화면과 같다 — 반복은 expandTodos 로 펼치고, 날짜는 사용자 시간대(localDateKey),
- * 완료 기록은 UTC 날짜(utcDayKey). "지금/다음" 판정은 Kotlin 이 그릴 때 하므로
- * (30분마다 스스로 다시 그린다) 시각은 그대로 넘긴다.
+ * 완료 기록은 UTC 날짜(utcDayKey). "지금/다음"·D-day 같은 시각 판정은 Kotlin 이
+ * 그릴 때 한다 (자정과 일정 경계에 스스로 다시 그린다). 그래서 시각은 그대로 넘긴다.
+ *
+ * 창(window): 이 달 첫날부터, 이 달 끝과 오늘+14일 중 늦은 쪽까지.
+ * 월간 위젯이 지난 날의 점까지 찍고, "다음" 이 달을 넘겨서도 보이게.
  */
 import { localDateKey, utcDayKey } from "@/lib/dateKey";
 import { expandTodos } from "@/hooks/useExpandedTodos";
 import type { Translations } from "@/i18n/types";
-import type { TodoType, CategoryType, ChallengeType } from "@/types";
+import type { TodoType, CategoryType, ChallengeType, ProjectType } from "@/types";
+import type { AnniversaryType } from "@/store/useAnniversaryStore";
 
 export interface SnapshotTodo {
+    /** 원래 할 일의 id (반복 펼침의 꼬리표는 뗀다) — 위젯에서 누르면 그 날짜의 일간으로 간다 */
+    id: string;
     title: string;
     startAt: string;   // ISO
     endAt: string;     // ISO
@@ -25,41 +32,85 @@ export interface SnapshotTodo {
 }
 
 export interface SnapshotChallenge {
+    id: string;
     title: string;
     count: number;
     target: number | null;
     doneToday: boolean;
 }
 
-export interface WidgetSnapshot {
-    generatedAt: string;
-    /** 만든 날 (사용자 시간대). */
-    date: string;
-    todos: SnapshotTodo[];
-    challenges: SnapshotChallenge[];
-    labels: {
-        today: string; noTodayTodos: string;
-        now: string; next: string; nothingNow: string; nothingNext: string;
-        challenge: string; noChallenges: string; allDay: string;
+export interface SnapshotAnniversary {
+    id: string;
+    title: string;
+    /** AnniversaryIcons 의 키 (star·moon·cake·ring·heart·flower·candle·gift) */
+    icon: string;
+    month: number;
+    day: number;
+}
+
+export interface SnapshotProject {
+    id: string;
+    title: string;
+    done: number;
+    total: number;
+    /** 마감 (YYYY-MM-DD). 없으면 null */
+    endAt: string | null;
+}
+
+export interface SnapshotTheme {
+    family: string;
+    mode: "light" | "dark";
+    colors: {
+        background: string; surface: string; primary: string; accent: string;
+        text: string; textSecondary: string; weekend: string;
     };
 }
 
-export function buildWidgetSnapshot(
-    todos: TodoType[],
-    categories: Pick<CategoryType, "id" | "color">[],
-    challenges: ChallengeType[],
-    t: Translations,
-    fallbackColor: string,
-    now: Date = new Date(),
-): WidgetSnapshot {
-    const todayKey = localDateKey(now);
-    // 앞으로 이레치까지 넘긴다. 앱이 며칠 안 켜져도 위젯이 날짜를 넘겨 가며 고를 수 있게.
-    const horizon = new Date(now); horizon.setDate(horizon.getDate() + 7);
+export interface WidgetSnapshot {
+    version: 2;
+    generatedAt: string;
+    /** 만든 날 (사용자 시간대). */
+    date: string;
+    locale: string;
+    theme: SnapshotTheme;
+    todos: SnapshotTodo[];
+    challenges: SnapshotChallenge[];
+    anniversaries: SnapshotAnniversary[];
+    projects: SnapshotProject[];
+    /** 오늘의 메모. 없으면 "" */
+    memo: string;
+    labels: Record<string, string>;
+}
 
+export interface SnapshotInput {
+    todos: TodoType[];
+    categories: Pick<CategoryType, "id" | "color">[];
+    challenges: ChallengeType[];
+    anniversaries: AnniversaryType[];
+    projects: ProjectType[];
+    memo: string;
+    t: Translations;
+    locale: string;
+    theme: { family?: string; mode?: string; colors: SnapshotTheme["colors"] };
+    now?: Date;
+}
+
+export function buildWidgetSnapshot(input: SnapshotInput): WidgetSnapshot {
+    const { todos, categories, challenges, anniversaries, projects, memo, t, locale, theme } = input;
+    const now = input.now ?? new Date();
+    const todayKey = localDateKey(now);
+
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+    const twoWeeks = new Date(now); twoWeeks.setDate(twoWeeks.getDate() + 14);
+    const windowEnd = monthEnd > twoWeeks ? monthEnd : twoWeeks;
+
+    const fallbackColor = theme.colors.primary;
     const color = (id?: string | null) => categories.find(c => c.id === id)?.color || fallbackColor;
 
-    const snapTodos: SnapshotTodo[] = expandTodos(todos, now, horizon)
+    const snapTodos: SnapshotTodo[] = expandTodos(todos, monthStart, windowEnd)
         .map(td => ({
+            id: td.id.replace(/-rep-\d+$/, ""),
             title: td.title,
             startAt: new Date(td.startAt!).toISOString(),
             endAt: new Date(td.endAt!).toISOString(),
@@ -79,17 +130,48 @@ export function buildWidgetSnapshot(
     const snapChallenges: SnapshotChallenge[] = challenges
         .filter(c => (c.targetCount == null || (c.completions?.length ?? 0) < c.targetCount) && !expired(c))
         .map(c => ({
+            id: c.id,
             title: c.title,
             count: c.completions?.length ?? 0,
             target: c.targetCount ?? null,
             doneToday: (c.completions ?? []).some(x => utcDayKey(x.targetDate) === todayKey),
         }));
 
+    const snapAnniversaries: SnapshotAnniversary[] = anniversaries.map(a => ({
+        id: a.id, title: a.title, icon: a.icon || "star", month: a.month, day: a.day,
+    }));
+
+    // 끝난 프로젝트는 빼고, 마감이 가까운 순 (마감 없는 것은 뒤로)
+    const snapProjects: SnapshotProject[] = projects
+        .filter(p => p.status !== "done")
+        .map(p => {
+            const tasks = p.tasks ?? [];
+            return {
+                id: p.id,
+                title: p.title,
+                done: tasks.filter(x => x.status === "done").length,
+                total: tasks.length,
+                endAt: p.endAt ? localDateKey(p.endAt) : null,
+            };
+        })
+        .sort((a, b) => (a.endAt ?? "9999").localeCompare(b.endAt ?? "9999"));
+
+    const w = t.homeWidget;
     return {
+        version: 2,
         generatedAt: now.toISOString(),
         date: todayKey,
+        locale,
+        theme: {
+            family: theme.family ?? "celestial",
+            mode: theme.mode === "dark" ? "dark" : "light",
+            colors: theme.colors,
+        },
         todos: snapTodos,
         challenges: snapChallenges,
+        anniversaries: snapAnniversaries,
+        projects: snapProjects,
+        memo: memo ?? "",
         labels: {
             today: t.widget.todayW,
             noTodayTodos: t.home.noTodayTodos,
@@ -100,6 +182,7 @@ export function buildWidgetSnapshot(
             challenge: t.home.challenge,
             noChallenges: t.home.noChallenges,
             allDay: t.todo.allDay,
+            ...w,
         },
     };
 }
