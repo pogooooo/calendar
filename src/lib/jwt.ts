@@ -38,9 +38,43 @@ export function generateAccessToken(payload: { userId: string; email: string | n
  * P2002 로 터져 500 이 나갔다. 로그인 단추를 두 번 누르거나 탭 두 개에서
  * 동시에 들어오면 실제로 걸린다.
  */
-export function generateRefreshToken(payload: TokenPayload) {
+export function generateRefreshToken(payload: TokenPayload, remember = true) {
     const jti = crypto.randomUUID();
-    return sign({ ...payload, jti }, "7d");
+    // remember 를 토큰 자체에 새긴다. 갱신 때 DB 를 안 바꾸고도 같은 수명으로 돌릴 수 있다.
+    return sign({ ...payload, jti, remember }, `${refreshLifetimeDays(remember)}d`);
+}
+
+/**
+ * "로그인 유지" 를 켜면 30일, 끄면 하루.
+ *
+ * 끈 쪽은 어차피 클라이언트가 창(앱)을 닫을 때 토큰을 버리므로 수명이 짧아도 불편이 없고,
+ * 흘러나간 토큰이 오래 살지 않는다. 갱신할 때마다 수명이 다시 시작하므로 쓰는 동안은 안 끊긴다.
+ */
+export function refreshLifetimeDays(remember: boolean): number {
+    return remember ? 30 : 1;
+}
+
+export function refreshExpiresAt(remember: boolean): Date {
+    return new Date(Date.now() + refreshLifetimeDays(remember) * 24 * 60 * 60 * 1000);
+}
+
+/** 리프레시 쿠키 옵션. 유지면 토큰 수명만큼, 아니면 세션 쿠키(브라우저를 닫으면 사라진다). */
+export function refreshCookie(token: string, remember: boolean) {
+    return {
+        name: "refreshToken",
+        value: token,
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict" as const,
+        path: "/",
+        ...(remember ? { maxAge: refreshLifetimeDays(true) * 24 * 60 * 60 } : {}),
+    };
+}
+
+/** 요청 본문의 remember. 없으면(옛 클라이언트) 유지로 본다 — 지금까지의 동작이 그랬다. */
+export function rememberFrom(body: unknown): boolean {
+    const v = (body as { remember?: unknown } | null)?.remember;
+    return typeof v === "boolean" ? v : true;
 }
 
 export async function verifyToken(token: string) {

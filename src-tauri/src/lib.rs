@@ -832,6 +832,24 @@ fn save_widget_snapshot(app: tauri::AppHandle, snapshot: String) -> bool {
     std::fs::rename(&tmp, &path).is_ok()
 }
 
+/// 이 프로세스가 켜진 순간에 정해지는 값. 모든 창(메인·위젯)이 같은 값을 받는다.
+///
+/// "로그인 유지" 를 끈 사람은 앱을 다시 켤 때 로그아웃돼 있어야 한다. 그런데 창이 새로 뜨는
+/// 것만으로는 "앱을 다시 켰다" 와 "켜 둔 앱에서 위젯 창을 하나 더 열었다" 를 가를 수 없다.
+/// 웹뷰는 localStorage 를 나눠 쓰므로, 거기 적힌 값과 이 값이 다르면 새로 켠 것이다.
+#[tauri::command]
+fn launch_id() -> String {
+    static ID: std::sync::OnceLock<String> = std::sync::OnceLock::new();
+    ID.get_or_init(|| {
+        let nanos = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_nanos())
+            .unwrap_or(0);
+        format!("{}-{:x}", std::process::id(), nanos)
+    })
+    .clone()
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let bottom_widgets = BottomWidgets(Arc::new(Mutex::new(HashSet::new())));
@@ -872,6 +890,7 @@ pub fn run() {
                     load_widget_state,
                     save_widget_state,
                     save_widget_snapshot,
+                    launch_id,
                 ]
             }
             #[cfg(not(desktop))]
@@ -882,6 +901,7 @@ pub fn run() {
                     load_widget_state,
                     save_widget_state,
                     save_widget_snapshot,
+                    launch_id,
                 ]
             }
         })

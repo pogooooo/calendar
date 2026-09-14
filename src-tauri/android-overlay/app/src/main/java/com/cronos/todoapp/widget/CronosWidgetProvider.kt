@@ -1,5 +1,6 @@
 package com.cronos.todoapp.widget
 
+import android.app.AlarmManager
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
@@ -15,6 +16,7 @@ import org.json.JSONObject
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.Calendar
 import java.util.Locale
 import java.util.TimeZone
 
@@ -29,6 +31,8 @@ import java.util.TimeZone
  *   - 시스템 주기(30분), 크기 변경
  *   - 앱이 스냅샷을 새로 쓸 때 (MainActivity 의 FileObserver → ACTION_REFRESH)
  *   - 앱을 벗어날 때 (MainActivity.onPause)
+ *   - 시각이 경계를 넘을 때 — 다음 일정의 시작·끝, 그리고 자정 (AlarmManager 로 그 순간에 한 번)
+ *     이게 없으면 "지금" 이 30분까지 늦게 바뀌고, 오늘 할 일이 자정을 넘겨도 어제 것을 보여 준다
  */
 abstract class CronosWidgetProvider : AppWidgetProvider() {
 
@@ -37,7 +41,46 @@ abstract class CronosWidgetProvider : AppWidgetProvider() {
     override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) {
         val snap = Snapshot.load(context)
         ids.forEach { id -> manager.updateAppWidget(id, build(context, snap)) }
+        // 놓인 위젯이 없으면 깨울 일도 없다 (ACTION_REFRESH 는 위젯이 없어도 온다)
+        if (ids.isNotEmpty()) scheduleBoundaryRefresh(context, snap)
     }
+
+    override fun onDisabled(context: Context) {
+        super.onDisabled(context)
+        // 이 종류의 마지막 위젯이 없어졌다 — 깨울 일도 없다
+        alarmManager(context).cancel(boundaryIntent(context))
+    }
+
+    /**
+     * 다음 경계(가장 이른 일정 시작·끝, 또는 자정)에 한 번 다시 그리도록 예약한다.
+     * 정확 알람(SCHEDULE_EXACT_ALARM) 은 권한이 필요하고 홈 위젯에 그만한 정밀도는 필요 없어
+     * 느슨한 set() 을 쓴다 — 보통 몇 초, 절전 중엔 몇 분 늦을 수 있다. 예약은 늘 하나만 산다 (같은 PendingIntent 로 덮어쓴다).
+     */
+    private fun scheduleBoundaryRefresh(context: Context, snap: Snapshot?) {
+        val now = System.currentTimeMillis()
+        var next = nextMidnight(now)
+        snap?.todos?.forEach { t ->
+            if (t.start > now && t.start < next) next = t.start
+            if (t.end > now && t.end < next) next = t.end
+        }
+        // 경계 1초 뒤 — 딱 그 시각에 깨면 "아직 안 지났다" 로 판정될 수 있다
+        alarmManager(context).set(AlarmManager.RTC, next + 1_000L, boundaryIntent(context))
+    }
+
+    private fun boundaryIntent(context: Context): PendingIntent =
+        PendingIntent.getBroadcast(
+            context, BOUNDARY_REQUEST + kind.hashCode(),
+            Intent(context, javaClass).setAction(ACTION_REFRESH),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+
+    private fun alarmManager(context: Context) = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+
+    private fun nextMidnight(now: Long): Long = Calendar.getInstance().apply {
+        timeInMillis = now
+        add(Calendar.DAY_OF_YEAR, 1)
+        set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+    }.timeInMillis
 
     override fun onAppWidgetOptionsChanged(
         context: Context, manager: AppWidgetManager, id: Int, newOptions: android.os.Bundle,
@@ -134,6 +177,8 @@ abstract class CronosWidgetProvider : AppWidgetProvider() {
     companion object {
         const val ACTION_REFRESH = "com.cronos.todoapp.WIDGET_REFRESH"
         const val SNAPSHOT_FILE = "widget-snapshot.json"
+        /** 경계 알람의 requestCode 자리. 앱 열기 PendingIntent(kind.hashCode()) 와 겹치지 않게 띄운다 */
+        private const val BOUNDARY_REQUEST = 0x5A00
 
         // 앱의 밤 팔레트와 같은 값
         private const val GOLD = 0xFFD4AF37.toInt()

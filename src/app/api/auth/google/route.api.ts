@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 import prisma from "@/lib/prisma";
-import { generateAccessToken, generateRefreshToken } from "@/lib/jwt";
+import { generateAccessToken, generateRefreshToken, refreshCookie, refreshExpiresAt, rememberFrom } from "@/lib/jwt";
 import {cookies} from "next/headers";
 
 const GOOGLE_CLIENT_ID =
@@ -132,27 +132,20 @@ export async function POST(request: NextRequest) {
         }
 
         const newAccessToken = await generateAccessToken({userId: user.id, email: user.email});
-        const refreshToken = await generateRefreshToken({ userId: user.id });
+        const remember = rememberFrom(body);
+        const refreshToken = await generateRefreshToken({ userId: user.id }, remember);
 
         await prisma.refreshToken.deleteMany({ where: { userId: user.id } });
         await prisma.refreshToken.create({
             data: {
                 userId: user.id,
                 Token: refreshToken,
-                expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+                expires: refreshExpiresAt(remember),
             },
         });
 
         const cookieStore = await cookies();
-        cookieStore.set({
-            name: 'refreshToken',
-            value: refreshToken,
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
-            maxAge: 7 * 24 * 60 * 60,
-            path: '/',
-        });
+        cookieStore.set(refreshCookie(refreshToken, remember));
 
         const isDesktop = request.headers.get("x-client") === "desktop";
 

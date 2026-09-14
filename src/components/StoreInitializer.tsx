@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { useAuthFetch } from "@/hooks/useAuthFetch";
+import { useAuthFetch, refreshSession } from "@/hooks/useAuthFetch";
 import useTodoStore from "@/store/useTodoStore";
 import useCategoryStore from "@/store/useCategoryStore";
 import useAuthStore from "@/store/useAuthStore";
@@ -11,6 +11,7 @@ import useSettingStore from "@/store/useSettingStore";
 import useAnniversaryStore from "@/store/useAnniversaryStore";
 import { isDesktopApp } from "@/lib/apiBase";
 import { subscribeDataChange, type DataKind } from "@/lib/dataSync";
+import { getRemember, isFreshLaunch } from "@/lib/session";
 
 const PUBLIC_ROUTES = ["/signIn", "/signUp", "/download", "/forgotPassword", "/resetPassword"];
 const NO_PREFETCH_ROUTES = PUBLIC_ROUTES;
@@ -38,13 +39,43 @@ export default function StoreInitializer({ children }: { children: React.ReactNo
 
     const accessToken = useAuthStore((state) => state.accessToken);
     const [isMounted, setIsMounted] = useState(false);
+    // "로그인 유지" 판정이 끝나기 전에는 자료도 안 받고 어디로도 보내지 않는다
+    const [sessionSettled, setSessionSettled] = useState(false);
 
     useEffect(() => {
         setIsMounted(true);
     }, []);
 
+    /**
+     * 켤 때 한 번, "로그인 유지" 를 끈 세션을 정리한다 (src/lib/session.ts).
+     *   - 데스크톱·안드로이드: 프로세스가 새로 켜졌으면 세션을 버린다 (서버 토큰도 지운다 —
+     *     그래야 같이 뜬 위젯 창이 옛 토큰으로 갱신해 되살아나지 못한다)
+     *   - 웹: 유지를 끈 탭은 sessionStorage 라 새 탭에는 토큰이 없다. 세션 쿠키는 살아 있을 수
+     *     있으니 한 번 갱신해 본다. 안 되면 그대로 로그인 화면으로
+     * 위젯 창은 제 인증 처리를 갖고 있어 건드리지 않는다.
+     */
     useEffect(() => {
-        if (!isMounted || !accessToken) return;
+        if (!isMounted) return;
+        if (pathname.startsWith("/widget")) { setSessionSettled(true); return; }
+        let cancelled = false;
+        (async () => {
+            const { accessToken: token, logout } = useAuthStore.getState();
+            if (isDesktopApp()) {
+                // 늘 부른다 — 이번 프로세스의 id 를 적어 두어야, 창을 다시 읽을 때 "새로 켠 것" 으로 오해하지 않는다
+                const fresh = await isFreshLaunch();
+                if (fresh && token && !getRemember()) await logout();
+            } else if (!token && !getRemember()) {
+                await refreshSession();
+            }
+            if (!cancelled) setSessionSettled(true);
+        })();
+        return () => { cancelled = true; };
+    // 켤 때 한 번이면 된다. pathname 이 바뀔 때마다 돌리면 위젯 창 밖에서 두 번 판정한다
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isMounted]);
+
+    useEffect(() => {
+        if (!isMounted || !sessionSettled || !accessToken) return;
         // 위젯은 자기 데이터만 받고, 공개 페이지는 앱 데이터가 필요 없다.
         if (pathname.startsWith("/widget")) return;
         if (NO_PREFETCH_ROUTES.includes(normalizePath(pathname))) return;
@@ -56,7 +87,7 @@ export default function StoreInitializer({ children }: { children: React.ReactNo
             fetchDailyData(authFetch, new Date()),
             fetchAnniversaries(authFetch)
         ]);
-    }, [isMounted, accessToken, pathname, authFetch, fetchTodos, fetchCategories, fetchSettings, fetchDailyData, fetchAnniversaries]);
+    }, [isMounted, sessionSettled, accessToken, pathname, authFetch, fetchTodos, fetchCategories, fetchSettings, fetchDailyData, fetchAnniversaries]);
 
     /**
      * 위젯 창에서 무언가를 바꾸면 본 창도 따라 바뀌어야 한다.
@@ -89,7 +120,7 @@ export default function StoreInitializer({ children }: { children: React.ReactNo
     }, [isMounted, accessToken, pathname]);
 
     useEffect(() => {
-        if (!isMounted) return;
+        if (!isMounted || !sessionSettled) return;
 
         const normalized = normalizePath(pathname);
         const isPublicRoute = PUBLIC_ROUTES.includes(normalized);
@@ -106,9 +137,9 @@ export default function StoreInitializer({ children }: { children: React.ReactNo
         if (accessToken && isPublicRoute && !stayWhenAuthed) {
             router.replace("/");
         }
-    }, [isMounted, accessToken, pathname, router]);
+    }, [isMounted, sessionSettled, accessToken, pathname, router]);
 
-    if (!isMounted) return null;
+    if (!isMounted || !sessionSettled) return null;
 
     return <>{children}</>;
 }

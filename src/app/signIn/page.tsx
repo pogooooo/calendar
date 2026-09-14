@@ -13,6 +13,7 @@ import useSettingStore from "@/store/useSettingStore";
 import useAuthStore from "@/store/useAuthStore";
 import { LoginSchema } from "@/lib/schema";
 import { api, clientHeaders } from "@/lib/apiBase";
+import { getRemember } from "@/lib/session";
 import { useT } from "@/i18n/useT";
 import LocaleSelect from "@/components/LocaleSelect";
 
@@ -51,17 +52,17 @@ const SignIn = () => {
     const router = useRouter();
     const t = useT();
     const setTheme = useSettingStore((state) => state.setTheme);
-    const setAccessToken = useAuthStore((state) => state.setAccessToken);
-    const setRefreshToken = useAuthStore((state) => state.setRefreshToken);
-    const setUser = useAuthStore((state) => state.setUser);
+    const beginSession = useAuthStore((state) => state.beginSession);
 
     const [globalError, setGlobalError] = useState<string>(" ");
     const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
-    const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<LoginFormData>({
+    const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm<LoginFormData>({
         resolver: zodResolver(LoginSchema),
-        defaultValues: { email: "", password: "" },
+        // 유지 여부는 지난번 고른 대로. 처음이면 켜짐.
+        defaultValues: { email: "", password: "", remember: getRemember() },
     });
+    const remember = watch("remember") ?? true;
 
     const handleGoogleToken = async (accessToken: string) => {
         setIsGoogleLoading(true);
@@ -69,14 +70,12 @@ const SignIn = () => {
             const res = await fetch(api("/api/auth/google"), {
                 method: "POST",
                 headers: { "Content-Type": "application/json", ...clientHeaders() },
-                body: JSON.stringify({ accessToken }),
+                body: JSON.stringify({ accessToken, remember }),
             });
             const data = await res.json();
             if (!res.ok) { setGlobalError(data.message || t.auth.googleFailed); setIsGoogleLoading(false); return; }
             setTheme(data.user.theme);
-            setAccessToken(data.accessToken);
-            if (data.refreshToken) setRefreshToken(data.refreshToken);
-            setUser(data.user);
+            beginSession({ accessToken: data.accessToken, refreshToken: data.refreshToken, user: data.user, remember });
             router.push("/");
         } catch {
             setGlobalError(t.auth.googleError);
@@ -100,9 +99,7 @@ const SignIn = () => {
             const data = await res.json();
             if (!res.ok) { setGlobalError(data.message || t.auth.signInFailed); return; }
             setTheme(data.user.theme);
-            setAccessToken(data.accessToken);
-            if (data.refreshToken) setRefreshToken(data.refreshToken);
-            setUser(data.user);
+            beginSession({ accessToken: data.accessToken, refreshToken: data.refreshToken, user: data.user, remember: formData.remember ?? true });
             router.push("/");
         } catch (err) {
             setGlobalError(err instanceof Error ? err.message : t.auth.signInError);
@@ -135,6 +132,15 @@ const SignIn = () => {
 
                         <PasswordInput $width={300} $height={40} label={t.auth.password} {...register("password")} />
                         <InlineError>{errors.password?.message}</InlineError>
+
+                        <RememberRow>
+                            <label>
+                                <input type="checkbox" {...register("remember")} />
+                                <span className="box" aria-hidden />
+                                {t.auth.keepSignedIn}
+                            </label>
+                            <small>{remember ? t.auth.keepSignedInOn : t.auth.keepSignedInOff}</small>
+                        </RememberRow>
 
                         <SecondaryButton type="submit" $width={300} $height={40} disabled={isSubmitting}>
                             {t.auth.emailSignIn}
@@ -252,6 +258,42 @@ const Separator = styled.div`
     }
     &::before { margin-right: 10px; }
     &::after  { margin-left:  10px; }
+`;
+
+/* 마름모 체크 — 앱 곳곳의 ◇/◆ 와 같은 말 */
+const RememberRow = styled.div`
+    width: 100%;
+    margin: 2px 0 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    label {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.8rem;
+        color: ${p => p.theme.colors.text};
+        cursor: pointer;
+        user-select: none;
+    }
+
+    input { position: absolute; opacity: 0; width: 0; height: 0; }
+
+    .box {
+        width: 10px; height: 10px;
+        border: 1px solid ${p => p.theme.colors.primary};
+        transform: rotate(45deg);
+        transition: background 0.15s;
+    }
+    input:checked + .box { background: ${p => p.theme.colors.primary}; }
+    input:focus-visible + .box { box-shadow: 0 0 0 3px ${p => p.theme.colors.primary}44; }
+
+    small {
+        font-size: 0.7rem;
+        color: ${p => p.theme.colors.textSecondary};
+        padding-left: 18px;
+    }
 `;
 
 const SwitchLink = styled.p`

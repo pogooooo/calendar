@@ -1,7 +1,7 @@
 import { NextResponse, NextRequest } from "next/server";
 import bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
-import { generateAccessToken, generateRefreshToken } from "@/lib/jwt";
+import { generateAccessToken, generateRefreshToken, refreshCookie, refreshExpiresAt, rememberFrom } from "@/lib/jwt";
 import { cookies } from "next/headers";
 import { LoginSchema } from "@/lib/schema";
 import { checkRateLimit, resetRateLimit } from "@/lib/rateLimiter";
@@ -47,6 +47,7 @@ export async function POST(request: NextRequest) {
         }
 
         const { email, password } = validation.data;
+        const remember = rememberFrom(body);
 
         const user = await prisma.user.findUnique({
             where: { email },
@@ -77,10 +78,8 @@ export async function POST(request: NextRequest) {
         }
 
         const accessToken = await generateAccessToken({ userId: user.id, email: user.email });
-        const refreshToken = await generateRefreshToken({ userId: user.id });
-
-        const expiresAt = new Date();
-        expiresAt.setDate(expiresAt.getDate() + 7);
+        const refreshToken = await generateRefreshToken({ userId: user.id }, remember);
+        const expiresAt = refreshExpiresAt(remember);
 
         await prisma.refreshToken.deleteMany({
             where: { userId: user.id, expires: { lt: new Date() } },
@@ -94,15 +93,7 @@ export async function POST(request: NextRequest) {
         });
 
         const cookieStore = await cookies();
-        cookieStore.set({
-            name: "refreshToken",
-            value: refreshToken,
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "strict",
-            maxAge: 7 * 24 * 60 * 60,
-            path: "/",
-        });
+        cookieStore.set(refreshCookie(refreshToken, remember));
 
         const isDesktop = request.headers.get("x-client") === "desktop";
 

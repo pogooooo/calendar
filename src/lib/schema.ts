@@ -24,6 +24,8 @@ export const LoginSchema = z.object({
         .min(1, "이메일을 입력해주세요.")
         .regex(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, "이메일 형식이 올바르지 않습니다."),
     password: z.string().min(1, "비밀번호를 입력해주세요."),
+    /** 로그인 유지. 서버는 없으면 켜진 것으로 본다 (rememberFrom). */
+    remember: z.boolean().optional(),
 });
 
 export const ForgotPasswordSchema = z.object({

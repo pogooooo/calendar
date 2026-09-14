@@ -203,6 +203,9 @@ export interface Translations {
         email: string;
         password: string;
         forgotPasswordLink: string;
+        keepSignedIn: string;
+        keepSignedInOn: string;
+        keepSignedInOff: string;
         forgotTitle: string;
         forgotSubtitle: string;
         forgotSubmit: string;
