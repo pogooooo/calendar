@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_today_label">오늘 할 일</string>
+    <string name="widget_today_desc">오늘 해야 할 일을 한눈에 봅니다.</string>
+    <string name="widget_nownext_label">지금 · 다음</string>
+    <string name="widget_nownext_desc">지금 하는 일과 바로 다음 일정.</string>
+    <string name="widget_challenge_label">챌린지</string>
+    <string name="widget_challenge_desc">오늘의 챌린지 진행 상황.</string>
+
+    <string name="widget_preview_today_title">오늘 할 일</string>
+    <string name="widget_preview_row1">아침 달리기</string>
+    <string name="widget_preview_row1_side">07:00–08:00</string>
+    <string name="widget_preview_row2">팀 회의</string>
+    <string name="widget_preview_row2_side">10:00–11:00</string>
+    <string name="widget_preview_row3">책 읽기</string>
+    <string name="widget_preview_row3_side">종일</string>
+    <string name="widget_preview_nownext_title">지금 · 다음</string>
+    <string name="widget_preview_now">지금 · 팀 회의</string>
+    <string name="widget_preview_next">다음 · 민이와 점심</string>
+    <string name="widget_preview_next_side">12:30–13:30</string>
+    <string name="widget_preview_challenge_title">챌린지</string>
+    <string name="widget_preview_ch1">일찍 일어나기</string>
+    <string name="widget_preview_ch1_side">✦ 12/30</string>
+    <string name="widget_preview_ch2">스트레칭 10분</string>
+    <string name="widget_preview_ch2_side">4/21</string>
+</resources>

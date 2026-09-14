@@ -22,14 +22,16 @@ const manifestPath = join(gen, "app", "src", "main", "AndroidManifest.xml");
 let manifest = readFileSync(manifestPath, "utf8");
 
 const WIDGETS = [
-    { cls: "TodayWidgetProvider", info: "widget_today_info" },
-    { cls: "NowNextWidgetProvider", info: "widget_nownext_info" },
-    { cls: "ChallengeWidgetProvider", info: "widget_challenge_info" },
+    // label 은 위젯 고르기 화면의 이름. 없으면 셋 다 앱 이름("CRONOS")으로 보여 구분이 안 됐다.
+    { cls: "TodayWidgetProvider", info: "widget_today_info", label: "widget_today_label" },
+    { cls: "NowNextWidgetProvider", info: "widget_nownext_info", label: "widget_nownext_label" },
+    { cls: "ChallengeWidgetProvider", info: "widget_challenge_info", label: "widget_challenge_label" },
 ];
 
 const block = WIDGETS.map(w => `
         <receiver
             android:name=".widget.${w.cls}"
+            android:label="@string/${w.label}"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />

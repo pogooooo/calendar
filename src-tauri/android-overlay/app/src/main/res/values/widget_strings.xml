@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 홈 위젯 고르기 화면에 보이는 이름·설명·미리보기 글. 실제 내용은 앱의 언어(스냅샷 labels)를 따른다. -->
+<resources>
+    <string name="widget_today_label">Today</string>
+    <string name="widget_today_desc">What is due today, at a glance.</string>
+    <string name="widget_nownext_label">Now · Next</string>
+    <string name="widget_nownext_desc">What is on right now and what comes next.</string>
+    <string name="widget_challenge_label">Challenges</string>
+    <string name="widget_challenge_desc">Today\'s progress on your challenges.</string>
+
+    <string name="widget_preview_today_title">TODAY</string>
+    <string name="widget_preview_row1">Morning run</string>
+    <string name="widget_preview_row1_side">07:00–08:00</string>
+    <string name="widget_preview_row2">Team meeting</string>
+    <string name="widget_preview_row2_side">10:00–11:00</string>
+    <string name="widget_preview_row3">Read a book</string>
+    <string name="widget_preview_row3_side">All day</string>
+    <string name="widget_preview_nownext_title">NOW · NEXT</string>
+    <string name="widget_preview_now">Now · Team meeting</string>
+    <string name="widget_preview_next">Next · Lunch with Min</string>
+    <string name="widget_preview_next_side">12:30–13:30</string>
+    <string name="widget_preview_challenge_title">CHALLENGE</string>
+    <string name="widget_preview_ch1">Wake up early</string>
+    <string name="widget_preview_ch1_side">✦ 12/30</string>
+    <string name="widget_preview_ch2">10 minutes of stretching</string>
+    <string name="widget_preview_ch2_side">4/21</string>
+</resources>

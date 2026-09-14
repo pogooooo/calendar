@@ -1,9 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 줄 앞의 마름모. 색은 카테고리 색으로 setColorFilter 한다. -->
-<rotate xmlns:android="http://schemas.android.com/apk/res/android"
-    android:fromDegrees="45" android:toDegrees="45" android:pivotX="50%" android:pivotY="50%">
-    <shape android:shape="rectangle">
-        <solid android:color="#FFFFFFFF" />
-        <size android:width="7dp" android:height="7dp" />
-    </shape>
-</rotate>
+<!-- 줄 앞의 마름모. 색은 카테고리 색으로 setColorFilter 한다.
+     처음엔 <rotate> 로 네모를 45° 돌렸는데, ImageView 가 그림을 제 크기에 맞춰 키우면서 돌린 네모의 귀퉁이가
+     틀 밖으로 나가 팔각형으로 잘렸다. 마름모를 곧장 경로로 그리면 틀 안에 꼭 맞는다. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="10dp"
+    android:height="10dp"
+    android:viewportWidth="10"
+    android:viewportHeight="10">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M5,0.4 L9.6,5 L5,9.6 L0.4,5 Z" />
+</vector>

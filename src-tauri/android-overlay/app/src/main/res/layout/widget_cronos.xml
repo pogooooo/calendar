@@ -22,10 +22,12 @@
         android:ellipsize="end"
         android:paddingBottom="6dp" />
 
-    <View
+    <!-- 제목 밑줄. RemoteViews 는 맨 android.view.View 를 못 부풀린다("Class not allowed to be inflated") — 그래서 ImageView 다. -->
+    <ImageView
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="#4DD4AF37" />
+        android:background="#4DD4AF37"
+        android:contentDescription="@null" />
 
     <LinearLayout
         android:id="@+id/row1"
@@ -38,8 +40,8 @@
         android:visibility="gone">
         <ImageView
             android:id="@+id/row1_dot"
-            android:layout_width="9dp"
-            android:layout_height="9dp"
+            android:layout_width="10dp"
+            android:layout_height="10dp"
             android:layout_marginEnd="9dp"
             android:src="@drawable/widget_dot"
             android:contentDescription="@null" />
@@ -72,8 +74,8 @@
         android:visibility="gone">
         <ImageView
             android:id="@+id/row2_dot"
-            android:layout_width="9dp"
-            android:layout_height="9dp"
+            android:layout_width="10dp"
+            android:layout_height="10dp"
             android:layout_marginEnd="9dp"
             android:src="@drawable/widget_dot"
             android:contentDescription="@null" />
@@ -106,8 +108,8 @@
         android:visibility="gone">
         <ImageView
             android:id="@+id/row3_dot"
-            android:layout_width="9dp"
-            android:layout_height="9dp"
+            android:layout_width="10dp"
+            android:layout_height="10dp"
             android:layout_marginEnd="9dp"
             android:src="@drawable/widget_dot"
             android:contentDescription="@null" />
@@ -140,8 +142,8 @@
         android:visibility="gone">
         <ImageView
             android:id="@+id/row4_dot"
-            android:layout_width="9dp"
-            android:layout_height="9dp"
+            android:layout_width="10dp"
+            android:layout_height="10dp"
             android:layout_marginEnd="9dp"
             android:src="@drawable/widget_dot"
             android:contentDescription="@null" />
@@ -174,8 +176,8 @@
         android:visibility="gone">
         <ImageView
             android:id="@+id/row5_dot"
-            android:layout_width="9dp"
-            android:layout_height="9dp"
+            android:layout_width="10dp"
+            android:layout_height="10dp"
             android:layout_marginEnd="9dp"
             android:src="@drawable/widget_dot"
             android:contentDescription="@null" />
@@ -208,8 +210,8 @@
         android:visibility="gone">
         <ImageView
             android:id="@+id/row6_dot"
-            android:layout_width="9dp"
-            android:layout_height="9dp"
+            android:layout_width="10dp"
+            android:layout_height="10dp"
             android:layout_marginEnd="9dp"
             android:src="@drawable/widget_dot"
             android:contentDescription="@null" />

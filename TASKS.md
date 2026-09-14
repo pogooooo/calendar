@@ -5,14 +5,9 @@ CRONOS 점검(2026-09-09)에서 나온 항목들. 데스크톱 · 웹 · 안드�
 
 ## Active
 
-없음. 아래 "Waiting On" 하나와 "Someday" 하나만 남았다.
+없음. 아래 "Waiting On" 하나와 "Someday" 하나만 남았다. (1.0.2 는 로컬에 준비만 해 두었고, 배포하라는 말씀이 있을 때 낸다)
 
 ## Waiting On
-
-- [ ] **안드로이드 에뮬레이터 가속 드라이버 설치 (관리자 권한)** - since 2026-09-14
-  - 에뮬레이터·시스템 이미지(API 34)·AVD(`cronos34`)·x86_64 디버그 APK 까지 준비했다. 가속 드라이버(AEHD)만 관리자 권한이 필요해 UAC 창에서 막혔다
-  - 가속 없이 띄우면 QEMU 가 한 발짝도 못 나간다 (CPU 0.5초, 커널 메시지 없음)
-  - `C:Userspogo	oolsandroid-sdkextrasgoogleAndroid_Emulator_Hypervisor_Driversilent_install.bat` 을 관리자 권한으로 한 번 실행해 주면, 그 다음부터 에뮬레이터로 위젯을 직접 볼 수 있다
 
 - [ ] **B-09가 어느 화면인지 확인** - since 2026-09-09
   - "위젯 설정 화면이 제대로 안 보이고 상단 바가 내용과 겹친다"는 말씀 중, 겹침은 재현되지 않았다
@@ -28,7 +23,9 @@ CRONOS 점검(2026-09-09)에서 나온 항목들. 데스크톱 · 웹 · 안드�
 ## Done
 
 - [x] ~~**패치 노트**~~ (2026-09-14, 미배포) - `src/lib/release-notes.json` 하나가 출처. 설정 > 정보 탭(지금 버전 + 업데이트 확인 + 판마다 달라진 점), 업데이트 알림(그 판의 노트), GitHub 릴리스 본문(CI 가 씀)이 다 여기서 읽는다
-- [x] ~~**A-01 안드로이드 홈 위젯이 늘 빈 그림이던 문제**~~ (2026-09-14) - 화면 밖 WebView 로 위젯 페이지를 찍으려 했는데, 그 WebView 는 Tauri 가 만든 게 아니라 `tauri.localhost` 를 못 연다. 앱(JS)이 재료를 `widget-snapshot.json` 에 쓰고(`src/lib/widgetSnapshot.ts`), Kotlin 이 RemoteViews 로 그린다. 파일이 바뀌면 FileObserver 가 곧바로 다시 그린다. 실기기·에뮬레이터가 없어 Kotlin 컴파일과 스냅샷 단위 확인까지만 했다
+- [x] ~~**A-01 안드로이드 홈 위젯이 늘 빈 그림이던 문제**~~ (2026-09-14, 에뮬레이터로 확인) - 화면 밖 WebView 로 위젯 페이지를 찍으려 했는데, 그 WebView 는 Tauri 가 만든 게 아니라 `tauri.localhost` 를 못 연다. 앱(JS)이 재료를 `widget-snapshot.json` 에 쓰고(`src/lib/widgetSnapshot.ts`), Kotlin 이 RemoteViews 로 그린다. 파일이 바뀌면 FileObserver 가 곧바로 다시 그린다. 에뮬레이터(AVD `cronos34`, AEHD 가속)에 x86_64 디버그 APK 를 올려 세 위젯을 홈 화면에 놓고 확인했다: 앱에서 할 일을 더하면 위젯이 곧바로 따라온다, 위젯을 누르면 앱이 열린다
+  - 처음 올렸을 때 "Can't load widget" 이었다. RemoteViews 는 맨 `<View>` 를 못 부풀린다 (제목 밑줄) → ImageView 로. 마름모 점은 `<rotate>` 를 ImageView 가 키우면서 귀퉁이가 잘려 팔각형이 됐다 → vector 경로로
+  - 위젯 고르기 화면에서 셋 다 "CRONOS" 로만 보이던 것: receiver 에 `android:label`, info 에 `description`·`previewLayout`(견본 레이아웃) 을 넣었다. 지금·다음은 4×2 로
 - [x] ~~**M-02 폰 주간 달력이 읽을 게 없던 것**~~ (2026-09-14) - 주간과 일간을 합쳤다: 위에 주간 띠(`components/calendar/weekStrip`), 아래 그날 일간. 띠에서는 쓸어 주를 넘기고, 일간에서는 쓸어 하루를 넘긴다
 - [x] ~~**M-03 며칠짜리 프로젝트 태스크가 일간 시간대를 막대로 꽉 채우던 것**~~ (2026-09-14) - 하루 안의 태스크만 시간대에 놓고, 나머지는 위 목록에 "하루 종일" 로
 - [x] ~~**M-04 폰 챌린지 화면이 빈 칸으로 화면을 나눠 갖던 것**~~ (2026-09-14) - 폰에서는 칸이 내용만큼만 자라고 화면이 굴러간다
