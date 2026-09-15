@@ -67,3 +67,6 @@ next-env.d.ts
 
 # productivity 플러그인이 만드는 대시보드 (프로젝트 코드가 아니다)
 dashboard.html
+
+# IDE 의 DB 연결 설정 — 옛 SQLite 경로를 가리켜 사람마다 다르다
+.idea/dataSources.xml
