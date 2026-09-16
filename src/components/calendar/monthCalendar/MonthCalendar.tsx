@@ -1,8 +1,7 @@
 ﻿"use client";
 
 import * as React from "react";
-import { usePickTheme } from "@/styles/themed";
-import CelestialMonthCalendar from "./celestial/CelestialMonthCalendar";
+import MonthCalendarView from "./MonthCalendarView";
 import { CategoryType } from "@/store/useCategoryStore";
 import { TodoType } from "@/store/useTodoStore";
 
@@ -82,9 +81,7 @@ export interface MonthThemeProps {
 }
 
 const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
-    ({ asChild = false, todos = [], categories = [], selectedDate, onDateChange, followSelectedDate = false, ...props }, ref) => {
-        const MonthCalendarView = usePickTheme({ celestial: CelestialMonthCalendar });
-
+    ({ asChild = false, todos = [], categories = [], selectedDate, onDateChange, followSelectedDate = false, ...props }, ref) => {
         const [currentDate, setCurrentDate] = React.useState(
             () => (followSelectedDate && selectedDate ? new Date(selectedDate) : new Date()));
         const [direction, setDirection] = React.useState(0);

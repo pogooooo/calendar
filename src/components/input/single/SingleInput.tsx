@@ -1,9 +1,8 @@
 "use client";
 
 import React, { forwardRef, InputHTMLAttributes } from 'react';
-import { usePickTheme } from "@/styles/themed";
 
-import CelestialSingleInput from './Celestial_SingleInput';
+import SingleInputView from './SingleInputView';
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
     asChild?: boolean;
@@ -13,7 +12,6 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 }
 
 const SingleInput = forwardRef<HTMLInputElement, InputProps>(({ asChild, label, ...props }, ref) => {
-    const SingleInputView = usePickTheme({ celestial: CelestialSingleInput });
 
     return <SingleInputView ref={ref} asChild={asChild} label={label} {...props} />;
 });

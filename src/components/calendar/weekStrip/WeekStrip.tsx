@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { usePickTheme } from "@/styles/themed";
 import { useT } from "@/i18n/useT";
 import useSwipe from "@/hooks/useSwipe";
 import { expandTodos } from "@/hooks/useExpandedTodos";
@@ -9,7 +8,7 @@ import { getWeekDates } from "@/utils/DateUtils";
 import { localDateKey } from "@/lib/dateKey";
 import useProjectStore from "@/store/useProjectStore";
 import type { TodoType, CategoryType } from "@/types";
-import CelestialWeekStrip from "./celestial/CelestialWeekStrip";
+import View from "./WeekStripView";
 
 /**
  * 폰의 주간 띠 — 일주일을 한 줄로 놓고 하루를 고른다.
@@ -52,7 +51,6 @@ export interface WeekStripThemeProps {
 }
 
 export default function WeekStrip({ selectedDate, onSelect, todos, categories }: WeekStripProps) {
-    const View = usePickTheme({ celestial: CelestialWeekStrip });
     const t = useT();
 
     const weekDates = React.useMemo(() => getWeekDates(selectedDate), [selectedDate]);

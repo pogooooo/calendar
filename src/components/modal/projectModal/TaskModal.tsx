@@ -2,8 +2,7 @@
 
 import * as React from 'react';
 import type { UserType } from "@/types";
-import { usePickTheme } from "@/styles/themed";
-import CelestialTaskModal from './celestial/CelestialTaskModal';
+import TaskModalView from './TaskModalView';
 import { ProjectTaskType } from '@/store/useProjectStore';
 
 export interface TaskModalProps {
@@ -18,9 +17,7 @@ export interface TaskModalProps {
     toggleParticipant: (user: UserType) => void;
 }
 
-export default function TaskModal(props: TaskModalProps) {
-    const TaskModalView = usePickTheme({ celestial: CelestialTaskModal });
-
+export default function TaskModal(props: TaskModalProps) {
     if (!props.isOpen) return null;
 
     return <TaskModalView {...props} />;

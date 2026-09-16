@@ -1,13 +1,12 @@
 "use client";
 
 import * as React from "react";
-import { usePickTheme } from "@/styles/themed";
 import { useT } from "@/i18n/useT";
 import { expandTodos } from "@/hooks/useExpandedTodos";
 import { localDateKey } from "@/lib/dateKey";
 import useProjectStore from "@/store/useProjectStore";
 import type { TodoType, CategoryType } from "@/types";
-import CelestialDayPeek from "./celestial/CelestialDayPeek";
+import View from "./DayPeekView";
 
 /**
  * 폰 월간 달력 아래의 "고른 날" 목록.
@@ -45,7 +44,6 @@ const pad = (n: number) => String(n).padStart(2, "0");
 const hhmm = (d: Date) => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 
 export default function DayPeek({ date, todos, categories, onOpenDay }: DayPeekProps) {
-    const View = usePickTheme({ celestial: CelestialDayPeek });
     const t = useT();
     const projects = useProjectStore((s) => s.projects);
 

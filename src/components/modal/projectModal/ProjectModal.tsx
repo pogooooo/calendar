@@ -2,8 +2,7 @@
 
 import * as React from 'react';
 import type { UserType } from "@/types";
-import { usePickTheme } from "@/styles/themed";
-import CelestialProjectModal from './celestial/CelestialProjectModal';
+import ProjectModalView from './ProjectModalView';
 import { ProjectType } from '@/store/useProjectStore';
 import { CategoryType } from "@/store/useCategoryStore";
 
@@ -19,9 +18,7 @@ export interface ProjectModalProps {
     toggleParticipant: (user: UserType) => void;
 }
 
-export default function ProjectModal(props: ProjectModalProps) {
-    const ProjectModalView = usePickTheme({ celestial: CelestialProjectModal });
-
+export default function ProjectModal(props: ProjectModalProps) {
     if (!props.isOpen) return null;
 
     return <ProjectModalView {...props} />;

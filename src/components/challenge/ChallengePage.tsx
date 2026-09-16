@@ -1,8 +1,7 @@
 ﻿"use client";
 
 import * as React from "react";
-import { usePickTheme } from "@/styles/themed";
-import CelestialChallenge from "./celestial/CelestialChallenge";
+import ChallengeView from "./ChallengeView";
 
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import useChallengeStore from "@/store/useChallengeStore";
@@ -12,9 +11,7 @@ import { localDateKey } from "@/lib/dateKey";
 import { useDialog } from "@/components/dialog/DialogProvider";
 import { useT } from "@/i18n/useT";
 
-export default function ChallengePage() {
-    const ChallengeView = usePickTheme({ celestial: CelestialChallenge });
-
+export default function ChallengePage() {
     const authFetch = useAuthFetch();
     const dialog = useDialog();
     const t = useT();

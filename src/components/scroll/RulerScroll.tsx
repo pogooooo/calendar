@@ -1,8 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { usePickTheme } from "@/styles/themed";
-import CelestialRulerScroll from "./celestial/CelestialRulerScroll";
+import RulerScrollView from "./RulerScrollView";
 import type { RulerScrollProps } from "./types";
 
 /**
@@ -16,7 +15,6 @@ import type { RulerScrollProps } from "./types";
  * 자세한 뜻은 ./types.ts 참고.
  */
 export default function RulerScroll(props: RulerScrollProps) {
-    const RulerScrollView = usePickTheme({ celestial: CelestialRulerScroll });
 
     return <RulerScrollView {...props} />;
 }

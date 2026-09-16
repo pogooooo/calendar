@@ -50,7 +50,7 @@ export function useThemeFamily(): ThemeFamily {
  * 컴포넌트를 감싸지 않고 **타입 그대로** 돌려준다. 그래서 ref 전달도,
  * 제네릭 props 도 평소처럼 동작한다.
  *
- *   const View = usePickTheme({ celestial: CelestialMonthCalendar });
+ *   const View = usePickTheme({ celestial: MonthCalendarView });
  *   return <View ref={ref} {...themeProps} />;
  */
 export function usePickTheme<T>(impls: ThemeImpls<T>): T {

@@ -1,8 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { usePickTheme } from "@/styles/themed";
-import CelestialChallengeModal from "./celestial/CelestialChallengeModal";
+import ChallengeModalView from "./ChallengeModalView";
 import { CategoryType } from "@/store/useCategoryStore";
 import { useDialog } from "@/components/dialog/DialogProvider";
 import { useT } from "@/i18n/useT";
@@ -39,9 +38,7 @@ export interface ChallengeThemeProps extends ChallengeModalProps {
 }
 
 export default function ChallengeModal(props: ChallengeModalProps) {
-    const { isOpen, categories, initialData, onSave } = props;
-    const ChallengeModalView = usePickTheme({ celestial: CelestialChallengeModal });
-    const dialog = useDialog();
+    const { isOpen, categories, initialData, onSave } = props;    const dialog = useDialog();
     const t = useT();
 
     const [title, setTitle] = React.useState("");

@@ -5,12 +5,13 @@ import { usePickTheme } from "@/styles/themed";
 import Profile from "@/components/sideBar/Profile";
 import Menu from "@/components/sideBar/Menu";
 import CelestialSidebarDesign from "@/assets/sidebarDesign/CelestialSidebarDesign";
+import MapleSidebarDesign from "@/assets/sidebarDesign/MapleSidebarDesign";
 import styled from "styled-components";
 import { useSidebarLogic } from "@/hooks/useSidebarLogic";
 
 const Sidebar = () => {
     // 옆선 장식은 테마마다 다른 그림이다.
-    const SidebarDesign = usePickTheme({ celestial: CelestialSidebarDesign });
+    const SidebarDesign = usePickTheme({ celestial: CelestialSidebarDesign, maple: MapleSidebarDesign });
 
     const { width, isResizing, screenHeight, startResizing, sidebarRef } = useSidebarLogic();
 

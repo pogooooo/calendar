@@ -1,8 +1,7 @@
 ﻿"use client";
 
 import * as React from "react";
-import { usePickTheme } from "@/styles/themed";
-import CelestialDayCalendar from "./celestial/CelestialDayCalendar";
+import DayCalendarView from "./DayCalendarView";
 import { CategoryType } from "@/store/useCategoryStore";
 import { TodoType } from "@/store/useTodoStore";
 
@@ -80,7 +79,6 @@ export interface DayThemeProps {
 
 const DayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
     ({ asChild = false, selectedDate = new Date(), todos = [], categories = [], ...props }, ref) => {
-        const DayCalendarView = usePickTheme({ celestial: CelestialDayCalendar });
 
         const [selectedCategoryIds, setSelectedCategoryIds] = React.useState<string[]>([]);
         const [showProjects, setShowProjects] = React.useState(true);

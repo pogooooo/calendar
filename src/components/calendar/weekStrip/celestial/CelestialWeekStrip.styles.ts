@@ -1,5 +1,5 @@
 /**
- * CelestialWeekStrip 의 모양.
+ * WeekStripView 의 모양.
  *
  * 집 규칙: 테마 갈래 컴포넌트는 JSX 만 들고, styled-components 는 형제 *.styles.ts 에 둔다.
  */

@@ -1,12 +1,9 @@
 "use client";
 
 import * as React from 'react';
-import { usePickTheme } from "@/styles/themed";
-import CelestialTertiaryButton , { ButtonProps } from "./Celestial_teritaryButton";
+import TertiaryButtonView , { ButtonProps } from "./TertiaryButtonView";
 
-const TertiaryButton = React.forwardRef<HTMLButtonElement, ButtonProps>(({ asChild = false, ...props }, ref) => {
-    const TertiaryButtonView = usePickTheme({ celestial: CelestialTertiaryButton });
-
+const TertiaryButton = React.forwardRef<HTMLButtonElement, ButtonProps>(({ asChild = false, ...props }, ref) => {
     return <TertiaryButtonView asChild={asChild} ref={ref} {...props} />;
 });
 

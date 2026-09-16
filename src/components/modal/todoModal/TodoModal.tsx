@@ -1,8 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { usePickTheme } from "@/styles/themed";
-import CelestialTodoModal from "./celestial/CelestialTodoModal";
+import TodoModalView from "./TodoModalView";
 import { CategoryType } from "@/types/calendar";
 import { TodoType } from "@/store/useTodoStore";
 
@@ -66,7 +65,6 @@ const getLocalDatetimeString = (date: Date) => {
 
 export default function TodoModal(props: TodoModalProps) {
     const { isOpen, onClose, todo, categories, selectedDate, initialTitle } = props;
-    const TodoModalView = usePickTheme({ celestial: CelestialTodoModal });
     const t = useT();
 
     const { addTodo, updateTodo, deleteTodo } = useTodoStore();

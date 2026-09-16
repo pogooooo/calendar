@@ -2,8 +2,7 @@
 
 import * as React from 'react';
 import type { CategoryType } from "@/types";
-import { usePickTheme } from "@/styles/themed";
-import CelestialProjectHeader from './celestial/CelestialProjectHeader';
+import ProjectHeaderView from './ProjectHeaderView';
 import { ProjectType } from '@/store/useProjectStore';
 
 export interface ProjectHeaderProps {
@@ -16,9 +15,7 @@ export interface ProjectHeaderProps {
     onOpenNewProject: () => void;
 }
 
-const ProjectHeader = React.forwardRef<HTMLDivElement, ProjectHeaderProps>((props, ref) => {
-    const ProjectHeaderView = usePickTheme({ celestial: CelestialProjectHeader });
-
+const ProjectHeader = React.forwardRef<HTMLDivElement, ProjectHeaderProps>((props, ref) => {
     return <ProjectHeaderView ref={ref} {...props} />;
 });
 

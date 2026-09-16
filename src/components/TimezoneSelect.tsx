@@ -4,7 +4,7 @@ import styled from "styled-components";
 import { MOBILE } from "@/styles/breakpoints";
 import useSettingStore from "@/store/useSettingStore";
 import { TIMEZONE_OPTIONS, detectTimeZone, isValidTimeZone } from "@/lib/timezone";
-import CelestialSelect from "@/components/input/select/CelestialSelect";
+import Select from "@/components/input/select/Select";
 import { useT } from "@/i18n/useT";
 
 export default function TimezoneSelect({ size = "md" }: { size?: "sm" | "md" }) {
@@ -20,7 +20,7 @@ export default function TimezoneSelect({ size = "md" }: { size?: "sm" | "md" }) 
     return (
         <Row>
             <Field>
-                <CelestialSelect
+                <Select
                     size={size}
                     value={timezone}
                     onChange={setTimezone}

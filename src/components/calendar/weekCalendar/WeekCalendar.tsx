@@ -1,8 +1,7 @@
 ﻿"use client";
 
 import * as React from "react";
-import { usePickTheme } from "@/styles/themed";
-import CelestialWeekCalendar from "./celestial/CelestialWeekCalendar";
+import WeekCalendarView from "./WeekCalendarView";
 import { CategoryType } from "@/store/useCategoryStore";
 import { TodoType } from "@/store/useTodoStore";
 
@@ -83,9 +82,7 @@ export interface WeekThemeProps {
 }
 
 const WeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
-    ({ asChild = false, todos = [], categories = [], selectedDate, onDateChange, ...props }, ref) => {
-        const WeekCalendarView = usePickTheme({ celestial: CelestialWeekCalendar });
-
+    ({ asChild = false, todos = [], categories = [], selectedDate, onDateChange, ...props }, ref) => {
         const [currentDate, setCurrentDate] = React.useState(new Date());
         const [direction, setDirection] = React.useState(0);
         const [selectedCategoryIds, setSelectedCategoryIds] = React.useState<string[]>([]);

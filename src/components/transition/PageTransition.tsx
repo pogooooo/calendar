@@ -4,10 +4,11 @@ import * as React from "react";
 import { usePathname } from "next/navigation";
 import { usePickTheme } from "@/styles/themed";
 import CelestialPageTransition from "./celestial/CelestialPageTransition";
+import MaplePageTransition from "./maple/MaplePageTransition";
 
 export default function PageTransition({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
-    const TransitionView = usePickTheme({ celestial: CelestialPageTransition });
+    const TransitionView = usePickTheme({ celestial: CelestialPageTransition, maple: MaplePageTransition });
 
     return <TransitionView key={pathname}>{children}</TransitionView>;
 }

@@ -1,8 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { usePickTheme } from "@/styles/themed";
-import CelestialMoreModal from "./celestial/CelestialMoreModal";
+import MoreModalView from "./MoreModalView";
 import { CategoryType } from "@/store/useCategoryStore";
 import {TodoType} from "@/store/useTodoStore";
 
@@ -24,9 +23,7 @@ export interface MoreModalProps {
     onToggleChallenge?: (challenge: MoreModalChallenge) => void;
 }
 
-export default function MoreModal(props: MoreModalProps) {
-    const MoreModalView = usePickTheme({ celestial: CelestialMoreModal });
-
+export default function MoreModal(props: MoreModalProps) {
     if (!props.isOpen) return null;
 
     return <MoreModalView {...props} />;

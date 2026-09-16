@@ -4,7 +4,7 @@ import styled from "styled-components";
 import useSettingStore from "@/store/useSettingStore";
 import type { Locale } from "@/i18n/types";
 import { useT } from "@/i18n/useT";
-import CelestialSelect from "@/components/input/select/CelestialSelect";
+import Select from "@/components/input/select/Select";
 
 export default function LocaleSelect({ size = "md" }: { size?: "sm" | "md" }) {
     const locale = useSettingStore((s) => s.locale);
@@ -13,7 +13,7 @@ export default function LocaleSelect({ size = "md" }: { size?: "sm" | "md" }) {
 
     return (
         <Sized $size={size}>
-            <CelestialSelect
+            <Select
                 size={size}
                 value={locale}
                 onChange={(v) => setLocale(v as Locale)}

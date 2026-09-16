@@ -1,14 +1,16 @@
 /**
- * 테마 갈래 컴포넌트가 모양을 형제 *.styles.ts 에 두고 있는지 확인한다.
+ * 테마를 타는 화면이 모양을 *.styles.ts 에 두고 있는지 확인한다.
  *
- * 테마를 늘리는 일은 `celestial/` 옆에 같은 모양의 폴더를 만드는 일이다.
- * 그 "같은 모양"이 파일마다 다르면, 새 테마를 만들 때 무엇을 만들어야 하는지가
+ * 화면은 두 종류다.
+ *   - 갈래 공용 View (`XView.tsx`, `parts/`, Select·TimeDial 같은 것): JSX 만 들고,
+ *     모양은 `celestial/`·`maple/` 의 *.styles.ts 에서 usePickTheme(STYLES) 로 고른다.
+ *   - 갈래 전용 그림 (`celestial/`·`maple/` 폴더의 .tsx, 이름이 Celestial·Maple 로 시작):
+ *     로그인 패널·사이드바 가지·달력 분위기처럼 갈래마다 아예 다른 것.
+ * 어느 쪽이든 styled-components 를 .tsx 안에 두면 새 갈래가 무엇을 만들어야 하는지
  * 파일을 열어 봐야만 드러난다. 그래서 규칙을 하나로 못 박는다:
  *
- *   테마 갈래 컴포넌트(.tsx)는 JSX 만 들고,
- *   styled-components 는 같은 이름의 *.styles.ts 에 둔다.
+ *   테마를 타는 .tsx 는 JSX 만 들고, styled-components 는 *.styles.ts 에 둔다.
  *
- * 테마 갈래로 보는 것: 경로에 `celestial/` 이 있거나 파일 이름이 `Celestial` 로 시작.
  * 테마와 무관한 공용 화면(다운로드 안내, 위젯 껍데기 등)은 여기서 보지 않는다.
  */
 import fs from "node:fs";

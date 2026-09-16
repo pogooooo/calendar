@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState, useMemo } from "react";
-import { usePickTheme } from "@/styles/themed";
 import useCategoryStore from "@/store/useCategoryStore";
 import useTodoStore from "@/store/useTodoStore";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
@@ -10,7 +9,7 @@ import { useDialog } from "@/components/dialog/DialogProvider";
 import { useT } from "@/i18n/useT";
 import type { AuthFetch, CategoryType, TodoType } from "@/types";
 
-import CelestialCategory from "./celestial/CelestialCategory";
+import CategoryView from "./CategoryView";
 import CategoryAddModal from "@/components/modal/categoryAddModal/CategoryAddModal";
 import TodoModal from "@/components/modal/todoModal/TodoModal";
 
@@ -54,9 +53,7 @@ export interface CategoryThemeProps {
     setIsAddModalOpen: (isOpen: boolean) => void;
 }
 
-export default function CategoryPage() {
-    const CategoryView = usePickTheme({ celestial: CelestialCategory });
-
+export default function CategoryPage() {
     const { categories, deleteCategory, updateCategory, addCategory, fetchCategories } = useCategoryStore();
     const { todos, toggleTodo, deleteTodo } = useTodoStore();
     const authFetch = useAuthFetch();

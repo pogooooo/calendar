@@ -8,7 +8,7 @@ import useAnniversaryStore, { AnniversaryType } from "@/store/useAnniversaryStor
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useDialog } from "@/components/dialog/DialogProvider";
 import { useT } from "@/i18n/useT";
-import CelestialSelect from "@/components/input/select/CelestialSelect";
+import Select from "@/components/input/select/Select";
 import AnniversaryIcon, { ANNIVERSARY_ICONS } from "@/assets/celestial/AnniversaryIcons";
 
 const ROMAN = [
@@ -115,7 +115,7 @@ export default function AnniversaryPage() {
                         maxLength={40}
                     />
                     <DateField>
-                        <CelestialSelect
+                        <Select
                             value={String(month)}
                             onChange={v => {
                                 const m = Number(v);
@@ -128,7 +128,7 @@ export default function AnniversaryPage() {
                         />
                     </DateField>
                     <DateField>
-                        <CelestialSelect
+                        <Select
                             value={String(day)}
                             onChange={v => setDay(Number(v))}
                             options={Array.from({ length: DAYS_IN_MONTH[month - 1] }, (_, i) => ({ value: String(i + 1), label: t.anniversaryPage.dayOption(i + 1) }))}

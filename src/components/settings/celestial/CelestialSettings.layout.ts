@@ -1,6 +1,6 @@
 /**
  * 설정 화면의 뼈대. 폼 요소(FormInput, FormButton …)는 예전 그대로
- * CelestialSettings.styles.ts 를 쓰고, 여기에는 판 넷으로 나뉜 새 틀만 둔다.
+ * SettingsView.styles.ts 를 쓰고, 여기에는 판 넷으로 나뉜 새 틀만 둔다.
  */
 import styled, { css, keyframes } from "styled-components";
 import { MOBILE } from "@/styles/breakpoints";
@@ -233,7 +233,7 @@ export const PaneBody = styled.div`
     ${MOBILE} { padding: 22px 20px 48px; }
 
     /* 판을 갈아 끼울 때 내용이 아래에서 올라온다.
-       key 가 판마다 달라야 다시 재생된다 (CelestialSettings 에서 붙인다). */
+       key 가 판마다 달라야 다시 재생된다 (SettingsView 에서 붙인다). */
     @media (prefers-reduced-motion: no-preference) {
         animation: ${paneBodyIn} 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
     }

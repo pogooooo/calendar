@@ -1,8 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { usePickTheme } from "@/styles/themed";
-import CelestialCategoryAddModal from "./celestial/CelestialCategoryAddModal";
+import CategoryAddModalView from "./CategoryAddModalView";
 import { useDialog } from "@/components/dialog/DialogProvider";
 import { useT } from "@/i18n/useT";
 
@@ -24,9 +23,7 @@ export interface CategoryAddThemeProps extends CategoryAddModalProps {
 }
 
 export default function CategoryAddModal(props: CategoryAddModalProps) {
-    const { isOpen, onClose, onAdd } = props;
-    const CategoryAddModalView = usePickTheme({ celestial: CelestialCategoryAddModal });
-    const dialog = useDialog();
+    const { isOpen, onClose, onAdd } = props;    const dialog = useDialog();
     const t = useT();
 
     const [name, setName] = React.useState("");

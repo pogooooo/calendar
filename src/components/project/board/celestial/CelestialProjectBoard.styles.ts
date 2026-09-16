@@ -1,5 +1,5 @@
 /**
- * CelestialProjectBoard 의 모양.
+ * ProjectBoardView 의 모양.
  *
  * 집 규칙: 테마 갈래 컴포넌트는 JSX 만 들고, styled-components 는 형제 *.styles.ts 에 둔다.
  * 새 테마 폴더를 만들 때 어떤 파일을 만들어야 하는지가 파일 이름만으로 드러난다.

@@ -1,7 +1,6 @@
 ﻿"use client";
 
 import * as React from "react";
-import { usePickTheme } from "@/styles/themed";
 import { useRouter } from "next/navigation";
 import useAuthStore from "@/store/useAuthStore";
 import useSettingStore from "@/store/useSettingStore";
@@ -14,7 +13,7 @@ import { checkForUpdate } from "@/lib/updater";
 import { RELEASE_NOTES, type ReleaseNote } from "@/lib/releaseNotes";
 import { WIDGET_KINDS } from "@/lib/widgetKinds";
 import { useDialog } from "@/components/dialog/DialogProvider";
-import CelestialSettings from "./celestial/CelestialSettings";
+import SettingsView from "./SettingsView";
 import type { Translations } from "@/i18n/types";
 import { listThemes, type ThemeChoice } from "@/styles/theme";
 
@@ -122,7 +121,6 @@ async function invokeAutostart(enabled: boolean): Promise<void> {
 }
 
 export default function SettingsPage() {
-    const SettingsView = usePickTheme({ celestial: CelestialSettings });
     const router = useRouter();
     const t = useT();
     const isMobile = useIsMobile();

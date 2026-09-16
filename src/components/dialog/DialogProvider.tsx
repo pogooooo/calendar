@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import CelestialDialog, { type DialogRequest } from "./CelestialDialog";
+import Dialog, { type DialogRequest } from "./Dialog";
 import type { DialogKind, DialogVariant } from "./arcana";
 import { useT } from "@/i18n/useT";
 
@@ -93,7 +93,7 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
         <DialogContext.Provider value={api}>
             {children}
             {current && (
-                <CelestialDialog
+                <Dialog
                     key={queue.length}
                     kind={current.kind}
                     title={current.title}
