@@ -76,6 +76,8 @@ declare module 'styled-components' {
              * 테마 이름을 토큰에 박아 두면 다른 테마도 그 칸을 채워야 한다.
              */
             display: string;
+            /** 시각·날짜 숫자에 쓰는 글꼴. 표시 글꼴과 같을 수도(Celestial), 라틴 세리프일 수도(Maple) 있다 */
+            numeral: string;
             body: string;
         };
     }
