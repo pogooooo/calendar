@@ -6,7 +6,12 @@ import { themes } from '@/styles/theme';
 import GlobalScrollbar from '@/styles/GlobalScrollbar';
 import GlobalTypography, { getFontSize, getFontWeight } from '@/styles/GlobalTypography';
 import useSettingStore from "@/store/useSettingStore";
-import { getFontOption, ensureFontLoaded } from "@/lib/fonts";
+import { getFontOption, ensureFontLoaded, THEME_FONTS } from "@/lib/fonts";
+import MapleGround from "@/styles/maple/MapleGround";
+import type { ThemeFamily } from "@/styles/themed";
+
+/** 갈래가 화면 전체에 얹는 한 겹 (종이결 같은 것). 없는 갈래는 아무것도 안 얹는다. */
+const GROUNDS: Partial<Record<ThemeFamily, React.ComponentType>> = { maple: MapleGround };
 
 export default function ThemeProviderWrapper({ children }: { children: React.ReactNode }) {
     const themeName = useSettingStore((state) => state.theme);
@@ -40,6 +45,13 @@ export default function ThemeProviderWrapper({ children }: { children: React.Rea
         document.body.style.fontFamily = fontOption.family;
     }, [fontOption]);
 
+    // 테마가 제 글꼴을 요구하면(Maple 의 고운바탕·Cormorant) 같이 내려받는다
+    useEffect(() => {
+        (THEME_FONTS[theme.family] ?? []).forEach(ensureFontLoaded);
+    }, [theme.family]);
+
+    const Ground = GROUNDS[theme.family];
+
     // 테마가 스스로 밝은 벌인지 어두운 벌인지 말해 준다.
     // 이름이 '-dark' 로 끝나는지 보던 예전 방식은 테마 이름 규칙에 묶여 있었다.
     useEffect(() => {
@@ -51,6 +63,7 @@ export default function ThemeProviderWrapper({ children }: { children: React.Rea
     return (
         <ThemeProvider theme={theme}>
             <GlobalScrollbar />
+            {Ground && <Ground />}
             <GlobalTypography
                 $sizePx={getFontSize(fontSizeKey).px}
                 $weight={getFontWeight(fontWeightKey).weight}

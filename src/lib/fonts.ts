@@ -68,6 +68,22 @@ export const FONT_OPTIONS: FontOption[] = [
     },
 ];
 
+/**
+ * 테마 갈래가 제 글꼴로 요구하는 것. 설정의 본문 글꼴과 별개로, 그 테마를 켜면 같이 내려받는다.
+ * Celestial 의 Orbit 은 next/font 가 번들에 넣으므로 여기 없다.
+ */
+export const THEME_FONTS: Record<string, FontOption[]> = {
+    maple: [
+        FONT_OPTIONS.find(f => f.key === "gowun-batang")!,
+        {
+            key: "cormorant",
+            label: "Cormorant Garamond",
+            family: "'Cormorant Garamond', serif",
+            cssUrl: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&display=swap",
+        },
+    ],
+};
+
 export const getFontOption = (key: string | undefined) =>
     FONT_OPTIONS.find(f => f.key === key) ?? FONT_OPTIONS[0];
 

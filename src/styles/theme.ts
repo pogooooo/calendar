@@ -21,17 +21,35 @@ const commonStyles = {
         body: 1.5,
         heading: 1.2,
     },
-    fonts: {
-        display: "'Orbit', serif",
-        body: "'Inter', sans-serif",
-    },
+};
+
+/**
+ * 갈래마다 글꼴 셋. display 는 제목·머리글, numeral 은 시각·날짜 숫자, body 는 본문(설정에서 고른 글꼴이 덮어쓴다).
+ * Orbit 은 next/font 가 번들에 넣어 --font-orbit 변수로 건네주고(이름이 해시라 변수로만 닿는다),
+ * Maple 의 두 글꼴은 한글 조각이 커서 번들에 넣지 않고 켤 때 Google Fonts 에서 받는다 (lib/fonts.ts 의 THEME_FONTS).
+ */
+const CELESTIAL_FONTS = {
+    display: "var(--font-orbit), 'Orbit', serif",
+    numeral: "var(--font-orbit), 'Orbit', serif",
+    body: "'Inter', sans-serif",
+};
+const MAPLE_FONTS = {
+    display: "'Gowun Batang', 'Nanum Myeongjo', 'Noto Serif KR', serif",
+    numeral: "'Cormorant Garamond', 'Times New Roman', serif",
+    body: "'Inter', sans-serif",
 };
 
 const CELESTIAL: ThemeFamily = 'celestial';
+const MAPLE: ThemeFamily = 'maple';
 
-/** 갈래마다 하나. 설정 화면에 보이는 이름·설명이 여기서 나온다. */
-const FAMILY_META: Record<ThemeFamily, { label: string; description: string }> = {
+/** 갈래마다 하나. 설정 화면에 보이는 이름·설명·미리보기 그림이 여기서 나온다. */
+const FAMILY_META: Record<ThemeFamily, { label: string; description: string; preview?: Record<string, string> }> = {
     celestial: { label: 'Celestial', description: 'Gold accents, Orbit typeface' },
+    maple: {
+        label: 'Maple',
+        description: 'Pressed maple leaves on aged paper',
+        preview: { light: '/themes/maple/preview-light.webp', dark: '/themes/maple/preview-dark.webp' },
+    },
 };
 
 const celestial: DefaultTheme = {
@@ -39,6 +57,7 @@ const celestial: DefaultTheme = {
     family: CELESTIAL,
     mode: 'light',
     ...commonStyles,
+    fonts: CELESTIAL_FONTS,
     colors: {
         background: '#FFFFFF',
         primary: '#D4AF37',
@@ -59,6 +78,7 @@ const celestialDark: DefaultTheme = {
     family: CELESTIAL,
     mode: 'dark',
     ...commonStyles,
+    fonts: CELESTIAL_FONTS,
     colors: {
         background: '#111111',
         primary: '#D4AF37',
@@ -74,6 +94,50 @@ const celestialDark: DefaultTheme = {
     preview: { cell: '#1E1E1E', event: '#4A3D1C' },
 };
 
+/* ── Maple — 1950년대 식물도감에 끼워 둔 단풍잎. 색은 design/themes/maple/ASSETS.md §1.2 ── */
+
+const maple: DefaultTheme = {
+    name: 'maple',
+    family: MAPLE,
+    mode: 'light',
+    ...commonStyles,
+    fonts: MAPLE_FONTS,
+    colors: {
+        background: '#F4EADB',   // 크림 종이
+        primary: '#B5432B',      // 단풍 붉음
+        accent: '#E4B26A',       // 황토
+        surface: '#ECDFC9',
+        text: '#3B2A20',         // 먹
+        textSecondary: '#7C6656',
+        border: '#C8702A',       // 탄 주황
+        success: '#6E8B5B',      // 바랜 세이지
+        error: '#9E3B2E',
+        weekend: '#A24A5B',      // 오디빛
+    },
+    preview: { cell: '#EFE3CF', event: '#E4B26A' },
+};
+
+const mapleDark: DefaultTheme = {
+    name: 'maple-dark',
+    family: MAPLE,
+    mode: 'dark',
+    ...commonStyles,
+    fonts: MAPLE_FONTS,
+    colors: {
+        background: '#1F1612',   // 호두나무
+        primary: '#D8703F',      // 잉걸 주황
+        accent: '#E8B45C',
+        surface: '#2A1E18',
+        text: '#EFE3D0',
+        textSecondary: '#A08C78',
+        border: '#D8703F',
+        success: '#8FA57A',
+        error: '#C9584A',
+        weekend: '#D98A8E',
+    },
+    preview: { cell: '#2A1E18', event: '#5A3A22' },
+};
+
 /**
  * 이름 규칙: 갈래 이름이 밝은 벌, 거기에 '-dark' 를 붙인 것이 어두운 벌이다.
  * ThemeProviderWrapper 가 이 규칙으로 찾는다.
@@ -81,6 +145,8 @@ const celestialDark: DefaultTheme = {
 export const themes: Record<string, DefaultTheme> = {
     celestial,
     'celestial-dark': celestialDark,
+    maple,
+    'maple-dark': mapleDark,
 };
 
 /* ── 설정 화면이 읽어 가는 목록 ─────────────────────────────────────────
@@ -106,6 +172,8 @@ export interface ThemeChoice {
     options: string[];
     /** 벌마다의 축소판 미리보기 색 */
     grounds: Record<string, ThemeGround>;
+    /** 벌마다의 미리보기 그림 (있는 갈래만). 없으면 grounds 색으로 축소판을 그린다 */
+    preview?: Record<string, string>;
 }
 
 const groundOf = (t: DefaultTheme): ThemeGround => ({
@@ -133,6 +201,7 @@ export function listThemes(): ThemeChoice[] {
             description: FAMILY_META[family].description,
             options: ordered.map((t) => t.mode),
             grounds,
+            preview: FAMILY_META[family].preview,
         };
     });
 }
