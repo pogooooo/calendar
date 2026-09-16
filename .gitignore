@@ -70,3 +70,6 @@ dashboard.html
 
 # IDE 의 DB 연결 설정 — 옛 SQLite 경로를 가리켜 사람마다 다르다
 .idea/dataSources.xml
+
+# Maple 테마 원본 그림 (42MB PNG) — 변환된 WebP 만 public/themes/maple 에 둔다
+/design/themes/maple/raw/
