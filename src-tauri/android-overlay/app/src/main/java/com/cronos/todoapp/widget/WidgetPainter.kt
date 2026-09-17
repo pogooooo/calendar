@@ -21,16 +21,18 @@ import kotlin.math.min
 import kotlin.math.sin
 
 /**
- * Celestial 테마의 위젯 화가 — 위젯 한 종류를 그림(Bitmap) 한 장으로 그린다.
+ * 위젯 화가 — 위젯 한 종류를 그림(Bitmap) 한 장으로 그린다.
  *
  * 홈 위젯(RemoteViews)은 TextView·ImageView 정도만 실을 수 있고 글꼴도 시스템 것뿐이다.
- * 그래서 앱 화면과 같은 말(Orbit 글꼴·마름모·금빛 실선·반원 눈금)을 내려면 앱이 그림으로
+ * 그래서 앱 화면과 같은 말(제 글꼴·표식·실선·반원 눈금)을 내려면 앱이 그림으로
  * 그려서 ImageView 에 얹는 수밖에 없다. 누르는 자리는 그림 위에 투명한 칸(widget_canvas.xml)을
  * 겹쳐 두는데, 그 칸의 위치는 여기의 치수(PAD·HDR_H·ROW_H)와 같아야 한다.
  *
- * 치수는 전부 dp 로 적고 그릴 때 density 를 곱한다. 갈래(Maple 등)가 늘면 이 클래스를 하나 더.
+ * 짜임(줄·격자·게이지)은 테마 갈래가 달라도 같다. 갈래마다 다른 것(글꼴·표식·바탕·문장)은
+ * 붓(WidgetStyle)이 그린다 — Celestial 은 마름모와 금빛 실선, Maple 은 잎과 먹 하이라인·종이결.
+ * 치수는 전부 dp 로 적고 그릴 때 density 를 곱한다.
  */
-class CelestialPainter(
+class WidgetPainter(
     context: Context,
     private val pal: Palette,
     /** 바탕 불투명도 20..100 */
@@ -52,7 +54,9 @@ class CelestialPainter(
 
     // 그림의 해상도. 너무 크면 런처에 넘길 때 무겁다 — 2x 면 충분히 또렷하다
     private val density: Float = min(context.resources.displayMetrics.density, 2.0f)
-    private val orbit: Typeface = Fonts.orbit(context)
+    private val style: WidgetStyle = WidgetStyle.of(context, pal.family, density)
+    /** 제목·머리글 글꼴 — 갈래의 것 */
+    private val orbit: Typeface = style.display
     private val sans: Typeface = Typeface.SANS_SERIF
     private val sansMedium: Typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
 
@@ -103,9 +107,9 @@ class CelestialPainter(
             textSize = dp(sizeDp); this.color = color; typeface = tf; letterSpacing = spacingEm
             if (tabular) fontFeatureSettings = "tnum"
         }
-    private fun title() = text(11f, pal.goldText, orbit, 0.2f)
-    private fun sub() = text(10f, pal.muted, orbit, 0.14f, tabular = true)
-    private fun kicker() = text(9.5f, pal.goldText, orbit, 0.24f)
+    private fun title() = text(11f, pal.goldText, orbit, style.titleSpacing)
+    private fun sub() = text(10f, pal.muted, orbit, style.titleSpacing * 0.7f, tabular = true)
+    private fun kicker() = text(9.5f, pal.goldText, orbit, style.titleSpacing * 1.2f)
     private fun body(color: Int = pal.ink) = text(12.5f, color)
     private fun side(color: Int = pal.muted) = text(11f, color, tabular = true)
     private fun stroke(color: Int, widthDp: Float) = Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = color; style = Paint.Style.STROKE; strokeWidth = dp(widthDp) }
@@ -118,11 +122,9 @@ class CelestialPainter(
     private fun drawRight(c: Canvas, s: String, right: Float, y: Float, p: Paint) { c.drawText(s, right - p.measureText(s), y, p) }
     private fun drawCenter(c: Canvas, s: String, cx: Float, y: Float, p: Paint) { c.drawText(s, cx - p.measureText(s) / 2f, y, p) }
 
-    private fun diamond(c: Canvas, cx: Float, cy: Float, rDp: Float, color: Int, filled: Boolean, strokeDp: Float = 1f) {
-        val r = dp(rDp)
-        val path = Path().apply { moveTo(cx, cy - r); lineTo(cx + r, cy); lineTo(cx, cy + r); lineTo(cx - r, cy); close() }
-        c.drawPath(path, if (filled) fill(color) else stroke(color, strokeDp))
-    }
+    /** 줄 앞·실선 끝의 표식 — 갈래의 붓이 그린다 (Celestial 마름모, Maple 잎) */
+    private fun diamond(c: Canvas, cx: Float, cy: Float, rDp: Float, color: Int, filled: Boolean, strokeDp: Float = 1f) =
+        style.bullet(c, cx, cy, rDp, color, filled, strokeDp)
 
     /** 진행 실선: 바탕선 + 금빛 채움 + 마름모 표식 */
     private fun rail(c: Canvas, x0: Float, x1: Float, y: Float, frac: Float, mark: Boolean = true) {
@@ -134,20 +136,8 @@ class CelestialPainter(
         if (mark) diamond(c, xe, y, 3.5f, pal.gold, true)
     }
 
-    /** 바탕: 둥근 네모 + 금빛 테두리 + 왼쪽 위 귀퉁이 표식 */
-    private fun frame(c: Canvas, w: Float, h: Float) {
-        val r = dp(RADIUS)
-        val inset = dp(0.5f)
-        val rect = RectF(inset, inset, w - inset, h - inset)
-        val bg = fill(Palette.withAlpha(pal.bg, alphaPct / 100f))
-        c.drawRoundRect(rect, r, r, bg)
-        c.drawRoundRect(rect, r, r, stroke(pal.line, 1f))
-        // 귀퉁이 표식 — 앱의 알림 패널과 같은 말
-        c.save()
-        c.clipPath(Path().apply { addRoundRect(rect, r, r, Path.Direction.CW) })
-        c.drawLine(dp(1f), dp(13f), dp(13f), dp(1f), stroke(Palette.withAlpha(pal.gold, 0.9f), 1f))
-        c.restore()
-    }
+    /** 바탕 — 갈래의 붓이 그린다 */
+    private fun frame(c: Canvas, w: Float, h: Float) = style.frame(c, w, h, pal, alphaPct)
 
     /** 머리글: 제목(금, Orbit) + 오른쪽 보조 글 + 밑줄. 내용 시작 y 를 돌려준다 */
     private fun header(c: Canvas, w: Float, titleText: String, subText: String? = null, subAccent: String? = null, divider: Boolean = true): Float {
@@ -224,10 +214,9 @@ class CelestialPainter(
         val fp = text(9f, pal.muted, orbit, 0.1f, tabular = true)
         val fy = h - dp(PAD_B) + dp(1f)
         c.drawText("${s.label("left")} ${total - done}", dp(PAD_X), fy, fp)
-        val star = text(9f, pal.gold)
         val doneText = " ${s.label("done")} $done"
         drawRight(c, doneText, w - dp(PAD_X), fy, fp)
-        drawRight(c, "✦", w - dp(PAD_X) - fp.measureText(doneText), fy, star)
+        style.glyph(c, w - dp(PAD_X) - fp.measureText(doneText) - dp(9f), fy - dp(3f), 9f, pal.gold)
         return Painted(bmp, rowLinks = links, overlay = Overlay.ROWS)
     }
 
@@ -322,10 +311,10 @@ class CelestialPainter(
             drawRight(c, countText, right, baseline(accent, cy), accent)
             right -= accent.measureText(countText)
             val bp = body()
-            val starW = if (ch.doneToday) text(10f, pal.gold).measureText(" ✦") else 0f
+            val starW = if (ch.doneToday) dp(14f) else 0f
             val txt = ellipsize(ch.title, bp, right - dp(8f) - dp(PAD_X) - starW)
             c.drawText(txt, dp(PAD_X), baseline(bp, cy), bp)
-            if (ch.doneToday) c.drawText(" ✦", dp(PAD_X) + bp.measureText(txt), baseline(bp, cy), text(10f, pal.gold))
+            if (ch.doneToday) style.glyph(c, dp(PAD_X) + bp.measureText(txt) + dp(4f), cy, 10f, pal.gold)
             // 진행선
             val by = top + dp(ROW_H) - dp(4f)
             c.drawLine(dp(PAD_X), by, w - dp(PAD_X), by, stroke(pal.line, 1f))
@@ -346,11 +335,8 @@ class CelestialPainter(
         val cx = w / 2f
         val cy = h - dp(PAD_B) - footH - dp(4f)
         val R = min(w / 2f - dp(PAD_X) - dp(4f), cy - dp(PAD_T) - dp(2f))
-        // 바깥·안쪽 호
-        val outer = RectF(cx - R, cy - R, cx + R, cy + R)
-        c.drawArc(outer, 180f, 180f, false, stroke(Palette.withAlpha(pal.gold, if (pal.dark) 0.5f else 0.7f), 1f))
-        val r2 = R * 0.56f
-        c.drawArc(RectF(cx - r2, cy - r2, cx + r2, cy + r2), 180f, 180f, false, stroke(Palette.withAlpha(pal.gold, if (pal.dark) 0.28f else 0.4f), 1f))
+        // 바탕 반원 — 갈래의 붓 (Celestial 은 금빛 호 둘, Maple 은 놋쇠판). 눈금 색을 돌려준다
+        val tick = style.gaugeBase(c, cx, cy, R, pal)
         // 눈금 — 하루에 하나, 5일마다 길게. 지난 날은 진하게
         for (d in 0..days) {
             val a = PI - PI * d / days
@@ -358,7 +344,7 @@ class CelestialPainter(
             val r1 = R - dp(if (long) 12f else 7f); val rr = R - dp(1.5f)
             val op = if (d <= today) (if (long) 0.9f else 0.6f) else (if (long) 0.45f else 0.25f)
             c.drawLine(cx + (cos(a) * r1).toFloat(), cy - (sin(a) * r1).toFloat(), cx + (cos(a) * rr).toFloat(), cy - (sin(a) * rr).toFloat(),
-                stroke(Palette.withAlpha(pal.gold, op), if (long) 1.2f else 0.8f))
+                stroke(Palette.withAlpha(tick, op), if (long) 1.2f else 0.8f))
         }
         // 바늘
         val a = PI - PI * today / days
@@ -367,7 +353,7 @@ class CelestialPainter(
         c.drawLine(cx, cy, nx, ny, stroke(pal.gold, 1.2f))
         diamond(c, nx, ny, 4f, pal.gold, false, 1.2f)
         diamond(c, cx, cy, 4f, pal.gold, true)
-        val ep = text(8f, pal.muted, orbit, 0f, tabular = true)
+        val ep = text(8f, pal.muted, style.numeral, 0f, tabular = true)
         c.drawText("1", cx - R - dp(2f), cy + dp(3f), ep)
         drawRight(c, "$days", cx + R + dp(3f), cy + dp(3f), ep)
         // 바닥 글: 로마 숫자 달 · 요약 · 오늘
@@ -379,8 +365,12 @@ class CelestialPainter(
         c.drawText(ROMAN[monthIdx], dp(PAD_X), fy, fp)
         drawRight(c, "$today", w - dp(PAD_X), fy, fp)
         val mid = text(9.5f, pal.goldText, orbit, 0.18f, tabular = true)
-        val summary = "✦ " + s.fmt("gaugeSummary", "month" to s.formatDate(now, "monthFmt", "MMM"), "left" to left, "done" to done) + " ✦"
-        drawCenter(c, ellipsize(summary, mid, w - dp(2 * PAD_X) - dp(40f)), cx, fy, mid)
+        val summary = s.fmt("gaugeSummary", "month" to s.formatDate(now, "monthFmt", "MMM"), "left" to left, "done" to done)
+        val shown = ellipsize(summary, mid, w - dp(2 * PAD_X) - dp(60f))
+        drawCenter(c, shown, cx, fy, mid)
+        val half = mid.measureText(shown) / 2f
+        style.glyph(c, cx - half - dp(13f), fy - dp(3f), 8f, pal.gold)
+        style.glyph(c, cx + half + dp(5f), fy - dp(3f), 8f, pal.gold)
         return Painted(bmp)
     }
     private fun monthStart(cal: Calendar): Long = (cal.clone() as Calendar).apply { set(Calendar.DAY_OF_MONTH, 1); set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0) }.timeInMillis
@@ -410,8 +400,8 @@ class CelestialPainter(
             val np = text(13f, if (isToday) pal.goldText else if (weekend) pal.weekend else pal.ink, tabular = true)
             val ny = top + dp(8f) + (bottom - dp(12f) - top - dp(8f)) / 2f
             val cal = Calendar.getInstance().apply { timeInMillis = start.timeInMillis + i * Snapshot.DAY_MS }
+            if (isToday) style.todayMark(c, cx, ny, 11f, pal)
             drawCenter(c, "${cal.get(Calendar.DAY_OF_MONTH)}", cx, baseline(np, ny), np)
-            if (isToday) c.drawCircle(cx, ny, dp(11f), stroke(pal.gold, 1f))
             // 점: 일정 하나에 하나, 셋 넘으면 +N
             val items = perDay[i]
             val dots = min(items.size, 3)
@@ -463,8 +453,8 @@ class CelestialPainter(
             val isToday = key == todayKey
             val weekend = col == 0 || col == 6
             val p = TextPaint(np).apply { color = if (isToday) pal.goldText else if (weekend) pal.weekend else pal.ink }
+            if (isToday) style.todayMark(c, cx, cy, 9.5f, pal)
             drawCenter(c, "$d", cx, baseline(p, cy), p)
-            if (isToday) c.drawCircle(cx, cy, dp(9.5f), stroke(pal.gold, 1f))
             val items = monthTodos.filter { it.spans(key) }
             val dots = min(items.size, 3)
             var dx = cx - dp(5f) * (dots - 1) / 2f
@@ -490,7 +480,7 @@ class CelestialPainter(
         if (!wide) {
             header(c, w, s.label("anniversary"), s.formatDate(first.nextDate(now), "shortDate", "M·d"), divider = false)
             val cx = w / 2f
-            val bigP = text(26f, pal.goldText, orbit, 0.08f)
+            val bigP = text(26f, pal.goldText, style.numeral, 0.08f)
             val cy = h / 2f - dp(6f)
             val bw = bigP.measureText(dText)
             c.drawText(dText, cx - bw / 2f, baseline(bigP, cy), bigP)
@@ -511,7 +501,7 @@ class CelestialPainter(
         val y0 = header(c, w, s.label("anniversary"), s.label("upcoming") + " ", "${upcoming.size}")
         val colW = (w - dp(2 * PAD_X)) * 0.45f
         val x0 = dp(PAD_X)
-        val bigP = text(24f, pal.goldText, orbit, 0.08f)
+        val bigP = text(24f, pal.goldText, style.numeral, 0.08f)
         val cy = y0 + (h - dp(PAD_B) - y0) / 2f
         c.drawText(ellipsize(dText, bigP, colW), x0, baseline(bigP, cy - dp(12f)), bigP)
         val np = text(12.5f, pal.ink, sansMedium)
@@ -705,10 +695,16 @@ class CelestialPainter(
     }
 }
 
-/** Orbit(OFL) — 앱의 표시 글꼴. assets/fonts 에 동봉 */
+/**
+ * 동봉 글꼴(전부 OFL, assets/fonts). Orbit 은 Celestial, 고운바탕·Cormorant Garamond 는 Maple.
+ * 고운바탕은 KS X 1001 한글 2,350자와 라틴만 남긴 부분집합이다 — 위젯의 머리글·숫자만 그리므로 충분하다.
+ */
 object Fonts {
-    @Volatile private var orbit: Typeface? = null
-    fun orbit(context: Context): Typeface = orbit ?: synchronized(this) {
-        orbit ?: (try { Typeface.createFromAsset(context.assets, "fonts/Orbit-Regular.ttf") } catch (e: Throwable) { Typeface.SANS_SERIF }).also { orbit = it }
+    private val cache = HashMap<String, Typeface>()
+    private fun load(context: Context, file: String, fallback: Typeface): Typeface = synchronized(cache) {
+        cache.getOrPut(file) { try { Typeface.createFromAsset(context.assets, "fonts/$file") } catch (e: Throwable) { fallback } }
     }
+    fun orbit(context: Context): Typeface = load(context, "Orbit-Regular.ttf", Typeface.SANS_SERIF)
+    fun gowun(context: Context): Typeface = load(context, "GowunBatang-Regular.ttf", Typeface.SERIF)
+    fun cormorant(context: Context): Typeface = load(context, "CormorantGaramond.ttf", Typeface.SERIF)
 }

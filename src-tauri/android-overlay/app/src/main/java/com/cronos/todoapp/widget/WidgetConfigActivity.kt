@@ -13,7 +13,7 @@ import com.cronos.todoapp.R
 /**
  * 위젯을 놓을 때 한 번 뜨는 설정 화면 (안드로이드 12+ 는 위젯을 길게 눌러 다시 연다).
  * 바탕 불투명도와 벌(앱 따라감 / 밝게 / 어둡게)을 정한다. 값은 위젯 id 마다 따로 산다.
- * 미리보기는 실제 화가(CelestialPainter)가 그린다 — 보이는 그대로 홈에 놓인다.
+ * 미리보기는 실제 화가(WidgetPainter)가 그린다 — 보이는 그대로 홈에 놓인다.
  */
 class WidgetConfigActivity : Activity() {
     private var widgetId = AppWidgetManager.INVALID_APPWIDGET_ID
@@ -49,7 +49,7 @@ class WidgetConfigActivity : Activity() {
             alphaText.text = "$alpha%"
             val mode = when (modes.checkedRadioButtonId) { R.id.cfg_mode_light -> "light"; R.id.cfg_mode_dark -> "dark"; else -> "app" }
             val palette = Palette.resolve(snap?.theme, mode)
-            preview.setImageBitmap(CelestialPainter(this, palette, alpha, snap).paint(kind, wDp, hDp).bitmap)
+            preview.setImageBitmap(WidgetPainter(this, palette, alpha, snap).paint(kind, wDp, hDp).bitmap)
         }
         seek.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(sb: SeekBar?, p: Int, fromUser: Boolean) = repaint()

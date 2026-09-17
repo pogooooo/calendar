@@ -8,6 +8,7 @@ import CategoryFilter from "@/components/calendar/parts/categoryFilter/CategoryF
 import SecondaryButton from "@/components/button/secondary/SecondaryButton";
 import ChallengeModal, { ChallengeData } from "@/components/modal/challengeModal/ChallengeModal";
 import { DynamicSticker } from "@/assets/ChallengeStickers";
+import EmptyArt from "@/components/empty/EmptyArt";
 import { useT } from "@/i18n/useT";
 import type { CategoryType, ChallengeType } from "@/types";
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
@@ -363,7 +364,7 @@ export default function ChallengeView({
                                     </div>
                                 </div>
                             ) : (
-                                <div className="placeholder">{tr.selectOrCreate}</div>
+                                <div className="placeholder"><EmptyArt kind="challenges" />{tr.selectOrCreate}</div>
                             )}
                         </S.DetailArea>
                     </S.TaskCard>

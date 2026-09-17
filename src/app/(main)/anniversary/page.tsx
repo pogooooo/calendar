@@ -10,6 +10,7 @@ import { useDialog } from "@/components/dialog/DialogProvider";
 import { useT } from "@/i18n/useT";
 import Select from "@/components/input/select/Select";
 import AnniversaryIcon, { ANNIVERSARY_ICONS } from "@/assets/celestial/AnniversaryIcons";
+import EmptyArt from "@/components/empty/EmptyArt";
 
 const ROMAN = [
     "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X",
@@ -144,6 +145,7 @@ export default function AnniversaryPage() {
 
             {sorted.length === 0 ? (
                 <Empty>
+                    <EmptyArt kind="anniversaries" />
                     <Cake size={28} strokeWidth={1.2} />
                     <p>{t.anniversaryPage.empty}<br />{t.anniversaryPage.emptyHint}</p>
                 </Empty>

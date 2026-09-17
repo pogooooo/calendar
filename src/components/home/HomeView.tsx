@@ -19,6 +19,7 @@ import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialHome.styles";
 import * as MapleS from "./maple/MapleHome.styles";
 import MonthArch from "./parts/MonthArch";
+import EmptyArt from "@/components/empty/EmptyArt";
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
 const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS };
@@ -288,7 +289,7 @@ export default function HomeView() {
 
                             <S.Scroll>
                                 {todayTodos.length === 0 ? (
-                                    <S.Empty>{t.home.noTodayTodos}</S.Empty>
+                                    <S.Empty><EmptyArt kind="todos" />{t.home.noTodayTodos}</S.Empty>
                                 ) : (
                                     todayTodos.map(todo => {
                                         const done = isDoneOn(todo, todayKey);

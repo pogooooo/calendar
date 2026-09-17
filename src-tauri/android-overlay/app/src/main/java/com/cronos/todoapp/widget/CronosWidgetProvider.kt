@@ -16,7 +16,7 @@ import com.cronos.todoapp.R
 import java.util.Calendar
 
 /**
- * 홈 위젯 — 앱이 그린 그림 한 장(CelestialPainter)을 ImageView 에 얹고, 그 위에 투명한 칸을 겹쳐 누르는 자리를 단다.
+ * 홈 위젯 — 앱이 그린 그림 한 장(WidgetPainter)을 ImageView 에 얹고, 그 위에 투명한 칸을 겹쳐 누르는 자리를 단다.
  *
  * 재료는 앱(JS)이 `widget-snapshot.json` 에 써 둔다 (src/lib/widgetSnapshot.ts). 홈 위젯은 WebView 를
  * 담을 수 없고 쓸 수 있는 뷰도 몇 가지뿐이라, 앱 화면과 같은 말(Orbit 글꼴·마름모·눈금)을 내려면
@@ -70,24 +70,24 @@ abstract class CronosWidgetProvider : AppWidgetProvider() {
         val (wDp, hDp) = sizeDp(manager, id)
         val alpha = WidgetPrefs.alpha(context, id)
         val palette = Palette.resolve(snap?.theme, WidgetPrefs.mode(context, id))
-        val painted = CelestialPainter(context, palette, alpha, snap).paint(kind, wDp, hDp)
+        val painted = WidgetPainter(context, palette, alpha, snap).paint(kind, wDp, hDp)
 
         val views = RemoteViews(context.packageName, R.layout.widget_canvas)
         views.setImageViewBitmap(R.id.widget_image, painted.bitmap)
         views.setContentDescription(R.id.widget_image, context.getString(labelRes()))
         views.setOnClickPendingIntent(R.id.widget_root, link(context, id, 0, rootLink(snap)))
 
-        views.setViewVisibility(R.id.ov_rows, if (painted.overlay == CelestialPainter.Overlay.ROWS) View.VISIBLE else View.GONE)
-        views.setViewVisibility(R.id.ov_week, if (painted.overlay == CelestialPainter.Overlay.WEEK) View.VISIBLE else View.GONE)
-        views.setViewVisibility(R.id.ov_month, if (painted.overlay == CelestialPainter.Overlay.MONTH) View.VISIBLE else View.GONE)
+        views.setViewVisibility(R.id.ov_rows, if (painted.overlay == WidgetPainter.Overlay.ROWS) View.VISIBLE else View.GONE)
+        views.setViewVisibility(R.id.ov_week, if (painted.overlay == WidgetPainter.Overlay.WEEK) View.VISIBLE else View.GONE)
+        views.setViewVisibility(R.id.ov_month, if (painted.overlay == WidgetPainter.Overlay.MONTH) View.VISIBLE else View.GONE)
         when (painted.overlay) {
-            CelestialPainter.Overlay.ROWS -> ROW_IDS.forEachIndexed { i, rid ->
+            WidgetPainter.Overlay.ROWS -> ROW_IDS.forEachIndexed { i, rid ->
                 views.setOnClickPendingIntent(rid, link(context, id, 1 + i, painted.rowLinks.getOrNull(i) ?: rootLink(snap)))
             }
-            CelestialPainter.Overlay.WEEK -> WEEK_IDS.forEachIndexed { i, cid ->
+            WidgetPainter.Overlay.WEEK -> WEEK_IDS.forEachIndexed { i, cid ->
                 views.setOnClickPendingIntent(cid, link(context, id, 8 + i, painted.cellLinks.getOrNull(i) ?: rootLink(snap)))
             }
-            CelestialPainter.Overlay.MONTH -> {
+            WidgetPainter.Overlay.MONTH -> {
                 views.setViewVisibility(R.id.ov_mrow6, if (painted.monthRows >= 6) View.VISIBLE else View.GONE)
                 MONTH_IDS.forEachIndexed { i, cid ->
                     views.setOnClickPendingIntent(cid, link(context, id, 16 + i, painted.cellLinks.getOrNull(i) ?: rootLink(snap)))

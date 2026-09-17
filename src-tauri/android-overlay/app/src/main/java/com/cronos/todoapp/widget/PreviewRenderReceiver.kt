@@ -26,7 +26,7 @@ class PreviewRenderReceiver : BroadcastReceiver() {
         )
         for ((kind, size) in sizes) {
             for (dark in listOf(false, true)) {
-                val bmp = CelestialPainter(context, Palette.celestial(dark, snap.theme), WidgetPrefs.DEFAULT_ALPHA, snap).paint(kind, size.first, size.second).bitmap
+                val bmp = WidgetPainter(context, Palette.of(snap.theme?.family, dark, snap.theme), WidgetPrefs.DEFAULT_ALPHA, snap).paint(kind, size.first, size.second).bitmap
                 File(dir, "widget_preview_${kind}${if (dark) "_dark" else ""}.png").outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
             }
         }

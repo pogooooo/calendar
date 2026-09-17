@@ -6,10 +6,11 @@ import android.graphics.Color
  * 위젯이 쓰는 색 한 벌. 앱 테마(스냅샷의 theme)와 위젯 설정(벌 강제)으로 정한다.
  *
  * Celestial 의 값이 기본이다. 스냅샷에 테마 색이 있으면 그걸 우선 쓴다 —
- * 그래서 앱 쪽에서 테마 색을 바꾸면 위젯도 따라온다. 갈래(family)가 다르면
- * 화가(Painter)가 달라지지만, 지금은 Celestial 하나다.
+ * 그래서 앱 쪽에서 테마 색을 바꾸면 위젯도 따라온다. 갈래(family)는 붓(WidgetStyle)을 고른다.
  */
 class Palette(
+    /** 테마 갈래 — 붓(WidgetStyle)을 고른다 */
+    val family: String,
     val dark: Boolean,
     val bg: Int,
     val ink: Int,
@@ -19,8 +20,8 @@ class Palette(
     val goldText: Int,
     val weekend: Int,
 ) {
-    /** 실선·테두리: 금색 55% */
-    val line: Int get() = withAlpha(gold, 0.55f)
+    /** 실선·테두리. Celestial 은 금색 55%, Maple 은 먹 35% */
+    val line: Int get() = if (family == "maple") withAlpha(ink, 0.35f) else withAlpha(gold, 0.55f)
 
     companion object {
         fun withAlpha(color: Int, a: Float): Int = (color and 0x00FFFFFF) or ((a.coerceIn(0f, 1f) * 255).toInt() shl 24)
@@ -37,6 +38,7 @@ class Palette(
             val c = if (spec != null && (spec.mode == "dark") == dark) spec.colors else emptyMap()
             val gold = c["primary"] ?: 0xFFD4AF37.toInt()
             return if (dark) Palette(
+                family = "celestial",
                 dark = true,
                 bg = c["background"] ?: 0xFF111111.toInt(),
                 ink = c["text"] ?: 0xFFE8E8E8.toInt(),
@@ -45,6 +47,7 @@ class Palette(
                 goldText = gold,
                 weekend = c["weekend"] ?: 0xFFD98A8E.toInt(),
             ) else Palette(
+                family = "celestial",
                 dark = false,
                 bg = c["background"] ?: 0xFFFFFFFF.toInt(),
                 ink = c["text"] ?: 0xFF2E2E2E.toInt(),
@@ -55,6 +58,35 @@ class Palette(
             )
         }
 
+        /** Maple — design/themes/maple/ASSETS.md §1.2 의 색. 여기서 gold 는 "강조색" 자리이고 값은 단풍 붉음이다 */
+        fun maple(dark: Boolean, spec: Snapshot.ThemeSpec?): Palette {
+            val c = if (spec != null && (spec.mode == "dark") == dark) spec.colors else emptyMap()
+            val red = c["primary"] ?: (if (dark) 0xFFD8703F.toInt() else 0xFFB5432B.toInt())
+            return if (dark) Palette(
+                family = "maple",
+                dark = true,
+                bg = c["background"] ?: 0xFF1F1612.toInt(),
+                ink = c["text"] ?: 0xFFEFE3D0.toInt(),
+                muted = c["textSecondary"] ?: 0xFFA08C78.toInt(),
+                gold = red,
+                goldText = red,
+                weekend = c["weekend"] ?: 0xFFD98A8E.toInt(),
+            ) else Palette(
+                family = "maple",
+                dark = false,
+                bg = c["background"] ?: 0xFFF4EADB.toInt(),
+                ink = c["text"] ?: 0xFF3B2A20.toInt(),
+                muted = c["textSecondary"] ?: 0xFF7C6656.toInt(),
+                gold = red,
+                goldText = red,
+                weekend = c["weekend"] ?: 0xFFA24A5B.toInt(),
+            )
+        }
+
+        /** 스냅샷의 갈래로 색 벌을 고른다 */
+        fun of(family: String?, dark: Boolean, spec: Snapshot.ThemeSpec?): Palette =
+            if (family == "maple") maple(dark, spec) else celestial(dark, spec)
+
         /** 위젯 설정의 벌(app/light/dark)과 스냅샷의 테마로 색을 고른다 */
         fun resolve(spec: Snapshot.ThemeSpec?, mode: String): Palette {
             val dark = when (mode) {
@@ -62,7 +94,7 @@ class Palette(
                 "dark" -> true
                 else -> spec?.mode == "dark"
             }
-            return celestial(dark, spec)
+            return of(spec?.family, dark, spec)
         }
     }
 }

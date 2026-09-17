@@ -55,3 +55,14 @@ export const Resizer = styled.div`
     /* 마우스로만 끄는 손잡이 */
     ${MOBILE} { display: none; }
 `;
+/** 프로젝트가 하나도 없을 때 */
+export const Empty = styled.div`
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 0;
+    font-size: 0.9rem;
+    color: ${(p) => p.theme.colors.textSecondary};
+`;

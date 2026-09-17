@@ -13,6 +13,7 @@ import ProjectTimeline from '@/components/project/timeline/ProjectTimeline';
 import ProjectModal from '@/components/modal/projectModal/ProjectModal';
 import TaskModal from '@/components/modal/projectModal/TaskModal';
 import { useT } from "@/i18n/useT";
+import EmptyArt from "@/components/empty/EmptyArt";
 
 export default function ProjectPage() {
     const authFetch = useAuthFetch();
@@ -134,6 +135,13 @@ export default function ProjectPage() {
                 onOpenNewProject={() => setProjectModal({ isOpen: true, mode: 'add', data: { id: '', title: '', description: '', categoryId: '', assignees: [] } })}
             />
 
+
+            {!selectedProject && (
+                <S.Empty>
+                    <EmptyArt kind="projects" />
+                    {t.home.noProjects}
+                </S.Empty>
+            )}
 
             {selectedProject && (
                 <S.ContentLayout ref={layoutRef}>

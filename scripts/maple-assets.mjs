@@ -350,7 +350,7 @@ await opaque("H2_landing-hero.png", "landing-hero.webp", { width: 1600, quality:
 
 /* ── 안드로이드 위젯이 쓰는 것 ────────────────────────────────────────── */
 fs.mkdirSync(ANDROID, { recursive: true });
-for (const n of ["widget-paper-light", "widget-paper-dark", "crest", "bullet-filled", "bullet-outline", "check", "acorn", "today-marker", "spinner"]) {
+for (const n of ["widget-paper-light", "widget-paper-dark", "crest", "bullet-filled", "bullet-outline", "check", "acorn", "today-marker", "spinner", "gauge-dial"]) {
     fs.copyFileSync(path.join(OUT, `${n}.webp`), path.join(ANDROID, `maple_${n.replace(/-/g, "_")}.webp`));
 }
 
