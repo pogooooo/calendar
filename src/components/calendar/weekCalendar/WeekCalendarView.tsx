@@ -19,7 +19,7 @@ import useAnniversaryStore from "@/store/useAnniversaryStore";
 import { anniversariesOn } from "@/lib/anniversary";
 import { useT } from "@/i18n/useT";
 
-import DayCellDecor from "@/assets/celestial/DayCellDecor";
+import DayCellDecor from "@/assets/DayCellDecor";
 import CalendarAmbience from "@/assets/celestial/CalendarAmbience";
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialWeekCalendar.styles";

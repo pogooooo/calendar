@@ -23,7 +23,7 @@ import TertiaryButton from "@/components/button/tertiary/TeritaryButton";
 import InlineError from "@/components/error/inlineError/InlineError";
 import GlobalError from "@/components/error/globalError/GlobalError";
 import PasswordInput from "@/components/input/password/PasswordInput";
-import CelestialAuthPanel from "@/components/auth/CelestialAuthPanel";
+import AuthPanel from "@/components/auth/AuthPanel";
 import GoogleSignInButton from "@/components/button/googleSignIn/GoogleSignInButton";
 
 type LoginFormData = z.infer<typeof LoginSchema>;
@@ -108,7 +108,7 @@ const SignIn = () => {
 
     return (
         <PageWrapper>
-            <CelestialAuthPanel busy={isSubmitting || isGoogleLoading} />
+            <AuthPanel busy={isSubmitting || isGoogleLoading} />
 
             <FormPanel>
                 <LangToggle>

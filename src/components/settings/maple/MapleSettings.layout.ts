@@ -3,4 +3,16 @@
  * 달라지는 것만 아래에서 styled(C.이름) 으로 덮어쓴다.
  * (여기서 이름을 새로 정의하면 그것이 위의 재수출보다 앞선다 — ES 모듈 규칙)
  */
+import styled from "styled-components";
+import * as C from "../celestial/CelestialSettings.layout";
+import { hair } from "@/styles/maple/ink";
 export * from "../celestial/CelestialSettings.layout";
+
+/* 금빛 테두리 → 먹 하이라인. 굵기·모양은 Celestial 그대로, 색만 바꾼다 */
+export const WidgetCard = styled(C.WidgetCard)`
+    border-color: ${(p) => hair(p.theme)};
+`;
+
+export const NoteHead = styled(C.NoteHead)`
+    border-color: ${(p) => hair(p.theme)};
+`;

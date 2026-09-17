@@ -3,4 +3,24 @@
  * 달라지는 것만 아래에서 styled(C.이름) 으로 덮어쓴다.
  * (여기서 이름을 새로 정의하면 그것이 위의 재수출보다 앞선다 — ES 모듈 규칙)
  */
+import styled from "styled-components";
+import * as C from "../celestial/CelestialMoreModal.styles";
+import { hair } from "@/styles/maple/ink";
 export * from "../celestial/CelestialMoreModal.styles";
+
+/* 금빛 테두리 → 먹 하이라인. 굵기·모양은 Celestial 그대로, 색만 바꾼다 */
+export const Header = styled(C.Header)`
+    border-color: ${(p) => hair(p.theme)};
+`;
+
+export const SectionLabel = styled(C.SectionLabel)`
+    border-color: ${(p) => hair(p.theme)};
+`;
+
+export const ChallengeItem = styled(C.ChallengeItem)`
+    border-color: ${(p) => hair(p.theme)};
+`;
+
+export const TodoItem = styled(C.TodoItem)`
+    border-color: ${(p) => hair(p.theme)};
+`;

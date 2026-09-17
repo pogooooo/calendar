@@ -5,8 +5,12 @@
  * 그래서 한 파일로 낮(먹 #3B2A20)·밤(크림 #EFE3D0) 어느 색이든 된다. 그림 목록은 scripts/maple-assets.mjs.
  */
 import { css } from "styled-components";
+import { withAlpha } from "@/styles/color";
 
 export const ASSET = "/themes/maple";
+
+/** 먹 하이라인 — 선은 붉은 primary 가 아니라 먹(text)을 옅게. Celestial 의 금빛 실선 자리 */
+export const hair = (theme: { colors: { text: string } }, alpha = 0.3) => withAlpha(theme.colors.text, alpha);
 
 /** 마스크 그림을 씌운 상자. 색은 background 로 준다 (기본 currentColor) */
 export const inkMask = (file: string, size = "contain") => css`

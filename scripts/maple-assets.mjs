@@ -299,7 +299,8 @@ await tile("G1_widget-paper-light.png", "widget-paper-light.webp", { base: 384, 
 await tile("G2_widget-paper-dark.png", "widget-paper-dark.webp", { base: 384, quality: 85 });
 await tile("A3_wash-band-light.png", "wash-light.webp", { base: 1024, quality: 70, mirrorY: false });
 await tile("A3_wash-band-dark.png", "wash-dark.webp", { base: 1024, quality: 70, mirrorY: false });
-await mask("A4_tape-tile.png", "tape.webp", { trim: false, width: 512, ink: { lo: 0.1, hi: 0.5 } });
+// 테이프는 띠의 위아래로 딱 맞게 잘라야 mask-size: auto 100% 로 씌웠을 때 막대 높이를 다 채운다
+await mask("A4_tape-tile.png", "tape.webp", { pad: 0, width: 512, ink: { lo: 0.1, hi: 0.5 } });
 await mask("A5_card-frame.png", "card-frame.webp", { pad: 0.02, width: 512, ink: { lo: 0.12, hi: 0.5 } });
 
 // B. 잎

@@ -3,4 +3,44 @@
  * 달라지는 것만 아래에서 styled(C.이름) 으로 덮어쓴다.
  * (여기서 이름을 새로 정의하면 그것이 위의 재수출보다 앞선다 — ES 모듈 규칙)
  */
+import styled from "styled-components";
+import * as C from "../celestial/CelestialTodoModal.styles";
+import { hair } from "@/styles/maple/ink";
 export * from "../celestial/CelestialTodoModal.styles";
+
+/* 금빛 테두리 → 먹 하이라인. 굵기·모양은 Celestial 그대로, 색만 바꾼다 */
+export const Header = styled(C.Header)`
+    border-color: ${(p) => hair(p.theme)};
+`;
+
+export const FieldRow = styled(C.FieldRow)`
+    border-color: ${(p) => hair(p.theme)};
+`;
+
+export const RepeatRow = styled(C.RepeatRow)`
+    border-color: ${(p) => hair(p.theme)};
+`;
+
+export const RepeatConditionBox = styled(C.RepeatConditionBox)`
+    border-color: ${(p) => hair(p.theme)};
+`;
+
+export const MemoRow = styled(C.MemoRow)`
+    border-color: ${(p) => hair(p.theme)};
+`;
+
+export const DropdownHeader = styled(C.DropdownHeader)`
+    border-color: ${(p) => hair(p.theme)};
+`;
+
+export const DropdownList = styled(C.DropdownList)`
+    border-color: ${(p) => hair(p.theme)};
+`;
+
+export const DropdownItem = styled(C.DropdownItem)`
+    border-color: ${(p) => hair(p.theme)};
+`;
+
+export const Footer = styled(C.Footer)`
+    border-color: ${(p) => hair(p.theme)};
+`;

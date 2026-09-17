@@ -19,7 +19,7 @@ import TertiaryButton from "@/components/button/tertiary/TeritaryButton";
 import PasswordInput from "@/components/input/password/PasswordInput";
 import GlobalError from "@/components/error/globalError/GlobalError";
 import InlineError from "@/components/error/inlineError/InlineError";
-import CelestialAuthPanel from "@/components/auth/CelestialAuthPanel";
+import AuthPanel from "@/components/auth/AuthPanel";
 
 type RegisterFormData = z.infer<typeof RegisterSchema>;
 
@@ -55,7 +55,7 @@ const SignUp = () => {
 
     return (
         <PageWrapper>
-            <CelestialAuthPanel busy={isSubmitting} />
+            <AuthPanel busy={isSubmitting} />
 
             <FormPanel>
                 <LangToggle>

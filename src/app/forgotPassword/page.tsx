@@ -17,7 +17,7 @@ import SingleInput from "@/components/input/single/SingleInput";
 import TertiaryButton from "@/components/button/tertiary/TeritaryButton";
 import InlineError from "@/components/error/inlineError/InlineError";
 import GlobalError from "@/components/error/globalError/GlobalError";
-import CelestialAuthPanel from "@/components/auth/CelestialAuthPanel";
+import AuthPanel from "@/components/auth/AuthPanel";
 
 type ForgotFormData = z.infer<typeof ForgotPasswordSchema>;
 
@@ -54,7 +54,7 @@ const ForgotPassword = () => {
 
     return (
         <PageWrapper>
-            <CelestialAuthPanel busy={isSubmitting} />
+            <AuthPanel busy={isSubmitting} />
 
             <FormPanel>
                 <LangToggle>

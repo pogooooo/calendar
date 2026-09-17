@@ -3,4 +3,24 @@
  * 달라지는 것만 아래에서 styled(C.이름) 으로 덮어쓴다.
  * (여기서 이름을 새로 정의하면 그것이 위의 재수출보다 앞선다 — ES 모듈 규칙)
  */
+import styled from "styled-components";
+import * as C from "../celestial/CelestialDialog.styles";
+import { hair } from "@/styles/maple/ink";
 export * from "../celestial/CelestialDialog.styles";
+
+/* 금빛 테두리 → 먹 하이라인. 굵기·모양은 Celestial 그대로, 색만 바꾼다 */
+export const Card = styled(C.Card)`
+    border-color: ${(p) => hair(p.theme)};
+`;
+
+export const Pip = styled(C.Pip)`
+    border-color: ${(p) => hair(p.theme)};
+`;
+
+export const ActionButton = styled(C.ActionButton)`
+    border-color: ${(p) => hair(p.theme)};
+`;
+
+export const LandCard = styled(C.LandCard)`
+    border-color: ${(p) => hair(p.theme)};
+`;

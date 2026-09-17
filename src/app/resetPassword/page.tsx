@@ -18,7 +18,7 @@ import TertiaryButton from "@/components/button/tertiary/TeritaryButton";
 import InlineError from "@/components/error/inlineError/InlineError";
 import GlobalError from "@/components/error/globalError/GlobalError";
 import PasswordInput from "@/components/input/password/PasswordInput";
-import CelestialAuthPanel from "@/components/auth/CelestialAuthPanel";
+import AuthPanel from "@/components/auth/AuthPanel";
 
 // 서버로는 token + password 만 보내고, 확인란은 화면에서만 검증한다.
 // 문구가 언어를 따라야 해서 화면 안에서 만든다.
@@ -105,7 +105,7 @@ const ResetPasswordForm = () => {
 
 const ResetPassword = () => (
     <PageWrapper>
-        <CelestialAuthPanel busy={false} />
+        <AuthPanel busy={false} />
         <FormPanel>
             <LangToggle>
                 <LocaleSelect size="sm" />

@@ -15,7 +15,7 @@ import AnimatedDateText from "@/components/calendar/parts/animatedDateText/Anima
 import TodoModal from "@/components/modal/todoModal/TodoModal";
 import MoreModal from "@/components/modal/moreModal/MoreModal";
 import TodoContextMenu from "@/components/calendar/parts/contextMenu/TodoContextMenu";
-import DayCellDecor from "@/assets/celestial/DayCellDecor";
+import DayCellDecor from "@/assets/DayCellDecor";
 import { useT } from "@/i18n/useT";
 import useIsMobile from "@/hooks/useIsMobile";
 import { isWidgetWindow } from "@/hooks/useAuthFetch";

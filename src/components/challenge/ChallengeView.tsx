@@ -7,7 +7,7 @@ import { Plus, Trash2, Settings2, X, Check } from "lucide-react";
 import CategoryFilter from "@/components/calendar/parts/categoryFilter/CategoryFilter";
 import SecondaryButton from "@/components/button/secondary/SecondaryButton";
 import ChallengeModal, { ChallengeData } from "@/components/modal/challengeModal/ChallengeModal";
-import { DynamicSticker } from "@/assets/celestial/ChallengeStickers";
+import { DynamicSticker } from "@/assets/ChallengeStickers";
 import { useT } from "@/i18n/useT";
 import type { CategoryType, ChallengeType } from "@/types";
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
