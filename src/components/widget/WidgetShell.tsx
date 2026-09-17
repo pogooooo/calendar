@@ -147,7 +147,9 @@ export default function WidgetShell({ kind, title, children }: Props) {
         };
     }, [kind]);
     const surfaceColor = theme?.colors?.surface;
-    const bgStyle = buildBackground(bg, surfaceColor);
+    // 테마가 종이결(Maple)을 가지면 "테마 바탕"은 색이 아니라 그 종이를 깐다 — 투명도는 종이 겹에 준다
+    const paper = bg.mode === "theme" ? theme?.paper : undefined;
+    const bgStyle = paper ? buildBackground({ ...bg, mode: "glass" }, surfaceColor) : buildBackground(bg, surfaceColor);
 
     const bgRef = useRef(bg);
     const surfaceColorRef = useRef(surfaceColor);
@@ -397,6 +399,7 @@ export default function WidgetShell({ kind, title, children }: Props) {
                     </FakeGlassLayer>
                 )}
 
+                {paper && <PaperLayer $url={paper} $opacity={bg.opacity} />}
                 {bg.mode === "glass" && bg.gloss && <GlossOverlay />}
 
                 {!locked && (
@@ -544,6 +547,16 @@ const FakeGlassLayer = styled.div<{ $opacity: number }>`
         inset: 0;
         z-index: 1;
     }
+`;
+
+/** 테마의 종이결(theme.paper). 바탕 투명도 슬라이더가 이 겹의 투명도다 */
+const PaperLayer = styled.div<{ $url: string; $opacity: number }>`
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: url('${p => p.$url}') center / 384px auto repeat;
+    opacity: ${p => p.$opacity};
 `;
 
 const GlossOverlay = styled.div`

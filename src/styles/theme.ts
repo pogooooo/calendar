@@ -115,6 +115,7 @@ const maple: DefaultTheme = {
         weekend: '#A24A5B',      // 오디빛
     },
     preview: { cell: '#EFE3CF', event: '#E4B26A' },
+    paper: '/themes/maple/widget-paper-light.webp',
 };
 
 const mapleDark: DefaultTheme = {
@@ -136,6 +137,7 @@ const mapleDark: DefaultTheme = {
         weekend: '#D98A8E',
     },
     preview: { cell: '#2A1E18', event: '#5A3A22' },
+    paper: '/themes/maple/widget-paper-dark.webp',
 };
 
 /**

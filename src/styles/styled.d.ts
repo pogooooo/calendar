@@ -48,6 +48,12 @@ declare module 'styled-components' {
          */
         baseColors?: DefaultTheme['colors'];
 
+        /**
+         * 종이결 타일의 주소. 데스크톱 위젯처럼 "테마 바탕"을 그림으로 깔 수 있는 자리가 쓴다.
+         * 없으면 surface 색을 칠한다 (Celestial).
+         */
+        paper?: string;
+
         fontSizes: {
             h1: string;
             h2: string;
