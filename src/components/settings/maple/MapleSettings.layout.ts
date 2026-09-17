@@ -53,3 +53,75 @@ export const Note = styled(C.Note)`
 export const NoteHead = styled(C.NoteHead)`
     border-color: ${(p) => hair(p.theme, 0.3)};
 `;
+
+/* ── 목차: 성좌 대신 도감의 색인 ─────────────────────────────────────────
+   Celestial 은 왼쪽에 별자리(선으로 이은 표지별)를 두고 그것이 곧 목차다.
+   Maple 은 종이 색인이다 — 먹 하이라인으로 나뉜 줄, 고른 줄 앞에 잎 하나. */
+
+export const ConstellationArt = styled(C.ConstellationArt)`
+    display: none;
+`;
+
+export const TabList = styled(C.TabList)`
+    padding-top: 42px;
+`;
+
+export const TabButton = styled(C.TabButton)`
+    height: 58px;
+    padding: 0 18px 0 44px;
+    border-bottom: 1px solid ${(p) => hair(p.theme, 0.16)};
+
+    &::before {
+        content: "";
+        position: absolute;
+        left: 18px;
+        top: 50%;
+        ${leafBullet(true, "12px")}
+        transform: translateY(-50%) scale(${(p) => (p.$active ? 1 : 0.7)});
+        background-color: ${(p) => p.theme.colors.primary};
+        opacity: ${(p) => (p.$active ? 1 : 0.28)};
+        transition: transform 0.22s ease, opacity 0.22s ease;
+    }
+
+    .lbl {
+        letter-spacing: 0.1em;
+        text-shadow: none;
+    }
+
+    .cnt {
+        font-family: ${(p) => p.theme.fonts.numeral};
+        font-size: 0.8rem;
+    }
+
+    @media (max-width: 768px) {
+        height: 52px;
+        padding: 0 6px;
+        border-bottom: none;
+
+        &::before { display: none; }
+    }
+`;
+
+export const Eyebrow = styled(C.Eyebrow)`
+    font-family: ${(p) => p.theme.fonts.numeral};
+    font-size: 0.8rem;
+    letter-spacing: 0.12em;
+
+    &::after { background-color: ${(p) => hair(p.theme, 0.4)}; }
+`;
+
+export const PaneTitle = styled(C.PaneTitle)`
+    letter-spacing: 0.2em;
+`;
+
+export const PaneHeader = styled(C.PaneHeader)`
+    border-bottom-color: ${(p) => hair(p.theme, 0.3)};
+`;
+
+export const Constellation = styled(C.Constellation)`
+    border-right-color: ${(p) => hair(p.theme, 0.3)};
+
+    @media (max-width: 768px) {
+        border-bottom-color: ${(p) => hair(p.theme, 0.3)};
+    }
+`;

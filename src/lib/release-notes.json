@@ -1,5 +1,25 @@
 [
   {
+    "version": "1.1.0",
+    "date": "2026-09-17",
+    "notes": {
+      "ko": [
+        "새 테마 Maple(단풍)이 생겼습니다 — 설정 > 모양에서 고릅니다. 낡은 크림 종이 위의 먹선과 눌러 말린 단풍잎, 놋쇠 해시계로 된 월 게이지, 마스킹테이프 같은 일정 막대, 잎 스티커의 챌린지 보드, 도감 한 장 같은 로그인 화면. 밝은 벌과 어두운 벌(호두나무 종이)이 있습니다.",
+        "Maple 을 고르면 안드로이드 홈 위젯도 종이결과 고운바탕 글꼴, 잎 표식으로 함께 바뀝니다. 데스크톱 위젯의 '테마 바탕'은 종이 타일이 됩니다.",
+        "화면을 넘길 때 잎 몇 장이 떨어지는 짧은 전환, 빈 화면의 작은 선화(벤치·공책·병·사진틀)가 Maple 에만 있습니다.",
+        "Celestial 의 제목 글꼴(Orbit)이 설치되지 않은 기기에서 다른 글꼴로 보이던 것을 고쳤습니다.",
+        "카테고리·기념일 화면의 바탕 장식 때문에 가로 스크롤바가 생기던 것을 없앴습니다."
+      ],
+      "en": [
+        "A new theme, Maple: pick it under Settings > Look. Ink lines on aged cream paper, pressed maple leaves, a brass sundial for the month gauge, masking-tape event bars, a challenge board of leaf stickers, and a sign-in page like a page from a field guide. Comes in light and dark (walnut paper).",
+        "With Maple on, the Android home-screen widgets change too — paper grain, the Gowun Batang typeface and leaf markers — and the desktop widgets’ “theme background” becomes a paper tile.",
+        "Maple-only touches: a short page transition with a few falling leaves, and small line drawings (a bench, a notebook, a jar, a photo frame) on empty screens.",
+        "Celestial’s display typeface (Orbit) no longer falls back to another font on devices where it isn’t installed.",
+        "The category and anniversary screens no longer show a horizontal scrollbar caused by their backdrop art."
+      ]
+    }
+  },
+  {
     "version": "1.0.2",
     "date": "2026-09-14",
     "notes": {

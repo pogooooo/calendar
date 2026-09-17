@@ -359,10 +359,59 @@ text, letters, words, numbers, watermark, signature, logo, frame, border, photo,
 
 ---
 
-## 6. 다음 단계 (내가 하는 일)
+## 6. 받은 뒤 — 어떻게 됐나 (2026-09-17)
 
-1. `raw/` 에 파일이 들어오면: 배경 제거 → 마스크 변환 → WebP(질감 ≤150KB, 스프라이트 ≤80KB, 큰 그림 ≤400KB, 전체 ≤4MB — 설치 파일과 APK 에 그대로 실린다) → `public/themes/maple/`
-2. `THEME_FAMILIES` 에 `maple` 추가, `theme.ts` 에 §1.2 의 두 벌 → 컴파일러가 아직 안 만든 화면 24곳을 짚어 준다 (`usePickTheme` 자리)
-3. 화면을 한 곳씩 Maple 로: 로그인 패널 → 사이드바 → 홈 → 달력 → 챌린지 → 프로젝트 → 기념일 → 설정 → 모달·버튼·입력
-4. 안드로이드 위젯 `MapleWidgetPainter` (위젯 시안 문서의 만드는 법과 같은 틀)
-5. 설정 > 테마에 Maple 카드 (E5 미리보기)
+그림 46장이 왔다(`raw/README.md` 에 생성 기록). 안 온 것 둘, 못 쓴 것 둘:
+
+| 항목 | 어떻게 했나 |
+|---|---|
+| **B5 leaf-brown** (안 옴) | 안 쓴다. 빈 화면·설정 바탕은 B2·B3·B4 석 장으로 충분했다 |
+| **C5 bullet-outline** (안 옴) | C6(채운 잎)을 부풀린 것에서 깎은 것을 빼서 윤곽을 만들었다 (`scripts/maple-assets.mjs` 의 `outlineFromFilled`) |
+| **D1 nav-icons-sheet** (옴, 못 씀) | 12종 순서 대신 20칸 짜리 회색 채움 아이콘이 나왔다(집·톱니·트로피 정도만 맞음). 내비 아이콘은 lucide 그대로 둔다. 다시 뽑는다면 §3 D1 프롬프트에 `exactly 12 icons, 4 columns by 3 rows, black line icons only, no fill, no gray` 를 더할 것 |
+| **D2 anniversary-icons-sheet** (옴, 못 씀) | 흐릿하고 달·꽃이 빠졌다(연필·불꽃이 대신). 기념일 아이콘은 Celestial 의 선화 SVG 를 Maple 에서도 쓴다 |
+
+나머지는 전부 들어갔다. 변환은 `node scripts/maple-assets.mjs` 한 번 — 원본 `raw/` (git 에 안 올림, 42MB) → `public/themes/maple/` WebP 50장 0.9MB.
+크림 바탕 키잉(가장자리 되섞기)·먹 마스크·거울 타일·글자 자리 덮기(E1 아래 캡션)·시트 자르기(B6)가 거기 있다.
+종이 네 장(A1·A2·G1·G2)은 모델이 너무 고르게 뽑아(밝기 편차 1~3/255) 결이 거의 없다 — 앱의 종이결은 CSS 잡음(`styles/maple/MapleGround.ts`)으로 얹고, 타일은 위젯 바탕에만 쓴다.
+
+### 어디에 붙었나
+
+| 그림 | 자리 |
+|---|---|
+| A3 wash | 달력 요일 줄 뒤 (`MapleMonthCalendar.styles` Header::before) |
+| A4 tape | 월간·일간·타임라인의 일정 막대 mask (`styles/maple/ink.ts` `tape`) |
+| A5 card-frame | `ink.ts` `cardFrame` (mask-border 9조각) — 아직 붙인 화면은 없다 |
+| B1 hero | 예비 (로그인은 E1·E2 를 썼다) |
+| B2·B3·B4 | 설정 바탕 `settings/maple/LeafField` |
+| B6 sprites | 로그인 패널 떨어지는 잎, 화면 전환 `transition/maple` |
+| C1·C2 | `ink.ts` `vineRule`·`shortRule` — 홈 기둥 머리, 로그인 이름 밑, 전환 |
+| C3 corner | `ink.ts` — 예비 |
+| C4 crest | ✦ 자리 전부 (홈·기념일 줄·위젯) |
+| C5·C6 | 할 일 줄 앞 잎 (`ink.ts` `leafBullet`), 폰 월간 칸의 표식, 설정 목차, 위젯 |
+| C7 check | `ink.ts` `checkStamp` — 예비 |
+| C8 spinner | 예비 |
+| C9 ribbon · C10 label | 예비 |
+| C11·C12 | 챌린지 스티커 `assets/maple/MapleChallengeSticker` |
+| E1·E2 | 로그인·가입 패널 `auth/MapleAuthPanel` |
+| E3 dial | 홈 월 게이지 `home/maple/MapleMonthArch`, 안드로이드 월 게이지 위젯 |
+| E4a~d | 빈 화면 `components/empty/maple` (홈 오늘·프로젝트·챌린지·기념일) |
+| E5 | 설정 테마 카드 미리보기 (`theme.ts` FAMILY_META.preview) |
+| E6 | 사이드바 옆선 `assets/sidebarDesign/MapleSidebarDesign` |
+| F1 seal · F2 medals · F4 acorn | 예비 (챌린지 달성·프로젝트 이정표에 쓸 자리) |
+| F3 today | 달력 오늘 칸 뒤, 위젯 오늘 칸 뒤 |
+| G1·G2 | 데스크톱 위젯 바탕(`theme.paper`), 안드로이드 위젯 바탕 |
+| H1 icon · H2 hero · H3 splash | 예비 (`public/themes/maple/app-icon.webp`·`landing-hero.webp`; H3 는 안 굽었다) |
+
+### 코드 짜임
+
+- 화면은 갈래 공용 View(`XView.tsx`) 하나에 모양만 `celestial/`·`maple/` 의 *.styles.ts — `usePickTheme(STYLES)`. Maple 의 styles 는 Celestial 것을 `export *` 로 받고 다른 것만 `styled(C.X)` 로 덮어쓴다 (`scripts/check-theme-styles.mjs` 가 규칙을 지킨다)
+- 갈래마다 아예 다른 그림은 picker 로: 로그인 패널·사이드바 옆선·홈 게이지(`home/parts/MonthArch`)·달력 칸 꾸밈·챌린지 스티커·설정 바탕·화면 전환·빈 화면 선화
+- 안드로이드 위젯은 화가 하나(`WidgetPainter`)에 붓(`WidgetStyle`: Celestial/Maple)이 글꼴·표식·바탕·문장을 그린다. 고운바탕(KS X 1001 2,350자 부분집합 1.4MB)·Cormorant Garamond 를 동봉
+- 글꼴: 앱은 고운바탕·Cormorant 를 Google Fonts 에서 켤 때 받는다(`lib/fonts.ts` THEME_FONTS)
+
+## 7. 남은 것
+
+- F1·F2 배지(챌린지 목표 달성·프로젝트 완료), C9 리본(D-day), C10 이름표(카테고리), A5 카드 틀(프로젝트 카드), F4 도토리(타임라인 이정표), C7 도장(체크박스) — 그림은 있고 자리만 정하면 된다
+- Maple 만의 짜임(구조) 바꾸기: 설정의 성좌 목차, 카테고리 덱의 별자리 워터마크, 기념일 카드의 마름모 귀퉁이는 아직 Celestial 의 짜임에 색만 바꾼 것
+- 안드로이드 위젯 고르기 화면의 미리보기 PNG(res/drawable-nodpi/widget_preview_*)는 Celestial 로 찍힌 것 그대로 (놓기 전 설정 화면의 미리보기는 실제 화가가 그리므로 Maple 로 나온다)
+- H3 스플래시(안드로이드 시작 화면)는 안 붙였다

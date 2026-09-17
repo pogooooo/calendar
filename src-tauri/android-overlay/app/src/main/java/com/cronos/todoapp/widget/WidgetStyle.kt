@@ -130,13 +130,15 @@ class MapleStyle(context: Context, density: Float) : WidgetStyle(context, densit
         val inset = dp(0.5f)
         val rect = RectF(inset, inset, w - inset, h - inset)
         val paper = if (pal.dark) paperDark else paperLight
-        val bgPaint = if (paper != null) {
+        // 종이색을 먼저 깔고 그 위에 결(G1·G2)을 얹는다. 밝은 벌의 크라프트 타일은 앱의 크림보다 짙어 70% 만 섞는다
+        c.drawRoundRect(rect, r, r, fill(Palette.withAlpha(pal.bg, alphaPct / 100f)))
+        if (paper != null) {
             val shader = BitmapShader(paper, Shader.TileMode.MIRROR, Shader.TileMode.MIRROR)
             // 종이 타일은 384px 결을 2배로 구운 768px — 화면 밀도에 맞춰 원래 크기로 깐다
             shader.setLocalMatrix(Matrix().apply { setScale(density / 2f, density / 2f) })
-            Paint(Paint.ANTI_ALIAS_FLAG).apply { this.shader = shader; alpha = (alphaPct * 255 / 100).coerceIn(0, 255) }
-        } else fill(Palette.withAlpha(pal.bg, alphaPct / 100f))
-        c.drawRoundRect(rect, r, r, bgPaint)
+            val mix = if (pal.dark) 1f else 0.7f
+            c.drawRoundRect(rect, r, r, Paint(Paint.ANTI_ALIAS_FLAG).apply { this.shader = shader; alpha = (alphaPct * 255 / 100 * mix).toInt().coerceIn(0, 255) })
+        }
         // 먹 하이라인 테두리와 그 안쪽의 옅은 선 — 색인 카드의 이중 괘선
         c.drawRoundRect(rect, r, r, stroke(pal.line, 1f))
         val inner = RectF(rect.left + dp(3f), rect.top + dp(3f), rect.right - dp(3f), rect.bottom - dp(3f))

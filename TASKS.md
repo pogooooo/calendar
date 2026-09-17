@@ -15,10 +15,6 @@ CRONOS 점검(2026-09-09)에서 나온 항목들. 데스크톱 · 웹 · 안드�
   - 풀리면: `git tag -f v1.0.2 && git push -f origin v1.0.2` 로 워크플로 다시 → latest.json 의 windows 항목 확인 → `gh release upload v1.0.2 Downloads/CRONOS-1.0.2-arm64.apk`
   - 로컬로 구운 `Downloads/CRONOS_1.0.2_x64-setup.exe` 는 새로 설치할 때만 쓴다 (서명 키가 GitHub 시크릿에만 있어 자동 업데이트 서명이 안 맞는다)
 
-- [ ] **Maple(단풍) 테마 — 그림 에셋** - since 2026-09-14
-  - 발주서 `design/themes/maple/ASSETS.md` (48개, 프롬프트·검수 기준·우선순위). 그림은 다른 채팅의 이미지 모델로 뽑아 `design/themes/maple/raw/` 에 넣어 주시면 된다
-  - 1차 13개(B1 스타일 키부터)만 와도 로그인·바탕·머리글·내비까지 Maple 로 세울 수 있다. 코드 쪽(`THEME_FAMILIES` 에 `maple`, 화면 24곳)은 그때 시작
-
 - [ ] **B-09가 어느 화면인지 확인** - since 2026-09-09
   - "위젯 설정 화면이 제대로 안 보이고 상단 바가 내용과 겹친다"는 말씀 중, 겹침은 재현되지 않았다
   - 재현되지 않은 채로 두지 않고, 잠기지 않은 동안 상단 바 자리(24px)를 늘 비워 두는 쪽으로 고쳐 두었다 (아래 Done B-09 · W-01)
@@ -32,10 +28,15 @@ CRONOS 점검(2026-09-09)에서 나온 항목들. 데스크톱 · 웹 · 안드�
 
 ## Done
 
+- [x] ~~**Maple(단풍) 테마**~~ (2026-09-17, 1.1.0 — 아직 배포 안 함) - 그림 46장이 와서(`design/themes/maple/raw/`, README 에 생성 기록) `scripts/maple-assets.mjs` 로 WebP 50장(0.9MB)을 굽고 테마를 세웠다. 낡은 종이·먹 하이라인·잎 표식·놋쇠 해시계·테이프 막대·잎 스티커·도감 로그인·설정 미리보기 그림·잎 떨어지는 전환·빈 화면 선화. 밝은 벌·어두운 벌. 데스크톱 위젯 바탕은 종이 타일(`theme.paper`), 안드로이드 위젯은 붓(`WidgetStyle`)으로 고운바탕 글꼴·잎·종이결
+  - 코드 짜임을 바꿨다: 화면은 갈래 공용 View(`XView.tsx`) 하나에 모양만 `celestial/`·`maple/` 의 *.styles.ts (`usePickTheme(STYLES)`). Maple styles 는 Celestial 것을 `export *` 로 받고 다른 것만 덮어쓴다. 갈래마다 아예 다른 그림(로그인·사이드바·게이지·스티커·전환·빈 화면)은 picker
+  - 못 쓴 그림: D1 내비 아이콘(20칸 회색 채움으로 나옴 → lucide 그대로), D2 기념일 아이콘(흐릿, 달·꽃 빠짐 → Celestial 선화 그대로). 안 온 것: B5(안 씀), C5(C6 에서 만듦). 자세한 건 ASSETS.md §6·§7
+  - 남은 것(§7): F1·F2 배지, C9 리본, C10 이름표, A5 카드 틀, F4 도토리, C7 도장은 그림만 있고 자리를 안 잡았다. 설정 목차·카테고리 덱·기념일 카드는 아직 Celestial 짜임에 색만 바꾼 것
+
 - [x] ~~**안드로이드 홈 위젯 11종 (Celestial)**~~ (2026-09-14, 1.0.2) - 시안(design/widgets/celestial-widgets.html)대로. 앱이 Canvas 로 그림 한 장을 그려 ImageView 에 얹는다(`CelestialPainter`, Orbit 글꼴 동봉). 종류: 오늘 할 일 · 지금/다음 · 챌린지 · 월 게이지 · 주간 띠 · 월간 · 기념일 D-day · 하루 진행 · 빠른 추가 · 오늘 메모 · 프로젝트. 놓을 때 설정 화면(투명도·벌, 길게 눌러 다시 열기), 줄·날짜 칸마다 `cronos://` 딥링크(MainActivity → pending-link.txt → JS). 스냅샷 v2(이 달 전체 일정·기념일·프로젝트·메모·테마 색). 에뮬레이터에서 11종 그리기·설정 화면·딥링크(기념일·그날 일간·빠른 추가)·주간 칸 누르기까지 확인
   - 미리보기 그림(res/drawable-nodpi)은 디버그 빌드의 `PreviewRenderReceiver` 로 에뮬레이터에서 만들어 가져온다 (adb broadcast RENDER_PREVIEWS)
   - 폰 앱이 켤 때 요청 하나가 간혹 "Failed to fetch" 로 떨어지던 것(서버는 멀쩡) → GET 은 한 번 더 묻는다 (useAuthFetch)
-  - Maple 테마 위젯은 화가(`MapleWidgetPainter`)만 더 두면 된다 — 에셋이 오면
+  - (2026-09-17) 갈래가 늘면서 화가는 `WidgetPainter` 하나, 갈래별 붓은 `WidgetStyle` 로 나눴다
 - [x] ~~**로그인 유지 선택**~~ (2026-09-14, 1.0.2) - 로그인 화면의 체크. 켜면 30일, 끄면 앱(브라우저)을 닫을 때 로그아웃 — 웹은 sessionStorage + 세션 쿠키, 데스크톱·안드로이드는 프로세스가 새로 켜졌는지(`launch_id`)로 판단해 서버 토큰까지 지운다. 서버 쪽은 로컬에서 curl 로 확인(세션 쿠키 / Max-Age 30일 / 갱신 때 모드 유지)
 - [x] ~~**안드로이드 위젯이 시각 경계에서 늦게 바뀌던 것**~~ (2026-09-14, 1.0.2) - 다음 일정의 시작·끝과 자정에 AlarmManager 로 한 번씩 다시 그린다. 에뮬레이터에서 2분 뒤 일정으로 확인: 경계 뒤 1분 남짓 안에 "지금" 으로 바뀜 (느슨한 알람이라 몇 초~1분 늦을 수 있다)
 - [x] ~~**패치 노트**~~ (2026-09-14, 1.0.2) - `src/lib/release-notes.json` 하나가 출처. 설정 > 정보 탭(지금 버전 + 업데이트 확인 + 판마다 달라진 점), 업데이트 알림(그 판의 노트), GitHub 릴리스 본문(CI 가 씀)이 다 여기서 읽는다

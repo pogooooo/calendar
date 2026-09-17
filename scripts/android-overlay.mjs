@@ -26,6 +26,8 @@ const STALE = [
     "res/drawable/widget_dot.xml",
     "res/drawable/widget_bg.xml",
     "java/com/cronos/todoapp/widget/WidgetSnapshot.kt",
+    // 2026-09-17: 화가를 갈래 공용 WidgetPainter 로 바꾸며 이름을 바꿨다
+    "java/com/cronos/todoapp/widget/CelestialPainter.kt",
 ];
 for (const rel of STALE) {
     const p = join(gen, "app", "src", "main", rel);

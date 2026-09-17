@@ -103,10 +103,11 @@ export const Tagline = styled.p`
 /** 이름 밑의 짧은 먹선 */
 export const Rule = styled.span`
     display: block;
-    width: 120px;
-    height: 12px;
-    margin-top: 12px;
-    background: ${p => p.theme.colors.primary};
-    mask: url("/themes/maple/divider-short.webp") left center / auto 100% no-repeat;
-    -webkit-mask: url("/themes/maple/divider-short.webp") left center / auto 100% no-repeat;
+    width: 200px;
+    height: 46px;
+    margin: 4px 0 0 -6px;
+    background: ${p => p.theme.colors.text};
+    opacity: 0.75;
+    mask: url("/themes/maple/divider-short.webp") left center / contain no-repeat;
+    -webkit-mask: url("/themes/maple/divider-short.webp") left center / contain no-repeat;
 `;

@@ -42,7 +42,7 @@
 │   └─ 정적 화면 번들 (out-desktop) + 위젯 창 + 자동 시작       │
 ├──────────────────────────────────────────────────────────┤
 │  Next.js 15                                                │
-│   ├─ app/(main)      화면            ├─ components/*/celestial/  테마 갈래  │
+│   ├─ app/(main)      화면            ├─ components/*/{celestial,maple}/ 테마 │
 │   ├─ app/widget/*    위젯 11종        ├─ store/                  Zustand   │
 │   ├─ app/api/*       route.api.ts    ├─ i18n/                   ko · en   │
 │   └─ app/download    소개·다운로드    └─ styles/                 토큰      │
@@ -53,9 +53,14 @@
 
 ### 테마 갈래 패턴
 
-화면마다 로직은 `XxxPage` 가 들고, 모양은 `celestial/CelestialXxx.tsx` + `CelestialXxx.styles.ts` 한 쌍이 든다.
-갈래는 `usePickTheme({ celestial: CelestialXxx })` 한 줄이고, `Record<ThemeFamily, …>` 라 새 테마를 `THEME_FAMILIES` 에 더하면 `tsc` 가 아직 안 만든 화면을 전부 짚어 준다.
-빌드 앞에서 두 가지를 확인한다 — 위젯 종류가 TS · Rust · 폴더 세 곳에서 같은지(`scripts/check-widget-kinds.mjs`), 테마 갈래 컴포넌트가 모양을 `*.styles.ts` 에 두었는지(`scripts/check-theme-styles.mjs`).
+테마는 두 갈래다 — **Celestial**(금빛 실선 위의 별자리, 그림 파일 없이 SVG·CSS) 과 **Maple**(낡은 종이 위의 먹과 단풍잎, `public/themes/maple/` 의 그림). 갈래마다 밝은 벌·어두운 벌.
+
+화면마다 로직은 `XxxPage` 가 들고, JSX 는 갈래 공용 `XxxView.tsx` 하나가 들고, 모양만 `celestial/CelestialXxx.styles.ts` 와 `maple/MapleXxx.styles.ts` 로 나뉜다 — View 안의 `usePickTheme(STYLES)` 가 고른다.
+Maple 의 styles 는 Celestial 것을 `export *` 로 받고 다른 것만 `styled(C.Xxx)` 로 덮어쓴다. 갈래마다 아예 다른 그림(로그인 패널·사이드바 옆선·홈 게이지·달력 칸 꾸밈·챌린지 스티커·설정 바탕·화면 전환·빈 화면 선화)은 `usePickTheme({ celestial, maple })` 로 구현을 통째로 고른다.
+`Record<ThemeFamily, …>` 라 새 갈래를 `THEME_FAMILIES` 에 더하면 `tsc` 가 아직 안 만든 자리를 전부 짚어 준다.
+안드로이드 홈 위젯도 같다: 화가(`WidgetPainter`)는 하나, 갈래별 붓(`WidgetStyle`)이 글꼴·표식·바탕을 그린다.
+빌드 앞에서 두 가지를 확인한다 — 위젯 종류가 TS · Rust · 폴더 세 곳에서 같은지(`scripts/check-widget-kinds.mjs`), 테마를 타는 화면이 모양을 `*.styles.ts` 에 두었는지(`scripts/check-theme-styles.mjs`).
+Maple 의 그림은 `node scripts/maple-assets.mjs` 로 원본(`design/themes/maple/raw/`, git 밖)에서 굽는다 — 발주서·배치는 `design/themes/maple/ASSETS.md`.
 
 ---
 
