@@ -6,6 +6,8 @@
  */
 import styled from "styled-components";
 import { TOUCH, MOBILE } from "@/styles/breakpoints";
+import { SectionWrapper, SectionTitle } from "@/components/project/celestial/section";
+export { SectionWrapper, SectionTitle };
 
 export const BoardGrid = styled.div`
     display: flex;

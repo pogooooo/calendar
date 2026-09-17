@@ -4,14 +4,12 @@ import * as React from 'react';
 import { useT } from "@/i18n/useT";
 import { ProjectBoardProps } from "./ProjectBoard";
 import { ProjectTaskType } from '@/store/useProjectStore';
-import { SectionWrapper, SectionTitle } from "@/components/project/celestial/section";
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialProjectBoard.styles";
 import * as MapleS from "./maple/MapleProjectBoard.styles";
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
 const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS };
-export { SectionWrapper, SectionTitle };
 
 const ProjectBoardView = React.forwardRef<HTMLDivElement, ProjectBoardProps>(({
                                                                                        tasks,
@@ -33,8 +31,8 @@ const ProjectBoardView = React.forwardRef<HTMLDivElement, ProjectBoardProps>(({
     ];
 
     return (
-        <SectionWrapper ref={ref} style={{ flex }} $mobileHeight="420px">
-            <SectionTitle>{tr.board}</SectionTitle>
+        <S.SectionWrapper ref={ref} style={{ flex }} $mobileHeight="420px">
+            <S.SectionTitle>{tr.board}</S.SectionTitle>
             <S.BoardGrid>
                 {boardColumns.map(col => (
                     <S.BoardColumn key={col.s}>
@@ -64,7 +62,7 @@ const ProjectBoardView = React.forwardRef<HTMLDivElement, ProjectBoardProps>(({
                     </S.BoardColumn>
                 ))}
             </S.BoardGrid>
-        </SectionWrapper>
+        </S.SectionWrapper>
     );
 });
 

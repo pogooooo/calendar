@@ -340,6 +340,15 @@ export const Mini = styled.div<{ $bg: string }>`
     background-color: ${(p) => p.$bg};
 `;
 
+/** 갈래가 미리보기 그림을 가진 경우(Maple 의 E5) 축소판 대신 그 그림 */
+export const MiniImage = styled.img`
+    display: block;
+    width: 100%;
+    height: 152px;
+    object-fit: cover;
+    object-position: center;
+`;
+
 export const MiniRail = styled.div<{ $bg: string }>`
     display: flex;
     flex-direction: column;

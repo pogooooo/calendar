@@ -4,7 +4,7 @@ import * as React from "react";
 import LocaleSelect from "@/components/LocaleSelect";
 import TimezoneSelect from "@/components/TimezoneSelect";
 import WidgetPreview from "./celestial/WidgetPreview";
-import StarField from "./celestial/StarField";
+import Backdrop from "./parts/Backdrop";
 import type { SettingsThemeProps } from "./SettingsPage";
 import { FONT_OPTIONS, ensureFontLoaded } from "@/lib/fonts";
 import { FONT_SIZE_OPTIONS, FONT_WEIGHT_OPTIONS } from "@/styles/GlobalTypography";
@@ -124,7 +124,7 @@ export default function SettingsView({
 
     return (
         <L.Shell>
-            <StarField />
+            <Backdrop />
 
             <L.Frame>
                 <L.Constellation>
@@ -193,36 +193,40 @@ export default function SettingsView({
                                                         onThemeOptionChange(th.id, option);
                                                     }}
                                                 >
-                                                    <L.Mini $bg={g.bg}>
-                                                        <L.MiniRail $bg={g.rail}>
-                                                            <i style={{ background: g.accent, width: "66%" }} />
-                                                            <i style={{ background: g.dimInk, width: "90%" }} />
-                                                            <i style={{ background: g.dimInk, width: "58%" }} />
-                                                            <i style={{ background: g.dimInk, width: "78%" }} />
-                                                            <i style={{ background: g.dimInk, width: "68%" }} />
-                                                        </L.MiniRail>
-                                                        <L.MiniBody>
-                                                            <div className="title" style={{ background: g.ink }} />
-                                                            <div className="week">
-                                                                {Array.from({ length: 7 }, (_, i) => (
-                                                                    <b key={i} style={{ background: g.dimInk }} />
-                                                                ))}
-                                                            </div>
-                                                            <div className="grid">
-                                                                {CELL_PLAN.map((kind, i) => (
-                                                                    <span
-                                                                        key={i}
-                                                                        style={{
-                                                                            background:
-                                                                                kind === "today" ? g.accent
-                                                                                    : kind === "event" ? g.event
-                                                                                        : g.cell,
-                                                                        }}
-                                                                    />
-                                                                ))}
-                                                            </div>
-                                                        </L.MiniBody>
-                                                    </L.Mini>
+                                                    {th.preview?.[option] ? (
+                                                        <L.MiniImage src={th.preview[option]} alt="" draggable={false} />
+                                                    ) : (
+                                                        <L.Mini $bg={g.bg}>
+                                                            <L.MiniRail $bg={g.rail}>
+                                                                <i style={{ background: g.accent, width: "66%" }} />
+                                                                <i style={{ background: g.dimInk, width: "90%" }} />
+                                                                <i style={{ background: g.dimInk, width: "58%" }} />
+                                                                <i style={{ background: g.dimInk, width: "78%" }} />
+                                                                <i style={{ background: g.dimInk, width: "68%" }} />
+                                                            </L.MiniRail>
+                                                            <L.MiniBody>
+                                                                <div className="title" style={{ background: g.ink }} />
+                                                                <div className="week">
+                                                                    {Array.from({ length: 7 }, (_, i) => (
+                                                                        <b key={i} style={{ background: g.dimInk }} />
+                                                                    ))}
+                                                                </div>
+                                                                <div className="grid">
+                                                                    {CELL_PLAN.map((kind, i) => (
+                                                                        <span
+                                                                            key={i}
+                                                                            style={{
+                                                                                background:
+                                                                                    kind === "today" ? g.accent
+                                                                                        : kind === "event" ? g.event
+                                                                                            : g.cell,
+                                                                            }}
+                                                                        />
+                                                                    ))}
+                                                                </div>
+                                                            </L.MiniBody>
+                                                        </L.Mini>
+                                                    )}
                                                     <L.ThemeMeta>
                                                         <L.ThemeName>
                                                             <L.Star $on={selected} />
