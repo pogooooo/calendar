@@ -20,12 +20,15 @@ import { createGlobalStyle } from "styled-components";
  * 눈금이 실제 값을 가리켜야 하는 곳(시각·주 단위)에는
  * components/scroll/RulerScroll 을 쓴다.
  */
+/** 눈금·막대의 색. 테마가 틀의 실선 색(line)을 주면 그것, 아니면 primary */
+const rail = (theme: { line?: string; colors: { primary: string } }) => theme.line ?? theme.colors.primary;
+
 const GlobalScrollbar = createGlobalStyle`
     /* ── 파이어폭스 등: 표준 속성만 지원하는 브라우저 ─────────────────── */
     @supports (scrollbar-width: thin) and (not selector(::-webkit-scrollbar)) {
         * {
             scrollbar-width: thin;
-            scrollbar-color: ${(props) => props.theme.colors.primary} transparent;
+            scrollbar-color: ${(props) => rail(props.theme)} transparent;
         }
     }
 
@@ -46,20 +49,20 @@ const GlobalScrollbar = createGlobalStyle`
         background-color: transparent;
         background-image: repeating-linear-gradient(
             to bottom,
-            ${(props) => props.theme.colors.primary}66 0 1px,
+            ${(props) => rail(props.theme)}66 0 1px,
             transparent 1px 9px
         );
         background-repeat: repeat-y;
         background-position: right;
         background-size: 7px 100%;
-        border-left: 1px solid ${(props) => props.theme.colors.primary}33;
+        border-left: 1px solid ${(props) => rail(props.theme)}33;
     }
 
     /* 가로 스크롤에는 눈금을 새기지 않는다. 세로처럼 읽어 내릴 일이 없다. */
     *::-webkit-scrollbar-track:horizontal {
         background-image: none;
         border-left: none;
-        border-top: 1px solid ${(props) => props.theme.colors.primary}33;
+        border-top: 1px solid ${(props) => rail(props.theme)}33;
     }
 
     *::-webkit-scrollbar-thumb {
@@ -67,7 +70,7 @@ const GlobalScrollbar = createGlobalStyle`
         border: 5px solid transparent;
         border-radius: 0;
         background-clip: content-box;
-        background-color: ${(props) => props.theme.colors.primary};
+        background-color: ${(props) => rail(props.theme)};
         transition: box-shadow 0.2s;
     }
 
@@ -76,7 +79,7 @@ const GlobalScrollbar = createGlobalStyle`
     }
 
     *::-webkit-scrollbar-thumb:hover {
-        box-shadow: 0 0 7px ${(props) => props.theme.colors.primary}80;
+        box-shadow: 0 0 7px ${(props) => rail(props.theme)}80;
     }
 
     *::-webkit-scrollbar-corner {

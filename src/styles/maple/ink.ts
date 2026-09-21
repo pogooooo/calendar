@@ -98,3 +98,203 @@ export const cardFrame = (color: string, width = "22px") => css`
         mask-border: url("${ASSET}/card-frame.webp") 96 fill / ${width} repeat;
     }
 `;
+
+/* ── 조작부의 말 — 단추·입력칸·탭·칩. 화면마다 따로 그리면 손이 달라지므로 여기서 한 번 정한다 ──
+   Celestial 이 "가는 금빛 선과 빛무리" 라면 Maple 은 "종이에 찍은 도장" 이다:
+   납작한 종이 위에 먹 하이라인, 누르면 잉크가 살짝 번지듯 황토 물이 들고, 주된 단추는 밀랍 붉음. 빛무리(box-shadow glow)는 없다. */
+
+type Themed = { theme: { mode: "light" | "dark"; colors: { text: string; primary: string; accent: string; background: string; surface: string; error: string; textSecondary: string } } };
+type Fonted = Themed & { theme: { fonts: { display: string } } };
+
+/** 종이 한 장 — 판·카드의 바탕. 살짝 짙은 종이(surface)에 먹 하이라인, 안쪽으로 옅은 괘선 하나 */
+export const paperCard = (inset = "3px") => css`
+    position: relative;
+    background-color: ${(p: Themed) => p.theme.colors.surface};
+    border: 1px solid ${(p: Themed) => hair(p.theme, 0.4)};
+    border-radius: 2px;
+    box-shadow: none;
+
+    &::before {
+        content: "";
+        position: absolute;
+        inset: ${inset};
+        border: 1px solid ${(p: Themed) => hair(p.theme, 0.12)};
+        border-radius: 1px;
+        pointer-events: none;
+    }
+`;
+
+/**
+ * 도장 단추. default 는 먹 윤곽, primary 는 밀랍 붉음, danger 는 붉은 윤곽에서 누르면 채움, ghost 는 윤곽 없음.
+ * 누르면 1px 내려앉고 안쪽 그늘이 진다 — 빛나지 않는다.
+ */
+export const stampButton = (variant: "default" | "primary" | "danger" | "ghost" = "default") => css`
+    border-radius: 2px;
+    box-shadow: none;
+    font-family: ${(p: Fonted) => p.theme.fonts.display};
+    letter-spacing: 0.04em;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.08s ease;
+
+    ${variant === "default" && css`
+        background-color: transparent;
+        border: 1px solid ${(p: Themed) => hair(p.theme, 0.5)};
+        color: ${(p: Themed) => p.theme.colors.text};
+
+        &:hover {
+            border-color: ${(p: Themed) => hair(p.theme, 0.8)};
+            background-color: ${(p: Themed) => withAlpha(p.theme.colors.accent, p.theme.mode === "dark" ? 0.14 : 0.2)};
+            box-shadow: none;
+        }
+    `}
+
+    ${variant === "primary" && css`
+        background-color: ${(p: Themed) => p.theme.colors.primary};
+        border: 1px solid ${(p: Themed) => p.theme.colors.primary};
+        color: ${(p: Themed) => p.theme.colors.background};
+
+        &:hover {
+            background-color: ${(p: Themed) => `color-mix(in srgb, ${p.theme.colors.primary} 86%, #000)`};
+            border-color: ${(p: Themed) => `color-mix(in srgb, ${p.theme.colors.primary} 86%, #000)`};
+            box-shadow: none;
+        }
+    `}
+
+    ${variant === "danger" && css`
+        background-color: transparent;
+        border: 1px solid ${(p: Themed) => p.theme.colors.error};
+        color: ${(p: Themed) => p.theme.colors.error};
+
+        &:hover {
+            background-color: ${(p: Themed) => p.theme.colors.error};
+            color: ${(p: Themed) => p.theme.colors.background};
+            box-shadow: none;
+        }
+    `}
+
+    ${variant === "ghost" && css`
+        background-color: transparent;
+        border: 1px solid transparent;
+        color: ${(p: Themed) => p.theme.colors.text};
+
+        &:hover {
+            background-color: ${(p: Themed) => withAlpha(p.theme.colors.accent, 0.18)};
+            box-shadow: none;
+        }
+    `}
+
+    &:active {
+        transform: translateY(1px);
+        box-shadow: inset 0 1px 2px ${withAlpha("#000000", 0.18)};
+    }
+`;
+
+/** 입력칸 — 종이 위의 네모 칸. 초점이 오면 먹선이 붉어질 뿐 빛나지 않는다 */
+export const inkInput = css`
+    background-color: ${(p: Themed) => withAlpha(p.theme.colors.background, p.theme.mode === "dark" ? 0.4 : 0.6)};
+    border: 1px solid ${(p: Themed) => hair(p.theme, 0.45)};
+    border-radius: 2px;
+    color: ${(p: Themed) => p.theme.colors.text};
+    box-shadow: none;
+    transition: border-color 0.15s ease;
+
+    &::placeholder { color: ${(p: Themed) => withAlpha(p.theme.colors.textSecondary, 0.8)}; }
+
+    &:focus, &:focus-within {
+        outline: none;
+        border-color: ${(p: Themed) => p.theme.colors.primary};
+        box-shadow: none;
+    }
+`;
+
+/** 종이 탭 — 밑선 하나. 고른 탭은 붉은 밑줄 두 줄 두께 */
+export const paperTab = (active: boolean) => css`
+    position: relative;
+    background: none;
+    border: none;
+    border-bottom: 2px solid ${(p: Themed) => (active ? p.theme.colors.primary : "transparent")};
+    border-radius: 0;
+    color: ${(p: Themed) => (active ? p.theme.colors.primary : p.theme.colors.textSecondary)};
+    box-shadow: none;
+
+    &:hover { color: ${(p: Themed) => p.theme.colors.text}; }
+`;
+
+/** 칩(카테고리·필터) — 하이라인 네모에 황토 물 */
+export const inkChip = (active: boolean) => css`
+    border: 1px solid ${(p: Themed) => hair(p.theme, active ? 0.6 : 0.3)};
+    border-radius: 2px;
+    background-color: ${(p: Themed) => (active ? withAlpha(p.theme.colors.accent, 0.16) : "transparent")};
+    color: ${(p: Themed) => (active ? p.theme.colors.text : p.theme.colors.textSecondary)};
+    box-shadow: none;
+`;
+
+/* ── 창(모달) 안의 서식 — 머리글·줄·바닥. 창마다 조금씩 다른 이름을 쓰므로 조각으로 둔다 ── */
+
+/** 창 머리글: 먹 하이라인 밑줄, 제목 입력칸은 초점이 오면 붉은 밑줄 */
+export const formHeader = css`
+    border-bottom: 1px solid ${(p: Themed) => hair(p.theme, 0.45)};
+    border-radius: 0;
+
+    .title-input {
+        font-family: ${(p: Fonted) => p.theme.fonts.display};
+        font-weight: 500;
+        letter-spacing: 0.02em;
+
+        &:focus { border-bottom-color: ${(p: Themed) => p.theme.colors.primary}; }
+    }
+
+    .close-btn:hover { color: ${(p: Themed) => p.theme.colors.primary}; }
+`;
+
+/** 서식의 한 줄: 먹 하이라인으로 나뉘고, 입력칸에 마우스가 오면 황토 물 */
+export const formRow = css`
+    border-bottom: 1px solid ${(p: Themed) => hair(p.theme, 0.18)};
+
+    label { font-family: ${(p: Fonted) => p.theme.fonts.display}; }
+
+    input[type="text"], input[type="date"], input[type="datetime-local"], input[type="number"], textarea, select {
+        border-radius: 2px;
+
+        &:hover, &:focus {
+            background-color: ${(p: Themed) => withAlpha(p.theme.colors.accent, 0.14)};
+            border-color: ${(p: Themed) => hair(p.theme, 0.4)};
+            box-shadow: none;
+        }
+    }
+`;
+
+/** 서식 바닥: 먹 하이라인 윗줄 */
+export const formFooter = css`
+    border-top: 1px solid ${(p: Themed) => hair(p.theme, 0.3)};
+    border-radius: 0;
+`;
+
+/** 켜고 끄는 스위치: 하이라인 홈에 종이 손잡이, 켜면 붉은 홈 */
+export const paperToggle = css`
+    .slider {
+        background-color: transparent;
+        border: 1px solid ${(p: Themed) => hair(p.theme, 0.5)};
+        box-sizing: border-box;
+        border-radius: 12px;
+    }
+
+    .slider::before {
+        background-color: ${(p: Themed) => p.theme.colors.text};
+        opacity: 0.55;
+        box-shadow: none;
+        height: 12px;
+        width: 12px;
+        left: 4px;
+        bottom: 4px;
+    }
+
+    input:checked + .slider {
+        background-color: ${(p: Themed) => p.theme.colors.primary};
+        border-color: ${(p: Themed) => p.theme.colors.primary};
+    }
+
+    input:checked + .slider::before {
+        background-color: ${(p: Themed) => p.theme.colors.background};
+        opacity: 1;
+    }
+`;

@@ -3,7 +3,8 @@
 import * as React from "react";
 import { createPortal } from "react-dom";
 import ArcanaEmblem from "./ArcanaEmblem";
-import { ARCANA, VARIANT_BY_KIND, type DialogKind, type DialogVariant } from "./arcana";
+import MapleEmblem from "./maple/MapleEmblem";
+import { ARCANA, PLATES, VARIANT_BY_KIND, type DialogKind, type DialogVariant } from "./arcana";
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialDialog.styles";
 import * as MapleS from "./maple/MapleDialog.styles";
@@ -37,7 +38,9 @@ export default function Dialog({
     kind, title, message, confirmLabel, cancelLabel, variant, onResolve,
 }: Props) {
     const S = usePickTheme(STYLES);
-    const arcanum = ARCANA[kind];
+    // 문장과 번호도 갈래마다 다르다 — Celestial 은 타로 아르카나, Maple 은 도감 도판
+    const Emblem = usePickTheme({ celestial: ArcanaEmblem, maple: MapleEmblem });
+    const arcanum = usePickTheme({ celestial: ARCANA, maple: PLATES })[kind];
     const shape = variant ?? VARIANT_BY_KIND[kind];
     const confirmRef = React.useRef<HTMLButtonElement>(null);
     const veilRef = React.useRef<HTMLDivElement>(null);
@@ -102,7 +105,7 @@ export default function Dialog({
                     <S.Numeral>{arcanum.num}</S.Numeral>
                     <S.ArcanaName>{arcanum.name}</S.ArcanaName>
                 </div>
-                <ArcanaEmblem kind={kind} size={76} />
+                <Emblem kind={kind} size={76} />
                 <S.Title>{title}</S.Title>
                 {message && <S.Message>{message}</S.Message>}
                 <div className="rule" />
@@ -118,7 +121,7 @@ export default function Dialog({
                     <S.ArcanaName>{arcanum.name}</S.ArcanaName>
                 </div>
                 <div className="inner">
-                    <ArcanaEmblem kind={kind} size={62} />
+                    <Emblem kind={kind} size={62} />
                     <S.Title>{title}</S.Title>
                     {message && <S.Message>{message}</S.Message>}
                     {actions}
@@ -130,7 +133,7 @@ export default function Dialog({
             <S.LandCard $kind={kind} role="alertdialog" aria-modal="true" aria-label={title}>
                 <Pips />
                 <div className="side">
-                    <ArcanaEmblem kind={kind} size={46} />
+                    <Emblem kind={kind} size={46} />
                     <S.Numeral>{arcanum.num}</S.Numeral>
                 </div>
                 <div className="body">
@@ -145,7 +148,7 @@ export default function Dialog({
             <S.PlainCard $kind={kind} role="alertdialog" aria-modal="true" aria-label={title}>
                 <Pips />
                 <div className="top">
-                    <ArcanaEmblem kind={kind} size={34} />
+                    <Emblem kind={kind} size={34} />
                     <div>
                         <S.Numeral>{arcanum.num}</S.Numeral>
                         <S.ArcanaName>{arcanum.name}</S.ArcanaName>

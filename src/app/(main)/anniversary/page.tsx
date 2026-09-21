@@ -1,8 +1,6 @@
 "use client";
 
 import * as React from "react";
-import styled, { css, keyframes } from "styled-components";
-import { MOBILE } from "@/styles/breakpoints";
 import { Cake, Plus, Trash2 } from "lucide-react";
 import useAnniversaryStore, { AnniversaryType } from "@/store/useAnniversaryStore";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
@@ -11,6 +9,12 @@ import { useT } from "@/i18n/useT";
 import Select from "@/components/input/select/Select";
 import AnniversaryIcon, { ANNIVERSARY_ICONS } from "@/assets/celestial/AnniversaryIcons";
 import EmptyArt from "@/components/empty/EmptyArt";
+import { usePickTheme, type ThemeImpls } from "@/styles/themed";
+import * as CelestialS from "./celestial/CelestialAnniversary.styles";
+import * as MapleS from "./maple/MapleAnniversary.styles";
+
+/** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS };
 
 const ROMAN = [
     "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X",
@@ -38,6 +42,7 @@ function ddayDiff(month: number, day: number) {
 }
 
 export default function AnniversaryPage() {
+    const S = usePickTheme(STYLES);
     const authFetch = useAuthFetch();
     const dialog = useDialog();
     const t = useT();
@@ -77,27 +82,27 @@ export default function AnniversaryPage() {
     );
 
     return (
-        <Page>
-            <Zodiac viewBox="0 0 400 400" aria-hidden>
+        <S.Page>
+            <S.Zodiac viewBox="0 0 400 400" aria-hidden>
                 <circle className="dashed" cx="200" cy="200" r="190" />
                 <circle cx="200" cy="200" r="160" />
                 {Array.from({ length: 24 }, (_, i) => (
                     <line key={i} x1="200" y1="14" x2="200" y2="26" transform={`rotate(${i * 15} 200 200)`} />
                 ))}
-            </Zodiac>
+            </S.Zodiac>
 
-            <PageHeader>
+            <S.PageHeader>
                 <i />
                 <span>{t.anniversaryPage.title}</span>
                 <hr />
-            </PageHeader>
+            </S.PageHeader>
 
-            <AddForm onSubmit={handleAdd}>
-                <Corners><i /><i /><i /><i /></Corners>
-                <FormCaption>{t.anniversaryPage.formCaption}</FormCaption>
-                <IconRow>
+            <S.AddForm onSubmit={handleAdd}>
+                <S.Corners><i /><i /><i /><i /></S.Corners>
+                <S.FormCaption>{t.anniversaryPage.formCaption}</S.FormCaption>
+                <S.IconRow>
                     {ANNIVERSARY_ICONS.map(i => (
-                        <IconChoice
+                        <S.IconChoice
                             key={i.key}
                             type="button"
                             title={t.anniversaryPage.iconLabels[i.key]}
@@ -105,17 +110,17 @@ export default function AnniversaryPage() {
                             onClick={() => setIcon(i.key)}
                         >
                             <AnniversaryIcon name={i.key} size={17} />
-                        </IconChoice>
+                        </S.IconChoice>
                     ))}
-                </IconRow>
-                <FormRow>
-                    <TitleInput
+                </S.IconRow>
+                <S.FormRow>
+                    <S.TitleInput
                         value={title}
                         onChange={e => setTitle(e.target.value)}
                         placeholder={t.anniversaryPage.namePlaceholder}
                         maxLength={40}
                     />
-                    <DateField>
+                    <S.DateField>
                         <Select
                             value={String(month)}
                             onChange={v => {
@@ -127,41 +132,41 @@ export default function AnniversaryPage() {
                             options={Array.from({ length: 12 }, (_, i) => ({ value: String(i + 1), label: t.anniversaryPage.monthOption(i + 1) }))}
                             ariaLabel={t.anniversaryPage.monthAria}
                         />
-                    </DateField>
-                    <DateField>
+                    </S.DateField>
+                    <S.DateField>
                         <Select
                             value={String(day)}
                             onChange={v => setDay(Number(v))}
                             options={Array.from({ length: DAYS_IN_MONTH[month - 1] }, (_, i) => ({ value: String(i + 1), label: t.anniversaryPage.dayOption(i + 1) }))}
                             ariaLabel={t.anniversaryPage.dayAria}
                         />
-                    </DateField>
-                    <AddButton type="submit" disabled={!title.trim() || pending}>
+                    </S.DateField>
+                    <S.AddButton type="submit" disabled={!title.trim() || pending}>
                         <Plus size={14} />
                         {t.anniversaryPage.add}
-                    </AddButton>
-                </FormRow>
-            </AddForm>
+                    </S.AddButton>
+                </S.FormRow>
+            </S.AddForm>
 
             {sorted.length === 0 ? (
-                <Empty>
+                <S.Empty>
                     <EmptyArt kind="anniversaries" />
                     <Cake size={28} strokeWidth={1.2} />
                     <p>{t.anniversaryPage.empty}<br />{t.anniversaryPage.emptyHint}</p>
-                </Empty>
+                </S.Empty>
             ) : (
-                <CardGrid>
+                <S.CardGrid>
                     {sorted.map((a, idx) => {
                         const diff = ddayDiff(a.month, a.day);
                         const isToday = diff === 0;
                         return (
-                            <Card key={a.id} $today={isToday}>
-                                <Corners><i /><i /><i /><i /></Corners>
-                                <CardDelete type="button" onClick={() => handleDelete(a)}>
+                            <S.Card key={a.id} $today={isToday}>
+                                <S.Corners><i /><i /><i /><i /></S.Corners>
+                                <S.CardDelete type="button" onClick={() => handleDelete(a)}>
                                     <Trash2 size={13} />
-                                </CardDelete>
-                                <CardNumeral>{ROMAN[idx] ?? String(idx + 1)}</CardNumeral>
-                                <CardEmblem $today={isToday}>
+                                </S.CardDelete>
+                                <S.CardNumeral>{ROMAN[idx] ?? String(idx + 1)}</S.CardNumeral>
+                                <S.CardEmblem $today={isToday}>
                                     <svg viewBox="0 0 64 64">
                                         <rect className="dia" x="21" y="21" width="22" height="22" transform="rotate(45 32 32)" />
                                         <circle className="orbit" cx="32" cy="32" r={RING_R} />
@@ -175,386 +180,17 @@ export default function AnniversaryPage() {
                                         />
                                     </svg>
                                     <span className="glyph"><AnniversaryIcon name={a.icon} size={20} /></span>
-                                </CardEmblem>
-                                <CardTitle>{a.title}</CardTitle>
-                                <CardDate>{t.anniversaryPage.everyYear(a.month, a.day)}</CardDate>
-                                <CardDday $today={isToday}>
+                                </S.CardEmblem>
+                                <S.CardTitle>{a.title}</S.CardTitle>
+                                <S.CardDate>{t.anniversaryPage.everyYear(a.month, a.day)}</S.CardDate>
+                                <S.CardDday $today={isToday}>
                                     <i />{isToday ? t.anniversaryPage.todayMark : `D-${diff}`}<i />
-                                </CardDday>
-                            </Card>
+                                </S.CardDday>
+                            </S.Card>
                         );
                     })}
-                </CardGrid>
+                </S.CardGrid>
             )}
-        </Page>
+        </S.Page>
     );
 }
-
-const todayGlow = keyframes`
-    0%, 100% { box-shadow: 0 0 8px 0 currentColor inset, 0 0 10px -4px currentColor; }
-    50%      { box-shadow: 0 0 14px 0 currentColor inset, 0 0 18px -4px currentColor; }
-`;
-
-const Page = styled.div`
-    position: relative;
-    max-width: 860px;
-    margin: 0 auto;
-
-    /* 배경 별자리는 화면 밖으로 걸치라고 둔 장식이다. 폰 폭에서는 그 삐져나온
-       만큼이 가로 스크롤이 되어 화면이 좌우로 흔들린다. 여기서 잘라낸다. */
-    ${MOBILE} { overflow-x: clip; }
-`;
-
-const Zodiac = styled.svg`
-    position: absolute;
-    top: -60px;
-    right: -80px;
-    width: 380px;
-    height: 380px;
-    color: ${p => p.theme.colors.primary};
-    opacity: 0.055;
-    pointer-events: none;
-
-    circle, line {
-        fill: none;
-        stroke: currentColor;
-    }
-
-    .dashed { stroke-dasharray: 2 6; }
-`;
-
-const PageHeader = styled.div`
-    position: relative;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    margin-bottom: 28px;
-
-    i {
-        width: 7px;
-        height: 7px;
-        border: 1px solid ${p => p.theme.colors.primary};
-        transform: rotate(45deg);
-        flex-shrink: 0;
-    }
-
-    span {
-        font-family: ${p => p.theme.fonts.display};
-        font-size: 1.3rem;
-        letter-spacing: 5px;
-        white-space: nowrap;
-    }
-
-    hr {
-        flex: 1;
-        border: none;
-        height: 1px;
-        background: linear-gradient(to right, ${p => p.theme.colors.primary}, transparent);
-    }
-`;
-
-const Corners = styled.span`
-    i {
-        position: absolute;
-        width: 6px;
-        height: 6px;
-        border: 1px solid ${p => p.theme.colors.primary}88;
-        background: ${p => p.theme.colors.background};
-        transform: rotate(45deg);
-        pointer-events: none;
-    }
-
-    i:nth-child(1) { top: -3.5px; left: -3.5px; }
-    i:nth-child(2) { top: -3.5px; right: -3.5px; }
-    i:nth-child(3) { bottom: -3.5px; left: -3.5px; }
-    i:nth-child(4) { bottom: -3.5px; right: -3.5px; }
-`;
-
-const AddForm = styled.form`
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    padding: 22px 16px 16px;
-    margin-bottom: 30px;
-    border: 1px solid ${p => p.theme.colors.primary}55;
-`;
-
-const FormCaption = styled.span`
-    position: absolute;
-    top: -9px;
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 0 14px;
-    background: ${p => p.theme.colors.background};
-    font-family: ${p => p.theme.fonts.display};
-    font-size: 0.72rem;
-    letter-spacing: 4px;
-    color: ${p => p.theme.colors.primary};
-    white-space: nowrap;
-`;
-
-const IconRow = styled.div`
-    display: flex;
-    gap: 6px;
-
-    ${MOBILE} { gap: 5px; }
-`;
-
-const IconChoice = styled.button<{ $selected: boolean }>`
-    width: 34px;
-    height: 34px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: none;
-    color: ${p => (p.$selected ? p.theme.colors.primary : p.theme.colors.textSecondary)};
-    border: 1px solid ${p => p.theme.colors.primary}${p => (p.$selected ? "" : "33")};
-    cursor: pointer;
-    transition: border-color 0.2s, box-shadow 0.2s, color 0.2s;
-
-    ${p => p.$selected && css`
-        box-shadow: 0 0 6px ${p.theme.colors.primary}55;
-        svg { filter: drop-shadow(0 0 3px ${p.theme.colors.primary}66); }
-    `}
-
-    &:hover {
-        border-color: ${p => p.theme.colors.primary};
-        color: ${p => p.theme.colors.primary};
-    }
-
-    /* 여덟 칸이 폭을 나눠 가지면 손가락이 닿을 만큼 커진다 */
-    ${MOBILE} {
-        flex: 1;
-        width: auto;
-        min-width: 0;
-        height: 42px;
-    }
-`;
-
-const FormRow = styled.div`
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-
-    /* 폰에서 그냥 흘려 두면 [이름][월] / [일][추가] 로 섞여 접힌다.
-       월과 일은 한 쌍이므로 이름 → 월·일 → 추가 순으로 못 박는다. */
-    ${MOBILE} {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 8px;
-
-        > input { grid-column: 1 / -1; }
-        > button { grid-column: 1 / -1; justify-content: center; }
-    }
-`;
-
-const inputBase = css`
-    padding: 9px 12px;
-    font-size: 0.85rem;
-    font-family: inherit;
-    color: ${p => p.theme.colors.text};
-    background: none;
-    border: 1px solid ${p => p.theme.colors.primary}44;
-    outline: none;
-    transition: border-color 0.2s;
-
-    &:focus { border-color: ${p => p.theme.colors.primary}; }
-`;
-
-const TitleInput = styled.input`
-    ${inputBase}
-    flex: 1;
-    min-width: 180px;
-
-    /* 옆의 고르개(46px)와 키를 맞춘다 */
-    ${MOBILE} { min-width: 0; min-height: 46px; }
-`;
-
-const DateField = styled.div`
-    width: 104px;
-    flex-shrink: 0;
-
-    ${MOBILE} { width: auto; }
-`;
-
-const AddButton = styled.button`
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 9px 16px;
-    font-size: 0.82rem;
-    font-family: inherit;
-    letter-spacing: 1px;
-    color: ${p => p.theme.colors.text};
-    background: none;
-    border: 1px solid ${p => p.theme.colors.primary};
-    cursor: pointer;
-    transition: box-shadow 0.2s;
-
-    &:hover:not(:disabled) { box-shadow: 0 0 10px ${p => p.theme.colors.primary}55; }
-    &:disabled { opacity: 0.45; cursor: default; }
-    &:active:not(:disabled) { background-color: ${p => p.theme.colors.primary}1F; }
-
-    ${MOBILE} { min-height: 46px; }
-`;
-
-const Empty = styled.div`
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 12px;
-    padding: 56px 0;
-    color: ${p => p.theme.colors.textSecondary};
-
-    svg { color: ${p => p.theme.colors.primary}; opacity: 0.7; }
-
-    p {
-        margin: 0;
-        font-size: 0.85rem;
-        line-height: 1.7;
-        text-align: center;
-    }
-`;
-
-const CardGrid = styled.div`
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(158px, 1fr));
-    gap: 18px;
-    padding-bottom: 30px;
-`;
-
-const Card = styled.div<{ $today: boolean }>`
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 7px;
-    padding: 22px 12px 18px;
-    border: 1px solid ${p => p.theme.colors.primary}${p => (p.$today ? "" : "55")};
-    text-align: center;
-
-    &::before {
-        content: "";
-        position: absolute;
-        inset: 5px;
-        border: 1px solid ${p => p.theme.colors.primary}22;
-        pointer-events: none;
-        transition: border-color 0.3s;
-    }
-
-    &:hover::before { border-color: ${p => p.theme.colors.primary}66; }
-
-    ${p => p.$today && css`
-        color: ${p.theme.colors.primary}44;
-        animation: ${todayGlow} 2.6s ease-in-out infinite;
-    `}
-
-    &:hover button { opacity: 1; }
-`;
-
-const CardDelete = styled.button`
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    z-index: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
-    background: none;
-    border: none;
-    color: ${p => p.theme.colors.textSecondary};
-    cursor: pointer;
-    opacity: 0;
-    transition: opacity 0.2s, color 0.2s;
-
-    &:hover { color: #e05b5b; }
-`;
-
-const CardNumeral = styled.span`
-    font-family: ${p => p.theme.fonts.display};
-    font-size: 0.72rem;
-    letter-spacing: 3px;
-    color: ${p => p.theme.colors.primary};
-    opacity: 0.85;
-`;
-
-const CardEmblem = styled.span<{ $today: boolean }>`
-    position: relative;
-    width: 64px;
-    height: 64px;
-    margin: 2px 0;
-
-    svg {
-        width: 100%;
-        height: 100%;
-
-        .dia {
-            fill: none;
-            stroke: ${p => p.theme.colors.primary}66;
-        }
-
-        .orbit {
-            fill: none;
-            stroke: ${p => p.theme.colors.primary}22;
-        }
-
-        .orbit-fill {
-            fill: none;
-            stroke: ${p => p.theme.colors.primary};
-            stroke-width: 1.2;
-            stroke-linecap: round;
-            transition: stroke-dashoffset 0.6s ease;
-        }
-    }
-
-    .glyph {
-        position: absolute;
-        inset: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: ${p => p.theme.colors.primary};
-
-        ${p => p.$today && css`
-            svg { filter: drop-shadow(0 0 4px ${p.theme.colors.primary}); }
-        `}
-    }
-`;
-
-const CardTitle = styled.span`
-    font-size: 0.88rem;
-    letter-spacing: 0.5px;
-    color: ${p => p.theme.colors.text};
-    word-break: keep-all;
-`;
-
-const CardDate = styled.span`
-    font-size: 0.72rem;
-    color: ${p => p.theme.colors.textSecondary};
-    white-space: nowrap;
-`;
-
-const CardDday = styled.span<{ $today: boolean }>`
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 2px;
-    font-family: ${p => p.theme.fonts.display};
-    font-size: 0.8rem;
-    letter-spacing: 2px;
-    white-space: nowrap;
-    color: ${p => p.theme.colors.primary};
-
-    i {
-        width: 14px;
-        height: 1px;
-        background: linear-gradient(to right, transparent, ${p => p.theme.colors.primary}88);
-    }
-
-    i:last-child {
-        background: linear-gradient(to left, transparent, ${p => p.theme.colors.primary}88);
-    }
-`;

@@ -116,6 +116,7 @@ const maple: DefaultTheme = {
     },
     preview: { cell: '#EFE3CF', event: '#E4B26A' },
     paper: '/themes/maple/widget-paper-light.webp',
+    line: '#7C6656',
 };
 
 const mapleDark: DefaultTheme = {
@@ -138,6 +139,7 @@ const mapleDark: DefaultTheme = {
     },
     preview: { cell: '#2A1E18', event: '#5A3A22' },
     paper: '/themes/maple/widget-paper-dark.webp',
+    line: '#A08C78',
 };
 
 /**

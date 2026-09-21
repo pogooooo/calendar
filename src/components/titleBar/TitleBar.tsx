@@ -88,7 +88,7 @@ const Bar = styled.div`
     justify-content: space-between;
     padding: 0 0 0 16px;
     background-color: ${(p) => p.theme.colors.background};
-    border-bottom: 1px solid ${(p) => p.theme.colors.primary}33;
+    border-bottom: 1px solid ${(p) => p.theme.line ?? p.theme.colors.primary}33;
     user-select: none;
     -webkit-user-select: none;
 `;

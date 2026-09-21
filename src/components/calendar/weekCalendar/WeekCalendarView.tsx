@@ -8,7 +8,7 @@ import { Plus } from 'lucide-react';
 
 import { WeekThemeProps } from "./WeekCalendar";
 import { isSameDay, isBetween } from "@/utils/DateUtils";
-import Arrow from "@/assets/celestial/Arrow";
+import Arrow from "@/assets/Arrow";
 import CategoryFilter from "@/components/calendar/parts/categoryFilter/CategoryFilter";
 import AnimatedDateText from "@/components/calendar/parts/animatedDateText/AnimatedDateText";
 import TodoModal from "@/components/modal/todoModal/TodoModal";

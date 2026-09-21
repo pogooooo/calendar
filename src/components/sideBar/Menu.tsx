@@ -1,14 +1,20 @@
 import { useEffect, useState } from "react";
-import styled from "styled-components";
 import SidebarMenuButton from "@/components/button/sidebarMenu/SidebarMenuButton";
 import { useRouter, usePathname } from "next/navigation";
 import { Layers, Calendar, Kanban, Trophy, Cake, MonitorDown } from "lucide-react";
 import { useT } from "@/i18n/useT";
 import { isDesktopApp } from "@/lib/apiBase";
+import { usePickTheme, type ThemeImpls } from "@/styles/themed";
+import * as CelestialS from "./celestial/CelestialSideBar.styles";
+import * as MapleS from "./maple/MapleSideBar.styles";
+
+/** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS };
 
 const ROMAN = ["I", "II", "III", "IV", "V", "VI"];
 
 const Menu = () => {
+    const S = usePickTheme(STYLES);
     const router = useRouter();
     const pathname = usePathname();
     const t = useT();
@@ -27,8 +33,8 @@ const Menu = () => {
     ];
 
     return(
-        <MenuWrapper>
-            <Divider aria-hidden><i /></Divider>
+        <S.MenuWrapper>
+            <S.Divider aria-hidden><i /></S.Divider>
 
             {items.map((item, i) => (
                 <SidebarMenuButton
@@ -41,32 +47,8 @@ const Menu = () => {
                     {item.icon}
                 </SidebarMenuButton>
             ))}
-        </MenuWrapper>
+        </S.MenuWrapper>
     )
 }
-
-const MenuWrapper = styled.div`
-    & > * {
-        margin-top: 10px;
-    }
-`
-
-const Divider = styled.div`
-    position: relative;
-    height: 1px;
-    margin: 18px 8px 6px;
-    background: linear-gradient(to right, transparent, ${(props) => props.theme.colors.primary}66, transparent);
-
-    i {
-        position: absolute;
-        left: 50%;
-        top: 50%;
-        width: 5px;
-        height: 5px;
-        transform: translate(-50%, -50%) rotate(45deg);
-        border: 1px solid ${(props) => props.theme.colors.primary};
-        background: ${(props) => props.theme.colors.background};
-    }
-`
 
 export default Menu;

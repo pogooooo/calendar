@@ -3,7 +3,7 @@ import {useTheme} from "styled-components";
 interface ArrowProps {
     width: number,
     height: number,
-    stroke: string,
+    stroke?: string,
     isRight: boolean
 }
 

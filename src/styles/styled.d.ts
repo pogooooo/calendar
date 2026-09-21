@@ -54,6 +54,12 @@ declare module 'styled-components' {
          */
         paper?: string;
 
+        /**
+         * 앱 틀(스크롤바·창 제목줄)의 실선 색. 없으면 primary 를 쓴다 (Celestial 의 금빛 실선).
+         * Maple 은 붉은 primary 대신 먹을 준다 — 틀은 조용해야 한다. 뒤에 알파 두 자리를 붙여 쓰므로 hex 여야 한다.
+         */
+        line?: string;
+
         fontSizes: {
             h1: string;
             h2: string;
