@@ -23,6 +23,6 @@ export const Container = styled(C.Container)`
     @media (max-width: 768px) {
         border-radius: 0;
         border-top-color: ${(p) => hair(p.theme, 0.5)};
-        box-shadow: 0 -8px 24px ${(p) => withAlpha("#000000", 0.35)};
+        box-shadow: 0 -8px 24px ${withAlpha("#000000", 0.35)};
     }
 `;

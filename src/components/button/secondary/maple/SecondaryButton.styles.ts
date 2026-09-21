@@ -4,7 +4,6 @@
  */
 import styled, { css } from "styled-components";
 import * as C from "../celestial/SecondaryButton.styles";
-import { withAlpha } from "@/styles/color";
 import { stampButton } from "@/styles/maple/ink";
 
 export * from "../celestial/SecondaryButton.styles";

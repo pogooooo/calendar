@@ -240,7 +240,7 @@ const en: Translations = {
         or: 'OR',
         noAccount: "Don't have an account?",
         keepSignedIn: 'Keep me signed in',
-        keepSignedInOn: 'You stay signed in on this device for 30 days.',
+        keepSignedInOn: 'You stay signed in on this device. After 30 days without use you are signed out; every use restarts the 30 days.',
         keepSignedInOff: 'You are signed out when you close the app or browser.',
         haveAccount: 'Already have an account?',
         signInLink: 'Sign In',

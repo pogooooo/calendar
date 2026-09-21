@@ -48,7 +48,11 @@ export function generateRefreshToken(payload: TokenPayload, remember = true) {
  * "로그인 유지" 를 켜면 30일, 끄면 하루.
  *
  * 끈 쪽은 어차피 클라이언트가 창(앱)을 닫을 때 토큰을 버리므로 수명이 짧아도 불편이 없고,
- * 흘러나간 토큰이 오래 살지 않는다. 갱신할 때마다 수명이 다시 시작하므로 쓰는 동안은 안 끊긴다.
+ * 흘러나간 토큰이 오래 살지 않는다.
+ *
+ * 30일은 "로그인한 날부터" 가 아니라 "마지막으로 쓴 날부터" 다 — refresh 라우트가 갱신할 때마다
+ * 새 토큰을 새 수명으로 내주고 쿠키의 Max-Age 도 다시 30일로 놓으므로, 30일 안에 한 번이라도 앱을 열면
+ * 그날부터 다시 30일이다. 30일 내내 안 열면 그때 만료돼 다시 로그인한다.
  */
 export function refreshLifetimeDays(remember: boolean): number {
     return remember ? 30 : 1;

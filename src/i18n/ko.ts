@@ -240,7 +240,7 @@ const ko: Translations = {
         or: '또는',
         noAccount: '계정이 없으신가요?',
         keepSignedIn: '로그인 유지',
-        keepSignedInOn: '이 기기에서 30일 동안 로그인이 유지됩니다.',
+        keepSignedInOn: '이 기기에서 계속 로그인이 유지됩니다. 30일 동안 쓰지 않으면 로그아웃되고, 쓸 때마다 30일이 다시 시작됩니다.',
         keepSignedInOff: '앱(브라우저)을 닫으면 로그아웃됩니다.',
         haveAccount: '이미 계정이 있으신가요?',
         signInLink: '로그인',
