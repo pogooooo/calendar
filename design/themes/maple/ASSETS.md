@@ -380,24 +380,26 @@ text, letters, words, numbers, watermark, signature, logo, frame, border, photo,
 |---|---|
 | A3 wash | 달력 요일 줄 뒤 (`MapleMonthCalendar.styles` Header::before) |
 | A4 tape | 월간·일간·타임라인의 일정 막대 mask (`styles/maple/ink.ts` `tape`) |
-| A5 card-frame | `ink.ts` `cardFrame` (mask-border 9조각) — 아직 붙인 화면은 없다 |
+| A5 card-frame | `ink.ts` `cardFrame` (mask-border 9조각) — 아직 붙인 화면은 없다. 카드는 `paperCard`(먹 하이라인 두 겹)로 갔다 |
 | B1 hero | 예비 (로그인은 E1·E2 를 썼다) |
 | B2·B3·B4 | 설정 바탕 `settings/maple/LeafField` |
 | B6 sprites | 로그인 패널 떨어지는 잎, 화면 전환 `transition/maple` |
 | C1·C2 | `ink.ts` `vineRule`·`shortRule` — 홈 기둥 머리, 로그인 이름 밑, 전환 |
-| C3 corner | `ink.ts` — 예비 |
+| C3 corner | 카테고리 표본 서랍·기념일 카드·알림 창의 네 귀 (`inkMask("corner.webp")` 를 네 방향으로 뒤집어) |
 | C4 crest | ✦ 자리 전부 (홈·기념일 줄·위젯) |
-| C5·C6 | 할 일 줄 앞 잎 (`ink.ts` `leafBullet`), 폰 월간 칸의 표식, 설정 목차, 위젯 |
-| C7 check | `ink.ts` `checkStamp` — 예비 |
+| C5·C6 | 할 일 줄 앞 잎 (`ink.ts` `leafBullet`), 폰 월간 칸의 표식, 설정 목차, 위젯, 사이드바 메뉴의 현재 표식, 셀렉트의 화살·체크, 눈금자 표식, 폰 탭바의 현재 표식 |
+| C7 check | 카테고리 할 일 카드의 체크 (`ink.ts` `checkStamp`), 알림 창 '됐다' 문장 (`dialog/maple/MapleEmblem`) |
 | C8 spinner | 예비 |
-| C9 ribbon · C10 label | 예비 |
+| C9 ribbon · C10 label | 예비 (2차 주문 `ASSETS-2.md` J5 책갈피 리본이 C9 를 대신할 예정) |
 | C11·C12 | 챌린지 스티커 `assets/maple/MapleChallengeSticker` |
 | E1·E2 | 로그인·가입 패널 `auth/MapleAuthPanel` |
 | E3 dial | 홈 월 게이지 `home/maple/MapleMonthArch`, 안드로이드 월 게이지 위젯 |
 | E4a~d | 빈 화면 `components/empty/maple` (홈 오늘·프로젝트·챌린지·기념일) |
 | E5 | 설정 테마 카드 미리보기 (`theme.ts` FAMILY_META.preview) |
 | E6 | 사이드바 옆선 `assets/sidebarDesign/MapleSidebarDesign` |
-| F1 seal · F2 medals · F4 acorn | 예비 (챌린지 달성·프로젝트 이정표에 쓸 자리) |
+| F1 seal | 알림 창 '위험' 문장 (`dialog/maple/MapleEmblem` — 지우기·되돌릴 수 없는 일) |
+| F2 medals | 챌린지 줄의 진행 메달(빈·반·가득, `challenge/maple` ProgressBar), 카테고리 표본의 메달 |
+| F4 acorn | 알림 창 '물음' 문장 (`dialog/maple/MapleEmblem`) |
 | F3 today | 달력 오늘 칸 뒤, 위젯 오늘 칸 뒤 |
 | G1·G2 | 데스크톱 위젯 바탕(`theme.paper`), 안드로이드 위젯 바탕 |
 | H1 icon · H2 hero · H3 splash | 예비 (`public/themes/maple/app-icon.webp`·`landing-hero.webp`; H3 는 안 굽었다) |
@@ -405,13 +407,15 @@ text, letters, words, numbers, watermark, signature, logo, frame, border, photo,
 ### 코드 짜임
 
 - 화면은 갈래 공용 View(`XView.tsx`) 하나에 모양만 `celestial/`·`maple/` 의 *.styles.ts — `usePickTheme(STYLES)`. Maple 의 styles 는 Celestial 것을 `export *` 로 받고 다른 것만 `styled(C.X)` 로 덮어쓴다 (`scripts/check-theme-styles.mjs` 가 규칙을 지킨다)
+- 조작부의 말은 `styles/maple/ink.ts` 한 곳에: `stampButton`(도장 단추 — 네모, 그림자 없음, 누르면 1px 내려앉음), `inkInput`(먹선 칸), `paperTab`(종이 탭 — 현재 것만 먹 밑줄), `paperCard`(먹 하이라인 두 겹 카드), `paperToggle`, `inkChip`, `formHeader/Row/Footer`(창 서식). 단추·입력·셀렉트·드롭다운·날짜/시간 고르개·창·알림 창·설정·사이드바·탭바·눈금자가 전부 이걸로 그려져서, 갈래를 바꾸면 조작부 하나하나가 다른 물건이 된다
+- 틀의 먹 색은 `theme.line`(스크롤바·제목 줄) — Celestial 은 primary 그대로
 - 갈래마다 아예 다른 그림은 picker 로: 로그인 패널·사이드바 옆선·홈 게이지(`home/parts/MonthArch`)·달력 칸 꾸밈·챌린지 스티커·설정 바탕·화면 전환·빈 화면 선화
 - 안드로이드 위젯은 화가 하나(`WidgetPainter`)에 붓(`WidgetStyle`: Celestial/Maple)이 글꼴·표식·바탕·문장을 그린다. 고운바탕(KS X 1001 2,350자 부분집합 1.4MB)·Cormorant Garamond 를 동봉
 - 글꼴: 앱은 고운바탕·Cormorant 를 Google Fonts 에서 켤 때 받는다(`lib/fonts.ts` THEME_FONTS)
 
-## 7. 남은 것
+## 7. 남은 것 (2026-09-21)
 
-- F1·F2 배지(챌린지 목표 달성·프로젝트 완료), C9 리본(D-day), C10 이름표(카테고리), A5 카드 틀(프로젝트 카드), F4 도토리(타임라인 이정표), C7 도장(체크박스) — 그림은 있고 자리만 정하면 된다
-- Maple 만의 짜임(구조) 바꾸기: 설정의 성좌 목차, 카테고리 덱의 별자리 워터마크, 기념일 카드의 마름모 귀퉁이는 아직 Celestial 의 짜임에 색만 바꾼 것
+- 자리 못 찾은 그림: A5 카드 틀, C8 스피너, C9 리본, C10 이름표, H2·H3(랜딩 큰 그림·스플래시). 그림은 굽혀 있다(H3 빼고)
+- 2차 주문서 `ASSETS-2.md` — 조작부를 그림으로 더 밀 수 있는 것들(도장 테두리·붓 밑줄·종이 탭·책갈피 리본·찢은 종이·화환 틀·먹 화살·체크 칸·잎 칩)과 D1·D2 다시 뽑기. 지금 조작부는 전부 CSS(먹선·하이라인)로 그려 놓아서 그림이 와야만 되는 건 없다
 - 안드로이드 위젯 고르기 화면의 미리보기 PNG(res/drawable-nodpi/widget_preview_*)는 Celestial 로 찍힌 것 그대로 (놓기 전 설정 화면의 미리보기는 실제 화가가 그리므로 Maple 로 나온다)
 - H3 스플래시(안드로이드 시작 화면)는 안 붙였다
