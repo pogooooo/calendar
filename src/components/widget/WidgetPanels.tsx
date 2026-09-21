@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import styled, { useTheme } from "styled-components";
+import styled, { css, useTheme } from "styled-components";
+import { checkStamp, hair, inkFill, leafBullet } from "@/styles/maple/ink";
 import { Check } from "lucide-react";
 import useTodoStore from "@/store/useTodoStore";
 import useCategoryStore from "@/store/useCategoryStore";
@@ -659,6 +660,26 @@ const Box = styled.button<{ $done: boolean }>`
     align-items: center;
     justify-content: center;
     cursor: pointer;
+
+    /* Maple: 먹 하이라인 칸, 끝낸 일은 붉은 도장(C7) — 카테고리 화면의 체크와 같은 말 */
+    ${p => p.theme.family === "maple" && css`
+        position: relative;
+        border-color: ${hair(p.theme, 0.5)};
+        border-radius: 2px;
+        background: transparent;
+        svg { display: none; }
+        &::after {
+            content: "";
+            position: absolute;
+            inset: -1px;
+            ${checkStamp("14px")}
+            background-color: ${p.theme.colors.primary};
+            opacity: ${p.$done ? 1 : 0};
+            transition: opacity 0.15s ease;
+        }
+        &:hover { border-color: ${p.theme.colors.primary}; }
+        &:hover::after { opacity: ${p.$done ? 1 : 0.35}; }
+    `}
 `;
 
 const Mark = styled.div<{ $c: string }>`
@@ -666,7 +687,9 @@ const Mark = styled.div<{ $c: string }>`
     height: 7px;
     flex-shrink: 0;
     transform: rotate(45deg);
-    background-color: ${p => p.$c};
+    /* 위젯 페이지의 "& * { background-color: transparent }" 가 색을 지우므로 그라데이션으로 칠한다 */
+    ${p => inkFill(p.$c)}
+    ${p => p.theme.family === "maple" && css`${leafBullet(true, "9px")} ${inkFill(p.$c)}`}
 `;
 
 const Star = styled.span`
@@ -750,6 +773,13 @@ const Dot = styled.button<{ $on: boolean; $today: boolean }>`
     border: 1px solid ${p => p.$today ? p.theme.colors.primary : `${p.theme.colors.primary}66`};
     background: ${p => p.$on ? p.theme.colors.primary : "transparent"};
     box-shadow: ${p => p.$today ? `0 0 4px ${p.theme.colors.primary}66` : "none"};
+    /* Maple: 잎 — 일정 있는 날은 채운 잎, 오늘은 진하게 */
+    ${p => p.theme.family === "maple" && css`
+        width: 10px; height: 10px;
+        ${leafBullet(p.$on, "10px")}
+        ${inkFill(p.theme.colors.primary)}
+        opacity: ${p.$today || p.$on ? 1 : 0.5};
+    `}
 `;
 
 const Big = styled.div`

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import styled, { keyframes } from "styled-components";
+import styled, { css, keyframes } from "styled-components";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import useCategoryStore from "@/store/useCategoryStore";
 import useTodoStore from "@/store/useTodoStore";
@@ -14,6 +14,7 @@ import useIsMobile from "@/hooks/useIsMobile";
 import useSwipe from "@/hooks/useSwipe";
 import { useT } from "@/i18n/useT";
 import { TAB_BAR_HEIGHT, SAFE_B } from "@/styles/breakpoints";
+import { leafBullet } from "@/styles/maple/ink";
 
 const DAY_COLLAPSE_KEY = "cronos-day-collapsed";
 
@@ -569,6 +570,24 @@ const Resizer = styled.div<{ $hidden: boolean }>`
         background-color: ${(props) => props.theme.colors.primary};
         box-shadow: 0 0 8px ${(props) => props.theme.colors.primary}CC;
     }
+
+    /* Maple: 먹 하이라인에 잎 손잡이 (윤곽 → 짚으면 채운 잎), 빛무리 없음 */
+    ${(props) => props.theme.family === "maple" && css`
+        /* 선만 옅게 — opacity 로 하면 잎 손잡이까지 바래므로 색에 섞는다 */
+        background-color: color-mix(in srgb, ${props.theme.line ?? props.theme.colors.primary} 55%, transparent);
+
+        .line { box-shadow: none; background: ${props.theme.line ?? props.theme.colors.primary}; }
+        .grip {
+            width: 13px;
+            height: 13px;
+            margin: -6.5px 0 0 -6.5px;
+            ${leafBullet(false, "13px")}
+            color: ${props.theme.colors.primary};
+            background-color: ${props.theme.colors.primary};
+            box-shadow: 0 0 0 3px ${props.theme.colors.background};
+        }
+        &:hover .grip { ${leafBullet(true, "13px")} background-color: ${props.theme.colors.primary}; box-shadow: 0 0 0 3px ${props.theme.colors.background}; }
+    `}
 
     @media (max-width: 1250px) {
         display: none;

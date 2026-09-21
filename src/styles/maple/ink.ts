@@ -30,6 +30,15 @@ export const leafBullet = (on: boolean, size = "11px") => css`
     ${inkMask(on ? "bullet-filled.webp" : "bullet-outline.webp")}
 `;
 
+/**
+ * 마스크에 색을 입힌다 — background-color 를 통째로 지우는 곳(데스크톱 위젯 페이지의
+ * `& * { background-color: transparent }`)에서도 살아남도록 같은 색의 그라데이션을 함께 깐다.
+ */
+export const inkFill = (color: string) => css`
+    background-color: ${color};
+    background-image: linear-gradient(${color}, ${color});
+`;
+
 /** 머리글의 ✦ 자리 — 잎 문장(C4) */
 export const crest = (size = "14px") => css`
     display: inline-block;

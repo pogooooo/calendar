@@ -1,7 +1,8 @@
 ﻿"use client";
 
 import React, { useState, useCallback, useEffect, useMemo, useRef } from "react";
-import styled, { ThemeProvider, keyframes, useTheme } from "styled-components";
+import styled, { ThemeProvider, css, keyframes, useTheme } from "styled-components";
+import { leafBullet } from "@/styles/maple/ink";
 import useWidgetStore, { BgMode, WidgetBgSettings } from "@/store/useWidgetStore";
 import { useT } from "@/i18n/useT";
 import { invoke } from "@tauri-apps/api/core";
@@ -629,6 +630,14 @@ const Gem = styled.span<{ $grip?: boolean; $active?: boolean; $danger?: boolean 
         border-color: ${p => p.$danger ? "#C8687A" : (p.theme?.colors?.primary)};
         box-shadow: 0 0 5px ${p => p.theme?.colors?.primary}80;
     }
+
+    /* Maple: 보석 대신 잎 (윤곽 → 켜지거나 짚으면 채운 잎), 빛무리 없음 */
+    ${p => p.theme?.family === "maple" && css`
+        width: 11px; height: 11px;
+        ${leafBullet(!!p.$active, "11px")}
+        background-color: ${p.$danger ? p.theme.colors.error : p.theme.colors.primary};
+        &:hover { ${leafBullet(true, "11px")} background-color: ${p.$danger ? p.theme.colors.error : p.theme.colors.primary}; }
+    `}
 `;
 
 const Rule = styled.span`
@@ -706,6 +715,11 @@ const PanelDone = styled.button`
         transform: rotate(45deg);
         border: 1px solid ${p => p.theme?.colors?.primary};
     }
+
+    /* Maple: 마름모 대신 잎 */
+    ${p => p.theme?.family === "maple" && css`
+        &::before { ${leafBullet(true, "9px")} background-color: ${p.theme.colors.primary}; }
+    `}
 `;
 
 const PanelLabel = styled.div`

@@ -1,6 +1,6 @@
 "use client";
 
-import styled, { keyframes } from "styled-components";
+import styled, { css, keyframes } from "styled-components";
 import { MOBILE } from "@/styles/breakpoints";
 import { useGoogleLogin } from "@react-oauth/google";
 import { useState } from "react";
@@ -16,6 +16,7 @@ import { api, clientHeaders } from "@/lib/apiBase";
 import { getRemember } from "@/lib/session";
 import { useT } from "@/i18n/useT";
 import LocaleSelect from "@/components/LocaleSelect";
+import { leafBullet } from "@/styles/maple/ink";
 
 import SecondaryButton from "@/components/button/secondary/SecondaryButton";
 import SingleInput from "@/components/input/single/SingleInput";
@@ -280,14 +281,24 @@ const RememberRow = styled.div`
 
     input { position: absolute; opacity: 0; width: 0; height: 0; }
 
+    /* 표식: Celestial 은 마름모, Maple 은 잎(윤곽 → 채운 잎) */
     .box {
         width: 10px; height: 10px;
         border: 1px solid ${p => p.theme.colors.primary};
         transform: rotate(45deg);
         transition: background 0.15s;
+        ${p => p.theme.family === "maple" && css`
+            ${leafBullet(false, "12px")}
+            color: ${p.theme.colors.primary};
+        `}
     }
     input:checked + .box { background: ${p => p.theme.colors.primary}; }
     input:focus-visible + .box { box-shadow: 0 0 0 3px ${p => p.theme.colors.primary}44; }
+    /* 마스크는 그림자까지 잘라내므로 Maple 의 초점 표시는 글자 밑줄로 */
+    ${p => p.theme.family === "maple" && css`
+        input:checked + .box { ${leafBullet(true, "12px")} }
+        label:has(input:focus-visible) { text-decoration: underline; text-underline-offset: 3px; }
+    `}
 
     small {
         font-size: 0.7rem;
