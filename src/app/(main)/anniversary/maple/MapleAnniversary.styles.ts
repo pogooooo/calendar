@@ -20,12 +20,12 @@ export const Page = styled(C.Page)`
     &::after {
         content: "";
         position: absolute;
-        right: -40px;
-        top: -10px;
-        width: 240px;
-        height: 240px;
+        right: -80px;
+        top: -70px;
+        width: 220px;
+        height: 220px;
         background: url("${ASSET}/leaf-yellow.webp") center / contain no-repeat;
-        opacity: ${(p) => (p.theme.mode === "dark" ? 0.12 : 0.18)};
+        opacity: ${(p) => (p.theme.mode === "dark" ? 0.09 : 0.12)};
         transform: rotate(-30deg);
         pointer-events: none;
     }

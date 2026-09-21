@@ -17,8 +17,8 @@ export const LogoRow = styled(C.LogoRow)`
 
     & > hr {
         border: none;
-        height: 14px;
-        ${shortRule("14px")}
+        height: 22px;
+        ${shortRule("22px")}
         mask-position: left center;
         -webkit-mask-position: left center;
         background-color: ${(p) => p.theme.colors.text};

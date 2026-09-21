@@ -4,7 +4,7 @@
  */
 import styled from "styled-components";
 import * as C from "../celestial/CelestialProjectBoard.styles";
-import { hair } from "@/styles/maple/ink";
+import { hair, tape } from "@/styles/maple/ink";
 import { withAlpha } from "@/styles/color";
 
 export * from "../celestial/CelestialProjectBoard.styles";
@@ -22,10 +22,34 @@ export const AddTaskButton = styled(C.AddTaskButton)`
     border-color: ${(p) => hair(p.theme, 0.4)};
 `;
 
-/** 작업 카드: 색인 카드처럼 종이 한 장 */
+/** 작업 카드: 종이 쪽지를 마스킹테이프로 붙여 둔 것 */
 export const CardBox = styled(C.CardBox)`
+    position: relative;
     border-color: ${(p) => hair(p.theme, 0.35)};
-    background-color: ${(p) => withAlpha(p.theme.colors.surface, 0.7)};
+    border-radius: 2px;
+    background-color: ${(p) => p.theme.colors.surface};
+    padding-top: 14px;
+
+    &::before {
+        content: "";
+        position: absolute;
+        top: -1px;
+        left: 50%;
+        width: 44px;
+        height: 11px;
+        margin-left: -22px;
+        ${tape}
+        background-color: ${(p) => withAlpha(p.theme.colors.accent, p.theme.mode === "dark" ? 0.55 : 0.7)};
+        transform: rotate(-2deg);
+        pointer-events: none;
+    }
+
+    &:nth-child(even)::before { transform: rotate(2.5deg); }
+`;
+
+export const ColumnTitle = styled(C.ColumnTitle)`
+    font-family: ${(p) => p.theme.fonts.display};
+    letter-spacing: 0.06em;
 `;
 
 export const CardMoveButton = styled(C.CardMoveButton)`

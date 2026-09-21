@@ -6,7 +6,8 @@
  */
 import styled, { css } from "styled-components";
 import * as C from "../celestial/CelestialSettings.layout";
-import { hair, leafBullet } from "@/styles/maple/ink";
+import { hair, leafBullet, paperCard } from "@/styles/maple/ink";
+import { withAlpha } from "@/styles/color";
 
 export * from "../celestial/CelestialSettings.layout";
 
@@ -14,14 +15,9 @@ export const Orbit = styled(C.Orbit)`
     display: none;
 `;
 
-/** 목차의 별 → 잎 */
+/** 성좌의 표지별은 뗀다 — 색인의 잎(TabButton::before)이 그 자리를 맡는다 */
 export const Mark = styled(C.Mark)`
-    ${(p) => leafBullet(p.$on, "12px")}
-    clip-path: none;
-    color: ${(p) => p.theme.colors.primary};
-    opacity: ${(p) => (p.$on ? 1 : 0.4)};
-    animation: none;
-    transform: translate(-50%, -50%) scale(${(p) => (p.$on ? 1.15 : 0.8)});
+    display: none;
 `;
 
 export const Star = styled(C.Star)`
@@ -38,15 +34,15 @@ export const ThemeCard = styled(C.ThemeCard)`
     `}
 `;
 
-export const FontCard = styled(C.FontCard)`
+const FontCard = styled(C.FontCard)`
     border-color: ${(p) => (p.$selected ? p.theme.colors.primary : hair(p.theme, 0.3))};
 `;
 
-export const WidgetCard = styled(C.WidgetCard)`
+const WidgetCard = styled(C.WidgetCard)`
     border-color: ${(p) => hair(p.theme, 0.3)};
 `;
 
-export const Note = styled(C.Note)`
+const Note = styled(C.Note)`
     border-color: ${(p) => hair(p.theme, 0.3)};
 `;
 
@@ -125,3 +121,63 @@ export const Constellation = styled(C.Constellation)`
         border-bottom-color: ${(p) => hair(p.theme, 0.3)};
     }
 `;
+
+/* ── 조작부: 갈라 고르기·글꼴 카드·위젯 카드·블록 머리 ───────────────── */
+
+export const SegGroup = styled(C.SegGroup)`
+    border-color: ${(p) => hair(p.theme, 0.4)};
+    border-radius: 2px;
+    overflow: hidden;
+`;
+
+export const Seg = styled(C.Seg)`
+    border-right-color: ${(p) => hair(p.theme, 0.3)};
+    font-family: ${(p) => p.theme.fonts.display};
+    background-color: ${(p) => (p.$selected ? withAlpha(p.theme.colors.accent, 0.24) : "transparent")};
+    color: ${(p) => (p.$selected ? p.theme.colors.primary : p.theme.colors.textSecondary)};
+
+    &:hover { color: ${(p) => p.theme.colors.text}; background-color: ${(p) => withAlpha(p.theme.colors.accent, 0.14)}; }
+
+    em { font-family: ${(p) => p.theme.fonts.numeral}; font-size: 0.78rem; }
+`;
+
+export const FontCardInk = styled(FontCard)`
+    ${paperCard("3px")}
+    background-color: ${(p) => (p.$selected ? withAlpha(p.theme.colors.accent, 0.18) : p.theme.colors.surface)};
+    border-color: ${(p) => (p.$selected ? p.theme.colors.primary : hair(p.theme, 0.3))};
+
+    &:hover { border-color: ${(p) => hair(p.theme, 0.75)}; }
+    &::after { display: none; }
+`;
+export { FontCardInk as FontCard };
+
+export const WidgetCardInk = styled(WidgetCard)`
+    ${paperCard("3px")}
+    border-color: ${(p) => hair(p.theme, 0.3)};
+    &:hover { border-color: ${(p) => hair(p.theme, 0.75)}; }
+`;
+export { WidgetCardInk as WidgetCard };
+
+export const BlockHead = styled(C.BlockHead)`
+    h2 { letter-spacing: 0.12em; font-size: 0.9rem; }
+    &::after { background-color: ${(p) => (p.$danger ? withAlpha(p.theme.colors.error, 0.35) : hair(p.theme, 0.3))}; }
+`;
+
+export const DangerBlock = styled(C.DangerBlock)`
+    border-top-color: ${(p) => withAlpha(p.theme.colors.error, 0.35)};
+`;
+
+export const ThemeName = styled(C.ThemeName)`
+    font-family: ${(p) => p.theme.fonts.display};
+    letter-spacing: 0.06em;
+`;
+
+export const CardName = styled(C.CardName)`
+    letter-spacing: 0.06em;
+`;
+
+export const NoteInk = styled(Note)`
+    ${paperCard("3px")}
+    border-color: ${(p) => (p.$current ? p.theme.colors.primary : hair(p.theme, 0.3))};
+`;
+export { NoteInk as Note };

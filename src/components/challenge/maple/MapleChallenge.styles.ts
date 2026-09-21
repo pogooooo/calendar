@@ -4,8 +4,8 @@
  */
 import styled, { css } from "styled-components";
 import * as C from "../celestial/CelestialChallenge.styles";
-import { hair } from "@/styles/maple/ink";
 import { withAlpha } from "@/styles/color";
+import { ASSET, hair, paperCard } from "@/styles/maple/ink";
 
 export * from "../celestial/CelestialChallenge.styles";
 
@@ -40,13 +40,52 @@ export const StickerBoardCard = styled(C.StickerBoardCard)`${inkPanel}`;
 export const TaskCard = styled(C.TaskCard)`${inkPanel}`;
 export const BaseCard = styled(C.BaseCard)`${inkPanel}`;
 
+/** 줄: 고르면 황토 물. 빛무리 없음 */
 export const ChallengeRow = styled(C.ChallengeRow)`
     border-bottom-color: ${(p) => hair(p.theme, 0.16)};
+    box-shadow: none;
     ${(p) => p.$isSelected && css`background-color: ${withAlpha(p.theme.colors.accent, 0.16)};`}
+    &:hover { box-shadow: none; background-color: ${(p) => withAlpha(p.theme.colors.accent, 0.12)}; }
+
+    .challenge-info .title { font-family: ${(p) => p.theme.fonts.display}; }
+    .challenge-info .title .star-icon {
+        filter: none;
+        color: ${(p) => p.theme.colors.primary};
+    }
+    .challenge-info .meta { font-family: ${(p) => p.theme.fonts.numeral}; font-size: 0.82rem; }
+    .challenge-progress .count { font-family: ${(p) => p.theme.fonts.numeral}; font-size: 0.86rem; }
+`;
+
+/** 진행 막대 + 놋쇠 메달(F2): 시작 전은 빈 메달, 가는 중은 반, 다 채우면 온 메달 */
+export const ProgressBar = styled(C.ProgressBar)`
+    position: relative;
+    overflow: visible;
+    height: 3px;
+    background-color: ${(p) => hair(p.theme, 0.18)};
+
+    &::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        bottom: 9px;
+        width: 22px;
+        height: 22px;
+        background: url("${ASSET}/${(p) => (p.$progress >= 100 ? "medal-full" : p.$progress > 0 ? "medal-half" : "medal-empty")}.webp") center / contain no-repeat;
+        filter: ${(p) => (p.theme.mode === "dark" ? "brightness(0.9)" : "none")};
+    }
 `;
 
 export const DetailArea = styled(C.DetailArea)`
     border-color: ${(p) => hair(p.theme, 0.45)};
+
+    .detail-content h3 { font-family: ${(p) => p.theme.fonts.display}; letter-spacing: 0.02em; }
+
+    .detail-content .stats {
+        ${paperCard("3px")}
+        border-style: solid;
+        border-color: ${(p) => hair(p.theme, 0.3)};
+        strong { font-family: ${(p) => p.theme.fonts.display}; font-weight: 500; }
+    }
 `;
 
 /** 스티커 칸을 조금 키운다 — 잎 스티커는 톱니 테두리까지 보여야 한다 */

@@ -18,7 +18,7 @@ export const Wash = styled.div<{ $level: number; $left: boolean; $right: boolean
     pointer-events: none;
     z-index: 0;
     animation: ${appear} 0.55s ease-out both;
-    background: ${(p) => withAlpha(p.theme.colors.accent, p.theme.mode === "dark" ? 0.04 + p.$level * 0.04 : 0.05 + p.$level * 0.045)};
+    background: ${(p) => withAlpha(p.theme.colors.accent, p.theme.mode === "dark" ? 0.03 + p.$level * 0.03 : 0.035 + p.$level * 0.03)};
     border: 1px solid ${(p) => (p.$level >= 3 ? withAlpha(p.theme.colors.text, 0.28) : "transparent")};
     border-left-color: ${(p) => (p.$left ? "transparent" : undefined)};
     border-right-color: ${(p) => (p.$right ? "transparent" : undefined)};

@@ -49,6 +49,14 @@ export const SectionHead = styled(C.SectionHead)`
     }
 `;
 
+/** 빠른 추가의 카테고리 점 → 잎 (색은 인라인 style 로 온다) */
+export const QuickForm = styled(C.QuickForm)`
+    .dot {
+        ${leafBullet(true, "12px")}
+        border-radius: 0;
+    }
+`;
+
 export const Mark = styled(C.Mark)`
     ${(p) => leafBullet(p.$on, "12px")}
     color: ${(p) => p.theme.colors.primary};
