@@ -39,7 +39,14 @@ export const Dial = styled(C.Dial)`
     .num, .mnum { font-family: ${(p) => p.theme.fonts.numeral}; }
     .num { font-size: 5.6px; }
     .num.on { font-size: 6.8px; }
-    .tip, .hub { fill: ${(p) => p.theme.colors.background}; stroke: ${(p) => p.theme.colors.primary}; }
+    /* 바늘 끝과 축: 마름모 대신 둥근 못 (rx 는 Chromium·WebKit 만 안다 — Firefox 에서는 마름모로 남는다) */
+    .tip, .hub {
+        fill: ${(p) => p.theme.colors.background};
+        stroke: ${(p) => p.theme.colors.primary};
+        rx: 2.4px;
+        ry: 2.4px;
+    }
+    .hub { fill: ${(p) => p.theme.colors.primary}; }
     &[data-grab="outer"] .rim:not(.inner) { stroke-opacity: 0.8; stroke: ${(p) => p.theme.colors.primary}; }
     &[data-grab="inner"] .rim.inner { stroke-opacity: 0.8; stroke: ${(p) => p.theme.colors.primary}; }
 `;

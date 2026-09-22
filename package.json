@@ -10,8 +10,8 @@
     "next:dev": "next dev --turbopack",
     "next:build": "next build",
     "seed:dev": "node scripts/seed-dev.mjs",
-    "build:desktop": "node scripts/check-widget-kinds.mjs && node scripts/check-theme-styles.mjs && node scripts/build-desktop.mjs",
-    "build:cloudflare": "node scripts/check-widget-kinds.mjs && node scripts/check-theme-styles.mjs && node scripts/build-cloudflare.mjs",
+    "build:desktop": "node scripts/check-widget-kinds.mjs && node scripts/check-theme-styles.mjs && node scripts/check-maple-position.mjs && node scripts/build-desktop.mjs",
+    "build:cloudflare": "node scripts/check-widget-kinds.mjs && node scripts/check-theme-styles.mjs && node scripts/check-maple-position.mjs && node scripts/build-cloudflare.mjs",
     "preview": "node scripts/build-cloudflare.mjs && opennextjs-cloudflare preview",
     "deploy": "node scripts/build-cloudflare.mjs && wrangler deploy",
     "tauri": "tauri",
@@ -20,7 +20,7 @@
     "android:overlay": "node scripts/android-overlay.mjs",
     "android:build": "node scripts/android-overlay.mjs && tauri android build --apk --target aarch64",
     "check:widgets": "node scripts/check-widget-kinds.mjs",
-    "check:themes": "node scripts/check-theme-styles.mjs"
+    "check:themes": "node scripts/check-theme-styles.mjs && node scripts/check-maple-position.mjs"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.10.0",

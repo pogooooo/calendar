@@ -570,6 +570,7 @@ const ko: Translations = {
     download: {
         openWeb: '웹으로 열기',
         tagline: '일정과 목표를 하나의 별자리처럼',
+        taglineMaple: '일정과 목표를 한 장의 도감처럼',
         lead: '캘린더 · 프로젝트 · 챌린지를 한 곳에서 관리하는 할 일 앱. 웹에서 바로 쓰거나, 앱을 설치해 바탕화면 위젯까지 사용할 수 있습니다.',
         downloadFor: (os: string) => `${os}용 다운로드`,
         download: '다운로드',

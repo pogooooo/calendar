@@ -5,7 +5,9 @@ import useProjectStore, { ProjectType, ProjectTaskType } from '@/store/useProjec
 import useCategoryStore from '@/store/useCategoryStore';
 import { useAuthFetch } from '@/hooks/useAuthFetch';
 import { useDialog } from '@/components/dialog/DialogProvider';
-import * as S from './styles';
+import { usePickTheme, type ThemeImpls } from "@/styles/themed";
+import * as CelestialS from "./celestial/CelestialProjectPage.styles";
+import * as MapleS from "./maple/MapleProjectPage.styles";
 
 import ProjectHeader from '@/components/project/header/ProjectHeader';
 import ProjectBoard from '@/components/project/board/ProjectBoard';
@@ -15,7 +17,11 @@ import TaskModal from '@/components/modal/projectModal/TaskModal';
 import { useT } from "@/i18n/useT";
 import EmptyArt from "@/components/empty/EmptyArt";
 
+/** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS };
+
 export default function ProjectPage() {
+    const S = usePickTheme(STYLES);
     const authFetch = useAuthFetch();
     const dialog = useDialog();
     const t = useT();

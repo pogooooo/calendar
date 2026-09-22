@@ -565,6 +565,8 @@ export interface Translations {
     download: {
         openWeb: string;
         tagline: string;
+        /** Maple 갈래에서 쓰는 한 줄 — 별자리 대신 도감의 말 */
+        taglineMaple: string;
         lead: string;
         downloadFor: (os: string) => string;
         download: string;

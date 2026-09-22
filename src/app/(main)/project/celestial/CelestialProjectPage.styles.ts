@@ -1,3 +1,8 @@
+/**
+ * 프로젝트 화면(틀)의 모양 — 보드와 타임라인을 세로로 나눠 갖는 판, 그 사이의 손잡이.
+ *
+ * 집 규칙: 화면은 갈래 공용 JSX 하나, 모양은 갈래마다 *.styles.ts (scripts/check-theme-styles.mjs).
+ */
 import styled from "styled-components";
 import { MOBILE } from "@/styles/breakpoints";
 
