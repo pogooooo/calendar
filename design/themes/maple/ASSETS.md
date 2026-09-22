@@ -365,12 +365,13 @@ text, letters, words, numbers, watermark, signature, logo, frame, border, photo,
 
 | 항목 | 어떻게 했나 |
 |---|---|
-| **B5 leaf-brown** (안 옴) | 안 쓴다. 빈 화면·설정 바탕은 B2·B3·B4 석 장으로 충분했다 |
-| **C5 bullet-outline** (안 옴) | C6(채운 잎)을 부풀린 것에서 깎은 것을 빼서 윤곽을 만들었다 (`scripts/maple-assets.mjs` 의 `outlineFromFilled`) |
-| **D1 nav-icons-sheet** (옴, 못 씀) | 12종 순서 대신 20칸 짜리 회색 채움 아이콘이 나왔다(집·톱니·트로피 정도만 맞음). 내비 아이콘은 lucide 그대로 둔다. 다시 뽑는다면 §3 D1 프롬프트에 `exactly 12 icons, 4 columns by 3 rows, black line icons only, no fill, no gray` 를 더할 것 |
-| **D2 anniversary-icons-sheet** (옴, 못 씀) | 흐릿하고 달·꽃이 빠졌다(연필·불꽃이 대신). 기념일 아이콘은 Celestial 의 선화 SVG 를 Maple 에서도 쓴다 |
+| **B5 leaf-brown** (안 옴) | 2차(9/22)에 왔다 — 설정 바탕의 넷째 잎, 챌린지 화면 귀퉁이 |
+| **C5 bullet-outline** (안 옴) | C6(채운 잎)을 부풀린 것에서 깎은 것을 빼서 윤곽을 만들었다 (`scripts/maple-assets.mjs` 의 `outlineFromFilled`). 2차에 온 C5 는 잎맥 해칭이 든 스케치라 11px 표식으론 못 쓰고 `leaf-sketch.webp` 로 굽기만 했다 |
+| **D1 nav-icons-sheet** (옴, 못 씀) | 1차는 20칸 회색 채움. **2차(9/22)에 낱장으로 뽑아 코드로 합친 정확한 4×3 시트가 왔다** → `icons/nav-*.webp` 12장, 사이드바·폰 탭바의 아이콘(`assets/NavIcon`) |
+| **D2 anniversary-icons-sheet** (옴, 못 씀) | 1차는 흐리고 달·꽃이 빠짐. **2차에 4×2 시트가 제대로 왔다** → `icons/anniv-*.webp` 8장, 기념일 아이콘(`assets/AnniversaryIcon`) |
 
-나머지는 전부 들어갔다. 변환은 `node scripts/maple-assets.mjs` 한 번 — 원본 `raw/` (git 에 안 올림, 42MB) → `public/themes/maple/` WebP 50장 0.9MB.
+나머지는 전부 들어갔다. 변환은 `node scripts/maple-assets.mjs` 한 번 — 원본 `raw/` (git 에 안 올림) → `public/themes/maple/` WebP 89장 1.0MB.
+2차(2026-09-22, `ASSETS-2.md`)로 마스크 그림 전부가 임계 128 로 이진화된 판으로 다시 왔고(1차의 회색 판은 `raw/_v1-2026-09-16/`) J1~J10 조작부 그림 18장이 더해졌다. J4 종이 탭만 못 썼다(윤곽에 검은 찢김 띠가 붙어 나옴).
 크림 바탕 키잉(가장자리 되섞기)·먹 마스크·거울 타일·글자 자리 덮기(E1 아래 캡션)·시트 자르기(B6)가 거기 있다.
 종이 네 장(A1·A2·G1·G2)은 모델이 너무 고르게 뽑아(밝기 편차 1~3/255) 결이 거의 없다 — 앱의 종이결은 CSS 잡음(`styles/maple/MapleGround.ts`)으로 얹고, 타일은 위젯 바탕에만 쓴다.
 
@@ -403,19 +404,31 @@ text, letters, words, numbers, watermark, signature, logo, frame, border, photo,
 | F3 today | 달력 오늘 칸 뒤, 위젯 오늘 칸 뒤 |
 | G1·G2 | 데스크톱 위젯 바탕(`theme.paper`), 안드로이드 위젯 바탕 |
 | H1 icon · H2 hero · H3 splash | 예비 (`public/themes/maple/app-icon.webp`·`landing-hero.webp`; H3 는 안 굽었다) |
+| **J1 stamp-frame** (2차) | 도장 단추 전부 — `ink.ts` `stampButton`: 단추 자체를 `stamp-fill` 로 잘라 가장자리가 거칠고 그 위에 `stamp-frame` 을 9조각(mask-box-image, slice 36 / 4.5px)으로 얹는다. 모델이 그린 가는 틀(`J1.png`)은 `stamp-frame-thin.webp` 로 굽기만 — 작은 단추에선 번져 보여 안 썼다 |
+| **J2 stamp-frame-square** (2차) | 네모 도장 — 주간 달력 칸의 + (`stampButton(…, { square: true })`) |
+| **J3 brush-underline a·b·c** (2차) | 종이 탭의 고른 탭 밑(`paperTab` — a), 셋째 단추의 hover 밑줄(b). c 는 예비 |
+| **J4 paper-tab** (2차, 못 씀) | 실루엣이 아니라 윤곽 + 검은 찢김 띠로 나왔다. 탭은 붓 밑줄(J3)로 충분해 안 쓴다 |
+| **J5 bookmark-ribbon** (2차) | 달력 눈금자의 막대(`scroll/maple` Thumb). 모델이 그린 `J5.png` 는 연필 꼴이라 안 씀 |
+| **J6 torn-edge** (2차) | 폰의 아래에서 올라오는 시트 위 가장자리(`ink.ts` `tornTop` — 창·더보기 시트). 모델이 그린 `J6.png`(가는 찢김 선)은 안 씀 |
+| **J7 wreath-frame** (2차) | 사이드바 쪽지의 얼굴, 카테고리 엠블럼, 기념일 카드 엠블럼(그 위에 남은 날의 붉은 호) — `ink.ts` `wreathFrame` |
+| **J8 ink-arrows** (2차) | 주간 달력(위젯)의 앞·뒤(`assets/maple/MapleArrow` — 코드 SVG 를 대신함), 월간 달력 앞·뒤. 모델이 방향을 반대로 그려 파일 이름을 실제 방향으로 바꿔 굽는다 |
+| **J9 check-box-frame** (2차) | 체크 칸 전부 — 일간 달력의 챌린지·임시 작업, 카테고리 할 일 카드, 데스크톱 위젯 (`ink.ts` `inkCheckbox` + C7 도장) |
+| **J10 leaf-chips 3·5·7** (2차) | 카테고리마다 다른 잎 — 색을 해시해 고른다(`ink.ts` `leafShapeOf`·`leafChip`): 카테고리 덱 칩·엠블럼, 주간 띠 점, 데스크톱 위젯 표식 |
 
 ### 코드 짜임
 
 - 화면은 갈래 공용 View(`XView.tsx`) 하나에 모양만 `celestial/`·`maple/` 의 *.styles.ts — `usePickTheme(STYLES)`. Maple 의 styles 는 Celestial 것을 `export *` 로 받고 다른 것만 `styled(C.X)` 로 덮어쓴다 (`scripts/check-theme-styles.mjs` 가 규칙을 지킨다)
-- 조작부의 말은 `styles/maple/ink.ts` 한 곳에: `stampButton`(도장 단추 — 네모, 그림자 없음, 누르면 1px 내려앉음), `inkInput`(먹선 칸), `paperTab`(종이 탭 — 현재 것만 먹 밑줄), `paperCard`(먹 하이라인 두 겹 카드), `paperToggle`, `inkChip`, `formHeader/Row/Footer`(창 서식). 단추·입력·셀렉트·드롭다운·날짜/시간 고르개·창·알림 창·설정·사이드바·탭바·눈금자가 전부 이걸로 그려져서, 갈래를 바꾸면 조작부 하나하나가 다른 물건이 된다
+- 조작부의 말은 `styles/maple/ink.ts` 한 곳에: `stampButton`(도장 단추 — J1 틀, 누르면 1px 내려앉음), `inkInput`(먹선 칸), `paperTab`(종이 탭 — 고른 것 밑에 J3 붓 획), `inkCheckbox`(J9 칸 + C7 도장), `paperCard`(먹 하이라인 두 겹 카드), `paperToggle`, `inkChip`, `wreathFrame`(J7), `tornTop`(J6), `bookmark`(J5), `leafChip`(J10), `formHeader/Row/Footer`(창 서식). 단추·입력·셀렉트·드롭다운·날짜/시간 고르개·창·알림 창·설정·사이드바·탭바·눈금자가 전부 이걸로 그려져서, 갈래를 바꾸면 조작부 하나하나가 다른 물건이 된다
+- 9조각 틀(`-webkit-mask-box-image`)은 Chromium·WebKit 만 안다 — 데스크톱(WebView2)·안드로이드(WebView)·크롬은 되고 Firefox 는 `@supports` 로 걸러 CSS 테두리로 남는다. 마스크는 outline·box-shadow 도 잘라내므로 초점 고리는 안쪽 그림자로, 폰 시트의 그림자는 뗐다
 - 틀의 먹 색은 `theme.line`(스크롤바·제목 줄) — Celestial 은 primary 그대로
-- 갈래마다 아예 다른 그림은 picker 로: 로그인 패널·사이드바 옆선·홈 게이지(`home/parts/MonthArch`)·달력 칸 꾸밈·챌린지 스티커·설정 바탕·화면 전환·빈 화면 선화
+- 갈래마다 아예 다른 그림은 picker 로: 로그인 패널·사이드바 옆선·홈 게이지(`home/parts/MonthArch`)·달력 칸 꾸밈·챌린지 스티커·설정 바탕·화면 전환·빈 화면 선화·내비 아이콘(`assets/NavIcon` — Celestial 은 넘겨받은 lucide 요소, Maple 은 D1)·기념일 아이콘(`assets/AnniversaryIcon`)·화살(`assets/Arrow`)
 - 안드로이드 위젯은 화가 하나(`WidgetPainter`)에 붓(`WidgetStyle`: Celestial/Maple)이 글꼴·표식·바탕·문장을 그린다. 고운바탕(KS X 1001 2,350자 부분집합 1.4MB)·Cormorant Garamond 를 동봉
 - 글꼴: 앱은 고운바탕·Cormorant 를 Google Fonts 에서 켤 때 받는다(`lib/fonts.ts` THEME_FONTS)
 
-## 7. 남은 것 (2026-09-21)
+## 7. 남은 것 (2026-09-22)
 
-- 자리 못 찾은 그림: A5 카드 틀, C8 스피너, C9 리본, C10 이름표, H2·H3(랜딩 큰 그림·스플래시). 그림은 굽혀 있다(H3 빼고)
-- 2차 주문서 `ASSETS-2.md` — 조작부를 그림으로 더 밀 수 있는 것들(도장 테두리·붓 밑줄·종이 탭·책갈피 리본·찢은 종이·화환 틀·먹 화살·체크 칸·잎 칩)과 D1·D2 다시 뽑기. 지금 조작부는 전부 CSS(먹선·하이라인)로 그려 놓아서 그림이 와야만 되는 건 없다
+- 자리 못 찾은 그림: A5 카드 틀, C8 스피너, C9 리본, C10 이름표, C5 스케치 잎(`leaf-sketch`), J1 가는 틀(`stamp-frame-thin`), J3 c(굵은 붓), H2·H3. 그림은 굽혀 있다(H3 빼고)
+- 2차에서 못 쓴 것: J4 종이 탭(윤곽 + 찢김 띠). 다시 뽑는다면 "solid black silhouette, no outline, no shadow" 를 앞세울 것
+- D1 의 나머지 넉 장(plus·check·watch·more)은 굽혀 있고 폰 탭바의 '더보기'만 쓴다 — 붓 +·체크는 단추 안 아이콘으로 쓸 수 있다
 - 안드로이드 위젯 고르기 화면의 미리보기 PNG(res/drawable-nodpi/widget_preview_*)는 Celestial 로 찍힌 것 그대로 (놓기 전 설정 화면의 미리보기는 실제 화가가 그리므로 Maple 로 나온다)
 - H3 스플래시(안드로이드 시작 화면)는 안 붙였다

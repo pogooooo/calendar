@@ -103,3 +103,25 @@
 ## 4. 받으면 내가 하는 일
 `raw/` 에 넣어 주면 → `scripts/maple-assets.mjs` 에 `mask(...)` 한 줄씩 → `public/themes/maple/` → `styles/maple/ink.ts` 의 조각을 mask-border 로 바꾼다.
 화면 코드(`*.styles.ts`)는 조각을 통해 쓰므로 손댈 곳이 없다.
+
+## 5. 받은 뒤 — 어떻게 됐나 (2026-09-22)
+
+18장 + 다시 뽑은 D1·D2 가 왔다(`raw/README.md` 의 2차 항목). 전부 임계 128 이진화라 마스크로 바로 굽는다. 1차 마스크(C·E4·F4·A4·A5)도 같은 판으로 다시 와서 통째로 바꿨다(옛 판은 `raw/_v1-2026-09-16/`).
+
+| 항목 | 결과 | 어디에 |
+|---|---|---|
+| D1 nav-icons | ✅ 4×3 정확 (낱장 뽑아 코드로 합침) | 사이드바·폰 탭바 아이콘 (`assets/NavIcon`) |
+| D2 anniversary-icons | ✅ 4×2 정확 | 기념일 아이콘 (`assets/AnniversaryIcon`) |
+| J1 stamp-frame | ✅ 코드로 그린 굵은 틀 + 모델이 그린 가는 틀(`J1.png`) 둘 다 옴 | 굵은 틀을 도장 단추 전부에 (`stampButton`). 가는 틀은 작은 단추에서 번져 보여 예비 |
+| J2 stamp-frame-square | ✅ | 주간 달력 칸의 + |
+| J3 brush-underline ×3 | ✅ (a 가 둘 온 건 같은 파일) | a: 종이 탭 밑줄, b: 셋째 단추 hover, c: 예비 |
+| J4 paper-tab | ❌ 실루엣이 아니라 윤곽 + 검은 찢김 띠 | 안 씀 — 탭은 J3 로 충분 |
+| J5 bookmark-ribbon | ✅ 코드로 그린 제비꼬리(모델 것 `J5.png` 은 연필 꼴) | 눈금자 막대 |
+| J6 torn-edge | ✅ 코드로 그린 것(모델 것 `J6.png` 은 가는 선) | 폰 시트(창·더보기)의 위 가장자리 |
+| J7 wreath-frame | ✅ | 사이드바 쪽지 얼굴, 카테고리·기념일 엠블럼 |
+| J8 ink-arrows | ✅ 다만 방향이 반대(left 파일이 오른쪽을 가리킴) → 굽을 때 이름을 바꿈 | 주간·월간 달력 앞·뒤 |
+| J9 check-box-frame | ✅ | 체크 칸 전부 (+ C7 도장) |
+| J10 leaf-chips ×3 | ✅ | 카테고리마다 다른 잎 (색 해시) |
+| B5 · C5 (1차에 안 온 것) | ✅ B5 는 설정 바탕·챌린지 귀퉁이. C5 는 해칭 스케치라 표식으론 못 씀(`leaf-sketch` 로 굽기만) | |
+
+굽는 법은 §4 대로 됐다: `maskSheet`(시트 자르기)·`stampFill`(틀 안 채우기)이 `scripts/maple-assets.mjs` 에 더해졌고, 조각은 `ink.ts` 의 `stampButton`·`paperTab`·`inkCheckbox`·`wreathFrame`·`tornTop`·`bookmark`·`leafChip`.

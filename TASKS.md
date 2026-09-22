@@ -32,7 +32,8 @@ CRONOS 점검(2026-09-09)에서 나온 항목들. 데스크톱 · 웹 · 안드�
   - 코드 짜임을 바꿨다: 화면은 갈래 공용 View(`XView.tsx`) 하나에 모양만 `celestial/`·`maple/` 의 *.styles.ts (`usePickTheme(STYLES)`). Maple styles 는 Celestial 것을 `export *` 로 받고 다른 것만 덮어쓴다. 갈래마다 아예 다른 그림(로그인·사이드바·게이지·스티커·전환·빈 화면)은 picker
   - 못 쓴 그림: D1 내비 아이콘(20칸 회색 채움으로 나옴 → lucide 그대로), D2 기념일 아이콘(흐릿, 달·꽃 빠짐 → Celestial 선화 그대로). 안 온 것: B5(안 씀), C5(C6 에서 만듦). 자세한 건 ASSETS.md §6·§7
   - (2026-09-21) 조작부 전부를 갈래마다 다른 물건으로: `styles/maple/ink.ts` 의 `stampButton`·`inkInput`·`paperTab`·`paperCard`·`paperToggle`·`inkChip`·`formHeader/Row/Footer` 로 단추·입력·셀렉트·드롭다운·날짜/시간 고르개·창·알림 창(도판: 도토리·밀랍 인장·체크)·설정·사이드바(색인: 로마 숫자·잎 표식)·폰 탭바·눈금자·스크롤바(`theme.line`)·달력 화살(붓)·오늘 잎·기념일/카테고리/챌린지/프로젝트 화면을 다시 그렸다. C3 귀·C7 도장·F1 인장·F2 메달·F4 도토리가 자리를 잡았다
-  - 남은 것(ASSETS.md §7): A5 카드 틀·C8 스피너·C9 리본·C10 이름표·H2·H3 는 자리 없음. 그림으로 더 밀 것은 2차 주문서 `design/themes/maple/ASSETS-2.md`(도장 테두리·붓 밑줄·종이 탭·책갈피 리본·찢은 종이·화환 틀·먹 화살·체크 칸·잎 칩, D1·D2 다시)
+  - (2026-09-22) 2차 그림(`ASSETS-2.md` §5)이 와서 조작부가 그림이 됐다: 도장 단추는 J1 틀을 9조각(mask-box-image)으로, 탭 밑줄은 J3 붓 획, 체크 칸은 J9 + C7 도장, 내비·기념일 아이콘은 D1·D2 먹 시트(`assets/NavIcon`·`assets/AnniversaryIcon` picker), 화환(J7)·책갈피(J5)·찢은 시트(J6)·먹 화살(J8)·카테고리마다 다른 잎(J10)·갈색 잎(B5). J4 종이 탭만 못 씀
+  - 남은 것(ASSETS.md §7): A5 카드 틀·C8 스피너·C9 리본·C10 이름표·J1 가는 틀·J3 c·H2·H3 는 자리 없음
 
 - [x] ~~**안드로이드 홈 위젯 11종 (Celestial)**~~ (2026-09-14, 1.0.2) - 시안(design/widgets/celestial-widgets.html)대로. 앱이 Canvas 로 그림 한 장을 그려 ImageView 에 얹는다(`CelestialPainter`, Orbit 글꼴 동봉). 종류: 오늘 할 일 · 지금/다음 · 챌린지 · 월 게이지 · 주간 띠 · 월간 · 기념일 D-day · 하루 진행 · 빠른 추가 · 오늘 메모 · 프로젝트. 놓을 때 설정 화면(투명도·벌, 길게 눌러 다시 열기), 줄·날짜 칸마다 `cronos://` 딥링크(MainActivity → pending-link.txt → JS). 스냅샷 v2(이 달 전체 일정·기념일·프로젝트·메모·테마 색). 에뮬레이터에서 11종 그리기·설정 화면·딥링크(기념일·그날 일간·빠른 추가)·주간 칸 누르기까지 확인
   - 미리보기 그림(res/drawable-nodpi)은 디버그 빌드의 `PreviewRenderReceiver` 로 에뮬레이터에서 만들어 가져온다 (adb broadcast RENDER_PREVIEWS)
