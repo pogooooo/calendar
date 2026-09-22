@@ -2,12 +2,12 @@
  * Maple 의 창 틀 — 종이 한 장 — 뼈대는 Celestial 과 같으므로 그쪽 것을 통째로 가져오고, 달라지는 것만 덮어쓴다.
  * (여기서 이름을 새로 정의하면 그것이 위의 재수출보다 앞선다 — ES 모듈 규칙)
  *
- * 금빛 테두리 대신 먹 하이라인 두 겹(색인 카드의 괘선). 폰에서는 위에서 내려오는 시트라 위쪽 먹선만.
+ * 금빛 테두리 대신 먹 하이라인 두 겹(색인 카드의 괘선). 폰에서는 아래에서 올라오는 시트 — 위 가장자리를 찢은 종이(J6).
  */
 import styled from "styled-components";
 import * as C from "../celestial/CelestialBaseModal.styles";
 import { withAlpha } from "@/styles/color";
-import { hair } from "@/styles/maple/ink";
+import { hair, tornTop } from "@/styles/maple/ink";
 
 export * from "../celestial/CelestialBaseModal.styles";
 
@@ -22,7 +22,9 @@ export const Container = styled(C.Container)`
 
     @media (max-width: 768px) {
         border-radius: 0;
-        border-top-color: ${(p) => hair(p.theme, 0.5)};
-        box-shadow: 0 -8px 24px ${withAlpha("#000000", 0.35)};
+        border-top: none;
+        box-shadow: none;
+        padding-top: 8px;
+        ${tornTop("26px")}
     }
 `;

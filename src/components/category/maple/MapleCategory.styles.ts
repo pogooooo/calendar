@@ -8,7 +8,7 @@
 import styled, { css } from "styled-components";
 import * as C from "../celestial/CelestialCategory.styles";
 import { withAlpha } from "@/styles/color";
-import { ASSET, checkStamp, crest, hair, inkMask, leafBullet, paperCard, paperTab } from "@/styles/maple/ink";
+import { ASSET, crest, hair, inkCheckbox, inkMask, leafBullet, leafChip, leafShapeOf, paperCard, paperTab, wreathFrame } from "@/styles/maple/ink";
 
 export * from "../celestial/CelestialCategory.styles";
 
@@ -60,8 +60,9 @@ export const DeckCard = styled(C.DeckCard)`
 
     .num { font-family: ${(p) => p.theme.fonts.numeral}; font-size: 0.8rem; letter-spacing: 0.06em; }
 
+    /* 카테고리마다 다른 잎(J10) — 색으로 갈래를 고른다 */
     .chip {
-        ${leafBullet(true, "12px")}
+        ${(p) => leafChip(leafShapeOf(p.$color), "13px")}
         clip-path: none;
         background-color: ${(p) => p.$color};
     }
@@ -108,42 +109,43 @@ export const Plate = styled(C.Plate)`
 `;
 
 /** 엠블럼: 금빛 고리 안의 별 → 카테고리 색 잎 */
+/** 엠블럼: 먹 고리 대신 잎 화환(J7), 가운데는 카테고리 색 잎(J10) */
 export const EmblemWrap = styled(C.EmblemWrap)`
-    svg {
-        .ring { stroke: ${(p) => hair(p.theme, 0.6)}; }
-        .star { display: none; }
+    svg { display: none; }
+
+    &::before {
+        ${wreathFrame("-4px")}
+        background-color: ${(p) => hair(p.theme, 0.85)};
     }
 
     &::after {
         content: "";
         position: absolute;
-        inset: 13px;
-        ${inkMask("bullet-filled.webp")}
+        inset: 17px;
+        ${(p) => leafChip(leafShapeOf(p.$color), "auto")}
         background-color: ${(p) => p.$color};
         pointer-events: none;
     }
-
-    &:hover svg { filter: none; }
 `;
 
-/** 정보·할 일 탭: 종이 탭 */
+/** 정보·할 일 탭: 종이 탭 — 고른 탭 밑에 붓 획(J3) */
 export const DetailHeader = styled(C.DetailHeader)`
     button {
         ${paperTab(false)}
-        border-bottom-width: 2px;
         letter-spacing: 0.08em;
         padding-bottom: 6px;
         text-shadow: none;
 
-        &::after { display: none; }
+        /* Celestial 의 자라나는 금선 자리 — 붓 획으로 */
+        &::after { width: auto; transition: opacity 0.15s ease; }
         &:hover { color: ${(p) => p.theme.colors.text}; }
     }
 
     ${(p) => css`
         .${p.$activeTab === "info" ? "info-tab" : "todo-tab"} {
             color: ${p.theme.colors.primary};
-            border-bottom-color: ${p.theme.colors.primary};
             text-shadow: none;
+            &::after { opacity: 1; }
         }
     `}
 `;
@@ -194,22 +196,9 @@ export const TodoCard = styled(C.TodoCard)`
     &:hover { border-color: ${(p) => hair(p.theme, 0.7)}; box-shadow: none; &::before { border-color: ${(p) => hair(p.theme, 0.12)}; } }
 
     .check-btn {
-        border-color: ${(p) => hair(p.theme, 0.5)};
-        border-radius: 2px;
-        background: transparent;
-        box-shadow: none;
+        ${(p) => inkCheckbox(p.$isDone)}
         font-size: 0;
-
-        &::after {
-            content: "";
-            ${checkStamp("13px")}
-            background-color: ${(p) => p.theme.colors.primary};
-            opacity: ${(p) => (p.$isDone ? 1 : 0)};
-            transition: opacity 0.15s ease;
-        }
-
-        &:hover { box-shadow: none; border-color: ${(p) => p.theme.colors.primary}; }
-        &:hover::after { opacity: ${(p) => (p.$isDone ? 1 : 0.35)}; }
+        &:hover { box-shadow: none; }
     }
 `;
 

@@ -4,18 +4,28 @@
  */
 import styled from "styled-components";
 import * as C from "../celestial/TertiaryButton.styles";
+import { brushUnderline } from "@/styles/maple/ink";
 
 export * from "../celestial/TertiaryButton.styles";
 
 export const TertiaryButton = styled(C.TertiaryButton)`
+    position: relative;
     color: ${(p) => p.theme.colors.primary};
     font-family: ${(p) => p.theme.fonts.display};
     text-decoration: none;
     border-bottom: 1px solid transparent;
-    transition: border-color 0.15s ease;
+
+    /* 마우스를 올리면 붓으로 그은 밑줄(J3 b — 마른 붓) */
+    &::after {
+        ${brushUnderline("b", "5px")}
+        bottom: -4px;
+        background-color: ${(p) => p.theme.colors.primary};
+        opacity: 0;
+        transition: opacity 0.15s ease;
+    }
 
     &:hover {
         text-decoration: none;
-        border-bottom-color: ${(p) => p.theme.colors.primary};
+        &::after { opacity: 1; }
     }
 `;

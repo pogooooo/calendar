@@ -7,7 +7,7 @@
 import styled from "styled-components";
 import * as C from "../celestial/CelestialSideBar.styles";
 import { withAlpha } from "@/styles/color";
-import { crest, hair, leafBullet, paperCard, shortRule } from "@/styles/maple/ink";
+import { crest, hair, leafBullet, paperCard, shortRule, wreathFrame } from "@/styles/maple/ink";
 
 export * from "../celestial/CelestialSideBar.styles";
 
@@ -61,16 +61,26 @@ export const ProfilePopup = styled(C.ProfilePopup)`
     &::after { display: none; }
 `;
 
+/** 얼굴 둘레에 잎 화환(J7) */
+export const SigilFrame = styled(C.SigilFrame)`
+    margin: 4px;
+
+    &::before {
+        ${wreathFrame("-9px")}
+        background-color: ${(p) => hair(p.theme, 0.85)};
+    }
+`;
+
 export const Sigil = styled(C.Sigil)`
     border-radius: 50%;
-    border-color: ${(p) => hair(p.theme, 0.5)};
+    border: none;
     color: ${(p) => p.theme.colors.primary};
     font-family: ${(p) => p.theme.fonts.display};
 `;
 
 export const SigilImage = styled(C.SigilImage)`
     border-radius: 50%;
-    border-color: ${(p) => hair(p.theme, 0.5)};
+    border: none;
 `;
 
 export const RuleLine = styled(C.RuleLine)`

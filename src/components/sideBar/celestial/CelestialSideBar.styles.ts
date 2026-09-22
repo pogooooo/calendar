@@ -197,6 +197,13 @@ export const PopupHeader = styled.div`
     padding: 14px 14px 11px;
 `;
 
+/** 얼굴 둘레 — Celestial 은 틀 없음(Maple 이 화환을 두른다) */
+export const SigilFrame = styled.span`
+    position: relative;
+    display: inline-flex;
+    flex-shrink: 0;
+`;
+
 export const Sigil = styled.div`
     width: 34px;
     height: 34px;

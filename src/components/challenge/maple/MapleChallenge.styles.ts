@@ -5,7 +5,7 @@
 import styled, { css } from "styled-components";
 import * as C from "../celestial/CelestialChallenge.styles";
 import { withAlpha } from "@/styles/color";
-import { ASSET, hair, paperCard } from "@/styles/maple/ink";
+import { ASSET, hair, paperCard, stampButton } from "@/styles/maple/ink";
 
 export * from "../celestial/CelestialChallenge.styles";
 
@@ -23,16 +23,33 @@ const inkPanel = css`
     }
 
     .timeline-header .add-header-btn {
-        border-color: ${(p) => hair(p.theme, 0.5)};
+        ${stampButton("default")}
         color: ${(p) => p.theme.colors.primary};
         letter-spacing: 0.06em;
-
-        &:hover { box-shadow: none; border-color: ${(p) => p.theme.colors.primary}; }
+        &:hover { box-shadow: none; }
     }
 `;
 
 export const DateHeader = styled(C.DateHeader)`
     & > hr { border-top-color: ${(p) => hair(p.theme, 0.45)}; }
+`;
+
+/** 화면 귀퉁이에 갈색 잎(B5) 한 장 — 카테고리·기념일 화면과 같은 손 */
+export const CelestialCalendarWrapper = styled(C.CelestialCalendarWrapper)`
+    position: relative;
+
+    &::after {
+        content: "";
+        position: absolute;
+        left: -70px;
+        bottom: -60px;
+        width: 220px;
+        height: 220px;
+        background: url("${ASSET}/leaf-brown.webp") center / contain no-repeat;
+        opacity: ${(p) => (p.theme.mode === "dark" ? 0.08 : 0.1)};
+        transform: rotate(160deg);
+        pointer-events: none;
+    }
 `;
 
 export const TimelineSection = styled(C.TimelineSection)`${inkPanel}`;

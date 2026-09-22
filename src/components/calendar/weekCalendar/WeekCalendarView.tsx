@@ -47,6 +47,9 @@ type CelestialWeekProps = WeekThemeProps & Omit<React.HTMLAttributes<HTMLDivElem
 const WeekCalendarView = React.forwardRef<HTMLDivElement, CelestialWeekProps>(
     ({
          asChild, direction, selectedCategoryIds,
+         // 화면이 안 쓰는 상태값도 여기서 받아 둔다 — 안 그러면 ...props 로 DOM 에 흘러가 React 가 경고한다
+         // eslint-disable-next-line @typescript-eslint/no-unused-vars
+         currentDate, selectedDate,
          isModalOpen, modalTodo, selectedDateForModal, todoContextMenu,
          moreModalDate, weekDates, expandedTodos, challengeTodos, todayStr, dateRangeText,
          todoLevels, maxLevel, categories, onDateChange,

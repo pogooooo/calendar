@@ -6,6 +6,7 @@ import type { WeekStripThemeProps } from "./WeekStrip";
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialWeekStrip.styles";
 import * as MapleS from "./maple/MapleWeekStrip.styles";
+import { leafShapeOf } from "@/styles/maple/ink";
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
 const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS };
@@ -47,7 +48,7 @@ export default function WeekStripView({
                         <span className="name">{dayNames[i]}</span>
                         <span className="num">{d.date.getDate()}</span>
                         <span className="dots" aria-hidden>
-                            {d.dots.map((c, j) => <i key={j} style={{ background: c }} />)}
+                            {d.dots.map((c, j) => <i key={j} style={{ background: c }} data-leaf={leafShapeOf(c)} />)}
                             {d.count > d.dots.length && <em>+{d.count - d.dots.length}</em>}
                         </span>
                     </S.Day>

@@ -8,7 +8,7 @@
 import styled, { css } from "styled-components";
 import * as C from "../celestial/CelestialAnniversary.styles";
 import { withAlpha } from "@/styles/color";
-import { ASSET, crest, hair, inkInput, inkMask, paperCard, stampButton } from "@/styles/maple/ink";
+import { ASSET, crest, hair, inkInput, inkMask, paperCard, stampButton, wreathFrame } from "@/styles/maple/ink";
 
 export * from "../celestial/CelestialAnniversary.styles";
 
@@ -71,6 +71,7 @@ export const FormCaption = styled(C.FormCaption)`
 
 export const IconChoice = styled(C.IconChoice)`
     border-radius: 2px;
+    i { width: 20px; height: 20px; }
     border-color: ${(p) => (p.$selected ? p.theme.colors.primary : hair(p.theme, 0.3))};
     background-color: ${(p) => (p.$selected ? withAlpha(p.theme.colors.accent, 0.22) : "transparent")};
     color: ${(p) => (p.$selected ? p.theme.colors.primary : p.theme.colors.textSecondary)};
@@ -108,17 +109,24 @@ export const CardNumeral = styled(C.CardNumeral)`
     color: ${(p) => p.theme.colors.textSecondary};
 `;
 
-/** 엠블럼: 마름모·궤도 대신 먹 고리 하나, 아이콘은 먹 */
+/** 엠블럼: 마름모·궤도 대신 잎 화환(J7), 그 위에 남은 날의 붉은 호, 아이콘은 먹 */
 export const CardEmblem = styled(C.CardEmblem)`
-    svg {
-        .dia { display: none; }
-        .orbit { stroke: ${(p) => hair(p.theme, 0.35)}; }
-        .orbit-fill { stroke: ${(p) => p.theme.colors.primary}; }
+    &::before {
+        ${wreathFrame("-6px")}
+        background-color: ${(p) => hair(p.theme, 0.8)};
     }
 
+    svg {
+        .dia { display: none; }
+        .orbit { display: none; }
+        .orbit-fill { stroke: ${(p) => p.theme.colors.primary}; stroke-width: 1.6; }
+    }
+
+    /* 먹 아이콘(D2)은 선 SVG 보다 조밀해서 한 치수 크게 */
     .glyph {
         color: ${(p) => p.theme.colors.text};
         svg { filter: none !important; }
+        i { width: 28px; height: 28px; }
     }
 `;
 

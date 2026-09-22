@@ -6,7 +6,7 @@
  */
 import styled from "styled-components";
 import * as C from "../celestial/CelestialDayCalendar.styles";
-import { hair, leafBullet, tape } from "@/styles/maple/ink";
+import { hair, inkCheckbox, leafBullet, tape } from "@/styles/maple/ink";
 import { withAlpha } from "@/styles/color";
 
 export * from "../celestial/CelestialDayCalendar.styles";
@@ -82,6 +82,11 @@ export const TodoCard = styled(C.TodoCard)`
 
 export const ChallengeItem = styled(C.ChallengeItem)`
     border-color: ${(p) => hair(p.theme, 0.3)};
+
+    &:hover { background-color: ${(p) => withAlpha(p.theme.colors.accent, 0.16)}; }
+
+    .box { ${(p) => inkCheckbox(p.$isDone)} }
+    input:focus-visible + .box { outline: none; &::before { background-color: ${(p) => p.theme.colors.primary}; } }
 `;
 
 export const TodoCardHead = styled(C.TodoCardHead)`
@@ -95,6 +100,11 @@ export const TodoCardHead = styled(C.TodoCardHead)`
 
 export const TaskItem = styled(C.TaskItem)`
     border-color: ${(p) => hair(p.theme, 0.3)};
+
+    .check-btn {
+        ${(p) => inkCheckbox(p.$isDone)}
+        &:focus-visible { outline: none; &::before { background-color: ${(p) => p.theme.colors.primary}; } }
+    }
 `;
 
 export const TaskForm = styled(C.TaskForm)`

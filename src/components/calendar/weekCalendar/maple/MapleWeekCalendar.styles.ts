@@ -80,9 +80,10 @@ export const BarContainer = styled(C.BarContainer)`
     border-color: ${(p) => hair(p.theme, 0.45)};
 `;
 
-/** 칸 위의 + : 먹 도장 단추 */
+/** 칸 위의 + : 네모 도장(J2) */
 export const AddTodoButton = styled(C.AddTodoButton)`
-    ${stampButton("default")}
+    ${stampButton("default", { square: true })}
+    position: absolute;
     width: 24px;
     height: 24px;
     border-radius: 2px;

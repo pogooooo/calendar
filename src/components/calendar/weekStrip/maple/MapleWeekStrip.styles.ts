@@ -7,7 +7,7 @@
 import styled from "styled-components";
 import * as C from "../celestial/CelestialWeekStrip.styles";
 import { withAlpha } from "@/styles/color";
-import { ASSET, hair, leafBullet, stampButton } from "@/styles/maple/ink";
+import { ASSET, hair, leafBullet, leafChip, stampButton } from "@/styles/maple/ink";
 
 export * from "../celestial/CelestialWeekStrip.styles";
 
@@ -44,6 +44,9 @@ export const Day = styled(C.Day)`
     .dots i {
         ${leafBullet(true, "7px")}
         border-radius: 0;
+        &[data-leaf="3"] { ${leafChip(3, "7px")} }
+        &[data-leaf="5"] { ${leafChip(5, "7px")} }
+        &[data-leaf="7"] { ${leafChip(7, "7px")} }
     }
 
     &:active { background: ${(p) => withAlpha(p.theme.colors.accent, 0.3)}; }

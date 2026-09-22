@@ -1,5 +1,5 @@
 /**
- * LeafField 의 모양 — 설정 화면 바탕에 눌러 말린 잎 석 장(B2·B3·B4)이 옅게 놓인다.
+ * LeafField 의 모양 — 설정 화면 바탕에 눌러 말린 잎 넉 장(B2·B3·B4·B5)이 옅게 놓인다.
  * 화면에 고정돼 글 뒤로 지나가며, 손가락·마우스는 통과한다.
  */
 import styled from "styled-components";
@@ -21,9 +21,10 @@ export const Field = styled.div`
     .a { right: -60px; top: 40px; width: 300px; transform: rotate(18deg); }
     .b { right: 190px; bottom: -70px; width: 220px; transform: rotate(-32deg); }
     .c { left: 44%; top: -90px; width: 200px; transform: rotate(140deg); }
+    .d { left: 240px; bottom: -60px; width: 170px; transform: rotate(-150deg); }
 
     ${MOBILE} {
-        .b, .c { display: none; }
+        .b, .c, .d { display: none; }
         .a { right: -80px; top: auto; bottom: 40px; width: 220px; }
     }
 `;

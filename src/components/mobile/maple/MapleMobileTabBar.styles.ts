@@ -2,13 +2,13 @@
  * Maple 의 폰 탭바 — 종이 띠. 뼈대는 Celestial 과 같으므로 그쪽 것을 통째로 가져오고, 달라지는 것만 덮어쓴다.
  * (여기서 이름을 새로 정의하면 그것이 위의 재수출보다 앞선다 — ES 모듈 규칙)
  *
- * 마름모 대신 잎: 고른 탭 위에 붉은 잎 하나가 돋는다. 선은 먹 하이라인.
+ * 마름모 대신 잎: 고른 탭 위에 붉은 잎 하나가 돋는다. 선은 먹 하이라인. 더보기 시트는 위를 찢은 종이(J6).
  */
 import styled from "styled-components";
 import { MOBILE_BREAKPOINT } from "@/styles/breakpoints";
 import * as C from "../celestial/CelestialMobileTabBar.styles";
 import { withAlpha } from "@/styles/color";
-import { crest, hair, leafBullet } from "@/styles/maple/ink";
+import { crest, hair, leafBullet, tornTop } from "@/styles/maple/ink";
 
 export * from "../celestial/CelestialMobileTabBar.styles";
 
@@ -32,7 +32,9 @@ export const Tab = styled(C.Tab)`
 `;
 
 export const SheetBody = styled(C.SheetBody)`
-    border-top-color: ${(p) => hair(p.theme, 0.5)};
+    border-top: none;
+    padding-top: 6px;
+    ${tornTop("24px")}
 `;
 
 export const SheetHead = styled(C.SheetHead)`

@@ -7,7 +7,7 @@
 import styled from "styled-components";
 import * as C from "../celestial/CelestialRulerScroll.styles";
 import { withAlpha } from "@/styles/color";
-import { hair, leafBullet } from "@/styles/maple/ink";
+import { bookmark, hair, leafBullet } from "@/styles/maple/ink";
 
 export * from "../celestial/CelestialRulerScroll.styles";
 
@@ -30,9 +30,14 @@ export const Mark = styled(C.Mark)`
     background-color: ${(p) => p.$color ?? p.theme.colors.primary};
 `;
 
+/** 막대 → 책갈피 리본(J5). 짧아도 제비꼬리가 보이게 최소 높이를 둔다 */
 export const Thumb = styled(C.Thumb)`
-    background-color: ${(p) => withAlpha(p.theme.colors.text, 0.45)};
-    border-radius: 1px;
+    ${bookmark}
+    width: 9px;
+    right: 0;
+    min-height: 34px;
+    background-color: ${(p) => withAlpha(p.theme.colors.primary, 0.85)};
+    &:hover, &:active { background-color: ${(p) => p.theme.colors.primary}; }
 `;
 
 export const Flag = styled(C.Flag)`

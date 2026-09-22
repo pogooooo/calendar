@@ -12,6 +12,8 @@
  *   tile    종이 질감 → 거울 타일링(좌우·상하 뒤집어 2×2)으로 이음새를 없앤다
  *   opaque  그대로 쓰는 큰 그림 → 크기만 줄인다 (모델이 끼워 넣은 글자는 종이로 덮는다)
  *
+ * 2차(ASSETS-2.md, 2026-09-22)는 전부 임계 128 로 이진화된 순수 흑백이라 mask 한 가지로 굽는다. 아이콘 시트는 칸칸이 잘라 낱장 마스크로.
+ *
  * 결과는 public/themes/maple/ 에 들어가 웹·데스크톱·안드로이드 번들에 실린다.
  * 안드로이드 홈 위젯(네이티브)이 쓰는 몇 장은 android-overlay 의 drawable-nodpi 로도 복사한다.
  */
@@ -289,6 +291,46 @@ async function sheet(file, cols, rows, nameOf, { key, size = 192, specks = 0.05 
     }
 }
 
+/** 먹 시트를 칸칸이 잘라 낱장 마스크로 (D1·D2). 칸 안의 작은 부스러기(서명·점)는 지운다 */
+async function maskSheet(file, cols, rows, nameOf, { size = 96, specks = 0.04, pad = 0.06, cellPad = 0.02, crops = {} } = {}) {
+    const meta = await sharp(path.join(RAW, file)).metadata();
+    const cw = Math.floor(meta.width / cols), chh = Math.floor(meta.height / rows);
+    let n = 0;
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+        n++;
+        // 칸 가장자리를 조금 안쪽으로 — 옆 칸의 그림이 넘어온 것을 자른다. crops[n] 은 칸 안의 상자(칸 좌표)로 더 좁게
+        const inset = Math.round(cw * cellPad);
+        const cell = crops[n] ?? { left: inset, top: inset, width: cw - inset * 2, height: chh - inset * 2 };
+        const rgb = await readRGB(file, { left: c * cw + cell.left, top: r * chh + cell.top, width: cell.width, height: cell.height });
+        const img = dropSpecks(inkToAlpha(rgb, paperColor(rgb)), specks);
+        const box = padBox(bbox(img), img.w, img.h, Math.round(Math.max(img.w, img.h) * pad));
+        await writeWebp(toSharp(img).extract(box), nameOf(n), { width: size, height: size, square: true });
+    }
+}
+
+/**
+ * 도장 틀(J1)에서 "채운 도장" 을 만든다 — 틀 안쪽을 알파 1 로 채운 것.
+ * 단추 자체에 mask-box-image 로 씌우면 바탕색·글자가 거친 도장 가장자리로 잘리고, 틀은 그 위에 ::after 로 얹는다.
+ * 안쪽 채우기: 바깥에서 닿는 투명 픽셀만 투명으로 두고(flood fill), 나머지는 전부 먹.
+ */
+async function stampFill(file, name, { ink, ...out } = {}) {
+    const rgb = await readRGB(file);
+    const img = inkToAlpha(rgb, paperColor(rgb), ink);
+    const { data, w, h } = img;
+    const outside = new Uint8Array(w * h);
+    const stack = [];
+    const push = (x, y) => { const q = y * w + x; if (!outside[q] && data[q * 4 + 3] < 128) { outside[q] = 1; stack.push(q); } };
+    for (let x = 0; x < w; x++) { push(x, 0); push(x, h - 1); }
+    for (let y = 0; y < h; y++) { push(0, y); push(w - 1, y); }
+    while (stack.length) {
+        const q = stack.pop(); const x = q % w, y = (q / w) | 0;
+        if (x > 0) push(x - 1, y); if (x < w - 1) push(x + 1, y); if (y > 0) push(x, y - 1); if (y < h - 1) push(x, y + 1);
+    }
+    for (let q = 0; q < w * h; q++) if (!outside[q]) data[q * 4 + 3] = 255;
+    const box = bbox(img);
+    await writeWebp(toSharp(img).extract(box), name, out);
+}
+
 /* ── 목록 ─────────────────────────────────────────────────────────────── */
 
 // A. 바탕
@@ -309,6 +351,7 @@ const leafCrop = { left: 0, top: 0, width: 1024, height: 1000 }; // 맨 아래 �
 await cutout("B2_leaf-red.png", "leaf-red.webp", { crop: leafCrop, width: 512, height: 512, square: true });
 await cutout("B3_leaf-orange.png", "leaf-orange.webp", { crop: leafCrop, width: 512, height: 512, square: true });
 await cutout("B4_leaf-yellow.png", "leaf-yellow.webp", { crop: leafCrop, width: 512, height: 512, square: true });
+await cutout("B5_leaf-brown.png", "leaf-brown.webp", { crop: leafCrop, width: 512, height: 512, square: true });
 await sheet("B6_leaf-sprites.png", 4, 2, (n) => `leaves/leaf-${n}.webp`, { size: 192, key: { t0: 22, t1: 84 } });
 
 // C. 먹 장식 (마스크)
@@ -316,7 +359,9 @@ await mask("C1_divider-vine.png", "divider-vine.webp", { width: 1024, pad: 0.01 
 await mask("C2_divider-short.png", "divider-short.webp", { width: 512, pad: 0.01 });
 await mask("C3_corner-flourish.png", "corner.webp", { width: 256, height: 256, pad: 0.01 });
 await mask("C4_crest.png", "crest.webp", { width: 128, height: 128, square: true });
+// C5 (2차) 는 잎맥 해칭이 든 스케치라 11px 표식으론 뭉개진다 — 표식은 계속 C6 에서 만든 윤곽, C5 는 큰 자리(엠블럼)용
 await outlineFromFilled("C6_bullet-filled.png", "bullet-outline.webp", { width: 96, height: 96, square: true });
+await mask("C5_bullet-outline.png", "leaf-sketch.webp", { width: 192, height: 192, square: true });
 await mask("C6_bullet-filled.png", "bullet-filled.webp", { width: 96, height: 96, square: true });
 await mask("C7_check-stamp.png", "check.webp", { width: 96, height: 96, square: true });
 await mask("C8_spinner-leaf.png", "spinner.webp", { width: 96, height: 96, square: true });
@@ -347,6 +392,32 @@ await mask("F4_acorn.png", "acorn.webp", { width: 96, height: 96, square: true }
 // H. 선택
 await cutout("H1_app-icon-maple.png", "app-icon.webp", { width: 512, height: 512, square: true, key: { t0: 10, t1: 40 } });
 await opaque("H2_landing-hero.png", "landing-hero.webp", { width: 1600, quality: 74 });
+
+// D. 아이콘 시트 (2차 — 낱장으로 뽑아 코드로 합친 시트라 칸이 정확하다)
+const NAV = ["home", "calendar", "project", "challenge", "anniversary", "category", "settings", "download", "plus", "check", "watch", "more"];
+// 집(1)은 모델이 넓은 땅선을 깔아 집이 작아진다 — 집 둘레만 자른다
+await maskSheet("D1_nav-icons-sheet.png", 4, 3, (n) => `icons/nav-${NAV[n - 1]}.webp`, { size: 96, crops: { 1: { left: 128, top: 276, width: 128, height: 110 } } });
+const ANNIV = ["star", "moon", "cake", "ring", "heart", "flower", "candle", "gift"];
+await maskSheet("D2_anniversary-icons-sheet.png", 4, 2, (n) => `icons/anniv-${ANNIV[n - 1]}.webp`, { size: 96 });
+
+// J. 조작부 (2차) — 틀은 9조각(mask-box-image)으로 늘어나므로 여백 없이 먹 끝에 딱 맞게 자른다
+await mask("J1_stamp-frame.png", "stamp-frame.webp", { width: 1024, pad: 0 });          // 두꺼운 고무도장 틀 (코드로 그린 것)
+await stampFill("J1_stamp-frame.png", "stamp-fill.webp", { width: 1024 });               // 같은 틀의 안을 채운 것 — 단추 바탕을 자르는 데
+await mask("J1.png", "stamp-frame-thin.webp", { width: 1024, pad: 0 });                  // 가늘고 튄 잉크가 있는 틀 (모델이 그린 것)
+await mask("J2_stamp-frame-square.png", "stamp-square.webp", { width: 256, height: 256, square: true, pad: 0 });
+await stampFill("J2_stamp-frame-square.png", "stamp-square-fill.webp", { width: 256, height: 256, square: true });
+await mask("J3_brush-underline-a.png", "underline-a.webp", { width: 1024, pad: 0.005 });
+await mask("J3_brush-underline-b.png", "underline-b.webp", { width: 1024, pad: 0.005 });
+await mask("J3_brush-underline-c.png", "underline-c.webp", { width: 1024, pad: 0.005 });
+await mask("J5_bookmark-ribbon.png", "bookmark.webp", { height: 256, pad: 0 });
+// 찢은 가장자리: 가로로 이어 붙이므로 폭은 그대로, 위 여백(흰 종이)도 그대로 둔다
+await mask("J6_torn-edge.png", "torn-edge.webp", { width: 1024, trim: false });
+await mask("J7_wreath-frame.png", "wreath.webp", { width: 512, height: 512, square: true, pad: 0.01 });
+// 모델이 화살 방향을 반대로 그렸다 — 파일 이름은 실제 방향으로
+await mask("J8_ink-arrows-left.png", "ink-arrow-right.webp", { width: 384, pad: 0.02 });
+await mask("J8_ink-arrows-right.png", "ink-arrow-left.webp", { width: 384, pad: 0.02 });
+await mask("J9_check-box-frame.png", "check-box.webp", { width: 128, height: 128, square: true, pad: 0.02 });
+for (const n of [3, 5, 7]) await mask(`J10_leaf-chip-${n}.png`, `leaves/chip-${n}.webp`, { width: 96, height: 96, square: true });
 
 /* ── 안드로이드 위젯이 쓰는 것 ────────────────────────────────────────── */
 fs.mkdirSync(ANDROID, { recursive: true });

@@ -7,7 +7,7 @@ import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useDialog } from "@/components/dialog/DialogProvider";
 import { useT } from "@/i18n/useT";
 import Select from "@/components/input/select/Select";
-import AnniversaryIcon, { ANNIVERSARY_ICONS } from "@/assets/celestial/AnniversaryIcons";
+import AnniversaryIcon, { ANNIVERSARY_ICONS } from "@/assets/AnniversaryIcon";
 import EmptyArt from "@/components/empty/EmptyArt";
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialAnniversary.styles";

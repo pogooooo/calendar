@@ -8,13 +8,27 @@ import styled, { css } from "styled-components";
 import * as C from "../celestial/CelestialMonthCalendar.styles";
 import { MOBILE, NOT_WIDGET } from "@/styles/breakpoints";
 import { withAlpha } from "@/styles/color";
-import { ASSET, leafBullet, tape, washBand, washBandDark } from "@/styles/maple/ink";
+import { ASSET, inkMask, leafBullet, tape, washBand, washBandDark } from "@/styles/maple/ink";
 
 export * from "../celestial/CelestialMonthCalendar.styles";
 
 const hair = (p: { theme: { colors: { text: string } } }, a = 0.28) => withAlpha(p.theme.colors.text, a);
 
 export const DateRangeDisplay = styled(C.DateRangeDisplay)`
+    /* 앞·뒤 단추: lucide 꺾쇠를 숨기고 먹 화살(J8)을 그린다. 첫째 단추가 앞, 둘째가 뒤 */
+    .nav-btn {
+        svg { display: none; }
+        &::before {
+            content: "";
+            display: block;
+            width: 40px;
+            height: 13px;
+            ${inkMask("ink-arrow-left.webp")}
+            background-color: ${(p) => p.theme.colors.primary};
+        }
+        &:nth-of-type(2)::before { ${inkMask("ink-arrow-right.webp")} background-color: ${(p) => p.theme.colors.primary}; }
+    }
+
     font-size: 1rem;
     letter-spacing: 0.06em;
 `;

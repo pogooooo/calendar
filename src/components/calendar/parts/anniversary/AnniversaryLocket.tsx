@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import AnniversaryIcon from "@/assets/celestial/AnniversaryIcons";
+import AnniversaryIcon from "@/assets/AnniversaryIcon";
 import type { AnniversaryType } from "@/store/useAnniversaryStore";
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/AnniversaryLocket.styles";

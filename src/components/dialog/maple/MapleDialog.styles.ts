@@ -55,8 +55,6 @@ export const ArcanaName = styled(C.ArcanaName)`
 export const ActionButton = styled(C.ActionButton)`
     ${(p) => stampButton(p.$tone === "go" ? "primary" : p.$tone === "danger" ? "danger" : "default")}
     padding: 8px 16px;
-
-    &:focus-visible { outline: 2px solid ${(p) => p.theme.colors.primary}; outline-offset: 2px; }
 `;
 
 export const FullCard = styled(C.FullCard)`

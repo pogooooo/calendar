@@ -6,6 +6,7 @@ import DefaultProfile from "@/assets/icons/DefaultProfile";
 import SidebarMenuButton from "@/components/button/sidebarMenu/SidebarMenuButton";
 import Setting from "@/assets/icons/Setting";
 import Home from "@/assets/icons/Home";
+import NavIcon from "@/assets/NavIcon";
 import useAuthStore from "@/store/useAuthStore";
 import { useRouter } from "next/navigation";
 import { LogOut, UserCog, ChevronDown } from "lucide-react";
@@ -102,11 +103,13 @@ const Profile = () => {
                             transition={{ duration: dur(0.16), ease: [0.22, 1, 0.36, 1] }}
                         >
                             <S.PopupHeader>
-                                {user?.image ? (
-                                    <S.SigilImage src={user.image} alt="profile" />
-                                ) : (
-                                    <S.Sigil>{(user?.name ?? "?").charAt(0)}</S.Sigil>
-                                )}
+                                <S.SigilFrame>
+                                    {user?.image ? (
+                                        <S.SigilImage src={user.image} alt="profile" />
+                                    ) : (
+                                        <S.Sigil>{(user?.name ?? "?").charAt(0)}</S.Sigil>
+                                    )}
+                                </S.SigilFrame>
                                 <S.PopupIdentity>
                                     <S.PopupName title={user?.name ?? ""}>{user?.name}</S.PopupName>
                                     <S.PopupEmail title={user?.email ?? ""}>{user?.email}</S.PopupEmail>
@@ -155,11 +158,11 @@ const Profile = () => {
             </S.UserWrapper>
 
             <SidebarMenuButton label={t.sidebar.settings} onClick={() => { router.push("/settings") }}>
-                <Setting width={26} />
+                <NavIcon name="settings" size={26} fallback={<Setting width={26} />} />
             </SidebarMenuButton>
 
             <SidebarMenuButton label={t.sidebar.home} onClick={() => { router.push("/") }}>
-                <Home width={26} />
+                <NavIcon name="home" size={26} fallback={<Home width={26} />} />
             </SidebarMenuButton>
         </S.ProfileWrapper>
     );

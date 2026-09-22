@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import SidebarMenuButton from "@/components/button/sidebarMenu/SidebarMenuButton";
 import { useRouter, usePathname } from "next/navigation";
 import { Layers, Calendar, Kanban, Trophy, Cake, MonitorDown } from "lucide-react";
+import NavIcon from "@/assets/NavIcon";
 import { useT } from "@/i18n/useT";
 import { isDesktopApp } from "@/lib/apiBase";
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
@@ -23,13 +24,14 @@ const Menu = () => {
     const [showDownload, setShowDownload] = useState(false);
     useEffect(() => setShowDownload(!isDesktopApp()), []);
 
+    // 아이콘은 갈래마다 다르다 — Celestial 은 lucide 선 아이콘, Maple 은 먹 아이콘 시트(D1)
     const items = [
-        { path: "/category", label: t.sidebar.categories, icon: <Layers size={26} /> },
-        { path: "/calendar", label: t.sidebar.calendar, icon: <Calendar size={26} /> },
-        { path: "/project", label: t.sidebar.project, icon: <Kanban size={26} /> },
-        { path: "/challenge", label: t.sidebar.challenge, icon: <Trophy size={26} /> },
-        { path: "/anniversary", label: t.sidebar.anniversary, icon: <Cake size={26} /> },
-        ...(showDownload ? [{ path: "/download", label: t.sidebar.download, icon: <MonitorDown size={26} /> }] : []),
+        { path: "/category", label: t.sidebar.categories, icon: <NavIcon name="category" size={26} fallback={<Layers size={26} />} /> },
+        { path: "/calendar", label: t.sidebar.calendar, icon: <NavIcon name="calendar" size={26} fallback={<Calendar size={26} />} /> },
+        { path: "/project", label: t.sidebar.project, icon: <NavIcon name="project" size={26} fallback={<Kanban size={26} />} /> },
+        { path: "/challenge", label: t.sidebar.challenge, icon: <NavIcon name="challenge" size={26} fallback={<Trophy size={26} />} /> },
+        { path: "/anniversary", label: t.sidebar.anniversary, icon: <NavIcon name="anniversary" size={26} fallback={<Cake size={26} />} /> },
+        ...(showDownload ? [{ path: "/download", label: t.sidebar.download, icon: <NavIcon name="download" size={26} fallback={<MonitorDown size={26} />} /> }] : []),
     ];
 
     return(
