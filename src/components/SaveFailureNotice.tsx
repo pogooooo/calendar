@@ -1,11 +1,16 @@
 "use client";
 
 import * as React from "react";
-import styled, { keyframes } from "styled-components";
 import { AlertTriangle, X } from "lucide-react";
 import { subscribeSaveFailure, type SaveScope } from "@/lib/saveError";
 import { useT } from "@/i18n/useT";
-import { MOBILE, TAB_BAR_HEIGHT, SAFE_B } from "@/styles/breakpoints";
+
+import { usePickTheme, type ThemeImpls } from "@/styles/themed";
+import * as CelestialS from "./notice/celestial/CelestialSaveFailureNotice.styles";
+import * as MapleS from "./notice/maple/MapleSaveFailureNotice.styles";
+
+/** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS };
 
 /**
  * 저장이 실패해 화면이 되돌아갔을 때 뜨는 알림.
@@ -17,6 +22,7 @@ import { MOBILE, TAB_BAR_HEIGHT, SAFE_B } from "@/styles/breakpoints";
 const HIDE_AFTER = 5000;
 
 export default function SaveFailureNotice() {
+    const S = usePickTheme(STYLES);
     const t = useT();
     const [state, setState] = React.useState<{ scope: SaveScope; count: number } | null>(null);
     const timer = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -39,7 +45,7 @@ export default function SaveFailureNotice() {
     const what = t.saveError.scopes[state.scope];
 
     return (
-        <Bar role="status" aria-live="polite">
+        <S.Bar role="status" aria-live="polite">
             <AlertTriangle size={15} />
             <span className="msg">
                 {t.saveError.message(what)}
@@ -48,68 +54,6 @@ export default function SaveFailureNotice() {
             <button type="button" onClick={() => setState(null)} aria-label={t.widgetShell.close}>
                 <X size={14} />
             </button>
-        </Bar>
+        </S.Bar>
     );
 }
-
-const slideUp = keyframes`
-    from { opacity: 0; transform: translate(-50%, 12px); }
-    to   { opacity: 1; transform: translate(-50%, 0); }
-`;
-
-const Bar = styled.div`
-    position: fixed;
-    left: 50%;
-    bottom: 22px;
-    transform: translateX(-50%);
-    z-index: 1200;
-
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    max-width: min(560px, calc(100vw - 32px));
-    padding: 10px 12px 10px 14px;
-
-    background-color: ${(p) => p.theme.colors.surface};
-    border: 1px solid ${(p) => p.theme.colors.error};
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
-    color: ${(p) => p.theme.colors.text};
-
-    svg { flex: none; color: ${(p) => p.theme.colors.error}; }
-
-    .msg {
-        flex: 1;
-        min-width: 0;
-        font-size: 0.82rem;
-        line-height: 1.5;
-    }
-
-    button {
-        flex: none;
-        display: flex;
-        padding: 4px;
-        background: none;
-        border: none;
-        cursor: pointer;
-        color: ${(p) => p.theme.colors.textSecondary};
-
-        &:hover { color: ${(p) => p.theme.colors.text}; }
-    }
-
-    @media (prefers-reduced-motion: no-preference) {
-        animation: ${slideUp} 0.22s ease-out both;
-    }
-
-    /* 폰에서는 탭바를 피해 그 위에 뜬다 */
-    ${MOBILE} {
-        bottom: calc(${TAB_BAR_HEIGHT}px + ${SAFE_B} + 14px);
-        left: 12px;
-        right: 12px;
-        transform: none;
-        max-width: none;
-
-        @media (prefers-reduced-motion: no-preference) {
-            animation: none;
-        }
-    }
-`;

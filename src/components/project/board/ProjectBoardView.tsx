@@ -4,6 +4,7 @@ import * as React from 'react';
 import { useT } from "@/i18n/useT";
 import { ProjectBoardProps } from "./ProjectBoard";
 import { ProjectTaskType } from '@/store/useProjectStore';
+import useIsMobile from "@/hooks/useIsMobile";
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialProjectBoard.styles";
 import * as MapleS from "./maple/MapleProjectBoard.styles";
@@ -20,6 +21,10 @@ const ProjectBoardView = React.forwardRef<HTMLDivElement, ProjectBoardProps>(({
                                                                                    }, ref) => {
     const S = usePickTheme(STYLES);
     const tr = useT().project;
+    /* 폰에서는 세 칸을 옆으로 밀어 봤다 — 칸이 세 개뿐인데도 지금 어디를 보고 있는지 알기 어려웠다.
+       이름표를 위에 놓고 한 칸씩 보여 준다. 화면이 세로로만 움직인다. */
+    const isMobile = useIsMobile();
+    const [picked, setPicked] = React.useState<string>('todo');
     const todoTasks = tasks.filter(t => t.status === 'todo');
     const inProgressTasks = tasks.filter(t => t.status === 'in_progress');
     const doneTasks = tasks.filter(t => t.status === 'done');
@@ -30,14 +35,35 @@ const ProjectBoardView = React.forwardRef<HTMLDivElement, ProjectBoardProps>(({
         { t: tr.colDone,  d: doneTasks,       s: 'done',        prevStatus: 'in_progress', prevLabel: tr.movePrev,   nextStatus: null,             nextLabel: null }
     ];
 
+    const shown = isMobile ? boardColumns.filter(col => col.s === picked) : boardColumns;
+
     return (
         <S.SectionWrapper ref={ref} style={{ flex }} $mobileHeight="420px">
             <S.SectionTitle>{tr.board}</S.SectionTitle>
+
+            {isMobile && (
+                <S.ColumnPicker role="tablist" aria-label={tr.board}>
+                    {boardColumns.map(col => (
+                        <S.ColumnPick
+                            key={col.s}
+                            type="button"
+                            role="tab"
+                            aria-selected={picked === col.s}
+                            $on={picked === col.s}
+                            onClick={() => setPicked(col.s)}
+                        >
+                            {col.t}<em>{col.d.length}</em>
+                        </S.ColumnPick>
+                    ))}
+                </S.ColumnPicker>
+            )}
+
             <S.BoardGrid>
-                {boardColumns.map(col => (
+                {shown.map(col => (
                     <S.BoardColumn key={col.s}>
                         <S.ColumnHeader>
-                            <S.ColumnTitle>{col.t} ({col.d.length})</S.ColumnTitle>
+                            {/* 폰에서는 위의 이름표가 이미 말하고 있다 */}
+                            {!isMobile && <S.ColumnTitle>{col.t} ({col.d.length})</S.ColumnTitle>}
                             {col.s !== 'done' && (
                                 <S.AddTaskButton type="button" onClick={() => onAddTask(col.s)}>
                                     {tr.add}
@@ -45,6 +71,7 @@ const ProjectBoardView = React.forwardRef<HTMLDivElement, ProjectBoardProps>(({
                             )}
                         </S.ColumnHeader>
                         <S.CardList>
+                            {col.d.length === 0 && <S.ColumnEmpty>{tr.noTasks}</S.ColumnEmpty>}
                             {col.d.map(task => (
                                 <TaskCard
                                     key={task.id}

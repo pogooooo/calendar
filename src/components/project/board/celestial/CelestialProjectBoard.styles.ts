@@ -15,11 +15,55 @@ export const BoardGrid = styled.div`
     overflow-x: auto;
     background: transparent;
 
-    /* 폰에서는 세 칸을 나란히 보여줄 폭이 없다. 한 칸씩 옆으로 넘긴다. */
+    /* 폰에서는 고른 칸 하나만 그린다 — 옆으로 미는 화면이 없다 */
     ${MOBILE} {
-        scroll-snap-type: x mandatory;
-        overscroll-behavior-x: contain;
+        overflow-x: hidden;
     }
+`;
+
+/* 폰에서만 보이는 칸 고르개: 진행 전 · 진행 중 · 완료 */
+export const ColumnPicker = styled.div`
+    display: none;
+
+    ${MOBILE} {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+        padding: 8px 10px 4px;
+        flex-shrink: 0;
+    }
+`;
+
+export const ColumnPick = styled.button<{ $on: boolean }>`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 38px;
+    padding: 6px 4px;
+    font-family: ${(props) => props.theme.fonts.display};
+    font-size: 0.74rem;
+    letter-spacing: 1px;
+    color: ${(props) => (props.$on ? props.theme.colors.primary : props.theme.colors.textSecondary)};
+    background: ${(props) => (props.$on ? `${props.theme.colors.primary}14` : "transparent")};
+    border: 1px solid ${(props) => props.theme.colors.primary}${(props) => (props.$on ? "" : "33")};
+    box-shadow: ${(props) => (props.$on ? `0 0 6px ${props.theme.colors.primary}44` : "none")};
+    cursor: pointer;
+
+    em {
+        font-style: normal;
+        font-size: 0.68rem;
+        font-variant-numeric: tabular-nums;
+        opacity: 0.8;
+    }
+`;
+
+export const ColumnEmpty = styled.div`
+    padding: 18px 12px;
+    text-align: center;
+    font-size: 0.78rem;
+    color: ${(props) => props.theme.colors.textSecondary};
+    opacity: 0.8;
 `;
 
 export const BoardColumn = styled.div`
@@ -32,10 +76,11 @@ export const BoardColumn = styled.div`
         border-right: none;
     }
 
+    /* 고른 한 칸이 화면을 다 쓴다 */
     ${MOBILE} {
-        flex: 0 0 88%;
+        flex: 1;
         min-width: 0;
-        scroll-snap-align: start;
+        border-right: none;
     }
 `;
 
@@ -46,7 +91,12 @@ export const ColumnHeader = styled.div`
     padding: 8px 12px;
     border-bottom: 1px solid ${(props) => props.theme.colors.primary}33;
 
-    ${MOBILE} { padding: 10px 12px; }
+    /* 폰에서는 이름표가 위에 따로 있어 이 줄에는 "추가" 만 남는다 */
+    ${MOBILE} {
+        padding: 4px 12px 8px;
+        justify-content: flex-end;
+        border-bottom: none;
+    }
 `;
 
 export const ColumnTitle = styled.span`

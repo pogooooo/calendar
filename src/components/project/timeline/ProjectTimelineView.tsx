@@ -4,6 +4,7 @@ import * as React from 'react';
 import { useT } from "@/i18n/useT";
 import { ProjectTimelineProps } from "./ProjectTimeline";
 import type { ProjectTaskType } from '@/types';
+import useIsMobile from "@/hooks/useIsMobile";
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialTimeline.styles";
 import * as MapleS from "./maple/MapleTimeline.styles";
@@ -29,7 +30,11 @@ interface DragState {
 const ProjectTimelineView = React.forwardRef<HTMLDivElement, ProjectTimelineProps>(
     ({ tasks, flex, onEditTask, onUpdateTaskDates }, ref) => {
     const S = usePickTheme(STYLES);
-    const tr = useT().project;
+    const t = useT();
+    const tr = t.project;
+    /* 폰에서는 간트를 옆으로 밀어야 하는 데다, 막대를 끌어 옮기는 것은 마우스 전용이었다.
+       손가락에게는 날짜 순 목록이 더 낫다 — 같은 자료를 세로로 읽는다. */
+    const isMobile = useIsMobile();
 
     // ── Ref 기반 드래그 — mousemove에서 React 리렌더 없음 ───────────────────
     const draggingRef     = React.useRef<DragState | null>(null);
@@ -185,6 +190,42 @@ const ProjectTimelineView = React.forwardRef<HTMLDivElement, ProjectTimelineProp
             document.removeEventListener('mouseup', handleMouseUp);
         };
     }, [draggingTaskId, tasks, onUpdateTaskDates, getBaseTaskBounds]);
+
+    const agenda = React.useMemo(
+        () => [...tasks].sort((a, b) => {
+            const av = a.startAt ? new Date(a.startAt).getTime() : Infinity;
+            const bv = b.startAt ? new Date(b.startAt).getTime() : Infinity;
+            return av - bv;
+        }),
+        [tasks],
+    );
+
+    const dayLabel = (v: string | Date | null | undefined) => {
+        if (!v) return t.form.noDate;
+        const d = new Date(v);
+        return t.calendar.dayLabelShort(d.getMonth() + 1, d.getDate());
+    };
+
+    if (isMobile) {
+        return (
+            <S.SectionWrapper ref={ref} style={{ flex }} $mobileHeight="340px">
+                <S.SectionTitle>{tr.timeline}</S.SectionTitle>
+                <S.AgendaList>
+                    {agenda.length === 0 && <S.AgendaEmpty>{tr.noTasks}</S.AgendaEmpty>}
+                    {agenda.map(task => (
+                        <S.AgendaRow key={task.id} type="button" $status={task.status} onClick={() => onEditTask(task)}>
+                            <S.AgendaWhen>
+                                <b>{dayLabel(task.startAt)}</b>
+                                {/* 하루짜리면 같은 날짜를 두 번 적지 않는다 */}
+                                {task.endAt && dayLabel(task.endAt) !== dayLabel(task.startAt) && <em>{dayLabel(task.endAt)}</em>}
+                            </S.AgendaWhen>
+                            <S.AgendaTitle $done={task.status === 'done'}>{task.title}</S.AgendaTitle>
+                        </S.AgendaRow>
+                    ))}
+                </S.AgendaList>
+            </S.SectionWrapper>
+        );
+    }
 
     return (
         <S.SectionWrapper ref={ref} style={{ flex }} $mobileHeight="340px">

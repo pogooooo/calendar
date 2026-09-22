@@ -4,10 +4,25 @@
  */
 import styled from "styled-components";
 import * as C from "../celestial/CelestialProjectBoard.styles";
-import { hair, tape } from "@/styles/maple/ink";
+import { hair, paperTab, tape } from "@/styles/maple/ink";
 import { withAlpha } from "@/styles/color";
 
 export * from "../celestial/CelestialProjectBoard.styles";
+
+/** 폰의 칸 고르개: 종이 탭 — 고른 것 밑에 붓 획 */
+export const ColumnPick = styled(C.ColumnPick)`
+    ${(p) => paperTab(p.$on)}
+    min-height: 38px;
+    background: ${(p) => (p.$on ? withAlpha(p.theme.colors.accent, 0.18) : "transparent")};
+    border: 1px solid ${(p) => hair(p.theme, p.$on ? 0.5 : 0.22)};
+    box-shadow: none;
+
+    em { font-family: ${(p) => p.theme.fonts.numeral}; font-size: 0.78rem; }
+`;
+
+export const ColumnEmpty = styled(C.ColumnEmpty)`
+    font-family: ${(p) => p.theme.fonts.display};
+`;
 export { SectionWrapper, SectionTitle } from "@/components/project/maple/section";
 
 export const BoardColumn = styled(C.BoardColumn)`

@@ -292,7 +292,7 @@ export default function DateTimePicker({ value, onChange, mode = "datetime", ran
 
                     <S.Foot>
                         <button type="button" onClick={pickNow}>{mode === "datetime" ? f.now : f.today}</button>
-                        <button type="button" className="ok" onClick={() => setOpen(false)}>{f.done} ✦</button>
+                        <button type="button" className="ok" onClick={() => setOpen(false)}>{f.done}</button>
                     </S.Foot>
                 </S.Popover>,
                 document.body,

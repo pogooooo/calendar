@@ -6,9 +6,29 @@
  */
 import styled from "styled-components";
 import * as C from "../celestial/CelestialTimeDial.styles";
-import { stampButton } from "@/styles/maple/ink";
+import { hair, stampButton } from "@/styles/maple/ink";
 
 export * from "../celestial/CelestialTimeDial.styles";
+
+/** 적는 칸: 먹선 아래, 숫자는 Cormorant */
+export const Entry = styled(C.Entry)`
+    input {
+        font-family: ${(p) => p.theme.fonts.numeral};
+        font-size: 1.3rem;
+        letter-spacing: 0.04em;
+        border-bottom-color: ${(p) => hair(p.theme, 0.5)};
+
+        &:hover { border-bottom-color: ${(p) => hair(p.theme, 0.8)}; }
+        &:focus { border-bottom-color: ${(p) => p.theme.colors.primary}; box-shadow: none; }
+    }
+
+    b {
+        font-family: ${(p) => p.theme.fonts.numeral};
+        font-size: 1.2rem;
+        color: ${(p) => p.theme.colors.text};
+        opacity: 0.55;
+    }
+`;
 
 export const Dial = styled(C.Dial)`
     .rim, .tick, .stem, .cross { stroke: ${(p) => p.theme.colors.text}; }

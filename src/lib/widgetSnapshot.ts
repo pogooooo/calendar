@@ -175,6 +175,7 @@ export function buildWidgetSnapshot(input: SnapshotInput): WidgetSnapshot {
         labels: {
             today: t.widget.todayW,
             noTodayTodos: t.home.noTodayTodos,
+            noDayTodos: t.home.noDayTodos,
             now: t.widget.now,
             next: t.widget.next,
             nothingNow: t.widget.nothingNow,

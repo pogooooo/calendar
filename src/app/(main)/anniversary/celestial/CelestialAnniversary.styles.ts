@@ -371,4 +371,13 @@ export const CardDday = styled.span<{ $today: boolean }>`
     i:last-child {
         background: linear-gradient(to left, transparent, ${p => p.theme.colors.primary}88);
     }
+
+    /* 오늘인 날에는 작은 별 하나 — 번역표의 글에는 장식을 넣지 않는다 */
+    ${p => p.$today && css`
+        &::after {
+            content: "✦";
+            font-size: 0.7rem;
+            opacity: 0.9;
+        }
+    `}
 `;

@@ -11,6 +11,8 @@ export * from "../celestial/TodoContextMenu.styles";
 
 export const FloatingContextMenu = styled(C.FloatingContextMenu)`
     ${paperCard("3px")}
+    /* 조각이 거는 relative 뒤에 다시 적는다 — 이 창은 떠 있어야 한다 */
+    position: fixed;
     border-radius: 2px;
     border-color: ${(p) => hair(p.theme, 0.5)};
 

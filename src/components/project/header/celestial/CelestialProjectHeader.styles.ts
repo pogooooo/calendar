@@ -111,10 +111,14 @@ export const TabContainer = styled.div`
     overflow-x: auto;
     padding-bottom: 5px;
 
+    /* 폰에서는 옆으로 미는 자리를 만들지 않는다 — 줄을 바꾸고, 많으면 두 줄까지만 보이고 그 아래로 굴린다 */
     ${MOBILE} {
-        gap: 8px;
-        /* 프로젝트 이름이 여러 개면 옆으로 넘긴다. 줄바꿈하면 헤더가 화면을 다 먹는다. */
-        & > * { flex: 0 0 auto; }
+        gap: 6px;
+        flex-wrap: wrap;
+        overflow-x: visible;
+        overflow-y: auto;
+        max-height: 84px;
+        & > * { flex: 0 1 auto; max-width: 100%; }
     }
 `;
 

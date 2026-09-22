@@ -16,6 +16,8 @@ export const SetCategoryButton = styled(C.SetCategoryButton)`
 
 export const SettingsPopover = styled(C.SettingsPopover)`
     ${paperCard("3px")}
+    /* 조각이 거는 relative 뒤에 다시 적는다 — 이 창은 떠 있어야 한다 */
+    position: absolute;
     border-radius: 2px;
 `;
 

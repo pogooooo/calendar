@@ -39,6 +39,12 @@ class WidgetPainter(
     private val alphaPct: Int,
     private val snap: Snapshot?,
     private val now: Long = System.currentTimeMillis(),
+    /**
+     * 화살표를 눌러 몇 칸 옮겼나. 한 칸의 크기는 종류마다 다르다 — 오늘 위젯은 하루, 주간은 한 주, 월간은 한 달.
+     * 옮긴 "지금"(shifted)으로 그리므로 날짜·목록·표식이 한꺼번에 따라간다.
+     * 시각이 중요한 위젯(지금·다음, 하루 진행)은 늘 0 이다.
+     */
+    private val steps: Int = 0,
 ) {
     class Painted(
         val bitmap: Bitmap,
@@ -74,11 +80,21 @@ class WidgetPainter(
         /** 월간의 요일 이름 줄 */
         const val NAMES_H = 16
         const val RADIUS = 18
+        /** 날짜 넘김 화살의 크기와, 머리글 글이 그만큼 안으로 들어가는 폭 (dp) */
+        const val ARROW_W = 9
+        const val ARROW_INSET = 22f
         const val MAX_ROWS = 6
         private val ROMAN = arrayOf("I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII")
     }
 
+    /** 옮겨 보는 위젯의 "지금". paint() 가 종류에 맞는 칸 크기로 정한다 */
+    private var shifted: Long = now
+
     fun paint(kind: String, wDp: Int, hDp: Int): Painted {
+        shifted = when (kind) {
+            "week" -> now + steps * 7L * Snapshot.DAY_MS
+            else -> now + steps * Snapshot.DAY_MS
+        }
         val w = dp(wDp).toInt().coerceAtLeast(1)
         val h = dp(hDp).toInt().coerceAtLeast(1)
         val bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
@@ -139,22 +155,37 @@ class WidgetPainter(
     /** 바탕 — 갈래의 붓이 그린다 */
     private fun frame(c: Canvas, w: Float, h: Float) = style.frame(c, w, h, pal, alphaPct)
 
-    /** 머리글: 제목(금, Orbit) + 오른쪽 보조 글 + 밑줄. 내용 시작 y 를 돌려준다 */
-    private fun header(c: Canvas, w: Float, titleText: String, subText: String? = null, subAccent: String? = null, divider: Boolean = true): Float {
+    /**
+     * 머리글 양 끝의 날짜 넘김 화살. 누르는 자리는 그림이 아니라 겹칸(ov_prev·ov_next)이고,
+     * 여기서는 그 자리에 보이는 것만 그린다 — 치수는 widget_canvas.xml 과 같아야 한다.
+     */
+    private fun dayArrows(c: Canvas, w: Float) {
+        val cy = dp(PAD_T) + dp(9f)
+        val color = if (steps == 0) Palette.withAlpha(pal.muted, 0.8f) else pal.gold
+        style.dayArrow(c, dp(PAD_X) - dp(2f), cy, ARROW_W.toFloat(), color, false)
+        style.dayArrow(c, w - dp(PAD_X) + dp(2f), cy, ARROW_W.toFloat(), color, true)
+    }
+
+    /**
+     * 머리글: 제목(금, Orbit) + 오른쪽 보조 글 + 밑줄. 내용 시작 y 를 돌려준다.
+     * inset 은 양 끝에서 들이는 폭 — 날짜 넘김 화살이 있는 위젯에서 글이 화살 위로 겹치지 않게 한다.
+     */
+    private fun header(c: Canvas, w: Float, titleText: String, subText: String? = null, subAccent: String? = null, divider: Boolean = true, inset: Float = 0f): Float {
         val top = dp(PAD_T)
         val cy = top + dp(9f)
+        val x0 = dp(PAD_X) + inset
         val tp = title()
-        val titleShown = ellipsize(titleText, tp, w - dp(2 * PAD_X))
-        c.drawText(titleShown, dp(PAD_X), baseline(tp, cy), tp)
+        val titleShown = ellipsize(titleText, tp, w - dp(2 * PAD_X) - inset * 2f)
+        c.drawText(titleShown, x0, baseline(tp, cy), tp)
         if (subText != null) {
             // 좁은 위젯에서는 제목과 겹치지 않게 — 날짜를 버리고 숫자만, 그것도 안 들어가면 아무것도
             val sp = sub()
             val ap = sub().apply { color = pal.goldText }
-            val avail = w - dp(2 * PAD_X) - tp.measureText(titleShown) - dp(8f)
+            val avail = w - dp(2 * PAD_X) - inset * 2f - tp.measureText(titleShown) - dp(8f)
             val accentW = if (subAccent != null) ap.measureText(subAccent) else 0f
             val showText = sp.measureText(subText) + accentW <= avail
             val showAccent = subAccent != null && accentW <= avail
-            var right = w - dp(PAD_X)
+            var right = w - dp(PAD_X) - inset
             if (showAccent) {
                 drawRight(c, subAccent!!, right, baseline(ap, cy), ap)
                 right -= accentW
@@ -180,17 +211,22 @@ class WidgetPainter(
 
     // ── I. 오늘 할 일 ─────────────────────────────────────────────
     private fun today(c: Canvas, s: Snapshot, w: Float, h: Float, bmp: Bitmap): Painted {
-        val key = s.todayKey(now)
+        val key = s.todayKey(shifted)
         val rows = s.todos.filter { it.spans(key) }.sortedWith(compareBy({ it.done }, { !it.allDay }, { it.start }))
         val done = rows.count { it.done }
         val total = rows.size
-        val y0 = header(c, w, s.label("today"), s.formatDate(now) + "  ", if (total > 0) "$done/$total" else null)
+        val titleText = if (steps == 0) s.label("today") else s.formatDate(shifted)
+        // 옮겨 본 날이면 제목이 이미 날짜다 — 오른쪽에 또 적지 않는다
+        val dateSub = if (steps == 0) s.formatDate(shifted) + "  " else null
+        val y0 = header(c, w, titleText, dateSub, if (total > 0) "$done/$total" else null, inset = dp(ARROW_INSET))
+        dayArrows(c, w)
 
         val n = min(rows.size, maxRows(h, 20))
         val links = ArrayList<String?>()
         if (rows.isEmpty()) {
             val bp = body(pal.muted)
-            c.drawText(ellipsize(s.label("noTodayTodos"), bp, w - dp(2 * PAD_X)), dp(PAD_X), baseline(bp, y0 + dp(14f)), bp)
+            val empty = if (steps == 0) s.label("noTodayTodos") else s.label("noDayTodos")
+            c.drawText(ellipsize(empty, bp, w - dp(2 * PAD_X)), dp(PAD_X), baseline(bp, y0 + dp(14f)), bp)
         }
         for (i in 0 until n) {
             val t = rows[i]
@@ -379,13 +415,14 @@ class WidgetPainter(
     // ── V. 주간 띠 ────────────────────────────────────────────────
     private fun week(c: Canvas, s: Snapshot, w: Float, h: Float, bmp: Bitmap): Painted {
         val start = Calendar.getInstance().apply {
-            timeInMillis = Snapshot.startOfDay(now)
+            timeInMillis = Snapshot.startOfDay(shifted)
             add(Calendar.DAY_OF_YEAR, -(get(Calendar.DAY_OF_WEEK) - Calendar.SUNDAY))
         }
         val dayKeys = (0 until 7).map { i -> Snapshot.dayKey(start.timeInMillis + i * Snapshot.DAY_MS) }
+        dayArrows(c, w)
         val perDay = dayKeys.map { k -> s.todos.filter { it.spans(k) } }
         val total = s.todos.count { t -> dayKeys.any { t.spans(it) } }
-        val y0 = header(c, w, s.label("thisWeek"), s.formatDate(now, "monthFmt", "MMM") + " · " + s.label("events") + " ", "$total")
+        val y0 = header(c, w, s.label("thisWeek"), s.formatDate(shifted, "monthFmt", "MMM") + " · " + s.label("events") + " ", "$total", inset = dp(ARROW_INSET))
         val cellW = (w - dp(2 * PAD_X)) / 7f
         val top = y0; val bottom = h - dp(PAD_B)
         val todayKey = s.todayKey(now)
@@ -424,14 +461,16 @@ class WidgetPainter(
 
     // ── VI. 월간 달력 ─────────────────────────────────────────────
     private fun month(c: Canvas, s: Snapshot, w: Float, h: Float, bmp: Bitmap): Painted {
-        val cal = Calendar.getInstance().apply { timeInMillis = now }
+        // 월간은 한 칸이 한 달이다 (30일을 더하면 달이 건너뛴다)
+        val cal = Calendar.getInstance().apply { timeInMillis = now; add(Calendar.MONTH, steps) }
+        dayArrows(c, w)
         val days = cal.getActualMaximum(Calendar.DAY_OF_MONTH)
         val first = (cal.clone() as Calendar).apply { set(Calendar.DAY_OF_MONTH, 1) }
         val firstDow = first.get(Calendar.DAY_OF_WEEK) - Calendar.SUNDAY // 0..6
         val year = cal.get(Calendar.YEAR)
         val ms = monthStart(cal); val me = monthEnd(cal)
         val monthTodos = s.todos.filter { it.start <= me && it.end >= ms }
-        val y0 = header(c, w, s.formatDate(now, "monthFmt", "MMM"), "$year · " + s.label("events") + " ", "${monthTodos.size}")
+        val y0 = header(c, w, s.formatDate(cal.timeInMillis, "monthFmt", "MMM"), "$year · " + s.label("events") + " ", "${monthTodos.size}", inset = dp(ARROW_INSET))
         val cellW = (w - dp(2 * PAD_X)) / 7f
         val names = text(8f, pal.muted, orbit, 0.08f)
         val dayNames = SHORT_DAYS(s)

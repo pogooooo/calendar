@@ -1,9 +1,15 @@
 "use client";
 
-import styled from "styled-components";
 import WidgetShell from "@/components/widget/WidgetShell";
 import type { WidgetKind } from "@/store/useWidgetStore";
 import { useT } from "@/i18n/useT";
+
+import { usePickTheme, type ThemeImpls } from "@/styles/themed";
+import * as CelestialS from "./celestial/CelestialWidgetAuthNotice.styles";
+import * as MapleS from "./maple/MapleWidgetAuthNotice.styles";
+
+/** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS };
 
 /**
  * 인증 전/실패 상태에서도 셸(제목줄·닫기 버튼)을 그린다.
@@ -18,31 +24,14 @@ export default function WidgetAuthNotice({
     title: string;
     authed: boolean;
 }) {
+    const S = usePickTheme(STYLES);
     const t = useT();
     return (
         <WidgetShell kind={kind} title={title}>
-            <Center>
+            <S.Center>
                 {authed ? t.widget.loading : t.widget.waiting}
-                {!authed && <Sub>{t.widget.waitingSub}</Sub>}
-            </Center>
+                {!authed && <S.Sub>{t.widget.waitingSub}</S.Sub>}
+            </S.Center>
         </WidgetShell>
     );
 }
-
-const Center = styled.div`
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    height: 100%;
-    min-height: 90px;
-    font-size: 0.8rem;
-    color: ${p => p.theme.colors.textSecondary};
-    text-align: center;
-`;
-
-const Sub = styled.span`
-    font-size: 0.7rem;
-    opacity: 0.75;
-`;

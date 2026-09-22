@@ -46,6 +46,8 @@ abstract class WidgetStyle(protected val context: Context, protected val density
     abstract fun todayMark(c: Canvas, cx: Float, cy: Float, rDp: Float, pal: Palette)
     /** 월 게이지의 바탕 반원 (눈금·바늘은 화가가 얹는다). 눈금 색을 돌려준다 */
     abstract fun gaugeBase(c: Canvas, cx: Float, cy: Float, r: Float, pal: Palette): Int
+    /** 날짜 넘김 화살. cx 는 화살 끝(바깥쪽), right 면 오른쪽을 가리킨다 */
+    abstract fun dayArrow(c: Canvas, cx: Float, cy: Float, sizeDp: Float, color: Int, right: Boolean)
 
     companion object {
         fun of(context: Context, family: String, density: Float): WidgetStyle =
@@ -89,6 +91,18 @@ class CelestialStyle(context: Context, density: Float) : WidgetStyle(context, de
         c.drawCircle(cx, cy, dp(rDp), stroke(pal.gold, 1f))
     }
 
+    override fun dayArrow(c: Canvas, cx: Float, cy: Float, sizeDp: Float, color: Int, right: Boolean) {
+        // 가는 꺾쇠 하나 — 앱의 달력 앞·뒤와 같은 말
+        val s = dp(sizeDp)
+        val dir = if (right) -1f else 1f
+        val p = stroke(color, 1.2f).apply { strokeCap = Paint.Cap.ROUND; strokeJoin = Paint.Join.ROUND }
+        c.drawPath(Path().apply {
+            moveTo(cx + dir * s * 0.5f, cy - s * 0.5f)
+            lineTo(cx - dir * s * 0.1f, cy)
+            lineTo(cx + dir * s * 0.5f, cy + s * 0.5f)
+        }, p)
+    }
+
     override fun gaugeBase(c: Canvas, cx: Float, cy: Float, r: Float, pal: Palette): Int {
         val outer = RectF(cx - r, cy - r, cx + r, cy + r)
         c.drawArc(outer, 180f, 180f, false, stroke(Palette.withAlpha(pal.gold, if (pal.dark) 0.5f else 0.7f), 1f))
@@ -110,6 +124,8 @@ class MapleStyle(context: Context, density: Float) : WidgetStyle(context, densit
     } catch (e: Throwable) { null }
 
     private val leafFilled by lazy { bmp("maple_bullet_filled") }
+    private val arrowLeft by lazy { bmp("maple_ink_arrow_left") }
+    private val arrowRight by lazy { bmp("maple_ink_arrow_right") }
     private val leafOutline by lazy { bmp("maple_bullet_outline") }
     private val crest by lazy { bmp("maple_crest") }
     private val todayLeaf by lazy { bmp("maple_today_marker") }
@@ -161,6 +177,14 @@ class MapleStyle(context: Context, density: Float) : WidgetStyle(context, densit
         val p = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG).apply { alpha = if (pal.dark) 170 else 255 }
         val b = todayLeaf ?: return c.drawCircle(cx, cy, dp(rDp), stroke(pal.gold, 1f))
         c.drawBitmap(b, null, RectF(cx - r, cy - r, cx + r, cy + r), p)
+    }
+
+    override fun dayArrow(c: Canvas, cx: Float, cy: Float, sizeDp: Float, color: Int, right: Boolean) {
+        // 먹 화살(J8) — 그림은 가로로 길다(384×91). 자리는 꺾쇠와 같은 폭(sizeDp*2)이라 높이는 비율대로 낮다
+        val w = dp(sizeDp) * 2f
+        val h = w * 91f / 384f
+        val left = if (right) cx - w else cx
+        tinted(c, if (right) arrowRight else arrowLeft, RectF(left, cy - h / 2f, left + w, cy + h / 2f), color)
     }
 
     override fun gaugeBase(c: Canvas, cx: Float, cy: Float, r: Float, pal: Palette): Int {

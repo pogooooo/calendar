@@ -1,11 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import styled from "styled-components";
 import { isDesktopShell } from "@/lib/platform";
 import { useT } from "@/i18n/useT";
 
+import { usePickTheme, type ThemeImpls } from "@/styles/themed";
+import * as CelestialS from "./celestial/CelestialTitleBar.styles";
+import * as MapleS from "./maple/MapleTitleBar.styles";
+
+/** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS };
+
 export default function TitleBar() {
+    const S = usePickTheme(STYLES);
     const t = useT();
     const [isMaximized, setIsMaximized] = useState(false);
     const [isDesktop, setIsDesktop] = useState(false);
@@ -54,13 +61,13 @@ export default function TitleBar() {
     if (!isDesktop) return null;
 
     return (
-        <Bar data-tauri-drag-region>
-            <Title data-tauri-drag-region>CRONOS</Title>
-            <Controls>
-                <Btn onClick={handleMinimize} title={t.titleBar.minimize}>
+        <S.Bar data-tauri-drag-region>
+            <S.Title data-tauri-drag-region>CRONOS</S.Title>
+            <S.Controls>
+                <S.Btn onClick={handleMinimize} title={t.titleBar.minimize}>
                     <svg width="10" height="1" viewBox="0 0 10 1"><line x1="0" y1="0.5" x2="10" y2="0.5" stroke="currentColor" strokeWidth="1.5"/></svg>
-                </Btn>
-                <Btn onClick={handleMaximize} title={isMaximized ? t.titleBar.restore : t.titleBar.maximize}>
+                </S.Btn>
+                <S.Btn onClick={handleMaximize} title={isMaximized ? t.titleBar.restore : t.titleBar.maximize}>
                     {isMaximized ? (
                         <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
                             <rect x="2" y="0" width="8" height="8" stroke="currentColor" strokeWidth="1.2"/>
@@ -71,61 +78,11 @@ export default function TitleBar() {
                             <rect x="0.6" y="0.6" width="8.8" height="8.8" stroke="currentColor" strokeWidth="1.2"/>
                         </svg>
                     )}
-                </Btn>
-                <CloseBtn onClick={handleClose} title={t.titleBar.close}>
+                </S.Btn>
+                <S.CloseBtn onClick={handleClose} title={t.titleBar.close}>
                     <svg width="10" height="10" viewBox="0 0 10 10"><line x1="0" y1="0" x2="10" y2="10" stroke="currentColor" strokeWidth="1.5"/><line x1="10" y1="0" x2="0" y2="10" stroke="currentColor" strokeWidth="1.5"/></svg>
-                </CloseBtn>
-            </Controls>
-        </Bar>
+                </S.CloseBtn>
+            </S.Controls>
+        </S.Bar>
     );
 }
-
-const Bar = styled.div`
-    height: 36px;
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 0 0 16px;
-    background-color: ${(p) => p.theme.colors.background};
-    border-bottom: 1px solid ${(p) => p.theme.line ?? p.theme.colors.primary}33;
-    user-select: none;
-    -webkit-user-select: none;
-`;
-
-const Title = styled.span`
-    font-family: ${(p) => p.theme.fonts.display};
-    font-size: 0.7rem;
-    letter-spacing: 3px;
-    color: ${(p) => p.theme.colors.primary};
-    pointer-events: none;
-`;
-
-const Controls = styled.div`
-    display: flex;
-    height: 100%;
-`;
-
-const Btn = styled.button`
-    width: 46px;
-    height: 100%;
-    background: transparent;
-    border: none;
-    color: ${(p) => p.theme.colors.text};
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: background-color 0.15s;
-
-    &:hover {
-        background-color: ${(p) => p.theme.colors.primary}22;
-    }
-`;
-
-const CloseBtn = styled(Btn)`
-    &:hover {
-        background-color: #C42B1C;
-        color: #ffffff;
-    }
-`;

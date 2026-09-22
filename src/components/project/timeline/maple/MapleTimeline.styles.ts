@@ -8,6 +8,29 @@ import { hair, tape } from "@/styles/maple/ink";
 import { withAlpha } from "@/styles/color";
 
 export * from "../celestial/CelestialTimeline.styles";
+
+/* ── 폰의 날짜 순 목록: 먹 하이라인에 잎 하나 ───────────────────── */
+
+export const AgendaRow = styled(C.AgendaRow)`
+    border-bottom-color: ${(p) => hair(p.theme, 0.2)};
+    border-left-color: ${(p) => (p.$status === "in_progress" ? p.theme.colors.primary : "transparent")};
+
+    &:active { background: ${(p) => withAlpha(p.theme.colors.accent, 0.22)}; }
+`;
+
+export const AgendaWhen = styled(C.AgendaWhen)`
+    b { font-family: ${(p) => p.theme.fonts.numeral}; font-size: 0.88rem; }
+    em { font-family: ${(p) => p.theme.fonts.numeral}; font-size: 0.76rem; }
+`;
+
+export const AgendaTitle = styled(C.AgendaTitle)`
+    font-family: ${(p) => p.theme.fonts.display};
+    text-decoration-color: ${(p) => hair(p.theme, 0.6)};
+`;
+
+export const AgendaEmpty = styled(C.AgendaEmpty)`
+    font-family: ${(p) => p.theme.fonts.display};
+`;
 export { SectionWrapper, SectionTitle } from "@/components/project/maple/section";
 
 export const TimelineDateHeader = styled(C.TimelineDateHeader)`

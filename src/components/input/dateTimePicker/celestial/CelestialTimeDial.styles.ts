@@ -11,6 +11,46 @@ export const Wrap = styled.div`
     padding: 4px 0 2px;
 `;
 
+/* 다이얼 위의 적는 칸 — 자판이 있는 곳에서는 이쪽이 빠르다 */
+export const Entry = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    margin-bottom: 6px;
+
+    input {
+        width: 46px;
+        padding: 3px 0;
+        text-align: center;
+        font-family: ${p => p.theme.fonts.display};
+        font-size: 1.05rem;
+        letter-spacing: 0.08em;
+        font-variant-numeric: tabular-nums;
+        color: ${p => p.theme.colors.text};
+        background: none;
+        border: none;
+        border-bottom: 1px solid ${p => p.theme.colors.primary}55;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+        &:hover { border-bottom-color: ${p => p.theme.colors.primary}99; }
+
+        &:focus {
+            outline: none;
+            border-bottom-color: ${p => p.theme.colors.primary};
+            box-shadow: 0 1px 6px -3px ${p => p.theme.colors.primary};
+        }
+    }
+
+    b {
+        font-family: ${p => p.theme.fonts.display};
+        font-size: 1rem;
+        font-weight: 400;
+        color: ${p => p.theme.colors.primary};
+        opacity: 0.7;
+    }
+`;
+
 export const Dial = styled.svg`
     display: block;
     width: 184px;

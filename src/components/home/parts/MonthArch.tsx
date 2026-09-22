@@ -7,8 +7,8 @@ import MapleMonthArch from "../maple/MapleMonthArch";
 /** 홈 위의 달 게이지에 들어가는 것. 그림은 갈래마다 다르지만 읽는 자료는 같다 */
 export interface MonthArchProps {
     daysInMonth: number;
-    /** 오늘 (0부터) */
-    todayIdx: number;
+    /** 바늘이 가리킬 날 — 홈에서 보고 있는 날 (0부터) */
+    focusIdx: number;
     /** 날마다 걸린 일정 수 */
     monthLoad: number[];
     /** 마감(due)·기념일(anv) 표식 */

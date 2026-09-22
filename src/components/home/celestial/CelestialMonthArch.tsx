@@ -29,12 +29,12 @@ const starPath = (x: number, y: number, s: number) =>
 const SPOKES = Array.from({ length: 45 }, (_, i) => -88 + i * 4);
 
 /** 금빛 실선의 반원 눈금판. 날마다의 일정 수가 안쪽 눈금 길이, 오늘이 바늘 */
-export default function CelestialMonthArch({ daysInMonth, todayIdx, monthLoad, marks }: MonthArchProps) {
+export default function CelestialMonthArch({ daysInMonth, focusIdx, monthLoad, marks }: MonthArchProps) {
     const dayDeg = (i: number) => -90 + (i / Math.max(1, daysInMonth - 1)) * 180;
 
-    const [rayTipX, rayTipY] = polar(R - 1, dayDeg(todayIdx));
-    const [crossAX, crossAY] = polar((R - 1) * 0.62, dayDeg(todayIdx) - 3.4);
-    const [crossBX, crossBY] = polar((R - 1) * 0.62, dayDeg(todayIdx) + 3.4);
+    const [rayTipX, rayTipY] = polar(R - 1, dayDeg(focusIdx));
+    const [crossAX, crossAY] = polar((R - 1) * 0.62, dayDeg(focusIdx) - 3.4);
+    const [crossBX, crossBY] = polar((R - 1) * 0.62, dayDeg(focusIdx) + 3.4);
 
     return (
         <S.Arch viewBox="0 0 240 132" aria-hidden="true">

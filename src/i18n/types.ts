@@ -412,6 +412,8 @@ export interface Translations {
         noTasks: string;
         noChallenges: string;
         noTodayTodos: string;
+        /** 오늘이 아닌 날을 보고 있을 때 */
+        noDayTodos: string;
         noUpcoming: string;
         noData: string;
         selectChallenge: string;
@@ -484,6 +486,8 @@ export interface Translations {
     project: {
         board: string;
         timeline: string;
+        /** 보드 칸·타임라인이 비었을 때 */
+        noTasks: string;
         add: string;
         colTodo: string;
         colDoing: string;

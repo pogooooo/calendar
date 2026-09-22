@@ -7,9 +7,43 @@
 import styled, { css } from "styled-components";
 import * as C from "../celestial/CelestialHome.styles";
 import { withAlpha } from "@/styles/color";
-import { crest, leafBullet, shortRule } from "@/styles/maple/ink";
+import { crest, hair, leafBullet, shortRule, stampButton } from "@/styles/maple/ink";
 
 export * from "../celestial/CelestialHome.styles";
+
+/* ── 보는 날 옮기기 ────────────────────────────────────────────────── */
+
+export const NavButton = styled(C.NavButton)`
+    color: ${(p) => p.theme.colors.text};
+    opacity: 0.8;
+
+    &:hover { filter: none; opacity: 1; }
+    &:focus-visible { outline-color: ${(p) => hair(p.theme, 0.7)}; }
+`;
+
+export const DayLabel = styled(C.DayLabel)`
+    /* 날짜에 한글(월·일)이 섞이므로 제목 글꼴로 — Cormorant 는 숫자만 있어 글자마다 크기가 튄다 */
+    b {
+        font-size: 0.98rem;
+        letter-spacing: 0.06em;
+    }
+
+    em {
+        font-family: ${(p) => p.theme.fonts.numeral};
+        font-size: 0.72rem;
+        letter-spacing: 0.18em;
+    }
+`;
+
+export const TodayButton = styled(C.TodayButton)`
+    ${stampButton("default")}
+    padding: 3px 12px;
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    color: ${(p) => p.theme.colors.text};
+
+    &:hover:not(:disabled) { box-shadow: none; }
+`;
 
 /** 카드 틀: 먹선 하나에 안쪽 옅은 선 */
 export const Card = styled(C.Card)`

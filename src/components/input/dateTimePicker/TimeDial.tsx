@@ -50,6 +50,9 @@ const MINUTES_PER_TURN = { outer: 360, inner: 60 } as const;
  * 다이얼 가장자리에서 2px 였다. 데스크톱은 휠로 5분씩 맞출 수 있었지만 폰에는 휠이 없어
  * 짚는 순간 ±50분이 흔들렸다. 그림(로마 숫자 고리·두 바늘)은 그대로 두고 손맛만 바꿨다.
  * 다이얼 밑의 단추(시 ±1 · 분 ±5)는 마지막 한 칸을 맞추는 용도다. 휠(5분)은 그대로.
+ *
+ * 데스크톱에서는 손가락 대신 자판이 있다 — 다이얼 위의 칸에 "14" "35" 를 바로 적을 수 있고,
+ * 칸 안에서 ↑↓ 는 시·분을 한 칸씩 올린다. 다이얼을 마우스로 돌리는 것보다 이쪽이 빠르다.
  */
 export default function TimeDial({ hour, minute, onChange, step = 5 }: Props) {
     const S = usePickTheme(STYLES);
@@ -143,8 +146,63 @@ export default function TimeDial({ hour, minute, onChange, step = 5 }: Props) {
 
     const bump = (minutes: number) => emitTotal(live.current.total + minutes);
 
+    /* ── 적어 넣기 ────────────────────────────────────────────────────
+       적는 동안에는 칸의 글자를 그대로 둔다("0" 을 치자마자 00 으로 튀지 않게).
+       숫자가 자리에 맞으면 곧바로 반영하고, 칸을 떠나면 다시 값이 다스린다. */
+    const [typing, setTyping] = React.useState<{ field: "h" | "m"; text: string } | null>(null);
+    const shown = (field: "h" | "m") =>
+        typing?.field === field ? typing.text : pad(field === "h" ? hour : minute);
+
+    const onType = (field: "h" | "m", raw: string) => {
+        const text = raw.replace(/\D/g, "").slice(0, 2);
+        setTyping({ field, text });
+        if (text === "") return;
+        const n = Number(text);
+        const cur = live.current.total;
+        if (field === "h") {
+            if (n > 23) return;
+            emitTotal(n * 60 + (cur % 60));
+        } else {
+            if (n > 59) return;
+            emitTotal(Math.floor(cur / 60) * 60 + n);
+        }
+    };
+
+    const onTypeKey = (field: "h" | "m", e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+        // 창 전체가 ↑↓ 로 날짜를 옮긴다 — 여기서 멈추지 않으면 시각을 올린 직후 날짜 쪽이 옛 시각으로 되돌린다
+        e.preventDefault();
+        e.stopPropagation();
+        setTyping(null);
+        const unit = field === "h" ? 60 : live.current.step;
+        bump(e.key === "ArrowUp" ? unit : -unit);
+    };
+
     return (
         <S.Wrap>
+            <S.Entry>
+                <input
+                    value={shown("h")}
+                    onChange={(e) => onType("h", e.target.value)}
+                    onKeyDown={(e) => onTypeKey("h", e)}
+                    onFocus={(e) => e.currentTarget.select()}
+                    onBlur={() => setTyping(null)}
+                    inputMode="numeric"
+                    maxLength={2}
+                    aria-label={f.hourStep}
+                />
+                <b>:</b>
+                <input
+                    value={shown("m")}
+                    onChange={(e) => onType("m", e.target.value)}
+                    onKeyDown={(e) => onTypeKey("m", e)}
+                    onFocus={(e) => e.currentTarget.select()}
+                    onBlur={() => setTyping(null)}
+                    inputMode="numeric"
+                    maxLength={2}
+                    aria-label={f.minuteStep}
+                />
+            </S.Entry>
             <S.Dial
                 ref={svgRef}
                 viewBox="0 0 100 100"

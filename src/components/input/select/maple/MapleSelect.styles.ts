@@ -25,6 +25,8 @@ export const Chev = styled(C.Chev)`
 
 export const Menu = styled(C.Menu)`
     ${paperCard("3px")}
+    /* 조각이 거는 relative 뒤에 다시 적는다 — 이 창은 떠 있어야 한다 */
+    position: fixed;
     border-color: ${(p) => hair(p.theme, 0.5)};
     box-shadow: 0 10px 24px ${(p) => withAlpha("#000000", p.theme.mode === "dark" ? 0.5 : 0.16)};
     padding: 5px 0;

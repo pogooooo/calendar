@@ -1,8 +1,10 @@
 "use client";
 
 import * as React from "react";
-import styled, { css, useTheme } from "styled-components";
-import { inkCheckbox, inkFill, leafBullet, leafChip, leafShapeOf } from "@/styles/maple/ink";
+import { useTheme } from "styled-components";
+import { usePickTheme, type ThemeImpls } from "@/styles/themed";
+import * as CelestialS from "./celestial/CelestialWidgetPanels.styles";
+import * as MapleS from "./maple/MapleWidgetPanels.styles";
 import { Check } from "lucide-react";
 import useTodoStore from "@/store/useTodoStore";
 import useCategoryStore from "@/store/useCategoryStore";
@@ -15,7 +17,11 @@ import { useT } from "@/i18n/useT";
 import { useCurrentDayKey } from "@/hooks/useCurrentDay";
 import { dayKeyToIso, localDateKey, utcDayKey } from "@/lib/dateKey";
 
-const ROW_PX = 32;
+/** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS };
+
+/** 줄 높이는 모양 쪽(styles)이 정한다 — 몇 줄이 들어가는지 셀 때 같은 값을 봐야 한다 */
+const ROW_PX = CelestialS.ROW_PX;
 const NARROW_PX = 300;
 
 const spansDay = (t: { startAt?: string | number | Date | null; endAt?: string | number | Date | null }, key: string) => {
@@ -52,6 +58,27 @@ function useFrame(rowPx = ROW_PX, reserved = 0) {
     return [ref, box] as const;
 }
 
+/**
+ * 위젯에서 날짜를 하루씩 옮긴다. 데스크톱 위젯은 늘 오늘만 보여 줬다 —
+ * 어제 못 끝낸 것을 보려면 앱을 열어야 했다. 옮긴 날은 창을 닫으면 잊는다(오늘로 돌아온다).
+ */
+function useDayShift() {
+    const [offset, setOffset] = React.useState(0);
+    const date = React.useMemo(() => {
+        const d = new Date();
+        d.setHours(0, 0, 0, 0);
+        d.setDate(d.getDate() + offset);
+        return d;
+    }, [offset]);
+    return {
+        offset,
+        date,
+        key: localDateKey(date),
+        shift: (delta: number) => setOffset(o => o + delta),
+        reset: () => setOffset(0),
+    };
+}
+
 function useMinuteTick(ms = 30000) {
     const [, force] = React.useReducer((n: number) => n + 1, 0);
     React.useEffect(() => {
@@ -61,15 +88,17 @@ function useMinuteTick(ms = 30000) {
 }
 
 export function TodayPanel() {
+    const S = usePickTheme(STYLES);
     const { todos, toggleTodo, addTodo } = useTodoStore();
     const { categories } = useCategoryStore();
     const authFetch = useAuthFetch();
     const tr = useT();
-    const [ref, box] = useFrame(ROW_PX, 26 + 38);
+    const [ref, box] = useFrame(ROW_PX, 26 + 38 + 22);
     const [draft, setDraft] = React.useState("");
 
-    const key = localDateKey(new Date());
-    const t0 = new Date().setHours(0, 0, 0, 0);
+    const day = useDayShift();
+    const key = day.key;
+    const t0 = day.date.getTime();
 
     const today = todos.filter(t => spansDay(t, key));
     const next = todos
@@ -91,7 +120,10 @@ export function TodayPanel() {
         const cat = categories[0];
         if (!cat) return;
 
-        const start = new Date();
+        // 보고 있는 날에 넣는다 (오늘이면 지금부터 한 시간)
+        const start = new Date(day.date);
+        if (day.offset === 0) start.setTime(Date.now());
+        else start.setHours(9, 0, 0, 0);
         const end = new Date(start.getTime() + 3600000);
 
         addTodo(authFetch, {
@@ -104,56 +136,65 @@ export function TodayPanel() {
     };
 
     return (
-        <Pad ref={ref}>
-            <QuickInput
+        <S.Pad ref={ref}>
+            <S.QuickInput
                 value={draft}
                 placeholder={tr.calendar.addTask}
                 onChange={(e) => setDraft(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
             />
-            <SectionHead>{tr.home.today}</SectionHead>
+            <S.DayNav>
+                <S.NavBtn type="button" onClick={() => day.shift(-1)} aria-label={tr.calendar.prevDay}>‹</S.NavBtn>
+                <button type="button" className="label" onClick={day.reset} disabled={day.offset === 0}>
+                    {day.offset === 0 ? tr.home.today : tr.calendar.dayLabelShort(day.date.getMonth() + 1, day.date.getDate())}
+                </button>
+                <S.NavBtn type="button" onClick={() => day.shift(1)} aria-label={tr.calendar.nextDay}>›</S.NavBtn>
+            </S.DayNav>
+            {/* 날짜는 위의 줄이 말한다 — 여기서 또 "오늘" 이라고 하면 같은 말이 두 번이다 */}
+            <S.SectionHead>{tr.home.tasks}</S.SectionHead>
             {today.length === 0
-                ? <Thin>{tr.home.noTodayTodos}</Thin>
+                ? <S.Thin>{day.offset === 0 ? tr.home.noTodayTodos : tr.home.noDayTodos}</S.Thin>
                 : today.slice(0, todayCap).map(t => {
                     const done = doneOn(t, key);
                     return (
-                        <Row key={t.id}>
-                            <Box $done={done} onClick={() => toggleTodo(authFetch, t.id, key)}>
+                        <S.Row key={t.id}>
+                            <S.Box $done={done} onClick={() => toggleTodo(authFetch, t.id, key)}>
                                 {done && <Check size={9} strokeWidth={3} />}
-                            </Box>
-                            <Mark $c={color(t.categoryId)} />
-                            <Name $done={done}>{t.title}</Name>
-                        </Row>
+                            </S.Box>
+                            <S.Mark $c={color(t.categoryId)} />
+                            <S.Name $done={done}>{t.title}</S.Name>
+                        </S.Row>
                     );
                 })}
-            {today.length > todayCap && <More>{`+${today.length - todayCap}`}</More>}
+            {today.length > todayCap && <S.More>{`+${today.length - todayCap}`}</S.More>}
 
             {hasNext && nextCap > 0 && (
                 <>
-                    <SectionHead className="mt">{tr.home.upcoming}</SectionHead>
+                    <S.SectionHead className="mt">{tr.home.upcoming}</S.SectionHead>
                     {next.slice(0, nextCap).map(t => {
                         const k = localDateKey(t.startAt!);
                         const done = doneOn(t, k);
                         const d = new Date(t.startAt!);
                         return (
-                            <Row key={t.id}>
-                                <Box $done={done} onClick={() => toggleTodo(authFetch, t.id, k)}>
+                            <S.Row key={t.id}>
+                                <S.Box $done={done} onClick={() => toggleTodo(authFetch, t.id, k)}>
                                     {done && <Check size={9} strokeWidth={3} />}
-                                </Box>
-                                <Mark $c={color(t.categoryId)} />
-                                <Name $done={done}>{t.title}</Name>
-                                <Meta>{`${d.getMonth() + 1}/${d.getDate()}`}</Meta>
-                            </Row>
+                                </S.Box>
+                                <S.Mark $c={color(t.categoryId)} />
+                                <S.Name $done={done}>{t.title}</S.Name>
+                                <S.Meta>{`${d.getMonth() + 1}/${d.getDate()}`}</S.Meta>
+                            </S.Row>
                         );
                     })}
-                    {next.length > nextCap && <More>{`+${next.length - nextCap}`}</More>}
+                    {next.length > nextCap && <S.More>{`+${next.length - nextCap}`}</S.More>}
                 </>
             )}
-        </Pad>
+        </S.Pad>
     );
 }
 
 export function NowNextPanel() {
+    const S = usePickTheme(STYLES);
     const { todos } = useTodoStore();
     const { categories } = useCategoryStore();
     const tr = useT();
@@ -190,38 +231,39 @@ export function NowNextPanel() {
         : 0;
 
     return (
-        <Pad>
-            <BigRow>
-                <SectionHead>{tr.widget.now}</SectionHead>
+        <S.Pad>
+            <S.BigRow>
+                <S.SectionHead>{tr.widget.now}</S.SectionHead>
                 {current ? (
                     <>
-                        <NowTitle><Mark $c={color(current.categoryId)} />{current.title}</NowTitle>
-                        <NowMeta>{`${hhmm(current.startAt!)} – ${hhmm(current.endAt!)} · ${untilText(new Date(current.endAt!).getTime() - now)}`}</NowMeta>
-                        <Bar><Fill $pct={pct} /></Bar>
+                        <S.NowTitle><S.Mark $c={color(current.categoryId)} />{current.title}</S.NowTitle>
+                        <S.NowMeta>{`${hhmm(current.startAt!)} – ${hhmm(current.endAt!)} · ${untilText(new Date(current.endAt!).getTime() - now)}`}</S.NowMeta>
+                        <S.Bar><S.Fill $pct={pct} /></S.Bar>
                     </>
                 ) : (
-                    <NowMeta>{tr.widget.nothingNow}</NowMeta>
+                    <S.NowMeta>{tr.widget.nothingNow}</S.NowMeta>
                 )}
-            </BigRow>
+            </S.BigRow>
 
-            <Dashed />
+            <S.Dashed />
 
-            <BigRow>
-                <SectionHead>{tr.widget.next}</SectionHead>
+            <S.BigRow>
+                <S.SectionHead>{tr.widget.next}</S.SectionHead>
                 {upcoming ? (
                     <>
-                        <NowTitle><Mark $c={color(upcoming.categoryId)} />{upcoming.title}</NowTitle>
-                        <NowMeta>{`${hhmm(upcoming.startAt!)} · ${untilText(new Date(upcoming.startAt!).getTime() - now)}`}</NowMeta>
+                        <S.NowTitle><S.Mark $c={color(upcoming.categoryId)} />{upcoming.title}</S.NowTitle>
+                        <S.NowMeta>{`${hhmm(upcoming.startAt!)} · ${untilText(new Date(upcoming.startAt!).getTime() - now)}`}</S.NowMeta>
                     </>
                 ) : (
-                    <NowMeta>{tr.widget.nothingNext}</NowMeta>
+                    <S.NowMeta>{tr.widget.nothingNext}</S.NowMeta>
                 )}
-            </BigRow>
-        </Pad>
+            </S.BigRow>
+        </S.Pad>
     );
 }
 
 export function DuePanel() {
+    const S = usePickTheme(STYLES);
     const { todos, toggleTodo } = useTodoStore();
     const { categories } = useCategoryStore();
     const authFetch = useAuthFetch();
@@ -249,27 +291,28 @@ export function DuePanel() {
     };
 
     return (
-        <Pad ref={ref}>
-            <SectionHead>{tr.widget.dueSoon}</SectionHead>
+        <S.Pad ref={ref}>
+            <S.SectionHead>{tr.widget.dueSoon}</S.SectionHead>
             {list.length === 0
-                ? <Thin>{tr.widget.noDue}</Thin>
+                ? <S.Thin>{tr.widget.noDue}</S.Thin>
                 : list.slice(0, cap).map(t => {
                     const k = localDateKey(t.endAt!);
                     return (
-                        <Row key={t.id}>
-                            <Box $done={false} onClick={() => toggleTodo(authFetch, t.id, k)} />
-                            <Mark $c={color(t.categoryId)} />
-                            <Name $done={false}>{t.title}</Name>
-                            <Meta>{left(t.endAt!)}</Meta>
-                        </Row>
+                        <S.Row key={t.id}>
+                            <S.Box $done={false} onClick={() => toggleTodo(authFetch, t.id, k)} />
+                            <S.Mark $c={color(t.categoryId)} />
+                            <S.Name $done={false}>{t.title}</S.Name>
+                            <S.Meta>{left(t.endAt!)}</S.Meta>
+                        </S.Row>
                     );
                 })}
-            {list.length > cap && <More>{`+${list.length - cap}`}</More>}
-        </Pad>
+            {list.length > cap && <S.More>{`+${list.length - cap}`}</S.More>}
+        </S.Pad>
     );
 }
 
 export function AnniversaryPanel() {
+    const S = usePickTheme(STYLES);
     const { anniversaries, fetchAnniversaries } = useAnniversaryStore();
     const authFetch = useAuthFetch();
     const tr = useT();
@@ -294,22 +337,23 @@ export function AnniversaryPanel() {
     const cap = Math.max(1, box.rows);
 
     return (
-        <Pad ref={ref}>
-            <SectionHead>{tr.sidebar.anniversary}</SectionHead>
+        <S.Pad ref={ref}>
+            <S.SectionHead>{tr.sidebar.anniversary}</S.SectionHead>
             {list.length === 0
-                ? <Thin>{tr.home.noAnniversaries}</Thin>
+                ? <S.Thin>{tr.home.noAnniversaries}</S.Thin>
                 : list.slice(0, cap).map(a => (
-                    <Row key={a.id}>
-                        <Star>✦</Star>
-                        <Name $done={false}>{a.title}</Name>
-                        <Meta className={a.dday === 0 ? "hot" : ""}>{a.dday === 0 ? "D-DAY" : `D-${a.dday}`}</Meta>
-                    </Row>
+                    <S.Row key={a.id}>
+                        <S.Star>✦</S.Star>
+                        <S.Name $done={false}>{a.title}</S.Name>
+                        <S.Meta className={a.dday === 0 ? "hot" : ""}>{a.dday === 0 ? "D-DAY" : `D-${a.dday}`}</S.Meta>
+                    </S.Row>
                 ))}
-        </Pad>
+        </S.Pad>
     );
 }
 
 export function ProjectsPanel() {
+    const S = usePickTheme(STYLES);
     const { projects, fetchProjects } = useProjectStore();
     const authFetch = useAuthFetch();
     const tr = useT();
@@ -331,30 +375,31 @@ export function ProjectsPanel() {
     const cap = Math.max(1, box.rows);
 
     return (
-        <Pad ref={ref}>
-            <SectionHead>{tr.home.project}</SectionHead>
+        <S.Pad ref={ref}>
+            <S.SectionHead>{tr.home.project}</S.SectionHead>
             {list.length === 0
-                ? <Thin>{tr.home.noProjects}</Thin>
+                ? <S.Thin>{tr.home.noProjects}</S.Thin>
                 : list.slice(0, cap).map(p => {
                     const tasks = p.tasks ?? [];
                     const done = tasks.filter(t => t.status === "done").length;
                     const pct = tasks.length ? Math.round((done / tasks.length) * 100) : 0;
                     return (
-                        <ProjRow key={p.id}>
-                            <ProjTop>
-                                <Name $done={false}>{p.title}</Name>
-                                <Meta>{`${done}/${tasks.length}`}</Meta>
-                            </ProjTop>
-                            <Bar><Fill $pct={pct} /></Bar>
-                        </ProjRow>
+                        <S.ProjRow key={p.id}>
+                            <S.ProjTop>
+                                <S.Name $done={false}>{p.title}</S.Name>
+                                <S.Meta>{`${done}/${tasks.length}`}</S.Meta>
+                            </S.ProjTop>
+                            <S.Bar><S.Fill $pct={pct} /></S.Bar>
+                        </S.ProjRow>
                     );
                 })}
-            {list.length > cap && <More>{`+${list.length - cap}`}</More>}
-        </Pad>
+            {list.length > cap && <S.More>{`+${list.length - cap}`}</S.More>}
+        </S.Pad>
     );
 }
 
 export function StatsPanel() {
+    const S = usePickTheme(STYLES);
     const { todos } = useTodoStore();
     const { categories } = useCategoryStore();
     const tr = useT();
@@ -392,30 +437,31 @@ export function StatsPanel() {
     const cap = wide ? Math.max(1, Math.min(6, box.rows)) : 0;
 
     return (
-        <Pad ref={ref}>
-            <Big>{pct}<span>%</span></Big>
-            <Caption>{tr.home.doneRatio(done, total)}</Caption>
-            <Bar><Fill $pct={pct} /></Bar>
+        <S.Pad ref={ref}>
+            <S.Big>{pct}<span>%</span></S.Big>
+            <S.Caption>{tr.home.doneRatio(done, total)}</S.Caption>
+            <S.Bar><S.Fill $pct={pct} /></S.Bar>
             {cap > 0 && (
                 <>
-                    <Dashed />
+                    <S.Dashed />
                     {cats.length === 0
-                        ? <Thin>{tr.home.noData}</Thin>
+                        ? <S.Thin>{tr.home.noData}</S.Thin>
                         : cats.slice(0, cap).map(c => (
-                            <CatRow key={c.id}>
-                                <Mark $c={c.color} />
-                                <CatName>{c.name}</CatName>
-                                <CatBar><CatFill $c={c.color} $pct={(c.total / max) * 100} /></CatBar>
-                                <Meta>{`${c.done}/${c.total}`}</Meta>
-                            </CatRow>
+                            <S.CatRow key={c.id}>
+                                <S.Mark $c={c.color} />
+                                <S.CatName>{c.name}</S.CatName>
+                                <S.CatBar><S.CatFill $c={c.color} $pct={(c.total / max) * 100} /></S.CatBar>
+                                <S.Meta>{`${c.done}/${c.total}`}</S.Meta>
+                            </S.CatRow>
                         ))}
                 </>
             )}
-        </Pad>
+        </S.Pad>
     );
 }
 
 export function ChallengePanel() {
+    const S = usePickTheme(STYLES);
     const { challenges, fetchChallenges, toggleChallengeCompletion } = useChallengeStore();
     const authFetch = useAuthFetch();
     const tr = useT();
@@ -452,7 +498,7 @@ export function ChallengePanel() {
     };
 
     if (active.length === 0) {
-        return <Pad ref={ref}><SectionHead>{tr.home.challenge}</SectionHead><Thin>{tr.home.noChallenges}</Thin></Pad>;
+        return <S.Pad ref={ref}><S.SectionHead>{tr.home.challenge}</S.SectionHead><S.Thin>{tr.home.noChallenges}</S.Thin></S.Pad>;
     }
 
     if (box.height < 260) {
@@ -464,43 +510,44 @@ export function ChallengePanel() {
             return { d, on: set.has(localDateKey(d)), isToday: i === 13 };
         });
         return (
-            <Pad ref={ref}>
-                <SectionHead>{tr.home.challenge}</SectionHead>
-                <NowTitle>{c.title}</NowTitle>
-                <NowMeta>{c.targetCount ? `${c.completions?.length ?? 0}/${c.targetCount}` : `${c.completions?.length ?? 0}`}</NowMeta>
-                <Streak>
+            <S.Pad ref={ref}>
+                <S.SectionHead>{tr.home.challenge}</S.SectionHead>
+                <S.NowTitle>{c.title}</S.NowTitle>
+                <S.NowMeta>{c.targetCount ? `${c.completions?.length ?? 0}/${c.targetCount}` : `${c.completions?.length ?? 0}`}</S.NowMeta>
+                <S.Streak>
                     {days.map((x, i) => (
-                        <Dot key={i} $on={x.on} $today={x.isToday} onClick={() => toggle(c.id, x.d)} />
+                        <S.Dot key={i} $on={x.on} $today={x.isToday} onClick={() => toggle(c.id, x.d)} />
                     ))}
-                </Streak>
-            </Pad>
+                </S.Streak>
+            </S.Pad>
         );
     }
 
     const cap = Math.max(1, box.rows);
 
     return (
-        <Pad ref={ref}>
-            <SectionHead>{tr.home.challenge}</SectionHead>
+        <S.Pad ref={ref}>
+            <S.SectionHead>{tr.home.challenge}</S.SectionHead>
             {active.slice(0, cap).map(c => {
                 const done = (c.completions ?? []).some(cp => utcDayKey(cp.targetDate) === key);
                 const count = c.completions?.length ?? 0;
                 return (
-                    <Row key={c.id}>
-                        <Box $done={done} onClick={() => toggle(c.id, today)}>
+                    <S.Row key={c.id}>
+                        <S.Box $done={done} onClick={() => toggle(c.id, today)}>
                             {done && <Check size={9} strokeWidth={3} />}
-                        </Box>
-                        <Name $done={done}>{c.title}</Name>
-                        <Meta>{c.targetCount ? `${count}/${c.targetCount}` : count}</Meta>
-                    </Row>
+                        </S.Box>
+                        <S.Name $done={done}>{c.title}</S.Name>
+                        <S.Meta>{c.targetCount ? `${count}/${c.targetCount}` : count}</S.Meta>
+                    </S.Row>
                 );
             })}
-            {active.length > cap && <More>{`+${active.length - cap}`}</More>}
-        </Pad>
+            {active.length > cap && <S.More>{`+${active.length - cap}`}</S.More>}
+        </S.Pad>
     );
 }
 
 export function MemoPanel() {
+    const S = usePickTheme(STYLES);
     const { memo, fetchDailyData, updateDailyMemo } = useDailyStore();
     const authFetch = useAuthFetch();
     const tr = useT();
@@ -519,7 +566,7 @@ export function MemoPanel() {
     }, [loaded, memo]);
 
     return (
-        <MemoArea
+        <S.MemoArea
             value={draft}
             placeholder={tr.calendar.memoPlaceholder}
             onChange={(e) => setDraft(e.target.value)}
@@ -529,6 +576,7 @@ export function MemoPanel() {
 }
 
 export function QuickTaskPanel() {
+    const S = usePickTheme(STYLES);
     const { tasks, fetchDailyData, addDailyTask, toggleDailyTask, deleteDailyTask } = useDailyStore();
     const authFetch = useAuthFetch();
     const tr = useT();
@@ -551,323 +599,27 @@ export function QuickTaskPanel() {
     const cap = Math.max(1, box.rows);
 
     return (
-        <Column>
-            <QuickInput
+        <S.Column>
+            <S.QuickInput
                 value={text}
                 placeholder={tr.calendar.addTask}
                 onChange={(e) => setText(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
             />
-            <Fit ref={ref}>
+            <S.Fit ref={ref}>
                 {tasks.length === 0
-                    ? <Thin>{tr.home.noTodayTodos}</Thin>
+                    ? <S.Thin>{tr.home.noTodayTodos}</S.Thin>
                     : tasks.slice(0, cap).map(task => (
-                        <Row key={task.id}>
-                            <Box $done={task.isDone} onClick={() => toggleDailyTask(authFetch, task.id)}>
+                        <S.Row key={task.id}>
+                            <S.Box $done={task.isDone} onClick={() => toggleDailyTask(authFetch, task.id)}>
                                 {task.isDone && <Check size={9} strokeWidth={3} />}
-                            </Box>
-                            <Name $done={task.isDone}>{task.text}</Name>
-                            <DelBtn onClick={() => deleteDailyTask(authFetch, task.id)}>×</DelBtn>
-                        </Row>
+                            </S.Box>
+                            <S.Name $done={task.isDone}>{task.text}</S.Name>
+                            <S.DelBtn onClick={() => deleteDailyTask(authFetch, task.id)}>×</S.DelBtn>
+                        </S.Row>
                     ))}
-                {tasks.length > cap && <More>{`+${tasks.length - cap}`}</More>}
-            </Fit>
-        </Column>
+                {tasks.length > cap && <S.More>{`+${tasks.length - cap}`}</S.More>}
+            </S.Fit>
+        </S.Column>
     );
 }
-
-const Pad = styled.div`
-    height: 100%;
-    width: 100%;
-    overflow: hidden;
-    padding: var(--widget-pad);
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-`;
-
-const Fit = styled.div`
-    flex: 1;
-    min-height: 0;
-    overflow: hidden;
-`;
-
-const Column = styled.div`
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-    padding: var(--widget-pad);
-    box-sizing: border-box;
-`;
-
-const SectionHead = styled.div`
-    flex-shrink: 0;
-    font-family: ${p => p.theme.fonts.display};
-    font-size: 0.66rem;
-    letter-spacing: 2px;
-    color: ${p => p.theme.colors.primary};
-    padding-bottom: 5px;
-    margin-bottom: 3px;
-    border-bottom: 1px solid ${p => p.theme.colors.primary}40;
-
-    &.mt { margin-top: 10px; }
-`;
-
-const Row = styled.div`
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    height: ${ROW_PX}px;
-    box-sizing: border-box;
-`;
-
-const ProjRow = styled.div`
-    flex-shrink: 0;
-    height: 38px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: 5px;
-    box-sizing: border-box;
-`;
-
-const ProjTop = styled.div`
-    display: flex;
-    align-items: center;
-    gap: 8px;
-`;
-
-const More = styled.div`
-    flex-shrink: 0;
-    font-family: ${p => p.theme.fonts.display};
-    font-size: 0.64rem;
-    letter-spacing: 1px;
-    color: ${p => p.theme.colors.textSecondary};
-    padding-top: 2px;
-`;
-
-const Box = styled.button<{ $done: boolean }>`
-    width: 14px;
-    height: 14px;
-    flex-shrink: 0;
-    padding: 0;
-    border: 1px solid ${p => p.theme.colors.primary};
-    background: ${p => p.$done ? p.theme.colors.primary : "transparent"};
-    color: ${p => p.theme.colors.surface};
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-
-    /* Maple: 손으로 그린 체크 칸(J9), 끝낸 일은 붉은 도장(C7) — 카테고리 화면의 체크와 같은 말 */
-    ${p => p.theme.family === "maple" && inkCheckbox(p.$done)}
-`;
-
-const Mark = styled.div<{ $c: string }>`
-    width: 7px;
-    height: 7px;
-    flex-shrink: 0;
-    transform: rotate(45deg);
-    /* 위젯 페이지의 "& * { background-color: transparent }" 가 색을 지우므로 그라데이션으로 칠한다 */
-    ${p => inkFill(p.$c)}
-    ${p => p.theme.family === "maple" && css`${leafChip(leafShapeOf(p.$c), "9px")} ${inkFill(p.$c)}`}
-`;
-
-const Star = styled.span`
-    width: 9px;
-    flex-shrink: 0;
-    text-align: center;
-    font-size: 0.62rem;
-    color: ${p => p.theme.colors.primary};
-`;
-
-const Name = styled.span<{ $done: boolean }>`
-    flex: 1;
-    min-width: 0;
-    font-size: 0.8rem;
-    color: ${p => p.$done ? p.theme.colors.textSecondary : p.theme.colors.text};
-    text-decoration: ${p => p.$done ? "line-through" : "none"};
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-`;
-
-const Meta = styled.span`
-    font-family: ${p => p.theme.fonts.display};
-    font-size: 0.68rem;
-    letter-spacing: 1px;
-    color: ${p => p.theme.colors.textSecondary};
-    flex-shrink: 0;
-
-    &.hot { color: ${p => p.theme.colors.primary}; }
-`;
-
-const Thin = styled.div`
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: ${p => p.theme.fonts.display};
-    font-size: 0.74rem;
-    letter-spacing: 1px;
-    color: ${p => p.theme.colors.textSecondary};
-`;
-
-const BigRow = styled.div`
-    flex: 1;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-`;
-
-const NowTitle = styled.div`
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.92rem;
-    color: ${p => p.theme.colors.text};
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    margin-top: 4px;
-`;
-
-const NowMeta = styled.div`
-    font-size: 0.7rem;
-    color: ${p => p.theme.colors.textSecondary};
-    margin-top: 3px;
-`;
-
-const Streak = styled.div`
-    display: flex;
-    gap: 5px;
-    margin-top: 10px;
-`;
-
-const Dot = styled.button<{ $on: boolean; $today: boolean }>`
-    width: 8px;
-    height: 8px;
-    padding: 0;
-    transform: rotate(45deg);
-    cursor: pointer;
-    border: 1px solid ${p => p.$today ? p.theme.colors.primary : `${p.theme.colors.primary}66`};
-    background: ${p => p.$on ? p.theme.colors.primary : "transparent"};
-    box-shadow: ${p => p.$today ? `0 0 4px ${p.theme.colors.primary}66` : "none"};
-    /* Maple: 잎 — 일정 있는 날은 채운 잎, 오늘은 진하게 */
-    ${p => p.theme.family === "maple" && css`
-        width: 10px; height: 10px;
-        ${leafBullet(p.$on, "10px")}
-        ${inkFill(p.theme.colors.primary)}
-        opacity: ${p.$today || p.$on ? 1 : 0.5};
-    `}
-`;
-
-const Big = styled.div`
-    flex-shrink: 0;
-    font-family: ${p => p.theme.fonts.display};
-    font-size: 2rem;
-    line-height: 1;
-    letter-spacing: 2px;
-    color: ${p => p.theme.colors.primary};
-    span { font-size: 0.9rem; margin-left: 3px; }
-`;
-
-const Caption = styled.div`
-    flex-shrink: 0;
-    font-size: 0.72rem;
-    color: ${p => p.theme.colors.textSecondary};
-    margin-top: 5px;
-`;
-
-const Bar = styled.div`
-    flex-shrink: 0;
-    height: 1px;
-    margin-top: 8px;
-    background: ${p => p.theme.colors.primary}33;
-`;
-
-const Fill = styled.div<{ $pct: number }>`
-    height: 100%;
-    width: ${p => p.$pct}%;
-    background: ${p => p.theme.colors.primary};
-`;
-
-const Dashed = styled.div`
-    flex-shrink: 0;
-    border-top: 1px dashed ${p => p.theme.colors.primary}40;
-    margin: 10px 0 8px;
-`;
-
-const CatRow = styled.div`
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    height: 22px;
-`;
-
-const CatName = styled.span`
-    font-size: 0.74rem;
-    color: ${p => p.theme.colors.text};
-    width: 60px;
-    flex-shrink: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-`;
-
-const CatBar = styled.div`
-    flex: 1;
-    height: 1px;
-    background: ${p => p.theme.colors.primary}22;
-`;
-
-const CatFill = styled.div<{ $c: string; $pct: number }>`
-    height: 100%;
-    width: ${p => p.$pct}%;
-    background: ${p => p.$c};
-`;
-
-const MemoArea = styled.textarea`
-    width: 100%;
-    height: 100%;
-    border: none;
-    outline: none;
-    resize: none;
-    padding: var(--widget-pad);
-    box-sizing: border-box;
-    font-family: inherit;
-    font-size: 0.92rem;
-    line-height: 1.7;
-    color: ${p => p.theme.colors.text};
-    background: transparent;
-    &::placeholder { color: ${p => p.theme.colors.textSecondary}88; }
-`;
-
-const QuickInput = styled.input`
-    flex-shrink: 0;
-    margin-bottom: 8px;
-    padding: 7px 9px;
-    border: 1px solid ${p => p.theme.colors.primary}66;
-    background: transparent;
-    outline: none;
-    font-family: inherit;
-    font-size: 0.8rem;
-    color: ${p => p.theme.colors.text};
-    &:focus { border-color: ${p => p.theme.colors.primary}; }
-    &::placeholder { color: ${p => p.theme.colors.textSecondary}88; }
-`;
-
-const DelBtn = styled.button`
-    flex-shrink: 0;
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 0.95rem;
-    line-height: 1;
-    color: ${p => p.theme.colors.textSecondary};
-    &:hover { color: ${p => p.theme.colors.error}; }
-`;

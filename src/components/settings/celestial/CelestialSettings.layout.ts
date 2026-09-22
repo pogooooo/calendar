@@ -498,6 +498,13 @@ export const FontPreview = styled.div<{ $family: string }>`
     font-size: 1.02rem;
     line-height: 1.45;
     color: ${(p) => p.theme.colors.text};
+
+    /* 문장 끝의 작은 표식 — 글은 번역표에, 표식은 갈래의 말에 */
+    &::after {
+        content: " ✦";
+        color: ${(p) => p.theme.colors.primary};
+        font-size: 0.8em;
+    }
 `;
 
 export const CardFoot = styled.div`

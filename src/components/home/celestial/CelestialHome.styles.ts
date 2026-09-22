@@ -131,6 +131,82 @@ export const ArchFoot = styled.div`
     }
 `;
 
+/* ── 보는 날 옮기기 ────────────────────────────────────────────────── */
+
+export const DayNav = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    flex-shrink: 0;
+    padding: 12px 30px 0;
+
+    @media (max-width: 768px) {
+        gap: 10px;
+        padding: 12px 4px 0;
+    }
+`;
+
+export const NavButton = styled.button`
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 6px;
+    background: none;
+    border: none;
+    color: ${p => p.theme.colors.primary};
+    cursor: pointer;
+    opacity: 0.75;
+    transition: opacity 0.15s ease, filter 0.15s ease;
+
+    &:hover { opacity: 1; filter: drop-shadow(0 0 5px ${p => p.theme.colors.primary}66); }
+    &:focus-visible { outline: 1px solid ${p => p.theme.colors.primary}; outline-offset: 3px; }
+`;
+
+export const DayLabel = styled.div`
+    display: inline-flex;
+    align-items: baseline;
+    gap: 9px;
+    min-width: 8.5em;
+    justify-content: center;
+    font-family: ${p => p.theme.fonts.display};
+    color: ${p => p.theme.colors.text};
+
+    b {
+        font-weight: 400;
+        font-size: 0.94rem;
+        letter-spacing: 0.1em;
+        font-variant-numeric: tabular-nums;
+    }
+
+    em {
+        font-style: normal;
+        font-size: 0.62rem;
+        letter-spacing: 0.18em;
+        color: ${p => p.theme.colors.textSecondary};
+    }
+`;
+
+export const TodayButton = styled.button`
+    padding: 3px 12px;
+    font-family: ${p => p.theme.fonts.display};
+    font-size: 0.64rem;
+    letter-spacing: 0.16em;
+    color: ${p => p.theme.colors.primary};
+    background: none;
+    border: 1px solid ${p => p.theme.colors.primary}55;
+    cursor: pointer;
+    transition: box-shadow 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+
+    &:hover:not(:disabled) {
+        border-color: ${p => p.theme.colors.primary};
+        box-shadow: 0 0 8px ${p => p.theme.colors.primary}44;
+    }
+
+    /* 오늘을 보고 있으면 누를 일이 없다 — 자리는 지키되 흐리게 */
+    &:disabled { opacity: 0.3; cursor: default; }
+`;
+
 export const Lists = styled.div`
     flex: 1;
     min-height: 0;

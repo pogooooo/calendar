@@ -12,6 +12,7 @@ import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useT } from "@/i18n/useT";
 import { localDateKey, utcDayKey } from "@/lib/dateKey";
 import { Plus, SlidersHorizontal } from "lucide-react";
+import Arrow from "@/assets/Arrow";
 import ChallengeModal, { type ChallengeData } from "@/components/modal/challengeModal/ChallengeModal";
 import TodoModal from "@/components/modal/todoModal/TodoModal";
 import { useDialog } from "@/components/dialog/DialogProvider";
@@ -46,13 +47,28 @@ export default function HomeView() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    const todayTime = React.useMemo(() => new Date().setHours(0, 0, 0, 0), []);
-    const today = React.useMemo(() => new Date(todayTime), [todayTime]);
-    const year = today.getFullYear();
-    const month = today.getMonth();
+    /* ── 보는 날 ──────────────────────────────────────────────────────────
+       홈은 오늘만 보여 줬다. 어제 못 끝낸 것, 내일 할 것을 보려면 달력으로 나가야 했다.
+       왼쪽(달 눈금·목록)은 "보는 날" 을 따르고, 오른쪽 기둥(프로젝트·챌린지·기념일)은
+       늘 오늘 기준이다 — 그쪽은 "지금 어떤가" 를 보는 자리라서. */
+    const realTodayTime = React.useMemo(() => new Date().setHours(0, 0, 0, 0), []);
+    const [focusTime, setFocusTime] = React.useState(realTodayTime);
+    const focus = React.useMemo(() => new Date(focusTime), [focusTime]);
+    const isToday = focusTime === realTodayTime;
+
+    const shiftDay = React.useCallback((delta: number) => {
+        setFocusTime(t2 => {
+            const d = new Date(t2);
+            d.setDate(d.getDate() + delta);
+            return d.setHours(0, 0, 0, 0);
+        });
+    }, []);
+
+    const year = focus.getFullYear();
+    const month = focus.getMonth();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const todayIdx = today.getDate() - 1;
-    const todayKey = localDateKey(today);
+    const focusIdx = focus.getDate() - 1;
+    const focusKey = localDateKey(focus);
 
     const spansDay = React.useCallback(
         (t2: { startAt?: string | number | Date | null; endAt?: string | number | Date | null }, key: string) => {
@@ -118,19 +134,19 @@ export default function HomeView() {
         return out;
     }, [projects, anniversaries, year, month]);
 
-    const todayTodos = React.useMemo(
-        () => todos.filter(t2 => spansDay(t2, todayKey)),
-        [todos, todayKey, spansDay]
+    const dayTodos = React.useMemo(
+        () => todos.filter(t2 => spansDay(t2, focusKey)),
+        [todos, focusKey, spansDay]
     );
 
     const upcomingTodos = React.useMemo(() => {
-        const start = new Date(todayTime + 86400000);
-        const end = new Date(todayTime + 86400000 * 8);
+        const start = new Date(focusTime + 86400000);
+        const end = new Date(focusTime + 86400000 * 8);
         return todos
             .filter(t2 => t2.startAt && new Date(t2.startAt) >= start && new Date(t2.startAt) < end)
             .sort((a, b) => new Date(a.startAt!).getTime() - new Date(b.startAt!).getTime())
             .slice(0, 6);
-    }, [todos, todayTime]);
+    }, [todos, focusTime]);
 
     const activeProjects = React.useMemo(
         () => projects.filter(p => p.status !== "done").slice(0, 4),
@@ -149,17 +165,18 @@ export default function HomeView() {
     );
 
     const upcomingAnniversaries = React.useMemo(() => {
+        const thisYear = new Date(realTodayTime).getFullYear();
         return anniversaries
             .map(a => {
-                let d = new Date(year, a.month - 1, a.day);
-                if (d.getTime() < todayTime) d = new Date(year + 1, a.month - 1, a.day);
-                return { ...a, dday: Math.round((d.getTime() - todayTime) / 86400000) };
+                let d = new Date(thisYear, a.month - 1, a.day);
+                if (d.getTime() < realTodayTime) d = new Date(thisYear + 1, a.month - 1, a.day);
+                return { ...a, dday: Math.round((d.getTime() - realTodayTime) / 86400000) };
             })
             .sort((a, b) => a.dday - b.dday)
             .slice(0, 3);
-    }, [anniversaries, year, todayTime]);
+    }, [anniversaries, realTodayTime]);
 
-    const handleToggleTodo = (id: string) => toggleTodo(authFetch, id, today.toISOString());
+    const handleToggleTodo = (id: string) => toggleTodo(authFetch, id, focus.toISOString());
 
     /* ── 홈에서 바로 만들기 ───────────────────────────────────────────────
        챌린지는 물어볼 것이 많아 기존 창을 그대로 띄우고,
@@ -213,9 +230,9 @@ export default function HomeView() {
 
         setQuickPending(true);
         setQuickError(null);
-        // 하루 종일 일정으로 넣는다. 시간을 물으면 한 줄 추가가 아니게 된다.
-        const start = new Date(todayTime);
-        const end = new Date(todayTime);
+        // 하루 종일 일정으로 넣는다. 시간을 물으면 한 줄 추가가 아니게 된다. 넣는 날은 지금 보고 있는 날이다.
+        const start = new Date(focusTime);
+        const end = new Date(focusTime);
         end.setHours(23, 59, 0, 0);
         const error = await addTodo(authFetch, {
             title,
@@ -237,7 +254,7 @@ export default function HomeView() {
     const streakOf = (completions?: { targetDate: string | Date }[]) => {
         const set = new Set((completions ?? []).map(c => utcDayKey(c.targetDate)));
         return Array.from({ length: 7 }, (_, i) => {
-            const d = new Date(todayTime);
+            const d = new Date(realTodayTime);
             d.setDate(d.getDate() - 6 + i);
             return { date: d, done: set.has(localDateKey(d)), isToday: i === 6 };
         });
@@ -248,7 +265,7 @@ export default function HomeView() {
             <S.Card>
                 <S.Main>
                     <S.ArchWrap>
-                        <MonthArch daysInMonth={daysInMonth} todayIdx={todayIdx} monthLoad={monthLoad} marks={marks} />
+                        <MonthArch daysInMonth={daysInMonth} focusIdx={focusIdx} monthLoad={monthLoad} marks={marks} />
 
                         <S.ArchFoot>
                             <span className="edge">1</span>
@@ -261,13 +278,30 @@ export default function HomeView() {
                         </S.ArchFoot>
                     </S.ArchWrap>
 
+                    {/* 보는 날 옮기기 — 하루씩, 그리고 오늘로 돌아오기 */}
+                    <S.DayNav>
+                        <S.NavButton type="button" onClick={() => shiftDay(-1)} aria-label={t.calendar.prevDay}>
+                            <Arrow width={34} height={13} isRight={false} />
+                        </S.NavButton>
+                        <S.DayLabel>
+                            <b>{t.calendar.dayLabelShort(month + 1, focus.getDate())}</b>
+                            <em>{t.calendar.days[focus.getDay()]}</em>
+                        </S.DayLabel>
+                        <S.NavButton type="button" onClick={() => shiftDay(1)} aria-label={t.calendar.nextDay}>
+                            <Arrow width={34} height={13} isRight />
+                        </S.NavButton>
+                        <S.TodayButton type="button" onClick={() => setFocusTime(realTodayTime)} disabled={isToday}>
+                            {t.home.today}
+                        </S.TodayButton>
+                    </S.DayNav>
+
                     <S.Lists>
                         <S.ListCol>
                             <S.SectionHead>
                                 <i className="hd" />
-                                {t.home.today}
+                                {isToday ? t.home.today : t.calendar.dayLabelShort(month + 1, focus.getDate())}
                                 <span className="hr" />
-                                <b>{todayTodos.length}</b>
+                                <b>{dayTodos.length}</b>
                             </S.SectionHead>
                             <S.QuickForm onSubmit={handleQuickAdd}>
                                 <i className="dot" style={quickCategory ? { background: quickCategory.color } : undefined} />
@@ -288,11 +322,11 @@ export default function HomeView() {
                             {quickError && <S.QuickError role="alert">{quickError}</S.QuickError>}
 
                             <S.Scroll>
-                                {todayTodos.length === 0 ? (
-                                    <S.Empty><EmptyArt kind="todos" />{t.home.noTodayTodos}</S.Empty>
+                                {dayTodos.length === 0 ? (
+                                    <S.Empty><EmptyArt kind="todos" />{isToday ? t.home.noTodayTodos : t.home.noDayTodos}</S.Empty>
                                 ) : (
-                                    todayTodos.map(todo => {
-                                        const done = isDoneOn(todo, todayKey);
+                                    dayTodos.map(todo => {
+                                        const done = isDoneOn(todo, focusKey);
                                         return (
                                             <S.Row key={todo.id} $done={done} onClick={() => handleToggleTodo(todo.id)}>
                                                 <S.Mark $on={done} />

@@ -55,6 +55,8 @@ export const UserName = styled(C.UserName)`
 /** 펼친 쪽지 */
 export const ProfilePopup = styled(C.ProfilePopup)`
     ${paperCard("4px")}
+    /* 조각이 거는 relative 뒤에 다시 적는다 — 이 창은 떠 있어야 한다 */
+    position: absolute;
     border-color: ${(p) => hair(p.theme, 0.5)};
     box-shadow: 0 10px 24px ${(p) => withAlpha("#000000", p.theme.mode === "dark" ? 0.5 : 0.16)};
 

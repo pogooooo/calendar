@@ -2,6 +2,73 @@ import styled from "styled-components";
 import { SectionWrapper, SectionTitle } from "@/components/project/celestial/section";
 export { SectionWrapper, SectionTitle };
 
+/* 폰에서 간트 대신 읽는 목록 — 같은 자료를 세로로 */
+export const AgendaList = styled.div`
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 6px 10px 10px;
+`;
+
+export const AgendaEmpty = styled.div`
+    padding: 18px 4px;
+    text-align: center;
+    font-size: 0.78rem;
+    color: ${(props) => props.theme.colors.textSecondary};
+    opacity: 0.8;
+`;
+
+export const AgendaRow = styled.button<{ $status?: string }>`
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 46px;
+    padding: 8px 6px;
+    text-align: left;
+    background: none;
+    border: none;
+    border-bottom: 1px solid ${(props) => props.theme.colors.primary}26;
+    cursor: pointer;
+
+    /* 진행 중인 것에만 금빛 눈금 하나 — 목록에서 지금 할 것이 드러난다 */
+    border-left: 2px solid ${(props) => (props.$status === "in_progress" ? props.theme.colors.primary : "transparent")};
+
+    &:active { background: ${(props) => props.theme.colors.primary}12; }
+`;
+
+export const AgendaWhen = styled.span`
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 5.4em;
+    font-variant-numeric: tabular-nums;
+
+    b {
+        font-weight: 400;
+        font-size: 0.76rem;
+        color: ${(props) => props.theme.colors.primary};
+    }
+
+    em {
+        font-style: normal;
+        font-size: 0.68rem;
+        color: ${(props) => props.theme.colors.textSecondary};
+    }
+`;
+
+export const AgendaTitle = styled.span<{ $done: boolean }>`
+    flex: 1;
+    min-width: 0;
+    font-size: 0.86rem;
+    color: ${(props) => (props.$done ? props.theme.colors.textSecondary : props.theme.colors.text)};
+    text-decoration: ${(props) => (props.$done ? "line-through" : "none")};
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+`;
+
 export const TimelineLayout = styled.div`
     display: flex;
     flex: 1;

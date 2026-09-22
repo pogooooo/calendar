@@ -1,10 +1,16 @@
 "use client";
 
 import * as React from "react";
-import styled, { keyframes } from "styled-components";
 import { X, Download } from "lucide-react";
 import { useT } from "@/i18n/useT";
 import { checkForUpdate, UPDATE_FOUND_EVENT, type FoundUpdate } from "@/lib/updater";
+
+import { usePickTheme, type ThemeImpls } from "@/styles/themed";
+import * as CelestialS from "./celestial/CelestialUpdateNotice.styles";
+import * as MapleS from "./maple/MapleUpdateNotice.styles";
+
+/** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS };
 
 type Phase = "idle" | "available" | "downloading" | "ready" | "failed";
 
@@ -14,6 +20,7 @@ interface UpdateInfo {
 }
 
 export default function UpdateNotice() {
+    const S = usePickTheme(STYLES);
     const t = useT();
     const [phase, setPhase] = React.useState<Phase>("idle");
     const [info, setInfo] = React.useState<UpdateInfo | null>(null);
@@ -78,186 +85,58 @@ export default function UpdateNotice() {
     if (phase === "idle" || !info) return null;
 
     return (
-        <Panel role="status">
-            <Corner />
-            <Head>
-                <Label>{t.update.title}</Label>
+        <S.Panel role="status">
+            <S.Corner />
+            <S.Head>
+                <S.Label>{t.update.title}</S.Label>
                 {phase === "available" && (
-                    <CloseBtn onClick={() => setPhase("idle")} aria-label={t.update.later}>
+                    <S.CloseBtn onClick={() => setPhase("idle")} aria-label={t.update.later}>
                         <X size={13} />
-                    </CloseBtn>
+                    </S.CloseBtn>
                 )}
-            </Head>
+            </S.Head>
 
-            <Version>{t.update.version(info.version)}</Version>
+            <S.Version>{t.update.version(info.version)}</S.Version>
 
             {phase === "available" && (
                 <>
                     {/* latest.json 의 notes — 릴리스 스크립트가 그 판의 패치 노트를 넣는다. 한 줄에 하나씩. */}
                     {info.notes && info.notes.trim() && (
-                        <Notes>
+                        <S.Notes>
                             {info.notes.split(/\r?\n/).map(l => l.replace(/^[•\-]\s*/, "").trim()).filter(Boolean).slice(0, 6).map((line, i) => (
                                 <li key={i}>{line}</li>
                             ))}
-                        </Notes>
+                        </S.Notes>
                     )}
-                    <Desc>{t.update.description}</Desc>
-                    <Row>
-                        <GhostBtn onClick={() => setPhase("idle")}>{t.update.later}</GhostBtn>
-                        <PrimaryBtn onClick={handleInstall}>
+                    <S.Desc>{t.update.description}</S.Desc>
+                    <S.Row>
+                        <S.GhostBtn onClick={() => setPhase("idle")}>{t.update.later}</S.GhostBtn>
+                        <S.PrimaryBtn onClick={handleInstall}>
                             <Download size={13} />
                             {t.update.install}
-                        </PrimaryBtn>
-                    </Row>
+                        </S.PrimaryBtn>
+                    </S.Row>
                 </>
             )}
 
             {phase === "downloading" && (
                 <>
-                    <Desc>{t.update.downloading(percent)}</Desc>
-                    <Rail><Fill $pct={percent} /></Rail>
+                    <S.Desc>{t.update.downloading(percent)}</S.Desc>
+                    <S.Rail><S.Fill $pct={percent} /></S.Rail>
                 </>
             )}
 
-            {phase === "ready" && <Desc>{t.update.restarting}</Desc>}
+            {phase === "ready" && <S.Desc>{t.update.restarting}</S.Desc>}
 
             {phase === "failed" && (
                 <>
-                    <Desc>{t.update.failed}</Desc>
-                    <Row>
-                        <GhostBtn onClick={() => setPhase("idle")}>{t.update.later}</GhostBtn>
-                        <PrimaryBtn onClick={handleInstall}>{t.update.retry}</PrimaryBtn>
-                    </Row>
+                    <S.Desc>{t.update.failed}</S.Desc>
+                    <S.Row>
+                        <S.GhostBtn onClick={() => setPhase("idle")}>{t.update.later}</S.GhostBtn>
+                        <S.PrimaryBtn onClick={handleInstall}>{t.update.retry}</S.PrimaryBtn>
+                    </S.Row>
                 </>
             )}
-        </Panel>
+        </S.Panel>
     );
 }
-
-const rise = keyframes`
-    from { opacity: 0; transform: translateY(10px); }
-    to   { opacity: 1; transform: translateY(0); }
-`;
-
-const Panel = styled.div`
-    position: fixed;
-    right: 20px;
-    bottom: 20px;
-    z-index: 500;
-    width: 290px;
-    padding: 14px 16px 16px;
-    background-color: ${p => p.theme.colors.background};
-    border: 1px solid ${p => p.theme.colors.primary};
-    box-shadow: 0 0 18px ${p => p.theme.colors.primary}33;
-    animation: ${rise} 0.35s ease-out both;
-`;
-
-const Corner = styled.span`
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 16px;
-    height: 16px;
-    background: linear-gradient(315deg, transparent 48%, ${p => p.theme.colors.primary} 50%, transparent 52%);
-    pointer-events: none;
-`;
-
-const Head = styled.div`
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-`;
-
-const Label = styled.span`
-    font-family: ${p => p.theme.fonts.display};
-    font-size: 0.72rem;
-    letter-spacing: 2px;
-    color: ${p => p.theme.colors.textSecondary};
-`;
-
-const CloseBtn = styled.button`
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    padding: 2px;
-    display: flex;
-    color: ${p => p.theme.colors.textSecondary};
-    &:hover { color: ${p => p.theme.colors.text}; }
-`;
-
-const Version = styled.div`
-    margin-top: 6px;
-    font-family: ${p => p.theme.fonts.display};
-    font-size: 1rem;
-    letter-spacing: 1px;
-    color: ${p => p.theme.colors.text};
-`;
-
-const Notes = styled.ul`
-    margin: 8px 0 0;
-    padding-left: 16px;
-    max-height: 132px;
-    overflow-y: auto;
-    font-size: 0.76rem;
-    line-height: 1.5;
-    color: ${p => p.theme.colors.text};
-
-    li + li { margin-top: 3px; }
-    li::marker { color: ${p => p.theme.colors.primary}; }
-`;
-
-const Desc = styled.p`
-    margin: 8px 0 0;
-    font-size: 0.78rem;
-    line-height: 1.5;
-    color: ${p => p.theme.colors.textSecondary};
-`;
-
-const Row = styled.div`
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-    margin-top: 14px;
-`;
-
-const GhostBtn = styled.button`
-    padding: 6px 12px;
-    font-size: 0.75rem;
-    letter-spacing: 0.5px;
-    background: transparent;
-    border: 1px solid ${p => p.theme.colors.primary}55;
-    color: ${p => p.theme.colors.text};
-    cursor: pointer;
-    transition: border-color 0.15s;
-    &:hover { border-color: ${p => p.theme.colors.primary}; }
-`;
-
-const PrimaryBtn = styled.button`
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
-    font-size: 0.75rem;
-    letter-spacing: 0.5px;
-    background: transparent;
-    border: 1px solid ${p => p.theme.colors.primary};
-    color: ${p => p.theme.colors.text};
-    cursor: pointer;
-    transition: box-shadow 0.15s;
-    &:hover { box-shadow: 0 0 8px ${p => p.theme.colors.primary}66; }
-`;
-
-const Rail = styled.div`
-    margin-top: 12px;
-    height: 1px;
-    background: ${p => p.theme.colors.primary}33;
-`;
-
-const Fill = styled.div<{ $pct: number }>`
-    height: 100%;
-    width: ${p => p.$pct}%;
-    background: ${p => p.theme.colors.primary};
-    box-shadow: 0 0 6px ${p => p.theme.colors.primary};
-    transition: width 0.2s ease;
-`;

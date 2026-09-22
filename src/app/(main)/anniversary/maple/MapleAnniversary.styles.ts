@@ -135,6 +135,9 @@ export const CardTitle = styled(C.CardTitle)`
 `;
 
 export const CardDday = styled(C.CardDday)`
+    /* 오늘 표식: 별 → 잎 문장 */
+    &::after { content: none; }
+
     font-family: ${(p) => p.theme.fonts.numeral};
     font-size: 1rem;
     letter-spacing: 0.08em;

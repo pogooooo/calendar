@@ -421,7 +421,7 @@ for (const n of [3, 5, 7]) await mask(`J10_leaf-chip-${n}.png`, `leaves/chip-${n
 
 /* ── 안드로이드 위젯이 쓰는 것 ────────────────────────────────────────── */
 fs.mkdirSync(ANDROID, { recursive: true });
-for (const n of ["widget-paper-light", "widget-paper-dark", "crest", "bullet-filled", "bullet-outline", "check", "acorn", "today-marker", "spinner", "gauge-dial"]) {
+for (const n of ["widget-paper-light", "widget-paper-dark", "crest", "bullet-filled", "bullet-outline", "check", "acorn", "today-marker", "spinner", "gauge-dial", "ink-arrow-left", "ink-arrow-right"]) {
     fs.copyFileSync(path.join(OUT, `${n}.webp`), path.join(ANDROID, `maple_${n.replace(/-/g, "_")}.webp`));
 }
 

@@ -22,9 +22,9 @@ const leafPath = (x: number, y: number, s: number) =>
     "M " + LEAF.map(([px, py]) => `${x + (px - 6) * s} ${y + (py - 6) * s}`).join(" L ") + " Z";
 
 /** 놋쇠 해시계 위의 달. 날마다의 일정 수가 테두리 안쪽 눈금 길이, 오늘이 바늘 */
-export default function MapleMonthArch({ daysInMonth, todayIdx, monthLoad, marks }: MonthArchProps) {
+export default function MapleMonthArch({ daysInMonth, focusIdx, monthLoad, marks }: MonthArchProps) {
     const dayDeg = (i: number) => -90 + (i / Math.max(1, daysInMonth - 1)) * 180;
-    const [tipX, tipY] = polar(0.9, dayDeg(todayIdx));
+    const [tipX, tipY] = polar(0.9, dayDeg(focusIdx));
 
     return (
         <S.Dial aria-hidden="true">

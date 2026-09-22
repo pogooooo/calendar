@@ -61,6 +61,7 @@ const receivers = WIDGETS.map(w => `
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
                 <action android:name="com.cronos.todoapp.WIDGET_REFRESH" />
+                <action android:name="com.cronos.todoapp.WIDGET_SHIFT" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"

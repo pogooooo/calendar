@@ -276,5 +276,8 @@ export const Foot = styled.div`
         color: ${p => p.theme.colors.text};
 
         &:hover { box-shadow: 0 0 8px ${p => p.theme.colors.primary}55; }
+
+        /* 마침 표식 — 글은 번역표에, 표식은 갈래의 말에 */
+        &::after { content: " ✦"; color: ${p => p.theme.colors.primary}; }
     }
 `;

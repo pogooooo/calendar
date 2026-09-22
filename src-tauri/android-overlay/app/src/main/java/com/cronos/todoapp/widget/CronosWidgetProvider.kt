@@ -63,6 +63,14 @@ abstract class CronosWidgetProvider : AppWidgetProvider() {
             val manager = AppWidgetManager.getInstance(context)
             onUpdate(context, manager, manager.getAppWidgetIds(ComponentName(context, javaClass)))
         }
+        if (intent.action == ACTION_SHIFT) {
+            val id = intent.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID)
+            if (id == AppWidgetManager.INVALID_APPWIDGET_ID) return
+            val delta = intent.getIntExtra(EXTRA_DELTA, 0)
+            WidgetPrefs.setOffset(context, id, if (delta == 0) 0 else WidgetPrefs.offset(context, id) + delta)
+            val manager = AppWidgetManager.getInstance(context)
+            manager.updateAppWidget(id, build(context, manager, id, Snapshot.load(context)))
+        }
     }
 
     /** 위젯 하나를 그린다: 설정(투명도·벌) + 크기 → 그림 + 누르는 칸 */
@@ -70,12 +78,24 @@ abstract class CronosWidgetProvider : AppWidgetProvider() {
         val (wDp, hDp) = sizeDp(manager, id)
         val alpha = WidgetPrefs.alpha(context, id)
         val palette = Palette.resolve(snap?.theme, WidgetPrefs.mode(context, id))
-        val painted = WidgetPainter(context, palette, alpha, snap).paint(kind, wDp, hDp)
+        // 옮겨 볼 수 있는 것은 한 때를 보여 주는 위젯만 — "지금·다음" 처럼 시각이 중요한 것은 늘 지금이다.
+        // 한 칸의 크기는 화가가 종류에 맞춰 잡는다 (오늘=하루, 주간=한 주, 월간=한 달)
+        val steps = if (kind in SHIFT_KINDS) WidgetPrefs.offset(context, id) else 0
+        val painted = WidgetPainter(context, palette, alpha, snap, steps = steps).paint(kind, wDp, hDp)
 
         val views = RemoteViews(context.packageName, R.layout.widget_canvas)
         views.setImageViewBitmap(R.id.widget_image, painted.bitmap)
         views.setContentDescription(R.id.widget_image, context.getString(labelRes()))
         views.setOnClickPendingIntent(R.id.widget_root, link(context, id, 0, rootLink(snap)))
+
+        // 날짜 넘김 — 왼쪽은 뒤로, 오른쪽은 앞으로. 옮긴 채로 두어도 날이 바뀌면 오늘로 돌아온다 (WidgetPrefs.offset)
+        val canShift = kind in SHIFT_KINDS
+        views.setViewVisibility(R.id.ov_prev, if (canShift) View.VISIBLE else View.GONE)
+        views.setViewVisibility(R.id.ov_next, if (canShift) View.VISIBLE else View.GONE)
+        if (canShift) {
+            views.setOnClickPendingIntent(R.id.ov_prev, shift(context, id, -1))
+            views.setOnClickPendingIntent(R.id.ov_next, shift(context, id, 1))
+        }
 
         views.setViewVisibility(R.id.ov_rows, if (painted.overlay == WidgetPainter.Overlay.ROWS) View.VISIBLE else View.GONE)
         views.setViewVisibility(R.id.ov_week, if (painted.overlay == WidgetPainter.Overlay.WEEK) View.VISIBLE else View.GONE)
@@ -123,6 +143,17 @@ abstract class CronosWidgetProvider : AppWidgetProvider() {
         val w = o.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0)
         val h = o.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 0)
         return (if (w > 0) w else defaultSizeDp.first).coerceIn(40, 800) to (if (h > 0) h else defaultSizeDp.second).coerceIn(40, 800)
+    }
+
+    /** 날짜 넘김 단추 하나. requestCode 는 링크 자리(widgetId*64+slot)의 위쪽을 쓴다 */
+    private fun shift(context: Context, widgetId: Int, delta: Int): PendingIntent {
+        val intent = Intent(context, javaClass).setAction(ACTION_SHIFT)
+            .putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId)
+            .putExtra(EXTRA_DELTA, delta)
+        return PendingIntent.getBroadcast(
+            context, widgetId * 64 + (if (delta < 0) 58 else 59), intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
     }
 
     /**
@@ -181,6 +212,10 @@ abstract class CronosWidgetProvider : AppWidgetProvider() {
 
     companion object {
         const val ACTION_REFRESH = "com.cronos.todoapp.WIDGET_REFRESH"
+        const val ACTION_SHIFT = "com.cronos.todoapp.WIDGET_SHIFT"
+        const val EXTRA_DELTA = "delta"
+        /** 때를 옮겨 볼 수 있는 종류 — 오늘(하루씩)·주간(한 주씩)·월간(한 달씩) */
+        val SHIFT_KINDS = setOf("today", "week", "month")
         const val SNAPSHOT_FILE = "widget-snapshot.json"
         /** 경계 알람의 requestCode 자리. 링크 PendingIntent(widgetId*64+slot) 와 겹치지 않게 띄운다 */
         private const val BOUNDARY_REQUEST = 0x5A000000

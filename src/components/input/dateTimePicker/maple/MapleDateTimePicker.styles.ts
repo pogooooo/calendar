@@ -22,6 +22,8 @@ export const Trigger = styled(C.Trigger)`
 
 export const Popover = styled(C.Popover)`
     ${paperCard("4px")}
+    /* 조각이 거는 relative 뒤에 다시 적는다 — 이 창은 떠 있어야 한다 */
+    position: fixed;
     border-radius: 2px;
     border-color: ${(p) => hair(p.theme, 0.5)};
     box-shadow: 0 12px 30px ${(p) => withAlpha("#000000", p.theme.mode === "dark" ? 0.5 : 0.18)};
@@ -32,7 +34,7 @@ export const MonthNav = styled(C.MonthNav)`
     font-family: ${(p) => p.theme.fonts.display};
 
     button {
-        ${stampButton("ghost")}
+    ${stampButton("ghost")}
         color: ${(p) => p.theme.colors.text};
     }
 `;
@@ -107,5 +109,6 @@ export const Foot = styled(C.Foot)`
     border-top-color: ${(p) => hair(p.theme, 0.3)};
 
     button { ${stampButton("default")} font-size: 0.74rem; }
-    .ok { ${stampButton("primary")} font-size: 0.74rem; }
+    /* 마침 표식은 도장 자체가 한다 — 별은 뗀다 */
+    .ok { ${stampButton("primary")} font-size: 0.74rem; &::after { content: none; } }
 `;

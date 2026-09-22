@@ -6,7 +6,7 @@
  */
 import styled, { css } from "styled-components";
 import * as C from "../celestial/CelestialSettings.layout";
-import { hair, leafBullet, paperCard } from "@/styles/maple/ink";
+import { crest, hair, leafBullet, paperCard } from "@/styles/maple/ink";
 import { withAlpha } from "@/styles/color";
 
 export * from "../celestial/CelestialSettings.layout";
@@ -181,3 +181,17 @@ export const NoteInk = styled(Note)`
     border-color: ${(p) => (p.$current ? p.theme.colors.primary : hair(p.theme, 0.3))};
 `;
 export { NoteInk as Note };
+
+/** 글꼴 미리보기 끝의 표식: 별 → 잎 문장 */
+export const FontPreview = styled(C.FontPreview)`
+    &::after {
+        content: "";
+        display: inline-block;
+        margin-left: 6px;
+        width: 11px;
+        height: 11px;
+        vertical-align: -1px;
+        ${crest("11px")}
+        background-color: ${(p) => p.theme.colors.primary};
+    }
+`;
