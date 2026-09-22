@@ -59,7 +59,8 @@
 Maple 의 styles 는 Celestial 것을 `export *` 로 받고 다른 것만 `styled(C.Xxx)` 로 덮어쓴다. 갈래마다 아예 다른 그림(로그인 패널·사이드바 옆선·홈 게이지·달력 칸 꾸밈·챌린지 스티커·설정 바탕·화면 전환·빈 화면 선화)은 `usePickTheme({ celestial, maple })` 로 구현을 통째로 고른다.
 `Record<ThemeFamily, …>` 라 새 갈래를 `THEME_FAMILIES` 에 더하면 `tsc` 가 아직 안 만든 자리를 전부 짚어 준다.
 안드로이드 홈 위젯도 같다: 화가(`WidgetPainter`)는 하나, 갈래별 붓(`WidgetStyle`)이 글꼴·표식·바탕을 그린다.
-빌드 앞에서 두 가지를 확인한다 — 위젯 종류가 TS · Rust · 폴더 세 곳에서 같은지(`scripts/check-widget-kinds.mjs`), 테마를 타는 화면이 모양을 `*.styles.ts` 에 두었는지(`scripts/check-theme-styles.mjs`).
+공용 화면(달력 틀·데스크톱 위젯·로그인/가입/비밀번호·내려받기 소개·알림 쪽지·제목 줄)도 같은 나눔을 따른다 — `celestial/`·`maple/` 의 *.styles.ts 두 벌에 화면은 하나.
+빌드 앞에서 네 가지를 확인한다 — 위젯 종류가 TS · Rust · 폴더 세 곳에서 같은지(`scripts/check-widget-kinds.mjs`), 테마를 타는 화면이 모양을 `*.styles.ts` 에 두었는지, 갈래 폴더 밖에서 `theme.family` 로 모양을 가르지 않는지(`scripts/check-theme-styles.mjs`), Maple 의 카드 조각이 떠 있어야 할 것(팝오버·메뉴)의 자리 지정을 덮지 않는지(`scripts/check-maple-position.mjs`).
 조작부(단추·입력칸·탭·카드·창 서식)의 갈래별 말은 한 파일에 모아 둔다 — Maple 은 `src/styles/maple/ink.ts`(`stampButton`·`inkInput`·`paperTab`·`paperCard`…), 화면의 styles 가 그 mixin 을 붙여 쓴다. 그래서 테마를 바꾸면 조작부 하나하나가 다른 물건이 된다.
 Maple 의 그림은 `node scripts/maple-assets.mjs` 로 원본(`design/themes/maple/raw/`, git 밖)에서 굽는다 — 발주서·배치는 `design/themes/maple/ASSETS.md`, 2차 주문서는 `ASSETS-2.md`.
 
