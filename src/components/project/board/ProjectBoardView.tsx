@@ -5,6 +5,7 @@ import { useT } from "@/i18n/useT";
 import { ProjectBoardProps } from "./ProjectBoard";
 import { ProjectTaskType } from '@/store/useProjectStore';
 import useIsMobile from "@/hooks/useIsMobile";
+import useSwipe from "@/hooks/useSwipe";
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialProjectBoard.styles";
 import * as MapleS from "./maple/MapleProjectBoard.styles";
@@ -37,6 +38,14 @@ const ProjectBoardView = React.forwardRef<HTMLDivElement, ProjectBoardProps>(({
 
     const shown = isMobile ? boardColumns.filter(col => col.s === picked) : boardColumns;
 
+    /* 이름표를 누르는 것 말고, 카드 위를 좌우로 쓸어도 옆 칸으로 간다 (달력·홈과 같은 손짓) */
+    const step = (delta: number) => {
+        const i = boardColumns.findIndex(c => c.s === picked);
+        const next = boardColumns[Math.min(boardColumns.length - 1, Math.max(0, i + delta))];
+        if (next) setPicked(next.s);
+    };
+    const swipe = useSwipe(() => step(1), () => step(-1));
+
     return (
         <S.SectionWrapper ref={ref} style={{ flex }} $mobileHeight="420px">
             <S.SectionTitle>{tr.board}</S.SectionTitle>
@@ -58,7 +67,7 @@ const ProjectBoardView = React.forwardRef<HTMLDivElement, ProjectBoardProps>(({
                 </S.ColumnPicker>
             )}
 
-            <S.BoardGrid>
+            <S.BoardGrid {...(isMobile ? swipe : {})}>
                 {shown.map(col => (
                     <S.BoardColumn key={col.s}>
                         <S.ColumnHeader>

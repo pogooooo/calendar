@@ -34,6 +34,8 @@ const HOUR_TICKS = Array.from({ length: 24 }, (_, i) => i);
 const MIN_TICKS = Array.from({ length: 12 }, (_, i) => i);
 const HOUR_LABELS = HOUR_TICKS.filter(i => i % 2 === 0);
 const MIN_LABELS = [0, 15, 30, 45];
+/** 다이얼 밑에서 한 번에 맞추는 분 */
+const QUICK_MINUTES = [0, 10, 15, 20, 30, 40, 45, 50];
 
 /** 바깥 고리(시)와 안쪽 고리(분)의 경계 — viewBox 단위. 안쪽 테두리 27, 바깥 46 의 사이 */
 const RING_SPLIT = 31;
@@ -51,8 +53,11 @@ const MINUTES_PER_TURN = { outer: 360, inner: 60 } as const;
  * 짚는 순간 ±50분이 흔들렸다. 그림(로마 숫자 고리·두 바늘)은 그대로 두고 손맛만 바꿨다.
  * 다이얼 밑의 단추(시 ±1 · 분 ±5)는 마지막 한 칸을 맞추는 용도다. 휠(5분)은 그대로.
  *
- * 데스크톱에서는 손가락 대신 자판이 있다 — 다이얼 위의 칸에 "14" "35" 를 바로 적을 수 있고,
- * 칸 안에서 ↑↓ 는 시·분을 한 칸씩 올린다. 다이얼을 마우스로 돌리는 것보다 이쪽이 빠르다.
+ * 데스크톱에서는 손가락 대신 자판과 마우스 포인터가 있다. 그래서 세 가지 길을 함께 둔다:
+ *   - 적기: 다이얼 위 칸에 "14" "35" 를 바로 친다. 칸 안에서 ↑↓ 는 한 칸씩, 옆의 작은 화살표도 같은 일을 한다
+ *   - 짚기: 문자판의 로마 숫자를 누르면 그 시로 간다 (마우스는 정확하니까 짚어도 튀지 않는다)
+ *   - 자주 쓰는 분(00·15·30·45)은 한 번 누르면 맞는다
+ * 손가락은 여전히 다이얼을 돌린다.
  */
 export default function TimeDial({ hour, minute, onChange, step = 5 }: Props) {
     const S = usePickTheme(STYLES);
@@ -145,6 +150,10 @@ export default function TimeDial({ hour, minute, onChange, step = 5 }: Props) {
     };
 
     const bump = (minutes: number) => emitTotal(live.current.total + minutes);
+    /** 문자판의 숫자를 짚었을 때 — 분은 그대로 두고 시만 옮긴다 */
+    const pickHour = (h: number) => emitTotal(h * 60 + (live.current.total % 60));
+    /** 자주 쓰는 분 — 시는 그대로 */
+    const pickMinute = (m: number) => emitTotal(Math.floor(live.current.total / 60) * 60 + m);
 
     /* ── 적어 넣기 ────────────────────────────────────────────────────
        적는 동안에는 칸의 글자를 그대로 둔다("0" 을 치자마자 00 으로 튀지 않게).
@@ -181,27 +190,41 @@ export default function TimeDial({ hour, minute, onChange, step = 5 }: Props) {
     return (
         <S.Wrap>
             <S.Entry>
-                <input
-                    value={shown("h")}
-                    onChange={(e) => onType("h", e.target.value)}
-                    onKeyDown={(e) => onTypeKey("h", e)}
-                    onFocus={(e) => e.currentTarget.select()}
-                    onBlur={() => setTyping(null)}
-                    inputMode="numeric"
-                    maxLength={2}
-                    aria-label={f.hourStep}
-                />
+                <S.Field>
+                    <input
+                        value={shown("h")}
+                        onChange={(e) => onType("h", e.target.value)}
+                        onKeyDown={(e) => onTypeKey("h", e)}
+                        onFocus={(e) => e.currentTarget.select()}
+                        onBlur={() => setTyping(null)}
+                        inputMode="numeric"
+                        maxLength={2}
+                        aria-label={f.hourStep}
+                    />
+                    <span className="spin">
+                        <button type="button" tabIndex={-1} aria-label={f.stepUp(f.hourStep)} onClick={() => bump(60)}>▲</button>
+                        <button type="button" tabIndex={-1} aria-label={f.stepDown(f.hourStep)} onClick={() => bump(-60)}>▼</button>
+                    </span>
+                    <em>{f.hourStep}</em>
+                </S.Field>
                 <b>:</b>
-                <input
-                    value={shown("m")}
-                    onChange={(e) => onType("m", e.target.value)}
-                    onKeyDown={(e) => onTypeKey("m", e)}
-                    onFocus={(e) => e.currentTarget.select()}
-                    onBlur={() => setTyping(null)}
-                    inputMode="numeric"
-                    maxLength={2}
-                    aria-label={f.minuteStep}
-                />
+                <S.Field>
+                    <input
+                        value={shown("m")}
+                        onChange={(e) => onType("m", e.target.value)}
+                        onKeyDown={(e) => onTypeKey("m", e)}
+                        onFocus={(e) => e.currentTarget.select()}
+                        onBlur={() => setTyping(null)}
+                        inputMode="numeric"
+                        maxLength={2}
+                        aria-label={f.minuteStep}
+                    />
+                    <span className="spin">
+                        <button type="button" tabIndex={-1} aria-label={f.stepUp(f.minuteStep)} onClick={() => bump(step)}>▲</button>
+                        <button type="button" tabIndex={-1} aria-label={f.stepDown(f.minuteStep)} onClick={() => bump(-step)}>▼</button>
+                    </span>
+                    <em>{f.minuteStep}</em>
+                </S.Field>
             </S.Entry>
             <S.Dial
                 ref={svgRef}
@@ -243,11 +266,17 @@ export default function TimeDial({ hour, minute, onChange, step = 5 }: Props) {
                     <rect x="47.6" y="4.1" width="4.8" height="4.8" transform="rotate(45 50 6.5)" className="tip" />
                 </g>
 
+                {/* 숫자를 짚으면 그 시로. 손가락으로 돌리던 사람에게는 그대로 돌아가는 다이얼이다 */}
                 {HOUR_LABELS.map(i => {
                     const [x, y] = polar(41.5, i * 15);
                     const on = hour === i;
                     return (
-                        <text key={`t${i}`} x={x} y={y + 1.8} textAnchor="middle" className={on ? "num on" : "num"}>
+                        <text
+                            key={`t${i}`} x={x} y={y + 1.8} textAnchor="middle"
+                            className={on ? "num on" : "num"}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            onClick={() => pickHour(i)}
+                        >
                             {ROMAN[i]}
                         </text>
                     );
@@ -260,19 +289,19 @@ export default function TimeDial({ hour, minute, onChange, step = 5 }: Props) {
                 <rect x="47.4" y="47.4" width="5.2" height="5.2" transform="rotate(45 50 50)" className="hub" />
             </S.Dial>
 
-            {/* 마지막 한 칸을 맞추는 단추. 시는 한 시간, 분은 한 칸(step) */}
-            <S.Steps>
-                <S.StepGroup role="group" aria-label={f.hourStep}>
-                    <button type="button" onClick={() => bump(-60)} aria-label={f.stepDown(f.hourStep)}>−</button>
-                    <span>{f.hourStep}</span>
-                    <button type="button" onClick={() => bump(60)} aria-label={f.stepUp(f.hourStep)}>+</button>
-                </S.StepGroup>
-                <S.StepGroup role="group" aria-label={f.minuteStep}>
-                    <button type="button" onClick={() => bump(-step)} aria-label={f.stepDown(f.minuteStep)}>−</button>
-                    <span>{f.minuteStep}</span>
-                    <button type="button" onClick={() => bump(step)} aria-label={f.stepUp(f.minuteStep)}>+</button>
-                </S.StepGroup>
-            </S.Steps>
+            {/* 자주 쓰는 분 — 한 번에 맞춘다. 그 사이 값은 칸에 적거나 다이얼을 돌린다 */}
+            <S.Quick role="group" aria-label={f.minuteStep}>
+                {QUICK_MINUTES.map(v => (
+                    <button
+                        key={v} type="button"
+                        data-on={minute === v ? "1" : "0"}
+                        onClick={() => pickMinute(v)}
+                        aria-label={`${f.minuteStep} ${pad(v)}`}
+                    >
+                        {pad(v)}
+                    </button>
+                ))}
+            </S.Quick>
         </S.Wrap>
     );
 }

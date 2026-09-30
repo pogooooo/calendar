@@ -14,40 +14,96 @@ export const Wrap = styled.div`
 /* 다이얼 위의 적는 칸 — 자판이 있는 곳에서는 이쪽이 빠르다 */
 export const Entry = styled.div`
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
-    gap: 4px;
-    margin-bottom: 6px;
+    gap: 8px;
+    margin-bottom: 8px;
+
+    b {
+        margin-top: 6px;
+        font-family: ${p => p.theme.fonts.display};
+        font-size: 1.2rem;
+        font-weight: 400;
+        color: ${p => p.theme.colors.primary};
+        opacity: 0.6;
+    }
+`;
+
+/** 시(또는 분) 한 칸: 큰 숫자 + 옆의 작은 오르내림 + 밑의 단위 */
+export const Field = styled.label`
+    position: relative;
+    display: grid;
+    grid-template-columns: auto 12px;
+    grid-template-rows: auto auto;
+    align-items: center;
+    column-gap: 4px;
 
     input {
-        width: 46px;
-        padding: 3px 0;
+        grid-column: 1;
+        grid-row: 1;
+        width: 58px;
+        padding: 2px 0 4px;
         text-align: center;
         font-family: ${p => p.theme.fonts.display};
-        font-size: 1.05rem;
-        letter-spacing: 0.08em;
+        font-size: 1.5rem;
+        letter-spacing: 0.06em;
         font-variant-numeric: tabular-nums;
         color: ${p => p.theme.colors.text};
         background: none;
         border: none;
         border-bottom: 1px solid ${p => p.theme.colors.primary}55;
         transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        cursor: text;
 
         &:hover { border-bottom-color: ${p => p.theme.colors.primary}99; }
 
         &:focus {
             outline: none;
             border-bottom-color: ${p => p.theme.colors.primary};
-            box-shadow: 0 1px 6px -3px ${p => p.theme.colors.primary};
+            box-shadow: 0 1px 8px -4px ${p => p.theme.colors.primary};
         }
     }
 
-    b {
+    /* 오르내림 화살 — 마우스가 있는 곳에서만 자리를 차지한다 */
+    .spin {
+        grid-column: 2;
+        grid-row: 1;
+        display: none;
+        flex-direction: column;
+        gap: 1px;
+    }
+
+    .spin button {
+        width: 12px;
+        height: 11px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 7px;
+        line-height: 1;
+        color: ${p => p.theme.colors.textSecondary};
+        background: none;
+        border: none;
+        cursor: pointer;
+
+        &:hover { color: ${p => p.theme.colors.primary}; }
+    }
+
+    em {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        margin-top: 3px;
+        font-style: normal;
+        text-align: center;
         font-family: ${p => p.theme.fonts.display};
-        font-size: 1rem;
-        font-weight: 400;
-        color: ${p => p.theme.colors.primary};
-        opacity: 0.7;
+        font-size: 0.58rem;
+        letter-spacing: 0.2em;
+        color: ${p => p.theme.colors.textSecondary};
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+        .spin { display: flex; }
     }
 `;
 
@@ -89,6 +145,10 @@ export const Dial = styled.svg`
         stroke-width: 0.7;
     }
 
+    /* 숫자를 짚어 시를 고른다 */
+    .num { cursor: pointer; }
+    .num:hover { fill: ${p => p.theme.colors.primary}; }
+
     .num {
         font-family: ${p => p.theme.fonts.display};
         font-size: 5px;
@@ -123,6 +183,39 @@ export const Dial = styled.svg`
 
     @media (prefers-reduced-motion: reduce) {
         .hand, .mhand { transition: none; }
+    }
+`;
+
+/** 자주 쓰는 분 — 한 번 눌러 맞춘다 */
+export const Quick = styled.div`
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 4px;
+    margin-top: 8px;
+
+    button {
+        padding: 5px 0;
+        font-family: ${p => p.theme.fonts.display};
+        font-size: 0.68rem;
+        font-variant-numeric: tabular-nums;
+        color: ${p => p.theme.colors.textSecondary};
+        background: none;
+        border: 1px solid ${p => p.theme.colors.primary}33;
+        cursor: pointer;
+        transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+
+        &:hover { border-color: ${p => p.theme.colors.primary}; color: ${p => p.theme.colors.primary}; }
+
+        &[data-on="1"] {
+            color: ${p => p.theme.colors.primary};
+            border-color: ${p => p.theme.colors.primary};
+            background-color: ${p => p.theme.colors.primary}1A;
+        }
+    }
+
+    ${MOBILE} {
+        grid-template-columns: repeat(4, 1fr);
+        button { padding: 9px 0; font-size: 0.74rem; }
     }
 `;
 

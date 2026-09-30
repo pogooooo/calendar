@@ -12,21 +12,43 @@ export * from "../celestial/CelestialTimeDial.styles";
 
 /** 적는 칸: 먹선 아래, 숫자는 Cormorant */
 export const Entry = styled(C.Entry)`
+    b {
+        font-family: ${(p) => p.theme.fonts.numeral};
+        font-size: 1.5rem;
+        color: ${(p) => p.theme.colors.text};
+        opacity: 0.5;
+    }
+`;
+
+export const Field = styled(C.Field)`
     input {
         font-family: ${(p) => p.theme.fonts.numeral};
-        font-size: 1.3rem;
-        letter-spacing: 0.04em;
+        font-size: 1.85rem;
+        letter-spacing: 0.02em;
         border-bottom-color: ${(p) => hair(p.theme, 0.5)};
 
         &:hover { border-bottom-color: ${(p) => hair(p.theme, 0.8)}; }
         &:focus { border-bottom-color: ${(p) => p.theme.colors.primary}; box-shadow: none; }
     }
 
-    b {
+    .spin button { color: ${(p) => hair(p.theme, 0.6)}; &:hover { color: ${(p) => p.theme.colors.primary}; } }
+
+    em { letter-spacing: 0.14em; }
+`;
+
+/** 자주 쓰는 분: 작은 도장들 */
+export const Quick = styled(C.Quick)`
+    button {
+        ${stampButton("default")}
         font-family: ${(p) => p.theme.fonts.numeral};
-        font-size: 1.2rem;
-        color: ${(p) => p.theme.colors.text};
-        opacity: 0.55;
+        font-size: 0.82rem;
+        padding: 4px 0;
+
+        &[data-on="1"] {
+            ${stampButton("primary")}
+            font-family: ${(p) => p.theme.fonts.numeral};
+            font-size: 0.82rem;
+        }
     }
 `;
 

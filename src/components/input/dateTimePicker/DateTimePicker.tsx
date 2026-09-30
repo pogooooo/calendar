@@ -22,6 +22,8 @@ interface CelestialDateTimePickerProps {
         edge: "start" | "end";
         onRangeChange: (start: string, end: string) => void;
     };
+    /** 좁은 자리(홈의 날짜 줄)에서는 해를 빼고 "9. 30 (수)" 로만 적는다 */
+    short?: boolean;
 }
 
 
@@ -50,7 +52,7 @@ function buildGrid(view: Date) {
     });
 }
 
-export default function DateTimePicker({ value, onChange, mode = "datetime", range }: CelestialDateTimePickerProps) {
+export default function DateTimePicker({ value, onChange, mode = "datetime", range, short = false }: CelestialDateTimePickerProps) {
     const S = usePickTheme(STYLES);
     const f = useT().form;
     const WEEKDAYS = f.weekdays;
@@ -215,7 +217,8 @@ export default function DateTimePicker({ value, onChange, mode = "datetime", ran
     const todayKey = toKey(new Date());
     const selectedKey = toKey(selected);
 
-    const label = `${selected.getFullYear()}. ${selected.getMonth() + 1}. ${selected.getDate()} (${WEEKDAYS[selected.getDay()]})`
+    const label = (short ? "" : `${selected.getFullYear()}. `)
+        + `${selected.getMonth() + 1}. ${selected.getDate()} (${WEEKDAYS[selected.getDay()]})`
         + (mode === "datetime" ? ` · ${pad(hour)}:${pad(minute)}` : "");
 
     return (

@@ -163,6 +163,33 @@ export const NavButton = styled.button`
     &:focus-visible { outline: 1px solid ${p => p.theme.colors.primary}; outline-offset: 3px; }
 `;
 
+/** 날짜 줄 가운데의 "달력에서 고르기" — 고르개의 단추를 이 줄에 맞춰 입힌다 */
+export const DayPick = styled.div`
+    min-width: 11.5em;
+    display: flex;
+    justify-content: center;
+
+    button {
+        width: 100%;
+        justify-content: center;
+        gap: 8px;
+        padding: 5px 10px;
+        font-family: ${p => p.theme.fonts.display};
+        font-size: 0.86rem;
+        letter-spacing: 0.06em;
+        border-color: ${p => p.theme.colors.primary}44;
+        background: none;
+    }
+
+    button:hover { border-color: ${p => p.theme.colors.primary}; }
+
+    @media (max-width: 768px) {
+        min-width: 0;
+        flex: 1;
+        button { font-size: 0.8rem; padding: 7px 8px; }
+    }
+`;
+
 export const DayLabel = styled.div`
     display: inline-flex;
     align-items: baseline;

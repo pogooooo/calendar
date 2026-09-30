@@ -4,10 +4,52 @@
  */
 import styled from "styled-components";
 import * as C from "../celestial/CelestialProjectBoard.styles";
-import { hair, paperTab, tape } from "@/styles/maple/ink";
+import { hair, paperTab, stampButton, tape } from "@/styles/maple/ink";
 import { withAlpha } from "@/styles/color";
+import { MOBILE } from "@/styles/breakpoints";
 
 export * from "../celestial/CelestialProjectBoard.styles";
+
+/* ── 짜임부터 다르다 ─────────────────────────────────────────────
+   Celestial 은 선으로 나눈 세 칸이다. Maple 은 표본 서랍 셋이라, 칸마다 종이 한 장을 두고
+   머리에 이름표를 붙인다. 칸 사이는 선이 아니라 여백으로 벌린다. */
+
+export const BoardGrid = styled(C.BoardGrid)`
+    gap: 10px;
+    padding: 10px;
+`;
+
+/** 서랍 한 칸 */
+export const BoardColumn = styled(C.BoardColumn)`
+    border-right: none;
+    border: 1px solid ${(p) => hair(p.theme, 0.28)};
+    border-radius: 2px;
+    background-color: ${(p) => withAlpha(p.theme.colors.surface, p.theme.mode === "dark" ? 0.5 : 0.6)};
+`;
+
+/** 서랍의 이름표: 종이 띠에 먹 하이라인 */
+export const ColumnHeader = styled(C.ColumnHeader)`
+    border-bottom: 1px solid ${(p) => hair(p.theme, 0.28)};
+    background-color: ${(p) => withAlpha(p.theme.colors.accent, p.theme.mode === "dark" ? 0.12 : 0.22)};
+
+    /* 폰에서는 이름표가 위의 탭이 대신한다 — 띠까지 두면 빈 칸만 넓어진다 */
+    ${MOBILE} {
+        background-color: transparent;
+        border-bottom: none;
+    }
+`;
+
+export const ColumnTitle = styled(C.ColumnTitle)`
+    font-family: ${(p) => p.theme.fonts.display};
+    letter-spacing: 0.08em;
+    color: ${(p) => p.theme.colors.text};
+`;
+
+export const AddTaskButton = styled(C.AddTaskButton)`
+    ${stampButton("default")}
+    padding: 3px 10px;
+    font-size: 0.72rem;
+`;
 
 /** 폰의 칸 고르개: 종이 탭 — 고른 것 밑에 붓 획 */
 export const ColumnPick = styled(C.ColumnPick)`
@@ -24,18 +66,6 @@ export const ColumnEmpty = styled(C.ColumnEmpty)`
     font-family: ${(p) => p.theme.fonts.display};
 `;
 export { SectionWrapper, SectionTitle } from "@/components/project/maple/section";
-
-export const BoardColumn = styled(C.BoardColumn)`
-    border-color: ${(p) => hair(p.theme, 0.3)};
-`;
-
-export const ColumnHeader = styled(C.ColumnHeader)`
-    border-color: ${(p) => hair(p.theme, 0.3)};
-`;
-
-export const AddTaskButton = styled(C.AddTaskButton)`
-    border-color: ${(p) => hair(p.theme, 0.4)};
-`;
 
 /** 작업 카드: 종이 쪽지를 마스킹테이프로 붙여 둔 것 */
 export const CardBox = styled(C.CardBox)`
@@ -60,11 +90,6 @@ export const CardBox = styled(C.CardBox)`
     }
 
     &:nth-child(even)::before { transform: rotate(2.5deg); }
-`;
-
-export const ColumnTitle = styled(C.ColumnTitle)`
-    font-family: ${(p) => p.theme.fonts.display};
-    letter-spacing: 0.06em;
 `;
 
 export const CardMoveButton = styled(C.CardMoveButton)`

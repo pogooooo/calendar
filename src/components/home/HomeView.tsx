@@ -13,6 +13,9 @@ import { useT } from "@/i18n/useT";
 import { localDateKey, utcDayKey } from "@/lib/dateKey";
 import { Plus, SlidersHorizontal } from "lucide-react";
 import Arrow from "@/assets/Arrow";
+import DateTimePicker from "@/components/input/dateTimePicker/DateTimePicker";
+import useSwipe from "@/hooks/useSwipe";
+import { localDateKey as toKey } from "@/lib/dateKey";
 import ChallengeModal, { type ChallengeData } from "@/components/modal/challengeModal/ChallengeModal";
 import TodoModal from "@/components/modal/todoModal/TodoModal";
 import { useDialog } from "@/components/dialog/DialogProvider";
@@ -63,6 +66,24 @@ export default function HomeView() {
             return d.setHours(0, 0, 0, 0);
         });
     }, []);
+
+    /* 폰에서는 목록을 좌우로 쓸어 하루씩 넘긴다 (달력 화면과 같은 손짓) */
+    const daySwipe = useSwipe(() => shiftDay(1), () => shiftDay(-1));
+
+    /* 데스크톱에서는 ←·→ 로 하루씩, T 로 오늘. 글을 적는 중에는 자판을 뺏지 않는다 */
+    React.useEffect(() => {
+        const onKey = (e: KeyboardEvent) => {
+            const el = document.activeElement;
+            const typing = el instanceof HTMLElement
+                && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable);
+            if (typing || e.metaKey || e.ctrlKey || e.altKey) return;
+            if (e.key === "ArrowLeft") { e.preventDefault(); shiftDay(-1); }
+            else if (e.key === "ArrowRight") { e.preventDefault(); shiftDay(1); }
+            else if (e.key === "t" || e.key === "T") setFocusTime(new Date().setHours(0, 0, 0, 0));
+        };
+        window.addEventListener("keydown", onKey);
+        return () => window.removeEventListener("keydown", onKey);
+    }, [shiftDay]);
 
     const year = focus.getFullYear();
     const month = focus.getMonth();
@@ -278,15 +299,23 @@ export default function HomeView() {
                         </S.ArchFoot>
                     </S.ArchWrap>
 
-                    {/* 보는 날 옮기기 — 하루씩, 그리고 오늘로 돌아오기 */}
+                    {/* 보는 날 옮기기 — 화살로 하루씩, 가운데를 누르면 달력에서 고르고, 오늘로 돌아온다.
+                        폰에서는 아래 목록을 쓸어도 넘어가고, 데스크톱에서는 ←·→ 로도 넘어간다 */}
                     <S.DayNav>
                         <S.NavButton type="button" onClick={() => shiftDay(-1)} aria-label={t.calendar.prevDay}>
                             <Arrow width={34} height={13} isRight={false} />
                         </S.NavButton>
-                        <S.DayLabel>
-                            <b>{t.calendar.dayLabelShort(month + 1, focus.getDate())}</b>
-                            <em>{t.calendar.days[focus.getDay()]}</em>
-                        </S.DayLabel>
+                        <S.DayPick>
+                            <DateTimePicker
+                                mode="date"
+                                short
+                                value={toKey(focus)}
+                                onChange={(v) => {
+                                    const m = v.match(/^(\d{4})-(\d{2})-(\d{2})/);
+                                    if (m) setFocusTime(new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])).setHours(0, 0, 0, 0));
+                                }}
+                            />
+                        </S.DayPick>
                         <S.NavButton type="button" onClick={() => shiftDay(1)} aria-label={t.calendar.nextDay}>
                             <Arrow width={34} height={13} isRight />
                         </S.NavButton>
@@ -295,7 +324,7 @@ export default function HomeView() {
                         </S.TodayButton>
                     </S.DayNav>
 
-                    <S.Lists>
+                    <S.Lists {...daySwipe}>
                         <S.ListCol>
                             <S.SectionHead>
                                 <i className="hd" />
