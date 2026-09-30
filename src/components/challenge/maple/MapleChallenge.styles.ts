@@ -105,8 +105,48 @@ export const DetailArea = styled(C.DetailArea)`
     }
 `;
 
-/** 스티커 칸을 조금 키운다 — 잎 스티커는 톱니 테두리까지 보여야 한다 */
+/**
+ * 스티커 판의 짜임이 다르다 — Celestial 은 스티커를 줄줄이 흘려 붙이지만,
+ * Maple 은 표본 대지다. 칸이 자로 잰 격자로 서고, 빈 자리에도 네모난 자국이 남으며,
+ * 칸마다 아래에 번호가 붙는다 (표본 번호).
+ */
+export const StickerGrid = styled(C.StickerGrid)`
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(58px, 1fr));
+    gap: 22px 10px;
+    counter-reset: specimen;
+    padding: 4px 2px 6px;
+`;
+
 export const StickerSlot = styled(C.StickerSlot)`
-    width: 52px;
-    height: 52px;
+    width: 100%;
+    max-width: 62px;
+    margin: 0 auto;
+    height: 56px;
+    border-radius: 0;
+    counter-increment: specimen;
+
+    /* 대지에 그어 둔 자리 — 표본을 붙일 네모 */
+    &::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border: 1px dashed ${(p) => hair(p.theme, 0.22)};
+        pointer-events: none;
+    }
+
+    /* 표본 번호 */
+    &::after {
+        content: counter(specimen);
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: -15px;
+        text-align: center;
+        font-family: ${(p) => p.theme.fonts.numeral};
+        font-size: 0.7rem;
+        line-height: 1;
+        color: ${(p) => p.theme.colors.textSecondary};
+        opacity: 0.6;
+    }
 `;

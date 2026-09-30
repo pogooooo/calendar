@@ -49,6 +49,22 @@ export const Header = styled(C.Header)`
 export const DayNameBox = styled(C.DayNameBox)`
     border-right-color: ${(p) => hair(p.theme, 0.25)};
 
+    /* 표의 머리 — 요일은 왼쪽에 적고, 해낸 자국은 오른쪽 여백에 세로로 선다 */
+    justify-content: flex-start;
+    padding-left: 11px;
+
+    .day-mark {
+        left: auto;
+        right: 9px;
+        bottom: auto;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 1px;
+        height: 14px;
+    }
+
+    .day-mark.done { width: 1px; height: 22px; }
+
     .day-name {
         font-family: ${(p) => p.theme.fonts.numeral};
         font-size: 1.1rem;

@@ -12,25 +12,51 @@ import { leafBullet } from "@/styles/maple/ink";
 
 export * from "../celestial/SidebarMenuButton.styles";
 
+/** 쪽 번호: 목차의 오른쪽 끝, 점선이 닿는 자리 */
 export const Numeral = styled(C.Numeral)`
-    margin-right: 6px;
+    margin-right: 8px;
     font-family: ${(p) => p.theme.fonts.numeral};
-    font-size: 0.8rem;
+    font-size: 0.86rem;
     letter-spacing: 0.08em;
-    opacity: 0.6;
+    opacity: 0.75;
 `;
 
 export const SidebarButton = styled(C.SidebarButton)`
-    padding: 0 2px 0 16px;
+    padding: 0 2px 0 12px;
+    gap: 6px;
     border-radius: 2px;
+
+    /* 그림은 줄 머리에 바짝 — 긴 이름도 한 줄에 들어가야 한다 */
+    ${C.IconContainer} { margin-left: 0; }
     background-image: none;
     transition: background-color 0.18s ease, color 0.18s ease;
 
+    /* 이름 칸이 줄 전체를 차지하고, 이름 뒤는 점선이 메운다 — 목차의 점선 */
     & > span {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        align-items: baseline;
+        gap: 4px;
+        white-space: nowrap;
+        overflow: hidden;
         font-family: ${(p) => p.theme.fonts.display};
         letter-spacing: 0.04em;
         transition: color 0.18s ease;
+
+        &::after {
+            content: "";
+            flex: 1;
+            min-width: 0;
+            align-self: center;
+            margin-top: 5px;
+            border-bottom: 1px dotted ${(p) => p.theme.colors.textSecondary};
+            opacity: 0.4;
+            transition: opacity 0.18s ease;
+        }
     }
+
+    &:hover > span::after { opacity: 0.7; }
 
     /* 줄 앞의 잎: 평소엔 숨고, 올리면 윤곽, 고르면 붉게 채운 잎 */
     &::before {
@@ -63,6 +89,10 @@ export const SidebarButton = styled(C.SidebarButton)`
         color: ${p.theme.colors.primary};
 
         & > span { color: ${p.theme.colors.primary}; }
+        & > span::after {
+            border-bottom-color: ${p.theme.colors.primary};
+            opacity: 0.55;
+        }
 
         &::before,
         &:hover::before {

@@ -24,23 +24,43 @@ export const TimelineSection = styled(C.TimelineSection)`
     border-color: ${(p) => hair(p.theme, 0.45)};
 `;
 
-/** 시간표: 안쪽 선들도 먹으로, 칸은 종이 그대로 */
+/**
+ * 시간표의 짜임이 다르다 — Celestial 은 한 시각마다 테두리를 두른 칸을 띄워 놓지만,
+ * Maple 은 장부 종이다. 왼쪽에 좁은 여백 기둥(겹줄)을 세우고 시각을 그 선에 붙여 오른쪽으로 적으며,
+ * 칸의 테두리를 걷어 일정이 줄 위에 그대로 눕게 한다. 세 시각마다 줄이 굵어진다.
+ */
 export const TimeRow = styled(C.TimeRow)`
     border-bottom-color: ${(p) => hair(p.theme, 0.16)};
 
+    /* 세 시각마다 굵은 줄 — 장부의 구획 */
+    &:nth-child(3n) { border-bottom-color: ${(p) => hair(p.theme, 0.4)}; }
+
+    /* 여백 기둥: 시각은 선에 붙여 오른쪽 끝에 */
     .time-label {
-        border-right-color: ${(p) => hair(p.theme, 0.45)};
+        width: 42px;
+        justify-content: flex-end;
+        padding-right: 8px;
+        border-right: 1px solid ${(p) => hair(p.theme, 0.5)};
         font-family: ${(p) => p.theme.fonts.numeral};
         font-size: 0.85rem;
+        letter-spacing: 0.01em;
     }
 
+    /* 겹줄: 여백 기둥 바로 옆의 가는 선 하나 */
+    .time-slots {
+        border-left: 1px solid ${(p) => hair(p.theme, 0.22)};
+        margin-left: 2px;
+        padding: 4px 12px 4px 8px;
+    }
+
+    /* 칸의 테두리를 걷는다 — 종이의 줄만 남는다 */
     .time-slots .slot-bar-container {
-        border-color: ${(p) => hair(p.theme, 0.3)};
-        border-radius: 2px;
+        border: none;
+        border-radius: 0;
     }
 
     .time-slots .slot-box {
-        border-right-color: ${(p) => hair(p.theme, 0.22)};
+        border-right-color: ${(p) => hair(p.theme, 0.16)};
 
         &:hover { background-color: ${(p) => withAlpha(p.theme.colors.accent, 0.18)}; }
     }

@@ -81,22 +81,41 @@ export const WeekRowContainer = styled(C.WeekRowContainer)`
     border-bottom-color: ${(p) => hair(p, 0.25)};
 `;
 
+/**
+ * 칸 자체가 다르다 — Celestial 은 선으로 나눈 격자에 왼쪽 위 날짜, Maple 은 종이에 붙인 표본이라
+ * 날짜가 오른쪽 위 구석(도감의 쪽 번호 자리)에 앉고, 고른 칸은 빛나는 대신 황토 물이 든다.
+ */
 export const DayCell = styled(C.DayCell)`
-    border-right-color: ${(p) => hair(p, 0.25)};
-    box-shadow: ${(p) => p.$isSelected ? `inset 0 0 0 1px ${withAlpha(p.theme.colors.primary, 0.55)}` : "none"};
+    border-right-color: ${(p) => hair(p, 0.22)};
+    box-shadow: none;
+    background-color: ${(p) => (p.$isSelected ? withAlpha(p.theme.colors.accent, 0.24) : "transparent")};
 
-    &:hover {
-        box-shadow: inset 0 0 0 1px ${(p) => withAlpha(p.theme.colors.primary, 0.7)};
+    .day-header {
+        padding: 5px 7px 2px;
+
+        /* 날짜는 도감의 쪽 번호처럼 오른쪽 구석에 (Celestial 은 왼쪽 위) */
+        & > div:first-child { justify-content: flex-end; }
+
+        .day-number {
+            font-family: ${(p) => p.theme.fonts.numeral};
+            font-size: 1.05rem;
+            font-weight: ${(p) => (p.$isToday || p.$isSelected) ? 600 : 500};
+            letter-spacing: 0.02em;
+        }
     }
 
-    .day-header .day-number {
-        font-family: ${(p) => p.theme.fonts.numeral};
-        font-size: 1.05rem;
-        font-weight: ${(p) => (p.$isToday || p.$isSelected) ? 600 : 500};
+    /* 날짜가 오른쪽으로 갔으니 + 는 왼쪽으로 */
+    .add-btn { right: auto; left: 6px; }
+
+    &:hover {
+        box-shadow: none;
+        background-color: ${(p) => withAlpha(p.theme.colors.accent, p.$isSelected ? 0.3 : 0.12)};
     }
 
     ${MOBILE} {
+        .day-header { padding: 3px 5px 0; }
         .day-header .day-number { font-size: 0.86rem; }
+        &:active { background-color: ${(p) => withAlpha(p.theme.colors.accent, 0.3)}; }
     }
 `;
 
