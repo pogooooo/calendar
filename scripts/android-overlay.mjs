@@ -125,3 +125,50 @@ if (manifest.includes(LINK_OPEN)) {
 
 writeFileSync(manifestPath, manifest, "utf8");
 console.log(`[android-overlay] 매니페스트에 위젯 ${WIDGETS.length}종 + 설정 화면 + 딥링크 등록 완료`);
+
+/* ── 서명 설정 ────────────────────────────────────────────────────────────────
+   Play 는 서명된 AAB 만 받는다. 열쇠와 비밀번호는 git 밖(src-tauri/keystore.properties)에 두고,
+   그 파일이 있을 때만 release 빌드에 서명을 건다 (없으면 예전처럼 서명 없이 구워진다).
+   gen 은 재생성되면 사라지므로 이 깁기도 오버레이가 맡는다. */
+const gradlePath = join(gen, "app", "build.gradle.kts");
+let gradle = readFileSync(gradlePath, "utf8").split(String.fromCharCode(13, 10)).join(String.fromCharCode(10)); // 줄 끝이 섞여 있으면 여러 줄 깁기가 빗나간다
+
+const SIGN_OPEN = "// cronos-signing:start";
+const SIGN_CLOSE = "// cronos-signing:end";
+const signBlock = `    ${SIGN_OPEN}
+    signingConfigs {
+        create("release") {
+            val ksFile = rootProject.file("../../keystore.properties")
+            if (ksFile.exists()) {
+                val ks = Properties().apply { ksFile.inputStream().use { load(it) } }
+                storeFile = file(ks.getProperty("storeFile"))
+                storePassword = ks.getProperty("storePassword")
+                keyAlias = ks.getProperty("keyAlias")
+                keyPassword = ks.getProperty("keyPassword")
+            }
+        }
+    }
+    ${SIGN_CLOSE}`;
+
+if (gradle.includes(SIGN_OPEN)) {
+    gradle = gradle.replace(new RegExp(`    ${SIGN_OPEN}[\s\S]*?${SIGN_CLOSE}`), signBlock);
+} else {
+    gradle = gradle.replace("    buildTypes {", `${signBlock}
+    buildTypes {`);
+}
+
+const USE_SIGN = "signingConfig = signingConfigs.getByName(\"release\")";
+if (!gradle.includes(USE_SIGN)) {
+    gradle = gradle.replace(
+        `        getByName("release") {
+            isMinifyEnabled = true`,
+        `        getByName("release") {
+            if (rootProject.file("../../keystore.properties").exists()) {
+                ${USE_SIGN}
+            }
+            isMinifyEnabled = true`,
+    );
+}
+
+writeFileSync(gradlePath, gradle, "utf8");
+console.log("[android-overlay] 서명 설정 깁기 완료 (keystore.properties 가 있을 때만 서명)");

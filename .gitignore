@@ -73,3 +73,6 @@ dashboard.html
 
 # Maple 테마 원본 그림 (42MB PNG) — 변환된 WebP 만 public/themes/maple 에 둔다
 /design/themes/maple/raw/
+
+# 안드로이드 업로드 열쇠 — 비밀번호가 들어 있다. 예시는 keystore.properties.example 참고
+/src-tauri/keystore.properties
