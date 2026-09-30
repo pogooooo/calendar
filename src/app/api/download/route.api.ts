@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const REPO = "pogooooo/calendar";
-const RELEASE_API = `https://api.github.com/repos/${REPO}/releases/latest`;
+import { Asset, assetResponse, fetchAsset, fetchLatestRelease } from "@/lib/githubRelease";
 
 type PlatformKey = "windows" | "macos" | "linux" | "android";
 
@@ -11,22 +10,6 @@ const MATCHERS: Record<PlatformKey, RegExp[]> = {
     linux: [/\.AppImage$/i, /\.deb$/i, /\.rpm$/i],
     android: [/\.apk$/i],
 };
-
-type Asset = { name: string; browser_download_url: string; size: number };
-type Release = { tag_name?: string; assets?: Asset[] };
-
-async function fetchLatestRelease(): Promise<Release | null> {
-    const res = await fetch(RELEASE_API, {
-        headers: {
-            Accept: "application/vnd.github+json",
-            "User-Agent": "cronos-download",
-        },
-        cf: { cacheTtl: 600, cacheEverything: true },
-    } as RequestInit);
-
-    if (!res.ok) return null;
-    return await res.json() as Release;
-}
 
 function pickAsset(assets: Asset[], platform: PlatformKey): Asset | null {
     for (const rule of MATCHERS[platform]) {
@@ -75,25 +58,13 @@ export async function GET(req: NextRequest) {
             return fail("unreleased", "이 운영체제용 설치 파일이 아직 없습니다.", 404);
         }
 
-        const file = await fetch(asset.browser_download_url, {
-            headers: { "User-Agent": "cronos-download" },
-            redirect: "follow",
-        });
+        const upstream = await fetchAsset(asset);
 
-        if (!file.ok || !file.body) {
+        if (!upstream) {
             return fail("upstream", "파일을 가져오지 못했습니다.", 502);
         }
 
-        const headers = new Headers({
-            "Content-Type": "application/octet-stream",
-            "Content-Disposition": `attachment; filename="${asset.name}"`,
-            "Cache-Control": "public, max-age=3600",
-        });
-
-        const upstreamLength = file.headers.get("content-length");
-        if (upstreamLength) headers.set("Content-Length", upstreamLength);
-
-        return new NextResponse(file.body, { headers });
+        return assetResponse(asset, upstream);
     } catch (error) {
         console.error("[DOWNLOAD_ERROR]", error);
         return fail("error", "다운로드 중 오류가 발생했습니다.", 500);

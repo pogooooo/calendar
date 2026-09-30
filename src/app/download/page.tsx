@@ -21,6 +21,11 @@ const HeroScene = dynamic(() => import("@/components/download/HeroScene"), {
 });
 
 const REPO = "https://github.com/pogooooo/calendar";
+/**
+ * 저장소가 밖에서 안 보이는 동안(계정 플래그)에는 GitHub 줄을 감춘다 — 누르면 404 만 나온다.
+ * 다시 보이게 되면 이 값만 true 로 바꾸면 된다. 내려받기 자체는 /api/download 가 서버에서 받아 오므로 무관하다.
+ */
+const SHOW_REPO_LINK = false;
 
 type PlatformKey = "windows" | "macos" | "linux" | "android";
 
@@ -376,7 +381,7 @@ export default function DownloadPage() {
             <S.Nav>
                 <S.NavBrand>CRONOS</S.NavBrand>
                 <S.NavRight>
-                    <S.NavLink as="a" href={REPO} target="_blank" rel="noreferrer">GitHub</S.NavLink>
+                    {SHOW_REPO_LINK && <S.NavLink as="a" href={REPO} target="_blank" rel="noreferrer">GitHub</S.NavLink>}
                     <S.NavCta type="button" onClick={goToWeb}>
                         <Globe size={14} />
                         {t.download.openWeb}
@@ -483,7 +488,7 @@ export default function DownloadPage() {
             <S.Foot>
                 <span>CRONOS</span>
                 <S.FootLinks>
-                    <a href={REPO} target="_blank" rel="noreferrer">GitHub</a>
+                    {SHOW_REPO_LINK && <a href={REPO} target="_blank" rel="noreferrer">GitHub</a>}
                     <Link href="/signIn">{t.download.signIn}</Link>
                     <Link href="/signUp">{t.download.signUp}</Link>
                 </S.FootLinks>
