@@ -505,6 +505,71 @@ fn any_widget_open(app: &tauri::AppHandle) -> bool {
     WIDGET_KINDS.iter().any(|k| app.get_webview_window(&format!("widget-{k}")).is_some())
 }
 
+/// tauri.conf.json 의 identifier 와 같아야 한다 — 설정 폴더 이름이 이것이다.
+#[cfg(desktop)]
+const APP_IDENTIFIER: &str = "com.cronos.todoapp";
+
+/// "앱을 한 번 더 켰다" 는 쪽지가 놓이는 자리.
+///
+/// single-instance 플러그인은 두 번째 인스턴스를 곧바로 끝내면서 첫 인스턴스에 창 메시지를 보낸다.
+/// 그 메시지는 두 경우에 사라진다 — (1) 첫 인스턴스가 아직 제 창을 만들기 전(부팅 직후 자동 실행과
+/// 아이콘 클릭이 겹칠 때), (2) 두 프로세스의 권한이 다를 때(업데이트 설치 프로그램이 앱을 관리자로
+/// 다시 띄운 뒤 사용자가 바로가기로 켜면 UIPI 가 낮은 쪽의 메시지를 막는다).
+/// 그러면 아이콘을 눌러도 아무 일도 안 일어난다 — "위젯만 떠 있고 앱이 안 켜진다" 가 이것이다.
+/// 그래서 메시지와 별개로 파일에도 남긴다. 파일은 권한이 달라도 같은 사용자 폴더라 읽고 쓸 수 있다.
+#[cfg(desktop)]
+fn launch_request_path() -> Option<std::path::PathBuf> {
+    #[cfg(target_os = "windows")]
+    let base = std::env::var_os("APPDATA").map(std::path::PathBuf::from);
+    #[cfg(target_os = "macos")]
+    let base = std::env::var_os("HOME").map(|h| std::path::PathBuf::from(h).join("Library/Application Support"));
+    #[cfg(all(not(target_os = "windows"), not(target_os = "macos")))]
+    let base = std::env::var_os("XDG_CONFIG_HOME")
+        .map(std::path::PathBuf::from)
+        .or_else(|| std::env::var_os("HOME").map(|h| std::path::PathBuf::from(h).join(".config")));
+    Some(base?.join(APP_IDENTIFIER).join("launch-request.json"))
+}
+
+#[cfg(desktop)]
+fn now_ms() -> u128 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_millis())
+        .unwrap_or(0)
+}
+
+/// 켤 때마다 쪽지를 남긴다 (첫 인스턴스든 두 번째든). 첫 인스턴스는 제 pid 를 보고 제 것을 건너뛴다.
+#[cfg(desktop)]
+fn write_launch_request() {
+    let Some(path) = launch_request_path() else { return };
+    if let Some(dir) = path.parent() {
+        let _ = std::fs::create_dir_all(dir);
+    }
+    let body = format!(
+        "{{\"pid\":{},\"ts\":{},\"autostart\":{}}}",
+        std::process::id(),
+        now_ms(),
+        launched_by_autostart(),
+    );
+    // 반쪽짜리 파일을 읽지 않도록 임시 파일에 쓰고 바꿔 끼운다
+    let tmp = path.with_extension("json.tmp");
+    if std::fs::write(&tmp, body).is_ok() {
+        let _ = std::fs::rename(&tmp, &path);
+    }
+}
+
+/// 쪽지 읽기 — (pid, 시각(ms), 자동 실행인가)
+#[cfg(desktop)]
+fn read_launch_request() -> Option<(u32, u128, bool)> {
+    let text = std::fs::read_to_string(launch_request_path()?).ok()?;
+    let v: serde_json::Value = serde_json::from_str(&text).ok()?;
+    Some((
+        v.get("pid")?.as_u64()? as u32,
+        v.get("ts")?.as_u64()? as u128,
+        v.get("autostart").and_then(|b| b.as_bool()).unwrap_or(false),
+    ))
+}
+
 /// 메인 창을 앞으로 가져온다. 없으면(닫혔으면) 설정 그대로 다시 만든다.
 ///
 /// 위젯이 떠 있는 동안 메인 창을 닫으면 프로세스는 위젯 때문에 살아 있다.
@@ -866,12 +931,16 @@ fn launch_id() -> String {
 pub fn run() {
     let bottom_widgets = BottomWidgets(Arc::new(Mutex::new(HashSet::new())));
 
-    let builder = tauri::Builder::default()
-        .plugin(tauri_plugin_shell::init())
-        .plugin(tauri_plugin_opener::init());
+    // 켜진 순간에 쪽지부터 남긴다. 두 번째 인스턴스는 곧 아래 플러그인이 끝내 버리므로
+    // 그 전에 적어 둬야 첫 인스턴스가 "누가 또 켰다" 를 안다 (launch_request_path 의 설명)
+    #[cfg(desktop)]
+    write_launch_request();
+
+    let builder = tauri::Builder::default();
 
     #[cfg(desktop)]
     // 두 번째 인스턴스는 즉시 종료된다. 없으면 위젯이 인스턴스 수만큼 중복 생성된다.
+    // 플러그인 문서대로 맨 앞에 건다 — 뒤에 걸면 곧 끝날 인스턴스가 업데이터·자동 실행까지 건드린다.
     let builder = builder
         .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
             show_main_window(app);
@@ -882,6 +951,10 @@ pub fn run() {
             tauri_plugin_autostart::MacosLauncher::LaunchAgent,
             Some(vec!["--from-autostart"]),
         ));
+
+    let builder = builder
+        .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_opener::init());
 
     builder
         .manage(bottom_widgets.clone())
@@ -923,6 +996,26 @@ pub fn run() {
             // 남아 있는 자동 실행 항목이 엉뚱한 실행 파일을 가리키면 여기서 바로잡는다.
             #[cfg(desktop)]
             repair_autostart_entry();
+
+            // 누가 앱을 한 번 더 켰는지 지켜본다 (창 메시지가 막혀도 이쪽으로 뜬다)
+            #[cfg(desktop)]
+            {
+                let app_handle = app.handle().clone();
+                let me = std::process::id();
+                let started = now_ms();
+                tauri::async_runtime::spawn(async move {
+                    let mut last = started;
+                    loop {
+                        tokio::time::sleep(tokio::time::Duration::from_millis(700)).await;
+                        let Some((pid, ts, autostart)) = read_launch_request() else { continue };
+                        // 내가 켜면서 남긴 쪽지, 오래된 쪽지, 부팅 자동 실행은 창을 띄우지 않는다
+                        if pid == me || ts <= last || autostart { continue; }
+                        last = ts;
+                        let h = app_handle.clone();
+                        let _ = app_handle.run_on_main_thread(move || show_main_window(&h));
+                    }
+                });
+            }
 
             #[cfg(desktop)]
             {

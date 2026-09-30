@@ -64,6 +64,8 @@ Maple 의 styles 는 Celestial 것을 `export *` 로 받고 다른 것만 `style
 조작부(단추·입력칸·탭·카드·창 서식)의 갈래별 말은 한 파일에 모아 둔다 — Maple 은 `src/styles/maple/ink.ts`(`stampButton`·`inkInput`·`paperTab`·`paperCard`…), 화면의 styles 가 그 mixin 을 붙여 쓴다. 그래서 테마를 바꾸면 조작부 하나하나가 다른 물건이 된다.
 Maple 의 그림은 `node scripts/maple-assets.mjs` 로 원본(`design/themes/maple/raw/`, git 밖)에서 굽는다 — 발주서·배치는 `design/themes/maple/ASSETS.md`, 2차 주문서는 `ASSETS-2.md`.
 
+고친 버그와 되풀이되는 함정은 [BUGS.md](BUGS.md) 에 한 줄씩 남긴다.
+
 ---
 
 ## 시작하기
