@@ -58,7 +58,7 @@ class Palette(
             )
         }
 
-        /** Maple — design/themes/maple/ASSETS.md §1.2 의 색. 여기서 gold 는 "강조색" 자리이고 값은 단풍 붉음이다 */
+        /** Maple — 앱의 Maple 팔레트와 같은 색. 여기서 gold 는 "강조색" 자리이고 값은 단풍 붉음이다 */
         fun maple(dark: Boolean, spec: Snapshot.ThemeSpec?): Palette {
             val c = if (spec != null && (spec.mode == "dark") == dark) spec.colors else emptyMap()
             val red = c["primary"] ?: (if (dark) 0xFFD8703F.toInt() else 0xFFB5432B.toInt())

@@ -94,7 +94,7 @@ const celestialDark: DefaultTheme = {
     preview: { cell: '#1E1E1E', event: '#4A3D1C' },
 };
 
-/* ── Maple — 1950년대 식물도감에 끼워 둔 단풍잎. 색은 design/themes/maple/ASSETS.md §1.2 ── */
+/* ── Maple — 1950년대 식물도감에 끼워 둔 단풍잎 ── */
 
 const maple: DefaultTheme = {
     name: 'maple',

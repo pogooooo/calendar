@@ -4,7 +4,7 @@
  *   node scripts/maple-assets.mjs            # design/themes/maple/raw → public/themes/maple
  *   node scripts/maple-assets.mjs <원본폴더>
  *
- * 원본은 이미지 모델이 뽑은 그대로다 (design/themes/maple/ASSETS.md 의 발주서, raw/README.md 의 생성 기록).
+ * 원본은 이미지 모델이 뽑은 그대로다 (raw/README.md 에 생성 기록).
  * 모델은 투명 배경을 못 만들므로 여기서 셋 중 하나로 다듬는다:
  *
  *   cutout  크림 바탕 위의 색 그림 → 바탕색을 빼서 투명 PNG 처럼 (가장자리는 바탕색을 되섞어 테두리 얼룩을 없앤다)
@@ -12,7 +12,7 @@
  *   tile    종이 질감 → 거울 타일링(좌우·상하 뒤집어 2×2)으로 이음새를 없앤다
  *   opaque  그대로 쓰는 큰 그림 → 크기만 줄인다 (모델이 끼워 넣은 글자는 종이로 덮는다)
  *
- * 2차(ASSETS-2.md, 2026-09-22)는 전부 임계 128 로 이진화된 순수 흑백이라 mask 한 가지로 굽는다. 아이콘 시트는 칸칸이 잘라 낱장 마스크로.
+ * 2차(2026-09-22)로 온 것은 전부 임계 128 로 이진화된 순수 흑백이라 mask 한 가지로 굽는다. 아이콘 시트는 칸칸이 잘라 낱장 마스크로.
  *
  * 결과는 public/themes/maple/ 에 들어가 웹·데스크톱·안드로이드 번들에 실린다.
  * 안드로이드 홈 위젯(네이티브)이 쓰는 몇 장은 android-overlay 의 drawable-nodpi 로도 복사한다.
