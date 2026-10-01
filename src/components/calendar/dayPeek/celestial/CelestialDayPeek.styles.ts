@@ -4,6 +4,7 @@
  * 집 규칙: 테마 갈래 컴포넌트는 JSX 만 들고, styled-components 는 형제 *.styles.ts 에 둔다.
  */
 import styled, { keyframes } from "styled-components";
+import { MOBILE } from "@/styles/breakpoints";
 
 const rowIn = keyframes`
     from { opacity: 0; transform: translateY(5px); }
@@ -73,6 +74,9 @@ export const Head = styled.button<{ $today: boolean }>`
     }
 
     &:active .open { color: ${p => p.theme.colors.primary}; }
+
+    /* 키 작은 폰에서는 오른쪽 아래에 떠 있는 + 단추(52px)가 이 줄 끝의 "N일간 >" 을 덮는다 — 그만큼 비켜 둔다 */
+    ${MOBILE} { padding-right: 64px; }
 `;
 
 export const List = styled.div`

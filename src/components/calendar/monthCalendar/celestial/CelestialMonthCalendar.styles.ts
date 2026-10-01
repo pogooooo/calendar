@@ -1,5 +1,5 @@
 import styled, { css } from "styled-components";
-import { NOT_WIDGET, MOBILE, TOUCH } from "@/styles/breakpoints";
+import { NOT_WIDGET, MOBILE, TOUCH, SAFE_T, SAFE_B } from "@/styles/breakpoints";
 import { motion } from "framer-motion";
 import { hide_scrollbar } from "@/styles/shared";
 
@@ -214,7 +214,9 @@ export const GridContainer = styled.div`
         /* 여섯 줄이 남은 높이를 다 나눠 가지면 칸이 세로로 두 배쯤 길어져 찌그러진다.
            칸 폭(화면 폭 − 좌우 여백 24px 을 7로 나눈 것)의 1.3배까지만 키운다. 남는 자리는 비워 둔다. */
         height: calc((100vw - 24px) / 7 * 1.3 * 6);
-        max-height: 62dvh;
+        /* 키 작은 폰(640)에서는 격자가 화면을 다 먹어 아래 고른 날 목록이 머리줄 하나만 남았다.
+           격자 밖(탭바·전환 단추·달 머리·요일 줄)과 목록 두 줄 몫 320px 은 남긴다. */
+        max-height: min(62dvh, calc(100dvh - 320px - ${SAFE_T} - ${SAFE_B}));
         flex: none;
     }
 `;
