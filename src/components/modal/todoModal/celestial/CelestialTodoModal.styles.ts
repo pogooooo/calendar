@@ -1,5 +1,5 @@
 import styled from "styled-components";
-import { MOBILE, SAFE_B } from "@/styles/breakpoints";
+import { MOBILE } from "@/styles/breakpoints";
 
 export const FormWrapper = styled.form`
     display: flex;
@@ -25,7 +25,6 @@ export const Header = styled.div`
 
     ${MOBILE} {
         padding: 14px 16px 12px;
-        padding-top: calc(14px + env(safe-area-inset-top, 0px));
     }
     background-color: ${(props) => props.theme.colors.surface};
     border-radius: 5px 5px 0 0;
@@ -407,7 +406,8 @@ export const Footer = styled.div`
     padding: 16px 24px;
 
     ${MOBILE} {
-        padding: 12px 16px calc(12px + ${SAFE_B});
+        /* 아래 막대 자리는 바깥 시트(BaseModal Container)가 이미 비운다 — 여기서 또 더하면 두 배가 된다 */
+        padding: 12px 16px;
 
         & > button {
             flex: 1;

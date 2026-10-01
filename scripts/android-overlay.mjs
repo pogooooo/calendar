@@ -123,6 +123,20 @@ if (manifest.includes(LINK_OPEN)) {
     manifest = manifest.slice(0, close) + linkFilter + "\n        " + manifest.slice(close);
 }
 
+// 자판이 뜨면 창을 밀어 올리지(pan) 말고 자판 높이를 알려 달라 — MainActivity.fitSystemEdges 가 웹뷰를 줄인다.
+// 밀어 올리면 아래에서 올라오는 시트의 머리가 화면 밖으로 나간다.
+const mainTag = manifest.match(/<activity\b[^>]*android:name="\.MainActivity"[^>]*>/);
+if (!mainTag) {
+    console.error("[android-overlay] MainActivity 의 <activity> 를 못 찾았다");
+    process.exit(1);
+}
+if (!mainTag[0].includes("windowSoftInputMode")) {
+    manifest = manifest.replace(mainTag[0], mainTag[0].replace(
+        'android:name=".MainActivity"',
+        'android:name=".MainActivity"\n            android:windowSoftInputMode="adjustResize"',
+    ));
+}
+
 writeFileSync(manifestPath, manifest, "utf8");
 console.log(`[android-overlay] 매니페스트에 위젯 ${WIDGETS.length}종 + 설정 화면 + 딥링크 등록 완료`);
 

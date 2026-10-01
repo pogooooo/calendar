@@ -4,7 +4,7 @@
  * 집 규칙: 화면은 갈래 공용 JSX 하나, 모양은 갈래마다 *.styles.ts (scripts/check-theme-styles.mjs).
  */
 import styled, { keyframes } from "styled-components";
-import { MOBILE } from "@/styles/breakpoints";
+import { MOBILE, SAFE_T } from "@/styles/breakpoints";
 
 /* ── 모양 ─────────────────────────────────────────────────────────── */
 
@@ -24,7 +24,7 @@ export const PageWrapper = styled.div`
     /* 폰에서는 화면 위쪽이 상태 표시줄 자리다. 비켜 주지 않으면 언어 고르개가 시계에 깔린다. */
     ${MOBILE} {
         height: 100dvh;
-        padding-top: env(safe-area-inset-top, 0px);
+        padding-top: ${SAFE_T};
     }
 `;
 

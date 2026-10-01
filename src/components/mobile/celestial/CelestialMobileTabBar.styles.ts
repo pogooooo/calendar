@@ -2,7 +2,7 @@
  * 폰 탭바(MobileTabBar)의 Celestial 모양 — 금빛 마름모가 고른 탭 위에 뜬다.
  */
 import styled, { keyframes } from "styled-components";
-import { MOBILE_BREAKPOINT, TAB_BAR_HEIGHT } from "@/styles/breakpoints";
+import { MOBILE_BREAKPOINT, TAB_BAR_HEIGHT, SAFE_B } from "@/styles/breakpoints";
 
 export const Bar = styled.nav`
     display: none;
@@ -13,12 +13,17 @@ export const Bar = styled.nav`
         right: 0;
         bottom: 0;
         z-index: 60;
-        height: calc(${TAB_BAR_HEIGHT}px + env(safe-area-inset-bottom, 0px));
-        padding-bottom: env(safe-area-inset-bottom, 0px);
+        height: calc(${TAB_BAR_HEIGHT}px + ${SAFE_B});
+        padding-bottom: ${SAFE_B};
         display: grid;
         grid-template-columns: repeat(5, 1fr);
         background: ${p => p.theme.colors.background};
         border-top: 1px solid ${p => p.theme.colors.primary}40;
+    }
+
+    /* 자판이 떠 있는 동안은 내린다 (안드로이드 앱이 html[data-keyboard] 를 단다) */
+    @media (max-width: ${MOBILE_BREAKPOINT}px) {
+        html[data-keyboard] & { display: none; }
     }
 `;
 
@@ -89,7 +94,7 @@ export const SheetBody = styled.div`
     width: 100%;
     background: ${p => p.theme.colors.background};
     border-top: 1px solid ${p => p.theme.colors.primary};
-    padding: 0 0 calc(${TAB_BAR_HEIGHT}px + env(safe-area-inset-bottom, 0px));
+    padding: 0 0 calc(${TAB_BAR_HEIGHT}px + ${SAFE_B});
 
     /* 아래에서 올라와야 탭바에서 자란 것으로 읽힌다 */
     @media (prefers-reduced-motion: no-preference) {

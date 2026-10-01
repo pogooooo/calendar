@@ -10,6 +10,7 @@ import SaveFailureNotice from "@/components/SaveFailureNotice";
 import AndroidWidgetSync from "@/components/AndroidWidgetSync";
 import { DialogProvider } from "@/components/dialog/DialogProvider";
 import MobileTabBar, { MOBILE_BREAKPOINT, TAB_BAR_HEIGHT } from "@/components/mobile/MobileTabBar";
+import { SAFE_B, SAFE_T } from "@/styles/breakpoints";
 
 interface MainLayoutProps {
     children: React.ReactNode;
@@ -54,8 +55,14 @@ const AppShell = styled.div`
        끝까지 그려지므로, 여기서 비켜 주지 않으면 첫 줄이 시계에 깔린다. */
     @media (max-width: ${MOBILE_BREAKPOINT}px) {
         height: 100dvh;
-        padding-top: env(safe-area-inset-top, 0px);
-        padding-bottom: calc(${TAB_BAR_HEIGHT}px + env(safe-area-inset-bottom, 0px));
+        padding-top: ${SAFE_T};
+        padding-bottom: calc(${TAB_BAR_HEIGHT}px + ${SAFE_B});
+    }
+
+    /* 자판이 떠 있는 동안(안드로이드 앱이 html[data-keyboard] 를 단다)은 탭바를 내린다.
+       줄어든 화면에서 탭바가 자판 바로 위에 남아 입력칸 자리를 먹는다. */
+    @media (max-width: ${MOBILE_BREAKPOINT}px) {
+        html[data-keyboard] & { padding-bottom: 0; }
     }
 `;
 

@@ -17,6 +17,31 @@ const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: Ma
 const restoreBaseColors = (outer?: DefaultTheme): DefaultTheme =>
     (outer?.baseColors ? { ...outer, colors: outer.baseColors } : outer) as DefaultTheme;
 
+/**
+ * 자판이 가린 만큼 시트 바탕을 줄인다. 크롬과 안드로이드 앱은 화면 자체가 줄어 CSS(100dvh)로 충분하지만,
+ * 사파리는 interactive-widget 을 모르고 보이는 칸(visual viewport)만 줄인다 — 그러면 아래에 붙은 시트가 자판 밑에 깔린다.
+ * 그때만 바탕을 보이는 칸에 맞춘다. 손가락으로 확대한 동안(scale ≠ 1)은 건드리지 않는다.
+ */
+function useKeyboardBox(active: boolean) {
+    const [box, setBox] = React.useState<{ top: number; height: number } | null>(null);
+    React.useEffect(() => {
+        const vv = typeof window !== "undefined" ? window.visualViewport : null;
+        if (!active || !vv) { setBox(null); return; }
+        const update = () => {
+            const covered = window.innerHeight - vv.height;
+            setBox(covered > 80 && Math.abs(vv.scale - 1) < 0.01 ? { top: vv.offsetTop, height: vv.height } : null);
+        };
+        update();
+        vv.addEventListener("resize", update);
+        vv.addEventListener("scroll", update);
+        return () => {
+            vv.removeEventListener("resize", update);
+            vv.removeEventListener("scroll", update);
+        };
+    }, [active]);
+    return box;
+}
+
 export interface CelestialBaseModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -59,6 +84,8 @@ export default function BaseModal({ isOpen, onClose, children, maxWidth = "400px
             transition: { type: "spring" as const, damping: 25, stiffness: 300 },
         };
 
+    const keyboardBox = useKeyboardBox(isOpen && isMobile);
+
     React.useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape') onClose();
@@ -78,6 +105,7 @@ export default function BaseModal({ isOpen, onClose, children, maxWidth = "400px
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     onClick={onClose}
+                    style={keyboardBox ?? undefined}
                 >
                     <S.Container
                         $maxWidth={maxWidth}

@@ -18,6 +18,9 @@ export const viewport = {
     width: 'device-width',
     initialScale: 1,
     viewportFit: 'cover' as const,
+    /* 자판이 올라오면 화면(레이아웃 뷰포트)을 줄인다. 크롬 기본값은 자판이 위에 덮어씌우는 것이라,
+       아래에 붙은 시트(할 일 추가 창)의 저장 단추가 자판 밑으로 들어가 버렸다. */
+    interactiveWidget: 'resizes-content' as const,
 };
 
 export const metadata: Metadata = {
