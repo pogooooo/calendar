@@ -16,6 +16,7 @@ const SRC = path.join(process.cwd(), "src");
 
 /** 스스로 `position: relative` 를 거는 Maple 조각들 (styles/maple/ink.ts) */
 const MIXINS = ["paperCard", "cardFrame", "stampButton", "inkCheckbox", "paperTab"];
+const MIXIN_CALL = new RegExp(`\\b(${MIXINS.join("|")})\\(`);
 
 /** src 아래의 .ts/.tsx 전부 */
 function walk(dir) {
@@ -87,7 +88,8 @@ for (const f of files) {
     if (!from) continue;
     const baseFile = `${path.basename(from)}.ts`;
     for (const [name, { base, body }] of blocks(code)) {
-        if (!/paperCard\(/.test(body)) continue;
+        // 조각 하나(paperCard)만 보던 탓에 도장 단추를 쓴 달력의 떠 있는 + 가 흐름 속으로 빠져나갔다 — 목록 전부를 본다
+        if (!MIXIN_CALL.test(body)) continue;
         if (!base.startsWith("C.")) continue;
         const basePos = celestial.get(`${baseFile}#${base.slice(2)}`);
         if (basePos !== "fixed" && basePos !== "absolute") continue;

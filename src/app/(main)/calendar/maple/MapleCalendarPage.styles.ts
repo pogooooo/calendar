@@ -32,6 +32,8 @@ export const SwitchButton = styled(C.SwitchButton)`
 /** 떠 있는 + : 네모 도장 */
 export const Fab = styled(C.Fab)`
     ${stampButton("primary", { square: true })}
+    /* 도장 조각이 거는 relative 가 떠 있는 자리를 덮지 않게 (안 그러면 + 가 달력 칸 위 흐름 속으로 들어간다) */
+    position: fixed;
     width: 52px;
     height: 52px;
     color: ${(p) => p.theme.colors.background};
