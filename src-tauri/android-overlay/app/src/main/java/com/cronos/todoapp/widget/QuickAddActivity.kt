@@ -12,6 +12,7 @@ import android.util.TypedValue
 import android.view.Gravity
 import android.view.KeyEvent
 import android.view.View
+import android.view.WindowManager
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.view.inputmethod.EditorInfo
@@ -88,6 +89,8 @@ class QuickAddActivity : Activity() {
         snap = Snapshot.load(this)
         palette = Palette.resolve(snap?.theme, "app")
         WindowCompat.setDecorFitsSystemWindows(window, false)
+        // 이 깃발이 없으면 옛 테마(Translucent)의 창은 상태 표시줄 바탕을 검게 칠한다 — 어둡게 깐 바탕이 그 밑까지 이어지게
+        window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
         @Suppress("DEPRECATION")
         run {
             window.statusBarColor = Color.TRANSPARENT
