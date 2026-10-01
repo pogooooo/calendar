@@ -6,6 +6,9 @@
 
 | 날짜 | 증상 | 까닭 | 고친 방법 |
 |---|---|---|---|
+| 2026-10-01 | 폰에서 할 일 추가 시트의 아래(입력칸·저장 단추)가 자판·아래 막대에 가려 안 보임 | ① 크롬 기본값은 자판이 화면을 덮을 뿐 줄이지 않는다 ② 안드로이드 앱은 `enableEdgeToEdge` 로 끝까지 그려 시스템이 자판만큼 창을 줄여 주지 않는다 ③ 웹뷰 140 미만은 `env(safe-area-inset-*)` 이 0 이다 | viewport `interactiveWidget: resizes-content`, 시트 바탕 `100dvh` + 사파리용 visual viewport 맞춤(`BaseModal`). `MainActivity.fitSystemEdges` 가 자판 높이만큼 웹뷰를 줄이고 막대 높이를 `--native-inset-*` 로 넣는다 → CSS 는 `SAFE_T`/`SAFE_B`(`breakpoints.ts`). 시트 아래 여백이 두 번 더해지던 것도 하나로 |
+| 2026-10-01 | Maple 폰 달력의 떠 있는 + 단추가 오른쪽 아래가 아니라 달력 칸 위에 박힘 | 도장 단추(`stampButton`)의 `position: relative` 가 `fixed` 를 덮었다. 지킴 스크립트는 `paperCard` 하나만 보고 있었다 | Fab 에 `position: fixed` 를 다시 적고, `check-maple-position.mjs` 가 자리를 거는 조각 목록 전부를 보게 |
+| 2026-10-01 | 키 작은 폰(360×640)에서 달력 아래 고른 날 목록이 머리줄만 남고, + 단추가 "N일간 >" 을 덮음 | 월간 격자 높이를 칸 폭으로만 정해 화면 높이를 몰랐다 | 격자 `max-height` 를 화면 높이 − 320px 까지로, 목록 머리줄은 + 단추 폭만큼 비켜 둠 |
 | 2026-09-30 | 내려받기와 자동 업데이트가 모두 끊김 — 받기 단추는 "준비 중", 앱은 새 판을 못 찾음 | GitHub 계정이 플래그되어 저장소·릴리스·자산이 **익명에게는 404** 다. `/api/download` 는 익명으로 API 를 부르고, 업데이터는 `releases/latest/download/latest.json` 을 앱이 직접 불렀다 | 서버가 토큰(`GITHUB_TOKEN` Worker 시크릿)으로 읽어 흘려보낸다 — `src/lib/githubRelease.ts`, `/api/download/<파일>`, 새 업데이트 자리 `/api/update` (latest.json 의 주소를 우리 쪽으로 바꿔 준다). `tauri.conf.json` 의 endpoints 를 우리 주소 먼저로 (옛 GitHub 주소는 뒤에 남겨 둔다) |
 | 2026-09-30 | 주간·월간 위젯에서 Maple 의 테이프 막대·먹 아이콘·요일 머리 물감이 안 보이고, 화살표도 안 보임 | 두 위젯만 `& * { background-color: transparent !important }` 로 속을 몽땅 비웠다. Maple 은 마스크에 색을 부어 그리므로 그림 자체가 지워진다 | 그 규칙을 지웠다 — 달력은 바탕을 칠하지 않아 위젯 껍데기의 종이가 그대로 비친다 (두 갈래 모두 확인, `src/app/widget/{weekly,monthly}/page.tsx`) |
 | 2026-09-30 | 위젯이 떠 있을 때 앱 아이콘을 눌러도 안 켜짐 (1차 수정 뒤에도 남음) | 두 번째 인스턴스가 첫 인스턴스에 보내는 창 메시지가 사라지는 경우가 있다 — 부팅 직후 첫 인스턴스가 아직 창을 못 만든 때, 그리고 업데이트 설치 프로그램이 앱을 관리자 권한으로 띄운 뒤 바로가기(일반 권한)로 켤 때(UIPI 가 막는다) | 켤 때마다 `%APPDATA%/com.cronos.todoapp/launch-request.json` 에 pid·시각을 남기고, 첫 인스턴스가 0.7초마다 읽어 제 것이 아니면 창을 띄운다. single-instance 플러그인도 맨 앞으로 옮겼다 (`src-tauri/src/lib.rs`) |
@@ -34,4 +37,5 @@
 - **위젯 화면은 바탕색을 통째로 지운다.** 마스크에 색을 입힐 때는 `inkFill`(그라데이션)로. 주간·월간은 아예 그 규칙을 뺐다.
 - **`next build` 를 dev 서버가 도는 중에 돌리면** `.next` 가 섞여 dev 서버가 500 을 뱉는다. 빌드 뒤에는 `.next` 를 지우고 dev 서버를 다시 켠다.
 - **갈래 폴더 밖에서 `theme.family` 로 모양을 가르지 말 것.** 가드: `scripts/check-theme-styles.mjs`
+- **폰의 상태 표시줄·아래 막대 높이는 `SAFE_T`/`SAFE_B` 로.** `env(safe-area-inset-*)` 을 바로 쓰면 안드로이드 앱(웹뷰 140 미만)에서 0 이다.
 - **날짜는 날짜 키로 주고받는다.** `Date` 를 그대로 넘기면 시간대에서 하루가 밀린다.
