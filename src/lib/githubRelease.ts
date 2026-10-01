@@ -4,14 +4,19 @@
  * 계정이 플래그되면 저장소·릴리스·자산이 **익명에게는 404** 다 (저장소 페이지까지).
  * 그래서 서버(Worker)가 토큰으로 읽어 사용자에게 흘려보낸다. 사용자는 GitHub 를 직접 부르지 않는다.
  * 토큰(`GITHUB_TOKEN`, Worker 시크릿)이 없으면 예전처럼 익명으로 시도한다 — 로컬 개발용.
+ *
+ * 또 하나: CI 가 죽어 운영체제마다 판이 어긋날 수 있다(윈도우만 새 판이 나오는 식).
+ * 그래서 "가장 최신 릴리스" 하나만 보지 않고, **그 파일이 있는 가장 최신 릴리스**를 찾아 내려간다.
  */
 
 export const REPO = process.env.GITHUB_REPO ?? "pogooooo/calendar";
 const API = `https://api.github.com/repos/${REPO}`;
 const UA = "cronos-download";
+/** 거슬러 올라가며 찾아볼 릴리스 수 */
+const LOOKBACK = 10;
 
 export type Asset = { id: number; name: string; browser_download_url: string; size: number };
-export type Release = { tag_name?: string; body?: string; assets?: Asset[] };
+export type Release = { tag_name?: string; body?: string; draft?: boolean; prerelease?: boolean; assets?: Asset[] };
 
 /** 업데이터가 읽는 파일의 모양 (tauri-plugin-updater 의 static JSON) */
 export type UpdaterManifest = {
@@ -30,6 +35,17 @@ const ghHeaders = (accept: string): Record<string, string> => {
     return h;
 };
 
+/** 새것부터 차례로. 초안과 시험판은 뺀다 */
+export async function fetchReleases(): Promise<Release[]> {
+    const res = await fetch(`${API}/releases?per_page=${LOOKBACK}`, {
+        headers: ghHeaders("application/vnd.github+json"),
+        cf: { cacheTtl: 600, cacheEverything: true },
+    } as RequestInit);
+    if (!res.ok) return [];
+    const list = await res.json() as Release[];
+    return list.filter((r) => !r.draft && !r.prerelease);
+}
+
 export async function fetchLatestRelease(): Promise<Release | null> {
     const res = await fetch(`${API}/releases/latest`, {
         headers: ghHeaders("application/vnd.github+json"),
@@ -42,12 +58,22 @@ export async function fetchLatestRelease(): Promise<Release | null> {
 export const findAsset = (release: Release | null, name: string): Asset | null =>
     release?.assets?.find((a) => a.name === name) ?? null;
 
+/** 조건에 맞는 자산이 있는 가장 최신 릴리스를 찾는다 */
+export async function findInReleases(
+    match: (a: Asset) => boolean,
+): Promise<{ release: Release; asset: Asset } | null> {
+    for (const release of await fetchReleases()) {
+        const asset = release.assets?.find(match);
+        if (asset) return { release, asset };
+    }
+    return null;
+}
+
 /**
  * 자산 하나를 받아 온다.
  *
  * 토큰이 있으면 API 로 받는다 — 플래그된 저장소도 열린다. 이때 GitHub 는 서명된 S3 주소로 302 를 준다.
- * 그 주소에 Authorization 을 같이 보내면 "Only one auth mechanism allowed" 로 400 이 나므로,
- * 리디렉트를 손수 따라가며 토큰을 뗀다.
+ * 그 주소에 Authorization 을 같이 보내면 거절당할 수 있으므로, 리디렉트를 손수 따라가며 토큰을 뗀다.
  */
 export async function fetchAsset(asset: Asset): Promise<Response | null> {
     const t = token();
@@ -71,12 +97,11 @@ export async function fetchAsset(asset: Asset): Promise<Response | null> {
     return first.ok && first.body ? first : null;
 }
 
-/** 릴리스에 올라 있는 latest.json (업데이터가 읽는 파일) */
+/** 릴리스에 올라 있는 latest.json (업데이터가 읽는 파일) — 그게 있는 가장 최신 릴리스에서 */
 export async function fetchUpdaterManifest(): Promise<UpdaterManifest | null> {
-    const release = await fetchLatestRelease();
-    const asset = findAsset(release, "latest.json");
-    if (!asset) return null;
-    const res = await fetchAsset(asset);
+    const hit = await findInReleases((a) => a.name === "latest.json");
+    if (!hit) return null;
+    const res = await fetchAsset(hit.asset);
     if (!res) return null;
     try {
         return await res.json() as UpdaterManifest;
