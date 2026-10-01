@@ -35,24 +35,37 @@ const ghHeaders = (accept: string): Record<string, string> => {
     return h;
 };
 
-/** 새것부터 차례로. 초안과 시험판은 뺀다 */
-export async function fetchReleases(): Promise<Release[]> {
-    const res = await fetch(`${API}/releases?per_page=${LOOKBACK}`, {
-        headers: ghHeaders("application/vnd.github+json"),
-        cf: { cacheTtl: 600, cacheEverything: true },
-    } as RequestInit);
-    if (!res.ok) return [];
-    const list = await res.json() as Release[];
-    return list.filter((r) => !r.draft && !r.prerelease);
-}
-
-export async function fetchLatestRelease(): Promise<Release | null> {
-    const res = await fetch(`${API}/releases/latest`, {
+const ghJson = async <T>(path: string): Promise<T | null> => {
+    const res = await fetch(`${API}/${path}`, {
         headers: ghHeaders("application/vnd.github+json"),
         cf: { cacheTtl: 600, cacheEverything: true },
     } as RequestInit);
     if (!res.ok) return null;
-    return await res.json() as Release;
+    return await res.json() as T;
+};
+
+export const fetchLatestRelease = () => ghJson<Release>("releases/latest");
+
+/**
+ * 새것부터 차례로 훑는다.
+ *
+ * `/releases` 목록 API 는 플래그된 계정에서 **빈 배열**을 준다(토큰이 있어도). 반면
+ * `/releases/latest`, `/releases/tags/{tag}`, `/tags` 는 멀쩡하다.
+ * 그래서 최신 하나를 먼저 보고, 없으면 태그를 거슬러 가며 그 태그의 릴리스를 하나씩 연다.
+ * 태그만 있고 릴리스가 없는 것(v1.0.2 처럼)은 404 라 건너뛴다.
+ */
+async function* walkReleases(): AsyncGenerator<Release> {
+    const latest = await fetchLatestRelease();
+    if (latest) yield latest;
+
+    const tags = await ghJson<{ name: string }[]>(`tags?per_page=${LOOKBACK}`);
+    if (!tags) return;
+
+    for (const { name } of tags) {
+        if (name === latest?.tag_name) continue;
+        const rel = await ghJson<Release>(`releases/tags/${encodeURIComponent(name)}`);
+        if (rel && !rel.draft && !rel.prerelease) yield rel;
+    }
 }
 
 export const findAsset = (release: Release | null, name: string): Asset | null =>
@@ -62,7 +75,7 @@ export const findAsset = (release: Release | null, name: string): Asset | null =
 export async function findInReleases(
     match: (a: Asset) => boolean,
 ): Promise<{ release: Release; asset: Asset } | null> {
-    for (const release of await fetchReleases()) {
+    for await (const release of walkReleases()) {
         const asset = release.assets?.find(match);
         if (asset) return { release, asset };
     }

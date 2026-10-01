@@ -55,8 +55,9 @@ for (const rule of RULES) {
     const sigName = file && assets.find(n => n === `${file}.sig`);
     if (!file || !sigName) { missing.push(rule.keys[0]); continue; }
     // .sig 는 몇백 바이트짜리 텍스트다
-    const sigUrl = release.assets.find(a => a.name === sigName).browser_download_url;
-    const signature = execFileSync("curl", ["-sL", sigUrl], { encoding: "utf8" }).trim();
+    // 계정이 플래그되면 browser_download_url 은 익명에게 404 다 — 인증된 gh 로 자산을 받는다
+    const sigId = release.assets.find(a => a.name === sigName).id;
+    const signature = gh(["api", `repos/${repo}/releases/assets/${sigId}`, "-H", "Accept: application/octet-stream"]).trim();
     for (const key of rule.keys) platforms[key] = { signature, url: url(file) };
 }
 
