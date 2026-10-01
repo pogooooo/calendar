@@ -84,7 +84,29 @@ export function rememberFrom(body: unknown): boolean {
 export async function verifyToken(token: string) {
     try {
         const { payload } = await jwtVerify(token, getKey(), { algorithms: ["HS256"] });
+        // 쓰임이 정해진 열쇠(홈 위젯용)는 일반 API 에 못 쓴다 — 흘러나가도 할 일 넣기밖에 못 하게
+        if (payload.scope !== undefined) return null;
         return payload;
+    } catch {
+        return null;
+    }
+}
+
+/**
+ * 홈 위젯 전용 열쇠 — 할 일 넣기(/api/widget/todo) 하나만 된다.
+ *
+ * 위젯은 앱을 열지 않고 서버에 써야 하는데, 앱의 리프레시 토큰은 쓸 때마다 바뀌므로(회전) 위젯이 그걸
+ * 쓰면 앱 쪽 토큰이 무효가 돼 로그아웃된다. 그래서 따로 준다. 수명은 리프레시 토큰과 같은 30일이고,
+ * 앱이 열릴 때마다 새로 받는다. 쓸 때는 그 사용자가 아직 어딘가에 로그인돼 있는지도 본다(라우트).
+ */
+export function generateWidgetToken(userId: string) {
+    return sign({ userId, scope: "widget" }, "30d");
+}
+
+export async function verifyWidgetToken(token: string): Promise<string | null> {
+    try {
+        const { payload } = await jwtVerify(token, getKey(), { algorithms: ["HS256"] });
+        return payload.scope === "widget" && typeof payload.userId === "string" ? payload.userId : null;
     } catch {
         return null;
     }

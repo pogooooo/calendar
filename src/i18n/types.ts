@@ -45,6 +45,15 @@ export interface Translations {
         noProjects: string;
         noAnniversaries: string;
         quickAdd: string;
+        /** 홈 위젯의 빠른 추가 창 (안드로이드 QuickAddActivity) */
+        qaTitle: string;
+        qaHint: string;
+        qaToday: string;
+        qaAdd: string;
+        qaCancel: string;
+        qaSaving: string;
+        qaSaved: string;
+        qaFailed: string;
         dayProgress: string;
         elapsedMin: string;
         leftMin: string;

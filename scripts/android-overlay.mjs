@@ -79,6 +79,16 @@ const extras = `
                 <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
             </intent-filter>
         </activity>
+        <!-- 빠른 추가 위젯을 누르면 뜨는 입력 창. 앱을 열지 않고 할 일을 넣는다.
+             taskAffinity 를 비워 앱의 작업과 따로 떠야 뒤에 앱이 아니라 홈 화면이 보인다 -->
+        <activity
+            android:name=".widget.QuickAddActivity"
+            android:exported="false"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:taskAffinity=""
+            android:excludeFromRecents="true"
+            android:launchMode="singleTask"
+            android:windowSoftInputMode="stateAlwaysVisible|adjustResize" />
         <!-- 개발용: 위젯 미리보기 그림 만들기 (디버그 빌드에서만 일한다) -->
         <receiver
             android:name=".widget.PreviewRenderReceiver"

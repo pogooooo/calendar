@@ -66,6 +66,16 @@ export interface SnapshotTheme {
     };
 }
 
+/**
+ * 위젯에서 앱을 열지 않고 할 일을 넣는 데 쓰는 것 (안드로이드 QuickAddActivity).
+ * token 은 할 일 넣기만 되는 위젯 전용 열쇠다 (/api/widget/token). 로그인돼 있지 않으면 통째로 없다.
+ */
+export interface SnapshotQuickAdd {
+    api: string;
+    token: string;
+    categories: { id: string; name: string; color: string }[];
+}
+
 export interface WidgetSnapshot {
     version: 2;
     generatedAt: string;
@@ -80,11 +90,12 @@ export interface WidgetSnapshot {
     /** 오늘의 메모. 없으면 "" */
     memo: string;
     labels: Record<string, string>;
+    quickAdd: SnapshotQuickAdd | null;
 }
 
 export interface SnapshotInput {
     todos: TodoType[];
-    categories: Pick<CategoryType, "id" | "color">[];
+    categories: Pick<CategoryType, "id" | "color" | "name">[];
     challenges: ChallengeType[];
     anniversaries: AnniversaryType[];
     projects: ProjectType[];
@@ -92,11 +103,13 @@ export interface SnapshotInput {
     t: Translations;
     locale: string;
     theme: { family?: string; mode?: string; colors: SnapshotTheme["colors"] };
+    /** 위젯 전용 열쇠와 서버 주소. 없으면(로그아웃·웹) 위젯은 누르면 앱을 연다 */
+    quickAdd?: { api: string; token: string } | null;
     now?: Date;
 }
 
 export function buildWidgetSnapshot(input: SnapshotInput): WidgetSnapshot {
-    const { todos, categories, challenges, anniversaries, projects, memo, t, locale, theme } = input;
+    const { todos, categories, challenges, anniversaries, projects, memo, t, locale, theme, quickAdd } = input;
     const now = input.now ?? new Date();
     const todayKey = localDateKey(now);
 
@@ -185,5 +198,8 @@ export function buildWidgetSnapshot(input: SnapshotInput): WidgetSnapshot {
             allDay: t.todo.allDay,
             ...w,
         },
+        quickAdd: quickAdd && categories.length
+            ? { ...quickAdd, categories: categories.map(c => ({ id: c.id, name: c.name, color: c.color || fallbackColor })) }
+            : null,
     };
 }

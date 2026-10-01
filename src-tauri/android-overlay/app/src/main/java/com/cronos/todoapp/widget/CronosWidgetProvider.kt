@@ -86,7 +86,8 @@ abstract class CronosWidgetProvider : AppWidgetProvider() {
         val views = RemoteViews(context.packageName, R.layout.widget_canvas)
         views.setImageViewBitmap(R.id.widget_image, painted.bitmap)
         views.setContentDescription(R.id.widget_image, context.getString(labelRes()))
-        views.setOnClickPendingIntent(R.id.widget_root, link(context, id, 0, rootLink(snap)))
+        // 빠른 추가는 앱을 열지 않고 작은 입력 창을 띄운다 (QuickAddActivity). 그 창이 못 쓰는 때(로그아웃)는 창이 앱을 연다
+        views.setOnClickPendingIntent(R.id.widget_root, if (kind == "quickadd") quickAdd(context, id) else link(context, id, 0, rootLink(snap)))
 
         // 날짜 넘김 — 왼쪽은 뒤로, 오른쪽은 앞으로. 옮긴 채로 두어도 날이 바뀌면 오늘로 돌아온다 (WidgetPrefs.offset)
         val canShift = kind in SHIFT_KINDS
@@ -143,6 +144,16 @@ abstract class CronosWidgetProvider : AppWidgetProvider() {
         val w = o.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0)
         val h = o.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 0)
         return (if (w > 0) w else defaultSizeDp.first).coerceIn(40, 800) to (if (h > 0) h else defaultSizeDp.second).coerceIn(40, 800)
+    }
+
+    /** 빠른 추가 입력 창. requestCode 는 링크 자리(widgetId*64+slot)의 빈 칸 60 */
+    private fun quickAdd(context: Context, widgetId: Int): PendingIntent {
+        val intent = Intent(context, QuickAddActivity::class.java)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+        return PendingIntent.getActivity(
+            context, widgetId * 64 + 60, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
     }
 
     /** 날짜 넘김 단추 하나. requestCode 는 링크 자리(widgetId*64+slot)의 위쪽을 쓴다 */

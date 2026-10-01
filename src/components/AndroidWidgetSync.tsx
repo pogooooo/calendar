@@ -14,6 +14,53 @@ import { useT } from "@/i18n/useT";
 import { isMobileShell } from "@/lib/platform";
 import { localDateKey } from "@/lib/dateKey";
 import { buildWidgetSnapshot } from "@/lib/widgetSnapshot";
+import useAuthStore from "@/store/useAuthStore";
+import { useAuthFetch, isTokenExpired } from "@/hooks/useAuthFetch";
+import { API_BASE } from "@/lib/apiBase";
+
+const WIDGET_KEY = "cronos-widget-key";
+/** 남은 수명이 이보다 짧으면 새로 받는다 (열쇠는 30일) */
+const RENEW_BEFORE_MS = 7 * 24 * 60 * 60 * 1000;
+
+/**
+ * 위젯 전용 열쇠(할 일 넣기만 되는 것)를 받아 둔다. 앱이 열릴 때 한 번, 같은 사용자의 것이 아직 넉넉하면 그대로 쓴다.
+ * 로그아웃하면 지운다 — 위젯 재료에서도 빠져, 위젯을 누르면 앱이 열린다.
+ */
+function useWidgetKey(): string | null {
+    const userId = useAuthStore((s) => s.user?.id ?? null);
+    const authFetch = useAuthFetch();
+    const [key, setKey] = React.useState<string | null>(null);
+
+    React.useEffect(() => {
+        if (!isMobileShell()) return;
+        if (!userId) {
+            setKey(null);
+            try { localStorage.removeItem(WIDGET_KEY); } catch {}
+            return;
+        }
+        let cancelled = false;
+        try {
+            const saved = JSON.parse(localStorage.getItem(WIDGET_KEY) ?? "null") as { userId?: string; token?: string } | null;
+            if (saved?.userId === userId && saved.token && !isTokenExpired(saved.token, RENEW_BEFORE_MS)) {
+                setKey(saved.token);
+                return;
+            }
+        } catch {}
+        (async () => {
+            try {
+                const res = await authFetch("/api/widget/token", { method: "POST" });
+                if (!res.ok) return;
+                const { token } = await res.json() as { token?: string };
+                if (cancelled || !token) return;
+                try { localStorage.setItem(WIDGET_KEY, JSON.stringify({ userId, token })); } catch {}
+                setKey(token);
+            } catch { /* 다음에 열 때 다시 */ }
+        })();
+        return () => { cancelled = true; };
+    }, [userId, authFetch]);
+
+    return key;
+}
 
 /**
  * 안드로이드 홈 위젯의 재료를 파일로 내보내고, 위젯에서 앱을 열었을 때 그 자리로 보낸다.
@@ -41,6 +88,8 @@ export default function AndroidWidgetSync() {
     const theme = useTheme();
     const router = useRouter();
     const [tick, setTick] = React.useState(0);
+    const widgetKey = useWidgetKey();
+    const authFetch = useAuthFetch();
     const timer = React.useRef<number | null>(null);
     // 일간 화면이 다른 날을 보면 store 의 memo 가 그날 것으로 바뀐다. 오늘 것만 기억해 둔다.
     const todayMemo = React.useRef("");
@@ -63,6 +112,7 @@ export default function AndroidWidgetSync() {
                     todos, categories, challenges, anniversaries, projects,
                     memo: todayMemo.current, t, locale,
                     theme: { family: theme.family, mode: theme.mode, colors: theme.colors },
+                    quickAdd: widgetKey && API_BASE ? { api: API_BASE, token: widgetKey } : null,
                 });
                 const { invoke } = await import("@tauri-apps/api/core");
                 await invoke("save_widget_snapshot", { snapshot: JSON.stringify(snapshot) });
@@ -71,7 +121,7 @@ export default function AndroidWidgetSync() {
             }
         }, 400);
         return () => { if (timer.current !== null) window.clearTimeout(timer.current); };
-    }, [todos, categories, challenges, anniversaries, projects, memo, memoDate, t, locale, theme, tick]);
+    }, [todos, categories, challenges, anniversaries, projects, memo, memoDate, t, locale, theme, tick, widgetKey]);
 
     // 위젯에서 열었을 때 갈 곳
     React.useEffect(() => {
@@ -82,6 +132,12 @@ export default function AndroidWidgetSync() {
                 const { invoke } = await import("@tauri-apps/api/core");
                 const link = await invoke<string | null>("take_pending_link");
                 if (stopped || !link) return;
+                // 위젯의 빠른 추가(QuickAddActivity)가 서버에 바로 넣고 남긴 신호 — 길은 그대로, 할 일만 다시 받는다.
+                // 안 받으면 뒤에 살아 있던 앱이 옛 목록으로 위젯 재료를 덮어써 방금 넣은 것이 위젯에서 사라진다.
+                if (link.startsWith("cronos://refresh")) {
+                    void useTodoStore.getState().fetchTodos(authFetch);
+                    return;
+                }
                 const path = routeForLink(link);
                 if (!path) return;
                 router.push(path);
@@ -95,8 +151,10 @@ export default function AndroidWidgetSync() {
         consume();
         const onVisible = () => { if (document.visibilityState === "visible") consume(); };
         document.addEventListener("visibilitychange", onVisible);
-        return () => { stopped = true; document.removeEventListener("visibilitychange", onVisible); };
-    }, [router]);
+        // 앱이 뒤에 떠 있는 동안 위젯에서 넣은 것도 곧 받아 오게
+        const poll = window.setInterval(consume, 60 * 1000);
+        return () => { stopped = true; document.removeEventListener("visibilitychange", onVisible); window.clearInterval(poll); };
+    }, [router, authFetch]);
 
     return null;
 }
