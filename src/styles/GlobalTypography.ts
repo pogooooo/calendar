@@ -28,6 +28,20 @@ const GlobalTypography = createGlobalStyle<{ $sizePx: number; $weight: number }>
         font-size: ${(props) => props.$sizePx}px;
     }
 
+    :where(button, a, input, textarea, select, [tabindex]):focus-visible {
+        outline: 2px solid ${(props) => props.theme.colors.primary};
+        outline-offset: 3px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+            scroll-behavior: auto !important;
+        }
+    }
+
     ${(props) => props.$weight > 0 && `
         body,
         body p, body span, body div, body li, body td, body th,
@@ -42,7 +56,7 @@ const GlobalTypography = createGlobalStyle<{ $sizePx: number; $weight: number }>
         input,
         textarea,
         select {
-            font-size: 16px;
+            font-size: max(16px, 1rem);
         }
     }
 `;

@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 홈 위젯 고르기 화면의 이름·설명과 위젯 설정 화면의 글. 위젯 안의 내용은 앱 언어(스냅샷 labels)를 따른다. -->
 <resources>
+    <string name="widget_previous">Previous date</string>
+    <string name="widget_next">Next date</string>
+    <string name="widget_return_today">Return to today</string>
     <string name="widget_today_label">Today</string>
     <string name="widget_today_desc">What is due today, at a glance.</string>
     <string name="widget_nownext_label">Now · Next</string>

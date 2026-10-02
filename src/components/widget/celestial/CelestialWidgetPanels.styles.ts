@@ -13,7 +13,9 @@ export const ROW_PX = 32;
 export const Pad = styled.div`
     height: 100%;
     width: 100%;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
     padding: var(--widget-pad);
     box-sizing: border-box;
     display: flex;
@@ -23,7 +25,9 @@ export const Pad = styled.div`
 export const Fit = styled.div`
     flex: 1;
     min-height: 0;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
 `;
 
 export const Column = styled.div`
@@ -60,8 +64,8 @@ export const DayNav = styled.div`
 `;
 
 export const NavBtn = styled.button`
-    width: 18px;
-    height: 18px;
+    width: 24px;
+    height: 24px;
     padding: 0;
     display: flex;
     align-items: center;
@@ -125,8 +129,8 @@ export const More = styled.div`
 `;
 
 export const Box = styled.button<{ $done: boolean }>`
-    width: 14px;
-    height: 14px;
+    width: 22px;
+    height: 22px;
     flex-shrink: 0;
     padding: 0;
     border: 1px solid ${p => p.theme.colors.primary};
@@ -216,13 +220,16 @@ export const NowMeta = styled.div`
 
 export const Streak = styled.div`
     display: flex;
-    gap: 5px;
+    flex-wrap: wrap;
+    gap: 7px;
+    flex-shrink: 0;
     margin-top: 10px;
 `;
 
 export const Dot = styled.button<{ $on: boolean; $today: boolean }>`
-    width: 8px;
-    height: 8px;
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
     padding: 0;
     transform: rotate(45deg);
     cursor: pointer;
@@ -298,6 +305,8 @@ export const CatFill = styled.div<{ $c: string; $pct: number }>`
 `;
 
 export const MemoArea = styled.textarea`
+    flex: 1;
+    min-height: 0;
     width: 100%;
     height: 100%;
     border: none;
@@ -311,6 +320,13 @@ export const MemoArea = styled.textarea`
     color: ${p => p.theme.colors.text};
     background: transparent;
     &::placeholder { color: ${p => p.theme.colors.textSecondary}88; }
+`;
+
+export const MemoColumn = styled.div`
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
 `;
 
 export const QuickInput = styled.input`
@@ -328,6 +344,8 @@ export const QuickInput = styled.input`
 `;
 
 export const DelBtn = styled.button`
+    min-width: 24px;
+    min-height: 24px;
     flex-shrink: 0;
     background: none;
     border: none;

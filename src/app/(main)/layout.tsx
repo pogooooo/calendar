@@ -19,7 +19,7 @@ interface MainLayoutProps {
 export default function MainLayout({ children }: MainLayoutProps) {
     return (
         <DialogProvider>
-            <AppShell>
+            <AppShell data-app-shell>
                 <TitleBar />
                 <LayoutWrapper>
                     <Sidebar />
@@ -78,6 +78,8 @@ const LayoutWrapper = styled.div`
 
 const MainContent = styled.main`
     flex: 1;
+    min-width: 0;
+    min-height: 0;
     overflow-y: auto;
     /* 화면 밖으로 걸쳐 둔 장식(카테고리·기념일의 별자리 워터마크)이 가로 스크롤바를 만들지 않게 */
     overflow-x: hidden;

@@ -31,6 +31,8 @@ export const Card = styled.div`
     display: grid;
     grid-template-columns: 1fr 236px;
     border: 1px solid ${p => p.theme.colors.primary}75;
+    background: ${p => p.theme.colors.surface};
+    box-shadow: 0 12px 40px ${p => p.theme.colors.text}08;
     overflow: hidden;
 
     &::before {
@@ -52,6 +54,8 @@ export const Card = styled.div`
         height: auto;
         overflow: visible;
         border: none;
+        background: transparent;
+        box-shadow: none;
 
         &::before { display: none; }
     }
@@ -142,7 +146,8 @@ export const DayNav = styled.div`
     padding: 12px 30px 0;
 
     @media (max-width: 768px) {
-        gap: 10px;
+        gap: 6px;
+        flex-wrap: wrap;
         padding: 12px 4px 0;
     }
 `;
@@ -161,6 +166,7 @@ export const NavButton = styled.button`
 
     &:hover { opacity: 1; filter: drop-shadow(0 0 5px ${p => p.theme.colors.primary}66); }
     &:focus-visible { outline: 1px solid ${p => p.theme.colors.primary}; outline-offset: 3px; }
+    @media (max-width: 768px) { min-width: 44px; min-height: 44px; padding: 0; flex-shrink: 0; }
 `;
 
 /** 날짜 줄 가운데의 "달력에서 고르기" — 고르개의 단추를 이 줄에 맞춰 입힌다 */
@@ -186,7 +192,7 @@ export const DayPick = styled.div`
     @media (max-width: 768px) {
         min-width: 0;
         flex: 1;
-        button { font-size: 0.8rem; padding: 7px 8px; }
+        button { font-size: 0.8rem; padding: 7px 8px; min-height: 44px; }
     }
 `;
 
@@ -232,6 +238,11 @@ export const TodayButton = styled.button`
 
     /* 오늘을 보고 있으면 누를 일이 없다 — 자리는 지키되 흐리게 */
     &:disabled { opacity: 0.3; cursor: default; }
+    @media (max-width: 768px) {
+        flex-basis: 100%;
+        min-height: 36px;
+        &:disabled { display: none; }
+    }
 `;
 
 export const Lists = styled.div`

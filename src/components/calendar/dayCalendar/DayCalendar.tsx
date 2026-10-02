@@ -224,7 +224,8 @@ const DayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
             if (!newTaskText.trim()) return;
             const text = newTaskText.trim();
             setNewTaskText("");
-            await addDailyTask(authFetch, selectedDate, text);
+            const error = await addDailyTask(authFetch, selectedDate, text);
+            if (error) setNewTaskText(value => value || text);
         };
 
         const handleMemoBlur = async () => {

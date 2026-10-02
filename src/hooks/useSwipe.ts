@@ -30,8 +30,16 @@ export default function useSwipe(
 
         // 손이 닿은 자리 위쪽에 가로 스크롤이 있으면 그 스크롤이 먼저다.
         let node = e.target as HTMLElement | null;
+        if (node?.closest('input, textarea, select, button, a, [contenteditable="true"], [role="slider"]')) {
+            start.current = null;
+            return;
+        }
         while (node && node !== e.currentTarget) {
-            if (node.scrollWidth > node.clientWidth + 1) { start.current = null; return; }
+            const overflow = window.getComputedStyle(node).overflowX;
+            if (node.scrollWidth > node.clientWidth + 1 && (overflow === "auto" || overflow === "scroll")) {
+                start.current = null;
+                return;
+            }
             node = node.parentElement;
         }
 
@@ -41,6 +49,7 @@ export default function useSwipe(
 
     const onTouchMove = React.useCallback((e: React.TouchEvent) => {
         const s = start.current;
+        if (e.touches.length !== 1) { start.current = null; return; }
         if (!s || !s.live) return;
         const t = e.touches[0];
         // 세로로 크게 움직였으면 이건 스크롤이다. 이번 손짓은 포기한다.
@@ -55,6 +64,7 @@ export default function useSwipe(
         if (!s || !s.live) return;
 
         const t = e.changedTouches[0];
+        if (!t) return;
         const dx = t.clientX - s.x;
         const dy = t.clientY - s.y;
         if (Math.abs(dx) < threshold || Math.abs(dx) < Math.abs(dy)) return;
@@ -63,5 +73,6 @@ export default function useSwipe(
         else onRight();
     }, [onLeft, onRight, threshold]);
 
-    return { onTouchStart, onTouchMove, onTouchEnd };
+    const onTouchCancel = React.useCallback(() => { start.current = null; }, []);
+    return { onTouchStart, onTouchMove, onTouchEnd, onTouchCancel };
 }

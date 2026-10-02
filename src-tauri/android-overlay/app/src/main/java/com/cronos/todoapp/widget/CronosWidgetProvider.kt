@@ -7,6 +7,7 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
@@ -75,7 +76,7 @@ abstract class CronosWidgetProvider : AppWidgetProvider() {
 
     /** 위젯 하나를 그린다: 설정(투명도·벌) + 크기 → 그림 + 누르는 칸 */
     fun build(context: Context, manager: AppWidgetManager, id: Int, snap: Snapshot?): RemoteViews {
-        val (wDp, hDp) = sizeDp(manager, id)
+        val (wDp, hDp) = sizeDp(context, manager, id)
         val alpha = WidgetPrefs.alpha(context, id)
         val palette = Palette.resolve(snap?.theme, WidgetPrefs.mode(context, id))
         // 옮겨 볼 수 있는 것은 한 때를 보여 주는 위젯만 — "지금·다음" 처럼 시각이 중요한 것은 늘 지금이다.
@@ -93,9 +94,14 @@ abstract class CronosWidgetProvider : AppWidgetProvider() {
         val canShift = kind in SHIFT_KINDS
         views.setViewVisibility(R.id.ov_prev, if (canShift) View.VISIBLE else View.GONE)
         views.setViewVisibility(R.id.ov_next, if (canShift) View.VISIBLE else View.GONE)
+        views.setViewVisibility(R.id.ov_today, if (canShift) View.VISIBLE else View.GONE)
         if (canShift) {
             views.setOnClickPendingIntent(R.id.ov_prev, shift(context, id, -1))
             views.setOnClickPendingIntent(R.id.ov_next, shift(context, id, 1))
+            views.setOnClickPendingIntent(R.id.ov_today, shift(context, id, 0))
+            views.setContentDescription(R.id.ov_prev, context.getString(R.string.widget_previous))
+            views.setContentDescription(R.id.ov_next, context.getString(R.string.widget_next))
+            views.setContentDescription(R.id.ov_today, context.getString(R.string.widget_return_today))
         }
 
         views.setViewVisibility(R.id.ov_rows, if (painted.overlay == WidgetPainter.Overlay.ROWS) View.VISIBLE else View.GONE)
@@ -103,6 +109,7 @@ abstract class CronosWidgetProvider : AppWidgetProvider() {
         views.setViewVisibility(R.id.ov_month, if (painted.overlay == WidgetPainter.Overlay.MONTH) View.VISIBLE else View.GONE)
         when (painted.overlay) {
             WidgetPainter.Overlay.ROWS -> ROW_IDS.forEachIndexed { i, rid ->
+                views.setViewVisibility(rid, if (i < painted.rowLinks.size) View.VISIBLE else View.GONE)
                 views.setOnClickPendingIntent(rid, link(context, id, 1 + i, painted.rowLinks.getOrNull(i) ?: rootLink(snap)))
             }
             WidgetPainter.Overlay.WEEK -> WEEK_IDS.forEachIndexed { i, cid ->
@@ -139,10 +146,11 @@ abstract class CronosWidgetProvider : AppWidgetProvider() {
     }
 
     /** 런처가 알려 준 크기 (세로 화면 기준: 폭은 min, 높이는 max). 모르면 기본값 */
-    private fun sizeDp(manager: AppWidgetManager, id: Int): Pair<Int, Int> {
+    private fun sizeDp(context: Context, manager: AppWidgetManager, id: Int): Pair<Int, Int> {
         val o = manager.getAppWidgetOptions(id)
-        val w = o.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0)
-        val h = o.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 0)
+        val landscape = context.resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        val w = o.getInt(if (landscape) AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH else AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0)
+        val h = o.getInt(if (landscape) AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT else AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 0)
         return (if (w > 0) w else defaultSizeDp.first).coerceIn(40, 800) to (if (h > 0) h else defaultSizeDp.second).coerceIn(40, 800)
     }
 
@@ -162,7 +170,7 @@ abstract class CronosWidgetProvider : AppWidgetProvider() {
             .putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId)
             .putExtra(EXTRA_DELTA, delta)
         return PendingIntent.getBroadcast(
-            context, widgetId * 64 + (if (delta < 0) 58 else 59), intent,
+            context, widgetId * 64 + (if (delta < 0) 58 else if (delta > 0) 59 else 57), intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
     }

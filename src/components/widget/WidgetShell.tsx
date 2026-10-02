@@ -11,6 +11,7 @@ import { useT } from "@/i18n/useT";
 import { invoke } from "@tauri-apps/api/core";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { getCurrentWindow, currentMonitor } from "@tauri-apps/api/window";
+import { Settings2, Lock, X } from "lucide-react";
 
 import type { WidgetKind } from "@/store/useWidgetStore";
 import { mirrorWidgetStateToFile } from "@/lib/widgetStateFile";
@@ -418,23 +419,26 @@ export default function WidgetShell({ kind, title, children }: Props) {
                             onMouseDown={(e) => e.stopPropagation()}
                             onClick={(e) => e.stopPropagation()}
                         >
-                            <S.Gem
-                                as="button"
+                            <S.Control
+                                type="button"
                                 $active={showSettings}
                                 title={t.widgetShell.background}
+                                aria-label={t.widgetShell.background}
+                                aria-expanded={showSettings}
                                 onClick={() => setShowSettings((v) => !v)}
-                            />
-                            <S.Gem as="button" title={t.widgetShell.lock} onClick={handleLock} />
-                            <S.Gem
-                                as="button"
+                            ><Settings2 size={14} /></S.Control>
+                            <S.Control type="button" title={t.widgetShell.lock} aria-label={t.widgetShell.lock} onClick={handleLock}><Lock size={14} /></S.Control>
+                            <S.Control
+                                type="button"
                                 $danger
                                 title={t.widgetShell.close}
+                                aria-label={t.widgetShell.close}
                                 onClick={async () => {
                                     try { localStorage.setItem(`cronos-widget-open:${kind}`, "0"); } catch {}
                                     await mirrorWidgetStateToFile();
                                     closeWindow();
                                 }}
-                            />
+                            ><X size={14} /></S.Control>
                         </S.BtnGroup>
                     </S.TopBar>
                 )}
@@ -460,6 +464,7 @@ export default function WidgetShell({ kind, title, children }: Props) {
                                 : t.widgetShell.opacity(Math.round(bg.opacity * 100))}
                         </S.PanelLabel>
                         <S.Slider
+                            aria-label={bg.mode === "glass" ? t.widgetShell.blur(Math.round(bg.opacity * 40)) : t.widgetShell.opacity(Math.round(bg.opacity * 100))}
                             type="range" min={0} max={100}
                             value={Math.round(bg.opacity * 100)}
                             onChange={(e) => handleOpacity(parseInt(e.target.value) / 100)}
@@ -471,6 +476,8 @@ export default function WidgetShell({ kind, title, children }: Props) {
                                 <S.ToggleRow>
                                     <S.ToggleLabel>{t.widgetShell.gloss}</S.ToggleLabel>
                                     <S.ToggleSwitch
+                                        aria-label={t.widgetShell.gloss}
+                                        aria-pressed={!!bg.gloss}
                                         $on={!!bg.gloss}
                                         onClick={() => handleGloss(!bg.gloss)}
                                     >
@@ -485,6 +492,7 @@ export default function WidgetShell({ kind, title, children }: Props) {
                                 <S.PanelLabel>{t.widgetShell.color}</S.PanelLabel>
                                 <S.ColorRow>
                                     <S.ColorPicker
+                                        aria-label={t.widgetShell.color}
                                         type="color"
                                         value={bg.customColor}
                                         onChange={(e) => handleColor(e.target.value)}
@@ -498,6 +506,8 @@ export default function WidgetShell({ kind, title, children }: Props) {
                         <S.ToggleRow>
                             <S.ToggleLabel>{t.widgetShell.autoTextColor}</S.ToggleLabel>
                             <S.ToggleSwitch
+                                aria-label={t.widgetShell.autoTextColor}
+                                aria-pressed={bg.autoTextColor}
                                 $on={bg.autoTextColor}
                                 onClick={() => handleAutoTextColor(!bg.autoTextColor)}
                             >

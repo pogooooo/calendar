@@ -23,7 +23,7 @@ export const CelestialWrapper = styled.div`
     ${celestial_singleInput_wrapper}
 `;
 
-export const CelestialLabel = styled.div`
+export const CelestialLabel = styled.label`
     ${celestial_singleInput_label}
 `;
 

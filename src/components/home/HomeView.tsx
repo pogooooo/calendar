@@ -24,6 +24,7 @@ import * as CelestialS from "./celestial/CelestialHome.styles";
 import * as MapleS from "./maple/MapleHome.styles";
 import MonthArch from "./parts/MonthArch";
 import EmptyArt from "@/components/empty/EmptyArt";
+import { useCurrentDayKey } from "@/hooks/useCurrentDay";
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
 const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS };
@@ -54,8 +55,15 @@ export default function HomeView() {
        홈은 오늘만 보여 줬다. 어제 못 끝낸 것, 내일 할 것을 보려면 달력으로 나가야 했다.
        왼쪽(달 눈금·목록)은 "보는 날" 을 따르고, 오른쪽 기둥(프로젝트·챌린지·기념일)은
        늘 오늘 기준이다 — 그쪽은 "지금 어떤가" 를 보는 자리라서. */
-    const realTodayTime = React.useMemo(() => new Date().setHours(0, 0, 0, 0), []);
+    const todayKey = useCurrentDayKey();
+    const realTodayTime = React.useMemo(() => new Date(`${todayKey}T00:00:00`).getTime(), [todayKey]);
     const [focusTime, setFocusTime] = React.useState(realTodayTime);
+    const previousToday = React.useRef(realTodayTime);
+    React.useEffect(() => {
+        const previous = previousToday.current;
+        setFocusTime(value => value === previous ? realTodayTime : value);
+        previousToday.current = realTodayTime;
+    }, [realTodayTime]);
     const focus = React.useMemo(() => new Date(focusTime), [focusTime]);
     const isToday = focusTime === realTodayTime;
 
@@ -340,6 +348,9 @@ export default function HomeView() {
                                     placeholder={t.calendar.addTask}
                                     maxLength={120}
                                     aria-label={t.calendar.addTask}
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Enter" && (e.nativeEvent.isComposing || e.keyCode === 229)) e.preventDefault();
+                                    }}
                                 />
                                 <button type="button" className="detail" onClick={openDetail} aria-label={t.home.quickDetail} title={t.home.quickDetail}>
                                     <SlidersHorizontal size={15} strokeWidth={2} />
@@ -456,6 +467,8 @@ export default function HomeView() {
                                                 type="button"
                                                 $on={s.done}
                                                 $today={s.isToday}
+                                                aria-label={`${c.title} ${localDateKey(s.date)}`}
+                                                aria-pressed={s.done}
                                                 onClick={() => handleToggleChallenge(c.id, s.date)}
                                             />
                                         ))}

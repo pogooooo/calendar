@@ -15,7 +15,9 @@ import useAnniversaryStore from "@/store/useAnniversaryStore";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useT } from "@/i18n/useT";
 import { useCurrentDayKey } from "@/hooks/useCurrentDay";
-import { dayKeyToIso, localDateKey, utcDayKey } from "@/lib/dateKey";
+import { localDateKey, utcDayKey, activeTimeZone } from "@/lib/dateKey";
+import { addDaysToKey, zonedDayStart } from "@/lib/timezone";
+import { expandTodos } from "@/hooks/useExpandedTodos";
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
 const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS };
@@ -63,17 +65,16 @@ function useFrame(rowPx = ROW_PX, reserved = 0) {
  * 어제 못 끝낸 것을 보려면 앱을 열어야 했다. 옮긴 날은 창을 닫으면 잊는다(오늘로 돌아온다).
  */
 function useDayShift() {
+    const todayKey = useCurrentDayKey();
     const [offset, setOffset] = React.useState(0);
+    const key = addDaysToKey(todayKey, offset);
     const date = React.useMemo(() => {
-        const d = new Date();
-        d.setHours(0, 0, 0, 0);
-        d.setDate(d.getDate() + offset);
-        return d;
-    }, [offset]);
+        return new Date(`${key}T00:00:00`);
+    }, [key]);
     return {
         offset,
         date,
-        key: localDateKey(date),
+        key,
         shift: (delta: number) => setOffset(o => o + delta),
         reset: () => setOffset(0),
     };
@@ -93,29 +94,31 @@ export function TodayPanel() {
     const { categories } = useCategoryStore();
     const authFetch = useAuthFetch();
     const tr = useT();
-    const [ref, box] = useFrame(ROW_PX, 26 + 38 + 22);
     const [draft, setDraft] = React.useState("");
+    const [pending, setPending] = React.useState(false);
+    const [error, setError] = React.useState<string | null>(null);
+    const submitting = React.useRef(false);
 
     const day = useDayShift();
     const key = day.key;
     const t0 = day.date.getTime();
 
-    const today = todos.filter(t => spansDay(t, key));
-    const next = todos
+    const windowEnd = new Date(day.date);
+    windowEnd.setDate(windowEnd.getDate() + 7);
+    const occurrences = expandTodos(todos, day.date, windowEnd);
+    const today = occurrences.filter(t => spansDay(t, key));
+    const next = occurrences
         .filter(t => t.startAt && new Date(t.startAt).getTime() >= t0 + 86400000 && new Date(t.startAt).getTime() < t0 + 86400000 * 8)
         .sort((a, b) => new Date(a.startAt!).getTime() - new Date(b.startAt!).getTime());
 
     const hasNext = next.length > 0;
-    const budget = Math.max(1, box.rows - (hasNext ? 1 : 0));
-    const todayCap = hasNext ? Math.max(1, Math.round(budget * 0.6)) : budget;
-    const nextCap = Math.max(0, budget - todayCap);
 
     const theme = useTheme();
     const color = (id: string) => categories.find(c => c.id === id)?.color || theme.colors.primary;
 
-    const submit = () => {
+    const submit = async () => {
         const v = draft.trim();
-        if (!v) return;
+        if (!v || submitting.current) return;
 
         const cat = categories[0];
         if (!cat) return;
@@ -126,23 +129,35 @@ export function TodayPanel() {
         else start.setHours(9, 0, 0, 0);
         const end = new Date(start.getTime() + 3600000);
 
-        addTodo(authFetch, {
+        submitting.current = true;
+        setPending(true);
+        setError(null);
+        const message = await addTodo(authFetch, {
             title: v,
             categoryId: cat.id,
             startAt: start.toISOString(),
             endAt: end.toISOString(),
         });
-        setDraft("");
+        submitting.current = false;
+        setPending(false);
+        if (message) setError(message);
+        else setDraft("");
     };
 
     return (
-        <S.Pad ref={ref}>
+        <S.Pad>
             <S.QuickInput
                 value={draft}
+                aria-label={tr.calendar.addTask}
+                maxLength={120}
+                disabled={pending || categories.length === 0}
                 placeholder={tr.calendar.addTask}
                 onChange={(e) => setDraft(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
+                onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.nativeEvent.isComposing && e.keyCode !== 229) { e.preventDefault(); void submit(); }
+                }}
             />
+            {error && <S.More role="alert">{error}</S.More>}
             <S.DayNav>
                 <S.NavBtn type="button" onClick={() => day.shift(-1)} aria-label={tr.calendar.prevDay}>‹</S.NavBtn>
                 <button type="button" className="label" onClick={day.reset} disabled={day.offset === 0}>
@@ -154,11 +169,11 @@ export function TodayPanel() {
             <S.SectionHead>{tr.home.tasks}</S.SectionHead>
             {today.length === 0
                 ? <S.Thin>{day.offset === 0 ? tr.home.noTodayTodos : tr.home.noDayTodos}</S.Thin>
-                : today.slice(0, todayCap).map(t => {
+                : today.map(t => {
                     const done = doneOn(t, key);
                     return (
                         <S.Row key={t.id}>
-                            <S.Box $done={done} onClick={() => toggleTodo(authFetch, t.id, key)}>
+                            <S.Box $done={done} aria-label={t.title} aria-pressed={done} onClick={() => toggleTodo(authFetch, t.originalTodo?.id ?? t.id, key)}>
                                 {done && <Check size={9} strokeWidth={3} />}
                             </S.Box>
                             <S.Mark $c={color(t.categoryId)} />
@@ -166,18 +181,16 @@ export function TodayPanel() {
                         </S.Row>
                     );
                 })}
-            {today.length > todayCap && <S.More>{`+${today.length - todayCap}`}</S.More>}
-
-            {hasNext && nextCap > 0 && (
+            {hasNext && (
                 <>
                     <S.SectionHead className="mt">{tr.home.upcoming}</S.SectionHead>
-                    {next.slice(0, nextCap).map(t => {
+                    {next.map(t => {
                         const k = localDateKey(t.startAt!);
                         const done = doneOn(t, k);
                         const d = new Date(t.startAt!);
                         return (
                             <S.Row key={t.id}>
-                                <S.Box $done={done} onClick={() => toggleTodo(authFetch, t.id, k)}>
+                                <S.Box $done={done} aria-label={t.title} aria-pressed={done} onClick={() => toggleTodo(authFetch, t.originalTodo?.id ?? t.id, k)}>
                                     {done && <Check size={9} strokeWidth={3} />}
                                 </S.Box>
                                 <S.Mark $c={color(t.categoryId)} />
@@ -186,7 +199,6 @@ export function TodayPanel() {
                             </S.Row>
                         );
                     })}
-                    {next.length > nextCap && <S.More>{`+${next.length - nextCap}`}</S.More>}
                 </>
             )}
         </S.Pad>
@@ -201,7 +213,8 @@ export function NowNextPanel() {
     useMinuteTick();
 
     const now = Date.now();
-    const timed = todos.filter(t => t.startAt && t.endAt && !t.isAllDay);
+    const timed = expandTodos(todos, new Date(now), new Date(now + 7 * 86400000))
+        .filter(t => t.startAt && t.endAt && !t.isAllDay && !doneOn(t, localDateKey(Math.max(now, new Date(t.startAt!).getTime()))));
 
     const current = timed
         .filter(t => new Date(t.startAt!).getTime() <= now && now < new Date(t.endAt!).getTime())
@@ -268,11 +281,10 @@ export function DuePanel() {
     const { categories } = useCategoryStore();
     const authFetch = useAuthFetch();
     const tr = useT();
-    const [ref, box] = useFrame(ROW_PX, 26);
     useMinuteTick(60000);
 
     const now = Date.now();
-    const list = todos
+    const list = expandTodos(todos, new Date(now), new Date(now + 2 * 86400000))
         .filter(t => {
             if (!t.endAt) return false;
             const end = new Date(t.endAt).getTime();
@@ -281,7 +293,6 @@ export function DuePanel() {
         })
         .sort((a, b) => new Date(a.endAt!).getTime() - new Date(b.endAt!).getTime());
 
-    const cap = Math.max(1, box.rows);
     const theme = useTheme();
     const color = (id: string) => categories.find(c => c.id === id)?.color || theme.colors.primary;
 
@@ -291,22 +302,21 @@ export function DuePanel() {
     };
 
     return (
-        <S.Pad ref={ref}>
+        <S.Pad>
             <S.SectionHead>{tr.widget.dueSoon}</S.SectionHead>
             {list.length === 0
                 ? <S.Thin>{tr.widget.noDue}</S.Thin>
-                : list.slice(0, cap).map(t => {
+                : list.map(t => {
                     const k = localDateKey(t.endAt!);
                     return (
                         <S.Row key={t.id}>
-                            <S.Box $done={false} onClick={() => toggleTodo(authFetch, t.id, k)} />
+                            <S.Box $done={false} aria-label={t.title} aria-pressed={false} onClick={() => toggleTodo(authFetch, t.originalTodo?.id ?? t.id, k)} />
                             <S.Mark $c={color(t.categoryId)} />
                             <S.Name $done={false}>{t.title}</S.Name>
                             <S.Meta>{left(t.endAt!)}</S.Meta>
                         </S.Row>
                     );
                 })}
-            {list.length > cap && <S.More>{`+${list.length - cap}`}</S.More>}
         </S.Pad>
     );
 }
@@ -316,7 +326,7 @@ export function AnniversaryPanel() {
     const { anniversaries, fetchAnniversaries } = useAnniversaryStore();
     const authFetch = useAuthFetch();
     const tr = useT();
-    const [ref, box] = useFrame(ROW_PX, 26);
+    useCurrentDayKey();
 
     React.useEffect(() => {
         fetchAnniversaries(authFetch);
@@ -334,14 +344,12 @@ export function AnniversaryPanel() {
         })
         .sort((a, b) => a.dday - b.dday);
 
-    const cap = Math.max(1, box.rows);
-
     return (
-        <S.Pad ref={ref}>
+        <S.Pad>
             <S.SectionHead>{tr.sidebar.anniversary}</S.SectionHead>
             {list.length === 0
                 ? <S.Thin>{tr.home.noAnniversaries}</S.Thin>
-                : list.slice(0, cap).map(a => (
+                : list.map(a => (
                     <S.Row key={a.id}>
                         <S.Star>✦</S.Star>
                         <S.Name $done={false}>{a.title}</S.Name>
@@ -357,7 +365,6 @@ export function ProjectsPanel() {
     const { projects, fetchProjects } = useProjectStore();
     const authFetch = useAuthFetch();
     const tr = useT();
-    const [ref, box] = useFrame(38, 26);
 
     React.useEffect(() => {
         fetchProjects(authFetch);
@@ -372,14 +379,12 @@ export function ProjectsPanel() {
             return ea - eb;
         });
 
-    const cap = Math.max(1, box.rows);
-
     return (
-        <S.Pad ref={ref}>
+        <S.Pad>
             <S.SectionHead>{tr.home.project}</S.SectionHead>
             {list.length === 0
                 ? <S.Thin>{tr.home.noProjects}</S.Thin>
-                : list.slice(0, cap).map(p => {
+                : list.map(p => {
                     const tasks = p.tasks ?? [];
                     const done = tasks.filter(t => t.status === "done").length;
                     const pct = tasks.length ? Math.round((done / tasks.length) * 100) : 0;
@@ -393,14 +398,14 @@ export function ProjectsPanel() {
                         </S.ProjRow>
                     );
                 })}
-            {list.length > cap && <S.More>{`+${list.length - cap}`}</S.More>}
         </S.Pad>
     );
 }
 
 export function StatsPanel() {
+    useCurrentDayKey();
     const S = usePickTheme(STYLES);
-    const { todos } = useTodoStore();
+    const { todos: sourceTodos } = useTodoStore();
     const { categories } = useCategoryStore();
     const tr = useT();
     const [ref, box] = useFrame(22, 96);
@@ -408,6 +413,9 @@ export function StatsPanel() {
     const t0 = new Date().setHours(0, 0, 0, 0);
     const base = new Date(t0);
     base.setDate(base.getDate() - base.getDay());
+    const weekEnd = new Date(base);
+    weekEnd.setDate(weekEnd.getDate() + 6);
+    const todos = expandTodos(sourceTodos, base, weekEnd);
 
     let total = 0;
     let done = 0;
@@ -461,6 +469,7 @@ export function StatsPanel() {
 }
 
 export function ChallengePanel() {
+    useCurrentDayKey();
     const S = usePickTheme(STYLES);
     const { challenges, fetchChallenges, toggleChallengeCompletion } = useChallengeStore();
     const authFetch = useAuthFetch();
@@ -516,24 +525,22 @@ export function ChallengePanel() {
                 <S.NowMeta>{c.targetCount ? `${c.completions?.length ?? 0}/${c.targetCount}` : `${c.completions?.length ?? 0}`}</S.NowMeta>
                 <S.Streak>
                     {days.map((x, i) => (
-                        <S.Dot key={i} $on={x.on} $today={x.isToday} onClick={() => toggle(c.id, x.d)} />
+                        <S.Dot key={i} $on={x.on} $today={x.isToday} aria-label={`${c.title} ${localDateKey(x.d)}`} aria-pressed={x.on} onClick={() => toggle(c.id, x.d)} />
                     ))}
                 </S.Streak>
             </S.Pad>
         );
     }
 
-    const cap = Math.max(1, box.rows);
-
     return (
         <S.Pad ref={ref}>
             <S.SectionHead>{tr.home.challenge}</S.SectionHead>
-            {active.slice(0, cap).map(c => {
+            {active.map(c => {
                 const done = (c.completions ?? []).some(cp => utcDayKey(cp.targetDate) === key);
                 const count = c.completions?.length ?? 0;
                 return (
                     <S.Row key={c.id}>
-                        <S.Box $done={done} onClick={() => toggle(c.id, today)}>
+                        <S.Box $done={done} aria-label={c.title} aria-pressed={done} onClick={() => toggle(c.id, today)}>
                             {done && <Check size={9} strokeWidth={3} />}
                         </S.Box>
                         <S.Name $done={done}>{c.title}</S.Name>
@@ -541,37 +548,54 @@ export function ChallengePanel() {
                     </S.Row>
                 );
             })}
-            {active.length > cap && <S.More>{`+${active.length - cap}`}</S.More>}
         </S.Pad>
     );
 }
 
 export function MemoPanel() {
     const S = usePickTheme(STYLES);
-    const { memo, fetchDailyData, updateDailyMemo } = useDailyStore();
+    const { memo, memoDate, error, memoError, fetchDailyData, updateDailyMemo } = useDailyStore();
     const authFetch = useAuthFetch();
     const tr = useT();
     const [draft, setDraft] = React.useState("");
     const [loaded, setLoaded] = React.useState(false);
+    const draftRef = React.useRef(draft);
+    draftRef.current = draft;
+    const dirty = React.useRef(false);
     const key = useCurrentDayKey();
 
     React.useEffect(() => {
         setLoaded(false);
-        fetchDailyData(authFetch, new Date(dayKeyToIso(key))).then(() => setLoaded(true));
+        dirty.current = false;
+        let active = true;
+        fetchDailyData(authFetch, zonedDayStart(key, activeTimeZone())!).then(() => {
+            if (active) setLoaded(useDailyStore.getState().memoDate === key && !useDailyStore.getState().error);
+        });
+        return () => { active = false; };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [key]);
 
     React.useEffect(() => {
-        if (loaded) setDraft(memo ?? "");
-    }, [loaded, memo]);
+        if (loaded && memoDate === key && !dirty.current) setDraft(memo ?? "");
+    }, [loaded, memo, memoDate, key]);
 
     return (
+        <S.MemoColumn>
         <S.MemoArea
             value={draft}
+            aria-label={tr.calendar.memoPlaceholder}
+            disabled={!loaded}
             placeholder={tr.calendar.memoPlaceholder}
-            onChange={(e) => setDraft(e.target.value)}
-            onBlur={() => updateDailyMemo(authFetch, new Date(dayKeyToIso(key)), draft)}
+            onChange={(e) => { dirty.current = true; setDraft(e.target.value); }}
+            onBlur={async () => {
+                if (!loaded || !dirty.current) return;
+                const savedDraft = draft;
+                const message = await updateDailyMemo(authFetch, zonedDayStart(key, activeTimeZone())!, savedDraft);
+                if (!message && draftRef.current === savedDraft) dirty.current = false;
+            }}
         />
+        {(error || memoError) && <S.More role="alert">{error || memoError}</S.More>}
+        </S.MemoColumn>
     );
 }
 
@@ -581,44 +605,55 @@ export function QuickTaskPanel() {
     const authFetch = useAuthFetch();
     const tr = useT();
     const [text, setText] = React.useState("");
+    const [pending, setPending] = React.useState(false);
+    const [error, setError] = React.useState<string | null>(null);
+    const submitting = React.useRef(false);
     const key = useCurrentDayKey();
-    const [ref, box] = useFrame(ROW_PX, 4);
 
     React.useEffect(() => {
-        fetchDailyData(authFetch, new Date(dayKeyToIso(key)));
+        fetchDailyData(authFetch, zonedDayStart(key, activeTimeZone())!);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [key]);
 
-    const submit = () => {
+    const submit = async () => {
         const v = text.trim();
-        if (!v) return;
-        addDailyTask(authFetch, new Date(dayKeyToIso(key)), v);
-        setText("");
+        if (!v || submitting.current) return;
+        submitting.current = true;
+        setPending(true);
+        setError(null);
+        const message = await addDailyTask(authFetch, zonedDayStart(key, activeTimeZone())!, v);
+        submitting.current = false;
+        setPending(false);
+        if (message) setError(message);
+        else setText("");
     };
-
-    const cap = Math.max(1, box.rows);
 
     return (
         <S.Column>
             <S.QuickInput
                 value={text}
+                aria-label={tr.calendar.addTask}
+                maxLength={120}
+                disabled={pending}
                 placeholder={tr.calendar.addTask}
                 onChange={(e) => setText(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
+                onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.nativeEvent.isComposing && e.keyCode !== 229) { e.preventDefault(); void submit(); }
+                }}
             />
-            <S.Fit ref={ref}>
+            {error && <S.More role="alert">{error}</S.More>}
+            <S.Fit>
                 {tasks.length === 0
                     ? <S.Thin>{tr.home.noTodayTodos}</S.Thin>
-                    : tasks.slice(0, cap).map(task => (
+                    : tasks.map(task => (
                         <S.Row key={task.id}>
-                            <S.Box $done={task.isDone} onClick={() => toggleDailyTask(authFetch, task.id)}>
+                            <S.Box $done={task.isDone} aria-label={task.text} aria-pressed={task.isDone} onClick={() => toggleDailyTask(authFetch, task.id)}>
                                 {task.isDone && <Check size={9} strokeWidth={3} />}
                             </S.Box>
                             <S.Name $done={task.isDone}>{task.text}</S.Name>
-                            <S.DelBtn onClick={() => deleteDailyTask(authFetch, task.id)}>×</S.DelBtn>
+                            <S.DelBtn aria-label={`${tr.todo.delete}: ${task.text}`} onClick={() => deleteDailyTask(authFetch, task.id)}>×</S.DelBtn>
                         </S.Row>
                     ))}
-                {tasks.length > cap && <S.More>{`+${tasks.length - cap}`}</S.More>}
             </S.Fit>
         </S.Column>
     );

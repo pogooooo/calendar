@@ -16,19 +16,29 @@
     <!-- 날짜 넘기기 — 머리글 양 끝. 날을 옮길 수 있는 위젯(오늘·주간·월간)에서만 보인다 -->
     <FrameLayout
         android:id="@+id/ov_prev"
-        android:layout_width="34dp"
-        android:layout_height="30dp"
+        android:layout_width="44dp"
+        android:layout_height="36dp"
         android:layout_gravity="top|start"
-        android:layout_marginTop="6dp"
-        android:layout_marginStart="4dp"
+        android:layout_marginTop="2dp"
+        android:layout_marginStart="0dp"
         android:visibility="gone" />
     <FrameLayout
         android:id="@+id/ov_next"
-        android:layout_width="34dp"
-        android:layout_height="30dp"
+        android:layout_width="44dp"
+        android:layout_height="36dp"
         android:layout_gravity="top|end"
-        android:layout_marginTop="6dp"
-        android:layout_marginEnd="4dp"
+        android:layout_marginTop="2dp"
+        android:layout_marginEnd="0dp"
+        android:visibility="gone" />
+
+    <FrameLayout
+        android:id="@+id/ov_today"
+        android:layout_width="match_parent"
+        android:layout_height="36dp"
+        android:layout_gravity="top"
+        android:layout_marginTop="2dp"
+        android:layout_marginStart="44dp"
+        android:layout_marginEnd="44dp"
         android:visibility="gone" />
 
     <!-- 줄 목록 (오늘 할 일 · 챌린지 · 프로젝트) -->

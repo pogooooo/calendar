@@ -20,6 +20,7 @@ import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.HorizontalScrollView
 import android.widget.LinearLayout
+import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.view.ViewCompat
@@ -201,6 +202,7 @@ class QuickAddActivity : Activity() {
             textSize = 15f
             gravity = Gravity.CENTER
             minWidth = dp(88)
+            minHeight = dp(48)
             setTextColor(opaque(palette.bg))
             setPadding(dp(18), dp(10), dp(18), dp(10))
             background = GradientDrawable().apply { setColor(palette.gold); cornerRadius = dp(6).toFloat() }
@@ -210,7 +212,11 @@ class QuickAddActivity : Activity() {
         sheet.addView(buttons, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply { topMargin = dp(12) })
 
         paintChips()
-        root.addView(sheet, FrameLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT, Gravity.BOTTOM))
+        root.addView(ScrollView(this).apply {
+            isFillViewport = false
+            isVerticalScrollBarEnabled = false
+            addView(sheet, FrameLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT))
+        }, FrameLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT, Gravity.BOTTOM))
 
         // 화면 끝까지 그리는 창이라 시스템이 자판만큼 줄여 주지 않는다 — 자판·아래 막대 위로 시트를 들어 올린다
         ViewCompat.setOnApplyWindowInsetsListener(root) { v, insets ->
@@ -227,6 +233,7 @@ class QuickAddActivity : Activity() {
         textSize = 13f
         isSingleLine = true
         gravity = Gravity.CENTER_VERTICAL
+        minHeight = dp(44)
         setPadding(dp(12), dp(7), dp(12), dp(7))
         if (dot != null) {
             val d = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(dot); setSize(dp(8), dp(8)) }

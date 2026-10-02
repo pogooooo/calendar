@@ -80,7 +80,7 @@ export const VirtualMonitor = styled.div<{ $url: string; $mw: number; $mh: numbe
 `;
 
 /** 상단 바 높이. 내용과 설정 패널이 이 값만큼 비켜선다. */
-const TOP_BAR_H = 24;
+const TOP_BAR_H = 30;
 
 export const TopBar = styled.div`
     position: absolute;
@@ -138,8 +138,22 @@ export const Rule = styled.span`
 export const BtnGroup = styled.div`
     display: flex;
     align-items: center;
-    gap: 7px;
+    gap: 4px;
     flex-shrink: 0;
+`;
+
+export const Control = styled.button<{ $active?: boolean; $danger?: boolean }>`
+    width: 24px;
+    height: 24px;
+    padding: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: ${(p) => p.$active ? `${p.theme.colors.primary}22` : "transparent"};
+    color: ${(p) => p.$danger ? p.theme.colors.error : p.theme.colors.primary};
+    cursor: pointer;
+    &:hover { background: ${(p) => p.theme.colors.primary}22; }
 `;
 
 const slideDown = keyframes`
@@ -186,7 +200,6 @@ export const PanelDone = styled.button`
     align-items: center;
     justify-content: center;
     gap: 8px;
-    background: none;
     border: none;
     border-top: 1px solid ${p => p.theme?.colors?.primary}33;
     cursor: pointer;
@@ -314,10 +327,6 @@ export const Content = styled.div<{ $kind?: string; $locked?: boolean }>`
      * 그 자리도 내용에 돌려준다.
      */
     padding: ${p => p.$locked ? 0 : TOP_BAR_H}px 0 0;
-
-    &, & * {
-        color: ${p => p.theme?.colors?.text} !important;
-    }
 
     & *::-webkit-scrollbar {
         display: none !important;

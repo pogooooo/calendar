@@ -5,7 +5,14 @@ export const SettingsContainer = styled.div`
     display: inline-flex;
 `;
 
-export const SetCategoryButton = styled.div`
+export const SetCategoryButton = styled.button`
+    border: none;
+    background: transparent;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    min-height: 36px;
     color: ${(props) => props.theme.colors.primary};
     padding: 3px;
     cursor: pointer;
@@ -72,7 +79,12 @@ export const PopoverLabel = styled.div`
     padding: 12px 14px 7px;
 `;
 
-export const MenuItem = styled.div<{ $isSelected: boolean }>`
+export const MenuItem = styled.button<{ $isSelected: boolean }>`
+    border: none;
+    color: inherit;
+    font-family: inherit;
+    text-align: left;
+    min-height: 44px;
     position: relative;
     display: flex;
     align-items: center;
@@ -80,7 +92,7 @@ export const MenuItem = styled.div<{ $isSelected: boolean }>`
     font-size: 0.87rem;
     cursor: pointer;
     user-select: none;
-    opacity: ${(props) => props.$isSelected ? 1 : 0.4};
+    opacity: ${(props) => props.$isSelected ? 1 : 0.65};
     text-decoration: ${(props) => props.$isSelected ? 'none' : 'line-through'};
 
     background-color: transparent;

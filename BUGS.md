@@ -6,6 +6,13 @@
 
 | 날짜 | 증상 | 까닭 | 고친 방법 |
 |---|---|---|---|
+| 2026-10-02 | 320px 폰에서 달력 필터·일정 입력칸이 옆으로 넘치고 홈 날짜가 말줄임됨 | 머리줄의 화살·간격과 입력칸 최소 너비가 좁은 화면에 맞지 않았다 | 달력 머리줄 간격·화살 크기를 줄이고, 일정 날짜 행은 세로로 배치. 입력칸 `min-width: 0`, 홈 오늘 복귀 단추는 필요한 때 별도 줄 (`CelestialMonthCalendar.styles`, `CelestialTodoModal.styles`, `CelestialHome.styles`) |
+| 2026-10-02 | 작은 위젯에서 일부 일정·프로젝트만 보이고 나머지는 조작할 수 없음 | 창에 맞춰 배열을 자른 뒤 넘침까지 숨겼다 | 전체 목록을 그려 세로 스크롤 허용, 체크·설정 단추 확대와 이름 지정. 설정 완료 단추의 배경을 지우던 규칙 제거 (`WidgetPanels`, `CelestialWidgetPanels.styles`, `WidgetShell`) |
+| 2026-10-02 | 오늘·지금/다음·마감·통계 위젯에 반복 일정 발생이 빠짐 | 원본 일정의 최초 시작일만 비교했다 | 조회 기간에 반복을 펼치고, 완료 변경에는 발생 ID 대신 원본 ID 사용 (`WidgetPanels`, `check-widget-behavior.mjs`) |
+| 2026-10-02 | 안드로이드에서 여러 날 일정의 체크가 날짜별로 어긋나고 자정 뒤 어제 메모·챌린지 표시가 남음 | snapshot 의 시작일 완료 여부와 메모를 모든 날에 그대로 썼다 | 완료 날짜 목록과 snapshot 날짜를 전달해 선택일별 체크·당일 자료를 구분. 오늘 복귀 영역 추가, 가로 배치 크기 계산과 빈 행 터치 영역 수정 (`widgetSnapshot`, Android `Snapshot`, `WidgetPainter`, `CronosWidgetProvider`) |
+| 2026-10-02 | 자정·시간대 변경 뒤 오늘 표시가 남고 미국 시간대의 위젯 메모가 전날에 저장됨 | 마운트 시점 날짜와 UTC 자정 시각을 사용했다 | 오늘 훅이 시간대·창 복귀를 구독하고, 메모·빠른 할 일은 선택 시간대의 자정 사용. 메모 읽기 전 편집 방지, 갱신 중 작성 내용 보호 (`useCurrentDay`, `HomeView`, `WidgetPanels`) |
+| 2026-10-02 | 빠른 추가에서 한글 조합 Enter 가 저장되고 실패해도 입력 내용이 사라짐 | 조합 중 키 입력·저장 결과를 구분하지 않았다 | IME 조합 Enter 무시, 위젯 중복 제출 차단과 실패 메시지·작성 내용 유지 (`HomeView`, `WidgetPanels`) |
+| 2026-10-02 | 키보드로 모달을 열면 초점이 뒤 화면에 남고 날짜 고르개 Escape 가 시트까지 닫음 | 모달 초점 관리와 중첩 Escape 처리가 없었다 | 대화상자 이름·초점 이동/복귀·Tab 순환, 처리된 Escape 존중. 입력 라벨·비밀번호 보기·필터 접근성 이름과 움직임 감소 설정 지원 (`BaseModal`, 입력 컴포넌트, `GlobalTypography`) |
 | 2026-10-01 | 폰에서 할 일 추가 시트의 아래(입력칸·저장 단추)가 자판·아래 막대에 가려 안 보임 | ① 크롬 기본값은 자판이 화면을 덮을 뿐 줄이지 않는다 ② 안드로이드 앱은 `enableEdgeToEdge` 로 끝까지 그려 시스템이 자판만큼 창을 줄여 주지 않는다 ③ 웹뷰 140 미만은 `env(safe-area-inset-*)` 이 0 이다 | viewport `interactiveWidget: resizes-content`, 시트 바탕 `100dvh` + 사파리용 visual viewport 맞춤(`BaseModal`). `MainActivity.fitSystemEdges` 가 자판 높이만큼 웹뷰를 줄이고 막대 높이를 `--native-inset-*` 로 넣는다 → CSS 는 `SAFE_T`/`SAFE_B`(`breakpoints.ts`). 시트 아래 여백이 두 번 더해지던 것도 하나로 |
 | 2026-10-01 | Maple 폰 달력의 떠 있는 + 단추가 오른쪽 아래가 아니라 달력 칸 위에 박힘 | 도장 단추(`stampButton`)의 `position: relative` 가 `fixed` 를 덮었다. 지킴 스크립트는 `paperCard` 하나만 보고 있었다 | Fab 에 `position: fixed` 를 다시 적고, `check-maple-position.mjs` 가 자리를 거는 조각 목록 전부를 보게 |
 | 2026-10-01 | 키 작은 폰(360×640)에서 달력 아래 고른 날 목록이 머리줄만 남고, + 단추가 "N일간 >" 을 덮음 | 월간 격자 높이를 칸 폭으로만 정해 화면 높이를 몰랐다 | 격자 `max-height` 를 화면 높이 − 320px 까지로, 목록 머리줄은 + 단추 폭만큼 비켜 둠 |

@@ -27,6 +27,7 @@ export const DateRangeDisplay = styled(C.DateRangeDisplay)`
             background-color: ${(p) => p.theme.colors.primary};
         }
         &:nth-of-type(2)::before { ${inkMask("ink-arrow-right.webp")} background-color: ${(p) => p.theme.colors.primary}; }
+        ${MOBILE} { ${NOT_WIDGET} &::before { width: 28px; } }
     }
 
     font-size: 1rem;

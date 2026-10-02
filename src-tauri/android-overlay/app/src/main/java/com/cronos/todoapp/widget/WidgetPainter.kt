@@ -212,8 +212,8 @@ class WidgetPainter(
     // ── I. 오늘 할 일 ─────────────────────────────────────────────
     private fun today(c: Canvas, s: Snapshot, w: Float, h: Float, bmp: Bitmap): Painted {
         val key = s.todayKey(shifted)
-        val rows = s.todos.filter { it.spans(key) }.sortedWith(compareBy({ it.done }, { !it.allDay }, { it.start }))
-        val done = rows.count { it.done }
+        val rows = s.todos.filter { it.spans(key) }.sortedWith(compareBy({ it.doneOn(key) }, { !it.allDay }, { it.start }))
+        val done = rows.count { it.doneOn(key) }
         val total = rows.size
         val titleText = if (steps == 0) s.label("today") else s.formatDate(shifted)
         // 옮겨 본 날이면 제목이 이미 날짜다 — 오른쪽에 또 적지 않는다
@@ -230,18 +230,19 @@ class WidgetPainter(
         }
         for (i in 0 until n) {
             val t = rows[i]
+            val completed = t.doneOn(key)
             val cy = y0 + dp(ROW_H) * i + dp(ROW_H) / 2f
-            diamond(c, dp(PAD_X) + dp(4f), cy, 3.5f, t.color, t.done)
-            val sp = side(if (t.done) Palette.withAlpha(pal.muted, 0.7f) else pal.muted)
+            diamond(c, dp(PAD_X) + dp(4f), cy, 3.5f, t.color, completed)
+            val sp = side(if (completed) Palette.withAlpha(pal.muted, 0.7f) else pal.muted)
             val sideText = if (t.allDay) s.label("allDay") else t.timeRange()
             val sideW = sp.measureText(sideText)
             drawRight(c, sideText, w - dp(PAD_X), baseline(sp, cy), sp)
-            val bp = body(if (t.done) pal.muted else pal.ink)
+            val bp = body(if (completed) pal.muted else pal.ink)
             val x = dp(PAD_X) + dp(16f)
             val maxW = w - dp(PAD_X) - sideW - dp(8f) - x
             val txt = ellipsize(t.title, bp, maxW)
             c.drawText(txt, x, baseline(bp, cy), bp)
-            if (t.done) c.drawLine(x, cy, x + bp.measureText(txt), cy, stroke(Palette.withAlpha(pal.gold, 0.8f), 1f))
+            if (completed) c.drawLine(x, cy, x + bp.measureText(txt), cy, stroke(Palette.withAlpha(pal.gold, 0.8f), 1f))
             links += "cronos://todo/${t.id}?date=$key"
         }
         // 바닥: 진행 실선 + 남은/끝낸
@@ -258,7 +259,7 @@ class WidgetPainter(
 
     // ── II. 지금 · 다음 ───────────────────────────────────────────
     private fun nowNext(c: Canvas, s: Snapshot, w: Float, h: Float, bmp: Bitmap): Painted {
-        val timed = s.todos.filter { !it.allDay && !it.done }
+        val timed = s.todos.filter { !it.allDay && !it.doneOn(s.todayKey(max(now, it.start))) }
         val current = timed.filter { it.start <= now && now < it.end }.minByOrNull { it.end }
         val next = timed.filter { it.start > now }.minByOrNull { it.start }
         val x0 = dp(PAD_X); val x1 = w - dp(PAD_X)
@@ -326,7 +327,8 @@ class WidgetPainter(
     // ── III. 챌린지 ───────────────────────────────────────────────
     private fun challenge(c: Canvas, s: Snapshot, w: Float, h: Float, bmp: Bitmap): Painted {
         val items = s.challenges
-        val leftToday = items.count { !it.doneToday }
+        val currentDate = s.date == s.todayKey(now)
+        val leftToday = items.count { !currentDate || !it.doneToday }
         val y0 = header(c, w, s.label("challenge"), s.label("todayLeft") + " ", if (items.isNotEmpty()) "$leftToday" else null)
         val n = min(items.size, maxRows(h, 0))
         if (items.isEmpty()) {
@@ -347,10 +349,10 @@ class WidgetPainter(
             drawRight(c, countText, right, baseline(accent, cy), accent)
             right -= accent.measureText(countText)
             val bp = body()
-            val starW = if (ch.doneToday) dp(14f) else 0f
+            val starW = if (currentDate && ch.doneToday) dp(14f) else 0f
             val txt = ellipsize(ch.title, bp, right - dp(8f) - dp(PAD_X) - starW)
             c.drawText(txt, dp(PAD_X), baseline(bp, cy), bp)
-            if (ch.doneToday) style.glyph(c, dp(PAD_X) + bp.measureText(txt) + dp(4f), cy, 10f, pal.gold)
+            if (currentDate && ch.doneToday) style.glyph(c, dp(PAD_X) + bp.measureText(txt) + dp(4f), cy, 10f, pal.gold)
             // 진행선
             val by = top + dp(ROW_H) - dp(4f)
             c.drawLine(dp(PAD_X), by, w - dp(PAD_X), by, stroke(pal.line, 1f))
@@ -620,7 +622,7 @@ class WidgetPainter(
     private fun dayProgress(c: Canvas, s: Snapshot, w: Float, h: Float, bmp: Bitmap): Painted {
         val key = s.todayKey(now)
         val rows = s.todos.filter { it.spans(key) }
-        val done = rows.count { it.done }; val total = rows.size
+        val done = rows.count { it.doneOn(key) }; val total = rows.size
         val dayFrac = ((now - Snapshot.startOfDay(now)).toFloat() / Snapshot.DAY_MS).coerceIn(0f, 1f)
         val doneFrac = if (total > 0) done.toFloat() / total else 0f
         val wide = w >= dp(150f)
@@ -654,7 +656,7 @@ class WidgetPainter(
     // ── IX. 빠른 추가 ─────────────────────────────────────────────
     private fun quickAdd(c: Canvas, s: Snapshot, w: Float, h: Float, bmp: Bitmap): Painted {
         val key = s.todayKey(now)
-        val left = s.todos.count { it.spans(key) && !it.done }
+        val left = s.todos.count { it.spans(key) && !it.doneOn(key) }
         val cy = h / 2f
         val plus = dp(30f)
         val px = w - dp(PAD_X) - plus
@@ -682,7 +684,7 @@ class WidgetPainter(
     // ── X. 오늘 메모 ──────────────────────────────────────────────
     private fun memo(c: Canvas, s: Snapshot, w: Float, h: Float, bmp: Bitmap): Painted {
         val y0 = header(c, w, s.label("memo"), s.formatDate(now))
-        val memoText = s.memo.trim()
+        val memoText = if (s.date == s.todayKey(now)) s.memo.trim() else ""
         val empty = memoText.isEmpty()
         c.drawLine(dp(PAD_X) + dp(0.5f), y0 + dp(4f), dp(PAD_X) + dp(0.5f), h - dp(PAD_B) - dp(2f), stroke(if (empty) Palette.withAlpha(pal.gold, 0.4f) else pal.gold, 1f))
         val tp = text(12f, if (empty) pal.muted else pal.ink)

@@ -221,9 +221,9 @@ const MonthCalendarView = React.forwardRef<HTMLDivElement, CelestialMonthProps>(
         return (
             <S.CelestialCalendarWrapper as={Component} ref={ref} {...props}>
                 <S.DateRangeDisplay>
-                    <button className="nav-btn" onClick={handlePrevMonth}><ChevronLeft size={24} /></button>
+                    <button type="button" className="nav-btn" aria-label={t.calendar.prevMonth} onClick={handlePrevMonth}><ChevronLeft size={24} /></button>
                     <AnimatedDateText text={dateRangeText} direction={direction} />
-                    <button className="nav-btn" onClick={handleNextMonth}><ChevronRight size={24} /></button>
+                    <button type="button" className="nav-btn" aria-label={t.calendar.nextMonth} onClick={handleNextMonth}><ChevronRight size={24} /></button>
                     <S.TodayButton type="button" onClick={handleToday} disabled={isOnToday}>
                         {t.home.today}
                     </S.TodayButton>

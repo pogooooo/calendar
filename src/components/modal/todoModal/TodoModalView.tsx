@@ -27,17 +27,18 @@ export default function TodoModalView({
     const t = useT();
 
     return (
-        <BaseModal isOpen={isOpen} onClose={onClose} maxWidth="420px">
+        <BaseModal isOpen={isOpen} onClose={onClose} maxWidth="420px" ariaLabel={t.todo.newTodo}>
             <S.FormWrapper onSubmit={handleSubmit}>
                 <S.Header>
                     <input
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                         placeholder={todo?.title || t.todo.newTodo}
+                        aria-label={t.todo.newTodo}
                         required
                         className="title-input"
                     />
-                    <button type="button" className="close-btn" onClick={onClose}>
+                    <button type="button" className="close-btn" onClick={onClose} aria-label={t.widgetShell.close}>
                         <X size={22} />
                     </button>
                 </S.Header>
@@ -56,7 +57,7 @@ export default function TodoModalView({
                     <S.FieldRow>
                         <label><Clock size={16} /> {t.todo.allDay}</label>
                         <S.ToggleSwitch>
-                            <input type="checkbox" checked={isAllDay} onChange={(e) => setIsAllDay(e.target.checked)} />
+                            <input type="checkbox" aria-label={t.todo.allDay} checked={isAllDay} onChange={(e) => setIsAllDay(e.target.checked)} />
                             <span className="slider"></span>
                         </S.ToggleSwitch>
                     </S.FieldRow>
@@ -97,6 +98,7 @@ export default function TodoModalView({
                         <label><MapPin size={16} /> {t.todo.location}</label>
                         <input
                             type="text"
+                            aria-label={t.todo.location}
                             placeholder={t.todo.locationPlaceholder}
                             value={location}
                             onChange={(e) => setLocation(e.target.value)}
@@ -109,6 +111,7 @@ export default function TodoModalView({
                             <div className="repeat-input-group">
                                 <input
                                     type="number"
+                                    aria-label={t.todo.repeatCycle}
                                     min="0"
                                     value={repeat === 0 ? "" : repeat}
                                     onChange={(e) => setRepeat(Number(e.target.value))}
@@ -158,6 +161,7 @@ export default function TodoModalView({
                     <S.MemoRow>
                         <label><AlignLeft size={16} /> {t.todo.notes}</label>
                         <textarea
+                            aria-label={t.todo.notes}
                             value={memo}
                             onChange={(e) => setMemo(e.target.value)}
                             placeholder={t.todo.notesPlaceholder}

@@ -54,7 +54,8 @@ function buildGrid(view: Date) {
 
 export default function DateTimePicker({ value, onChange, mode = "datetime", range, short = false }: CelestialDateTimePickerProps) {
     const S = usePickTheme(STYLES);
-    const f = useT().form;
+    const t = useT();
+    const f = t.form;
     const WEEKDAYS = f.weekdays;
     const triggerRef = React.useRef<HTMLButtonElement>(null);
     const popRef = React.useRef<HTMLDivElement>(null);
@@ -231,11 +232,11 @@ export default function DateTimePicker({ value, onChange, mode = "datetime", ran
             {open && pos && typeof document !== "undefined" && createPortal(
                 <S.Popover ref={popRef} $up={pos.up} style={{ top: pos.top, left: pos.left }} onKeyDown={onGridKey} tabIndex={-1}>
                     <S.MonthNav>
-                        <button type="button" onClick={() => setView(v => new Date(v.getFullYear(), v.getMonth() - 1, 1))}>
+                        <button type="button" aria-label={t.calendar.prevMonth} onClick={() => setView(v => new Date(v.getFullYear(), v.getMonth() - 1, 1))}>
                             <ChevronLeft size={15} />
                         </button>
                         <strong>{view.getFullYear()}. {view.getMonth() + 1}</strong>
-                        <button type="button" onClick={() => setView(v => new Date(v.getFullYear(), v.getMonth() + 1, 1))}>
+                        <button type="button" aria-label={t.calendar.nextMonth} onClick={() => setView(v => new Date(v.getFullYear(), v.getMonth() + 1, 1))}>
                             <ChevronRight size={15} />
                         </button>
                     </S.MonthNav>

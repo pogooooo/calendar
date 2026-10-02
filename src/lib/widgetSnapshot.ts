@@ -28,6 +28,8 @@ export interface SnapshotTodo {
     endAt: string;     // ISO
     allDay: boolean;
     done: boolean;
+    /** Completion is per calendar day, including tasks that span several days. */
+    completedDates: string[];
     color: string;
 }
 
@@ -129,6 +131,7 @@ export function buildWidgetSnapshot(input: SnapshotInput): WidgetSnapshot {
             endAt: new Date(td.endAt!).toISOString(),
             allDay: !!td.isAllDay,
             done: !!td.isDone,
+            completedDates: (td.completions ?? []).map(c => utcDayKey(c.targetDate)),
             color: color(td.categoryId),
         }))
         .sort((a, b) => a.startAt.localeCompare(b.startAt));

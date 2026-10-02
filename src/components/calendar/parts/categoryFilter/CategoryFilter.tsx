@@ -50,7 +50,7 @@ export default function CategoryFilter({
 
     return (
         <S.SettingsContainer ref={anchorRef}>
-            <S.SetCategoryButton onClick={() => setIsOpen(!isOpen)}>
+            <S.SetCategoryButton type="button" aria-label={t.popup.display} aria-expanded={isOpen} onClick={() => setIsOpen(!isOpen)}>
                 <Settings2 strokeWidth={1.5} size={24} />
             </S.SetCategoryButton>
 
@@ -71,7 +71,7 @@ export default function CategoryFilter({
                                 {hasExtras && <S.PopoverLabel>{t.popup.display}</S.PopoverLabel>}
 
                                 {onToggleProjects && (
-                                    <S.MenuItem onClick={onToggleProjects} $isSelected={!!showProjects}>
+                                    <S.MenuItem type="button" aria-pressed={!!showProjects} onClick={onToggleProjects} $isSelected={!!showProjects}>
                                         <S.CategoryColorDot
                                             $color={theme?.colors.primary || '#ffffff'}
                                             $isSelected={!!showProjects}
@@ -81,7 +81,7 @@ export default function CategoryFilter({
                                 )}
 
                                 {onToggleChallenges && (
-                                    <S.MenuItem onClick={onToggleChallenges} $isSelected={!!showChallenges}>
+                                    <S.MenuItem type="button" aria-pressed={!!showChallenges} onClick={onToggleChallenges} $isSelected={!!showChallenges}>
                                         <S.CategoryColorDot
                                             $color={theme.colors.primary}
                                             $isSelected={!!showChallenges}
@@ -98,6 +98,8 @@ export default function CategoryFilter({
                                     const isSelected = selectedCategoryIds.includes(cat.id);
                                     return (
                                         <S.MenuItem
+                                            type="button"
+                                            aria-pressed={isSelected}
                                             key={cat.id}
                                             onClick={() => onToggle(cat.id)}
                                             $isSelected={isSelected}

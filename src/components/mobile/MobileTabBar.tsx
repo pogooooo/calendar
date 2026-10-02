@@ -74,12 +74,12 @@ export default function MobileTabBar() {
 
             <S.Bar role="navigation">
                 {tabs.map(tab => (
-                    <S.Tab key={tab.path} $on={!!isActive(tab.path)} onClick={() => go(tab.path)}>
+                    <S.Tab key={tab.path} aria-current={isActive(tab.path) ? "page" : undefined} $on={!!isActive(tab.path)} onClick={() => go(tab.path)}>
                         {tab.icon}
                         <span>{tab.label}</span>
                     </S.Tab>
                 ))}
-                <S.Tab $on={moreActive || more} onClick={() => setMore(v => !v)}>
+                <S.Tab aria-expanded={more} $on={moreActive || more} onClick={() => setMore(v => !v)}>
                     <MoreHorizontal size={19} />
                     <span>{t.sidebar.more}</span>
                 </S.Tab>

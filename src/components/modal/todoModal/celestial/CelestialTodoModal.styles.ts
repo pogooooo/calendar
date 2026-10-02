@@ -30,6 +30,7 @@ export const Header = styled.div`
     border-radius: 5px 5px 0 0;
 
     .title-input {
+        min-width: 0;
         flex: 1;
         border: none;
         background: transparent;
@@ -53,6 +54,8 @@ export const Header = styled.div`
     }
 
     .close-btn {
+        min-width: 44px;
+        min-height: 44px;
         background: transparent;
         border: none;
         color: ${(props) => props.theme.colors.textSecondary};
@@ -106,6 +109,7 @@ export const FieldRow = styled.div`
 
     input[type="text"], input[type="date"], input[type="datetime-local"] {
         flex: 1;
+        min-width: 0;
         font-family: inherit;
         font-size: 0.95rem;
         color: ${(props) => props.theme.colors.text};
@@ -132,6 +136,16 @@ export const FieldRow = styled.div`
             opacity: 0.5;
             transition: opacity 0.2s;
             &:hover { opacity: 1; }
+        }
+    }
+
+    ${MOBILE} {
+        gap: 8px;
+        label { min-width: 76px; flex-shrink: 0; }
+        &:has(> button) {
+            flex-direction: column;
+            align-items: stretch;
+            & > button { width: 100%; }
         }
     }
 `;

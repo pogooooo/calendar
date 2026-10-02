@@ -98,6 +98,9 @@ export const TodayButton = styled(C.TodayButton)`
 
 /** 카드 틀: 먹선 하나에 안쪽 옅은 선 */
 export const Card = styled(C.Card)`
+    background: ${(p) => p.theme.colors.background};
+    background-image: linear-gradient(110deg, ${(p) => p.theme.colors.accent}0C, transparent 45%, ${(p) => p.theme.colors.primary}08);
+    box-shadow: 0 12px 36px ${(p) => p.theme.colors.text}0C;
     border-color: ${(p) => withAlpha(p.theme.colors.text, 0.35)};
     /* 색인이 왼쪽, 본문이 오른쪽 */
     grid-template-columns: 232px 1fr;
@@ -108,6 +111,11 @@ export const Card = styled(C.Card)`
 
     @media (max-width: 900px) {
         grid-template-columns: 1fr;
+    }
+
+    @media (max-width: 768px) {
+        background: transparent;
+        box-shadow: none;
     }
 `;
 

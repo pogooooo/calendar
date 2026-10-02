@@ -19,6 +19,12 @@ const GRAIN = (r: number, g: number, b: number) =>
     )}")`;
 
 const MapleGround = createGlobalStyle`
+    [data-app-shell] {
+        background-image:
+            radial-gradient(ellipse at 100% 0%, ${(p) => p.theme.colors.accent}1C, transparent 50%),
+            radial-gradient(ellipse at 0% 100%, ${(p) => p.theme.colors.primary}0C, transparent 48%);
+    }
+
     body::after {
         content: "";
         position: fixed;

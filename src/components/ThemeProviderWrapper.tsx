@@ -8,10 +8,11 @@ import GlobalTypography, { getFontSize, getFontWeight } from '@/styles/GlobalTyp
 import useSettingStore from "@/store/useSettingStore";
 import { getFontOption, ensureFontLoaded, THEME_FONTS } from "@/lib/fonts";
 import MapleGround from "@/styles/maple/MapleGround";
+import CelestialGround from "@/styles/celestial/CelestialGround";
 import type { ThemeFamily } from "@/styles/themed";
 
 /** 갈래가 화면 전체에 얹는 한 겹 (종이결 같은 것). 없는 갈래는 아무것도 안 얹는다. */
-const GROUNDS: Partial<Record<ThemeFamily, React.ComponentType>> = { maple: MapleGround };
+const GROUNDS: Partial<Record<ThemeFamily, React.ComponentType>> = { maple: MapleGround, celestial: CelestialGround };
 
 export default function ThemeProviderWrapper({ children }: { children: React.ReactNode }) {
     const themeName = useSettingStore((state) => state.theme);
@@ -55,6 +56,7 @@ export default function ThemeProviderWrapper({ children }: { children: React.Rea
     // 테마가 스스로 밝은 벌인지 어두운 벌인지 말해 준다.
     // 이름이 '-dark' 로 끝나는지 보던 예전 방식은 테마 이름 규칙에 묶여 있었다.
     useEffect(() => {
+        document.documentElement.style.colorScheme = theme.mode;
         import('@tauri-apps/api/window').then(({ getCurrentWindow }) => {
             getCurrentWindow().setTheme(theme.mode).catch(() => {});
         }).catch(() => {});

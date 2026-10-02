@@ -4,6 +4,7 @@ import React, { useState, forwardRef } from 'react';
 import styled from 'styled-components';
 import { EyeIcon, EyeSlashIcon } from '@/assets/icons/EyeIcon';
 import SingleInput, { InputProps } from '../single/SingleInput';
+import { useT } from '@/i18n/useT';
 
 const Wrapper = styled.div`
     position: relative;
@@ -21,7 +22,10 @@ const ToggleButton = styled.button`
     color: ${(props) => props.theme.colors?.border || '#ccc'};
     display: flex;
     align-items: center;
-    padding: 0;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 8px;
 
     &:hover {
         color: ${(props) => props.theme.colors?.primary || '#000'};
@@ -30,6 +34,7 @@ const ToggleButton = styled.button`
 
 const PasswordInput = forwardRef<HTMLInputElement, InputProps>((props, ref) => {
     const [showPassword, setShowPassword] = useState(false);
+    const t = useT();
 
     const toggleVisibility = (e: React.MouseEvent) => {
         e.preventDefault();
@@ -42,9 +47,10 @@ const PasswordInput = forwardRef<HTMLInputElement, InputProps>((props, ref) => {
                 {...props}
                 ref={ref}
                 type={showPassword ? "text" : "password"}
+                style={{ ...props.style, paddingRight: '58px' }}
             />
 
-            <ToggleButton type="button" onClick={toggleVisibility} tabIndex={-1}>
+            <ToggleButton type="button" onClick={toggleVisibility} aria-label={showPassword ? t.auth.hidePassword : t.auth.showPassword} aria-pressed={showPassword}>
                 {showPassword ? <EyeIcon /> : <EyeSlashIcon />}
             </ToggleButton>
         </Wrapper>

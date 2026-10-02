@@ -45,6 +45,7 @@ export const DateRangeDisplay = styled.div`
         justify-content: center;
         padding: 4px;
         transition: transform 0.2s ease;
+        ${MOBILE} { ${NOT_WIDGET} & { min-width: 44px; min-height: 44px; } }
 
         &:hover {
             transform: scale(1.1);
@@ -60,6 +61,14 @@ export const DateRangeDisplay = styled.div`
 
     & > span {
         white-space: nowrap;
+    }
+
+    ${MOBILE} {
+        ${NOT_WIDGET} & {
+            gap: 4px;
+            flex-wrap: wrap;
+            & > hr { display: none; }
+        }
     }
 `;
 

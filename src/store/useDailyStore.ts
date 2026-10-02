@@ -17,7 +17,7 @@ interface DailyState {
     memoError: string | null;
 
     fetchDailyData: (authFetch: AuthFetch, date: Date) => Promise<void>;
-    addDailyTask: (authFetch: AuthFetch, date: Date, text: string) => Promise<void>;
+    addDailyTask: (authFetch: AuthFetch, date: Date, text: string) => Promise<string | null>;
     toggleDailyTask: (authFetch: AuthFetch, taskId: string) => Promise<void>;
     deleteDailyTask: (authFetch: AuthFetch, taskId: string) => Promise<void>;
     updateDailyMemo: (authFetch: AuthFetch, date: Date, content: string) => Promise<string | null>;
@@ -67,7 +67,7 @@ const useDailyStore = create<DailyState>((set, get) => ({
 
     addDailyTask: async (authFetch, date, text) => {
         const userId = useAuthStore.getState().user?.id;
-        if (!userId) return;
+        if (!userId) return "로그인이 필요합니다.";
 
         const previousTasks = get().tasks;
         const tempId = `temp-${Date.now()}`;
@@ -85,6 +85,7 @@ const useDailyStore = create<DailyState>((set, get) => ({
                 set((state) => ({
                     tasks: state.tasks.map(t => t.id === tempId ? serverTask : t)
                 }));
+                return null;
             } else {
                 throw new Error();
             }
@@ -92,6 +93,7 @@ const useDailyStore = create<DailyState>((set, get) => ({
             set({ tasks: previousTasks });
             console.error("[DAILY_ADD_TASK_ERROR]", err);
             reportSaveFailure("daily");
+            return "할 일을 저장하지 못했습니다. 연결을 확인한 뒤 다시 시도해주세요.";
         }
     },
 

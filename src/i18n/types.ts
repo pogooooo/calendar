@@ -204,6 +204,8 @@ export interface Translations {
         nextDay: string;
         prevWeek: string;
         nextWeek: string;
+        prevMonth: string;
+        nextMonth: string;
         expandDay: string;
         collapseDay: string;
         dayLabelShort: (m: number, d: number) => string;
@@ -243,6 +245,8 @@ export interface Translations {
         name: string;
         email: string;
         password: string;
+        showPassword: string;
+        hidePassword: string;
         forgotPasswordLink: string;
         keepSignedIn: string;
         keepSignedInOn: string;

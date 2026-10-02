@@ -1,6 +1,6 @@
 import * as React from "react";
 import { createPortal } from "react-dom";
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence, useReducedMotion } from "framer-motion";
 import { ThemeProvider, DefaultTheme } from "styled-components";
 import { MOBILE_BREAKPOINT } from "@/styles/breakpoints";
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
@@ -47,10 +47,15 @@ export interface CelestialBaseModalProps {
     onClose: () => void;
     children: React.ReactNode;
     maxWidth?: string;
+    ariaLabel?: string;
 }
 
-export default function BaseModal({ isOpen, onClose, children, maxWidth = "400px" }: CelestialBaseModalProps) {
+export default function BaseModal({ isOpen, onClose, children, maxWidth = "400px", ariaLabel }: CelestialBaseModalProps) {
     const S = usePickTheme(STYLES);
+    const containerRef = React.useRef<HTMLDivElement>(null);
+    const reducedMotion = useReducedMotion();
+    const closeRef = React.useRef(onClose);
+    closeRef.current = onClose;
     /**
      * 시트인지 창인지는 뜨는 그 순간 정해져야 한다. 상태로 들고 있는 훅
      * (useIsMobile)은 첫 렌더에 false 를 주는데, framer-motion 은 initial 을
@@ -70,7 +75,9 @@ export default function BaseModal({ isOpen, onClose, children, maxWidth = "400px
      * 폰에서는 아래에서 올라오는 시트다. 가운데서 커지는 몸짓은 시트와 안 맞고,
      * 어디서 왔는지도 알려 주지 않는다. 올라오고 내려가게 한다.
      */
-    const sheet = isMobile
+    const sheet = reducedMotion
+        ? { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 }, transition: { duration: 0 } }
+        : isMobile
         ? {
             initial: { y: "100%", opacity: 1 },
             animate: { y: 0, opacity: 1 },
@@ -87,12 +94,42 @@ export default function BaseModal({ isOpen, onClose, children, maxWidth = "400px
     const keyboardBox = useKeyboardBox(isOpen && isMobile);
 
     React.useEffect(() => {
+        if (!isOpen) return;
+        const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+        const container = containerRef.current;
+        if (!container) return;
+        const heading = container.querySelector('h1, h2, h3, .title-input');
+        container.setAttribute('aria-label', ariaLabel || heading?.textContent?.trim() || heading?.getAttribute('placeholder') || 'CRONOS');
+        // Focusing the sheet itself on phones avoids opening the keyboard before the user chooses a field.
+        container.focus({ preventScroll: true });
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') onClose();
+            const dialogs = document.querySelectorAll('[role="dialog"]');
+            if (e.defaultPrevented || dialogs[dialogs.length - 1] !== container) return;
+            if (e.key === 'Escape') { e.preventDefault(); closeRef.current(); }
         };
-        if (isOpen) window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [isOpen, onClose]);
+        window.addEventListener('keydown', handleKeyDown);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+            if (previousFocus?.isConnected) previousFocus.focus({ preventScroll: true });
+        };
+    }, [isOpen, ariaLabel]);
+
+    const handleTab = (e: React.KeyboardEvent) => {
+        if (e.key !== 'Tab' || e.defaultPrevented) return;
+        const container = containerRef.current;
+        if (!container || !container.contains(e.target as Node)) return;
+        const focusable = Array.from(container.querySelectorAll<HTMLElement>(
+            'button, input, textarea, select, a[href], [tabindex]',
+        )).filter(el => el.tabIndex >= 0 && !el.matches(':disabled, [aria-disabled="true"]') && el.getClientRects().length > 0);
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (!first) { e.preventDefault(); container.focus(); return; }
+        if (e.shiftKey && (document.activeElement === first || document.activeElement === container)) {
+            e.preventDefault(); last.focus();
+        } else if (!e.shiftKey && (document.activeElement === last || document.activeElement === container)) {
+            e.preventDefault(); first.focus();
+        }
+    };
 
     if (typeof document === "undefined") return null;
 
@@ -108,6 +145,11 @@ export default function BaseModal({ isOpen, onClose, children, maxWidth = "400px
                     style={keyboardBox ?? undefined}
                 >
                     <S.Container
+                        ref={containerRef}
+                        role="dialog"
+                        aria-modal="true"
+                        tabIndex={-1}
+                        onKeyDown={handleTab}
                         $maxWidth={maxWidth}
                         {...sheet}
                         onClick={(e) => e.stopPropagation()}

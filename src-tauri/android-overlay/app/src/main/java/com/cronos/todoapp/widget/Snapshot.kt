@@ -18,6 +18,7 @@ import java.util.TimeZone
  * 스스로 다시 그리므로, 앱이 며칠 안 켜져도 날짜가 넘어간다.
  */
 class Snapshot private constructor(
+    val date: String,
     val locale: Locale,
     val theme: ThemeSpec?,
     val todos: List<Todo>,
@@ -30,10 +31,12 @@ class Snapshot private constructor(
     class Todo(
         val id: String, val title: String, val start: Long, val end: Long,
         val allDay: Boolean, val done: Boolean, val color: Int,
+        val completedDates: Set<String>? = null,
     ) {
         /** 사용자 시간대의 날짜 키(yyyy-MM-dd)로 그날을 지나는가 */
         fun spans(key: String): Boolean = dayKey(start) <= key && key <= dayKey(end)
         fun timeRange(): String = "${hhmm(start)}–${hhmm(end)}"
+        fun doneOn(key: String): Boolean = completedDates?.contains(key) ?: (done && dayKey(start) == key)
     }
 
     class Challenge(val id: String, val title: String, val count: Int, val target: Int?, val doneToday: Boolean)
@@ -139,6 +142,9 @@ class Snapshot private constructor(
                     o.optBoolean("allDay", false),
                     o.optBoolean("done", false),
                     parseColor(o.optString("color")) ?: 0xFFD4AF37.toInt(),
+                    o.optJSONArray("completedDates")?.let { a ->
+                        (0 until a.length()).map { a.optString(it) }.toSet()
+                    },
                 )
             }
             val challenges = root.optJSONArray("challenges").map { o ->
@@ -152,7 +158,7 @@ class Snapshot private constructor(
                 Project(o.optString("id"), o.getString("title"), o.optInt("done", 0), o.optInt("total", 0),
                     if (o.isNull("endAt")) null else o.optString("endAt"))
             }
-            return Snapshot(locale, theme, todos, challenges, anniversaries, projects, root.optString("memo", ""), root.optJSONObject("labels") ?: JSONObject())
+            return Snapshot(root.optString("date", dayKey(System.currentTimeMillis())), locale, theme, todos, challenges, anniversaries, projects, root.optString("memo", ""), root.optJSONObject("labels") ?: JSONObject())
         }
 
         private fun <T> JSONArray?.map(f: (JSONObject) -> T): List<T> {
