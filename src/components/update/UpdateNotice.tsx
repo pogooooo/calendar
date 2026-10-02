@@ -8,9 +8,10 @@ import { checkForUpdate, UPDATE_FOUND_EVENT, type FoundUpdate } from "@/lib/upda
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialUpdateNotice.styles";
 import * as MapleS from "./maple/MapleUpdateNotice.styles";
+import * as OceanS from './ocean/OceanUpdateNotice.styles';
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
 
 type Phase = "idle" | "available" | "downloading" | "ready" | "failed";
 

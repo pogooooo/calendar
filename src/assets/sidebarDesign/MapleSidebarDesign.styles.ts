@@ -18,12 +18,17 @@ export const gust = keyframes`
     60% { transform: rotate(-2.4deg); }
     100% { transform: rotate(1.4deg); }
 `;
+const seed = keyframes`0%,65% { opacity:0; transform:translateY(0) rotate(0); } 70% { opacity:.4; } 100% { opacity:0; transform:translate(-20px,120px) rotate(80deg); }`;
 
 export const Wrap = styled.div<{ $hovered?: boolean }>`
     position: relative;
     width: 160px;
     height: 100%;
     color: ${(p) => p.theme.colors.text};
+    .seed { position:absolute; top:260px; left:110px; width:6px; height:10px; background:${p=>p.theme.colors.primary}; border-radius:100% 0 100% 0; animation:${seed} 15s ease-in-out infinite; pointer-events:none; }
+    .seed-1 { left:82px; animation-delay:-7s; animation-duration:19s; }
+    .seed-2 { left:135px; animation-delay:-13s; animation-duration:23s; }
+    @media(prefers-reduced-motion:reduce) { .seed { display:none; } .branch { animation:none; } }
 
     .rule {
         position: absolute;

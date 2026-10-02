@@ -12,9 +12,10 @@ import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialModal.styles";
 import * as MapleS from "./maple/MapleModal.styles";
 import { dependencyIssue } from "@/lib/taskInteractions";
+import * as OceanS from './ocean/OceanModal.styles';
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
 
 /** 날짜 입력을 비우면 빈 문자열이 온다. new Date("") 는 RangeError 를 던져 입력이 먹통이 된다. */
 const toIsoOrNull = (value: string): string | null => {

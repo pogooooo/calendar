@@ -17,11 +17,13 @@ import * as CelestialS from "./celestial/CelestialCalendarPage.styles";
 import CelestialCalendarLayout from "./celestial/CelestialCalendarLayout";
 import MapleCalendarLayout from "./maple/MapleCalendarLayout";
 import * as MapleS from "./maple/MapleCalendarPage.styles";
+import * as OceanS from './ocean/OceanCalendarPage.styles';
+import OceanCalendarLayout from './ocean/OceanCalendarLayout';
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
 
-const LAYOUTS = { celestial: CelestialCalendarLayout, maple: MapleCalendarLayout };
+const LAYOUTS = { celestial: CelestialCalendarLayout, maple: MapleCalendarLayout, ocean: OceanCalendarLayout };
 
 const DAY_COLLAPSE_KEY = "cronos-day-collapsed";
 

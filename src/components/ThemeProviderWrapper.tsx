@@ -10,9 +10,12 @@ import { getFontOption, ensureFontLoaded, THEME_FONTS } from "@/lib/fonts";
 import MapleGround from "@/styles/maple/MapleGround";
 import CelestialGround from "@/styles/celestial/CelestialGround";
 import type { ThemeFamily } from "@/styles/themed";
+import OceanGround from '@/styles/ocean/OceanGround';
+import ThemeAtmosphere from './ambient/ThemeAtmosphere';
+import { MotionConfig } from 'framer-motion';
 
 /** 갈래가 화면 전체에 얹는 한 겹 (종이결 같은 것). 없는 갈래는 아무것도 안 얹는다. */
-const GROUNDS: Partial<Record<ThemeFamily, React.ComponentType>> = { maple: MapleGround, celestial: CelestialGround };
+const GROUNDS: Partial<Record<ThemeFamily, React.ComponentType>> = { maple: MapleGround, celestial: CelestialGround, ocean: OceanGround };
 
 export default function ThemeProviderWrapper({ children }: { children: React.ReactNode }) {
     const themeName = useSettingStore((state) => state.theme);
@@ -20,6 +23,23 @@ export default function ThemeProviderWrapper({ children }: { children: React.Rea
     const fontKey = useSettingStore((state) => state.font);
     const fontSizeKey = useSettingStore((state) => state.fontSize);
     const fontWeightKey = useSettingStore((state) => state.fontWeight);
+    const motion = useSettingStore((state) => state.motion);
+
+    useEffect(() => {
+        const root = document.documentElement;
+        const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
+        const syncMotion = () => { root.dataset.themeMotion = preference.matches ? 'off' : motion; };
+        const syncVisibility = () => { root.toggleAttribute('data-page-hidden', document.hidden); };
+        syncMotion(); syncVisibility();
+        preference.addEventListener('change', syncMotion);
+        document.addEventListener('visibilitychange', syncVisibility);
+        return () => {
+            preference.removeEventListener('change', syncMotion);
+            document.removeEventListener('visibilitychange', syncVisibility);
+            delete root.dataset.themeMotion;
+            root.removeAttribute('data-page-hidden');
+        };
+    }, [motion]);
 
     /**
      * 테마 이름 규칙: 갈래 이름이 밝은 벌, 거기에 '-어두운벌' 을 붙인 것이 어두운 벌이다.
@@ -64,13 +84,16 @@ export default function ThemeProviderWrapper({ children }: { children: React.Rea
 
     return (
         <ThemeProvider theme={theme}>
+            <MotionConfig reducedMotion={motion === 'off' ? 'always' : 'user'}>
             <GlobalScrollbar />
             {Ground && <Ground />}
             <GlobalTypography
                 $sizePx={getFontSize(fontSizeKey).px}
                 $weight={getFontWeight(fontWeightKey).weight}
             />
+            <ThemeAtmosphere />
             {children}
+            </MotionConfig>
         </ThemeProvider>
     );
 }

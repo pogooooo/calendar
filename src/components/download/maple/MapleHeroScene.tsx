@@ -14,7 +14,7 @@ const LEAVES = [
 /** Maple 의 소개 그림 — 도는 고리 대신 도감의 한 장(H2)과 그 위로 천천히 지나는 잎 넷 */
 export default function MapleHeroScene() {
     return (
-        <S.Scene aria-hidden="true">
+        <S.Scene aria-hidden="true" data-ambient="maple-hero">
             <S.Plate>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src="/themes/maple/landing-hero.webp" alt="" draggable={false} />

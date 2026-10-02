@@ -34,7 +34,7 @@ const GLOSS = new Set([
 ]);
 
 const isThemed = (rel) =>
-    /(^|[\\/])celestial[\\/]/i.test(rel) || /(^|[\\/])Celestial[^\\/]*\.tsx$/.test(rel);
+    /(^|[\\/])(celestial|maple|ocean)[\\/]/i.test(rel) || /(^|[\\/])(?:Celestial|Maple|Ocean)[^\\/]*\.tsx$/.test(rel);
 
 function* walkAll(dir, ext) {
     for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -73,7 +73,7 @@ for (const file of walk(SRC)) {
 // styles.ts 도 본다 — 갈래 폴더 밖의 *.styles.ts 가 family 로 갈리면 같은 문제다
 for (const file of walkAll(SRC, ".ts")) {
     const rel = path.relative(root, file).split(path.sep).join("/");
-    if (/(^|\/)(celestial|maple)\//i.test(rel) || GLOSS.has(rel)) continue;
+    if (/(^|\/)(celestial|maple|ocean)\//i.test(rel) || GLOSS.has(rel)) continue;
     const src = fs.readFileSync(file, "utf8");
     if (/theme\??\.family\s*===/.test(src)) branched.push(rel);
 }

@@ -8,9 +8,10 @@ import { useT } from "@/i18n/useT";
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./notice/celestial/CelestialSaveFailureNotice.styles";
 import * as MapleS from "./notice/maple/MapleSaveFailureNotice.styles";
+import * as OceanS from './notice/ocean/OceanSaveFailureNotice.styles';
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
 
 /**
  * 저장이 실패해 화면이 되돌아갔을 때 뜨는 알림.

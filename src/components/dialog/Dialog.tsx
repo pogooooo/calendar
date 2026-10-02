@@ -8,9 +8,12 @@ import { ARCANA, PLATES, VARIANT_BY_KIND, type DialogKind, type DialogVariant } 
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialDialog.styles";
 import * as MapleS from "./maple/MapleDialog.styles";
+import * as OceanS from './ocean/OceanDialog.styles';
+import OceanArcanaEmblem from './OceanArcanaEmblem';
+import { ARCANA as OceanARCANA } from './Oceanarcana';
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
 
 export interface DialogRequest {
     kind: DialogKind;
@@ -39,8 +42,8 @@ export default function Dialog({
 }: Props) {
     const S = usePickTheme(STYLES);
     // 문장과 번호도 갈래마다 다르다 — Celestial 은 타로 아르카나, Maple 은 도감 도판
-    const Emblem = usePickTheme({ celestial: ArcanaEmblem, maple: MapleEmblem });
-    const arcanum = usePickTheme({ celestial: ARCANA, maple: PLATES })[kind];
+    const Emblem = usePickTheme({ celestial: ArcanaEmblem, maple: MapleEmblem, ocean: OceanArcanaEmblem });
+    const arcanum = usePickTheme({ celestial: ARCANA, maple: PLATES, ocean: OceanARCANA })[kind];
     const shape = variant ?? VARIANT_BY_KIND[kind];
     const confirmRef = React.useRef<HTMLButtonElement>(null);
     const veilRef = React.useRef<HTMLDivElement>(null);

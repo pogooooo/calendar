@@ -21,11 +21,12 @@ import PasswordInput from "@/components/input/password/PasswordInput";
 import GlobalError from "@/components/error/globalError/GlobalError";
 import InlineError from "@/components/error/inlineError/InlineError";
 import AuthPanel from "@/components/auth/AuthPanel";
+import * as OceanS from './ocean/OceanSignUp.styles';
 
 type RegisterFormData = z.infer<typeof RegisterSchema>;
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
 
 
 const SignUp = () => {

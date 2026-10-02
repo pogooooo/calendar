@@ -9,9 +9,10 @@ import useSwipe from "@/hooks/useSwipe";
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialProjectBoard.styles";
 import * as MapleS from "./maple/MapleProjectBoard.styles";
+import * as OceanS from './ocean/OceanProjectBoard.styles';
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
 
 const ProjectBoardView = React.forwardRef<HTMLDivElement, ProjectBoardProps>(({
                                                                                        tasks,

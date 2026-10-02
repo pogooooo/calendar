@@ -19,11 +19,13 @@ import EmptyArt from "@/components/empty/EmptyArt";
 import CelestialProjectLayout from "./celestial/CelestialProjectLayout";
 import MapleProjectLayout from "./maple/MapleProjectLayout";
 import { dependencyIssue } from "@/lib/taskInteractions";
+import * as OceanS from './ocean/OceanProjectPage.styles';
+import OceanProjectLayout from './ocean/OceanProjectLayout';
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
 
-const LAYOUTS = { celestial: CelestialProjectLayout, maple: MapleProjectLayout };
+const LAYOUTS = { celestial: CelestialProjectLayout, maple: MapleProjectLayout, ocean: OceanProjectLayout };
 
 export default function ProjectPage() {
     const S = usePickTheme(STYLES);

@@ -12,9 +12,10 @@ import { X, AlignLeft, Folder, Users } from 'lucide-react';
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialModal.styles";
 import * as MapleS from "./maple/MapleModal.styles";
+import * as OceanS from './ocean/OceanModal.styles';
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
 
 export default function ProjectModalView({
                                                   isOpen, mode, data, categories, modalCategoryParticipants,

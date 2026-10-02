@@ -36,7 +36,7 @@ const CelestialSidebarDesign = ({ isHovered = false }: { isHovered?: boolean }) 
     }, [isHovered]);
 
     return (
-        <S.AnimatedSvg ref={svgRef} $hovered={isHovered} width="160" height="954" viewBox="0 0 160 954" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <S.AnimatedSvg aria-hidden="true" data-ambient="celestial-sidebar" ref={svgRef} $hovered={isHovered} width="160" height="954" viewBox="0 0 160 954" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path className="orn spark"
                     d="M102.384 115.625C102.384 118.317 103.727 120.5 105.384 120.5C103.727 120.5 102.384 122.683 102.384 125.375C102.384 122.683 101.041 120.5 99.384 120.5C101.041 120.5 102.384 118.317 102.384 115.625Z"
                     stroke="currentColor" strokeWidth="0.768" strokeLinecap="round" strokeLinejoin="round"/>

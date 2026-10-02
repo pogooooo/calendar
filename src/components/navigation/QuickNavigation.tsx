@@ -8,8 +8,9 @@ import { useT } from "@/i18n/useT";
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialQuickNavigation.styles";
 import * as MapleS from "./maple/MapleQuickNavigation.styles";
+import * as OceanS from './ocean/OceanQuickNavigation.styles';
 
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
 export const OPEN_QUICK_NAVIGATION = "cronos:quick-navigation";
 export const openQuickNavigation = () => window.dispatchEvent(new Event(OPEN_QUICK_NAVIGATION));
 

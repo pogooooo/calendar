@@ -1,0 +1,80 @@
+{
+  "hardware": {
+    "verified": "NVIDIA GeForce GTX 1060 3GB",
+    "vramMiB": 3072,
+    "benchmarkPerformed": false
+  },
+  "recommendation": "현재 3GB GPU에서는 SD 1.5 512px 배치 1을 시작점으로 사용. 최신 FLUX 4B는 이 GPU에서 효율 우위를 기대하기 어려움. 모델 설치나 생성은 실행하지 않았음.",
+  "model": {
+    "checkpoint": "v1-5-pruned-emaonly.safetensors",
+    "directory": "ComfyUI/models/checkpoints",
+    "source": "https://huggingface.co/stable-diffusion-v1-5/stable-diffusion-v1-5",
+    "license": "CreativeML OpenRAIL-M; 사용 전 모델 라이선스와 출력물을 확인",
+    "note": "현재 모델 저장소는 원본의 보관용 mirror임"
+  },
+  "pipeline": [
+    "CheckpointLoaderSimple → CLIPTextEncode(positive/negative) → EmptyLatentImage(512×512, batch 1) → KSampler → VAEDecodeTiled → SaveImage",
+    "ComfyUI에 ocean-sd15-workflow.json을 불러온 뒤 체크포인트 파일 이름을 실제 설치 이름으로 선택",
+    "메모리 부족 시 ComfyUI 시작 옵션 --lowvram; 그래도 실패하면 --novram 사용. 속도는 더 느려질 수 있음",
+    "한 장씩 생성하여 동일 스타일 프롬프트와 seed를 유지; 후보를 고른 뒤 seed를 바꾸어 변형",
+    "SD 1.5는 이 워크플로로 실제 alpha 투명 이미지를 생성하지 않음. 흰 배경을 수동 마스킹한 뒤 PNG RGBA로 저장",
+    "최종 조개/모서리 자산은 알파 WebP로 변환. 작은 위젯용은 128~256px. 파일 크기와 대비를 실제 화면에서 확인",
+    "파도/낙엽/별빛 애니메이션은 SVG/CSS를 사용. 생성 영상이나 매 프레임 래스터 시트를 앱 배경으로 넣지 않음"
+  ],
+  "sampler": {
+    "steps": 24,
+    "cfg": 6.5,
+    "sampler": "dpmpp_2m",
+    "scheduler": "karras",
+    "denoise": 1,
+    "batch": 1,
+    "seed": 20461003,
+    "vae": "checkpoint embedded; tiled decode 256px"
+  },
+  "upgrade": {
+    "model": "FLUX.2 [klein] 4B distilled",
+    "license": "Apache-2.0",
+    "guide": "https://docs.comfy.org/tutorials/flux/flux-2-klein",
+    "note": "GPU 업그레이드나 별도 GPU 서버가 있을 때 검토. 공식 안내의 5090 수치 약 8.4GB VRAM은 현재 PC의 속도 측정 결과가 아님. 9B 비상업 라이선스 모델은 유료 테마 자산용 기본 추천에서 제외."
+  },
+  "prompts": [
+    {
+      "id": "shell-hero",
+      "output": "shell-hero.webp",
+      "prompt": "one delicate ivory scallop seashell, pearlescent nacre with pale aqua reflections, hand painted natural history illustration, cool refreshing summer beach palette, fine detailed ribs, clean plain white background, single centered object, generous empty space, soft natural daylight, elegant editorial botanical illustration",
+      "width": 512,
+      "height": 512,
+      "negative": "text, letters, watermark, logo, border, frame, busy background, oversaturated orange, deep sea, jellyfish, people, hands, cropped shell, multiple shells, blurry, noisy"
+    },
+    {
+      "id": "shore-corner",
+      "output": "shore-corner.webp",
+      "prompt": "watercolor illustration of a small cluster of ivory seashells and sea glass on pale fine beach sand in the lower right corner, refreshing turquoise coastal palette, airy white empty background taking most of the image, gentle summer daylight, quiet refined illustration, minimal composition",
+      "width": 512,
+      "height": 512,
+      "negative": "text, letters, watermark, logo, border, frame, busy background, oversaturated orange, deep sea, jellyfish, people, hands, cropped shells, blurry, noisy"
+    },
+    {
+      "id": "sand-texture",
+      "output": "sand-texture.webp",
+      "prompt": "top down subtle seamless texture of very fine pale ivory beach sand, cool neutral light, minimal contrast, soft tiny grains, no objects, no shadows, calm delicate background texture",
+      "width": 512,
+      "height": 512,
+      "negative": "text, letters, watermark, logo, border, frame, busy background, oversaturated orange, deep sea, jellyfish, people, hands, cropped shell, multiple shells, blurry, noisy"
+    },
+    {
+      "id": "moonlit-shell",
+      "output": "moonlit-shell.webp",
+      "prompt": "single elegant scallop seashell in soft cool moonlight, pale nacre blue highlights, delicate fine ribs, quiet seaside night illustration, dark navy plain background, single centered object, no stars, minimal refined composition",
+      "width": 512,
+      "height": 512,
+      "negative": "text, letters, watermark, logo, border, frame, busy background, oversaturated orange, deep sea, jellyfish, people, hands, cropped shell, multiple shells, blurry, noisy"
+    }
+  ],
+  "references": [
+    "https://comfyanonymous.github.io/ComfyUI_examples/",
+    "https://huggingface.co/stable-diffusion-v1-5/stable-diffusion-v1-5",
+    "https://docs.comfy.org/tutorials/flux/flux-2-klein",
+    "https://huggingface.co/black-forest-labs/FLUX.2-klein-4b-fp8"
+  ]
+}

@@ -3,6 +3,7 @@
 import { usePickTheme } from "@/styles/themed";
 import CelestialDayCellDecor from "./celestial/DayCellDecor";
 import MapleDayCellDecor from "./maple/MapleDayCellDecor";
+import OceanDayCellDecor from './ocean/DayCellDecor';
 
 export interface DayCellDecorProps {
     /** 바쁜 정도. 0 이면 아무것도 안 그린다 */
@@ -13,6 +14,6 @@ export interface DayCellDecorProps {
 
 /** 달력 칸 뒤의 꾸밈. Celestial 은 금빛 틀, Maple 은 황토 물 */
 export default function DayCellDecor(props: DayCellDecorProps) {
-    const View = usePickTheme({ celestial: CelestialDayCellDecor, maple: MapleDayCellDecor });
+    const View = usePickTheme({ celestial: CelestialDayCellDecor, maple: MapleDayCellDecor, ocean: OceanDayCellDecor });
     return <View {...props} />;
 }

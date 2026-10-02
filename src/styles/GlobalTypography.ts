@@ -47,6 +47,25 @@ const GlobalTypography = createGlobalStyle<{ $sizePx: number; $weight: number }>
         }
     }
 
+    html[data-theme-motion="off"] *,
+    html[data-theme-motion="off"] *::before,
+    html[data-theme-motion="off"] *::after {
+        animation: none !important;
+        transition: none !important;
+        scroll-behavior: auto !important;
+    }
+
+    html[data-theme-motion="off"] [data-page-transition-overlay] {
+        display:none !important;
+    }
+
+    html[data-page-hidden] [data-ambient],
+    html[data-page-hidden] [data-ambient] *,
+    html[data-drag-active] [data-ambient],
+    html[data-drag-active] [data-ambient] * {
+        animation-play-state: paused !important;
+    }
+
     ${(props) => props.$weight > 0 && `
         body,
         body p, body span, body div, body li, body td, body th,

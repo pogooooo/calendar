@@ -5,9 +5,10 @@ import { useT } from "@/i18n/useT";
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialGoogleSignInButton.styles";
 import * as MapleS from "./maple/MapleGoogleSignInButton.styles";
+import * as OceanS from './ocean/OceanGoogleSignInButton.styles';
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
 
 /* Google 공식 브랜드 가이드라인 기반 버튼
    https://developers.google.com/identity/branding-guidelines */

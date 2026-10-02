@@ -5,6 +5,7 @@ import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { useTheme } from "styled-components";
 import { withAlpha } from "@/styles/color";
+import useThemeMotion from '@/hooks/useThemeMotion';
 
 export const CrescentMoonAndLineIndicator = ({ className = "" }: { width?: string; height?: string; className?: string }) => (
     <svg overflow="visible" width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
@@ -33,6 +34,7 @@ const DynamicStickerInner = ({ isFilled }: { isFilled: boolean, idx: number }) =
     // 빛무리도 팔레트를 따른다. 예전에는 금색이 박혀 있어 새 테마에서도 금빛이 났다.
     const theme = useTheme();
     const primary = theme.colors.primary;
+    const motion = useThemeMotion();
 
     useEffect(() => {
         if (!containerRef.current) return;
@@ -43,7 +45,8 @@ const DynamicStickerInner = ({ isFilled }: { isFilled: boolean, idx: number }) =
 
         if (!starPath || !crescentPath) return;
 
-        if (isFirstRender.current) {
+        gsap.killTweensOf([starPath,crescentPath,containerRef.current]);
+        if (isFirstRender.current || motion === 'off') {
             gsap.set(starPath, { attr: { d: isFilled ? INNER_STAR_PATH : INNER_LINE_PATH } });
             gsap.set(crescentPath, { attr: { d: isFilled ? CIRCLE_PATH : CRESCENT_PATH } });
             gsap.set(containerRef.current, {
@@ -75,7 +78,10 @@ const DynamicStickerInner = ({ isFilled }: { isFilled: boolean, idx: number }) =
             ease: "power2.inOut"
         });
 
-    }, [isFilled, primary]);
+        const targets=[starPath,crescentPath,containerRef.current];
+        return ()=>{gsap.killTweensOf(targets);};
+
+    }, [isFilled, primary, motion]);
 
     return (
         <div ref={containerRef} style={{ width: "100%", height: "100%", color: theme.colors.primary }}>

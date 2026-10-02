@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import * as S from "./MaplePageTransition.styles";
+import useThemeMotion from '@/hooks/useThemeMotion';
 
 let hasNavigated = false;
 
@@ -15,7 +16,8 @@ const LEAVES = [
 ];
 
 export default function MaplePageTransition({ children }: { children: React.ReactNode }) {
-    const animate = hasNavigated;
+    const motion = useThemeMotion();
+    const animate = hasNavigated && motion !== 'off';
 
     React.useEffect(() => {
         hasNavigated = true;
@@ -24,7 +26,7 @@ export default function MaplePageTransition({ children }: { children: React.Reac
     return (
         <S.Stage>
             {animate && (
-                <S.Overlay aria-hidden="true">
+                <S.Overlay aria-hidden="true" data-page-transition-overlay>
                     <S.Veil />
                     <S.Rule />
                     {LEAVES.map((l) => (

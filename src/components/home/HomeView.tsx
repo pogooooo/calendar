@@ -30,11 +30,13 @@ import { expandTodos } from "@/hooks/useExpandedTodos";
 import { addDaysToKey, zonedDayStart } from "@/lib/timezone";
 import { activeTimeZone } from "@/lib/dateKey";
 import { useCurrentDayKey } from "@/hooks/useCurrentDay";
+import * as OceanS from './ocean/OceanHome.styles';
+import OceanHomeLayout from './ocean/OceanHomeLayout';
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
 
-const LAYOUTS = { celestial: CelestialHomeLayout, maple: MapleHomeLayout };
+const LAYOUTS = { celestial: CelestialHomeLayout, maple: MapleHomeLayout, ocean: OceanHomeLayout };
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
 

@@ -19,11 +19,12 @@ import TertiaryButton from "@/components/button/tertiary/TeritaryButton";
 import InlineError from "@/components/error/inlineError/InlineError";
 import GlobalError from "@/components/error/globalError/GlobalError";
 import AuthPanel from "@/components/auth/AuthPanel";
+import * as OceanS from './ocean/OceanForgotPassword.styles';
 
 type ForgotFormData = z.infer<typeof ForgotPasswordSchema>;
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
 
 
 const ForgotPassword = () => {

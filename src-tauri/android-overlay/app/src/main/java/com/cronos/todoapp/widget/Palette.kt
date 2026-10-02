@@ -85,7 +85,24 @@ class Palette(
 
         /** 스냅샷의 갈래로 색 벌을 고른다 */
         fun of(family: String?, dark: Boolean, spec: Snapshot.ThemeSpec?): Palette =
-            if (family == "maple") maple(dark, spec) else celestial(dark, spec)
+            when (family) {
+                "maple" -> maple(dark, spec)
+                "ocean" -> ocean(dark, spec)
+                else -> celestial(dark, spec)
+            }
+
+        fun ocean(dark: Boolean, spec: Snapshot.ThemeSpec?): Palette {
+            val c = if (spec != null && (spec.mode == "dark") == dark) spec.colors else emptyMap()
+            val accent = c["primary"] ?: if (dark) 0xFF70D9D0.toInt() else 0xFF147F87.toInt()
+            return Palette(
+                family = "ocean", dark = dark,
+                bg = c["background"] ?: if (dark) 0xFF081F2C.toInt() else 0xFFEEF7F6.toInt(),
+                ink = c["text"] ?: if (dark) 0xFFE4F6F5.toInt() else 0xFF183E4B.toInt(),
+                muted = c["textSecondary"] ?: if (dark) 0xFF96C0CA.toInt() else 0xFF52717E.toInt(),
+                gold = accent, goldText = accent,
+                weekend = c["weekend"] ?: if (dark) 0xFFEF9D88.toInt() else 0xFFBD6767.toInt(),
+            )
+        }
 
         /** 위젯 설정의 벌(app/light/dark)과 스냅샷의 테마로 색을 고른다 */
         fun resolve(spec: Snapshot.ThemeSpec?, mode: String): Palette {

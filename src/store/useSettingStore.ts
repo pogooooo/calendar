@@ -15,6 +15,8 @@ interface SettingState {
     font: string;
     fontSize: string;
     fontWeight: string;
+    motion: 'full' | 'gentle' | 'off';
+    setMotion: (motion: 'full' | 'gentle' | 'off') => void;
     isLoading: boolean;
     setTheme: (inputTheme: string) => void;
     setThemeOption: (themeId: string, option: string) => void;
@@ -39,6 +41,8 @@ const useSettingStore = create<SettingState>()(
             font: 'default',
             fontSize: 'md',
             fontWeight: 'normal',
+            motion: 'full',
+            setMotion: (motion) => set({ motion }),
             isLoading: false,
 
             setTheme: (inputTheme) => set({ theme: inputTheme }),

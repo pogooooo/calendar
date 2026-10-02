@@ -5,9 +5,10 @@ import type { RulerScrollProps } from "./types";
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialRulerScroll.styles";
 import * as MapleS from "./maple/MapleRulerScroll.styles";
+import * as OceanS from './ocean/OceanRulerScroll.styles';
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
 
 /**
  * Celestial 눈금자 스크롤바.

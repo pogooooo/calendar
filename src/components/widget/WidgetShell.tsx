@@ -15,6 +15,8 @@ import { Settings2, Lock, X } from "lucide-react";
 
 import type { WidgetKind } from "@/store/useWidgetStore";
 import { mirrorWidgetStateToFile } from "@/lib/widgetStateFile";
+import * as OceanS from './ocean/OceanWidgetShell.styles';
+import WidgetCharm from './WidgetCharm';
 
 interface Props {
     kind: WidgetKind;
@@ -98,7 +100,7 @@ function buildBackground(bg: WidgetBgSettings, surfaceColor: string): React.CSSP
 }
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
 
 export default function WidgetShell({ kind, title, children }: Props) {
     const S = usePickTheme(STYLES);
@@ -397,6 +399,7 @@ export default function WidgetShell({ kind, title, children }: Props) {
             onContextMenu={handleContextMenu}
         >
             <ThemeProvider theme={widgetTheme}>
+                {bg.mode === 'theme' && !showSettings && <WidgetCharm />}
                 {bg.mode === "glass" && wallpaper.url && (
                     <S.FakeGlassLayer $opacity={bg.opacity}>
                         <S.VirtualMonitor

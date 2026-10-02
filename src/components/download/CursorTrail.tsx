@@ -2,14 +2,16 @@
 
 import * as React from "react";
 import styled from "styled-components";
+import useThemeMotion from '@/hooks/useThemeMotion';
 
 const COUNT = 7;
 
 export default function CursorTrail() {
     const ref = React.useRef<HTMLDivElement>(null);
+    const motion=useThemeMotion();
 
     React.useEffect(() => {
-        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+        if (motion !== 'full') return;
         if (window.matchMedia("(pointer: coarse)").matches) return;
 
         const container = ref.current;
@@ -24,29 +26,33 @@ export default function CursorTrail() {
         const onMove = (e: PointerEvent) => {
             mx = e.clientX;
             my = e.clientY;
+            if (!raf) raf=requestAnimationFrame(loop);
         };
 
         const loop = () => {
+            raf=0;
+            if(document.hidden) return;
+            let moving=false;
             for (let i = 0; i < pos.length; i++) {
                 const target = i === 0 ? { x: mx, y: my } : pos[i - 1];
                 pos[i].x += (target.x - pos[i].x) * (i === 0 ? 0.35 : 0.3);
                 pos[i].y += (target.y - pos[i].y) * (i === 0 ? 0.35 : 0.3);
                 dots[i].style.transform = `translate3d(${pos[i].x}px, ${pos[i].y}px, 0)`;
+                if(Math.abs(target.x-pos[i].x)+Math.abs(target.y-pos[i].y)>.3) moving=true;
             }
-            raf = requestAnimationFrame(loop);
+            if(moving) raf = requestAnimationFrame(loop);
         };
 
         window.addEventListener("pointermove", onMove, { passive: true });
-        raf = requestAnimationFrame(loop);
 
         return () => {
             window.removeEventListener("pointermove", onMove);
             cancelAnimationFrame(raf);
         };
-    }, []);
+    }, [motion]);
 
     return (
-        <Trail ref={ref} aria-hidden="true">
+        <Trail ref={ref} aria-hidden="true" hidden={motion !== 'full'}>
             {Array.from({ length: COUNT }, (_, i) => (
                 <i key={i} style={{ opacity: 0.55 - i * 0.07, width: 5 - i * 0.5, height: 5 - i * 0.5 }} />
             ))}

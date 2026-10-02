@@ -9,14 +9,16 @@ import { useSidebarLogic } from "@/hooks/useSidebarLogic";
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialSideBar.styles";
 import * as MapleS from "./maple/MapleSideBar.styles";
+import * as OceanS from './ocean/OceanSideBar.styles';
+import OceanSidebarDesign from '@/assets/sidebarDesign/OceanSidebarDesign';
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
 
 const Sidebar = () => {
     const S = usePickTheme(STYLES);
     // 옆선 장식은 테마마다 다른 그림이다.
-    const SidebarDesign = usePickTheme({ celestial: CelestialSidebarDesign, maple: MapleSidebarDesign });
+    const SidebarDesign = usePickTheme({ celestial: CelestialSidebarDesign, maple: MapleSidebarDesign, ocean: OceanSidebarDesign });
 
     const { width, isResizing, screenHeight, startResizing, sidebarRef } = useSidebarLogic();
 

@@ -6,9 +6,10 @@ import type { InputProps } from "./celestial/SingleInput.styles";
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/SingleInput.styles";
 import * as MapleS from "./maple/SingleInput.styles";
+import * as OceanS from './ocean/SingleInput.styles';
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
 
 export type { InputProps } from "./celestial/SingleInput.styles";
 

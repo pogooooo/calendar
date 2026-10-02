@@ -5,9 +5,10 @@ import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/AnimatedDateText.styles";
 import * as MapleS from "./maple/AnimatedDateText.styles";
+import * as OceanS from './ocean/AnimatedDateText.styles';
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
 
 interface AnimatedDateTextProps {
     text: string;

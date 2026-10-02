@@ -32,11 +32,13 @@ import CelestialMonthHeader from "./celestial/CelestialMonthHeader";
 import MapleMonthHeader from "./maple/MapleMonthHeader";
 import * as CelestialS from "./celestial/CelestialMonthCalendar.styles";
 import * as MapleS from "./maple/MapleMonthCalendar.styles";
+import OceanMonthHeader from './ocean/OceanMonthHeader';
+import * as OceanS from './ocean/OceanMonthCalendar.styles';
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const HEADERS = { celestial: CelestialMonthHeader, maple: MapleMonthHeader };
+const HEADERS = { celestial: CelestialMonthHeader, maple: MapleMonthHeader, ocean: OceanMonthHeader };
 
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
 
 
 interface WeekRowProps {

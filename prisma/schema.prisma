@@ -240,3 +240,19 @@ model ChallengeCompletion {
   // 동일한 챌린지를 같은 날짜에 여러 번 달성할 수 없도록 유니크 제약
   @@unique([challengeId, targetDate])
 }
+
+// Sandbox purchase receipts never grant production access.
+model ThemeOrder {
+  id          String   @id
+  userId      String
+  themeId     String
+  amount      Int
+  customerKey String
+  paymentKey  String?  @unique
+  status      String   @default("CREATED")
+  environment String   @default("test")
+  createdAt   DateTime @default(now())
+  confirmedAt DateTime?
+
+  @@index([userId, themeId, environment, status])
+}

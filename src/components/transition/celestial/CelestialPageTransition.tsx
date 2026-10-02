@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import * as S from "./CelestialPageTransition.styles";
+import useThemeMotion from '@/hooks/useThemeMotion';
 
 let hasNavigated = false;
 
@@ -33,7 +34,8 @@ const TICKS = Array.from({ length: 48 }, (_, i) => i * 7.5);
 const CARDINALS = [0, 90, 180, 270];
 
 export default function CelestialPageTransition({ children }: { children: React.ReactNode }) {
-    const animate = hasNavigated;
+    const motion = useThemeMotion();
+    const animate = hasNavigated && motion !== 'off';
 
     React.useEffect(() => {
         hasNavigated = true;
@@ -42,7 +44,7 @@ export default function CelestialPageTransition({ children }: { children: React.
     return (
         <S.Stage>
             {animate && (
-                <S.Overlay aria-hidden="true">
+                <S.Overlay aria-hidden="true" data-page-transition-overlay>
                     <S.Veil />
 
                     <S.Frame viewBox="0 0 100 100" preserveAspectRatio="none">

@@ -13,10 +13,14 @@ import * as CelestialS from "./celestial/CelestialSettings.styles";
 import * as MapleS from "./maple/MapleSettings.styles";
 import * as CelestialLS from "./celestial/CelestialSettings.layout";
 import * as MapleLS from "./maple/MapleSettings.layout";
+import * as OceanS from './ocean/OceanSettings.styles';
+import * as OceanLS from './ocean/OceanSettings.layout';
+import useSettingStore from '@/store/useSettingStore';
+import ThemeShop from '@/components/billing/ThemeShop';
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS };
-const LAYOUTS: ThemeImpls<typeof CelestialLS> = { celestial: CelestialLS, maple: MapleLS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
+const LAYOUTS: ThemeImpls<typeof CelestialLS> = { celestial: CelestialLS, maple: MapleLS, ocean: OceanLS };
 
 /**
  * 설정은 판(pane) 넷으로 나뉜다. 예전에는 여덟 조각이 세로로 이어져 있어
@@ -64,6 +68,8 @@ export default function SettingsView({
     const S = usePickTheme(STYLES);
     const L = usePickTheme(LAYOUTS);
     const [tab, setTab] = React.useState<TabId>("look");
+    const motion = useSettingStore(s => s.motion);
+    const setMotion = useSettingStore(s => s.setMotion);
 
     React.useEffect(() => {
         FONT_OPTIONS.forEach(ensureFontLoaded);
@@ -238,10 +244,21 @@ export default function SettingsView({
                                             );
                                         })}
                                     </L.ThemeRow>
+                                    <ThemeShop locale={locale} />
                                 </L.Block>
 
                                 <L.Block>
                                     <L.BlockHead><h2>{t.settings.font}</h2></L.BlockHead>
+
+                                    <L.SegRow>
+                                        <L.SegLabel>{locale === 'ko' ? '테마 애니메이션' : 'Theme animation'}</L.SegLabel>
+                                        <L.SegGroup role="group" aria-label={locale === 'ko' ? '테마 애니메이션' : 'Theme animation'}>
+                                            {(['full', 'gentle', 'off'] as const).map((value, i) => <L.Seg
+                                                key={value} type="button" $selected={motion === value}
+                                                aria-pressed={motion === value} onClick={() => setMotion(value)}
+                                            >{(locale === 'ko' ? ['풍성하게', '잔잔하게', '끄기'] : ['Full', 'Gentle', 'Off'])[i]}</L.Seg>)}
+                                        </L.SegGroup>
+                                    </L.SegRow>
 
                                     <L.SegRow>
                                         <L.SegLabel>{t.settings.fontSize}</L.SegLabel>

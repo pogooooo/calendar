@@ -4,6 +4,8 @@ import * as React from "react";
 import * as THREE from "three";
 import { useTheme } from "styled-components";
 import * as S from "./CelestialHeroScene.styles";
+import useThemeMotion from '@/hooks/useThemeMotion';
+import CelestialArcana from '@/assets/celestial/CelestialArcana';
 
 const RINGS = [
     { radius: 1.55, tiltX: 1.25, tiltZ: -0.3, speed: 0.28, size: 0.052, phase: 0 },
@@ -15,12 +17,13 @@ export default function HeroScene() {
     const mountRef = React.useRef<HTMLDivElement>(null);
     const theme = useTheme();
     const gold = theme.colors.primary;
+    const motion = useThemeMotion();
 
     React.useEffect(() => {
         const mount = mountRef.current;
-        if (!mount) return;
+        if (!mount || motion === 'off') return;
 
-        const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        const reduced = motion === 'gentle';
         const color = new THREE.Color(gold);
 
         const scene = new THREE.Scene();
@@ -233,8 +236,8 @@ export default function HeroScene() {
             renderer.dispose();
             mount.removeChild(renderer.domElement);
         };
-    }, [gold]);
+    }, [gold,motion]);
 
-    return <S.Mount ref={mountRef} aria-hidden="true" />;
+    return <S.Mount ref={mountRef} aria-hidden="true">{motion === 'off' && <CelestialArcana />}</S.Mount>;
 }
 

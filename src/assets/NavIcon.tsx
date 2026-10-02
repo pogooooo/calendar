@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { usePickTheme } from "@/styles/themed";
 import MapleNavIcon from "./maple/MapleNavIcon";
 import type { NavIconName } from "./maple/MapleNavIcon";
+import OceanNavIcon from './ocean/OceanNavIcon';
 
 export type { NavIconName };
 
@@ -15,6 +16,6 @@ const CelestialNavIcon = ({ fallback }: { name: NavIconName; size: number; fallb
  * fallback 에 Celestial 의 아이콘 요소를 넘긴다 (갈래마다 다른 그림이므로 여기서 고른다).
  */
 export default function NavIcon(props: { name: NavIconName; size: number; fallback: ReactNode }) {
-    const View = usePickTheme({ celestial: CelestialNavIcon, maple: MapleNavIcon });
+    const View = usePickTheme({ celestial: CelestialNavIcon, maple: MapleNavIcon, ocean: OceanNavIcon });
     return <View {...props} />;
 }

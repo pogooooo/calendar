@@ -51,12 +51,16 @@ abstract class WidgetStyle(protected val context: Context, protected val density
 
     companion object {
         fun of(context: Context, family: String, density: Float): WidgetStyle =
-            if (family == "maple") MapleStyle(context, density) else CelestialStyle(context, density)
+            when (family) {
+                "maple" -> MapleStyle(context, density)
+                "ocean" -> OceanStyle(context, density)
+                else -> CelestialStyle(context, density)
+            }
     }
 }
 
 /** Celestial — 금빛 실선 위의 별자리 */
-class CelestialStyle(context: Context, density: Float) : WidgetStyle(context, density) {
+open class CelestialStyle(context: Context, density: Float) : WidgetStyle(context, density) {
     override val display: Typeface = Fonts.orbit(context)
     override val numeral: Typeface = display
     override val titleSpacing = 0.2f

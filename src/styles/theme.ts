@@ -41,10 +41,12 @@ const MAPLE_FONTS = {
 
 const CELESTIAL: ThemeFamily = 'celestial';
 const MAPLE: ThemeFamily = 'maple';
+const OCEAN: ThemeFamily = 'ocean';
 
 /** 갈래마다 하나. 설정 화면에 보이는 이름·설명·미리보기 그림이 여기서 나온다. */
 const FAMILY_META: Record<ThemeFamily, { label: string; description: string; preview?: Record<string, string> }> = {
     celestial: { label: 'Celestial', description: 'Gold accents, Orbit typeface' },
+    ocean: { label: 'Ocean', description: 'Cool sea breeze, seashells and a sunlit beach' },
     maple: {
         label: 'Maple',
         description: 'Pressed maple leaves on aged paper',
@@ -151,6 +153,18 @@ export const themes: Record<string, DefaultTheme> = {
     'celestial-dark': celestialDark,
     maple,
     'maple-dark': mapleDark,
+    ocean: {
+        name: 'ocean', family: OCEAN, mode: 'light', ...commonStyles,
+        fonts: { display: "'Inter', system-ui, sans-serif", numeral: "'Inter', system-ui, sans-serif", body: "'Inter', sans-serif" },
+        colors: { background:'#EEF7F6', primary:'#147F87', accent:'#88D3CE', surface:'#F6FCFB', text:'#183E4B', textSecondary:'#52717E', border:'#79ABB5', success:'#237D64', error:'#B25250', weekend:'#BD6767' },
+        preview: { cell:'#E1F0EF', event:'#B7E2DD' }, line:'#79ABB5',
+    },
+    'ocean-dark': {
+        name: 'ocean-dark', family: OCEAN, mode: 'dark', ...commonStyles,
+        fonts: { display: "'Inter', system-ui, sans-serif", numeral: "'Inter', system-ui, sans-serif", body: "'Inter', sans-serif" },
+        colors: { background:'#081F2C', primary:'#70D9D0', accent:'#2399AD', surface:'#0D2C3A', text:'#E4F6F5', textSecondary:'#96C0CA', border:'#79ABB5', success:'#70C9AA', error:'#F39B96', weekend:'#EF9D88' },
+        preview: { cell:'#123B48', event:'#165666' }, line:'#79ABB5',
+    },
 };
 
 /* ── 설정 화면이 읽어 가는 목록 ─────────────────────────────────────────

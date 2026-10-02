@@ -21,7 +21,7 @@ import { useTheme } from "styled-components";
  *    "아직 안 만든 화면"을 전부 짚어 준다. 그 목록이 곧 할 일이다.
  */
 
-export const THEME_FAMILIES = ["celestial", "maple"] as const;
+export const THEME_FAMILIES = ["celestial", "maple", "ocean"] as const;
 
 export type ThemeFamily = (typeof THEME_FAMILIES)[number];
 
