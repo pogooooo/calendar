@@ -16,13 +16,18 @@ import ProjectModal from '@/components/modal/projectModal/ProjectModal';
 import TaskModal from '@/components/modal/projectModal/TaskModal';
 import { useT } from "@/i18n/useT";
 import EmptyArt from "@/components/empty/EmptyArt";
+import CelestialProjectLayout from "./celestial/CelestialProjectLayout";
+import MapleProjectLayout from "./maple/MapleProjectLayout";
 import { dependencyIssue } from "@/lib/taskInteractions";
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
 const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS };
 
+const LAYOUTS = { celestial: CelestialProjectLayout, maple: MapleProjectLayout };
+
 export default function ProjectPage() {
     const S = usePickTheme(STYLES);
+    const ProjectLayout = usePickTheme(LAYOUTS);
     const authFetch = useAuthFetch();
     const dialog = useDialog();
     const t = useT();
@@ -74,7 +79,8 @@ export default function ProjectPage() {
             rafId = requestAnimationFrame(() => {
                 if (!layoutRef.current) return;
                 const { top, height } = layoutRef.current.getBoundingClientRect();
-                const newRatio = Math.min(Math.max(((moveEvent.clientY - top) / height) * 100, 20), 80);
+                const pointerRatio = ((moveEvent.clientY - top) / height) * 100;
+                const newRatio = Math.min(Math.max(layoutRef.current.dataset.boardFirst === "false" ? 100 - pointerRatio : pointerRatio, 20), 80);
                 boardRatioRef.current = newRatio;
                 // 직접 DOM 업데이트 — React 리렌더 없음
                 if (boardRef.current)    boardRef.current.style.flex    = `${newRatio} 1 0`;
@@ -174,19 +180,14 @@ export default function ProjectPage() {
             )}
 
             {selectedProject && (
-                <S.ContentLayout ref={layoutRef}>
-                    <ProjectBoard
+                <ProjectLayout containerRef={layoutRef} board={(<ProjectBoard
                         ref={boardRef}
                         flex={boardRatio}
                         tasks={tasks}
                         onAddTask={(status) => setTaskModal({ isOpen: true, mode: 'add', data: { id: '', title: '', description: '', status, priority: 'medium', startAt: '', endAt: '', blockedBy: [], assignees: [] } })}
                         onEditTask={openTaskEdit}
                         onMoveTask={handleMoveTaskStatus}
-                    />
-
-                    <S.Resizer onMouseDown={handleMouseDownResizer} />
-
-                    <ProjectTimeline
+                    />)} timeline={(<ProjectTimeline
                         ref={timelineRef}
                         flex={100 - boardRatio}
                         tasks={tasks}
@@ -203,8 +204,7 @@ export default function ProjectPage() {
                             if (!selectedProjectId) return;
                             await updateProjectTask(authFetch, selectedProjectId, taskId, { startAt: newStart, endAt: newEnd });
                         }}
-                    />
-                </S.ContentLayout>
+                    />)} resizer={(<S.Resizer onMouseDown={handleMouseDownResizer} />)} />
             )}
 
             <TaskModal

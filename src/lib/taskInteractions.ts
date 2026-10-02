@@ -34,6 +34,13 @@ export function calendarDayDelta(from: string, to: string): number {
     return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86400000);
 }
 
+/** Resize only one edge, preserving its time and rejecting an inverted interval. */
+export function resizeZonedRange(start: string | number | Date, end: string | number | Date, edge: 'start' | 'end', days: number, timeZone: string) {
+    const startAt = edge === 'start' ? shiftZonedDays(start, days, timeZone) : new Date(start).toISOString();
+    const endAt = edge === 'end' ? shiftZonedDays(end, days, timeZone) : new Date(end).toISOString();
+    return Date.parse(startAt) <= Date.parse(endAt) ? { startAt, endAt } : null;
+}
+
 type DependencyTask = { id: string; blockedBy?: { id: string }[] | null };
 export function dependencyIssue(tasks: DependencyTask[], predecessor: string, successor: string): "self" | "duplicate" | "cycle" | "missing" | null {
     if (predecessor === successor) return "self";

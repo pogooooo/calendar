@@ -104,7 +104,7 @@ export const PageWrapper = styled.div`
     height: 100%;
     min-height: 0;
     padding: 18px 20px;
-    background-color: ${(props) => props.theme.colors.background};
+    background-color: transparent;
 
     @media (max-width: 1250px) {
         height: auto;
@@ -252,7 +252,7 @@ export const DaySection = styled.div<{ $flex: number; $collapsed: boolean }>`
         height: auto;
         overflow: visible;
         border-left: none;
-        border-top: 1px solid ${(props) => props.theme.colors.primary};
+        border-top: none;
         padding-top: 24px;
         margin-top: 12px;
     }

@@ -3,7 +3,7 @@ export interface Translations {
         invalidDates: string;
         linkHintMobile: string;
         linkSelectedMobile: (title: string) => string;
-        calendarDragHint: string; moveSeries: string; moveSeriesMessage: string; moveAll: string;
+        calendarDragHint: string; moveSeries: string; moveSeriesMessage: string; resizeSeriesMessage: string; moveAll: string;
         moved: string; undo: string; dismiss: string;
         linkHint: string; linkStart: (title: string) => string; linkTarget: (title: string) => string;
         linkSelected: (title: string) => string; linkCreated: string; linkInvalid: string; linkDuplicate: string;

@@ -1,5 +1,5 @@
 /**
- * Maple 의 달력 틀 — 뼈대는 Celestial 과 같으므로 그쪽 것을 통째로 가져오고, 달라지는 것만 덮어쓴다.
+ * Maple 의 달력 틀 — 일간 기록을 먼저 놓는 별도 JSX 배치에 공통 조작 스타일을 덮어쓴다.
  * (여기서 이름을 새로 정의하면 그것이 위의 재수출보다 앞선다 — ES 모듈 규칙)
  *
  * 금빛 실선·마름모·빛무리 대신: 종이 탭으로 갈아 끼우는 두 화면, 먹 하이라인 나눔선에 잎 손잡이,
@@ -52,6 +52,8 @@ export const CollapsedRail = styled(C.CollapsedRail)`
 
 /** 접기 단추: 먹 하이라인, 빛무리 없음 */
 export const ToggleButton = styled(C.ToggleButton)`
+    @media(min-width:1251px) { left:auto; right:-28px; }
+    svg { transform: scaleX(-1); }
     border-color: ${(p) => hair(p.theme, 0.4)};
     border-radius: 2px;
 
@@ -64,10 +66,11 @@ export const ToggleButton = styled(C.ToggleButton)`
 `;
 
 export const DaySection = styled(C.DaySection)`
-    border-left-color: ${(p) => (p.$collapsed ? hair(p.theme, 0.35) : "transparent")};
+    border-left: none;
+    border-right: 1px solid ${(p) => (p.$collapsed ? hair(p.theme, 0.35) : "transparent")};
 
     @media (max-width: 1250px) {
-        border-top-color: ${(p) => hair(p.theme, 0.4)};
+        border-right: none;
     }
 `;
 

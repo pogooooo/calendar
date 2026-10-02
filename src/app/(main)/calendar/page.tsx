@@ -14,10 +14,14 @@ import useSwipe from "@/hooks/useSwipe";
 import { useT } from "@/i18n/useT";
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialCalendarPage.styles";
+import CelestialCalendarLayout from "./celestial/CelestialCalendarLayout";
+import MapleCalendarLayout from "./maple/MapleCalendarLayout";
 import * as MapleS from "./maple/MapleCalendarPage.styles";
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
 const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS };
+
+const LAYOUTS = { celestial: CelestialCalendarLayout, maple: MapleCalendarLayout };
 
 const DAY_COLLAPSE_KEY = "cronos-day-collapsed";
 
@@ -26,10 +30,12 @@ const MAX_RATIO = 82;
 
 export default function CalendarPage() {
     const S = usePickTheme(STYLES);
+    const DesktopLayout = usePickTheme(LAYOUTS);
     const { categories } = useCategoryStore();
     const { todos } = useTodoStore();
     const t = useT();
     const isMobile = useIsMobile();
+    const isStacked = useIsMobile(1250);
 
     /** 폰에서는 두 달력을 한 화면에 같이 두지 않는다. 하나씩 갈아 끼운다. */
     // 폰은 두 화면이다: 월간, 그리고 주간 띠 + 그날 일간 (주간·일간을 합쳤다)
@@ -98,7 +104,7 @@ export default function CalendarPage() {
         const onMove = (mv: MouseEvent) => {
             const box = containerRef.current?.getBoundingClientRect();
             if (!box) return;
-            const raw = startRatio + ((mv.clientX - startX) / box.width) * 100;
+            const raw = startRatio + ((mv.clientX - startX) / box.width) * 100 * Number(containerRef.current?.dataset.resizeDirection ?? 1);
             const next = Math.min(MAX_RATIO, Math.max(MIN_RATIO, raw));
             ratioRef.current = next;
             if (monthRef.current) monthRef.current.style.flex = `${next} 1 0`;
@@ -208,28 +214,14 @@ export default function CalendarPage() {
         );
     }
 
-    return (
-        <S.PageWrapper>
-            <S.CalendarContainer ref={containerRef} $collapsed={dayCollapsed}>
-                <S.MonthSection ref={monthRef} $flex={monthRatio} $collapsed={dayCollapsed}>
+    return <DesktopLayout containerRef={containerRef} collapsed={dayCollapsed} month={(<S.MonthSection ref={monthRef} $flex={monthRatio} $collapsed={dayCollapsed}>
                     <MonthCalendar
                         todos={todos}
                         categories={categories}
                         selectedDate={selectedDate}
                         onDateChange={(date) => setSelectedDate(date)}
                     />
-                </S.MonthSection>
-
-                <S.Resizer
-                    $hidden={dayCollapsed}
-                    onMouseDown={dayCollapsed ? undefined : handleResize}
-                    onDoubleClick={dayCollapsed ? undefined : handleReset}
-                >
-                    <span className="line" />
-                    <span className="grip" />
-                </S.Resizer>
-
-                <S.DaySection ref={dayRef} $flex={100 - monthRatio} $collapsed={dayCollapsed}>
+                </S.MonthSection>)} day={(<S.DaySection ref={dayRef} $flex={100 - monthRatio} $collapsed={dayCollapsed}>
                     <S.ToggleButton
                         type="button"
                         onClick={toggleDay}
@@ -245,7 +237,7 @@ export default function CalendarPage() {
                             <span className="star">✦</span>
                         </S.CollapsedRail>
 
-                        <S.DayBody $collapsed={dayCollapsed}>
+                        <S.DayBody $collapsed={dayCollapsed} inert={dayCollapsed && !isStacked} aria-hidden={dayCollapsed && !isStacked}>
                             <DayCalendar
                                 selectedDate={selectedDate}
                                 todos={todos}
@@ -253,8 +245,12 @@ export default function CalendarPage() {
                             />
                         </S.DayBody>
                     </S.DayClip>
-                </S.DaySection>
-            </S.CalendarContainer>
-        </S.PageWrapper>
-    );
+                </S.DaySection>)} resizer={(<S.Resizer
+                    $hidden={dayCollapsed}
+                    onMouseDown={dayCollapsed ? undefined : handleResize}
+                    onDoubleClick={dayCollapsed ? undefined : handleReset}
+                >
+                    <span className="line" />
+                    <span className="grip" />
+                </S.Resizer>)} />;
 }

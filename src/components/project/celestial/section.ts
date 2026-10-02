@@ -1,6 +1,5 @@
 import styled from "styled-components";
 import { MOBILE } from "@/styles/breakpoints";
-import { celestial_corner_accent } from "@/styles/celestial_theme";
 
 /**
  * 프로젝트 화면의 큰 칸(보드·타임라인)을 감싸는 틀.
@@ -14,9 +13,8 @@ export const SectionWrapper = styled.div<{ $mobileHeight?: string }>`
     flex-direction: column;
     min-height: 150px;
     overflow: hidden;
-    border: 1px solid ${(props) => props.theme.colors.primary};
+    border: none;
     background: transparent;
-    ${celestial_corner_accent}
 
     /* 비율은 인라인 style 로 들어오므로 !important 로만 덮인다. */
     ${MOBILE} {
@@ -31,7 +29,7 @@ export const SectionTitle = styled.div`
     letter-spacing: 2px;
     color: ${(props) => props.theme.colors.textSecondary};
     padding: 8px 12px;
-    border-bottom: 1px solid ${(props) => props.theme.colors.primary};
+    border-bottom: none;
 
     ${MOBILE} { padding: 10px 12px; }
 `;

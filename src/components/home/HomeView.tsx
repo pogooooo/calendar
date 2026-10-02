@@ -24,15 +24,23 @@ import * as CelestialS from "./celestial/CelestialHome.styles";
 import * as MapleS from "./maple/MapleHome.styles";
 import MonthArch from "./parts/MonthArch";
 import EmptyArt from "@/components/empty/EmptyArt";
+import CelestialHomeLayout from "./celestial/CelestialHomeLayout";
+import MapleHomeLayout from "./maple/MapleHomeLayout";
+import { expandTodos } from "@/hooks/useExpandedTodos";
+import { addDaysToKey, zonedDayStart } from "@/lib/timezone";
+import { activeTimeZone } from "@/lib/dateKey";
 import { useCurrentDayKey } from "@/hooks/useCurrentDay";
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
 const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS };
 
+const LAYOUTS = { celestial: CelestialHomeLayout, maple: MapleHomeLayout };
+
 const pad2 = (n: number) => String(n).padStart(2, "0");
 
 export default function HomeView() {
     const S = usePickTheme(STYLES);
+    const Layout = usePickTheme(LAYOUTS);
     const { todos, toggleTodo, addTodo } = useTodoStore();
     const { projects, fetchProjects } = useProjectStore();
     const { challenges, fetchChallenges, toggleChallengeCompletion, addChallenge } = useChallengeStore();
@@ -84,7 +92,7 @@ export default function HomeView() {
             const el = document.activeElement;
             const typing = el instanceof HTMLElement
                 && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable);
-            if (typing || e.metaKey || e.ctrlKey || e.altKey) return;
+            if (typing || e.isComposing || document.querySelector('[role="dialog"]') || e.metaKey || e.ctrlKey || e.altKey) return;
             if (e.key === "ArrowLeft") { e.preventDefault(); shiftDay(-1); }
             else if (e.key === "ArrowRight") { e.preventDefault(); shiftDay(1); }
             else if (e.key === "t" || e.key === "T") setFocusTime(new Date().setHours(0, 0, 0, 0));
@@ -118,23 +126,27 @@ export default function HomeView() {
         [year, month, daysInMonth]
     );
 
+    const homeTodos = React.useMemo(() => expandTodos(todos,
+        zonedDayStart(monthDays[0], activeTimeZone())!,
+        new Date(zonedDayStart(addDaysToKey(monthDays[monthDays.length - 1], 9), activeTimeZone())!.getTime() - 1)), [todos, monthDays]);
+
     const monthLoad = React.useMemo(
-        () => monthDays.map(k => todos.filter(t2 => spansDay(t2, k)).length),
-        [monthDays, todos, spansDay]
+        () => monthDays.map(k => homeTodos.filter(t2 => spansDay(t2, k)).length),
+        [monthDays, homeTodos, spansDay]
     );
 
     const monthStats = React.useMemo(() => {
         let total = 0;
         let done = 0;
         monthDays.forEach(k => {
-            todos.forEach(t2 => {
+            homeTodos.forEach(t2 => {
                 if (!spansDay(t2, k)) return;
                 total += 1;
                 if (isDoneOn(t2, k)) done += 1;
             });
         });
         return { left: total - done, done };
-    }, [monthDays, todos, spansDay, isDoneOn]);
+    }, [monthDays, homeTodos, spansDay, isDoneOn]);
 
     const marks = React.useMemo(() => {
         const seen = new Set<string>();
@@ -164,18 +176,18 @@ export default function HomeView() {
     }, [projects, anniversaries, year, month]);
 
     const dayTodos = React.useMemo(
-        () => todos.filter(t2 => spansDay(t2, focusKey)),
-        [todos, focusKey, spansDay]
+        () => homeTodos.filter(t2 => spansDay(t2, focusKey)),
+        [homeTodos, focusKey, spansDay]
     );
 
     const upcomingTodos = React.useMemo(() => {
         const start = new Date(focusTime + 86400000);
         const end = new Date(focusTime + 86400000 * 8);
-        return todos
+        return homeTodos
             .filter(t2 => t2.startAt && new Date(t2.startAt) >= start && new Date(t2.startAt) < end)
             .sort((a, b) => new Date(a.startAt!).getTime() - new Date(b.startAt!).getTime())
             .slice(0, 6);
-    }, [todos, focusTime]);
+    }, [homeTodos, focusTime]);
 
     const activeProjects = React.useMemo(
         () => projects.filter(p => p.status !== "done").slice(0, 4),
@@ -289,27 +301,21 @@ export default function HomeView() {
         });
     };
 
-    return (
-        <S.PageWrapper>
-            <S.Card>
-                <S.Main>
-                    <S.ArchWrap>
+    const regions = {
+        arch: (<S.ArchWrap>
                         <MonthArch daysInMonth={daysInMonth} focusIdx={focusIdx} monthLoad={monthLoad} marks={marks} />
 
                         <S.ArchFoot>
                             <span className="edge">1</span>
                             <span className="center">
                                 <i>✦</i>
-                                {t.home.monthLabel(month + 1)} · {t.home.monthSummary(monthStats.left, monthStats.done)}
+                                <span className="summary">{t.home.monthLabel(month + 1)} · {t.home.monthSummary(monthStats.left, monthStats.done)}</span>
                                 <i>✦</i>
                             </span>
                             <span className="edge">{daysInMonth}</span>
                         </S.ArchFoot>
-                    </S.ArchWrap>
-
-                    {/* 보는 날 옮기기 — 화살로 하루씩, 가운데를 누르면 달력에서 고르고, 오늘로 돌아온다.
-                        폰에서는 아래 목록을 쓸어도 넘어가고, 데스크톱에서는 ←·→ 로도 넘어간다 */}
-                    <S.DayNav>
+                    </S.ArchWrap>),
+        navigation: (<S.DayNav>
                         <S.NavButton type="button" onClick={() => shiftDay(-1)} aria-label={t.calendar.prevDay}>
                             <Arrow width={34} height={13} isRight={false} />
                         </S.NavButton>
@@ -330,10 +336,8 @@ export default function HomeView() {
                         <S.TodayButton type="button" onClick={() => setFocusTime(realTodayTime)} disabled={isToday}>
                             {t.home.today}
                         </S.TodayButton>
-                    </S.DayNav>
-
-                    <S.Lists {...daySwipe}>
-                        <S.ListCol>
+                    </S.DayNav>),
+        today: (<S.ListCol>
                             <S.SectionHead>
                                 <i className="hd" />
                                 {isToday ? t.home.today : t.calendar.dayLabelShort(month + 1, focus.getDate())}
@@ -368,7 +372,7 @@ export default function HomeView() {
                                     dayTodos.map(todo => {
                                         const done = isDoneOn(todo, focusKey);
                                         return (
-                                            <S.Row key={todo.id} $done={done} onClick={() => handleToggleTodo(todo.id)}>
+                                            <S.Row key={todo.id} type="button" aria-pressed={done} $done={done} onClick={() => handleToggleTodo(todo.originalTodo?.id ?? todo.id)}>
                                                 <S.Mark $on={done} />
                                                 <span className="name">{todo.title}</span>
                                             </S.Row>
@@ -376,9 +380,8 @@ export default function HomeView() {
                                     })
                                 )}
                             </S.Scroll>
-                        </S.ListCol>
-
-                        <S.ListCol>
+                        </S.ListCol>),
+        upcoming: (<S.ListCol>
                             <S.SectionHead>
                                 <i className="hd" />
                                 {t.home.thisWeek}
@@ -394,7 +397,7 @@ export default function HomeView() {
                                         const done = isDoneOn(todo, key);
                                         return (
                                             // 그 날로 데려간다. 그냥 /calendar 로 보내면 오늘이 열려 다시 찾아야 한다.
-                                            <S.Row key={todo.id} $done={done} $soft onClick={() => router.push(`/calendar?date=${key}`)}>
+                                            <S.Row key={todo.id} type="button" $done={done} $soft onClick={() => router.push(`/calendar?date=${key}`)}>
                                                 <S.Mark $on={done} />
                                                 <span className="name">{todo.title}</span>
                                                 <em>{t.calendar.days[new Date(todo.startAt!).getDay()]}</em>
@@ -403,14 +406,8 @@ export default function HomeView() {
                                     })
                                 )}
                             </S.Scroll>
-                        </S.ListCol>
-                    </S.Lists>
-                </S.Main>
-
-                <S.Pillar>
-                    <S.Crest>✦</S.Crest>
-
-                    <S.PillarHead onClick={() => router.push("/project")}>
+                        </S.ListCol>),
+        projects: (<><S.PillarHead onClick={() => router.push("/project")}>
                         <span className="idx">I</span>
                         {t.home.project}
                         <i className="rule" />
@@ -436,7 +433,8 @@ export default function HomeView() {
                         })
                     )}
 
-                    <S.PillarHeadRow className="mt">
+                    </>),
+        challenges: (<><S.PillarHeadRow className="mt">
                         <S.PillarHead onClick={() => router.push("/challenge")}>
                             <span className="idx">II</span>
                             {t.home.challenge}
@@ -478,7 +476,8 @@ export default function HomeView() {
                         })
                     )}
 
-                    <S.PillarHeadRow className="mt">
+                    </>),
+        anniversaries: (<><S.PillarHeadRow className="mt">
                         <S.PillarHead onClick={() => router.push("/anniversary")}>
                             <span className="idx">III</span>
                             {t.sidebar.anniversary}
@@ -521,10 +520,8 @@ export default function HomeView() {
                             </S.AnniversaryRow>
                         ))
                     )}
-                </S.Pillar>
-            </S.Card>
-
-            <TodoModal
+                </>),
+        dialogs: (<><TodoModal
                 isOpen={detailOpen}
                 onClose={closeDetail}
                 categories={categories}
@@ -538,6 +535,8 @@ export default function HomeView() {
                 initialData={null}
                 onSave={handleSaveChallenge}
             />
-        </S.PageWrapper>
-    );
+        </>),
+        listProps: daySwipe,
+    };
+    return <Layout {...regions} />;
 }

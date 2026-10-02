@@ -7,68 +7,6 @@
 import styled, { keyframes } from "styled-components";
 import { hide_scrollbar } from "@/styles/shared";
 
-export const PageWrapper = styled.div`
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    overflow: hidden;
-    color: ${p => p.theme.colors.text};
-    padding: 12px 0;
-
-    @media (max-width: 768px) {
-        height: auto;
-        min-height: 100%;
-        overflow: visible;
-        padding: 0;
-    }
-`;
-
-export const Card = styled.div`
-    position: relative;
-    width: min(1120px, 100%);
-    height: 100%;
-    min-height: 0;
-    display: grid;
-    grid-template-columns: 1fr 236px;
-    border: 1px solid ${p => p.theme.colors.primary}75;
-    background: ${p => p.theme.colors.surface};
-    box-shadow: 0 12px 40px ${p => p.theme.colors.text}08;
-    overflow: hidden;
-
-    &::before {
-        content: "";
-        position: absolute;
-        inset: 5px;
-        border: 1px solid ${p => p.theme.colors.primary}24;
-        pointer-events: none;
-        z-index: 5;
-    }
-
-    @media (max-width: 900px) {
-        grid-template-columns: 1fr;
-        overflow-y: auto;
-        ${hide_scrollbar}
-    }
-
-    @media (max-width: 768px) {
-        height: auto;
-        overflow: visible;
-        border: none;
-        background: transparent;
-        box-shadow: none;
-
-        &::before { display: none; }
-    }
-`;
-
-export const Main = styled.div`
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-    min-height: 0;
-    padding-top: 8px;
-`;
-
 export const ArchWrap = styled.div`
     flex-shrink: 0;
     padding: 14px 30px 0;
@@ -132,6 +70,10 @@ export const ArchFoot = styled.div`
     .center i {
         font-style: normal;
         font-size: 0.56rem;
+    }
+    .summary { white-space: nowrap; }
+    @media(max-width:768px) {
+        .center { gap:4px; font-size:.68rem; letter-spacing:.04em; min-width:0; }
     }
 `;
 
@@ -242,24 +184,6 @@ export const TodayButton = styled.button`
         flex-basis: 100%;
         min-height: 36px;
         &:disabled { display: none; }
-    }
-`;
-
-export const Lists = styled.div`
-    flex: 1;
-    min-height: 0;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 34px;
-    padding: 22px 30px 20px;
-
-    @media (max-width: 900px) {
-        grid-template-columns: 1fr;
-        gap: 18px;
-    }
-
-    @media (max-width: 768px) {
-        padding: 18px 4px 6px;
     }
 `;
 
@@ -416,7 +340,12 @@ export const rowIn = keyframes`
     to   { opacity: 1; transform: translateY(0); }
 `;
 
-export const Row = styled.div<{ $done: boolean; $soft?: boolean }>`
+export const Row = styled.button<{ $done: boolean; $soft?: boolean }>`
+    width: 100%;
+    border: none;
+    font: inherit;
+    text-align: left;
+    background: transparent;
     display: flex;
     align-items: center;
     gap: 11px;
@@ -466,32 +395,6 @@ export const Row = styled.div<{ $done: boolean; $soft?: boolean }>`
         border-color: ${p => p.theme.colors.primary};
         box-shadow: 0 0 5px ${p => p.theme.colors.primary}75;
     }
-`;
-
-export const Pillar = styled.aside`
-    border-left: 1px solid ${p => p.theme.colors.primary}42;
-    padding: 16px 22px 18px;
-    min-height: 0;
-    overflow-y: auto;
-    ${hide_scrollbar}
-
-    @media (max-width: 900px) {
-        border-left: 0;
-        border-top: 1px solid ${p => p.theme.colors.primary}42;
-    }
-
-    @media (max-width: 768px) {
-        overflow: visible;
-        padding: 16px 4px 8px;
-    }
-`;
-
-export const Crest = styled.div`
-    text-align: center;
-    color: ${p => p.theme.colors.primary};
-    font-size: 0.66rem;
-    letter-spacing: 0.4em;
-    margin-bottom: 14px;
 `;
 
 export const PillarHead = styled.button`

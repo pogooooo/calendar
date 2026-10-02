@@ -108,16 +108,17 @@ export const TimelineSection = styled.div.attrs<{ $flex: number }>(props => ({
     flex: ${(props) => props.$flex};
     display: flex;
     flex-direction: column;
-    border: 1px solid ${(props) => props.theme.colors.primary};
+    border: none;
     background-color: transparent;
     ${celestial_corner_accent}
+    &::after { display: none; }
 
     .timeline-header {
         font-family: ${(props) => props.theme.fonts.display};
         font-size: 0.95rem;
         color: ${(props) => props.theme.colors.textSecondary};
         padding: 8px 15px;
-        border-bottom: 1px solid ${(props) => props.theme.colors.primary};
+        border-bottom: none;
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -243,19 +244,20 @@ export const SideSection = styled.div.attrs<{ $flex: number }>(props => ({
 `;
 
 export const BaseCard = styled.div`
-    border: 1px solid ${(props) => props.theme.colors.primary};
+    border: none;
     background-color: transparent;
     display: flex;
     flex-direction: column;
     overflow: hidden;
     ${celestial_corner_accent}
+    &::after { display: none; }
 
     .card-header {
         font-family: ${(props) => props.theme.fonts.display};
         font-size: 0.95rem;
         color: ${(props) => props.theme.colors.textSecondary};
         padding: 8px 12px;
-        border-bottom: 1px solid ${(props) => props.theme.colors.primary};
+        border-bottom: none;
         background-color: transparent;
     }
 `;

@@ -10,7 +10,7 @@ import useTodoStore from "@/store/useTodoStore";
 import { useT } from "@/i18n/useT";
 import { localDateKey, activeTimeZone, parseExcludedDates } from "@/lib/dateKey";
 import { addDaysToKey } from "@/lib/timezone";
-import { calendarDayDelta, shiftZonedDays } from "@/lib/taskInteractions";
+import { calendarDayDelta, shiftZonedDays, resizeZonedRange } from "@/lib/taskInteractions";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useDialog } from "@/components/dialog/DialogProvider";
 import useProjectStore from "@/store/useProjectStore";
@@ -81,6 +81,7 @@ export interface MonthThemeProps {
     showChallenges: boolean;
     onToggleChallenges: () => void;
     handleMoveTodo: (todo: CalendarTodoType, from: string, to: string) => Promise<void>;
+    handleResizeTodo: (todo: CalendarTodoType, edge: 'start' | 'end', from: string, to: string) => Promise<void>;
     moveNotice: string | null;
     undoMove: (() => Promise<void>) | null;
     dismissMove: () => void;
@@ -403,16 +404,18 @@ const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
             setIsModalOpen(true);
         };
 
-        const handleMoveTodo = async (todo: CalendarTodoType, from: string, to: string) => {
+        const handleChangeDates = async (todo: CalendarTodoType, from: string, to: string, edge?: 'start' | 'end') => {
             const days = calendarDayDelta(from, to);
             if (!days || !Number.isFinite(days) || moving.current || todo.isProject || todo.isProjectTask || todo.isChallenge) return;
             const original = todo.originalTodo ?? todo;
             if (!original.startAt || !original.endAt) return;
+            const resized = edge ? resizeZonedRange(original.startAt, original.endAt, edge, days, activeTimeZone()) : null;
+            if (edge && !resized) { setMoveNotice(t.interaction.invalidDates); return; }
             moving.current = true;
             try {
-                if ((original.repeat ?? 0) > 0 && !(await dialog.confirm({ title: t.interaction.moveSeries, message: t.interaction.moveSeriesMessage, confirmLabel: t.interaction.moveAll }))) return;
+                if ((original.repeat ?? 0) > 0 && !(await dialog.confirm({ title: t.interaction.moveSeries, message: edge ? t.interaction.resizeSeriesMessage : t.interaction.moveSeriesMessage, confirmLabel: t.interaction.moveAll }))) return;
                 const originalDates = { startAt: original.startAt, endAt: original.endAt, repeatEndDate: original.repeatEndDate ?? null, excludedDates: original.excludedDates ?? null };
-                const data = {
+                const data = edge ? resized! : {
                     startAt: shiftZonedDays(original.startAt, days, activeTimeZone()),
                     endAt: shiftZonedDays(original.endAt, days, activeTimeZone()),
                     repeatEndDate: original.repeatEndDate ? shiftZonedDays(original.repeatEndDate, days, activeTimeZone()) : null,
@@ -432,10 +435,13 @@ const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
                 if (!error && selectedDate && localDateKey(selectedDate) === from) onDateChange?.(new Date(`${to}T12:00:00`));
             } finally { moving.current = false; }
         };
+        const handleMoveTodo = (todo: CalendarTodoType, from: string, to: string) => handleChangeDates(todo, from, to);
+        const handleResizeTodo = (todo: CalendarTodoType, edge: 'start' | 'end', from: string, to: string) => handleChangeDates(todo, from, to, edge);
 
         const themeProps: MonthThemeProps = {
             asChild,
             handleMoveTodo,
+            handleResizeTodo,
             moveNotice,
             undoMove,
             dismissMove: () => { setMoveNotice(null); setUndoMove(null); },

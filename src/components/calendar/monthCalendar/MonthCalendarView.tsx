@@ -28,10 +28,14 @@ import useAnniversaryStore from "@/store/useAnniversaryStore";
 import { anniversariesOn } from "@/lib/anniversary";
 import AnniversaryCrown from "@/components/calendar/parts/anniversary/AnniversaryCrown";
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
+import CelestialMonthHeader from "./celestial/CelestialMonthHeader";
+import MapleMonthHeader from "./maple/MapleMonthHeader";
 import * as CelestialS from "./celestial/CelestialMonthCalendar.styles";
 import * as MapleS from "./maple/MapleMonthCalendar.styles";
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
+const HEADERS = { celestial: CelestialMonthHeader, maple: MapleMonthHeader };
+
 const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS };
 
 
@@ -51,7 +55,8 @@ interface WeekRowProps {
     setMoreModalDate: (date: Date | null) => void;
     handleQuickEdit: MonthThemeProps['handleQuickEdit'];
     handleMoveTodo: MonthThemeProps['handleMoveTodo'];
-    onDragStart: (e: React.PointerEvent<HTMLElement>, todo: CalendarTodoType, from: string) => void;
+    handleResizeTodo: MonthThemeProps['handleResizeTodo'];
+    onDragStart: (e: React.PointerEvent<HTMLElement>, todo: CalendarTodoType, from: string, edge?: 'start' | 'end') => void;
     consumeDragClick: () => boolean;
     draggingId?: string;
     dropTarget: string | null;
@@ -64,7 +69,7 @@ const MAX_VISIBLE_LEVELS_MOBILE = 6;
 const WeekRow = ({
                      dates, todos, challengeTodos, categories, todayStr, currentMonth,
                      handleCreateTodo, handleContextMenu,
-                     selectedDate, onCellClick, setMoreModalDate, handleQuickEdit, handleMoveTodo,
+                     selectedDate, onCellClick, setMoreModalDate, handleQuickEdit, handleMoveTodo, handleResizeTodo,
                      onDragStart, consumeDragClick, draggingId, dropTarget
                  }: WeekRowProps) => {
     const S = usePickTheme(STYLES);
@@ -200,6 +205,20 @@ const WeekRow = ({
                                                            handleContextMenu(e, todoAtThisLevel);
                                                        }}>
                                             {(isStart || idx === 0) && <span className="todo-title">{todoAtThisLevel.title}</span>}
+                                            {movable && !isMobile && (['start', 'end'] as const).map(edge => ((edge === 'start' && isStart) || (edge === 'end' && isEnd)) && <S.RangeHandle
+                                                key={edge} type="button" $edge={edge}
+                                                aria-label={`${todoAtThisLevel.title} · ${edge === 'start' ? t.form.startDate : t.form.endDate}`}
+                                                title={edge === 'start' ? t.form.startDate : t.form.endDate}
+                                                onPointerDown={e => { e.stopPropagation(); onDragStart(e, todoAtThisLevel, localDateKey(date), edge); }}
+                                                onClick={e => { e.stopPropagation(); consumeDragClick(); }}
+                                                onKeyDown={e => {
+                                                    e.stopPropagation();
+                                                    if (e.altKey && ['ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                                                        e.preventDefault(); const from = localDateKey(date);
+                                                        void handleResizeTodo(todoAtThisLevel, edge, from, addDaysToKey(from, e.key === 'ArrowLeft' ? -1 : 1));
+                                                    }
+                                                }}
+                                            />)}
                                         </S.TodoBarItem>
                                     );
                                 }
@@ -239,27 +258,31 @@ const MonthCalendarView = React.forwardRef<HTMLDivElement, CelestialMonthProps>(
          handleContextMenuChallenge, handleQuickToggleChallenge,
          setIsModalOpen, setMoreModalDate, setContextMenu, showProjects, onToggleProjects,
          showChallenges, onToggleChallenges,
-         handleMoveTodo, moveNotice, undoMove, dismissMove,
+         handleMoveTodo, handleResizeTodo, moveNotice, undoMove, dismissMove,
          ...props
      }, ref) => {
         const S = usePickTheme(STYLES);
         const Component = asChild ? Slot : 'div';
         const t = useT();
         const reducedMotion = useReducedMotion();
-        const calendarDrag = useDragTarget<{ todo: CalendarTodoType; from: string }>('data-calendar-date', (source, target) => { void handleMoveTodo(source.todo, source.from, target); });
+        const MonthHeader = usePickTheme(HEADERS);
+        const calendarDrag = useDragTarget<{ todo: CalendarTodoType; from: string; edge?: 'start' | 'end' }>('data-calendar-date', (source, target) => {
+            if (source.edge) void handleResizeTodo(source.todo, source.edge, source.from, target);
+            else void handleMoveTodo(source.todo, source.from, target);
+        });
         // 손가락으로는 작은 화살표보다 쓸어 넘기는 쪽이 빠르다.
         const swipe = useSwipe(handleNextMonth, handlePrevMonth);
 
         return (
             <S.CelestialCalendarWrapper as={Component} ref={ref} {...props}>
-                <S.DateRangeDisplay>
+                <MonthHeader navigation={<>
                     <button type="button" className="nav-btn" aria-label={t.calendar.prevMonth} onClick={handlePrevMonth}><ChevronLeft size={24} /></button>
                     <AnimatedDateText text={dateRangeText} direction={direction} />
                     <button type="button" className="nav-btn" aria-label={t.calendar.nextMonth} onClick={handleNextMonth}><ChevronRight size={24} /></button>
                     <S.TodayButton type="button" onClick={handleToday} disabled={isOnToday}>
                         {t.home.today}
                     </S.TodayButton>
-                    <hr/>
+                    </>} filters={
                     <CategoryFilter
                         categories={categories}
                         selectedCategoryIds={selectedCategoryIds}
@@ -269,7 +292,7 @@ const MonthCalendarView = React.forwardRef<HTMLDivElement, CelestialMonthProps>(
                         onToggleChallenges={onToggleChallenges}
                         onToggle={toggleCategory}
                     />
-                </S.DateRangeDisplay>
+                } />
                 {moveNotice && <S.MoveNotice role="status">
                     <span>{moveNotice}</span>
                     {undoMove && <button type="button" onClick={() => void undoMove()}>{t.interaction.undo}</button>}
@@ -319,7 +342,8 @@ const MonthCalendarView = React.forwardRef<HTMLDivElement, CelestialMonthProps>(
                                             setMoreModalDate={setMoreModalDate}
                                             handleQuickEdit={handleQuickEdit}
                                             handleMoveTodo={handleMoveTodo}
-                                            onDragStart={(e, todo, from) => calendarDrag.begin(e, { todo, from })}
+                                            handleResizeTodo={handleResizeTodo}
+                                            onDragStart={(e, todo, from, edge) => calendarDrag.begin(e, { todo, from, edge })}
                                             consumeDragClick={calendarDrag.consumeClick}
                                             draggingId={calendarDrag.drag?.source.todo.id}
                                             dropTarget={calendarDrag.drag?.target ?? null}

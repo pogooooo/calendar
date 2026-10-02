@@ -521,6 +521,7 @@ export const TodoBarSpacer = styled.div`
 `;
 
 export const TodoBarItem = styled.div<{ $isStart: boolean; $isEnd: boolean; $color?: string; $isDone?: boolean; $dragging?: boolean; $movable?: boolean }>`
+    position: relative;
     opacity: ${(p) => p.$dragging ? 0.5 : 1};
     touch-action: ${(p) => p.$movable ? 'none' : 'auto'};
     cursor: ${(p) => p.$dragging ? 'grabbing' : p.$movable ? 'grab' : 'pointer'};
@@ -589,6 +590,16 @@ export const TodoBarItem = styled.div<{ $isStart: boolean; $isEnd: boolean; $col
             & > * { display: none; }
         }
     }
+`;
+
+export const RangeHandle = styled.button<{ $edge: 'start' | 'end' }>`
+    position:absolute; top:0; bottom:0;
+    ${p=>p.$edge === 'start' ? 'left:0;' : 'right:0;'}
+    width:10px; padding:0; border:none; background:transparent; cursor:ew-resize;
+    color:${p=>p.theme.colors.primary}; opacity:.5; z-index:3; touch-action:none;
+    &::after { content:''; display:block; width:2px; height:10px; margin:auto; background:currentColor; border-radius:2px; }
+    &:hover,&:focus-visible { opacity:1; background:${p=>p.theme.colors.primary}22; }
+    @media(max-height:420px) { [data-widget] & { display:none; } }
 `;
 
 export const MoreButton = styled.button.attrs({ type: 'button' })`
