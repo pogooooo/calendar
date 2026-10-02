@@ -19,7 +19,7 @@ const hair = (a: number) => css`${(p) => p.theme.colors.primary}${a}`;
 export const Shell = styled.div`
     position: relative;
     width: 100%;
-    background-color: ${(p) => p.theme.colors.background};
+    background-color: transparent;
 `;
 
 export const Frame = styled.div`

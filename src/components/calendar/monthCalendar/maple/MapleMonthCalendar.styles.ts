@@ -88,7 +88,7 @@ export const WeekRowContainer = styled(C.WeekRowContainer)`
  */
 export const DayCell = styled(C.DayCell)`
     border-right-color: ${(p) => hair(p, 0.22)};
-    box-shadow: none;
+    box-shadow: ${(p) => p.$dropTarget ? `inset 0 0 0 2px ${p.theme.colors.primary}` : 'none'};
     background-color: ${(p) => (p.$isSelected ? withAlpha(p.theme.colors.accent, 0.24) : "transparent")};
 
     .day-header {

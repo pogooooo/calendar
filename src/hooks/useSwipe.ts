@@ -30,7 +30,7 @@ export default function useSwipe(
 
         // 손이 닿은 자리 위쪽에 가로 스크롤이 있으면 그 스크롤이 먼저다.
         let node = e.target as HTMLElement | null;
-        if (node?.closest('input, textarea, select, button, a, [contenteditable="true"], [role="slider"]')) {
+        if (node?.closest('input, textarea, select, button, a, [contenteditable="true"], [role="slider"], [role="button"]')) {
             start.current = null;
             return;
         }

@@ -21,6 +21,7 @@ export default function MoreModalView({
                                                todos,
                                                categories,
                                                handleContextMenu,
+                                               onEditTodo,
                                                challenges,
                                                onToggleChallenge
                                            }: MoreModalProps) {
@@ -35,11 +36,11 @@ export default function MoreModalView({
     );
 
     return (
-        <BaseModal isOpen={isOpen} onClose={onClose} maxWidth="360px">
+        <BaseModal isOpen={isOpen} onClose={onClose} maxWidth="360px" ariaLabel={t.popup.dayTodosTitle(date)}>
             <S.ContentWrapper>
                 <S.Header>
                     <span className="title-text">{t.popup.dayTodosTitle(date)}</span>
-                    <button type="button" className="close-btn" onClick={onClose}>
+                    <button type="button" className="close-btn" onClick={onClose} aria-label={t.interaction.dismiss}>
                         <X size={20} />
                     </button>
                 </S.Header>
@@ -60,11 +61,11 @@ export default function MoreModalView({
                             return (
                                 <S.TodoItem
                                     key={todo.id}
+                                    type="button"
                                     $color={category?.color}
                                     $isDone={isDone}
                                     onContextMenu={(e) => handleContextMenu(e, todo)}
-                                    /* 손가락에는 오른쪽 클릭이 없다. 그냥 누르면 같은 차림표가 뜬다. */
-                                    onClick={(e) => { if (matchMedia("(hover: none)").matches) handleContextMenu(e, todo); }}
+                                    onClick={(e) => onEditTodo ? onEditTodo(todo) : handleContextMenu(e, todo)}
                                 >
                                     <div className="color-bar" />
                                     <span className="todo-title">{todo.title}</span>
@@ -82,6 +83,8 @@ export default function MoreModalView({
                                         <button
                                             type="button"
                                             className="check"
+                                            aria-label={challenge.title}
+                                            aria-pressed={!!challenge.isDone}
                                             onClick={() => onToggleChallenge?.(challenge)}
                                         >
                                             {challenge.isDone && <Check size={10} strokeWidth={3} />}

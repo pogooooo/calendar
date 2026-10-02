@@ -122,7 +122,10 @@ export const TabContainer = styled.div`
     }
 `;
 
-export const Tab = styled.div<{ $active: boolean }>`
+export const Tab = styled.button.attrs({ type: 'button' })<{ $active: boolean }>`
+    font: inherit;
+    min-height: 36px;
+    @media (max-width: 768px) { min-height: 44px; }
     display: flex;
     align-items: center;
     background: transparent;

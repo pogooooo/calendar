@@ -51,6 +51,7 @@ const ProjectHeaderView = React.forwardRef<HTMLDivElement, ProjectHeaderProps>((
                     <S.Tab
                         key={project.id}
                         $active={project.id === selectedProjectId}
+                        aria-pressed={project.id === selectedProjectId}
                         onClick={() => onSelectProject(project.id)}
                     >
                         <S.TabText>{project.title}</S.TabText>

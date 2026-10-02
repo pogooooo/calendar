@@ -20,3 +20,15 @@ export function withAlpha(color: string, alpha: number): string {
     const b = parseInt(full.slice(4, 6), 16);
     return `rgba(${r}, ${g}, ${b}, ${a})`;
 }
+
+/** An opaque check mark must contrast with its fill, including transparent widget themes. */
+export function inkOnFill(color: string): string {
+    const hex = color.replace('#', '');
+    const rgb = hex.length === 3 ? hex.split('').map(c => c + c).join('') : hex;
+    if (!/^[0-9a-f]{6}$/i.test(rgb)) return '#111111';
+    const channels = [0, 2, 4].map(i => {
+        const value = parseInt(rgb.slice(i, i + 2), 16) / 255;
+        return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+    });
+    return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722 > 0.179 ? '#111111' : '#FFFFFF';
+}

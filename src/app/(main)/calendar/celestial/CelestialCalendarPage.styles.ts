@@ -101,8 +101,9 @@ export const Fab = styled.button`
 export const PageWrapper = styled.div`
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 80px);
-    padding: 30px 40px;
+    height: 100%;
+    min-height: 0;
+    padding: 18px 20px;
     background-color: ${(props) => props.theme.colors.background};
 
     @media (max-width: 1250px) {

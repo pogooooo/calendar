@@ -19,6 +19,7 @@ export interface MoreModalProps {
     todos: TodoType[];
     categories: CategoryType[];
     handleContextMenu: (e: React.MouseEvent, todo: TodoType) => void;
+    onEditTodo?: (todo: TodoType) => void;
     challenges?: MoreModalChallenge[];
     onToggleChallenge?: (challenge: MoreModalChallenge) => void;
 }

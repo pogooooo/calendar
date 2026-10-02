@@ -36,7 +36,7 @@ class Palette(
         fun celestial(dark: Boolean, spec: Snapshot.ThemeSpec?): Palette {
             // 앱 테마의 색은 그 벌(밝음/어두움)일 때만 쓴다 — 위젯 설정으로 다른 벌을 강제하면 기본색으로
             val c = if (spec != null && (spec.mode == "dark") == dark) spec.colors else emptyMap()
-            val gold = c["primary"] ?: (if (dark) 0xFFD9BD78.toInt() else 0xFF89651D.toInt())
+            val gold = c["primary"] ?: (if (dark) 0xFFD9BD78.toInt() else 0xFFD4AF37.toInt())
             return if (dark) Palette(
                 family = "celestial",
                 dark = true,

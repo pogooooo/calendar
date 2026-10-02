@@ -60,7 +60,7 @@ const celestial: DefaultTheme = {
     fonts: CELESTIAL_FONTS,
     colors: {
         background: '#FAF8F2',
-        primary: '#89651D',
+        primary: '#D4AF37',
         accent: '#FAE7B5',
         surface: '#FFFDF7',
         text: '#292D3B',

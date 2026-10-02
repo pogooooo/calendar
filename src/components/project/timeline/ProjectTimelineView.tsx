@@ -5,6 +5,8 @@ import { useT } from "@/i18n/useT";
 import { ProjectTimelineProps } from "./ProjectTimeline";
 import type { ProjectTaskType } from '@/types';
 import useIsMobile from "@/hooks/useIsMobile";
+import useDragTarget from "@/hooks/useDragTarget";
+import { Link2 } from "lucide-react";
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialTimeline.styles";
 import * as MapleS from "./maple/MapleTimeline.styles";
@@ -28,10 +30,36 @@ interface DragState {
 }
 
 const ProjectTimelineView = React.forwardRef<HTMLDivElement, ProjectTimelineProps>(
-    ({ tasks, flex, onEditTask, onUpdateTaskDates }, ref) => {
+    ({ tasks, flex, onEditTask, onUpdateTaskDates, onConnectDependency }, ref) => {
     const S = usePickTheme(STYLES);
     const t = useT();
     const tr = t.project;
+    const [linkSource, setLinkSource] = React.useState<string | null>(null);
+    const [linkMessage, setLinkMessage] = React.useState<string | null>(null);
+    const connecting = React.useRef(false);
+    const graphRef = React.useRef<HTMLDivElement>(null);
+    const arrowId = React.useId().replace(/:/g, '');
+    const connect = async (from: string, to: string) => {
+        if (!onConnectDependency || connecting.current) return;
+        connecting.current = true;
+        try {
+            const error = await onConnectDependency(from, to);
+            setLinkMessage(error || t.interaction.linkCreated);
+            if (!error) setLinkSource(null);
+        } finally { connecting.current = false; }
+    };
+    const linkDrag = useDragTarget<string>('data-project-task', (from, to) => { void connect(from, to); });
+    const source = linkDrag.drag?.source ?? linkSource;
+    const selectSource = (id: string) => {
+        if (linkDrag.consumeClick()) return;
+        setLinkSource(value => value === id ? null : id);
+        setLinkMessage(null);
+    };
+    React.useEffect(() => {
+        const cancel = (e: KeyboardEvent) => { if (e.key === 'Escape') setLinkSource(null); };
+        document.addEventListener('keydown', cancel);
+        return () => document.removeEventListener('keydown', cancel);
+    }, []);
     /* 폰에서는 간트를 옆으로 밀어야 하는 데다, 막대를 끌어 옮기는 것은 마우스 전용이었다.
        손가락에게는 날짜 순 목록이 더 낫다 — 같은 자료를 세로로 읽는다. */
     const isMobile = useIsMobile();
@@ -92,6 +120,7 @@ const ProjectTimelineView = React.forwardRef<HTMLDivElement, ProjectTimelineProp
     // ── 마우스다운 ────────────────────────────────────────────────────────────
     const handleMouseDownMove = React.useCallback(
         (e: React.MouseEvent, task: ProjectTaskType, left: number, width: number) => {
+            if (e.button !== 0) return;
             e.stopPropagation();
             lastMovedRef.current = false;
             draggingRef.current = {
@@ -165,9 +194,10 @@ const ProjectTimelineView = React.forwardRef<HTMLDivElement, ProjectTimelineProp
 
                     } else if (drag.mode === 'resize-right' && daysShifted !== 0) {
                         // 스냅백 방지: 최종 폭 유지, React 리렌더가 같은 값으로 덮어씀
-                        const finalWidth = Math.max(DAY_WIDTH, drag.initialWidth + daysShifted * DAY_WIDTH);
+                        const actualShift = Math.max(daysShifted, -Math.round(drag.initialWidth / DAY_WIDTH) + 1);
+                        const finalWidth = Math.max(DAY_WIDTH, drag.initialWidth + actualShift * DAY_WIDTH);
                         if (el) el.style.width = `${finalWidth}px`;
-                        const ne = new Date(endTs); ne.setDate(ne.getDate() + daysShifted);
+                        const ne = new Date(endTs); ne.setDate(ne.getDate() + actualShift);
                         onUpdateTaskDates(task.id, new Date(startTs).toISOString(), ne.toISOString());
 
                     } else {
@@ -183,11 +213,25 @@ const ProjectTimelineView = React.forwardRef<HTMLDivElement, ProjectTimelineProp
             setDraggingTaskId(null); // 단 한 번의 리렌더
         };
 
+        const cancel = () => {
+            const drag = draggingRef.current;
+            const el = drag && taskElemsRef.current.get(drag.taskId);
+            if (el) { el.style.transform = ''; el.style.width = ''; }
+            lastMovedRef.current = Boolean(drag?.hasMoved);
+            draggingRef.current = null;
+            setDraggingTaskId(null);
+        };
+        const key = (e: KeyboardEvent) => { if (e.key === 'Escape') { e.preventDefault(); cancel(); } };
+
         document.addEventListener('mousemove', handleMouseMove, { passive: true });
         document.addEventListener('mouseup', handleMouseUp);
+        document.addEventListener('keydown', key);
+        window.addEventListener('blur', cancel);
         return () => {
             document.removeEventListener('mousemove', handleMouseMove);
             document.removeEventListener('mouseup', handleMouseUp);
+            document.removeEventListener('keydown', key);
+            window.removeEventListener('blur', cancel);
         };
     }, [draggingTaskId, tasks, onUpdateTaskDates, getBaseTaskBounds]);
 
@@ -210,10 +254,12 @@ const ProjectTimelineView = React.forwardRef<HTMLDivElement, ProjectTimelineProp
         return (
             <S.SectionWrapper ref={ref} style={{ flex }} $mobileHeight="340px">
                 <S.SectionTitle>{tr.timeline}</S.SectionTitle>
+                {onConnectDependency && <S.LinkHint role="status">{linkMessage || (source ? t.interaction.linkSelectedMobile(tasks.find(t => t.id === source)?.title ?? '') : t.interaction.linkHintMobile)}</S.LinkHint>}
                 <S.AgendaList>
                     {agenda.length === 0 && <S.AgendaEmpty>{tr.noTasks}</S.AgendaEmpty>}
                     {agenda.map(task => (
-                        <S.AgendaRow key={task.id} type="button" $status={task.status} onClick={() => onEditTask(task)}>
+                        <S.MobileTaskRow key={task.id} data-project-task={task.id}>
+                        <S.AgendaRow type="button" aria-label={source ? t.interaction.linkTarget(task.title) : undefined} $status={task.status} onClick={() => source ? void connect(source, task.id) : onEditTask(task)}>
                             <S.AgendaWhen>
                                 <b>{dayLabel(task.startAt)}</b>
                                 {/* 하루짜리면 같은 날짜를 두 번 적지 않는다 */}
@@ -221,6 +267,8 @@ const ProjectTimelineView = React.forwardRef<HTMLDivElement, ProjectTimelineProp
                             </S.AgendaWhen>
                             <S.AgendaTitle $done={task.status === 'done'}>{task.title}</S.AgendaTitle>
                         </S.AgendaRow>
+                        {onConnectDependency && <S.MobileConnector type="button" aria-label={t.interaction.linkStart(task.title)} aria-pressed={source === task.id} onClick={() => selectSource(task.id)}><Link2 size={16} /></S.MobileConnector>}
+                        </S.MobileTaskRow>
                     ))}
                 </S.AgendaList>
             </S.SectionWrapper>
@@ -230,6 +278,7 @@ const ProjectTimelineView = React.forwardRef<HTMLDivElement, ProjectTimelineProp
     return (
         <S.SectionWrapper ref={ref} style={{ flex }} $mobileHeight="340px">
             <S.SectionTitle>{tr.timeline}</S.SectionTitle>
+            {onConnectDependency && <S.LinkHint role="status">{linkMessage || (source ? t.interaction.linkSelected(tasks.find(t => t.id === source)?.title ?? '') : t.interaction.linkHint)}</S.LinkHint>}
             <S.TimelineLayout>
                 <S.TimelineGridArea ref={scrollRef}>
                     <S.TimelineContent>
@@ -244,7 +293,7 @@ const ProjectTimelineView = React.forwardRef<HTMLDivElement, ProjectTimelineProp
                             })}
                         </S.TimelineDateHeader>
 
-                        <S.TimelineGraphContainer style={{ height: Math.max(tasks.length * ROW_HEIGHT, 80) }}>
+                        <S.TimelineGraphContainer ref={graphRef} data-connecting={source ? 'true' : undefined} style={{ height: Math.max(tasks.length * ROW_HEIGHT, 80) }}>
                             <S.TimelineBackground>
                                 {timelineDays.map((day, i) => (
                                     <S.TimelineVerticalLine key={i} $isToday={day.getTime() === todayTime} />
@@ -252,6 +301,7 @@ const ProjectTimelineView = React.forwardRef<HTMLDivElement, ProjectTimelineProp
                             </S.TimelineBackground>
 
                             <S.DependencySvg>
+                                <defs><marker id={arrowId} markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="currentColor" /></marker></defs>
                                 {tasks.flatMap(task => {
                                     if (!task.blockedBy?.length) return [];
                                     return task.blockedBy.map(dep => {
@@ -267,11 +317,22 @@ const ProjectTimelineView = React.forwardRef<HTMLDivElement, ProjectTimelineProp
                                         return (
                                             <S.DependencyLine
                                                 key={`${dep.id}-${task.id}`}
+                                                markerEnd={`url(#${arrowId})`}
                                                 d={`M ${x1} ${y1} C ${x1+20} ${y1}, ${x2-20} ${y2}, ${x2} ${y2}`}
                                             />
                                         );
                                     });
                                 })}
+                                {linkDrag.drag && graphRef.current && (() => {
+                                    const task = tasks.find(t => t.id === linkDrag.drag!.source);
+                                    if (!task) return null;
+                                    const rect = graphRef.current!.getBoundingClientRect();
+                                    const x1 = getBoundsForSvg(task).right;
+                                    const y1 = (taskIndexMap.get(task.id) ?? 0) * ROW_HEIGHT + ROW_HEIGHT / 2;
+                                    const x2 = linkDrag.drag!.x - rect.left;
+                                    const y2 = linkDrag.drag!.y - rect.top;
+                                    return <S.DependencyLine strokeDasharray="4 4" d={`M ${x1} ${y1} C ${x1+24} ${y1}, ${x2-24} ${y2}, ${x2} ${y2}`} />;
+                                })()}
                             </S.DependencySvg>
 
                             {tasks.map(task => {
@@ -282,6 +343,12 @@ const ProjectTimelineView = React.forwardRef<HTMLDivElement, ProjectTimelineProp
                                 return (
                                     <S.TaskNode
                                         key={task.id}
+                                        data-project-task={task.id}
+                                        role="button"
+                                        tabIndex={0}
+                                        aria-label={source ? t.interaction.linkTarget(task.title) : task.title}
+                                        title={task.title}
+                                        $connectTarget={!!source && source !== task.id && (linkDrag.drag?.target === task.id || !!linkSource)}
                                         ref={el => {
                                             if (el) taskElemsRef.current.set(task.id, el);
                                             else    taskElemsRef.current.delete(task.id);
@@ -289,8 +356,11 @@ const ProjectTimelineView = React.forwardRef<HTMLDivElement, ProjectTimelineProp
                                         style={{ left, top, width }}
                                         $status={task.status}
                                         $isDragging={isDragged}
-                                        onMouseDown={e => handleMouseDownMove(e, task, left, width)}
+                                        onMouseDown={e => { if (!source && e.button === 0) handleMouseDownMove(e, task, left, width); }}
+                                        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (source) void connect(source, task.id); else onEditTask(task); } }}
                                         onClick={e => {
+                                            if (linkDrag.consumeClick()) { e.stopPropagation(); return; }
+                                            if (source) { void connect(source, task.id); return; }
                                             // lastMovedRef: draggingRef가 이미 null인 시점에서도 이동 여부 확인
                                             if (lastMovedRef.current) {
                                                 lastMovedRef.current = false;
@@ -301,6 +371,16 @@ const ProjectTimelineView = React.forwardRef<HTMLDivElement, ProjectTimelineProp
                                         }}
                                     >
                                         <S.TaskNodeText>{task.title}</S.TaskNodeText>
+                                        {onConnectDependency && <S.Connector
+                                            type="button"
+                                            aria-label={t.interaction.linkStart(task.title)}
+                                            aria-pressed={source === task.id}
+                                            title={t.interaction.linkHint}
+                                            onPointerDown={e => { e.stopPropagation(); linkDrag.begin(e, task.id); }}
+                                            onMouseDown={e => e.stopPropagation()}
+                                            onKeyDown={e => e.stopPropagation()}
+                                            onClick={e => { e.stopPropagation(); selectSource(task.id); }}
+                                        ><Link2 size={12} /></S.Connector>}
                                         <S.TaskResizeHandle
                                             onMouseDown={e => handleMouseDownResize(e, task, left, width)}
                                             onClick={e => e.stopPropagation()}

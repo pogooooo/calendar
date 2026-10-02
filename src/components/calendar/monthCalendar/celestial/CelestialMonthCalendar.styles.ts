@@ -3,6 +3,20 @@ import { NOT_WIDGET, MOBILE, TOUCH, SAFE_T, SAFE_B } from "@/styles/breakpoints"
 import { motion } from "framer-motion";
 import { hide_scrollbar } from "@/styles/shared";
 
+export const MoveNotice = styled.div`
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 6px 12px;
+    flex-shrink: 0;
+    border-bottom: 1px solid ${(p) => p.theme.colors.primary}44;
+    color: ${(p) => p.theme.colors.text};
+    font-size: 0.76rem;
+    span { flex: 1; }
+    button { border: none; background: transparent; color: ${(p) => p.theme.colors.primary}; cursor: pointer; min-height: 32px; }
+`;
+
 export const CelestialCalendarWrapper = styled.div`
     display: flex;
     flex-direction: column;
@@ -199,8 +213,9 @@ export const DayNameBox = styled.div<{ $isToday?: boolean }>`
 `;
 
 export const GridContainer = styled.div`
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-rows: repeat(6, minmax(80px, 1fr));
+    min-height: 0;
     width: 100%;
     flex: 1;
     box-sizing: border-box;
@@ -212,11 +227,13 @@ export const GridContainer = styled.div`
     ${hide_scrollbar}
 
     [data-widget] & {
+        grid-template-rows: repeat(6, minmax(0, 1fr));
         border: none;
         overflow: hidden;
     }
 
     ${MOBILE} {
+        ${NOT_WIDGET} & {
         display: grid;
         grid-template-rows: repeat(6, minmax(0, 1fr));
         overflow: hidden;
@@ -227,6 +244,7 @@ export const GridContainer = styled.div`
            격자 밖(탭바·전환 단추·달 머리·요일 줄)과 목록 두 줄 몫 320px 은 남긴다. */
         max-height: min(62dvh, calc(100dvh - 320px - ${SAFE_T} - ${SAFE_B}));
         flex: none;
+        }
     }
 `;
 
@@ -234,7 +252,7 @@ export const WeekRowContainer = styled.div`
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     flex: 1;
-    min-height: 120px;
+    min-height: 0;
     border-bottom: 1px solid ${(props) => props.theme.colors.primary};
 
     [data-widget] & {
@@ -252,7 +270,8 @@ export const WeekRowContainer = styled.div`
     }
 `;
 
-export const DayCell = styled.div<{ $isToday: boolean; $isCurrentMonth: boolean; $isSelected: boolean }>`
+export const DayCell = styled.div<{ $isToday: boolean; $isCurrentMonth: boolean; $isSelected: boolean; $dropTarget?: boolean }>`
+    ${(p) => p.$dropTarget && css`box-shadow: inset 0 0 0 2px ${p.theme.colors.primary}; background-image: linear-gradient(${p.theme.colors.primary}22, ${p.theme.colors.primary}22);`}
     display: flex;
     flex-direction: column;
     min-width: 0;
@@ -267,7 +286,9 @@ export const DayCell = styled.div<{ $isToday: boolean; $isCurrentMonth: boolean;
     /* 배경을 채우지 않는다 — 셀 내용(날짜·할 일 바)이 가려지지 않도록
        선택/호버는 테두리로만, 오늘은 모서리 브래킷으로 표시한다 */
     background-color: transparent;
-    box-shadow: ${(props) => props.$isSelected
+    box-shadow: ${(props) => props.$dropTarget
+        ? `inset 0 0 0 2px ${props.theme.colors.primary}`
+        : props.$isSelected
         ? `inset 0 0 0 1px ${props.theme.colors.primary}66`
         : 'none'};
     cursor: pointer;
@@ -442,6 +463,10 @@ export const TodoBarList = styled.div`
         margin-bottom: 2px;
     }
 
+    @media (max-height: 420px) {
+        [data-widget] & { display: none; }
+    }
+
     /* 폰에서는 바 대신 마름모를 가로로 늘어놓는다.
        위젯 창은 폭이 좁아도 마우스로 쓰는 데스크톱이라 바를 그대로 둔다.
        마름모는 네모를 45° 돌린 것이라 제 상자 밖으로 귀퉁이가 1~2px 나간다 —
@@ -460,6 +485,32 @@ export const TodoBarList = styled.div`
     }
 `;
 
+/** Short widget windows expose the full day list through a compact count. */
+export const CompactTaskCount = styled.button`
+    display: none;
+    @media (max-height: 420px) {
+        [data-widget] & {
+            display: flex;
+            position: absolute;
+            right: 2px;
+            top: 3px;
+            align-items: center;
+            justify-content: center;
+            min-width: 14px;
+            height: 14px;
+            padding: 0 2px;
+            border-radius: 4px;
+            border: 1px solid ${(p) => p.theme.colors.primary}99;
+            color: ${(p) => p.theme.colors.text};
+            background: transparent;
+            font-size: 0.58rem;
+            line-height: 1;
+            cursor: pointer;
+            z-index: 12;
+        }
+    }
+`;
+
 export const TodoBarSpacer = styled.div`
     height: 20px;
     width: 100%;
@@ -469,7 +520,11 @@ export const TodoBarSpacer = styled.div`
     ${MOBILE} { display: none; }
 `;
 
-export const TodoBarItem = styled.div<{ $isStart: boolean; $isEnd: boolean; $color?: string; $isDone?: boolean }>`
+export const TodoBarItem = styled.div<{ $isStart: boolean; $isEnd: boolean; $color?: string; $isDone?: boolean; $dragging?: boolean; $movable?: boolean }>`
+    opacity: ${(p) => p.$dragging ? 0.5 : 1};
+    touch-action: ${(p) => p.$movable ? 'none' : 'auto'};
+    cursor: ${(p) => p.$dragging ? 'grabbing' : p.$movable ? 'grab' : 'pointer'};
+    transition: opacity 0.18s ease, box-shadow 0.18s ease;
 
     /* 오늘 원반이 바 뒤로 지나가도록 불투명하게 (셀 배경과 같은 색이라 겉보기는 동일) */
     background-color: ${(props) => props.theme.colors.background};
@@ -490,8 +545,8 @@ export const TodoBarItem = styled.div<{ $isStart: boolean; $isEnd: boolean; $col
     border-bottom-left-radius: ${(props) => props.$isStart ? '4px' : '0'};
     border-top-right-radius: ${(props) => props.$isEnd ? '4px' : '0'};
     border-bottom-right-radius: ${(props) => props.$isEnd ? '4px' : '0'};
-    cursor: pointer;
-    transition: background-color 0.2s ease, opacity 0.2s ease;
+    cursor: ${(p) => p.$dragging ? 'grabbing' : p.$movable ? 'grab' : 'pointer'};
+    transition: background-color 0.2s ease, opacity 0.2s ease, box-shadow 0.18s ease;
 
     .todo-title {
         padding: 0 8px;
@@ -536,7 +591,11 @@ export const TodoBarItem = styled.div<{ $isStart: boolean; $isEnd: boolean; $col
     }
 `;
 
-export const MoreButton = styled.div`
+export const MoreButton = styled.button.attrs({ type: 'button' })`
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    min-height: 18px;
     font-size: 0.75rem;
     color: ${(props) => props.theme.colors.textSecondary};
     font-weight: 500;

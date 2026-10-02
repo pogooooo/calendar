@@ -16,6 +16,7 @@ import ProjectModal from '@/components/modal/projectModal/ProjectModal';
 import TaskModal from '@/components/modal/projectModal/TaskModal';
 import { useT } from "@/i18n/useT";
 import EmptyArt from "@/components/empty/EmptyArt";
+import { dependencyIssue } from "@/lib/taskInteractions";
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
 const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS };
@@ -30,6 +31,9 @@ export default function ProjectPage() {
 
     const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
     const [boardRatio, setBoardRatio] = useState<number>(50);
+    const [saveError, setSaveError] = useState<string | null>(null);
+    const [saving, setSaving] = useState(false);
+    const savingRef = useRef(false);
     const boardRatioRef = useRef<number>(50);
     const layoutRef = useRef<HTMLDivElement>(null);
     const boardRef = useRef<HTMLDivElement>(null);
@@ -59,6 +63,7 @@ export default function ProjectPage() {
     const availableAssignees = selectedCategory?.participants || [];
     const modalCategory = categories.find(c => c.id === projectModal.data.categoryId);
     const modalCategoryParticipants = modalCategory?.participants || [];
+    useEffect(() => { setSaveError(null); }, [projectModal.isOpen, taskModal.isOpen, projectModal.data.id, taskModal.data.id]);
 
     const handleMouseDownResizer = (e: React.MouseEvent) => {
         e.preventDefault();
@@ -90,24 +95,43 @@ export default function ProjectPage() {
 
     const handleSaveProject = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (savingRef.current) return;
         if (!projectModal.data.categoryId) {
             await dialog.notify({ title: t.form.categoryRequiredTitle, message: t.form.categoryRequiredMsg });
             return;
         }
         const projectData = { ...projectModal.data, assignees: projectModal.data.assignees?.map(a => a.id) as unknown as ProjectType["assignees"] };
 
-        if (projectModal.mode === 'add') await addProject(authFetch, projectData);
-        else if (projectModal.data.id) await updateProject(authFetch, projectModal.data.id, projectData);
-        setProjectModal(prev => ({ ...prev, isOpen: false }));
+        savingRef.current = true;
+        setSaving(true);
+        setSaveError(null);
+        try {
+            const error = projectModal.mode === 'add'
+                ? await addProject(authFetch, projectData)
+                : await updateProject(authFetch, projectModal.data.id!, projectData);
+            setSaveError(error);
+            if (!error) setProjectModal(prev => ({ ...prev, isOpen: false }));
+        } finally { savingRef.current = false; setSaving(false); }
     };
 
     const handleSaveTask = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!selectedProjectId) return;
+        if (!selectedProjectId || savingRef.current) return;
+        if (taskModal.data.startAt && taskModal.data.endAt && new Date(taskModal.data.endAt) < new Date(taskModal.data.startAt)) {
+            setSaveError(t.interaction.invalidDates);
+            return;
+        }
         const taskData = { ...taskModal.data, assignees: taskModal.data.assignees?.map(a => a.id) as unknown as ProjectTaskType["assignees"] };
-        if (taskModal.mode === 'add') await addProjectTask(authFetch, selectedProjectId, taskData);
-        else if (taskModal.data.id) await updateProjectTask(authFetch, selectedProjectId, taskModal.data.id, taskData);
-        setTaskModal(prev => ({ ...prev, isOpen: false }));
+        savingRef.current = true;
+        setSaving(true);
+        setSaveError(null);
+        try {
+            const error = taskModal.mode === 'add'
+                ? await addProjectTask(authFetch, selectedProjectId, taskData)
+                : await updateProjectTask(authFetch, selectedProjectId, taskModal.data.id!, taskData);
+            setSaveError(error);
+            if (!error) setTaskModal(prev => ({ ...prev, isOpen: false }));
+        } finally { savingRef.current = false; setSaving(false); }
     };
 
     const handleMoveTaskStatus = async (taskId: string, newStatus: string) => {
@@ -167,6 +191,14 @@ export default function ProjectPage() {
                         flex={100 - boardRatio}
                         tasks={tasks}
                         onEditTask={openTaskEdit}
+                        onConnectDependency={async (from, to) => {
+                            if (!selectedProjectId) return t.interaction.linkInvalid;
+                            const issue = dependencyIssue(tasks, from, to);
+                            if (issue) return issue === 'duplicate' ? t.interaction.linkDuplicate : t.interaction.linkInvalid;
+                            const target = tasks.find(t => t.id === to)!;
+                            const predecessor = tasks.find(t => t.id === from)!;
+                            return updateProjectTask(authFetch, selectedProjectId, to, { blockedBy: [...(target.blockedBy ?? []), predecessor] });
+                        }}
                         onUpdateTaskDates={async (taskId, newStart, newEnd) => {
                             if (!selectedProjectId) return;
                             await updateProjectTask(authFetch, selectedProjectId, taskId, { startAt: newStart, endAt: newEnd });
@@ -176,12 +208,14 @@ export default function ProjectPage() {
             )}
 
             <TaskModal
+                pending={saving}
+                error={saveError}
                 isOpen={taskModal.isOpen}
                 mode={taskModal.mode}
                 data={taskModal.data}
                 tasks={tasks}
                 availableAssignees={availableAssignees}
-                onClose={() => setTaskModal(prev => ({ ...prev, isOpen: false }))}
+                onClose={() => { if (!savingRef.current) setTaskModal(prev => ({ ...prev, isOpen: false })); }}
                 onSave={handleSaveTask}
                 setData={(d) => setTaskModal(prev => ({ ...prev, data: { ...prev.data, ...d } }))}
                 toggleParticipant={(user) => {
@@ -192,12 +226,14 @@ export default function ProjectPage() {
             />
 
             <ProjectModal
+                pending={saving}
+                error={saveError}
                 isOpen={projectModal.isOpen}
                 mode={projectModal.mode}
                 data={projectModal.data}
                 categories={categories}
                 modalCategoryParticipants={modalCategoryParticipants}
-                onClose={() => setProjectModal(prev => ({ ...prev, isOpen: false }))}
+                onClose={() => { if (!savingRef.current) setProjectModal(prev => ({ ...prev, isOpen: false })); }}
                 onSave={handleSaveProject}
                 setData={(d) => setProjectModal(prev => ({ ...prev, data: { ...prev.data, ...d } }))}
                 toggleParticipant={(user) => {

@@ -18,6 +18,7 @@ import { useCurrentDayKey } from "@/hooks/useCurrentDay";
 import { localDateKey, utcDayKey, activeTimeZone } from "@/lib/dateKey";
 import { addDaysToKey, zonedDayStart } from "@/lib/timezone";
 import { expandTodos } from "@/hooks/useExpandedTodos";
+import { weeklyTaskStats } from "@/lib/widgetStats";
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
 const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS };
@@ -403,39 +404,24 @@ export function ProjectsPanel() {
 }
 
 export function StatsPanel() {
-    useCurrentDayKey();
+    const todayKey = useCurrentDayKey();
     const S = usePickTheme(STYLES);
     const { todos: sourceTodos } = useTodoStore();
     const { categories } = useCategoryStore();
     const tr = useT();
     const [ref, box] = useFrame(22, 96);
 
-    const t0 = new Date().setHours(0, 0, 0, 0);
-    const base = new Date(t0);
-    base.setDate(base.getDate() - base.getDay());
-    const weekEnd = new Date(base);
-    weekEnd.setDate(weekEnd.getDate() + 6);
+    const weekKey = addDaysToKey(todayKey, -new Date(`${todayKey}T00:00:00Z`).getUTCDay());
+    const base = zonedDayStart(weekKey, activeTimeZone())!;
+    const weekEnd = new Date(zonedDayStart(addDaysToKey(weekKey, 7), activeTimeZone())!.getTime() - 1);
     const todos = expandTodos(sourceTodos, base, weekEnd);
-
-    let total = 0;
-    let done = 0;
-    for (let i = 0; i < 7; i++) {
-        const d = new Date(base);
-        d.setDate(base.getDate() + i);
-        const k = localDateKey(d);
-        todos.forEach(t => {
-            if (!spansDay(t, k)) return;
-            total += 1;
-            if (doneOn(t, k)) done += 1;
-        });
-    }
+    const { total, done, categories: categoryCounts } = weeklyTaskStats(todos, weekKey);
     const pct = total ? Math.round((done / total) * 100) : 0;
 
-    const key = localDateKey(new Date());
     const cats = categories
         .map(c => {
-            const mine = todos.filter(t => t.categoryId === c.id);
-            return { ...c, total: mine.length, done: mine.filter(t => doneOn(t, key)).length };
+            const counts = categoryCounts.get(c.id) ?? { total: 0, done: 0 };
+            return { ...c, ...counts };
         })
         .filter(c => c.total > 0)
         .sort((a, b) => b.total - a.total);

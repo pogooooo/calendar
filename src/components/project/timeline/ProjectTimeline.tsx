@@ -9,6 +9,7 @@ export interface ProjectTimelineProps {
     flex?: number;
     onEditTask: (task: ProjectTaskType) => void;
     onUpdateTaskDates?: (taskId: string, newStart: string, newEnd: string) => void;
+    onConnectDependency?: (predecessor: string, successor: string) => Promise<string | null>;
 }
 
 const ProjectTimeline = React.forwardRef<HTMLDivElement, ProjectTimelineProps>((props, ref) => {

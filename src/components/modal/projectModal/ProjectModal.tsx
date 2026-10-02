@@ -7,6 +7,8 @@ import { ProjectType } from '@/store/useProjectStore';
 import { CategoryType } from "@/store/useCategoryStore";
 
 export interface ProjectModalProps {
+    pending?: boolean;
+    error?: string | null;
     isOpen: boolean;
     mode: 'add' | 'edit';
     data: Partial<ProjectType>;

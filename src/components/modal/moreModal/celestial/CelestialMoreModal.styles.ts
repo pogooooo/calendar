@@ -1,4 +1,5 @@
 import styled, { css } from "styled-components";
+import { inkOnFill } from '@/styles/color';
 
 export const ContentWrapper = styled.div`
     position: relative;
@@ -46,6 +47,8 @@ export const Header = styled.div`
         color: ${(props) => props.theme.colors.textSecondary};
         cursor: pointer;
         padding: 2px;
+        min-width: 32px;
+        min-height: 32px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -107,8 +110,8 @@ export const ChallengeItem = styled.div<{ $isDone: boolean }>`
     }
 
     .check {
-        width: 15px;
-        height: 15px;
+        width: 32px;
+        height: 32px;
         flex-shrink: 0;
         padding: 0;
         display: flex;
@@ -117,7 +120,7 @@ export const ChallengeItem = styled.div<{ $isDone: boolean }>`
         cursor: pointer;
         border: 1px solid ${(props) => props.theme.colors.primary};
         background-color: ${(props) => props.$isDone ? props.theme.colors.primary : 'transparent'};
-        color: ${(props) => props.theme.colors.background};
+        color: ${(props) => inkOnFill(props.theme.colors.primary)};
         transition: box-shadow 0.15s;
 
         &:hover {
@@ -147,7 +150,12 @@ export const EmptyText = styled.div`
     color: ${(props) => props.theme.colors.textSecondary};
 `;
 
-export const TodoItem = styled.div<{ $color?: string; $isDone?: boolean }>`
+export const TodoItem = styled.button<{ $color?: string; $isDone?: boolean }>`
+    width: 100%;
+    text-align: left;
+    font: inherit;
+    border: none;
+    min-height: 44px;
     position: relative;
     display: flex;
     align-items: center;

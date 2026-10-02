@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { Home, Calendar, Kanban, Trophy, MoreHorizontal, Layers, Cake, Settings, MonitorDown, X } from "lucide-react";
+import { Home, Calendar, Kanban, Trophy, MoreHorizontal, Layers, Cake, Settings, MonitorDown, X, Search } from "lucide-react";
+import { openQuickNavigation } from "@/components/navigation/QuickNavigation";
 import NavIcon from "@/assets/NavIcon";
 import { useT } from "@/i18n/useT";
 import { isDesktopApp } from "@/lib/apiBase";
@@ -68,6 +69,7 @@ export default function MobileTabBar() {
                                 <span>{e.label}</span>
                             </S.SheetRow>
                         ))}
+                        <S.SheetRow $on={false} onClick={() => { setMore(false); openQuickNavigation(); }}><Search size={18} /><span>{t.interaction.quickFind}</span></S.SheetRow>
                     </S.SheetBody>
                 </S.Sheet>
             )}

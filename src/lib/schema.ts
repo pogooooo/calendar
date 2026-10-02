@@ -96,6 +96,12 @@ export const UpdateTodoSchema = z.object({
     repeat: z.number().int().min(0).optional(),
     repeatEndDate: z.string().nullable().optional(),
     repeatCount: z.number().int().positive().nullable().optional(),
+    excludedDates: z.string().refine(raw => {
+        try {
+            const dates = JSON.parse(raw);
+            return Array.isArray(dates) && dates.every(key => typeof key === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(key) && !Number.isNaN(Date.parse(`${key}T00:00:00Z`)) && new Date(`${key}T00:00:00Z`).toISOString().slice(0, 10) === key);
+        } catch { return false; }
+    }, '제외 날짜 형식이 올바르지 않습니다.').nullable().optional(),
 });
 
 export type CreateTodoInput = z.infer<typeof CreateTodoSchema>;

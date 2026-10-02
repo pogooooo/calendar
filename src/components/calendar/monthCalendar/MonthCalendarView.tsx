@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 
 import { MonthThemeProps, CalendarTodoType } from "./MonthCalendar";
@@ -20,6 +20,10 @@ import { useT } from "@/i18n/useT";
 import useIsMobile from "@/hooks/useIsMobile";
 import { isWidgetWindow } from "@/hooks/useAuthFetch";
 import useSwipe from "@/hooks/useSwipe";
+import useDragTarget from "@/hooks/useDragTarget";
+import { localDateKey, activeTimeZone } from "@/lib/dateKey";
+import { overlapsCalendarDays } from "@/lib/taskInteractions";
+import { addDaysToKey } from "@/lib/timezone";
 import useAnniversaryStore from "@/store/useAnniversaryStore";
 import { anniversariesOn } from "@/lib/anniversary";
 import AnniversaryCrown from "@/components/calendar/parts/anniversary/AnniversaryCrown";
@@ -45,6 +49,12 @@ interface WeekRowProps {
     handleQuickToggleChallenge: (challenge: CalendarTodoType) => void;
     onCellClick?: (date: Date) => void;
     setMoreModalDate: (date: Date | null) => void;
+    handleQuickEdit: MonthThemeProps['handleQuickEdit'];
+    handleMoveTodo: MonthThemeProps['handleMoveTodo'];
+    onDragStart: (e: React.PointerEvent<HTMLElement>, todo: CalendarTodoType, from: string) => void;
+    consumeDragClick: () => boolean;
+    draggingId?: string;
+    dropTarget: string | null;
 }
 
 /** 데스크톱은 바 두 층까지, 폰은 마름모라 작으니 여섯까지 — 두 줄 (그 뒤는 +N) */
@@ -54,7 +64,8 @@ const MAX_VISIBLE_LEVELS_MOBILE = 6;
 const WeekRow = ({
                      dates, todos, challengeTodos, categories, todayStr, currentMonth,
                      handleCreateTodo, handleContextMenu,
-                     selectedDate, onCellClick, setMoreModalDate
+                     selectedDate, onCellClick, setMoreModalDate, handleQuickEdit, handleMoveTodo,
+                     onDragStart, consumeDragClick, draggingId, dropTarget
                  }: WeekRowProps) => {
     const S = usePickTheme(STYLES);
     const t = useT();
@@ -65,11 +76,7 @@ const WeekRow = ({
     const weekTodos = React.useMemo(() => {
         return todos.filter((todo: CalendarTodoType) => {
             if (!todo.startAt || !todo.endAt) return false;
-            const start = new Date(todo.startAt as string | number | Date);
-            const end = new Date(todo.endAt as string | number | Date);
-            const weekStart = dates[0];
-            const weekEnd = dates[6];
-            return start <= weekEnd && end >= weekStart;
+            return overlapsCalendarDays(todo.startAt, todo.endAt, localDateKey(dates[0]), localDateKey(dates[6]), activeTimeZone());
         });
     }, [todos, dates]);
 
@@ -109,6 +116,8 @@ const WeekRow = ({
                 return (
                     <S.DayCell
                         key={idx}
+                        data-calendar-date={localDateKey(date)}
+                        $dropTarget={dropTarget === localDateKey(date)}
                         $isToday={isToday}
                         $isCurrentMonth={isCurrentMonth}
                         $isSelected={isSelected}
@@ -140,14 +149,18 @@ const WeekRow = ({
                             </S.DayHeaderLeft>
 
                             <S.AddTodoButton
+                                aria-label={`${t.calendar.addTask}: ${localDateKey(date)}`}
                                 className="add-btn"
                                 onClick={(e) => { e.stopPropagation(); handleCreateTodo(date); }}
                             >
                                 <Plus size={16} strokeWidth={2.5} />
                             </S.AddTodoButton>
                         </div>
-
-
+                        {dayTodos.length > 0 && <S.CompactTaskCount type="button"
+                            aria-label={`${localDateKey(date)} · ${t.calendar.more(dayTodos.length)}`}
+                            onClick={e => { e.stopPropagation(); setMoreModalDate(date); }}>
+                            {dayTodos.length}
+                        </S.CompactTaskCount>}
                         <S.TodoBarList>
                             {Array.from({ length: Math.min(maxLevel, maxLevels) }).map((_, levelIndex) => {
                                 const todoAtThisLevel = dayTodos.find((t: CalendarTodoType) => todoLevels[t.id] === levelIndex);
@@ -158,14 +171,30 @@ const WeekRow = ({
                                     const color = categories.find((c: CategoryType) => c.id === todoAtThisLevel.categoryId)?.color;
 
                                     const isDone = !!todoAtThisLevel.isDone;
+                                    const movable = !todoAtThisLevel.isProject && !todoAtThisLevel.isProjectTask && !todoAtThisLevel.isChallenge;
 
                                     return (
                                         <S.TodoBarItem key={todoAtThisLevel.id}
+                                                       role="button"
+                                                       tabIndex={isStart || idx === 0 ? 0 : -1}
+                                                       aria-label={todoAtThisLevel.title}
+                                                       title={movable ? `${todoAtThisLevel.title} · ${t.interaction.calendarDragHint}` : todoAtThisLevel.title}
+                                                       $dragging={draggingId === todoAtThisLevel.id}
+                                                       $movable={movable}
+                                                       onPointerDown={e => { if (movable) onDragStart(e, todoAtThisLevel, localDateKey(date)); }}
                                                        $isStart={isStart}
                                                        $isEnd={isEnd}
                                                        $color={color}
                                                        $isDone={isDone}
-                                                       onClick={(e) => e.stopPropagation()}
+                                                       onClick={(e) => { e.stopPropagation(); if (!consumeDragClick()) void handleQuickEdit(todoAtThisLevel); }}
+                                                       onKeyDown={e => {
+                                                           if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); void handleQuickEdit(todoAtThisLevel); }
+                                                           if (movable && e.altKey && ['ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                                                               e.preventDefault();
+                                                               const from = localDateKey(date);
+                                                               void handleMoveTodo(todoAtThisLevel, from, addDaysToKey(from, e.key === 'ArrowLeft' ? -1 : 1));
+                                                           }
+                                                       }}
                                                        onContextMenu={(e) => {
                                                            e.stopPropagation();
                                                            handleContextMenu(e, todoAtThisLevel);
@@ -210,11 +239,14 @@ const MonthCalendarView = React.forwardRef<HTMLDivElement, CelestialMonthProps>(
          handleContextMenuChallenge, handleQuickToggleChallenge,
          setIsModalOpen, setMoreModalDate, setContextMenu, showProjects, onToggleProjects,
          showChallenges, onToggleChallenges,
+         handleMoveTodo, moveNotice, undoMove, dismissMove,
          ...props
      }, ref) => {
         const S = usePickTheme(STYLES);
         const Component = asChild ? Slot : 'div';
         const t = useT();
+        const reducedMotion = useReducedMotion();
+        const calendarDrag = useDragTarget<{ todo: CalendarTodoType; from: string }>('data-calendar-date', (source, target) => { void handleMoveTodo(source.todo, source.from, target); });
         // 손가락으로는 작은 화살표보다 쓸어 넘기는 쪽이 빠르다.
         const swipe = useSwipe(handleNextMonth, handlePrevMonth);
 
@@ -238,6 +270,11 @@ const MonthCalendarView = React.forwardRef<HTMLDivElement, CelestialMonthProps>(
                         onToggle={toggleCategory}
                     />
                 </S.DateRangeDisplay>
+                {moveNotice && <S.MoveNotice role="status">
+                    <span>{moveNotice}</span>
+                    {undoMove && <button type="button" onClick={() => void undoMove()}>{t.interaction.undo}</button>}
+                    <button type="button" aria-label={t.interaction.dismiss} onClick={dismissMove}>×</button>
+                </S.MoveNotice>}
 
                 <S.SliderWrapper {...swipe}>
                     <S.CalendarWindow>
@@ -245,11 +282,11 @@ const MonthCalendarView = React.forwardRef<HTMLDivElement, CelestialMonthProps>(
                             <motion.div
                                 key={currentDate.toISOString()}
                                 custom={direction}
-                                variants={slideVariants}
+                                variants={reducedMotion ? { enter: { opacity: 1 }, center: { opacity: 1 }, exit: { opacity: 1 } } : slideVariants}
                                 initial="enter"
                                 animate="center"
                                 exit="exit"
-                                transition={{
+                                transition={reducedMotion ? { duration: 0 } : {
                                     x: { type: "spring", stiffness: 300, damping: 30 },
                                     opacity: { duration: 0.2 }
                                 }}
@@ -280,6 +317,12 @@ const MonthCalendarView = React.forwardRef<HTMLDivElement, CelestialMonthProps>(
                                             selectedDate={selectedDate}
                                             onCellClick={onDateChange}
                                             setMoreModalDate={setMoreModalDate}
+                                            handleQuickEdit={handleQuickEdit}
+                                            handleMoveTodo={handleMoveTodo}
+                                            onDragStart={(e, todo, from) => calendarDrag.begin(e, { todo, from })}
+                                            consumeDragClick={calendarDrag.consumeClick}
+                                            draggingId={calendarDrag.drag?.source.todo.id}
+                                            dropTarget={calendarDrag.drag?.target ?? null}
                                         />
                                     ))}
                                 </S.GridContainer>
@@ -295,6 +338,7 @@ const MonthCalendarView = React.forwardRef<HTMLDivElement, CelestialMonthProps>(
                     todos={expandedTodos}
                     categories={categories}
                     handleContextMenu={handleContextMenu}
+                    onEditTodo={todo => { setMoreModalDate(null); void handleQuickEdit(todo); }}
                     challenges={challengeTodos}
                     onToggleChallenge={(challenge) => handleQuickToggleChallenge(challenge as CalendarTodoType)}
                 />

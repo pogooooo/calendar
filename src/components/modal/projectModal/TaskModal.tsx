@@ -6,6 +6,8 @@ import TaskModalView from './TaskModalView';
 import { ProjectTaskType } from '@/store/useProjectStore';
 
 export interface TaskModalProps {
+    pending?: boolean;
+    error?: string | null;
     isOpen: boolean;
     mode: 'add' | 'edit';
     data: Partial<ProjectTaskType>;

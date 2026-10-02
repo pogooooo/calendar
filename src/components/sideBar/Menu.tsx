@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import SidebarMenuButton from "@/components/button/sidebarMenu/SidebarMenuButton";
 import { useRouter, usePathname } from "next/navigation";
-import { Layers, Calendar, Kanban, Trophy, Cake, MonitorDown } from "lucide-react";
+import { Layers, Calendar, Kanban, Trophy, Cake, MonitorDown, Search } from "lucide-react";
+import { openQuickNavigation } from "@/components/navigation/QuickNavigation";
 import NavIcon from "@/assets/NavIcon";
 import { useT } from "@/i18n/useT";
 import { isDesktopApp } from "@/lib/apiBase";
@@ -37,6 +38,7 @@ const Menu = () => {
     return(
         <S.MenuWrapper>
             <S.Divider aria-hidden><i /></S.Divider>
+            <SidebarMenuButton label={`${t.interaction.quickFind} · Ctrl K`} onClick={openQuickNavigation}><Search size={24} /></SidebarMenuButton>
 
             {items.map((item, i) => (
                 <SidebarMenuButton

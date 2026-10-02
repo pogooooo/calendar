@@ -1,6 +1,20 @@
 import type { Translations } from './types';
 
 const ko: Translations = {
+    interaction: {
+        invalidDates: '마감일은 시작일보다 빠를 수 없습니다.',
+        linkHintMobile: '연결점을 누른 뒤 후속 작업을 선택하세요.',
+        linkSelectedMobile: title => `${title} 다음 작업을 선택하세요. 연결점을 다시 누르면 취소`,
+        calendarDragHint: '다른 날짜로 끌어 이동 · Alt+방향키로 하루 이동 · 클릭하여 편집',
+        moveSeries: '반복 일정 이동', moveSeriesMessage: '이 일정의 전체 반복을 같은 일수만큼 이동합니다. 반복 간격과 시작 시간은 유지됩니다.', moveAll: '전체 반복 이동',
+        moved: '일정 날짜를 이동했습니다.', undo: '되돌리기', dismiss: '닫기',
+        linkHint: '오른쪽 연결점을 다음 작업으로 끌거나, 연결점 → 다음 작업을 클릭하세요.',
+        linkStart: title => `${title}: 후속 작업 연결`, linkTarget: title => `${title}: 후속 작업으로 연결`,
+        linkSelected: title => `${title} 다음에 진행할 작업을 선택하세요. Esc로 취소`,
+        linkCreated: '선행 조건을 연결했습니다.', linkInvalid: '자기 자신이나 순환 관계로 연결할 수 없습니다.', linkDuplicate: '이미 연결된 선행 조건입니다.',
+        searchDependencies: '선행 작업 검색', noMatches: '일치하는 항목이 없습니다.',
+        quickFind: '빠른 이동', quickFindPlaceholder: '화면 이름 검색…',
+    },
     settings: {
         title: '설정',
         appearance: '모양',

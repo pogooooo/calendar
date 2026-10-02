@@ -1,4 +1,15 @@
 export interface Translations {
+    interaction: {
+        invalidDates: string;
+        linkHintMobile: string;
+        linkSelectedMobile: (title: string) => string;
+        calendarDragHint: string; moveSeries: string; moveSeriesMessage: string; moveAll: string;
+        moved: string; undo: string; dismiss: string;
+        linkHint: string; linkStart: (title: string) => string; linkTarget: (title: string) => string;
+        linkSelected: (title: string) => string; linkCreated: string; linkInvalid: string; linkDuplicate: string;
+        searchDependencies: string; noMatches: string;
+        quickFind: string; quickFindPlaceholder: string;
+    };
     settings: {
         title: string;
         appearance: string;

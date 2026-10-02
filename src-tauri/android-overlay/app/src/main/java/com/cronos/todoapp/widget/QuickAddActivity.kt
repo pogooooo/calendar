@@ -1,11 +1,13 @@
 package com.cronos.todoapp.widget
 
 import android.app.Activity
+import android.animation.ValueAnimator
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Bundle
+import android.os.Build
 import android.text.InputType
 import android.util.Log
 import android.util.TypedValue
@@ -218,6 +220,12 @@ class QuickAddActivity : Activity() {
             addView(sheet, FrameLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT))
         }, FrameLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT, Gravity.BOTTOM))
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && ValueAnimator.areAnimatorsEnabled()) {
+            sheet.alpha = 0f
+            sheet.translationY = dp(24).toFloat()
+            sheet.animate().alpha(1f).translationY(0f).setDuration(220).start()
+        }
+
         // 화면 끝까지 그리는 창이라 시스템이 자판만큼 줄여 주지 않는다 — 자판·아래 막대 위로 시트를 들어 올린다
         ViewCompat.setOnApplyWindowInsetsListener(root) { v, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -244,12 +252,18 @@ class QuickAddActivity : Activity() {
 
     private fun paintChips() {
         fun paint(v: TextView, on: Boolean, color: Int) {
+            val newlySelected = on && !v.isSelected
+            v.isSelected = on
             v.background = GradientDrawable().apply {
                 cornerRadius = dp(16).toFloat()
                 setColor(if (on) Palette.withAlpha(color, 0.22f) else Color.TRANSPARENT)
                 setStroke(dp(1), if (on) color else palette.line)
             }
             v.setTextColor(if (on) palette.ink else palette.muted)
+            if (newlySelected && v.isAttachedToWindow && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && ValueAnimator.areAnimatorsEnabled()) {
+                v.scaleX = 0.94f; v.scaleY = 0.94f
+                v.animate().scaleX(1f).scaleY(1f).setDuration(160).start()
+            }
         }
         dayChips.forEachIndexed { i, v -> paint(v, i == dayOffset, palette.gold) }
         categoryChips.forEachIndexed { i, v -> paint(v, i == categoryIndex, categories[i].color) }
@@ -260,6 +274,8 @@ class QuickAddActivity : Activity() {
         addButton.text = if (on) label("qaSaving", "넣는 중…") else label("qaAdd", "추가")
         addButton.alpha = if (on) 0.6f else 1f
         input.isEnabled = !on
+        dayChips.forEach { it.isEnabled = !on }
+        categoryChips.forEach { it.isEnabled = !on }
     }
 
     // ── 넣기 ────────────────────────────────────────────────────────────

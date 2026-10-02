@@ -1,6 +1,20 @@
 import type { Translations } from './types';
 
 const en: Translations = {
+    interaction: {
+        invalidDates: 'The end date cannot be before the start date.',
+        linkHintMobile: 'Tap a connector, then choose the next task.',
+        linkSelectedMobile: title => `Choose the task after ${title}. Tap its connector again to cancel`,
+        calendarDragHint: 'Drag to another date · Alt+arrow to move one day · Click to edit',
+        moveSeries: 'Move recurring task', moveSeriesMessage: 'Move the entire series by the same number of days, keeping its interval and start time.', moveAll: 'Move entire series',
+        moved: 'Task dates moved.', undo: 'Undo', dismiss: 'Dismiss',
+        linkHint: 'Drag the right connector to the next task, or click the connector then the next task.',
+        linkStart: title => `${title}: connect a successor`, linkTarget: title => `${title}: connect as successor`,
+        linkSelected: title => `Select the task that follows ${title}. Esc to cancel`,
+        linkCreated: 'Dependency connected.', linkInvalid: 'A task cannot depend on itself or form a cycle.', linkDuplicate: 'This dependency is already connected.',
+        searchDependencies: 'Search predecessor tasks', noMatches: 'No matching items.',
+        quickFind: 'Quick navigation', quickFindPlaceholder: 'Search screens…',
+    },
     settings: {
         title: 'Settings',
         appearance: 'Appearance',

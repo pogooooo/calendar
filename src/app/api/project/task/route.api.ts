@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import prisma from '@/lib/prisma';
 import { CreateProjectTaskSchema, UpdateProjectTaskSchema } from '@/lib/schema';
 import { getUserId, categoryAccessWhere } from '@/lib/apiAuth';
+import { dependencyIssue } from '@/lib/taskInteractions';
 
 const canAccessProject = async (projectId: string, userId: string) => {
     const project = await prisma.project.findFirst({
@@ -24,9 +25,9 @@ const canAccessTask = async (taskId: string, userId: string) => {
 const normalizeBlockedBy = (raw: unknown): string[] | null => {
     if (raw === undefined) return null;
     if (!Array.isArray(raw)) return [];
-    return raw
+    return [...new Set(raw
         .map((b) => (typeof b === "string" ? b : (b && typeof b === "object" && typeof (b as { id?: unknown }).id === "string" ? (b as { id: string }).id : null)))
-        .filter((v): v is string => !!v);
+        .filter((v): v is string => !!v))];
 };
 
 const assertBlockedByAccessible = async (ids: string[], userId: string) => {
@@ -39,6 +40,16 @@ const assertBlockedByAccessible = async (ids: string[], userId: string) => {
 
 /** 응답에 남의 태스크 전체가 실려 나가지 않도록 필요한 필드만 고른다 */
 const blockedBySelect = { select: { id: true, title: true, status: true } } as const;
+
+async function validDependencies(taskId: string, ids: string[], userId: string) {
+    if (!ids.length) return true;
+    const graph = await prisma.projectTask.findMany({
+        where: { project: { category: categoryAccessWhere(userId) } },
+        select: { id: true, blockedBy: { select: { id: true } } },
+    });
+    const replaced = graph.map(t => t.id === taskId ? { ...t, blockedBy: [] } : t);
+    return ids.every(id => !dependencyIssue(replaced, id, taskId));
+}
 
 export async function POST(request: Request) {
     try {
@@ -106,6 +117,9 @@ export async function PATCH(request: Request) {
         const blockedBy = normalizeBlockedBy(body.blockedBy);
         if (blockedBy && !(await assertBlockedByAccessible(blockedBy, userId))) {
             return NextResponse.json({ message: "연결할 수 없는 항목이 포함돼 있습니다." }, { status: 403 });
+        }
+        if (blockedBy && !(await validDependencies(id, blockedBy, userId))) {
+            return NextResponse.json({ message: "자기 자신이나 순환 관계를 선행 조건으로 연결할 수 없습니다." }, { status: 400 });
         }
 
         const task = await prisma.projectTask.update({

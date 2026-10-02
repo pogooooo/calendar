@@ -8,7 +8,9 @@ import { TodoType } from "@/store/useTodoStore";
 import { useExpandedTodos, ExpandedTodoType } from "@/hooks/useExpandedTodos";
 import useTodoStore from "@/store/useTodoStore";
 import { useT } from "@/i18n/useT";
-import { localDateKey } from "@/lib/dateKey";
+import { localDateKey, activeTimeZone, parseExcludedDates } from "@/lib/dateKey";
+import { addDaysToKey } from "@/lib/timezone";
+import { calendarDayDelta, shiftZonedDays } from "@/lib/taskInteractions";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useDialog } from "@/components/dialog/DialogProvider";
 import useProjectStore from "@/store/useProjectStore";
@@ -78,6 +80,10 @@ export interface MonthThemeProps {
     onToggleProjects: () => void;
     showChallenges: boolean;
     onToggleChallenges: () => void;
+    handleMoveTodo: (todo: CalendarTodoType, from: string, to: string) => Promise<void>;
+    moveNotice: string | null;
+    undoMove: (() => Promise<void>) | null;
+    dismissMove: () => void;
 }
 
 const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
@@ -99,7 +105,10 @@ const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
 
         const { projects, fetchProjects } = useProjectStore();
         const { challenges, fetchChallenges, toggleChallengeCompletion } = useChallengeStore();
-        const { deleteTodo, deleteTodoOccurrence, toggleTodo } = useTodoStore();
+        const { deleteTodo, deleteTodoOccurrence, toggleTodo, updateTodo } = useTodoStore();
+        const [moveNotice, setMoveNotice] = React.useState<string | null>(null);
+        const [undoMove, setUndoMove] = React.useState<(() => Promise<void>) | null>(null);
+        const moving = React.useRef(false);
         // 자체 fetch 를 쓰면 토큰 갱신을 건너뛰어 1시간 뒤 모든 조작이 조용히 실패한다
         const authFetch = useAuthFetch();
         const dialog = useDialog();
@@ -319,6 +328,8 @@ const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
                 await dialog.notify({ title: t.alert.editHereTitle, message: t.alert.editHereMsg });
                 return;
             }
+            setUndoMove(null);
+            setMoveNotice(null);
             setModalTodo(expandedTodo.originalTodo || (expandedTodo as unknown as TodoType));
             setIsModalOpen(true);
             setContextMenu(null);
@@ -392,8 +403,42 @@ const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
             setIsModalOpen(true);
         };
 
+        const handleMoveTodo = async (todo: CalendarTodoType, from: string, to: string) => {
+            const days = calendarDayDelta(from, to);
+            if (!days || !Number.isFinite(days) || moving.current || todo.isProject || todo.isProjectTask || todo.isChallenge) return;
+            const original = todo.originalTodo ?? todo;
+            if (!original.startAt || !original.endAt) return;
+            moving.current = true;
+            try {
+                if ((original.repeat ?? 0) > 0 && !(await dialog.confirm({ title: t.interaction.moveSeries, message: t.interaction.moveSeriesMessage, confirmLabel: t.interaction.moveAll }))) return;
+                const originalDates = { startAt: original.startAt, endAt: original.endAt, repeatEndDate: original.repeatEndDate ?? null, excludedDates: original.excludedDates ?? null };
+                const data = {
+                    startAt: shiftZonedDays(original.startAt, days, activeTimeZone()),
+                    endAt: shiftZonedDays(original.endAt, days, activeTimeZone()),
+                    repeatEndDate: original.repeatEndDate ? shiftZonedDays(original.repeatEndDate, days, activeTimeZone()) : null,
+                    excludedDates: original.excludedDates ? JSON.stringify(parseExcludedDates(original.excludedDates).map(key => addDaysToKey(key, days))) : null,
+                };
+                const error = await updateTodo(authFetch, original.id, data);
+                setMoveNotice(error || t.interaction.moved);
+                setUndoMove(error ? null : () => async () => {
+                    if (moving.current) return;
+                    moving.current = true;
+                    try {
+                        const error = await updateTodo(authFetch, original.id, originalDates);
+                        setMoveNotice(error);
+                        if (!error) setUndoMove(null);
+                    } finally { moving.current = false; }
+                });
+                if (!error && selectedDate && localDateKey(selectedDate) === from) onDateChange?.(new Date(`${to}T12:00:00`));
+            } finally { moving.current = false; }
+        };
+
         const themeProps: MonthThemeProps = {
             asChild,
+            handleMoveTodo,
+            moveNotice,
+            undoMove,
+            dismissMove: () => { setMoveNotice(null); setUndoMove(null); },
             currentDate,
             direction,
             selectedCategoryIds,

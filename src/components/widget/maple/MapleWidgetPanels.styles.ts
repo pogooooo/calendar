@@ -27,6 +27,7 @@ export const NavBtn = styled(C.NavBtn)`
 
 /** 체크 칸: 손으로 그린 네모(J9)에 붉은 도장(C7) */
 export const Box = styled(C.Box)`
+    background-image: none;
     ${(p) => inkCheckbox(p.$done)}
 `;
 

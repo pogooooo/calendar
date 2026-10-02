@@ -31,8 +31,9 @@ export const fall = keyframes`
 `;
 
 export const bodyIn = keyframes`
-    from { opacity: 0; transform: translateY(6px); }
-    to   { opacity: 1; transform: none; }
+    /* A retained transform makes fixed controls anchor to this scrolling page. */
+    from { opacity: 0; }
+    to   { opacity: 1; }
 `;
 
 export const Stage = styled.div`

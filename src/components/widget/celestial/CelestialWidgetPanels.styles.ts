@@ -3,7 +3,18 @@
  *
  * 집 규칙: 화면은 갈래 공용 JSX 하나, 모양은 갈래마다 *.styles.ts (scripts/check-theme-styles.mjs).
  */
-import styled from "styled-components";
+import styled, { css, keyframes } from "styled-components";
+import { inkOnFill } from "@/styles/color";
+
+const settle = keyframes`
+    from { opacity: 0; }
+    to { opacity: 1; }
+`;
+const checkIn = keyframes`
+    0% { transform: scale(0.65); opacity: 0; }
+    65% { transform: scale(1.15); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+`;
 
 /** 줄 하나의 높이 — 화면(WidgetPanels)이 몇 줄이 들어가는지 셀 때 같은 값을 본다 */
 export const ROW_PX = 32;
@@ -95,6 +106,7 @@ export const SectionHead = styled.div`
 `;
 
 export const Row = styled.div`
+    animation: ${settle} 180ms ease-out;
     flex-shrink: 0;
     display: flex;
     align-items: center;
@@ -129,13 +141,17 @@ export const More = styled.div`
 `;
 
 export const Box = styled.button<{ $done: boolean }>`
+    transition: background 160ms ease, box-shadow 160ms ease;
+    &:hover { box-shadow: 0 0 0 3px ${p => p.theme.colors.primary}22; }
+    ${p => p.$done && css`svg { animation: ${checkIn} 220ms ease-out; }`}
     width: 22px;
     height: 22px;
     flex-shrink: 0;
     padding: 0;
     border: 1px solid ${p => p.theme.colors.primary};
     background: ${p => p.$done ? p.theme.colors.primary : "transparent"};
-    color: ${p => p.theme.colors.surface};
+    background-image: ${p => p.$done ? `linear-gradient(${p.theme.colors.primary}, ${p.theme.colors.primary})` : 'none'};
+    color: ${p => inkOnFill(p.theme.colors.primary)};
     display: flex;
     align-items: center;
     justify-content: center;
@@ -161,6 +177,7 @@ export const Star = styled.span`
 `;
 
 export const Name = styled.span<{ $done: boolean }>`
+    transition: color 160ms ease;
     flex: 1;
     min-width: 0;
     font-size: 0.8rem;
@@ -263,9 +280,11 @@ export const Bar = styled.div`
 `;
 
 export const Fill = styled.div<{ $pct: number }>`
+    transition: width 260ms cubic-bezier(0.22, 1, 0.36, 1);
     height: 100%;
     width: ${p => p.$pct}%;
     background: ${p => p.theme.colors.primary};
+    background-image: ${p => `linear-gradient(${p.theme.colors.primary}, ${p.theme.colors.primary})`};
 `;
 
 export const Dashed = styled.div`

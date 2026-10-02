@@ -2,6 +2,30 @@ import styled from "styled-components";
 import { SectionWrapper, SectionTitle } from "@/components/project/celestial/section";
 export { SectionWrapper, SectionTitle };
 
+export const LinkHint = styled.div`
+    padding: 5px 12px 7px;
+    font-size: 0.68rem;
+    color: ${(p) => p.theme.colors.textSecondary};
+    min-height: 22px;
+`;
+export const MobileTaskRow = styled.div`display: flex; align-items: center; gap: 6px;`;
+export const MobileConnector = styled.button`
+    flex-shrink: 0;
+    width: 40px; height: 40px;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: transparent; border: 1px solid ${(p) => p.theme.colors.primary}55;
+    color: ${(p) => p.theme.colors.primary}; cursor: pointer;
+    &[aria-pressed="true"] { background: ${(p) => p.theme.colors.primary}22; }
+`;
+export const Connector = styled(MobileConnector)`
+    position: absolute; right: -20px; top: 50%; transform: translateY(-50%);
+    width: 22px; height: 22px; border-radius: 50%;
+    background: ${(p) => p.theme.colors.background};
+    z-index: 4; touch-action: none;
+    transition: box-shadow 0.18s ease, background 0.18s ease;
+    &:hover { box-shadow: 0 0 0 3px ${(p) => p.theme.colors.primary}22; }
+`;
+
 /* 폰에서 간트 대신 읽는 목록 — 같은 자료를 세로로 */
 export const AgendaList = styled.div`
     flex: 1;
@@ -142,6 +166,7 @@ export const DateNumber = styled.span<{ $isToday?: boolean }>`
 `;
 
 export const DependencySvg = styled.svg`
+    color: ${(p) => p.theme.colors.primary};
     position: absolute;
     top: 0;
     left: 0;
@@ -159,7 +184,9 @@ export const DependencyLine = styled.path`
     opacity: 0.8;
 `;
 
-export const TaskNode = styled.div<{ $status?: string; $isDragging?: boolean }>`
+export const TaskNode = styled.div<{ $status?: string; $isDragging?: boolean; $connectTarget?: boolean }>`
+    outline: ${(p) => p.$connectTarget ? `2px solid ${p.theme.colors.primary}` : 'none'};
+    outline-offset: 3px;
     position: absolute;
     /* top / left / width 는 style prop 으로 전달 (CSS 클래스 재생성 방지) */
     height: 28px;
@@ -187,9 +214,12 @@ export const TaskNode = styled.div<{ $status?: string; $isDragging?: boolean }>`
 `;
 
 export const TaskNodeText = styled.span`
+    min-width: 0;
+    max-width: 100%;
+    text-overflow: ellipsis;
     font-size: 0.7rem;
     white-space: nowrap;
-    overflow: visible;
+    overflow: hidden;
     user-select: none;
 `;
 

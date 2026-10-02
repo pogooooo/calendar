@@ -94,7 +94,7 @@ export const Row = styled.button<{ $done: boolean }>`
     gap: 14px;
     width: 100%;
     min-height: 44px;
-    padding: 6px 0;
+    padding: 6px 64px 6px 0;
     background: none;
     border: 0;
     border-bottom: 1px solid ${p => p.theme.colors.text}1A;

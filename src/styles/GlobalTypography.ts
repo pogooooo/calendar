@@ -28,6 +28,11 @@ const GlobalTypography = createGlobalStyle<{ $sizePx: number; $weight: number }>
         font-size: ${(props) => props.$sizePx}px;
     }
 
+    html[data-drag-active], html[data-drag-active] * {
+        cursor: grabbing !important;
+        user-select: none !important;
+    }
+
     :where(button, a, input, textarea, select, [tabindex]):focus-visible {
         outline: 2px solid ${(props) => props.theme.colors.primary};
         outline-offset: 3px;

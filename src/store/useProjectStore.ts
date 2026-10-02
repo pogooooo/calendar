@@ -11,17 +11,24 @@ interface ProjectState {
     error: string | null;
 
     fetchProjects: (authFetch: AuthFetch, categoryId?: string) => Promise<void>;
-    addProject: (authFetch: AuthFetch, data: Partial<ProjectType>) => Promise<void>;
-    updateProject: (authFetch: AuthFetch, projectId: string, data: Partial<ProjectType>) => Promise<void>;
+    addProject: (authFetch: AuthFetch, data: Partial<ProjectType>) => Promise<string | null>;
+    updateProject: (authFetch: AuthFetch, projectId: string, data: Partial<ProjectType>) => Promise<string | null>;
     deleteProject: (authFetch: AuthFetch, projectId: string) => Promise<void>;
 
-    addProjectTask: (authFetch: AuthFetch, projectId: string, data: Partial<ProjectTaskType>) => Promise<void>;
+    addProjectTask: (authFetch: AuthFetch, projectId: string, data: Partial<ProjectTaskType>) => Promise<string | null>;
     updateProjectTaskStatus: (authFetch: AuthFetch, projectId: string, taskId: string, newStatus: string) => Promise<void>;
-    updateProjectTask: (authFetch: AuthFetch, projectId: string, taskId: string, data: Partial<ProjectTaskType>) => Promise<void>;
+    updateProjectTask: (authFetch: AuthFetch, projectId: string, taskId: string, data: Partial<ProjectTaskType>) => Promise<string | null>;
 }
 
 const isSessionExpired = (err: unknown) =>
     err instanceof Error && err.message === "Session expired";
+
+async function requireSuccess(response: Response) {
+    if (response.ok) return;
+    const body = await response.json().catch(() => null);
+    throw new Error(body?.message || "변경 내용을 저장하지 못했습니다. 연결을 확인한 뒤 다시 시도해주세요.");
+}
+const failureMessage = (error: unknown) => error instanceof Error && error.message ? error.message : "변경 내용을 저장하지 못했습니다. 연결을 확인한 뒤 다시 시도해주세요.";
 
 const useProjectStore = create<ProjectState>((set, get) => ({
     projects: [],
@@ -74,7 +81,7 @@ const useProjectStore = create<ProjectState>((set, get) => ({
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data),
             });
-            if (res.status === 401) return;
+            await requireSuccess(res);
             if (res.ok) {
                 const serverProject = await res.json();
                 set((state) => ({
@@ -83,11 +90,12 @@ const useProjectStore = create<ProjectState>((set, get) => ({
             } else {
                 throw new Error();
             }
+            return null;
         } catch (err) {
-            if (isSessionExpired(err)) return;
             set({ projects: previousProjects });
             console.error("[PROJECT_ADD_ERROR]", err);
             reportSaveFailure("project");
+            return failureMessage(err);
         }
     },
 
@@ -103,13 +111,13 @@ const useProjectStore = create<ProjectState>((set, get) => ({
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ id: projectId, ...data }),
             });
-            if (res.status === 401) return;
-            if (!res.ok) throw new Error();
+            await requireSuccess(res);
+            return null;
         } catch (err) {
-            if (isSessionExpired(err)) return;
             set({ projects: previousProjects });
             console.error("[PROJECT_UPDATE_ERROR]", err);
             reportSaveFailure("project");
+            return failureMessage(err);
         }
     },
 
@@ -119,10 +127,8 @@ const useProjectStore = create<ProjectState>((set, get) => ({
 
         try {
             const res = await authFetch(`/api/project?id=${projectId}`, { method: 'DELETE' });
-            if (res.status === 401) return;
-            if (!res.ok) throw new Error();
+            await requireSuccess(res);
         } catch (err) {
-            if (isSessionExpired(err)) return;
             set({ projects: previousProjects });
             console.error("[PROJECT_DELETE_ERROR]", err);
             reportSaveFailure("project");
@@ -154,7 +160,7 @@ const useProjectStore = create<ProjectState>((set, get) => ({
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ...data, projectId }),
             });
-            if (res.status === 401) return;
+            await requireSuccess(res);
             if (res.ok) {
                 const serverTask = await res.json();
                 set((state) => ({
@@ -165,11 +171,12 @@ const useProjectStore = create<ProjectState>((set, get) => ({
                     )
                 }));
             } else throw new Error();
+            return null;
         } catch (err) {
-            if (isSessionExpired(err)) return;
             set({ projects: previousProjects });
             console.error("[PROJECT_TASK_ADD_ERROR]", err);
             reportSaveFailure("project");
+            return failureMessage(err);
         }
     },
 
@@ -189,10 +196,8 @@ const useProjectStore = create<ProjectState>((set, get) => ({
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ id: taskId, status: newStatus }),
             });
-            if (res.status === 401) return;
-            if (!res.ok) throw new Error();
+            await requireSuccess(res);
         } catch (err) {
-            if (isSessionExpired(err)) return;
             set({ projects: previousProjects });
             console.error("[PROJECT_TASK_STATUS_ERROR]", err);
             reportSaveFailure("project");
@@ -215,8 +220,7 @@ const useProjectStore = create<ProjectState>((set, get) => ({
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ id: taskId, ...data }),
             });
-            if (res.status === 401) return;
-            if (!res.ok) throw new Error();
+            await requireSuccess(res);
             const serverTask = await res.json();
             set((state) => ({
                 projects: state.projects.map(p =>
@@ -225,11 +229,12 @@ const useProjectStore = create<ProjectState>((set, get) => ({
                         : p
                 )
             }));
+            return null;
         } catch (err) {
-            if (isSessionExpired(err)) return;
             set({ projects: previousProjects });
             console.error("[PROJECT_TASK_UPDATE_ERROR]", err);
             reportSaveFailure("project");
+            return failureMessage(err);
         }
     }
 }));

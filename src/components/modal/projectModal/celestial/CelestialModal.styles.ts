@@ -56,7 +56,10 @@ export const CloseButton = styled.button`
     }
 `;
 
-export const ScrollBody = styled.div`
+export const ScrollBody = styled.fieldset`
+    border: none;
+    margin: 0;
+    min-width: 0;
     padding: 12px 20px;
     display: flex;
     flex-direction: column;
@@ -137,7 +140,11 @@ export const ParticipantPicker = styled.div`
 
 `;
 
-export const ParticipantItem = styled.div<{ $selected: boolean }>`
+export const ParticipantItem = styled.button.attrs({ type: 'button' })<{ $selected: boolean }>`
+    font-family: inherit;
+    min-height: 32px;
+    &:disabled { opacity: 0.45; cursor: not-allowed; }
+    @media (max-width: 768px) { min-height: 44px; }
     display: flex;
     align-items: center;
     padding: 4px 10px;
@@ -197,4 +204,11 @@ export const Footer = styled.div`
     padding: 12px 20px;
     background-color: ${(props) => props.theme.colors.surface};
     border-top: 1px solid ${(props) => props.theme.colors.primary}55;
+`;
+
+export const ErrorMessage = styled.p`
+    margin: 0;
+    padding: 8px 20px;
+    color: ${(p) => p.theme.colors.error};
+    font-size: 0.8rem;
 `;
