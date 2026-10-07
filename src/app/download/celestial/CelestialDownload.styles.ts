@@ -197,7 +197,7 @@ export const Tagline = styled.p`
     margin: 12px 0 0;
     font-family: ${p => p.theme.fonts.display};
     font-size: 1rem;
-    letter-spacing: 3px;
+    letter-spacing: 0.12em;
     color: ${p => p.theme.colors.primary};
 `;
 
@@ -328,7 +328,7 @@ export const SectionTitle = styled.h2`
     font-family: ${p => p.theme.fonts.display};
     font-size: 1.05rem;
     font-weight: 400;
-    letter-spacing: 5px;
+    letter-spacing: 0.1em;
 
     &::after {
         content: "";

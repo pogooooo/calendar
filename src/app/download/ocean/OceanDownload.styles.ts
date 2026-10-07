@@ -2,9 +2,13 @@
  * 바다의 내려받기·소개 화면 — 물빛 바탕 위에 글과 판만. 별 하늘·금빛 쓸림(Celestial), 잎·도장(Maple) 없이.
  * 뼈대는 Celestial 과 같으므로 그쪽 것을 통째로 가져오고, 달라지는 것만 덮어쓴다.
  *
- *   머리: 아주 큰 기울인 세리프 "Cronos", 한 줄 소개, 청록 단추 하나 + 흰 단추 하나. 오른쪽엔 앱 화면을 닮은 반투명 판(OceanHeroScene).
- *   기능: 같은 크기의 판 넷(벤토), 안의 작은 그림은 납작한 칸·막대·동그라미.
- *   내려받기: 판 하나 안의 목록(줄 사이 머리카락 선) — 설정 화면 같은 짜임.
+ * 짜임도 Celestial(왼쪽 글·오른쪽 그림, 같은 판 넷, 표 한 장)과 다르다 — 같은 JSX 를 CSS 로만 다시 앉힌다:
+ *   길잡이: 위에 떠 있는 유리 알약 하나(내려도 따라온다).
+ *   머리: 가운데 정렬 — 아주 큰 기울인 세리프 "Cronos", 한 줄 소개, 단추 둘. 그 아래 앱 화면을 닮은 판(OceanHeroScene)을
+ *         물 위에 띄운 제품 사진처럼 크게.
+ *   기능: 벤토 — 넓은 판(그림 왼쪽·글 오른쪽)과 좁은 판이 엇갈린다.
+ *   내려받기: 운영체제마다 유리 타일 한 장(이름·설명·크기·받기 단추).
+ *   꼬리: 가운데 상표와 링크.
  * 움직임은 한 번씩만(떠오르기·올리면 색 바뀜). 끝없이 도는 것은 없다(내려받는 중 표시도 몇 바퀴 돌고 멈춘다).
  */
 import styled, { css, keyframes } from "styled-components";
@@ -27,6 +31,8 @@ const wordmark = css`
 
 export const Page = styled(C.Page)`
     background: transparent;
+    /* hidden 은 이 상자를 스크롤 상자로 만들어 위에 뜬 길잡이(sticky)가 붙지 못한다 — 잘라내기만 */
+    overflow-x: clip;
     color: ${(p) => p.theme.colors.text};
 `;
 
@@ -42,8 +48,18 @@ export const Sky = styled(C.Sky)`
 `;
 
 export const Nav = styled(C.Nav)`
-    padding-top: 22px;
-`;
+    /* 위에 떠 있는 유리 알약 — 내려도 따라온다 */
+    ${surface("float")}
+    position: sticky;
+    top: 14px;
+    z-index: 5;
+    max-width: 820px;
+    margin: 14px auto 0;
+    padding: 7px 7px 7px 22px;
+    border-radius: 999px;
+
+    @media (max-width: 880px) { margin: 10px 12px 0; }
+`
 
 export const NavBrand = styled(C.NavBrand)`
     ${wordmark}
@@ -63,16 +79,21 @@ export const NavCta = styled(C.NavCta)`
     height: 36px;
     padding: 0 14px;
     gap: 7px;
+    border-radius: 999px;
     font-size: 0.84rem;
     letter-spacing: -0.005em;
-`;
+`
 
 export const Hero = styled(C.Hero)`
-    gap: 56px;
-    padding: 88px 28px 104px;
+    /* 가운데 한 줄기: 글 → 단추 → 그 아래 큰 판 */
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 64px;
+    padding: 96px 28px 112px;
 
-    @media (max-width: 900px) { padding: 56px 24px 72px; }
-`;
+    @media (max-width: 900px) { padding: 56px 20px 72px; gap: 44px; }
+`
 
 const arrive = keyframes`
     from { opacity: 0; transform: translateY(8px); }
@@ -80,28 +101,34 @@ const arrive = keyframes`
 `;
 
 export const HeroText = styled(C.HeroText)`
+    flex: none;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
     & > * { animation: ${arrive} 0.5s ${EASE} both; ${calm} }
     & > *:nth-child(2) { animation-delay: 0.06s; }
     & > *:nth-child(3) { animation-delay: 0.12s; }
     & > *:nth-child(4) { animation-delay: 0.18s; }
     & > *:nth-child(5) { animation-delay: 0.24s; }
-`;
+`
 
 /** 아주 큰 기울인 세리프 한 단어 */
 export const Brand = styled(C.Brand)`
     ${wordmark}
-    font-size: 6.2rem;
-    line-height: 0.95;
-    letter-spacing: -0.03em;
+    font-size: 8rem;
+    line-height: 0.9;
+    letter-spacing: -0.035em;
     color: ${(p) => p.theme.colors.text};
     animation: ${arrive} 0.5s ${EASE} both;
     ${calm}
 
     @media (max-width: 720px) {
-        font-size: 4.2rem;
+        font-size: 4.6rem;
         letter-spacing: -0.03em;
     }
-`;
+`
 
 export const Tagline = styled(C.Tagline)`
     margin-top: 18px;
@@ -116,12 +143,12 @@ export const Tagline = styled(C.Tagline)`
 `;
 
 export const Lead = styled(C.Lead)`
-    margin-top: 14px;
-    max-width: 470px;
+    margin: 14px auto 0;
+    max-width: 520px;
     font-size: 0.98rem;
     line-height: 1.7;
     letter-spacing: -0.005em;
-`;
+`
 
 export const DownloadNotice = styled(C.DownloadNotice)`
     max-width: 470px;
@@ -135,9 +162,10 @@ export const DownloadNotice = styled(C.DownloadNotice)`
 `;
 
 export const CtaRow = styled(C.CtaRow)`
+    justify-content: center;
     gap: 10px;
     margin-top: 32px;
-`;
+`
 
 /** 단추 — 끌려오는 움직임(magnetic)은 쓰지 않는다. 누르면 살짝 눌린다 */
 const cta = css`
@@ -177,15 +205,32 @@ export const CtaMeta = styled(C.CtaMeta)`
 `;
 
 /** 오른쪽 그림 자리 — 앱 화면을 닮은 판(OceanHeroScene). 불러오는 동안의 별 고리(Celestial)는 숨긴다 */
+/** 단추 아래의 큰 판 — 앱 화면을 닮은 판(OceanHeroScene)을 물 위에 띄운 제품 사진처럼. 불러오는 동안의 별 고리(Celestial)는 숨긴다 */
 export const HeroArt = styled(C.HeroArt)`
-    width: 440px;
-    height: 380px;
+    width: min(660px, 100%);
+    height: 430px;
     animation: none;
 
     & > svg { display: none; }
 
-    @media (max-width: 1000px) { width: 360px; height: 330px; }
-`;
+    /* 판 아래 물에 드리운 그늘 */
+    &::after {
+        content: "";
+        position: absolute;
+        left: 12%;
+        right: 12%;
+        bottom: -34px;
+        height: 46px;
+        border-radius: 50%;
+        background: ${(p) => (dark(p) ? "rgba(0, 0, 0, 0.45)" : "rgba(6, 60, 66, 0.22)")};
+        filter: blur(18px);
+        pointer-events: none;
+        z-index: -1;
+    }
+
+    @media (max-width: 860px) { display: block; height: 340px; }
+    @media (max-width: 520px) { height: 280px; }
+`
 
 export const RevealBox = styled(C.RevealBox)`
     @media (prefers-reduced-motion: no-preference) {
@@ -200,15 +245,18 @@ export const Section = styled(C.Section)`
 `;
 
 /** 마디 제목 — 굵은 본문 글꼴, 옆의 선 없음 */
+/** 마디 제목 — 굵은 본문 글꼴, 가운데, 옆의 선 없음 */
 export const SectionTitle = styled(C.SectionTitle)`
-    margin-bottom: 20px;
+    justify-content: center;
+    text-align: center;
+    margin-bottom: 28px;
     font-family: ${(p) => p.theme.fonts.body};
-    font-size: 1.6rem;
+    font-size: 1.9rem;
     font-weight: 700;
-    letter-spacing: -0.025em;
+    letter-spacing: -0.03em;
 
     &::after { display: none; }
-`;
+`
 
 export const Char = styled(C.Char)`
     @media (prefers-reduced-motion: no-preference) {
@@ -218,10 +266,44 @@ export const Char = styled(C.Char)`
     }
 `;
 
+/**
+ * 벤토 — 여섯 칸 바탕에 넓은 판(4칸)과 좁은 판(2칸)이 엇갈린다: [달력 ▭▭ | 보드 ▭] / [챌린지 ▭ | 위젯 ▭▭].
+ * 넓은 판은 그림 왼쪽·글 오른쪽으로 눕힌다. (판은 Reveal 상자에 한 겹 싸여 들어온다)
+ */
 export const FeatureGrid = styled(C.FeatureGrid)`
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    grid-template-columns: repeat(6, minmax(0, 1fr));
     gap: 12px;
-`;
+
+    & > * { grid-column: span 2; }
+    & > :nth-child(1), & > :nth-child(4) { grid-column: span 4; }
+
+    & > :nth-child(1) article, & > :nth-child(4) article {
+        display: grid;
+        grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+        grid-template-rows: 1fr auto auto 1fr;
+        column-gap: 24px;
+        align-items: center;
+
+        & > :nth-child(1) { grid-row: 1 / -1; height: 100%; min-height: 168px; margin-bottom: 0; }
+        & > :nth-child(2) { grid-row: 2; grid-column: 2; }
+        & > :nth-child(3) { grid-row: 3; grid-column: 2; }
+    }
+
+    @media (max-width: 900px) {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        & > * { grid-column: span 1; }
+        & > :nth-child(1), & > :nth-child(4) { grid-column: span 2; }
+    }
+
+    @media (max-width: 560px) {
+        grid-template-columns: minmax(0, 1fr);
+        & > *, & > :nth-child(1), & > :nth-child(4) { grid-column: auto; }
+        & > :nth-child(1) article, & > :nth-child(4) article {
+            display: block;
+            & > :nth-child(1) { height: 112px; min-height: 0; margin-bottom: 18px; }
+        }
+    }
+`
 
 /** 기능 판 — 같은 크기의 판 넷. 기울이는 움직임 없이, 올리면 선이 조금 진해지고 2px 뜬다 */
 export const Feature = styled(C.Feature)`
@@ -356,40 +438,60 @@ export const MiniWidgets = styled(C.MiniWidgets)`
 `;
 
 /** 내려받기 목록 — 판 하나, 줄 사이 머리카락 선 */
+/** 내려받기 — 운영체제마다 유리 타일 한 장 */
 export const PlatformList = styled(C.PlatformList)`
-    ${surface("panel")}
-    border-radius: ${R.lg};
-    overflow: hidden;
-`;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    border-top: none;
 
+    @media (max-width: 900px) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    @media (max-width: 480px) { grid-template-columns: minmax(0, 1fr); }
+`
+
+/** 타일: 위에 이름과 받기 단추, 가운데 설명, 아래 형식·크기 */
 export const PlatformRow = styled(C.PlatformRow)`
-    grid-template-columns: minmax(150px, auto) 1fr auto 36px;
-    gap: 16px;
-    padding: 16px 20px;
-    border-bottom: 1px solid ${(p) => hairline(p.theme)};
-    transition: background-color 0.15s ease;
+    ${surface("panel")}
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto 1fr auto;
+    align-items: start;
+    gap: 10px 12px;
+    min-height: 176px;
+    padding: 18px 18px 16px;
+    border-radius: ${R.lg};
+    box-shadow: ${(p) => (p.$mine ? `0 0 0 1.5px ${withAlpha(p.theme.colors.primary, 0.55)}` : "none")};
+    transform: translateY(var(--lift, 0px));
+    transition: transform 0.2s ${EASE}, border-color 0.15s ease;
     ${focusRing}
-    &:focus-visible { outline-offset: -2px; }
 
-    &:last-child { border-bottom: none; }
+    & > :nth-child(1) { grid-row: 1; grid-column: 1; }
+    & > :nth-child(2) { grid-row: 2; grid-column: 1 / -1; display: block; }
+    & > :nth-child(3) { grid-row: 3; grid-column: 1; align-self: end; justify-self: start; }
+    & > :nth-child(4) { grid-row: 1; grid-column: 2; }
+
     &:hover:not(:disabled) {
-        box-shadow: none;
-        background-color: ${(p) => ink(p.theme, dark(p) ? 0.05 : 0.03)};
+        --lift: -2px;
+        box-shadow: ${(p) => (p.$mine ? `0 0 0 1.5px ${withAlpha(p.theme.colors.primary, 0.7)}, ` : "")}0 20px 44px -24px ${(p) => (dark(p) ? "rgba(0, 0, 0, 0.7)" : "rgba(18, 33, 32, 0.24)")};
         .arrow { transform: translateY(2px); }
     }
 
     @media (max-width: 620px) {
-        grid-template-columns: auto 1fr 36px;
-        padding: 14px 16px;
+        grid-template-columns: minmax(0, 1fr) auto;
+        min-height: 0;
+        & > :nth-child(2) { display: block; }
     }
-`;
+`
 
 export const RowName = styled(C.RowName)`
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
     font-family: ${(p) => p.theme.fonts.body};
-    font-size: 0.98rem;
-    font-weight: 600;
-    letter-spacing: -0.01em;
-`;
+    font-size: 1.15rem;
+    font-weight: 650;
+    letter-spacing: -0.02em;
+`
 
 export const RowMine = styled(C.RowMine)`
     ${seaChip(true)}
@@ -402,7 +504,9 @@ export const RowMine = styled(C.RowMine)`
 
 export const RowNote = styled(C.RowNote)`
     font-size: 0.84rem;
-`;
+    line-height: 1.6;
+    text-align: left;
+`
 
 export const RowMeta = styled(C.RowMeta)`
     ${label}
@@ -425,18 +529,22 @@ export const Spinner = styled(C.Spinner)`
     ${calm}
 `;
 
+/** 꼬리 — 가운데 상표, 그 아래 링크 */
 export const Foot = styled(C.Foot)`
-    padding: 28px 28px 40px;
-    border-top: 1px solid ${(p) => hairline(p.theme)};
+    flex-direction: column;
+    justify-content: center;
+    gap: 12px;
+    padding: 40px 28px 48px;
+    border-top: none;
     font-family: ${(p) => p.theme.fonts.body};
     letter-spacing: 0;
 
     & > span {
         ${wordmark}
-        font-size: 1.35rem;
+        font-size: 2rem;
         color: ${(p) => p.theme.colors.text};
     }
-`;
+`
 
 export const FootLinks = styled(C.FootLinks)`
     gap: 20px;

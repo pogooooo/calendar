@@ -110,7 +110,7 @@ export const SheetHead = styled.div`
     border-bottom: 1px solid ${p => p.theme.colors.text}1A;
     font-family: ${p => p.theme.fonts.display};
     font-size: 0.78rem;
-    letter-spacing: 0.2em;
+    letter-spacing: 0.08em;
     color: ${p => p.theme.colors.primary};
 
     i {
