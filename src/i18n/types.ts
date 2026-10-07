@@ -344,6 +344,8 @@ export interface Translations {
         deleteTitle: string;
         deleteMessage: string;
         cancel: string;
+        /** 새 카테고리 단추 (바다 머리줄) */
+        newCategory: string;
     };
     update: {
         title: string;
@@ -410,6 +412,11 @@ export interface Translations {
         deleteMessage: (title: string) => string;
         missingTitle: string;
         missingMessage: string;
+        /** 이어서 해낸 칸 수 (바다 카드) */
+        streak: (n: number) => string;
+        /** 펼친 챌린지에서 앞·뒤 챌린지로 (바다 무대) */
+        prev: string;
+        next: string;
     };
     popup: {
         display: string;

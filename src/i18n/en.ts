@@ -356,6 +356,7 @@ const en: Translations = {
         deleteTitle: 'Delete this category?',
         deleteMessage: 'The to-dos inside it are deleted too. This cannot be undone.',
         cancel: 'Cancel',
+        newCategory: 'New category',
     },
     update: {
         title: 'Update',
@@ -421,6 +422,9 @@ const en: Translations = {
         deleteMessage: (title: string) => `'${title}' and every day you logged for it will be removed. This cannot be undone.`,
         missingTitle: 'Something is missing',
         missingMessage: 'Enter a title and pick a category.',
+        streak: (n: number) => `${n} in a row`,
+        prev: 'Previous challenge',
+        next: 'Next challenge',
     },
     popup: {
         display: 'DISPLAY',

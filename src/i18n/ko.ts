@@ -356,6 +356,7 @@ const ko: Translations = {
         deleteTitle: '카테고리를 삭제할까요',
         deleteMessage: '안에 있는 할 일이 함께 삭제됩니다. 되돌릴 수 없습니다.',
         cancel: '취소',
+        newCategory: '새 카테고리',
     },
     update: {
         title: '업데이트',
@@ -421,6 +422,9 @@ const ko: Translations = {
         deleteMessage: (title: string) => `'${title}'과 지금까지의 달성 기록이 사라집니다. 되돌릴 수 없습니다.`,
         missingTitle: '빠진 항목이 있습니다',
         missingMessage: '제목을 적고 카테고리를 골라주세요.',
+        streak: (n: number) => `연속 ${n}회`,
+        prev: '이전 챌린지',
+        next: '다음 챌린지',
     },
     popup: {
         display: '표시',
