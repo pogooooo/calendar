@@ -1,5 +1,6 @@
 import { DefaultTheme } from "styled-components";
 import { THEME_FAMILIES, type ThemeFamily } from "./themed";
+import { causticNet, sandGrain } from "./ocean/shoreArt";
 
 const commonStyles = {
     fontSizes: {
@@ -167,14 +168,22 @@ export const themes: Record<string, DefaultTheme> = {
         name: 'ocean', family: OCEAN, mode: 'light', ...commonStyles,
         fonts: OCEAN_FONTS,
         colors: { background:'#EAF7F7', primary:'#0E8C96', accent:'#6FD6CF', surface:'#F7FDFC', text:'#12404C', textSecondary:'#4F7C86', border:'#9CCFD2', success:'#1F9A7A', error:'#D9604E', weekend:'#E9806E' },
-        preview: { cell:'#DDF2F1', event:'#A9E3DE' }, line:'#9CCFD2',
+        preview: {
+            cell: 'rgba(255,255,255,0.72)', event: '#7FD9D2', today: '#F5A847',
+            bg: `${causticNet({ size: 160, freq: 0.03, seed: 11, alpha: 0.7 })} 0 0 / 160px 160px, linear-gradient(180deg, #A6ECE7, #3FC8D0)`,
+            rail: `${sandGrain(false)} 0 0 / 120px 120px, linear-gradient(180deg, #F8EDD8, #EAD1A9)`,
+        }, line:'#9CCFD2',
     },
     /* 밤의 석호 — 깊은 남청 바탕에 달빛 같은 청록 */
     'ocean-dark': {
         name: 'ocean-dark', family: OCEAN, mode: 'dark', ...commonStyles,
         fonts: OCEAN_FONTS,
         colors: { background:'#06222E', primary:'#6FE3DA', accent:'#1FA6B4', surface:'#0B3140', text:'#E3F7F5', textSecondary:'#94C3CB', border:'#2E6A78', success:'#6FD3B0', error:'#FF9A8B', weekend:'#FF9F8A' },
-        preview: { cell:'#0F3B4A', event:'#16606E' }, line:'#2E6A78',
+        preview: {
+            cell: 'rgba(40,120,136,0.35)', event: '#1F8C98', today: '#F5A847',
+            bg: `${causticNet({ size: 160, freq: 0.03, seed: 11, alpha: 0.35, color: '150 245 235' })} 0 0 / 160px 160px, linear-gradient(180deg, #0B3D4C, #04202B)`,
+            rail: `${sandGrain(true)} 0 0 / 120px 120px, linear-gradient(180deg, #3D4651, #2A313B)`,
+        }, line:'#2E6A78',
     },
 };
 
@@ -183,6 +192,7 @@ export const themes: Record<string, DefaultTheme> = {
    미리보기 색은 저기 — 한쪽만 고치면 조용히 어긋났다. 이제 한 곳에서 만든다. */
 
 export interface ThemeGround {
+    /** CSS background 값 — 색 하나거나, 그림을 쓰는 갈래는 그라데이션·무늬 */
     bg: string;
     rail: string;
     ink: string;
@@ -206,13 +216,13 @@ export interface ThemeChoice {
 }
 
 const groundOf = (t: DefaultTheme): ThemeGround => ({
-    bg: t.colors.background,
-    rail: t.colors.surface,
+    bg: t.preview.bg ?? t.colors.background,
+    rail: t.preview.rail ?? t.colors.surface,
     ink: t.colors.text,
     dimInk: t.colors.textSecondary,
     cell: t.preview.cell,
     event: t.preview.event,
-    accent: t.colors.primary,
+    accent: t.preview.today ?? t.colors.primary,
 });
 
 export function listThemes(): ThemeChoice[] {

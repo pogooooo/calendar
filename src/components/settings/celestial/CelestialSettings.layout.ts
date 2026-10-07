@@ -287,21 +287,29 @@ export const Star = styled.span<{ $on: boolean; $small?: boolean }>`
     visibility: ${(p) => (p.$on ? "visible" : "hidden")};
 `;
 
-export const ThemeRow = styled.div`
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(268px, 288px));
-    gap: 16px;
-    margin-bottom: 18px;
+/* ── 테마 고르기: 갈래 진열장 + 고른 갈래의 무대 (parts/ThemePicker) ────────
+   갈래 × 벌마다 큰 카드를 내던 예전 판은 갈래가 늘수록 끝없이 길어졌다.
+   갈래는 작은 타일 하나씩, 벌(밝게·어둡게)은 아래 무대에서 고른다. */
 
-    ${MOBILE} { grid-template-columns: 1fr; }
+export const ThemeGallery = styled.div`
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(146px, 1fr));
+    gap: 12px;
+    margin-bottom: 14px;
+
+    /* 폰: 옆으로 밀어 보는 띠 — 갈래가 많아도 한 줄 */
+    ${MOBILE} {
+        grid-auto-flow: column;
+        grid-template-columns: none;
+        grid-auto-columns: minmax(128px, 42%);
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        padding-bottom: 6px;
+        & > * { scroll-snap-align: start; }
+    }
 `;
 
-/**
- * 테마 하나가 라이트·다크 두 벌을 품고 있어서, 예전에는 카드 한 장 옆에
- * 넓은 빈 자리가 남고 모드 단추는 아래에 따로 떨어져 있었다.
- * 조합마다 카드를 두어 빈 자리를 없애고 고르는 곳을 한 군데로 모은다.
- */
-export const ThemeCard = styled.button<{ $selected: boolean }>`
+export const FamilyTile = styled.button<{ $selected: boolean }>`
     position: relative;
     display: flex;
     flex-direction: column;
@@ -323,8 +331,8 @@ export const ThemeCard = styled.button<{ $selected: boolean }>`
             position: absolute;
             top: 0;
             left: 0;
-            width: 30px;
-            height: 30px;
+            width: 26px;
+            height: 26px;
             z-index: 2;
             pointer-events: none;
             background: linear-gradient(315deg, transparent 49%, ${p.theme.colors.primary} 50%, transparent 51%);
@@ -332,19 +340,106 @@ export const ThemeCard = styled.button<{ $selected: boolean }>`
     `}
 `;
 
-/** 추상적인 막대 대신 앱 화면 축소판을 보여준다. 고르기 전에 결과가 보이도록. */
-export const Mini = styled.div<{ $bg: string }>`
+export const FamilyFoot = styled.span`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 10px;
+    border-top: 1px solid ${hair(26)};
+`;
+
+export const FamilyName = styled.span`
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: ${(p) => p.theme.fonts.display};
+    font-size: 0.78rem;
+    letter-spacing: 2px;
+    color: ${(p) => p.theme.colors.text};
+`;
+
+/** 이 갈래가 가진 벌의 수 — 채운 것이 지금 벌 */
+export const VariantDots = styled.span`
+    display: flex;
+    gap: 5px;
+    flex: none;
+
+    i {
+        width: 5px;
+        height: 5px;
+        transform: rotate(45deg);
+        border: 1px solid ${hair(99)};
+    }
+    i.on { background-color: ${(p) => p.theme.colors.primary}; border-color: ${(p) => p.theme.colors.primary}; }
+`;
+
+const stageIn = keyframes`
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+`;
+
+/** 고른 갈래의 무대 — 큰 축소판 옆에 이름·설명·벌 고르기 */
+export const ThemeStage = styled.div`
     display: grid;
-    grid-template-columns: 54px 1fr;
-    height: 152px;
-    background-color: ${(p) => p.$bg};
+    grid-template-columns: minmax(200px, 300px) minmax(0, 1fr);
+    gap: 22px;
+    align-items: center;
+    padding: 16px;
+    margin-bottom: 18px;
+    border: 1px solid ${hair(26)};
+
+    @media (prefers-reduced-motion: no-preference) {
+        animation: ${stageIn} 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+    ${MOBILE} { grid-template-columns: 1fr; gap: 14px; padding: 12px; }
+`;
+
+export const StageThumb = styled.div`
+    overflow: hidden;
+    border: 1px solid ${hair(26)};
+`;
+
+export const StageInfo = styled.div`
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    min-width: 0;
+`;
+
+export const StageName = styled.h3`
+    margin: 0;
+    font-family: ${(p) => p.theme.fonts.display};
+    font-weight: 400;
+    font-size: 1.45rem;
+    letter-spacing: 6px;
+    color: ${(p) => p.theme.colors.text};
+`;
+
+export const StageDesc = styled.p`
+    margin: 0 0 4px;
+    max-width: 46ch;
+    font-size: 0.8rem;
+    line-height: 1.6;
+    color: ${(p) => p.theme.colors.textSecondary};
+`;
+
+/** 추상적인 막대 대신 앱 화면 축소판을 보여준다. 고르기 전에 결과가 보이도록. */
+export const Mini = styled.div<{ $bg: string; $h?: number }>`
+    display: grid;
+    grid-template-columns: 26% 1fr;
+    height: ${(p) => p.$h ?? 152}px;
+    /* 색 하나일 수도, 무늬를 겹친 그림일 수도 있다 (바다의 물) */
+    background: ${(p) => p.$bg};
 `;
 
 /** 갈래가 미리보기 그림을 가진 경우(Maple 의 E5) 축소판 대신 그 그림 */
-export const MiniImage = styled.img`
+export const MiniImage = styled.img<{ $h?: number }>`
     display: block;
     width: 100%;
-    height: 152px;
+    height: ${(p) => p.$h ?? 152}px;
     object-fit: cover;
     object-position: center;
 `;
@@ -354,7 +449,7 @@ export const MiniRail = styled.div<{ $bg: string }>`
     flex-direction: column;
     gap: 7px;
     padding: 10px 7px;
-    background-color: ${(p) => p.$bg};
+    background: ${(p) => p.$bg};
     border-right: 1px solid ${hair(44)};
 
     i { display: block; height: 3px; border-radius: 1px; }
@@ -371,31 +466,6 @@ export const MiniBody = styled.div`
     .week b { display: block; height: 3px; }
     .grid { display: grid; grid-template-columns: repeat(7, 1fr); grid-auto-rows: 1fr; gap: 4px; flex: 1; }
     .grid span { border-radius: 1px; }
-`;
-
-export const ThemeMeta = styled.div`
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-    padding: 13px 15px;
-    border-top: 1px solid ${hair(26)};
-`;
-
-export const ThemeName = styled.span`
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    font-family: ${(p) => p.theme.fonts.display};
-    font-size: 0.86rem;
-    letter-spacing: 2px;
-    color: ${(p) => p.theme.colors.text};
-`;
-
-export const ThemeDesc = styled.span`
-    /* 별 너비 + 사이 간격만큼 들여 이름과 왼쪽을 맞춘다. */
-    padding-left: 17px;
-    font-size: 0.72rem;
-    color: ${(p) => p.theme.colors.textSecondary};
 `;
 
 /* ── 분절 ────────────────────────────────────────────────────────────── */

@@ -40,6 +40,11 @@ declare module 'styled-components' {
         preview: {
             cell: string;
             event: string;
+            /** 바탕·옆줄을 색 대신 그림(그라데이션·무늬)으로 칠하고 싶은 갈래만 (바다의 물·모래) */
+            bg?: string;
+            rail?: string;
+            /** 오늘 칸 — 없으면 primary */
+            today?: string;
         };
 
         /**

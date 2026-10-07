@@ -26,12 +26,37 @@ export const Star = styled(C.Star)`
     color: ${(p) => p.theme.colors.primary};
 `;
 
-export const ThemeCard = styled(C.ThemeCard)`
+/** 진열장 타일 — 종이 쪽지. 고른 것은 먹 테두리 한 겹 더 (모서리 사선 없음) */
+export const FamilyTile = styled(C.FamilyTile)`
+    ${paperCard("3px")}
     border-color: ${(p) => (p.$selected ? p.theme.colors.primary : hair(p.theme, 0.3))};
     ${(p) => p.$selected && css`
         box-shadow: 0 0 0 1px ${p.theme.colors.primary};
         &::after { display: none; }
     `}
+`;
+
+export const FamilyFoot = styled(C.FamilyFoot)`
+    border-top-color: ${(p) => hair(p.theme, 0.3)};
+`;
+
+/** 벌 표시 — 마름모 대신 작은 먹 점 */
+export const VariantDots = styled(C.VariantDots)`
+    i { transform: none; border-radius: 50%; border-color: ${(p) => hair(p.theme, 0.6)}; }
+`;
+
+export const ThemeStage = styled(C.ThemeStage)`
+    ${paperCard("4px")}
+    border-color: ${(p) => hair(p.theme, 0.3)};
+`;
+
+export const StageThumb = styled(C.StageThumb)`
+    border-color: ${(p) => hair(p.theme, 0.3)};
+    border-radius: 2px;
+`;
+
+export const StageName = styled(C.StageName)`
+    letter-spacing: 0.12em;
 `;
 
 const FontCard = styled(C.FontCard)`
@@ -167,8 +192,7 @@ export const DangerBlock = styled(C.DangerBlock)`
     border-top-color: ${(p) => withAlpha(p.theme.colors.error, 0.35)};
 `;
 
-export const ThemeName = styled(C.ThemeName)`
-    font-family: ${(p) => p.theme.fonts.display};
+export const FamilyName = styled(C.FamilyName)`
     letter-spacing: 0.06em;
 `;
 

@@ -5,6 +5,7 @@ import LocaleSelect from "@/components/LocaleSelect";
 import TimezoneSelect from "@/components/TimezoneSelect";
 import WidgetPreview from "./celestial/WidgetPreview";
 import Backdrop from "./parts/Backdrop";
+import ThemePicker from "./parts/ThemePicker";
 import type { SettingsThemeProps } from "./SettingsPage";
 import { FONT_OPTIONS, ensureFontLoaded } from "@/lib/fonts";
 import { FONT_SIZE_OPTIONS, FONT_WEIGHT_OPTIONS } from "@/styles/GlobalTypography";
@@ -39,13 +40,6 @@ const MARK_Y0 = 67;
 const MARK_DY = 74;
 
 const ROMAN = ["I", "II", "III", "IV"];
-
-/** 축소판 달력 한 판. 오늘 하루와 일정 사흘이 들어간다. */
-const CELL_PLAN = [
-    "", "", "event", "", "", "", "",
-    "", "today", "", "event", "", "", "",
-    "", "", "", "", "event", "", "",
-] as const;
 
 export default function SettingsView({
     currentTheme, onThemeChange,
@@ -116,18 +110,6 @@ export default function SettingsView({
         dark: t.settings.darkMode,
     };
 
-    // 테마 하나가 여러 벌을 품고 있으면 조합마다 카드를 낸다.
-    const themeCards = themes.flatMap((th) => {
-        const opts = th.options.length > 0 ? th.options : ([""] as const);
-        return opts.map((option) => ({
-            theme: th,
-            option: option as string,
-            selected:
-                currentTheme === th.id &&
-                (option === "" || (themeOptions[th.id] ?? th.options[0]) === option),
-        }));
-    });
-
     return (
         <L.Shell>
             <Backdrop />
@@ -186,64 +168,17 @@ export default function SettingsView({
                             <>
                                 <L.Block>
                                     <L.BlockHead><h2>{t.settings.theme}</h2></L.BlockHead>
-                                    <L.ThemeRow>
-                                        {themeCards.map(({ theme: th, option, selected }) => {
-                                            const g = th.grounds[option] ?? th.grounds[th.options[0]];
-                                            return (
-                                                <L.ThemeCard
-                                                    key={`${th.id}-${option}`}
-                                                    type="button"
-                                                    $selected={selected}
-                                                    onClick={() => {
-                                                        if (currentTheme !== th.id) onThemeChange(th.id);
-                                                        onThemeOptionChange(th.id, option);
-                                                    }}
-                                                >
-                                                    {th.preview?.[option] ? (
-                                                        <L.MiniImage src={th.preview[option]} alt="" draggable={false} />
-                                                    ) : (
-                                                        <L.Mini $bg={g.bg}>
-                                                            <L.MiniRail $bg={g.rail}>
-                                                                <i style={{ background: g.accent, width: "66%" }} />
-                                                                <i style={{ background: g.dimInk, width: "90%" }} />
-                                                                <i style={{ background: g.dimInk, width: "58%" }} />
-                                                                <i style={{ background: g.dimInk, width: "78%" }} />
-                                                                <i style={{ background: g.dimInk, width: "68%" }} />
-                                                            </L.MiniRail>
-                                                            <L.MiniBody>
-                                                                <div className="title" style={{ background: g.ink }} />
-                                                                <div className="week">
-                                                                    {Array.from({ length: 7 }, (_, i) => (
-                                                                        <b key={i} style={{ background: g.dimInk }} />
-                                                                    ))}
-                                                                </div>
-                                                                <div className="grid">
-                                                                    {CELL_PLAN.map((kind, i) => (
-                                                                        <span
-                                                                            key={i}
-                                                                            style={{
-                                                                                background:
-                                                                                    kind === "today" ? g.accent
-                                                                                        : kind === "event" ? g.event
-                                                                                            : g.cell,
-                                                                            }}
-                                                                        />
-                                                                    ))}
-                                                                </div>
-                                                            </L.MiniBody>
-                                                        </L.Mini>
-                                                    )}
-                                                    <L.ThemeMeta>
-                                                        <L.ThemeName>
-                                                            <L.Star $on={selected} />
-                                                            {th.label}{option !== th.options[0] ? ` ${optionLabels[option] ?? option}` : ""}
-                                                        </L.ThemeName>
-                                                        <L.ThemeDesc>{th.description}</L.ThemeDesc>
-                                                    </L.ThemeMeta>
-                                                </L.ThemeCard>
-                                            );
-                                        })}
-                                    </L.ThemeRow>
+                                    <ThemePicker
+                                        L={L}
+                                        themes={themes}
+                                        currentTheme={currentTheme}
+                                        themeOptions={themeOptions}
+                                        onThemeChange={onThemeChange}
+                                        onThemeOptionChange={onThemeOptionChange}
+                                        optionLabels={optionLabels}
+                                        label={t.settings.theme}
+                                        variantLabel={locale === 'ko' ? '밝기' : 'Variant'}
+                                    />
                                     <ThemeShop locale={locale} />
                                 </L.Block>
 
