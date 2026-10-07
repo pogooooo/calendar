@@ -133,6 +133,7 @@ export const SwitchButton = styled(C.SwitchButton)`
     font-family: ${(p) => p.theme.fonts.body};
     font-weight: ${(p) => (p.$on ? 600 : 500)};
     font-size: 0.85rem;
+    letter-spacing: 0;
     padding: 8px 0;
     background: ${(p) => (p.$on ? (p.theme.mode === "dark" ? "rgba(255, 255, 255, 0.12)" : "#FFFFFF") : "transparent")};
     color: ${(p) => (p.$on ? p.theme.colors.text : p.theme.colors.textSecondary)};
