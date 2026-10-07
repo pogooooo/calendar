@@ -14,7 +14,7 @@ export interface MonthArchProps {
     monthLoad: number[];
     /** 마감(due)·기념일(anv) 표식 */
     marks: { day: number; kind: "due" | "anv" }[];
-    /** 보고 있는 날 그 자체 — 날짜를 글로 쓰는 갈래(Ocean 의 물때판)만 읽는다 */
+    /** 보고 있는 날 그 자체 — 날짜를 글로 쓰는 갈래(Ocean 의 날짜 머리)만 읽는다 */
     focus?: Date;
 }
 
