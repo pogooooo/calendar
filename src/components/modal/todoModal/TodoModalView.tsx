@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { TodoModalThemeProps } from "./TodoModal";
-import { X, MapPin, Repeat, AlignLeft, Clock } from 'lucide-react';
+import { X, MapPin, Repeat, AlignLeft, Clock, FolderKanban } from 'lucide-react';
 import SecondaryButton from "@/components/button/secondary/SecondaryButton";
 import BaseModal from "@/components/modal/baseModal/BaseModal";
 import DateTimePicker from "@/components/input/dateTimePicker/DateTimePicker";
@@ -21,7 +21,7 @@ export default function TodoModalView({
     title, setTitle, categoryId, setCategoryId, memo, setMemo,
     startAt, setStartAt, endAt, setEndAt, isAllDay, setIsAllDay, location, setLocation,
     repeat, setRepeat, repeatEndType, setRepeatEndType, repeatEndDate, setRepeatEndDate, repeatCount, setRepeatCount,
-    repeatEndOptions,
+    repeatEndOptions, projectId, setProjectId, projectOptions,
     handleDateChange, handleSubmit, handleDelete
 }: TodoModalThemeProps) {
     const S = usePickTheme(STYLES);
@@ -54,6 +54,21 @@ export default function TodoModalView({
                             ariaLabel={t.todo.categorySelect}
                         />
                     </div>
+
+                    {/* 새로 만들 때만: 그 카테고리의 프로젝트에 할 일로 넣기 */}
+                    {!todo && projectOptions.length > 0 && (
+                        <S.FieldRow>
+                            <label><FolderKanban size={16} /> {t.project.inProject}</label>
+                            <div style={{ flex: 1, minWidth: 0, maxWidth: '220px' }}>
+                                <Select
+                                    value={projectId}
+                                    onChange={setProjectId}
+                                    options={[{ value: "", label: t.project.noProject }, ...projectOptions]}
+                                    ariaLabel={t.project.inProject}
+                                />
+                            </div>
+                        </S.FieldRow>
+                    )}
 
                     <S.FieldRow>
                         <label><Clock size={16} /> {t.todo.allDay}</label>
@@ -95,6 +110,11 @@ export default function TodoModalView({
                         />
                     </S.FieldRow>
 
+                    {projectId ? (
+                        <S.FieldRow>
+                            <label style={{ minWidth: 0, fontSize: '0.8rem' }}>{t.project.projectTaskHint}</label>
+                        </S.FieldRow>
+                    ) : (<>
                     <S.FieldRow>
                         <label><MapPin size={16} /> {t.todo.location}</label>
                         <input
@@ -158,6 +178,7 @@ export default function TodoModalView({
                             </S.RepeatConditionBox>
                         )}
                     </S.RepeatRow>
+                    </>)}
 
                     <S.MemoRow>
                         <label><AlignLeft size={16} /> {t.todo.notes}</label>

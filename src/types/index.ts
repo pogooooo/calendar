@@ -79,6 +79,8 @@ export interface ProjectTaskType {
     projectId: string;
     startAt?: string | null;
     endAt?: string | null;
+    /** 날짜만인 할 일(시각 없음). 없으면 true 로 본다 — 예전 할 일은 날짜만 고를 수 있었다 */
+    isAllDay?: boolean;
     assignees?: UserType[] | null;
     blockedBy?: ProjectTaskType[] | null;
     blocking?: ProjectTaskType[] | null;

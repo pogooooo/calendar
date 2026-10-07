@@ -7,6 +7,7 @@ import { expandTodos } from "@/hooks/useExpandedTodos";
 import { getWeekDates } from "@/utils/DateUtils";
 import { localDateKey } from "@/lib/dateKey";
 import useProjectStore from "@/store/useProjectStore";
+import { projectCalendarItems } from "@/lib/projectCalendar";
 import type { TodoType, CategoryType } from "@/types";
 import View from "./WeekStripView";
 
@@ -57,27 +58,7 @@ export default function WeekStrip({ selectedDate, onSelect, todos, categories }:
     const projects = useProjectStore((s) => s.projects);
 
     // 아래 일간 화면은 프로젝트와 그 태스크도 그날의 일정으로 보여준다. 띠의 점도 같은 눈으로 센다.
-    const allItems = React.useMemo<TodoType[]>(() => {
-        const fromProjects: TodoType[] = [];
-        for (const proj of projects) {
-            if (proj.startAt || proj.endAt) {
-                fromProjects.push({
-                    id: `project-${proj.id}`, title: proj.title, categoryId: proj.categoryId,
-                    startAt: proj.startAt ?? proj.endAt, endAt: proj.endAt ?? proj.startAt,
-                    isAllDay: true, repeat: 0, completions: [],
-                });
-            }
-            for (const task of proj.tasks ?? []) {
-                if (!task.startAt && !task.endAt) continue;
-                fromProjects.push({
-                    id: `proj-task-${task.id}`, title: task.title, categoryId: proj.categoryId,
-                    startAt: task.startAt ?? task.endAt, endAt: task.endAt ?? task.startAt,
-                    isAllDay: true, repeat: 0, completions: [],
-                });
-            }
-        }
-        return [...todos, ...fromProjects];
-    }, [todos, projects]);
+    const allItems = React.useMemo<TodoType[]>(() => [...todos, ...projectCalendarItems(projects)], [todos, projects]);
     const todayKey = localDateKey(new Date());
     const selectedKey = localDateKey(selectedDate);
 

@@ -8,7 +8,9 @@ import Dropdown from '@/components/dropdown/Dropdown';
 import { ProjectModalProps } from "./ProjectModal";
 import { UserType } from "@/store/useProjectStore";
 import { CategoryType } from "@/store/useCategoryStore";
-import { X, AlignLeft, Folder, Users } from 'lucide-react';
+import { X, AlignLeft, Folder, Users, Calendar } from 'lucide-react';
+import DateTimePicker from "@/components/input/dateTimePicker/DateTimePicker";
+import { toLocalInput, fromLocalInput, todayKey } from "@/lib/localTime";
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialModal.styles";
 import * as MapleS from "./maple/MapleModal.styles";
@@ -24,6 +26,29 @@ export default function ProjectModalView({
     const S = usePickTheme(STYLES);
     const t = useT();
     const f = t.form;
+
+    /* 기간 — 날짜만 (시작일 0시 ~ 마감일 23:59). 기간이 있어야 달력에 선다.
+       예전에는 이 칸이 없어서, 새 프로젝트가 달력에 끝내 나타나지 않았다. */
+    const scheduled = !!(data.startAt || data.endAt);
+    const startKey = toLocalInput(data.startAt ?? data.endAt).slice(0, 10);
+    const endKey = toLocalInput(data.endAt ?? data.startAt).slice(0, 10);
+    const setScheduled = (on: boolean) => {
+        const key = todayKey();
+        setData(on
+            ? { ...data, startAt: fromLocalInput(key, "00:00"), endAt: fromLocalInput(key, "23:59") }
+            : { ...data, startAt: null, endAt: null });
+    };
+    const setRange = (start: string, end: string) =>
+        setData({ ...data, startAt: fromLocalInput(start.slice(0, 10), "00:00"), endAt: fromLocalInput(end.slice(0, 10), "23:59") });
+    const setStart = (value: string) => {
+        const start = value.slice(0, 10);
+        setRange(start, endKey && endKey >= start ? endKey : start);
+    };
+    const setEnd = (value: string) => {
+        const end = value.slice(0, 10);
+        setRange(startKey && startKey <= end ? startKey : end, end);
+    };
+
     return (
         <BaseModal isOpen={isOpen} onClose={onClose} maxWidth="450px" ariaLabel={data.title || f.projectName}>
             <S.FormWrapper onSubmit={onSave} aria-busy={pending}>
@@ -58,6 +83,33 @@ export default function ProjectModalView({
                             />
                         </div>
                     </S.FieldRow>
+
+                    <S.FieldRow>
+                        <S.FieldLabel><Calendar size={16} /> {t.project.period}</S.FieldLabel>
+                        <S.ToggleSwitch>
+                            <input type="checkbox" aria-label={t.project.period} checked={scheduled} onChange={(e) => setScheduled(e.target.checked)} />
+                            <span className="slider" />
+                        </S.ToggleSwitch>
+                    </S.FieldRow>
+
+                    {scheduled && (
+                        <>
+                            <S.FieldRow>
+                                <S.FieldLabel>{f.startDate}</S.FieldLabel>
+                                <S.PickerCell>
+                                    <DateTimePicker mode="date" value={startKey} onChange={setStart}
+                                        range={{ start: startKey, end: endKey, edge: "start", onRangeChange: setRange }} />
+                                </S.PickerCell>
+                            </S.FieldRow>
+                            <S.FieldRow>
+                                <S.FieldLabel>{f.endDate}</S.FieldLabel>
+                                <S.PickerCell>
+                                    <DateTimePicker mode="date" value={endKey} onChange={setEnd}
+                                        range={{ start: startKey, end: endKey, edge: "end", onRangeChange: setRange }} />
+                                </S.PickerCell>
+                            </S.FieldRow>
+                        </>
+                    )}
 
                     {data.categoryId && (
                         <S.ParticipantRow>

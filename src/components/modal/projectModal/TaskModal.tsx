@@ -15,6 +15,8 @@ export interface TaskModalProps {
     availableAssignees: UserType[];
     onClose: () => void;
     onSave: (e: React.FormEvent) => Promise<void>;
+    /** 고칠 때만 — 있으면 왼쪽 아래에 삭제 단추가 선다 */
+    onDelete?: () => void;
     setData: (data: Partial<ProjectTaskType>) => void;
     toggleParticipant: (user: UserType) => void;
 }

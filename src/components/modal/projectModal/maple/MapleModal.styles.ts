@@ -5,7 +5,7 @@
 import styled from "styled-components";
 import * as C from "../celestial/CelestialModal.styles";
 import { withAlpha } from "@/styles/color";
-import { formFooter, hair, inkInput, paperCard } from "@/styles/maple/ink";
+import { formFooter, hair, inkInput, paperCard, paperToggle } from "@/styles/maple/ink";
 
 export * from "../celestial/CelestialModal.styles";
 
@@ -49,3 +49,6 @@ export const MemoTextArea = styled(C.MemoTextArea)`
 `;
 
 export const Footer = styled(C.Footer)`${formFooter}`;
+
+/** 스위치: 종이 위의 먹 스위치 (할 일 창과 같은 것) */
+export const ToggleSwitch = styled(C.ToggleSwitch)`${paperToggle}`;

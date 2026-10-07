@@ -178,7 +178,7 @@ const WeekRow = ({
                                     const color = categories.find((c: CategoryType) => c.id === todoAtThisLevel.categoryId)?.color;
 
                                     const isDone = !!todoAtThisLevel.isDone;
-                                    const movable = !todoAtThisLevel.isProject && !todoAtThisLevel.isProjectTask && !todoAtThisLevel.isChallenge;
+                                    const movable = !todoAtThisLevel.isChallenge; // 프로젝트·할 일도 끌어서 옮긴다
 
                                     return (
                                         <S.TodoBarItem key={todoAtThisLevel.id}

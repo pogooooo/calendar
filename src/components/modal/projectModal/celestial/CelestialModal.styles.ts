@@ -212,3 +212,51 @@ export const ErrorMessage = styled.p`
     color: ${(p) => p.theme.colors.error};
     font-size: 0.8rem;
 `;
+
+/* 하루 종일·날짜 지정 스위치 — 할 일 창(TodoModal)의 것과 같은 모양 */
+export const ToggleSwitch = styled.label`
+    position: relative;
+    display: inline-block;
+    flex: none;
+    width: 60px;
+    height: 22px;
+
+    input { opacity: 0; width: 0; height: 0; }
+
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background-color: ${(props) => props.theme.colors.textSecondary}66;
+        transition: 0.3s;
+        border-radius: 24px;
+    }
+
+    .slider::before {
+        position: absolute;
+        content: "";
+        height: 16px; width: 16px;
+        left: 3px; bottom: 3px;
+        background-color: white;
+        transition: 0.3s;
+        border-radius: 50%;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    input:checked + .slider { background-color: ${(props) => props.theme.colors.primary}; }
+    input:checked + .slider::before { transform: translateX(38px); }
+    input:focus-visible + .slider { outline: 2px solid ${(props) => props.theme.colors.primary}; outline-offset: 2px; }
+`;
+
+/* 고르개(DateTimePicker)가 줄의 남은 폭을 쓰게 */
+export const PickerCell = styled.div`
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    justify-content: flex-end;
+`;
+
+/* 왼쪽 끝의 삭제 단추를 밀어 두고 나머지는 오른쪽에 */
+export const FooterSpacer = styled.div`
+    flex: 1;
+`;

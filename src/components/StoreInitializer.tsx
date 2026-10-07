@@ -9,6 +9,8 @@ import useAuthStore from "@/store/useAuthStore";
 import useDailyStore from "@/store/useDailyStore";
 import useSettingStore from "@/store/useSettingStore";
 import useAnniversaryStore from "@/store/useAnniversaryStore";
+import useProjectStore from "@/store/useProjectStore";
+import useChallengeStore from "@/store/useChallengeStore";
 import { isDesktopApp } from "@/lib/apiBase";
 import { subscribeDataChange, type DataKind } from "@/lib/dataSync";
 import { getRemember, isFreshLaunch } from "@/lib/session";
@@ -37,6 +39,8 @@ export default function StoreInitializer({ children }: { children: React.ReactNo
     const fetchDailyData = useDailyStore((state) => state.fetchDailyData);
     const fetchSettings = useSettingStore((state) => state.fetchSettings);
     const fetchAnniversaries = useAnniversaryStore((state) => state.fetchAnniversaries);
+    const fetchProjects = useProjectStore((state) => state.fetchProjects);
+    const fetchChallenges = useChallengeStore((state) => state.fetchChallenges);
 
     const accessToken = useAuthStore((state) => state.accessToken);
     const [isMounted, setIsMounted] = useState(false);
@@ -109,6 +113,9 @@ export default function StoreInitializer({ children }: { children: React.ReactNo
             if (kinds.has("todos")) fetchTodos(authFetch);
             if (kinds.has("categories")) fetchCategories(authFetch);
             if (kinds.has("anniversaries")) fetchAnniversaries(authFetch);
+            // 위젯 창에서 프로젝트·챌린지를 바꿔도 본 창 달력이 따라오게 (예전엔 이 둘을 안 받아서 다시 열 때까지 옛것이었다)
+            if (kinds.has("projects")) fetchProjects(authFetch);
+            if (kinds.has("challenges")) fetchChallenges(authFetch);
             if (kinds.has("daily")) fetchDailyData(authFetch, new Date());
         };
 

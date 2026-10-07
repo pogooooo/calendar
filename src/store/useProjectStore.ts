@@ -18,6 +18,7 @@ interface ProjectState {
     addProjectTask: (authFetch: AuthFetch, projectId: string, data: Partial<ProjectTaskType>) => Promise<string | null>;
     updateProjectTaskStatus: (authFetch: AuthFetch, projectId: string, taskId: string, newStatus: string) => Promise<void>;
     updateProjectTask: (authFetch: AuthFetch, projectId: string, taskId: string, data: Partial<ProjectTaskType>) => Promise<string | null>;
+    deleteProjectTask: (authFetch: AuthFetch, projectId: string, taskId: string) => Promise<string | null>;
 }
 
 const isSessionExpired = (err: unknown) =>
@@ -146,6 +147,10 @@ const useProjectStore = create<ProjectState>((set, get) => ({
             description: data.description ?? null,
             status: data.status || "todo",
             priority: data.priority || "medium",
+            // 달력이 서버 응답을 기다리지 않고 곧장 그리도록 날짜도 같이 둔다
+            startAt: data.startAt ?? null,
+            endAt: data.endAt ?? null,
+            isAllDay: data.isAllDay ?? true,
         };
 
         set((state) => ({
@@ -233,6 +238,34 @@ const useProjectStore = create<ProjectState>((set, get) => ({
         } catch (err) {
             set({ projects: previousProjects });
             console.error("[PROJECT_TASK_UPDATE_ERROR]", err);
+            reportSaveFailure("project");
+            return failureMessage(err);
+        }
+    },
+
+    deleteProjectTask: async (authFetch, projectId, taskId) => {
+        const previousProjects = get().projects;
+        // 이 할 일을 선행 조건으로 걸어 둔 다른 할 일에서도 같이 뗀다 (서버는 관계 표에서 지운다)
+        set((state) => ({
+            projects: state.projects.map(p =>
+                p.id === projectId
+                    ? {
+                        ...p,
+                        tasks: (p.tasks ?? [])
+                            .filter(t => t.id !== taskId)
+                            .map(t => t.blockedBy?.some(b => b.id === taskId) ? { ...t, blockedBy: t.blockedBy.filter(b => b.id !== taskId) } : t),
+                    }
+                    : p
+            )
+        }));
+
+        try {
+            const res = await authFetch(`/api/project/task?${new URLSearchParams({ id: taskId })}`, { method: 'DELETE' });
+            await requireSuccess(res);
+            return null;
+        } catch (err) {
+            set({ projects: previousProjects });
+            console.error("[PROJECT_TASK_DELETE_ERROR]", err);
             reportSaveFailure("project");
             return failureMessage(err);
         }

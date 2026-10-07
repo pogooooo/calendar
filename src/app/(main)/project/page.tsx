@@ -13,12 +13,13 @@ import ProjectHeader from '@/components/project/header/ProjectHeader';
 import ProjectBoard from '@/components/project/board/ProjectBoard';
 import ProjectTimeline from '@/components/project/timeline/ProjectTimeline';
 import ProjectModal from '@/components/modal/projectModal/ProjectModal';
-import TaskModal from '@/components/modal/projectModal/TaskModal';
+import ProjectTaskEditor, { type TaskEditTarget } from '@/components/modal/projectModal/ProjectTaskEditor';
 import { useT } from "@/i18n/useT";
 import EmptyArt from "@/components/empty/EmptyArt";
 import CelestialProjectLayout from "./celestial/CelestialProjectLayout";
 import MapleProjectLayout from "./maple/MapleProjectLayout";
 import { dependencyIssue } from "@/lib/taskInteractions";
+import { fromLocalInput, todayKey } from "@/lib/localTime";
 import * as OceanS from './ocean/OceanProjectPage.styles';
 import OceanProjectLayout from './ocean/OceanProjectLayout';
 
@@ -33,7 +34,7 @@ export default function ProjectPage() {
     const authFetch = useAuthFetch();
     const dialog = useDialog();
     const t = useT();
-    const { projects, fetchProjects, addProject, updateProject, addProjectTask, updateProjectTaskStatus, updateProjectTask } = useProjectStore();
+    const { projects, fetchProjects, addProject, updateProject, updateProjectTaskStatus, updateProjectTask } = useProjectStore();
     const { categories, fetchCategories } = useCategoryStore();
 
     const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
@@ -50,9 +51,8 @@ export default function ProjectPage() {
         isOpen: false, mode: 'add', data: { id: '', title: '', description: '', categoryId: '', assignees: [] }
     });
 
-    const [taskModal, setTaskModal] = useState<{ isOpen: boolean; mode: 'add' | 'edit'; data: Partial<ProjectTaskType> }>({
-        isOpen: false, mode: 'add', data: { id: '', title: '', description: '', status: 'todo', priority: 'medium', startAt: '', endAt: '', blockedBy: [], assignees: [] }
-    });
+    // 할 일 창은 달력과 같은 것을 쓴다 (저장·삭제·담당자·선행 조건까지 그 안에서)
+    const [taskTarget, setTaskTarget] = useState<TaskEditTarget | null>(null);
 
     useEffect(() => {
         fetchProjects(authFetch);
@@ -61,16 +61,17 @@ export default function ProjectPage() {
     }, []);
 
     useEffect(() => {
-        if (projects.length > 0 && !selectedProjectId) setSelectedProjectId(projects[0].id);
+        if (projects.length === 0 || selectedProjectId) return;
+        const wanted = new URLSearchParams(window.location.search).get('id');
+        setSelectedProjectId(projects.some(p => p.id === wanted) ? wanted : projects[0].id);
     }, [projects, selectedProjectId]);
 
     const selectedProject = projects.find(p => p.id === selectedProjectId);
     const tasks = selectedProject?.tasks || [];
     const selectedCategory = categories.find(c => c.id === selectedProject?.categoryId);
-    const availableAssignees = selectedCategory?.participants || [];
     const modalCategory = categories.find(c => c.id === projectModal.data.categoryId);
     const modalCategoryParticipants = modalCategory?.participants || [];
-    useEffect(() => { setSaveError(null); }, [projectModal.isOpen, taskModal.isOpen, projectModal.data.id, taskModal.data.id]);
+    useEffect(() => { setSaveError(null); }, [projectModal.isOpen, projectModal.data.id]);
 
     const handleMouseDownResizer = (e: React.MouseEvent) => {
         e.preventDefault();
@@ -122,39 +123,13 @@ export default function ProjectPage() {
         } finally { savingRef.current = false; setSaving(false); }
     };
 
-    const handleSaveTask = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!selectedProjectId || savingRef.current) return;
-        if (taskModal.data.startAt && taskModal.data.endAt && new Date(taskModal.data.endAt) < new Date(taskModal.data.startAt)) {
-            setSaveError(t.interaction.invalidDates);
-            return;
-        }
-        const taskData = { ...taskModal.data, assignees: taskModal.data.assignees?.map(a => a.id) as unknown as ProjectTaskType["assignees"] };
-        savingRef.current = true;
-        setSaving(true);
-        setSaveError(null);
-        try {
-            const error = taskModal.mode === 'add'
-                ? await addProjectTask(authFetch, selectedProjectId, taskData)
-                : await updateProjectTask(authFetch, selectedProjectId, taskModal.data.id!, taskData);
-            setSaveError(error);
-            if (!error) setTaskModal(prev => ({ ...prev, isOpen: false }));
-        } finally { savingRef.current = false; setSaving(false); }
-    };
-
     const handleMoveTaskStatus = async (taskId: string, newStatus: string) => {
         if (!selectedProjectId) return;
         await updateProjectTaskStatus(authFetch, selectedProjectId, taskId, newStatus);
     };
 
     const openTaskEdit = (task: ProjectTaskType) => {
-        setTaskModal({
-            isOpen: true, mode: 'edit',
-            data: {
-                id: task.id, title: task.title, description: task.description || '', status: task.status, priority: task.priority || 'medium',
-                startAt: task.startAt || '', endAt: task.endAt || '', blockedBy: task.blockedBy || [], assignees: task.assignees || []
-            }
-        });
+        if (selectedProjectId) setTaskTarget({ projectId: selectedProjectId, taskId: task.id });
     };
 
     return (
@@ -168,9 +143,10 @@ export default function ProjectPage() {
                 onSelectProject={setSelectedProjectId}
                 onOpenSettings={() => setProjectModal({
                     isOpen: true, mode: 'edit',
-                    data: { id: selectedProject!.id, title: selectedProject!.title, description: selectedProject!.description || '', categoryId: selectedProject!.categoryId, assignees: selectedProject!.assignees || [] }
+                    data: { id: selectedProject!.id, title: selectedProject!.title, description: selectedProject!.description || '', categoryId: selectedProject!.categoryId, assignees: selectedProject!.assignees || [], startAt: selectedProject!.startAt ?? null, endAt: selectedProject!.endAt ?? null }
                 })}
-                onOpenNewProject={() => setProjectModal({ isOpen: true, mode: 'add', data: { id: '', title: '', description: '', categoryId: '', assignees: [] } })}
+                // 새 프로젝트는 오늘 하루짜리로 시작한다 — 기간이 있어야 만들자마자 달력에 선다 (끄거나 늘릴 수 있다)
+                onOpenNewProject={() => setProjectModal({ isOpen: true, mode: 'add', data: { id: '', title: '', description: '', categoryId: '', assignees: [], startAt: fromLocalInput(todayKey(), "00:00"), endAt: fromLocalInput(todayKey(), "23:59") } })}
             />
 
 
@@ -186,7 +162,7 @@ export default function ProjectPage() {
                         ref={boardRef}
                         flex={boardRatio}
                         tasks={tasks}
-                        onAddTask={(status) => setTaskModal({ isOpen: true, mode: 'add', data: { id: '', title: '', description: '', status, priority: 'medium', startAt: '', endAt: '', blockedBy: [], assignees: [] } })}
+                        onAddTask={(status) => { if (selectedProjectId) setTaskTarget({ projectId: selectedProjectId, defaults: { status } }); }}
                         onEditTask={openTaskEdit}
                         onMoveTask={handleMoveTaskStatus}
                     />)} timeline={(<ProjectTimeline
@@ -209,23 +185,7 @@ export default function ProjectPage() {
                     />)} resizer={(<S.Resizer onMouseDown={handleMouseDownResizer} />)} />
             )}
 
-            <TaskModal
-                pending={saving}
-                error={saveError}
-                isOpen={taskModal.isOpen}
-                mode={taskModal.mode}
-                data={taskModal.data}
-                tasks={tasks}
-                availableAssignees={availableAssignees}
-                onClose={() => { if (!savingRef.current) setTaskModal(prev => ({ ...prev, isOpen: false })); }}
-                onSave={handleSaveTask}
-                setData={(d) => setTaskModal(prev => ({ ...prev, data: { ...prev.data, ...d } }))}
-                toggleParticipant={(user) => {
-                    const isSelected = taskModal.data.assignees?.some(a => a.id === user.id);
-                    const newAssignees = isSelected ? taskModal.data.assignees?.filter(a => a.id !== user.id) : [...(taskModal.data.assignees || []), user];
-                    setTaskModal(prev => ({ ...prev, data: { ...prev.data, assignees: newAssignees } }));
-                }}
-            />
+            <ProjectTaskEditor target={taskTarget} onClose={() => setTaskTarget(null)} />
 
             <ProjectModal
                 pending={saving}

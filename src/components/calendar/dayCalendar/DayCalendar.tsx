@@ -9,6 +9,8 @@ import useDailyStore from "@/store/useDailyStore";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useExpandedTodos, ExpandedTodoType } from "@/hooks/useExpandedTodos";
 import useProjectStore from "@/store/useProjectStore";
+import { projectCalendarItems } from "@/lib/projectCalendar";
+import { useProjectItemActions } from "@/hooks/useProjectItemActions";
 import useChallengeStore from "@/store/useChallengeStore";
 import useTodoStore from "@/store/useTodoStore";
 import { useT } from "@/i18n/useT";
@@ -75,6 +77,10 @@ export interface DayThemeProps {
     handleQuickDelete: (todo: CalendarTodoType) => void;
     handleQuickDeleteOne: (todo: CalendarTodoType) => void;
     handleQuickToggle: (todo: CalendarTodoType) => void;
+    /** 시간표의 빈 칸을 누르면 그 시각(10분 단위)에 새 일정 */
+    createAt: (hour: number, minute: number) => void;
+    /** 새 일정 창에 미리 채울 시각 (빈 칸을 눌러 열었을 때) */
+    modalDate: Date;
 }
 
 const DayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
@@ -124,53 +130,12 @@ const DayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
 
             if (!showProjects) return baseTodos;
 
-            const projectItems = projects.reduce<TodoType[]>((acc, proj) => {
-                if (selectedCategoryIds.includes(proj.categoryId)) {
-                    const isProjCompleted = proj.status === 'done';
-
-                    acc.push({
-                        id: `project-${proj.id}`,
-                        title: `[Project] ${proj.title}`,
-                        categoryId: proj.categoryId,
-                        startAt: proj.startAt ? new Date(proj.startAt).toISOString() : null,
-                        endAt: proj.endAt ? new Date(proj.endAt).toISOString() : null,
-                        isAllDay: true,
-                        repeat: 0,
-                        memo: proj.description || null,
-                        check: isProjCompleted ? 'done' : 'none',
-                        completions: [],
-                        isProject: true,
-                        isDone: isProjCompleted
-                    } as unknown as TodoType);
-
-                    if (proj.tasks && Array.isArray(proj.tasks)) {
-                        proj.tasks.forEach(task => {
-                            if (task.startAt || task.endAt) {
-                                const isTaskCompleted = task.status === 'done';
-                                acc.push({
-                                    id: `proj-task-${task.id}`,
-                                    title: `↳ ${task.title}`,
-                                    categoryId: proj.categoryId,
-                                    startAt: task.startAt ? new Date(task.startAt).toISOString() : null,
-                                    endAt: task.endAt ? new Date(task.endAt).toISOString() : null,
-                                    // 하루 안에 시작해 끝나는 태스크만 시간대에 놓는다. 며칠에 걸친 태스크를
-                                    // 시간대에 넣으면 그 기간 매일 00~24시가 막대로 꽉 차서 타임라인이 쓸모없어진다.
-                                    // 그런 건 위 "할 일" 목록에 '하루 종일' 로 선다.
-                                    isAllDay: !task.startAt || !task.endAt
-                                        || localDateKey(task.startAt) !== localDateKey(task.endAt),
-                                    repeat: 0,
-                                    memo: task.description || null,
-                                    check: isTaskCompleted ? 'done' : 'none',
-                                    completions: [],
-                                    isProjectTask: true,
-                                    isDone: isTaskCompleted
-                                } as unknown as TodoType);
-                            }
-                        });
-                    }
-                }
-                return acc;
-            }, []);
+            const projectItems: TodoType[] = projectCalendarItems(projects, { categoryIds: selectedCategoryIds, marked: true })
+                // 며칠에 걸친 할 일은 시간대에 놓지 않는다. 그 기간 매일 00~24시가 막대로 꽉 차서
+                // 타임라인이 쓸모없어진다. 그런 건 위 "할 일" 목록에 '하루 종일' 로 선다.
+                .map(item => item.isProjectTask && !item.isAllDay && localDateKey(item.startAt!) !== localDateKey(item.endAt!)
+                    ? { ...item, isAllDay: true }
+                    : item);
 
             return [...baseTodos, ...projectItems];
         }, [todos, projects, selectedCategoryIds, showProjects]);
@@ -282,10 +247,23 @@ const DayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
 
         const isForeign = (todo: CalendarTodoType) => !!todo.isProject || !!todo.isProjectTask;
 
+        // 시간표의 빈 칸을 눌러 그 시각에 바로 일정을 넣는다 (한 시간짜리로 시작)
+        const [createDate, setCreateDate] = React.useState<Date | null>(null);
+        const createAt = (hour: number, minute: number) => {
+            const d = new Date(selectedDate);
+            d.setHours(hour, minute, 0, 0);
+            setContextMenu(null);
+            setModalTodo(null);
+            setCreateDate(d);
+            setIsModalOpen(true);
+        };
+        // 프로젝트·프로젝트 할 일도 여기서 바로 고치고 끝낸다 (예전엔 "프로젝트 화면에서" 안내만)
+        const projectActions = useProjectItemActions();
+
         const handleQuickEdit = async (todo: CalendarTodoType) => {
             setContextMenu(null);
             if (isForeign(todo)) {
-                await dialog.notify({ title: t.alert.editHereTitle, message: t.alert.editHereMsg });
+                projectActions.open(todo);
                 return;
             }
             setModalTodo(todo.originalTodo || (todo as unknown as TodoType));
@@ -295,7 +273,7 @@ const DayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
         const handleQuickDelete = async (todo: CalendarTodoType) => {
             setContextMenu(null);
             if (isForeign(todo)) {
-                await dialog.notify({ title: t.alert.deleteHereTitle, message: t.alert.deleteHereDetailMsg });
+                await projectActions.remove(todo);
                 return;
             }
             const ok = await dialog.confirmDanger({
@@ -309,7 +287,7 @@ const DayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
 
         const handleQuickDeleteOne = async (todo: CalendarTodoType) => {
             setContextMenu(null);
-            if (isForeign(todo)) return;
+            if (isForeign(todo)) { await projectActions.remove(todo); return; }
             const ok = await dialog.confirm({
                 title: t.alert.deleteOneDayTitle,
                 message: t.alert.deleteOneDayMsg,
@@ -324,7 +302,7 @@ const DayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
         const handleQuickToggle = async (todo: CalendarTodoType) => {
             setContextMenu(null);
             if (isForeign(todo)) {
-                await dialog.notify({ title: t.alert.statusHereTitle, message: t.alert.statusHereMsg });
+                await projectActions.toggle(todo);
                 return;
             }
             const occurrence = todo.date ?? new Date(todo.startAt || Date.now());
@@ -376,7 +354,9 @@ const DayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
             selectedDate,
             isModalOpen,
             modalTodo,
-            setIsModalOpen,
+            setIsModalOpen: (open: boolean) => { setIsModalOpen(open); if (!open) setCreateDate(null); },
+            createAt,
+            modalDate: createDate ?? selectedDate,
             contextMenu,
             setContextMenu,
             openTodoMenu,
@@ -389,6 +369,7 @@ const DayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
         return (
             <>
                 <DayCalendarView ref={ref} {...themeProps} {...props} />
+                {projectActions.editor}
             </>
         );
     }

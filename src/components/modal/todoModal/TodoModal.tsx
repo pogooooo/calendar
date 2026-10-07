@@ -6,6 +6,7 @@ import { CategoryType } from "@/types/calendar";
 import { TodoType } from "@/store/useTodoStore";
 
 import useTodoStore from "@/store/useTodoStore";
+import useProjectStore from "@/store/useProjectStore";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useT } from "@/i18n/useT";
 import { useDialog } from "@/components/dialog/DialogProvider";
@@ -53,6 +54,11 @@ export interface TodoModalThemeProps extends TodoModalProps {
     repeatEndOptions: { value: string; label: string }[];
     selectedRepeatEndLabel: string | undefined;
 
+    /** 새로 만들 때 그 카테고리의 프로젝트에 할 일로 넣을 수 있다. "" 면 보통 일정 */
+    projectId: string;
+    setProjectId: (id: string) => void;
+    projectOptions: { value: string; label: string }[];
+
     handleDateChange: (setter: (val: string) => void, currentValue: string, newValue: string) => void;
     handleSubmit: (e: React.FormEvent) => Promise<void>;
     handleDelete: () => Promise<void>;
@@ -68,6 +74,10 @@ export default function TodoModal(props: TodoModalProps) {
     const t = useT();
 
     const { addTodo, updateTodo, deleteTodo } = useTodoStore();
+    const projects = useProjectStore((s) => s.projects);
+    const fetchProjects = useProjectStore((s) => s.fetchProjects);
+    const addProjectTask = useProjectStore((s) => s.addProjectTask);
+    const [projectId, setProjectId] = React.useState("");
     const authFetch = useAuthFetch();
     const dialog = useDialog();
 
@@ -88,6 +98,21 @@ export default function TodoModal(props: TodoModalProps) {
     const [isRepeatEndOpen, setIsRepeatEndOpen] = React.useState(false);
 
     const selectedCategory = categories.find(c => c.id === categoryId);
+
+    // 고른 카테고리의 아직 안 끝난 프로젝트들 — 여기서 고르면 일정 대신 그 프로젝트의 할 일로 들어간다
+    const projectOptions = React.useMemo(
+        () => projects.filter(p => p.categoryId === categoryId && p.status !== "done").map(p => ({ value: p.id, label: p.title })),
+        [projects, categoryId],
+    );
+    // 카테고리를 바꿔 그 프로젝트가 목록에서 빠지면 고른 것도 푼다
+    React.useEffect(() => {
+        if (projectId && !projectOptions.some(o => o.value === projectId)) setProjectId("");
+    }, [projectOptions, projectId]);
+    // 프로젝트를 한 번도 안 읽은 화면(홈 등)에서 열어도 고를 수 있게
+    React.useEffect(() => {
+        if (isOpen && !todo && projects.length === 0) void fetchProjects(authFetch);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isOpen, todo]);
 
     const repeatEndOptions = [
         { value: 'never', label: t.todo.repeatEndNever },
@@ -124,6 +149,7 @@ export default function TodoModal(props: TodoModalProps) {
                     setRepeatEndDate("");
                 }
             } else {
+                setProjectId("");
                 setTitle(initialTitle ?? "");
                 setCategoryId(categories.length > 0 ? categories[0].id : "");
                 setMemo("");
@@ -163,6 +189,27 @@ export default function TodoModal(props: TodoModalProps) {
         const end = new Date(endAt);
         if (isNaN(start.getTime()) || isNaN(end.getTime())) {
             await dialog.notify({ title: t.form.timeCheckTitle, message: t.form.timeCheckMsg });
+            return;
+        }
+
+        // 프로젝트 할 일로 넣기 — 반복·장소는 없다. 하루 종일이면 그날 0시 ~ 23:59 로 맞춘다 (프로젝트 할 일의 약속)
+        if (!todo && projectId) {
+            const dayStart = new Date(start); dayStart.setHours(0, 0, 0, 0);
+            const dayEnd = new Date(end); dayEnd.setHours(23, 59, 0, 0);
+            const error = await addProjectTask(authFetch, projectId, {
+                title,
+                description: memo || null,
+                status: "todo",
+                priority: "medium",
+                startAt: (isAllDay ? dayStart : start).toISOString(),
+                endAt: (isAllDay ? dayEnd : end).toISOString(),
+                isAllDay,
+            });
+            if (error) {
+                await dialog.notify({ title: t.alert.saveFailed, message: error });
+                return;
+            }
+            onClose();
             return;
         }
 
@@ -240,6 +287,7 @@ export default function TodoModal(props: TodoModalProps) {
         isCategoryOpen, setIsCategoryOpen,
         isRepeatEndOpen, setIsRepeatEndOpen,
         selectedCategory, repeatEndOptions, selectedRepeatEndLabel,
+        projectId, setProjectId, projectOptions,
         handleDateChange, handleSubmit, handleDelete
     };
 

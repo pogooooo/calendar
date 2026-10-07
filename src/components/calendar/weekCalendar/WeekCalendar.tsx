@@ -15,6 +15,8 @@ import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useDialog } from "@/components/dialog/DialogProvider";
 import { formatDate } from "@/utils/DateUtils";
 import useProjectStore from "@/store/useProjectStore";
+import { projectCalendarItems } from "@/lib/projectCalendar";
+import { useProjectItemActions } from "@/hooks/useProjectItemActions";
 import useChallengeStore, { ChallengeType } from "@/store/useChallengeStore";
 
 export interface CalendarTodoType extends ExpandedTodoType {
@@ -123,52 +125,10 @@ const WeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
 
         const filteredTodos = React.useMemo(() => {
             const baseTodos = todos.filter(todo => selectedCategoryIds.includes(todo.categoryId));
-            let projectItems: TodoType[] = [];
-
-            if (showProjects) {
-                projectItems = projects.reduce<TodoType[]>((acc, proj) => {
-                    if (selectedCategoryIds.includes(proj.categoryId)) {
-                        const isProjCompleted = proj.status === 'done';
-                        acc.push({
-                            id: `project-${proj.id}`,
-                            title: `[Project] ${proj.title}`,
-                            categoryId: proj.categoryId,
-                            startAt: proj.startAt ? new Date(proj.startAt).toISOString() : null,
-                            endAt: proj.endAt ? new Date(proj.endAt).toISOString() : null,
-                            isAllDay: true,
-                            repeat: 0,
-                            memo: proj.description || null,
-                            completions: [],
-                            originalData: proj as unknown as TodoType,
-                            isProject: true,
-                            check: isProjCompleted ? 'done' : 'none'
-                        } as unknown as TodoType);
-
-                        if (proj.tasks && Array.isArray(proj.tasks)) {
-                            proj.tasks.forEach(task => {
-                                if (task.startAt || task.endAt) {
-                                    const isTaskCompleted = task.status === 'done';
-                                    acc.push({
-                                        id: `proj-task-${task.id}`,
-                                        title: `↳ ${task.title}`,
-                                        categoryId: proj.categoryId,
-                                        startAt: task.startAt ? new Date(task.startAt).toISOString() : null,
-                                        endAt: task.endAt ? new Date(task.endAt).toISOString() : null,
-                                        isAllDay: true,
-                                        repeat: 0,
-                                        memo: task.description || null,
-                                        completions: [],
-                                        originalData: task as unknown as TodoType,
-                                        isProjectTask: true,
-                                        check: isTaskCompleted ? 'done' : 'none'
-                                    } as unknown as TodoType);
-                                }
-                            });
-                        }
-                    }
-                    return acc;
-                }, []);
-            }
+            // 프로젝트·할 일 → 달력 항목은 한 곳에서 (src/lib/projectCalendar.ts)
+            const projectItems: TodoType[] = showProjects
+                ? projectCalendarItems(projects, { categoryIds: selectedCategoryIds, marked: true })
+                : [];
 
             return [...baseTodos, ...projectItems];
         }, [todos, projects, selectedCategoryIds, showProjects]);
@@ -262,6 +222,9 @@ const WeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
             );
         };
 
+        // 프로젝트·프로젝트 할 일도 여기서 바로 고치고 끝낸다 (예전엔 "프로젝트 화면에서" 안내만)
+        const projectActions = useProjectItemActions();
+
         const handleContextMenu = (e: React.MouseEvent, todo: CalendarTodoType) => {
             e.preventDefault();
             setTodoContextMenu({ x: e.clientX, y: e.clientY, todo: todo });
@@ -270,7 +233,7 @@ const WeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
         const handleQuickEdit = async (expandedTodo: CalendarTodoType) => {
             if (expandedTodo.isProject || expandedTodo.isProjectTask) {
                 setTodoContextMenu(null);
-                await dialog.notify({ title: t.alert.editHereTitle, message: t.alert.editHereMsg });
+                projectActions.open(expandedTodo);
                 return;
             }
             setModalTodo(expandedTodo.originalTodo || expandedTodo as unknown as TodoType);
@@ -281,7 +244,7 @@ const WeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
         const handleQuickDelete = async (expandedTodo: CalendarTodoType) => {
             setTodoContextMenu(null);
             if (expandedTodo.isProject || expandedTodo.isProjectTask) {
-                await dialog.notify({ title: t.alert.deleteHereTitle, message: t.alert.deleteHereDetailMsg });
+                await projectActions.remove(expandedTodo);
                 return;
             }
             const actualId = expandedTodo.originalTodo?.id || expandedTodo.id;
@@ -297,7 +260,7 @@ const WeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
         const handleQuickDeleteOne = async (expandedTodo: CalendarTodoType) => {
             setTodoContextMenu(null);
             if (expandedTodo.isProject || expandedTodo.isProjectTask) {
-                await dialog.notify({ title: t.alert.deleteHereTitle, message: t.alert.deleteHereDetailMsg });
+                await projectActions.remove(expandedTodo);
                 return;
             }
             const actualId = expandedTodo.originalTodo?.id || expandedTodo.id;
@@ -314,7 +277,7 @@ const WeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
         const handleQuickToggle = async (expandedTodo: CalendarTodoType) => {
             if (expandedTodo.isProject || expandedTodo.isProjectTask) {
                 setTodoContextMenu(null);
-                await dialog.notify({ title: t.alert.statusHereTitle, message: t.alert.statusHereMsg });
+                await projectActions.toggle(expandedTodo);
                 return;
             }
 
@@ -374,6 +337,7 @@ const WeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
         return (
             <>
                 <WeekCalendarView ref={ref} {...themeProps} {...props} />
+                {projectActions.editor}
             </>
         );
     }

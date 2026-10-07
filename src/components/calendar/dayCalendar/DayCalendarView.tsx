@@ -33,7 +33,7 @@ const DEFAULT_FOLD: FoldState = { timeline: false, challenge: false, task: false
 
 const DayCalendarView = React.forwardRef<HTMLDivElement, CelestialDayProps>(
     ({
-         asChild, formattedDate, hours, getSlotTodos,
+         asChild, formattedDate, hours, getSlotTodos, createAt, modalDate,
          dayChallenges, toggleChallenge,
          tasks, newTaskText, setNewTaskText, handleAddTask,
          toggleDailyTask, deleteDailyTask,
@@ -227,6 +227,9 @@ const DayCalendarView = React.forwardRef<HTMLDivElement, CelestialDayProps>(
                                                     <div
                                                         key={slotIdx}
                                                         className={`slot-box ${hasTodo ? 'filled' : ''}`}
+                                                        // 빈 칸을 누르면 그 시각에 새 일정 (예전엔 손가락 모양만 바뀌고 아무 일도 없었다)
+                                                        onClick={hasTodo ? undefined : () => createAt(hour, slotIdx * 10)}
+                                                        title={hasTodo ? undefined : `${hour.toString().padStart(2, '0')}:${(slotIdx * 10).toString().padStart(2, '0')} · ${t.calendar.addTask}`}
                                                     >
                                                         {slotTodos.map((todo, idx) => {
                                                             const isContinuingPrev = prevSlotTodos.some(pt => pt.id === todo.id);
@@ -235,6 +238,7 @@ const DayCalendarView = React.forwardRef<HTMLDivElement, CelestialDayProps>(
                                                             return (
                                                                 <S.SlotTodoItem
                                                                     key={`${todo.id}-${idx}`}
+                                                                    onClick={(e) => openTodoMenu(e, todo)}
                                                                     $isContinuingPrev={isContinuingPrev}
                                                                     $isContinuingNext={isContinuingNext}
                                                                     $isDone={todo.isDone}
@@ -398,7 +402,7 @@ const DayCalendarView = React.forwardRef<HTMLDivElement, CelestialDayProps>(
                     onClose={() => setIsModalOpen(false)}
                     todo={modalTodo}
                     categories={categories}
-                    selectedDate={selectedDate}
+                    selectedDate={modalDate}
                 />
             </S.CelestialCalendarWrapper>
         );

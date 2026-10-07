@@ -197,6 +197,8 @@ model ProjectTask {
 
   startAt     DateTime?
   endAt       DateTime?
+  /// 시각 없이 날짜만인 할 일. 예전 것은 모두 날짜만 고를 수 있었으므로 기본이 true
+  isAllDay    Boolean   @default(true)
 
   project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
   projectId   String

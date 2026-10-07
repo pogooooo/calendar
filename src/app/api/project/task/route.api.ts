@@ -62,7 +62,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ message: parsed.error.issues[0].message }, { status: 400 });
         }
 
-        const { title, description, status, priority, projectId, startAt, endAt, assignees } = parsed.data;
+        const { title, description, status, priority, projectId, startAt, endAt, isAllDay, assignees } = parsed.data;
 
         if (!(await canAccessProject(projectId, userId))) {
             return NextResponse.json({ message: "프로젝트를 찾을 수 없거나 권한이 없습니다." }, { status: 403 });
@@ -81,6 +81,7 @@ export async function POST(request: Request) {
                 projectId,
                 startAt: startAt ? new Date(startAt) : null,
                 endAt: endAt ? new Date(endAt) : null,
+                isAllDay: isAllDay ?? true,
                 blockedBy: blockedBy.length > 0 ? {
                     connect: blockedBy.map((id) => ({ id }))
                 } : undefined,

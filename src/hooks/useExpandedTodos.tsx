@@ -51,7 +51,9 @@ export function expandTodos(
                     ...todo,
                     originalTodo: todo,
                     date: new Date(todo.startAt),
-                    isDone: isDone || false
+                    // 프로젝트·할 일은 완료 기록이 없고 상태로 끝남을 들고 온다 (src/lib/projectCalendar.ts).
+                    // 그걸 completions 로 다시 셈하면 끝낸 할 일이 달력에서 늘 안 끝난 것으로 보였다
+                    isDone: isDone || !!(todo as ExpandedTodoType).isDone
                 });
                 return;
             }

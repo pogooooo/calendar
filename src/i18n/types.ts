@@ -527,6 +527,16 @@ export interface Translations {
         startLabel: string;
         settings: string;
         newProject: string;
+        status: string;
+        schedule: string;
+        deleteTask: string;
+        deleteTaskConfirm: string;
+        deleteTaskMsg: (title: string) => string;
+        inProject: string;
+        noProject: string;
+        projectTaskHint: string;
+        period: string;
+        openProject: string;
     };
     saveError: {
         message: (what: string) => string;

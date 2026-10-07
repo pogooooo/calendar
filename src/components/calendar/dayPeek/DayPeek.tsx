@@ -5,6 +5,7 @@ import { useT } from "@/i18n/useT";
 import { expandTodos } from "@/hooks/useExpandedTodos";
 import { localDateKey } from "@/lib/dateKey";
 import useProjectStore from "@/store/useProjectStore";
+import { projectCalendarItems } from "@/lib/projectCalendar";
 import type { TodoType, CategoryType } from "@/types";
 import View from "./DayPeekView";
 
@@ -49,25 +50,8 @@ export default function DayPeek({ date, todos, categories, onOpenDay }: DayPeekP
 
     const key = localDateKey(date);
     const items = React.useMemo<DayPeekItem[]>(() => {
-        const all: TodoType[] = [...todos];
-        for (const proj of projects) {
-            if (proj.startAt || proj.endAt) {
-                all.push({
-                    id: `project-${proj.id}`, title: proj.title, categoryId: proj.categoryId,
-                    startAt: proj.startAt ?? proj.endAt, endAt: proj.endAt ?? proj.startAt,
-                    isAllDay: true, repeat: 0, completions: [],
-                });
-            }
-            for (const task of proj.tasks ?? []) {
-                if (!task.startAt && !task.endAt) continue;
-                all.push({
-                    id: `proj-task-${task.id}`, title: task.title, categoryId: proj.categoryId,
-                    startAt: task.startAt ?? task.endAt, endAt: task.endAt ?? task.startAt,
-                    isAllDay: !task.startAt || !task.endAt || localDateKey(task.startAt) !== localDateKey(task.endAt),
-                    repeat: 0, completions: [],
-                });
-            }
-        }
+        // 끝낸 프로젝트 할 일은 끝낸 것으로, 시각을 준 할 일은 그 시각으로 (src/lib/projectCalendar.ts)
+        const all: TodoType[] = [...todos, ...projectCalendarItems(projects)];
         const dayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
         const dayEnd = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
         const colorOf = (id: string) => categories.find(c => c.id === id)?.color ?? "";

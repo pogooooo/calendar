@@ -14,6 +14,8 @@ import { calendarDayDelta, shiftZonedDays, resizeZonedRange } from "@/lib/taskIn
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useDialog } from "@/components/dialog/DialogProvider";
 import useProjectStore from "@/store/useProjectStore";
+import { projectCalendarItems } from "@/lib/projectCalendar";
+import { useProjectItemActions } from "@/hooks/useProjectItemActions";
 import useChallengeStore, { ChallengeType } from "@/store/useChallengeStore";
 
 export interface CalendarTodoType extends ExpandedTodoType {
@@ -114,6 +116,8 @@ const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
         const authFetch = useAuthFetch();
         const dialog = useDialog();
         const t = useT();
+        // 프로젝트·프로젝트 할 일도 여기서 바로 고치고 끝내고 옮긴다 (예전엔 "프로젝트 화면에서" 안내만)
+        const projectActions = useProjectItemActions();
 
         React.useEffect(() => {
             if (categories.length > 0 && selectedCategoryIds.length === 0) {
@@ -152,52 +156,10 @@ const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
 
         const filteredTodos = React.useMemo(() => {
             const baseTodos = todos.filter(todo => selectedCategoryIds.includes(todo.categoryId));
-            let projectItems: TodoType[] = [];
-
-            if (showProjects) {
-                projectItems = projects.reduce<TodoType[]>((acc, proj) => {
-                    if (selectedCategoryIds.includes(proj.categoryId)) {
-                        const isProjCompleted = proj.status === 'done';
-                        acc.push({
-                            id: `project-${proj.id}`,
-                            title: `[Project] ${proj.title}`,
-                            categoryId: proj.categoryId,
-                            startAt: proj.startAt ? new Date(proj.startAt).toISOString() : null,
-                            endAt: proj.endAt ? new Date(proj.endAt).toISOString() : null,
-                            isAllDay: true,
-                            repeat: 0,
-                            memo: proj.description || null,
-                            completions: [],
-                            originalData: proj as unknown as TodoType,
-                            isProject: true,
-                            isDone: isProjCompleted
-                        } as unknown as TodoType);
-
-                        if (proj.tasks && Array.isArray(proj.tasks)) {
-                            proj.tasks.forEach(task => {
-                                if (task.startAt || task.endAt) {
-                                    const isTaskCompleted = task.status === 'done';
-                                    acc.push({
-                                        id: `proj-task-${task.id}`,
-                                        title: `↳ ${task.title}`,
-                                        categoryId: proj.categoryId,
-                                        startAt: task.startAt ? new Date(task.startAt).toISOString() : null,
-                                        endAt: task.endAt ? new Date(task.endAt).toISOString() : null,
-                                        isAllDay: true,
-                                        repeat: 0,
-                                        memo: task.description || null,
-                                        completions: [],
-                                        originalData: task as unknown as TodoType,
-                                        isProjectTask: true,
-                                        isDone: isTaskCompleted
-                                    } as unknown as TodoType);
-                                }
-                            });
-                        }
-                    }
-                    return acc;
-                }, []);
-            }
+            // 프로젝트·할 일 → 달력 항목은 한 곳에서 (src/lib/projectCalendar.ts)
+            const projectItems: TodoType[] = showProjects
+                ? projectCalendarItems(projects, { categoryIds: selectedCategoryIds, marked: true })
+                : [];
 
             return [...baseTodos, ...projectItems];
         }, [todos, projects, selectedCategoryIds, showProjects]);
@@ -326,7 +288,7 @@ const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
         const handleQuickEdit = async (expandedTodo: CalendarTodoType) => {
             if (expandedTodo.isProject || expandedTodo.isProjectTask) {
                 setContextMenu(null);
-                await dialog.notify({ title: t.alert.editHereTitle, message: t.alert.editHereMsg });
+                projectActions.open(expandedTodo);
                 return;
             }
             setUndoMove(null);
@@ -339,7 +301,7 @@ const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
         const handleQuickDelete = async (expandedTodo: CalendarTodoType) => {
             setContextMenu(null);
             if (expandedTodo.isProject || expandedTodo.isProjectTask) {
-                await dialog.notify({ title: t.alert.deleteHereTitle, message: t.alert.deleteHereDetailMsg });
+                await projectActions.remove(expandedTodo);
                 return;
             }
 
@@ -356,7 +318,7 @@ const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
         const handleQuickDeleteOne = async (expandedTodo: CalendarTodoType) => {
             setContextMenu(null);
             if (expandedTodo.isProject || expandedTodo.isProjectTask) {
-                await dialog.notify({ title: t.alert.deleteHereTitle, message: t.alert.deleteHereDetailMsg });
+                await projectActions.remove(expandedTodo);
                 return;
             }
             const actualId = expandedTodo.originalTodo?.id || expandedTodo.id;
@@ -373,7 +335,7 @@ const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
         const handleQuickToggle = async (expandedTodo: CalendarTodoType) => {
             if (expandedTodo.isProject || expandedTodo.isProjectTask) {
                 setContextMenu(null);
-                await dialog.notify({ title: t.alert.statusHereTitle, message: t.alert.statusHereMsg });
+                await projectActions.toggle(expandedTodo);
                 return;
             }
 
@@ -406,7 +368,33 @@ const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
 
         const handleChangeDates = async (todo: CalendarTodoType, from: string, to: string, edge?: 'start' | 'end') => {
             const days = calendarDayDelta(from, to);
-            if (!days || !Number.isFinite(days) || moving.current || todo.isProject || todo.isProjectTask || todo.isChallenge) return;
+            if (todo.isProject || todo.isProjectTask) {
+                // 프로젝트·할 일도 끌어서 옮기고 늘린다. 반복이 없으니 시리즈 확인은 없다
+                if (!days || !Number.isFinite(days) || moving.current) return;
+                const original = todo.originalTodo ?? todo;
+                if (!original.startAt || !original.endAt) return;
+                const next = edge
+                    ? resizeZonedRange(original.startAt, original.endAt, edge, days, activeTimeZone())
+                    : { startAt: shiftZonedDays(original.startAt, days, activeTimeZone()), endAt: shiftZonedDays(original.endAt, days, activeTimeZone()) };
+                if (!next) { setMoveNotice(t.interaction.invalidDates); return; }
+                moving.current = true;
+                try {
+                    const { error, before } = await projectActions.reschedule(todo, next.startAt, next.endAt);
+                    setMoveNotice(error || t.interaction.moved);
+                    setUndoMove(error ? null : () => async () => {
+                        if (moving.current) return;
+                        moving.current = true;
+                        try {
+                            const { error } = await projectActions.reschedule(todo, before.startAt, before.endAt);
+                            setMoveNotice(error);
+                            if (!error) setUndoMove(null);
+                        } finally { moving.current = false; }
+                    });
+                    if (!error && selectedDate && localDateKey(selectedDate) === from) onDateChange?.(new Date(`${to}T12:00:00`));
+                } finally { moving.current = false; }
+                return;
+            }
+            if (!days || !Number.isFinite(days) || moving.current || todo.isChallenge) return;
             const original = todo.originalTodo ?? todo;
             if (!original.startAt || !original.endAt) return;
             const resized = edge ? resizeZonedRange(original.startAt, original.endAt, edge, days, activeTimeZone()) : null;
@@ -486,6 +474,7 @@ const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
         return (
             <>
                 <MonthCalendarView ref={ref} {...themeProps} {...props} />
+                {projectActions.editor}
             </>
         );
     }

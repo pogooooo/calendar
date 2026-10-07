@@ -193,6 +193,7 @@ export const CreateProjectTaskSchema = z.object({
     priority: z.enum(["low", "medium", "high"]).optional().default("medium"),
     startAt: z.string().nullable().optional(),
     endAt: z.string().nullable().optional(),
+    isAllDay: z.boolean().optional(),
     assignees: z.array(z.string()).optional(),
 });
 
@@ -204,6 +205,7 @@ export const UpdateProjectTaskSchema = z.object({
     priority: z.enum(["low", "medium", "high"]).optional(),
     startAt: z.string().nullable().optional(),
     endAt: z.string().nullable().optional(),
+    isAllDay: z.boolean().optional(),
     assignees: z.array(z.string()).optional(),
 });
 
