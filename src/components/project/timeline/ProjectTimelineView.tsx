@@ -287,7 +287,7 @@ const ProjectTimelineView = React.forwardRef<HTMLDivElement, ProjectTimelineProp
                             {timelineDays.map((day, i) => {
                                 const isToday = day.getTime() === todayTime;
                                 return (
-                                    <S.DateCell key={i} $isToday={isToday}>
+                                    <S.DateCell key={i} $isToday={isToday} data-weekend={day.getDay() % 6 === 0 ? "" : undefined}>
                                         <S.DateNumber $isToday={isToday}>{day.getDate()}</S.DateNumber>
                                     </S.DateCell>
                                 );
@@ -296,8 +296,9 @@ const ProjectTimelineView = React.forwardRef<HTMLDivElement, ProjectTimelineProp
 
                         <S.TimelineGraphContainer ref={graphRef} data-connecting={source ? 'true' : undefined} style={{ height: Math.max(tasks.length * ROW_HEIGHT, 80) }}>
                             <S.TimelineBackground>
+                                {/* 주말은 data-weekend 로만 알린다 — 칠할지는 갈래가 정한다 */}
                                 {timelineDays.map((day, i) => (
-                                    <S.TimelineVerticalLine key={i} $isToday={day.getTime() === todayTime} />
+                                    <S.TimelineVerticalLine key={i} $isToday={day.getTime() === todayTime} data-weekend={day.getDay() % 6 === 0 ? "" : undefined} />
                                 ))}
                             </S.TimelineBackground>
 

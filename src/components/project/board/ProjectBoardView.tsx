@@ -73,7 +73,8 @@ const ProjectBoardView = React.forwardRef<HTMLDivElement, ProjectBoardProps>(({
                     <S.BoardColumn key={col.s}>
                         <S.ColumnHeader>
                             {/* 폰에서는 위의 이름표가 이미 말하고 있다 */}
-                            {!isMobile && <S.ColumnTitle>{col.t} ({col.d.length})</S.ColumnTitle>}
+                            {/* 개수는 따로 감싸 둔다 — 갈래마다 꼬리표로 꾸밀 수 있게 (글자는 그대로 "진행 전 (3)") */}
+                            {!isMobile && <S.ColumnTitle>{col.t} <span className="count"><span className="paren">(</span>{col.d.length}<span className="paren">)</span></span></S.ColumnTitle>}
                             {col.s !== 'done' && (
                                 <S.AddTaskButton type="button" onClick={() => onAddTask(col.s)}>
                                     {tr.add}

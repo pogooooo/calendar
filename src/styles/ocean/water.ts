@@ -329,13 +329,6 @@ export const waterLevel = (ratio: number) => css`
 `;
 
 /* ── 시간 축 (프로젝트 타임라인·주간 달력) ─────────────────────────────── */
-/** 가로 선 그림 한 장(40×8, 가운데 1px) — background 로 깔 때 */
-export const waveImage = (color: string) =>
-    `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='40' height='8' viewBox='0 0 40 8'><rect y='3.5' width='40' height='1' fill='${color}'/></svg>`)}")`;
-/** 세로 선 그림 한 장(8×40, 가운데 1px) */
-export const waveColumnImage = (color: string) =>
-    `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='8' height='40' viewBox='0 0 8 40'><rect x='3.5' width='1' height='40' fill='${color}'/></svg>`)}")`;
-
 /** 오늘을 가리키는 세로선 — 위가 진하고 아래로 옅어지는 청록 한 줄 */
 export const sunBeam = (tint?: string | ((t: DefaultTheme) => string)) => css`
     pointer-events: none;
