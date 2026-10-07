@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactElement } from "react";
 import { isDesktopShell } from "@/lib/platform";
 import { useT } from "@/i18n/useT";
 
@@ -8,12 +8,17 @@ import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialTitleBar.styles";
 import * as MapleS from "./maple/MapleTitleBar.styles";
 import * as OceanS from './ocean/OceanTitleBar.styles';
+import CelestialTitleMark from "./celestial/CelestialTitleMark";
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
 const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
+/** 이름 앞의 작은 표 — Celestial 은 3D 혼천의, 다른 갈래는 아직 없다 */
+const NoMark = () => null;
+const MARKS: ThemeImpls<() => ReactElement | null> = { celestial: CelestialTitleMark, maple: NoMark, ocean: NoMark };
 
 export default function TitleBar() {
     const S = usePickTheme(STYLES);
+    const Mark = usePickTheme(MARKS);
     const t = useT();
     const [isMaximized, setIsMaximized] = useState(false);
     const [isDesktop, setIsDesktop] = useState(false);
@@ -63,7 +68,7 @@ export default function TitleBar() {
 
     return (
         <S.Bar data-tauri-drag-region>
-            <S.Title data-tauri-drag-region>CRONOS</S.Title>
+            <S.Title data-tauri-drag-region><Mark />CRONOS</S.Title>
             <S.Controls>
                 <S.Btn onClick={handleMinimize} title={t.titleBar.minimize}>
                     <svg width="10" height="1" viewBox="0 0 10 1"><line x1="0" y1="0.5" x2="10" y2="0.5" stroke="currentColor" strokeWidth="1.5"/></svg>

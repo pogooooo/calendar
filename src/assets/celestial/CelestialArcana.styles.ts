@@ -20,8 +20,15 @@ export const Frame = styled.div`
     position:relative; width:140px; pointer-events:none;
 `;
 
-/** 새긴 초승달 자리(보기 상자 180×200 의 (90, 94), 반지름 22)에 맞춘 달 칸 — 공이 칸의 83% 를 채운다 */
-export const Moon = styled.div`
-    position:absolute; left:35.3%; top:33.8%; width:29.4%; aspect-ratio:1;
+/**
+ * 새긴 초승달 자리(보기 상자 180×200 의 (90, 94), 반지름 22)에 맞춘 달 칸 — 공이 칸의 83% 를 채운다.
+ * $scale 만큼 키워도 가운데는 그대로: 가로는 폭의 50%, 세로는 높이(= 폭 × 200/180)의 47%.
+ * (left·width 의 % 는 폭, top 의 % 는 높이 기준 — 칸 반쪽 14.7%(폭)는 높이로 13.23%)
+ */
+export const Moon = styled.div<{ $scale?: number }>`
+    position:absolute; aspect-ratio:1;
+    width:${p=>(29.4 * (p.$scale ?? 1)).toFixed(2)}%;
+    left:${p=>(50 - 14.7 * (p.$scale ?? 1)).toFixed(2)}%;
+    top:${p=>(47 - 13.23 * (p.$scale ?? 1)).toFixed(2)}%;
     opacity:${p=>p.theme.mode === 'dark' ? .92 : .88};
 `;

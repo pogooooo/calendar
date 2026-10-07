@@ -399,7 +399,7 @@ export default function WidgetShell({ kind, title, children }: Props) {
             onContextMenu={handleContextMenu}
         >
             <ThemeProvider theme={widgetTheme}>
-                {bg.mode === 'theme' && !showSettings && <WidgetCharm />}
+                {bg.mode === 'theme' && !showSettings && <WidgetCharm locked={locked} />}
                 {bg.mode === "glass" && wallpaper.url && (
                     <S.FakeGlassLayer $opacity={bg.opacity}>
                         <S.VirtualMonitor

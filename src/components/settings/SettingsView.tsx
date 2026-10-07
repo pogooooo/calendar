@@ -18,10 +18,14 @@ import * as OceanS from './ocean/OceanSettings.styles';
 import * as OceanLS from './ocean/OceanSettings.layout';
 import useSettingStore from '@/store/useSettingStore';
 import ThemeShop from '@/components/billing/ThemeShop';
+import CelestialOrbitArt from './celestial/CelestialOrbitArt';
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
 const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
 const LAYOUTS: ThemeImpls<typeof CelestialLS> = { celestial: CelestialLS, maple: MapleLS, ocean: OceanLS };
+/** '모양' 판 머리의 그림 — Celestial 은 3D 오러리, Maple·Ocean 은 두지 않는다(예전에도 감춰 두었다) */
+const NoArt = () => null;
+const ORBIT_ART: ThemeImpls<() => React.ReactElement | null> = { celestial: CelestialOrbitArt, maple: NoArt, ocean: NoArt };
 
 /**
  * 설정은 판(pane) 넷으로 나뉜다. 예전에는 여덟 조각이 세로로 이어져 있어
@@ -61,6 +65,7 @@ export default function SettingsView({
 }: SettingsThemeProps) {
     const S = usePickTheme(STYLES);
     const L = usePickTheme(LAYOUTS);
+    const OrbitArt = usePickTheme(ORBIT_ART);
     const [tab, setTab] = React.useState<TabId>("look");
     const motion = useSettingStore(s => s.motion);
     const setMotion = useSettingStore(s => s.setMotion);
@@ -147,16 +152,7 @@ export default function SettingsView({
 
                 <L.Pane>
                     <L.PaneHeader>
-                        {tab === "look" && (
-                            <L.Orbit viewBox="0 0 200 200" aria-hidden="true" fill="none" strokeWidth=".6">
-                                <ellipse cx="100" cy="100" rx="80" ry="31" opacity=".55" />
-                                <ellipse cx="100" cy="100" rx="80" ry="31" opacity=".55" transform="rotate(60 100 100)" />
-                                <ellipse cx="100" cy="100" rx="80" ry="31" opacity=".55" transform="rotate(120 100 100)" />
-                                <circle cx="100" cy="100" r="10" opacity=".85" />
-                                <circle className="pip" cx="180" cy="100" r="3.2" />
-                                <circle className="pip" cx="60" cy="31" r="2.4" />
-                            </L.Orbit>
-                        )}
+                        {tab === "look" && <OrbitArt />}
                         <L.Eyebrow>{ROMAN[activeIndex]}</L.Eyebrow>
                         <L.PaneTitle>{active.label}</L.PaneTitle>
                         {active.note && <L.PaneNote>{active.note}</L.PaneNote>}

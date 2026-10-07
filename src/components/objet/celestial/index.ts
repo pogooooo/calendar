@@ -6,12 +6,16 @@
  *   telescope  망원경 — 별 하나를 겨누고 하늘을 훑는다 (빈 챌린지)
  *   hourglass  모래시계 — 금모래가 떨어진다 (빈 할 일)
  *   moon       달 — 위상이 돈다 (빈 기념일). options.phase 'today' 면 오늘의 실제 위상에 멈춘 달
+ *   orrery     오러리 — 금 해 둘레를 세 행성이 돈다 (설정 '모양' 판 머리)
+ *
+ *   armillary 의 options 더: detail 'mark'(20~30px 자리 — 제목 줄·위젯), still(올렸을 때만 돈다), stars(둘레 별), frame(카메라 물림)
  */
 import type { ObjetRegistry } from "../types";
 import { armillary } from "./armillary";
 import { astrolabe } from "./astrolabe";
 import { hourglass } from "./hourglass";
 import { moon } from "./moon";
+import { orrery } from "./orrery";
 import { telescope } from "./telescope";
 
 const registry = {
@@ -20,6 +24,7 @@ const registry = {
     telescope,
     hourglass,
     moon,
+    orrery,
 } satisfies ObjetRegistry;
 
 export type CelestialObjetName = keyof typeof registry;

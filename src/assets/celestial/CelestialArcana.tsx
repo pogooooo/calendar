@@ -7,10 +7,11 @@ const TODAY = { phase: 'today' };
 
 /**
  * Decorative star, lunar crescent and engraved astrolabe; never intercepts input.
- * liveMoon: 새긴 초승달 대신 오늘의 실제 위상을 보이는 3D 달(오브제)을 그 자리에 — 홈의 연감 표지에서만.
+ * liveMoon: 새긴 초승달 대신 오늘의 실제 위상을 보이는 3D 달(오브제)을 그 자리에 — 홈의 연감 표지, 달력 머리.
+ * moonScale: 달을 새긴 초승달보다 크게(작은 표지에서 달 모양이 읽히게 — 달력 머리의 36px 표지는 2배).
  * WebGL 이 없으면 예전 초승달로 돌아간다.
  */
-export default function CelestialArcana({ liveMoon = false }: { liveMoon?: boolean }) {
+export default function CelestialArcana({ liveMoon = false, moonScale = 1 }: { liveMoon?: boolean; moonScale?: number }) {
     const id = useId().replace(/:/g, '');
     const [flat, setFlat] = useState(false);
     const onFail = useCallback(() => setFlat(true), []);
@@ -25,8 +26,8 @@ export default function CelestialArcana({ liveMoon = false }: { liveMoon?: boole
         <text x="90" y="194" textAnchor="middle">XVII · XVIII · XIX</text>
     </S.Seal>;
     if (!liveMoon) return seal;
-    return <S.Frame>
+    return <S.Frame data-arcana="">
         {seal}
-        {live && <S.Moon><Objet name="celestial/moon" size="100%" options={TODAY} interaction="none" onFail={onFail} /></S.Moon>}
+        {live && <S.Moon $scale={moonScale}><Objet name="celestial/moon" size="100%" options={TODAY} interaction="none" onFail={onFail} /></S.Moon>}
     </S.Frame>;
 }

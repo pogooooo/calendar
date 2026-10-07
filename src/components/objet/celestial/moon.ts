@@ -150,11 +150,12 @@ export const moon: ObjetDef = {
                 uniforms.uRim.value.copy(p);
                 uniforms.uShadeAlpha.value = 0.9;
             } else {
-                // 아이보리 종이 위 — 연감의 그림처럼: 빛 받는 쪽은 금빛, 그늘은 종이에 가까운 옅은 면과 금 테두리
-                uniforms.uLit.value.copy(p).lerp(new THREE.Color("#E6D196"), 0.45);
-                uniforms.uShade.value.set("#EFE9DA");
+                // 아이보리 종이 위 — 연감의 그림처럼: 빛 받는 쪽은 금빛, 그늘은 종이보다 한 톤 가라앉은 면과 금 테두리
+                // (작은 자리에서 가는 초승달만 빛나도 둥근 달이 읽히게 그늘을 조금 더 세운다)
+                uniforms.uLit.value.copy(p).lerp(new THREE.Color("#F2DA8E"), 0.38);
+                uniforms.uShade.value.copy(p).lerp(new THREE.Color("#D8D0BC"), 0.82);
                 uniforms.uRim.value.copy(p).lerp(new THREE.Color("#6E5A2A"), 0.3);
-                uniforms.uShadeAlpha.value = 0.42;
+                uniforms.uShadeAlpha.value = 0.5;
             }
         };
         tint(tone);

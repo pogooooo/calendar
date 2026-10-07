@@ -9,6 +9,8 @@
  * - 초당 30장, 손이 닿아 있는 동안만 60장. 창이 숨으면 멈춘다.
  * - 1배 화면에서도 2배로 그려 줄여 담는다 — 가는 금빛 선이 계단 없이 또렷하다.
  * - 움직임 '끄기'·위젯 창: 한 장만 그린다(루프 없음). '잔잔하게': 느리게, 올리기 반응 없음(끌기는 된다).
+ * - 화면의 모든 칸이 멈춘 한 장뿐이면(위젯 창·움직임 끔) 다 그린 뒤 맥락을 곧바로 돌려준다 — 그림은 2D 캔버스에 남는다.
+ *   색·크기가 바뀌어 다시 그릴 일이 생기면 그때 다시 연다.
  * - 마지막 칸이 사라지고 30초 조용하면 렌더러·반사광을 돌려준다. WebGL 이 없으면 칸에 알려 원래 그림으로 물러난다.
  */
 import type * as THREE_NS from "three";
@@ -23,6 +25,8 @@ const SUPERSAMPLE = 2;
 /** 한 칸을 그리는 최대 픽셀(한 변) — 아주 큰 칸도 이 이상은 안 키운다 */
 const MAX_RENDER = 1400;
 const IDLE_DISPOSE_MS = 30_000;
+/** 멈춘 한 장만 남았을 때 맥락을 돌려주기까지 */
+const STILL_RELEASE_MS = 2_500;
 const FRAME_MS = 1000 / 30;
 const FRAME_MS_ACTIVE = 1000 / 60;
 const GENTLE = 0.4;
@@ -54,6 +58,8 @@ class Slot {
     readonly input: ObjetInput = { hover: false, x: 0, y: 0, dragging: false, dragX: 0, dragY: 0 };
     private detachPointer: () => void = () => {};
     disposed = false;
+    /** 처음 보인 뒤에야 렌더러를 열고 오브제를 받는다 — 숨은 칸(폰의 사이드바 같은)은 맥락을 만들지 않는다 */
+    started = false;
 
     constructor(readonly stage: Stage, readonly canvas: HTMLCanvasElement, public init: SlotInit) {
         this.ctx = canvas.getContext("2d", { alpha: true });
@@ -122,7 +128,8 @@ class Slot {
 
     setTone(tone: ObjetTone) {
         this.init = { ...this.init, tone };
-        if (!this.inst) return;
+        // 아직 없거나(받는 중) 맥락을 돌려준 뒤면 다음에 만들 때 새 색으로 — 다시 그려야 한다는 것만 남긴다
+        if (!this.inst) { this.dirty = true; this.stage.wake(); return; }
         if (this.inst.setTone) { this.inst.setTone(tone); this.dirty = true; this.stage.wake(); }
         else this.create();
     }
@@ -209,6 +216,12 @@ class Slot {
         };
     }
 
+    /** 맥락을 돌려줄 때 — 장면만 버린다(그림은 캔버스에 남고, 다시 열면 create 로 되살린다) */
+    release() {
+        this.inst?.dispose();
+        this.inst = null;
+    }
+
     dispose() {
         this.disposed = true;
         this.detachPointer();
@@ -232,6 +245,10 @@ class Stage {
     private bufW = 0;
     private bufH = 0;
     private idleTimer: ReturnType<typeof setTimeout> | undefined;
+    private stillTimer: ReturnType<typeof setTimeout> | undefined;
+    /** 멈춘 한 장들을 다 그리고 맥락을 돌려준 상태 */
+    private asleep = false;
+    private reviving = false;
     private onVisibility = () => {
         if (document.hidden) { cancelAnimationFrame(this.raf); this.raf = 0; return; }
         this.slots.forEach((s) => { s.lastT = 0; });
@@ -292,7 +309,10 @@ class Stage {
                     const s = this.byCanvas.get(e.target);
                     if (!s) continue;
                     s.visible = e.isIntersecting;
-                    if (s.visible) { s.lastT = 0; this.wake(); }
+                    if (!s.visible) continue;
+                    s.lastT = 0;
+                    if (!s.started) this.start(s);
+                    else this.wake();
                 }
             }, { rootMargin: "48px" });
             this.ro = new ResizeObserver((entries) => {
@@ -301,13 +321,23 @@ class Stage {
         }
         this.io.observe(canvas);
         this.ro?.observe(canvas);
+        return slot;
+    }
+
+    /** 칸이 처음 보였다 — 렌더러를 열고(이미 있으면 그대로) 오브제를 받는다 */
+    private start(slot: Slot) {
+        slot.started = true;
         void this.boot().then((ok) => {
             if (slot.disposed) return;
-            if (!ok || !slot.ctx) { this.detach(slot); init.onFail(); return; }
+            if (!ok || !slot.ctx) { this.detach(slot); slot.init.onFail(); return; }
+            if (this.asleep) {
+                // 맥락을 돌려준 뒤에 새 칸이 보였다 — 장면을 버렸던 칸들도 되살린다
+                this.asleep = false;
+                this.slots.forEach((s) => { if (s !== slot && s.def && !s.inst) s.create(); });
+            }
             slot.measure();
             void slot.build();
         });
-        return slot;
     }
 
     detach(slot: Slot) {
@@ -324,12 +354,18 @@ class Stage {
     }
 
     private teardown() {
-        cancelAnimationFrame(this.raf);
-        this.raf = 0;
         this.io?.disconnect();
         this.ro?.disconnect();
         this.io = null;
         this.ro = null;
+        this.releaseGpu();
+        this.asleep = false;
+    }
+
+    private releaseGpu() {
+        cancelAnimationFrame(this.raf);
+        this.raf = 0;
+        clearTimeout(this.stillTimer);
         this.env?.dispose();
         this.env = null;
         this.renderer?.dispose();
@@ -338,8 +374,40 @@ class Stage {
         document.removeEventListener("visibilitychange", this.onVisibility);
     }
 
+    /** 모든 칸이 멈춘 한 장이고 다 그려졌으면 잠시 뒤 맥락을 돌려준다 */
+    private maybeRest() {
+        clearTimeout(this.stillTimer);
+        const resting = () => [...this.slots].every((s) => s.motion === "off" && !(s.visible && s.dirty));
+        if (!this.slots.size || !resting()) return;
+        this.stillTimer = setTimeout(() => {
+            if (!this.renderer || this.raf || !resting()) return;
+            this.slots.forEach((s) => s.release());
+            this.releaseGpu();
+            this.asleep = true;
+        }, STILL_RELEASE_MS);
+    }
+
+    /** 돌려준 맥락을 다시 연다 — 다시 그릴 칸이 있을 때만 */
+    private revive() {
+        if (this.reviving) return;
+        this.reviving = true;
+        void this.boot().then((ok) => {
+            this.reviving = false;
+            if (!ok) return;
+            this.asleep = false;
+            this.slots.forEach((s) => { if (s.def && !s.inst) s.create(); });
+            this.wake();
+        });
+    }
+
     wake() {
-        if (this.raf || !this.renderer || typeof document === "undefined" || document.hidden) return;
+        if (typeof document === "undefined") return;
+        clearTimeout(this.stillTimer);
+        if (this.asleep) {
+            if ([...this.slots].some((s) => s.visible && s.dirty)) this.revive();
+            return;
+        }
+        if (this.raf || !this.renderer || document.hidden) return;
         this.raf = requestAnimationFrame(this.tick);
     }
 
@@ -371,6 +439,7 @@ class Stage {
             if (s.moving) again = true;
         }
         if (again) this.raf = requestAnimationFrame(this.tick);
+        else this.maybeRest();
     };
 
     private draw(r: THREE_NS.WebGLRenderer, s: Slot) {
@@ -396,7 +465,11 @@ let stage: Stage | null = null;
 
 /** 칸 하나를 무대에 올린다. 돌려받은 것으로 색·움직임·active 를 바꾸고, 다 쓰면 detach */
 export function attachObjet(canvas: HTMLCanvasElement, init: SlotInit) {
-    stage ??= new Stage();
+    if (!stage) {
+        stage = new Stage();
+        // 개발 중에만: 콘솔에서 무대를 들여다본다 (window.__objet.renderer 가 null 이면 맥락을 돌려준 상태)
+        if (process.env.NODE_ENV !== "production") (window as unknown as { __objet?: Stage }).__objet = stage;
+    }
     const s = stage;
     const slot = s.attach(canvas, init);
     return {
