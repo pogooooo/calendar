@@ -10,7 +10,6 @@
 import { css, keyframes, type DefaultTheme } from "styled-components";
 import { withAlpha } from "@/styles/color";
 
-type P = { theme: DefaultTheme };
 const dark = (t: DefaultTheme) => t.mode === "dark";
 
 /** 모서리 — 물에 깎인 조약돌처럼 */
@@ -47,7 +46,7 @@ export const calm = css`
 
 /* ── 겉 ─────────────────────────────────────────────────────────────── */
 /** 유리 — 물속에서 올려다본 수면 같은 반투명 판 */
-export const glass = (strength: "soft" | "solid" = "soft") => css<P>`
+export const glass = (strength: "soft" | "solid" = "soft") => css`
     background-color: ${(p) => withAlpha(p.theme.colors.surface, dark(p.theme) ? (strength === "solid" ? 0.92 : 0.66) : (strength === "solid" ? 0.94 : 0.72))};
     backdrop-filter: blur(14px) saturate(140%);
     -webkit-backdrop-filter: blur(14px) saturate(140%);
@@ -58,7 +57,7 @@ export const glass = (strength: "soft" | "solid" = "soft") => css<P>`
 `;
 
 /** 물빛 — 바닥에 어른거리는 빛 그물(caustics)을 멈춘 그림으로. three.js 효과가 없을 때도 바다로 읽히게 */
-export const caustics = (alpha = 0.16) => css<P>`
+export const caustics = (alpha = 0.16) => css`
     background-image:
         radial-gradient(ellipse 22% 14% at 18% 22%, ${(p) => withAlpha(dark(p.theme) ? p.theme.colors.primary : "#FFFFFF", alpha * 1.6)}, transparent 70%),
         radial-gradient(ellipse 18% 12% at 64% 14%, ${(p) => withAlpha(dark(p.theme) ? p.theme.colors.primary : "#FFFFFF", alpha * 1.2)}, transparent 70%),
@@ -72,13 +71,13 @@ const wavePath = (color: string) =>
     `url("data:image/svg+xml,${encodeURIComponent(
         `<svg xmlns='http://www.w3.org/2000/svg' width='40' height='8' viewBox='0 0 40 8'><path d='M0 4 Q5 0 10 4 T20 4 T30 4 T40 4' fill='none' stroke='${color}' stroke-width='1.2' stroke-linecap='round'/></svg>`,
     )}")`;
-export const waveRule = (alpha = 0.5) => css<P>`
+export const waveRule = (alpha = 0.5) => css`
     height: 8px;
     border: none;
     background: ${(p) => wavePath(withAlpha(p.theme.colors.primary, alpha))} repeat-x center / 40px 8px;
 `;
 /** 물결선을 밑줄로 (탭·제목 아래) */
-export const waveUnderline = (alpha = 0.7) => css<P>`
+export const waveUnderline = (alpha = 0.7) => css`
     background-image: ${(p) => wavePath(withAlpha(p.theme.colors.primary, alpha))};
     background-repeat: repeat-x;
     background-position: 0 100%;
@@ -86,7 +85,7 @@ export const waveUnderline = (alpha = 0.7) => css<P>`
 `;
 
 /** 진주 — 점·표식 자리 (마름모·잎 대신) */
-export const pearl = (size = "8px", color?: string) => css<P>`
+export const pearl = (size = "8px", color?: string) => css`
     width: ${size};
     height: ${size};
     border-radius: 50%;
@@ -101,7 +100,7 @@ export const pearl = (size = "8px", color?: string) => css<P>`
 const SHELL = `url("data:image/svg+xml,${encodeURIComponent(
     "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 21c-1.2 0-2.2-.6-2.7-1.6L3.2 9.6C2.4 8 3.5 6 5.3 5.6 7.3 3.2 9.6 2 12 2s4.7 1.2 6.7 3.6c1.8.4 2.9 2.4 2.1 4L14.7 19.4c-.5 1-1.5 1.6-2.7 1.6Z'/></svg>",
 )}")`;
-export const shell = (size = "14px", color?: string) => css<P>`
+export const shell = (size = "14px", color?: string) => css`
     width: ${size};
     height: ${size};
     flex: none;
@@ -112,7 +111,7 @@ export const shell = (size = "14px", color?: string) => css<P>`
 
 /* ── 조작부 ─────────────────────────────────────────────────────────── */
 /** 단추 — 바다 유리 알약. 누르면 살짝 가라앉고, 올리면 물빛이 한 번 스친다 */
-export const seaButton = (variant: "default" | "primary" | "danger" | "ghost" = "default") => css<P>`
+export const seaButton = (variant: "default" | "primary" | "danger" | "ghost" = "default") => css`
     position: relative;
     overflow: hidden;
     border-radius: ${R.pill};
@@ -163,7 +162,7 @@ export const seaButton = (variant: "default" | "primary" | "danger" | "ghost" = 
 `;
 
 /** 입력칸 — 조용한 물웅덩이: 둥글고 안쪽으로 살짝 고인 그림자, 누르면 물결 테두리 */
-export const tideInput = css<P>`
+export const tideInput = css`
     border-radius: 14px;
     border: 1px solid ${(p) => withAlpha(p.theme.colors.primary, 0.22)};
     background-color: ${(p) => (dark(p.theme) ? "rgba(255, 255, 255, 0.04)" : "rgba(255, 255, 255, 0.78)")};
@@ -177,7 +176,7 @@ export const tideInput = css<P>`
 `;
 
 /** 체크칸 — 물방울. 끝내면 아래에서 물이 차오른다 */
-export const bubbleCheck = (done: boolean, size = "18px") => css<P>`
+export const bubbleCheck = (done: boolean, size = "18px") => css`
     position: relative;
     width: ${size};
     height: ${size};
@@ -195,7 +194,7 @@ export const bubbleCheck = (done: boolean, size = "18px") => css<P>`
 `;
 
 /** 스위치(label > input + .slider) — 물길 속을 미끄러지는 진주 */
-export const pearlToggle = css<P>`
+export const pearlToggle = css`
     .slider {
         border-radius: ${R.pill};
         background: ${(p) => (dark(p.theme) ? "rgba(255, 255, 255, 0.08)" : withAlpha(p.theme.colors.primary, 0.14))};
@@ -211,7 +210,7 @@ export const pearlToggle = css<P>`
 `;
 
 /** 작은 고르개(칩) — 바다 유리 조각. 고르면 물빛이 찬다 */
-export const seaChip = (active: boolean, color?: string) => css<P>`
+export const seaChip = (active: boolean, color?: string) => css`
     border-radius: ${R.pill};
     border: 1px solid ${(p) => withAlpha(color ?? p.theme.colors.primary, active ? 0.7 : 0.25)};
     background-color: ${(p) => withAlpha(color ?? p.theme.colors.accent, active ? 0.28 : 0.06)};
@@ -220,7 +219,7 @@ export const seaChip = (active: boolean, color?: string) => css<P>`
 `;
 
 /** 오늘 — 물결 고리 (동심원 둘이 천천히 번진다) */
-export const rippleMark = (size = "30px") => css<P>`
+export const rippleMark = (size = "30px") => css`
     position: absolute;
     width: ${size};
     height: ${size};
@@ -240,7 +239,7 @@ export const rippleMark = (size = "30px") => css<P>`
 `;
 
 /** 수위 — 진행 막대 대신 물이 찬 높이 (가로) */
-export const waterLevel = (ratio: number) => css<P>`
+export const waterLevel = (ratio: number) => css`
     position: relative;
     overflow: hidden;
     border-radius: ${R.pill};
