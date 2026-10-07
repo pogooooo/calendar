@@ -6,6 +6,7 @@
  */
 import styled from "styled-components";
 import { MOBILE } from "@/styles/breakpoints";
+import { gilt, sheen } from "@/styles/celestial/almanac";
 
 export const HeaderWrapper = styled.div`
     width: 100%;
@@ -106,8 +107,8 @@ export const HeaderActionButton = styled.button`
 
     /* 마지막(새 프로젝트)이 이 줄의 할 일 — 금빛으로 채운다 */
     &:last-child {
-        background: ${(props) => props.theme.colors.primary};
-        color: ${(props) => props.theme.colors.background};
+        ${gilt}
+        ${sheen}
     }
 
     ${MOBILE} {

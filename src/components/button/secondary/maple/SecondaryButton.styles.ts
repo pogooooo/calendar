@@ -17,4 +17,12 @@ export const SecondaryButton = styled(C.SecondaryButton)`
     `}
 
     &:active { transform: translateY(1px); }
+
+    /* 금박 결은 Celestial 만. 스치는 빛도 ::after 를 쓰는데 그 자리는 도장 테두리(stampButton)의 자리다 —
+       지우지 말고 움직임만 멈춘다 */
+    background-image: none;
+    ${(p) => p.$variant === "primary" && css`
+        &::after { transform: none; }
+        &:hover:not(:disabled)::after { transform: none; }
+    `}
 `;

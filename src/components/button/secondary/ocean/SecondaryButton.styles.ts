@@ -11,4 +11,5 @@ export * from "../celestial/SecondaryButton.styles";
 export const SecondaryButton = styled(C.SecondaryButton)`
     ${(p) => seaButton(p.$variant === "primary" ? "primary" : p.$variant === "danger" ? "danger" : "default")}
     font-size: 0.9rem;
+    &::after { content: none; }
 `;

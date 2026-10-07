@@ -4,6 +4,7 @@
  * 집 규칙: 화면은 갈래 공용 JSX 하나, 모양은 갈래마다 *.styles.ts (scripts/check-theme-styles.mjs).
  */
 import styled, { keyframes } from "styled-components";
+import { gilt } from "@/styles/celestial/almanac";
 import { TAB_BAR_HEIGHT, SAFE_B } from "@/styles/breakpoints";
 
 /* ── 폰 전용 ─────────────────────────────────────────────────────────── */
@@ -84,10 +85,9 @@ export const Fab = styled.button`
     justify-content: center;
     width: 52px;
     height: 52px;
-    background-color: ${(props) => props.theme.colors.background};
+    ${gilt}
     border: 1px solid ${(props) => props.theme.colors.primary};
-    color: ${(props) => props.theme.colors.primary};
-    box-shadow: 0 0 12px ${(props) => props.theme.colors.primary}55;
+    box-shadow: inset 0 1px 0 rgba(255, 248, 220, 0.7), inset 0 -1px 0 rgba(110, 80, 10, 0.3), 0 8px 20px -8px ${(props) => props.theme.colors.primary};
     cursor: pointer;
     transition: transform 0.12s ease;
 

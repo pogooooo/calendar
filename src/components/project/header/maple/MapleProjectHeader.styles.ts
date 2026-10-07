@@ -19,6 +19,8 @@ export const HeaderActionButton = styled(C.HeaderActionButton)`
     letter-spacing: 1.5px;
     &:last-child { background: transparent; color: ${(p) => p.theme.colors.primary}; }
     ${MOBILE} { letter-spacing: 1px; }
+    &:last-child { box-shadow: none; }
+    &:last-child::after { content: none; }
 `;
 
 export const Tab = styled(C.Tab)`

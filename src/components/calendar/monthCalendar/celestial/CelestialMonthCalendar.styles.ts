@@ -1,4 +1,5 @@
 import styled, { css } from "styled-components";
+import { giltSmall } from "@/styles/celestial/almanac";
 import { NOT_WIDGET, MOBILE, TOUCH, SAFE_T, SAFE_B } from "@/styles/breakpoints";
 import { motion } from "framer-motion";
 import { hide_scrollbar } from "@/styles/shared";
@@ -332,8 +333,8 @@ export const DayCell = styled.div<{ $isToday: boolean; $isCurrentMonth: boolean;
                 margin: -3px 0 -3px -3px;
                 padding: 0 6px;
                 border-radius: 12px;
-                background-color: ${props.theme.colors.primary};
-                box-shadow: 0 0 0 3px ${props.theme.colors.primary}26, 0 0 14px ${props.theme.colors.primary}55;
+                ${giltSmall}
+                box-shadow: inset 0 1px 0 rgba(255, 248, 220, 0.7), 0 0 0 3px ${props.theme.colors.primary}26, 0 0 14px ${props.theme.colors.primary}55;
             `}
         }
     }

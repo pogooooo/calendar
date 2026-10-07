@@ -38,6 +38,7 @@ export const Fab = styled(C.Fab)`
     height: 52px;
     color: ${(p) => p.theme.colors.background};
     box-shadow: none;
+    background-image: none;
 `;
 
 /** 접은 판의 세로 이름표: 별 → 잎 */

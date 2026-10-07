@@ -89,6 +89,7 @@ export const HeaderActionButton = styled(C.HeaderActionButton)`
     &:last-child { ${seaButton("primary")} }
 
     ${MOBILE} { height: 40px; padding: 0 8px; font-size: 0.8125rem; letter-spacing: 0; }
+    &:last-child::after { content: none; }
 `;
 
 /** 탭 줄 — 아래로 머리카락 선 하나, 그 위에 글씨 탭 */
