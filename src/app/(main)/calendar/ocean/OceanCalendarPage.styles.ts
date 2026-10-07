@@ -75,11 +75,14 @@ export const DaySection = styled(C.DaySection)`
     }
 `;
 
+/** 띠의 상자에 딱 맞춰 자른다 — 띠의 높이가 flex 로만 정해져 100% 가 안 풀리는 때가 있어 절대 자리로 */
 export const DayClip = styled(C.DayClip)`
-    height: 100%;
+    position: absolute;
+    inset: 0;
+    height: auto;
     border-radius: inherit;
     overflow: hidden;
-    @media (max-width: 1250px) { height: 100%; overflow: hidden; }
+    @media (max-width: 1250px) { position: relative; inset: auto; height: 100%; overflow: hidden; }
 `;
 
 export const DayBody = styled(C.DayBody)`

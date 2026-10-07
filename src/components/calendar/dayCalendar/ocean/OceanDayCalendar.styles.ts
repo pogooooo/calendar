@@ -84,7 +84,7 @@ export const TimelineSection = styled(C.TimelineSection)`
     ${DESKTOP} {
         flex: 1 1 0 !important;
         min-width: 0;
-        min-height: 0;
+        min-height: 0 !important;
         height: 100%;
     }
 `;
