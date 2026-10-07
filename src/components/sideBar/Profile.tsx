@@ -8,7 +8,7 @@ import Setting from "@/assets/icons/Setting";
 import Home from "@/assets/icons/Home";
 import NavIcon from "@/assets/NavIcon";
 import useAuthStore from "@/store/useAuthStore";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { LogOut, UserCog, ChevronDown } from "lucide-react";
 import { useT } from "@/i18n/useT";
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
@@ -24,6 +24,8 @@ const Profile = () => {
     const user = useAuthStore((state) => state.user);
     const logout = useAuthStore((state) => state.logout);
     const router = useRouter();
+    // 지금 화면이 홈·설정이면 그 단추에 aria-current — 화면 읽기 프로그램이 알리고, 바다의 독은 고른 표시를 단다
+    const pathname = usePathname();
     const t = useT();
     const [open, setOpen] = useState(false);
     const popupRef = useRef<HTMLDivElement>(null);
@@ -158,11 +160,11 @@ const Profile = () => {
                 </AnimatePresence>
             </S.UserWrapper>
 
-            <SidebarMenuButton label={t.sidebar.settings} onClick={() => { router.push("/settings") }}>
+            <SidebarMenuButton label={t.sidebar.settings} aria-current={pathname?.startsWith("/settings") ? "page" : undefined} onClick={() => { router.push("/settings") }}>
                 <NavIcon name="settings" size={26} fallback={<Setting width={26} />} />
             </SidebarMenuButton>
 
-            <SidebarMenuButton label={t.sidebar.home} onClick={() => { router.push("/") }}>
+            <SidebarMenuButton label={t.sidebar.home} aria-current={pathname === "/" ? "page" : undefined} onClick={() => { router.push("/") }}>
                 <NavIcon name="home" size={26} fallback={<Home width={26} />} />
             </SidebarMenuButton>
         </S.ProfileWrapper>

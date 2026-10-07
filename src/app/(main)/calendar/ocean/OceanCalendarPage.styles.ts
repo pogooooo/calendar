@@ -14,8 +14,13 @@ export const PageWrapper = styled(C.PageWrapper)`
     padding: 20px 24px 20px 4px;
     background: transparent;
 
-    @media (max-width: 1250px) { padding: 16px; }
-    @media (max-width: 768px) { padding: 0; }
+    /* 뼈대는 "화면 높이 - 80px"(MainContent 위아래 2rem + 16px). 바다는 위에 상표 칩 자리를 더 비우고, 아래는 독 자리를
+       스크롤 칸 밖으로 빼는 대신 아래 여백이 1rem 이 된다 — 그만큼 맞춰 뺀다 (oceanShell) */
+    @media (max-width: 1250px) {
+        padding: 16px;
+        min-height: calc(100vh - 64px - var(--app-top-clearance, 0px) - var(--app-dock-clearance, 0px));
+    }
+    @media (max-width: 768px) { padding: 0; min-height: 0; }
 `;
 
 export const CalendarContainer = styled(C.CalendarContainer)`

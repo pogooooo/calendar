@@ -28,14 +28,14 @@ const arrive = (delay: number) => css`
 
 /* ── 틀 ──────────────────────────────────────────────────────────── */
 
-/** 화면 전체 — 넓게 쓰고, 아래 90px 는 독 자리로 비운다 */
+/** 화면 전체 — 넓게 쓴다. 독 자리는 뼈대(MainContent 의 --app-dock-clearance)가 비우므로 여기선 숨 쉴 틈만 */
 export const Page = styled.div`
     width: min(1240px, 100%);
     margin: 0 auto;
     display: flex;
     flex-direction: column;
     gap: 18px;
-    padding-bottom: 90px;
+    padding-bottom: 24px;
     font-family: ${(p) => p.theme.fonts.body};
     color: ${(p) => p.theme.colors.text};
 

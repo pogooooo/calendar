@@ -2,14 +2,66 @@
  * 바다의 떠 있는 층(창·알림·차림표·고르개)이 함께 쓰는 작은 조각 — 요즘 화면의 문법으로.
  * 창 틀(BaseModal) 옆에 두고, 할 일·프로젝트·챌린지·카테고리·더보기 창, 고르개·날짜 고르기·알림이 가져다 쓴다.
  *
- *   바탕: 옅게 어두워지는 장막 + 약한 흐림 / 창: 거의 불투명한 흰 판(surface "float"), 모서리 16px
+ *   바탕: 옅게 어두워지는 장막 + 약한 흐림 / 창: 데스크톱은 오른쪽의 유리 시트(모서리 24px), 폰은 아래 시트
  *   제목 15–16px·600, 머리·바닥은 머리카락 선 하나로 가르고, 닫기는 28px 글자 단추, 바닥 단추는 오른쪽 정렬
  *   서식 한 줄은 상자 없이 이름(옅은 글씨) + 칸, 칸은 10px 모서리의 흰 면에 선 하나
  * Celestial(금빛 실선 상자)·Maple(먹선 종이)과 달리 선은 아주 옅고, 장식은 없다.
  */
-import { css, keyframes } from "styled-components";
+import { css, keyframes, type DefaultTheme } from "styled-components";
 import { withAlpha } from "@/styles/color";
-import { EASE, focusRing, hairline, ink, pearlToggle, tideInput } from "@/styles/ocean/water";
+import { EASE, focusRing, hairline, ink, pearlToggle, surface, tideInput } from "@/styles/ocean/water";
+
+/* ── 오른쪽 시트 (데스크톱) ─────────────────────────────────────────── */
+
+/** 데스크톱 — 창이 오른쪽 시트가 되는 폭 */
+export const SHEET = "@media (min-width: 769px)";
+/** 데스크톱의 키 큰 창 — 서식이 시트 높이를 다 채운다. 520px 이하는 뼈대의 "한 덩어리로 굴리고 단추 줄은 붙는다" */
+export const SHEET_TALL = "@media (min-width: 769px) and (min-height: 521px)";
+
+/** 시트 유리 색 — 붙은 단추 줄(키 작은 창)도 이 색을 깔아 뒤로 굴러가는 칸이 비치지 않게 */
+export const sheetTint = (t: DefaultTheme) => (t.mode === "dark" ? "rgba(15, 28, 30, 0.86)" : "rgba(255, 255, 255, 0.8)");
+
+/**
+ * 창 유리 — 폰·위젯은 surface("float") 위에 뼈대의 불투명 바탕 그대로, 데스크톱 시트는 뒤의 물빛이 조금 비치게.
+ * 뼈대가 바탕색에 !important 를 걸어 두어(위젯 창에서도 읽히게) 시트도 !important 로 덮는다.
+ */
+export const sheetGlass = css`
+    ${surface("float")}
+    ${SHEET} {
+        background-color: ${(p) => sheetTint(p.theme)} !important;
+        backdrop-filter: blur(40px) saturate(170%);
+        -webkit-backdrop-filter: blur(40px) saturate(170%);
+    }
+`;
+
+/**
+ * 서식(폼)·몸통이 시트 높이를 채운다. 시트는 창 높이를 다 쓰므로 뼈대의 85vh 상한을 푼다.
+ * 키 작은 창은 뼈대가 이미 "남은 높이를 채우고 그 안에서 굴러간다"(flex 1 · overflow auto)를 걸어 둔다.
+ */
+export const sheetFill = css`
+    ${SHEET} { max-height: none; }
+    ${SHEET_TALL} {
+        flex: 1 1 auto;
+        min-height: 0;
+    }
+`;
+
+/**
+ * 단추 줄 바탕 — 키 큰 시트에서는 비운다(제자리에 있으니). 키 작은 창에서 바닥에 붙어 있을 때만
+ * 시트 색에 흐림을 깔아, 밑으로 굴러가는 칸이 비치지 않고 서리 낀 듯 지나가게 한다.
+ */
+export const sheetFootBg = css`
+    ${SHEET} {
+        background-color: ${(p) => sheetTint(p.theme)};
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+    }
+    ${SHEET_TALL} {
+        background-color: transparent;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+`;
 
 /* ── 움직임 (모두 한 번, 짧게) ─────────────────────────────────────── */
 
@@ -31,11 +83,34 @@ export const popIn = keyframes`
 
 /* ── 겉 ─────────────────────────────────────────────────────────────── */
 
-/** 창 뒤의 장막 — 옅게 어두워지고 아주 조금 흐려진다 */
+/**
+ * 창 뒤의 장막 — 옅게 어두워지고 조금 흐려진다. 짙기는 --veil(0~1, 없으면 1)로 — BaseModal 의 몸짓이 이 값을 움직인다.
+ * 투명도(opacity)로 나타나게 하지 않는다: 투명도가 움직이는 막 안에서는 위에 뜬 창의 흐림이 뒤 화면을 못 본다.
+ * 흐림도 막 자체가 아니라 ::before 가 맡는다 — 막에 걸면 막이 흐림의 바닥(backdrop root)이 되어 창의 흐림이 그 안에 갇힌다.
+ * 막은 position: fixed + z-index 로 쌓임 맥락을 이미 갖고 있어 ::before(z -1)는 창 뒤에 깔린다.
+ */
 export const veil = css`
-    background-color: ${(p) => (p.theme.mode === "dark" ? "rgba(0, 0, 0, 0.5)" : "rgba(18, 33, 32, 0.26)")};
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
+    background-color: ${(p) => (p.theme.mode === "dark" ? "rgba(0, 0, 0, calc(0.5 * var(--veil, 1)))" : "rgba(18, 33, 32, calc(0.24 * var(--veil, 1)))")};
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+
+    &::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        pointer-events: none;
+        backdrop-filter: blur(calc(6px * var(--veil, 1)));
+        -webkit-backdrop-filter: blur(calc(6px * var(--veil, 1)));
+    }
+`;
+
+/** 몸짓 라이브러리 없이 뜨는 막(알림 창)이 짙어지며 나타날 때 — 색과 흐림만 움직인다 */
+export const veilIn = keyframes`
+    from { background-color: transparent; }
+`;
+export const veilBlurIn = keyframes`
+    from { backdrop-filter: blur(0px); -webkit-backdrop-filter: blur(0px); }
 `;
 
 /** 창·차림표 제목 — 15–16px, 600, 살짝 좁힌 자간 */

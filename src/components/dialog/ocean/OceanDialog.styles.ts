@@ -3,16 +3,20 @@
  * **장식 없는 확인 창**: 흰 판(surface "float", 16px 모서리) 왼쪽에 무채색 동그라미 아이콘(OceanArcanaEmblem),
  * 그 옆에 15px·600 제목과 13px 옅은 설명, 아래 오른쪽에 단추. 위험한 일은 산호색 단추 하나로만 알린다.
  * 번호·이름(아르카나)·귀퉁이 장식·나눔선은 그리지 않는다. 나타날 때 살짝 떠오른다(한 번).
+ * 창(오른쪽 시트) 위에서 물을 때도 화면 가운데의 작은 카드 그대로 — 시트와 겹치지 않고 눈길이 한곳에 모인다.
+ * 장막은 투명도 대신 색과 흐림이 짙어지며 나타난다 — 투명도가 움직이는 막 안에서는 카드의 흐림이 뒤 화면을 못 본다(oceanLayer.veil).
  */
 import styled, { css } from "styled-components";
 import * as C from "../celestial/CelestialDialog.styles";
 import { EASE, seaButton, surface } from "@/styles/ocean/water";
-import { popIn, veil } from "@/components/modal/baseModal/ocean/oceanLayer";
+import { popIn, veil, veilBlurIn, veilIn } from "@/components/modal/baseModal/ocean/oceanLayer";
 
 export * from "../celestial/CelestialDialog.styles";
 
 export const Veil = styled(C.Veil)`
     ${veil}
+    animation: ${veilIn} 0.18s ease-out both;
+    &::before { animation: ${veilBlurIn} 0.18s ease-out both; }
 `;
 
 /** 아이콘 왼쪽 · 글 오른쪽 · 단추 아래 오른쪽 — 네 꼴 모두 같은 틀로 */
@@ -33,7 +37,7 @@ const card = css`
     width: 380px;
     max-width: 100%;
     padding: 20px;
-    border-radius: 16px;
+    border-radius: 20px;
     animation: ${popIn} 0.22s ${EASE} both;
 
     &::before { display: none; }

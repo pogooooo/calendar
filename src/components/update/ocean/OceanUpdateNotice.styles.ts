@@ -2,17 +2,21 @@
  * 바다의 업데이트 알림(데스크톱 오른쪽 아래) — 금빛 테두리·빛무리·귀퉁이 사선(Celestial), 덩굴 귀 종이(Maple) 대신
  * **알림 토스트**: 떠 있는 흰 판(14px 모서리), 작은 옅은 머리 글씨 + 15px·600 판 번호, 고친 것들은 작은 점 목록,
  * 단추는 오른쪽 — "나중에" 글자 단추와 청록 "설치". 받는 중에는 가는 진행 막대. 살짝 떠오르며 나타난다(한 번).
+ * 아래 가운데의 독(OceanSideBar)과 겹치지 않게 독 위 높이에 뜬다.
  */
 import styled from "styled-components";
 import * as C from "../celestial/CelestialUpdateNotice.styles";
 import { EASE, ink, seaButton, surface, surfaceIn } from "@/styles/ocean/water";
 import { ghostIcon } from "@/components/modal/baseModal/ocean/oceanLayer";
+import { ABOVE_DOCK, SHELL } from "@/components/sideBar/ocean/oceanShell";
 
 export * from "../celestial/CelestialUpdateNotice.styles";
 
 export const Panel = styled(C.Panel)`
     ${surface("float")}
     position: fixed;
+    right: ${SHELL.edge}px;
+    bottom: ${ABOVE_DOCK}px;
     width: 300px;
     padding: 14px 16px 16px;
     border-radius: 14px;

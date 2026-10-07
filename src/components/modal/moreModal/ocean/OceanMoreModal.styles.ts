@@ -3,18 +3,20 @@
  * 15px·600 날짜 제목 밑에 머리카락 선, 개수는 옆에 옅은 작은 글씨.
  * 한 줄은 상자 없는 32px 줄(앞에 카테고리 색 점) — 올리면 8px 모서리로 옅게 칠해진다.
  * 끝낸 일은 점이 빈 고리가 되고 글자는 옅게 지운다. 챌린지 체크는 동그라미(끝내면 청록으로 차고 흰 체크).
+ * 데스크톱에서는 오른쪽 유리 시트(OceanBaseModal) — 목록이 시트 높이를 채우고 그 안에서 굴러간다.
  */
 import styled, { css } from "styled-components";
 import * as C from "../celestial/CelestialMoreModal.styles";
 import { bubbleCheck, ink } from "@/styles/ocean/water";
 import { withAlpha } from "@/styles/color";
-import { ghostIcon, headRule, menuRow, titleType } from "../../baseModal/ocean/oceanLayer";
+import { ghostIcon, headRule, menuRow, sheetFill, titleType } from "../../baseModal/ocean/oceanLayer";
 
 export * from "../celestial/CelestialMoreModal.styles";
 
-/** 귀퉁이 사선은 뗀다 */
+/** 귀퉁이 사선은 뗀다. 시트에서는 높이를 다 채운다 */
 export const ContentWrapper = styled(C.ContentWrapper)`
     &::after { display: none; }
+    ${sheetFill}
 `;
 
 export const Header = styled(C.Header)`

@@ -4,17 +4,24 @@
  *   한 줄 = 옅은 이름(아이콘 포함) + 오른쪽 칸. 칸은 10px 모서리의 흰 면에 선 하나, 누르면 청록 선과 옅은 고리
  *   반복 조건은 판 안의 작은 카드(surface "card"), 스위치는 36×20 납작한 홈, 단추는 오른쪽 정렬
  *
- * 키 작은 창(위젯·눕힌 폰·자판이 올라온 폰)에서 머리·몸통·바닥을 한 덩어리로 굴리는 뼈대(Celestial 의
+ * 데스크톱에서는 오른쪽 유리 시트(OceanBaseModal) — 서식이 시트 높이를 다 채워 머리는 위, 몸통은 남은 높이에서 굴러가고,
+ * 단추 줄은 시트 바닥에 놓인다.
+ * 키 작은 창(위젯·눕힌 폰·자판이 올라온 폰·낮은 데스크톱 창)에서 머리·몸통·바닥을 한 덩어리로 굴리는 뼈대(Celestial 의
  * max-height: 520px — 서식이 굴러가고, 몸통은 넘쳐도 그대로 두고, 바닥은 붙는다)는 건드리지 않는다.
- * 바닥의 position 은 덮어쓰지 않고, 붙은 바닥 뒤가 비치지 않게 바닥에 판과 같은 색을 깐다.
+ * 바닥의 position 은 덮어쓰지 않고, 붙은 바닥 뒤가 비치지 않게 바닥에 판(시트)과 같은 색을 깐다.
  */
 import styled from "styled-components";
 import * as C from "../celestial/CelestialTodoModal.styles";
 import { hairline, ink, surface } from "@/styles/ocean/water";
 import { MOBILE } from "@/styles/breakpoints";
-import { field, fieldLabel, footRule, ghostIcon, headRule, menuRow, switch36, titleType } from "../../baseModal/ocean/oceanLayer";
+import { SHEET_TALL, field, fieldLabel, footRule, ghostIcon, headRule, menuRow, sheetFill, sheetFootBg, switch36, titleType } from "../../baseModal/ocean/oceanLayer";
 
 export * from "../celestial/CelestialTodoModal.styles";
+
+/** 서식 — 시트 높이를 다 채운다 */
+export const FormWrapper = styled(C.FormWrapper)`
+    ${sheetFill}
+`;
 
 /** 칸 바탕 — 손이 가도 흰 면 그대로 (뼈대가 거는 금빛 물을 지운다) */
 const fieldBg = (p: { theme: { mode: string } }) => (p.theme.mode === "dark" ? "rgba(255, 255, 255, 0.04)" : "rgba(255, 255, 255, 0.9)");
@@ -50,6 +57,7 @@ export const ScrollBody = styled(C.ScrollBody)`
     background: transparent;
 
     ${MOBILE} { padding: 10px 8px 14px; }
+    ${SHEET_TALL} { flex: 1 1 auto; min-height: 0; }
 `;
 
 /** 한 줄 — 상자 없이 이름 + 칸 */
@@ -167,6 +175,7 @@ export const Footer = styled(C.Footer)`
     ${footRule}
     padding: 12px 16px;
     background-color: ${(p) => p.theme.colors.surface};
+    ${sheetFootBg}
 
     ${MOBILE} { padding: 10px 16px; }
 

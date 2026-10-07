@@ -1,6 +1,6 @@
 import * as React from "react";
 import { createPortal } from "react-dom";
-import { AnimatePresence, useReducedMotion } from "framer-motion";
+import { AnimatePresence, useReducedMotion, type MotionProps } from "framer-motion";
 import { ThemeProvider, DefaultTheme } from "styled-components";
 import { MOBILE_BREAKPOINT } from "@/styles/breakpoints";
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
@@ -10,6 +10,14 @@ import * as OceanS from './ocean/OceanBaseModal.styles';
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
 const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
+
+type ModalMotion = Pick<MotionProps, "initial" | "animate" | "exit" | "transition">;
+/**
+ * 갈래가 제 몸짓을 주면 데스크톱 창(desktop)과 바탕 막(overlay)은 그것으로 움직인다. 없으면 아래의 기본 몸짓.
+ * 바다는 오른쪽에서 밀려 들어오는 시트라 가운데서 커지는 기본 몸짓이 맞지 않는다 (OceanBaseModal.styles).
+ */
+const MOTION: ThemeImpls<{ desktop?: ModalMotion; overlay?: ModalMotion } | null> = { celestial: null, maple: null, ocean: OceanS.modalMotion };
+const FADE: ModalMotion = { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 } };
 
 /**
  * 위젯 창은 배경이 비쳐 보이도록 surface를 transparent로, 글자색도 배경에 맞게 덮어쓴다.
@@ -53,6 +61,7 @@ export interface CelestialBaseModalProps {
 
 export default function BaseModal({ isOpen, onClose, children, maxWidth = "400px", ariaLabel }: CelestialBaseModalProps) {
     const S = usePickTheme(STYLES);
+    const themedMotion = usePickTheme(MOTION);
     const containerRef = React.useRef<HTMLDivElement>(null);
     const reducedMotion = useReducedMotion();
     const closeRef = React.useRef(onClose);
@@ -85,12 +94,13 @@ export default function BaseModal({ isOpen, onClose, children, maxWidth = "400px
             exit: { y: "100%", opacity: 1 },
             transition: { type: "spring" as const, damping: 32, stiffness: 340, mass: 0.8 },
         }
-        : {
+        : themedMotion?.desktop ?? {
             initial: { scale: 0.95, opacity: 0, y: 15 },
             animate: { scale: 1, opacity: 1, y: 0 },
             exit: { scale: 0.95, opacity: 0, y: 15 },
             transition: { type: "spring" as const, damping: 25, stiffness: 300 },
         };
+    const veil = themedMotion?.overlay ?? FADE;
 
     const keyboardBox = useKeyboardBox(isOpen && isMobile);
 
@@ -139,9 +149,7 @@ export default function BaseModal({ isOpen, onClose, children, maxWidth = "400px
         <AnimatePresence>
             {isOpen && (
                 <S.Overlay
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
+                    {...veil}
                     onClick={onClose}
                     style={keyboardBox ?? undefined}
                 >

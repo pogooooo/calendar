@@ -47,6 +47,7 @@ const Menu = () => {
                     label={item.label}
                     $numeral={ROMAN[i] ?? String(i + 1)}
                     $active={pathname?.startsWith(item.path)}
+                    aria-current={pathname?.startsWith(item.path) ? "page" : undefined}
                     onClick={() => { router.push(item.path) }}
                 >
                     {item.icon}

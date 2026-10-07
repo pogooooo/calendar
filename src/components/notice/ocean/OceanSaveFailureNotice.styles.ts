@@ -1,13 +1,14 @@
 /**
  * 바다의 저장 실패 알림 — 붉은 실선 띠(Celestial), 종이 위 붉은 띠(Maple) 대신 **알림 토스트**:
  * 떠 있는 흰 판(12px 모서리)에 산호색 경고 아이콘 하나, 13px 글, 오른쪽에 작은 글자 단추 닫기.
- * 아래에서 살짝 떠오르며 나타난다(한 번). 폰에서는 탭바 위에 화면 폭으로.
+ * 아래에서 살짝 떠오르며 나타난다(한 번). 데스크톱에서는 아래 가운데의 독 바로 위, 폰에서는 알약 탭바 위에 화면 폭으로.
  */
 import styled, { keyframes } from "styled-components";
 import * as C from "../celestial/CelestialSaveFailureNotice.styles";
 import { EASE, surface } from "@/styles/ocean/water";
 import { MOBILE } from "@/styles/breakpoints";
 import { ghostIcon } from "@/components/modal/baseModal/ocean/oceanLayer";
+import { ABOVE_DOCK } from "@/components/sideBar/ocean/oceanShell";
 
 export * from "../celestial/CelestialSaveFailureNotice.styles";
 
@@ -23,6 +24,7 @@ const toastInFlat = keyframes`
 
 export const Bar = styled(C.Bar)`
     ${surface("float")}
+    @media (min-width: 769px) { bottom: ${ABOVE_DOCK}px; }
     gap: 10px;
     padding: 10px 8px 10px 14px;
     border-radius: 12px;

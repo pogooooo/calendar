@@ -3,17 +3,19 @@
  * 16px·600 제목 밑과 단추 줄 위에만 머리카락 선, 28px 글자 단추 닫기, 상자 없는 "이름 + 칸" 줄,
  * 10px 모서리 입력칸, 36×20 스위치. 참가자·선행 조건은 판 안의 작은 카드에 놓인 8px 모서리 칩 —
  * 고르면 청록 기운이 돈다.
+ * 데스크톱에서는 오른쪽 유리 시트(OceanBaseModal) — 서식이 시트 높이를 다 채우고 단추 줄은 시트 바닥에.
  */
 import styled, { css } from "styled-components";
 import * as C from "../celestial/CelestialModal.styles";
 import { ink, seaChip, surface } from "@/styles/ocean/water";
 import { MOBILE } from "@/styles/breakpoints";
-import { field, fieldLabel, footRule, ghostIcon, headRule, switch36, titleType } from "../../baseModal/ocean/oceanLayer";
+import { field, fieldLabel, footRule, ghostIcon, headRule, sheetFill, sheetFootBg, switch36, titleType } from "../../baseModal/ocean/oceanLayer";
 
 export * from "../celestial/CelestialModal.styles";
 
 export const FormWrapper = styled(C.FormWrapper)`
     background: transparent;
+    ${sheetFill}
 `;
 
 export const Header = styled(C.Header)`
@@ -114,6 +116,7 @@ export const Footer = styled(C.Footer)`
     ${footRule}
     padding: 12px 16px;
     background-color: ${(p) => p.theme.colors.surface};
+    ${sheetFootBg}
 `;
 
 export const ErrorMessage = styled(C.ErrorMessage)`

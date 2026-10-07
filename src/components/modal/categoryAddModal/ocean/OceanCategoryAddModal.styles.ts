@@ -2,14 +2,20 @@
  * 바다의 카테고리 창 — 금빛 실선 서식(Celestial), 먹선 종이(Maple) 대신
  * 16px·600 제목 밑과 단추 줄 위에만 머리카락 선, 28px 글자 단추 닫기, 상자 없는 "이름 + 칸" 줄.
  * 색 고르기는 머리카락 선 고리를 두른 24px 동그라미 하나, 옆의 색 번호는 작은 고정폭 글씨.
+ * 데스크톱에서는 오른쪽 유리 시트(OceanBaseModal) — 서식이 시트 높이를 다 채우고 단추 줄은 시트 바닥에.
  */
 import styled from "styled-components";
 import * as C from "../celestial/CelestialCategoryAddModal.styles";
 import { MONO, hairline, ink } from "@/styles/ocean/water";
 import { MOBILE } from "@/styles/breakpoints";
-import { field, fieldLabel, footRule, ghostIcon, headRule, titleType } from "../../baseModal/ocean/oceanLayer";
+import { SHEET_TALL, field, fieldLabel, footRule, ghostIcon, headRule, sheetFill, sheetFootBg, titleType } from "../../baseModal/ocean/oceanLayer";
 
 export * from "../celestial/CelestialCategoryAddModal.styles";
+
+/** 서식 — 시트 높이를 다 채운다 */
+export const FormWrapper = styled(C.FormWrapper)`
+    ${sheetFill}
+`;
 
 export const Header = styled(C.Header)`
     padding: 14px 12px 12px 20px;
@@ -35,6 +41,7 @@ export const ScrollBody = styled(C.ScrollBody)`
     gap: 2px;
     padding: 12px 20px 16px;
     ${MOBILE} { padding: 10px 16px 14px; }
+    ${SHEET_TALL} { flex: 1 1 auto; min-height: 0; }
 `;
 
 /** 색 — 고리를 두른 동그라미 하나 */
@@ -88,4 +95,5 @@ export const Footer = styled(C.Footer)`
     ${footRule}
     padding: 12px 16px;
     background-color: ${(p) => p.theme.colors.surface};
+    ${sheetFootBg}
 `;

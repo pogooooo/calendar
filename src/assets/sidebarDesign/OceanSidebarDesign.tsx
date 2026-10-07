@@ -1,10 +1,9 @@
 "use client";
 /**
- * 사이드바 옆 손잡이 — 바다는 그림 없이 가는 선 하나. 마우스를 올리면 판 가장자리 옆에 선이 서서 "끌 수 있다"를 알린다.
+ * 사이드바 옆 손잡이 자리 — 바다에는 사이드바 칸이 없다(아래 가운데의 독과 왼쪽 위 칩, OceanSideBar.styles).
+ * 폭을 조절할 것이 없으니 손잡이도 그리지 않는다 (손잡이 칸 SidebarContour 도 감춘다).
  * (Celestial: 별 박힌 옆선, Maple: 먹선에 걸린 단풍 가지)
  */
-import * as S from "./OceanSidebarDesign.styles";
-
-export default function OceanSidebarDesign({ isHovered = false }: { isHovered?: boolean }) {
-    return <S.Handle $hovered={isHovered} aria-hidden="true" data-ambient="ocean-handle" />;
+export default function OceanSidebarDesign(_props: { isHovered?: boolean }) {
+    return <></>;
 }

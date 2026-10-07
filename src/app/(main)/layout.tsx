@@ -85,7 +85,11 @@ const MainContent = styled.main`
     overflow-y: auto;
     /* 화면 밖으로 걸쳐 둔 장식(카테고리·기념일의 별자리 워터마크)이 가로 스크롤바를 만들지 않게 */
     overflow-x: hidden;
-    padding: 2rem;
+    /* 갈래가 화면 위·아래에 띄운 것(바다의 상표 칩·독)이 있으면 그 갈래가 이 값을 적는다. 없으면 0 — 그대로 2rem.
+       위(칩)는 여백으로 비워 내용이 칩 밑으로 굴러가게 두고, 아래(독)는 스크롤 칸 밖으로 뺀다 — 판보다 긴 화면은
+       아래 여백 없이 칸 끝까지 굴러가므로, 칸이 독 밑까지 내려가 있으면 마지막 줄이 독에 깔린다. 그 대신 아래 여백은 1rem */
+    padding: calc(2rem + var(--app-top-clearance, 0px)) 2rem max(1rem, calc(2rem - var(--app-dock-clearance, 0px)));
+    margin-bottom: var(--app-dock-clearance, 0px);
     position: relative;
 
     @media (max-width: ${MOBILE_BREAKPOINT}px) {
