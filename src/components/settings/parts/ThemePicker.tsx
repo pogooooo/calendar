@@ -7,11 +7,39 @@
  * 갈래가 늘수록 판이 끝없이 길어져 무엇이 있는지 한눈에 안 들어왔다.
  * 이제 갈래는 작은 타일 하나씩 늘어놓고(폰에서는 옆으로 밀어 보는 띠), 벌은 고른 갈래의 무대에서 고른다.
  * 모양은 갈래마다의 설정 판 짜임(L)이 맡는다 — 여기에는 짜임만 있다.
+ *
+ * 타일과 무대에는 그 갈래의 오브제가 하나씩 선다(Celestial 혼천의 · Maple 잎 · Ocean 구슬). 가만히 있다가
+ * 타일에 올리거나(초점) 고르면 천천히 돈다. 오브제의 색은 지금 테마가 아니라 그 갈래의 것(지금의 밝기)으로 —
+ * Ocean 화면에서도 Celestial 타일의 혼천의는 금빛이다. 축소판 그림·글자는 덮지 않는다(ThemePicker.styles).
  */
+import { useState } from "react";
+import { ThemeProvider, useTheme } from "styled-components";
+import Objet, { type ObjetName } from "@/components/objet/Objet";
+import { themes, type ThemeChoice } from "@/styles/theme";
 import type * as Layout from "../celestial/CelestialSettings.layout";
-import type { ThemeChoice } from "@/styles/theme";
+import * as P from "./ThemePicker.styles";
 
 type L = typeof Layout;
+
+/** 갈래마다의 오브제 — 작은 자리(타일)와 큰 자리(무대) */
+const OBJET: Record<string, { name: ObjetName; small: Record<string, unknown>; large: Record<string, unknown> }> = {
+    celestial: { name: "celestial/armillary", small: { detail: "mark", still: true }, large: { still: true } },
+    maple: { name: "maple/leaf", small: { still: true }, large: { still: true } },
+    ocean: { name: "ocean/orb", small: { still: true }, large: { still: true } },
+};
+
+/** 그 갈래의 오브제 — 그 갈래의 색(지금 화면의 밝기)으로 칠한다. 오브제가 없는 갈래는 빈자리 */
+function FamilyObjet({ id, size, active, large = false }: { id: string; size: string; active: boolean; large?: boolean }) {
+    const page = useTheme();
+    const spec = OBJET[id];
+    if (!spec) return null;
+    const family = themes[page.mode === "dark" ? `${id}-dark` : id] ?? themes[id] ?? page;
+    return (
+        <ThemeProvider theme={family}>
+            <Objet name={spec.name} size={size} active={active} options={large ? spec.large : spec.small} interaction="none" />
+        </ThemeProvider>
+    );
+}
 
 /** 축소판 달력 한 판. 오늘 하루와 일정 사흘이 들어간다. */
 const CELL_PLAN = [
@@ -61,16 +89,20 @@ interface Props {
     variantLabel: string;
 }
 
-export default function ThemePicker({ L, themes, currentTheme, themeOptions, onThemeChange, onThemeOptionChange, optionLabels, label, variantLabel }: Props) {
-    const current = themes.find((th) => th.id === currentTheme) ?? themes[0];
+export default function ThemePicker({ L, themes: choices, currentTheme, themeOptions, onThemeChange, onThemeOptionChange, optionLabels, label, variantLabel }: Props) {
+    const current = choices.find((th) => th.id === currentTheme) ?? choices[0];
     const currentOption = themeOptions[current.id] ?? current.options[0];
+    // 올리거나 초점이 온 타일 — 그 타일의 오브제가 돈다
+    const [lit, setLit] = useState<string | null>(null);
 
     return (
         <>
+            <P.GalleryFit>
             <L.ThemeGallery role="radiogroup" aria-label={label}>
-                {themes.map((th) => {
+                {choices.map((th) => {
                     const option = themeOptions[th.id] ?? th.options[0];
                     const on = th.id === current.id;
+                    const off = () => setLit((v) => (v === th.id ? null : v));
                     return (
                         <L.FamilyTile
                             key={th.id}
@@ -80,6 +112,10 @@ export default function ThemePicker({ L, themes, currentTheme, themeOptions, onT
                             title={th.description}
                             $selected={on}
                             onClick={() => { if (!on) onThemeChange(th.id); }}
+                            onMouseEnter={() => setLit(th.id)}
+                            onMouseLeave={off}
+                            onFocus={() => setLit(th.id)}
+                            onBlur={off}
                         >
                             <ThemeThumb L={L} theme={th} option={option} height={84} />
                             <L.FamilyFoot>
@@ -90,18 +126,27 @@ export default function ThemePicker({ L, themes, currentTheme, themeOptions, onT
                                         {th.options.map((o) => <i key={o} className={o === option ? "on" : undefined} />)}
                                     </L.VariantDots>
                                 )}
+                                <P.TileObjet aria-hidden="true">
+                                    <FamilyObjet id={th.id} size="100%" active={on || lit === th.id} />
+                                </P.TileObjet>
                             </L.FamilyFoot>
                         </L.FamilyTile>
                     );
                 })}
             </L.ThemeGallery>
+            </P.GalleryFit>
 
             <L.ThemeStage key={current.id}>
                 <L.StageThumb>
                     <ThemeThumb L={L} theme={current} option={currentOption} height={168} />
                 </L.StageThumb>
                 <L.StageInfo>
-                    <L.StageName>{current.label}</L.StageName>
+                    <P.StageHead>
+                        <L.StageName>{current.label}</L.StageName>
+                        <P.StageObjet aria-hidden="true">
+                            <FamilyObjet id={current.id} size="100%" active large />
+                        </P.StageObjet>
+                    </P.StageHead>
                     <L.StageDesc>{current.description}</L.StageDesc>
                     {current.options.length > 1 && (
                         <L.SegGroup role="radiogroup" aria-label={variantLabel}>
