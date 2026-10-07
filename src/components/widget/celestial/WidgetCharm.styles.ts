@@ -1,10 +1,9 @@
-import styled, { keyframes } from 'styled-components';
+import styled from 'styled-components';
 import type { ComponentType } from 'react';
-const turn = keyframes`to { rotate:360deg; }`;
 export const Charm = styled.div`
     position:absolute; width:48px; height:48px; right:8px; bottom:8px; z-index:0; pointer-events:none; color:${p=>p.theme.colors.primary}; opacity:.12;
-    svg { width:100%; height:100%; stroke:currentColor; stroke-width:.7; animation:${turn} 90s linear infinite; }
-    html[data-theme-motion="gentle"] & svg { animation:none; }
+    /* 움직이지 않는다 — 위젯은 투명 창이라, 끝없이 도는 장식이 창 전체를 쉬지 않고 다시 칠하게 해 깜빡였다 */
+    svg { width:100%; height:100%; stroke:currentColor; stroke-width:.7; }
     @media(max-height:180px),(max-width:260px) { display:none; }
 `;
 /** JSX stays in the theme component through a small intrinsic styled path. */
