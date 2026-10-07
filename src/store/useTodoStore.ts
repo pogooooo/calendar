@@ -4,6 +4,7 @@ import { reportSaveFailure } from "@/lib/saveError";
 import type { AuthFetch, TodoType, TodoCompletionType } from '@/types';
 import { toUtcAnchorIso, utcDayKey } from '@/lib/dateKey';
 import { readError } from '@/lib/readError';
+import { fx } from '@/lib/fx';
 
 export type { TodoType, TodoCompletionType };
 
@@ -78,6 +79,7 @@ const useTodoStore = create<TodoState>((set, get) => ({
         set((state) => ({
             todos: state.todos.map(t => t.id === todoId ? { ...t, completions: newCompletions } : t)
         }));
+        if (!isCompleted) fx.emit("complete");
 
         try {
             const res = await authFetch('/api/todo', {
@@ -97,6 +99,7 @@ const useTodoStore = create<TodoState>((set, get) => ({
     addTodo: async (authFetch, data) => {
         const previousTodos = get().todos;
         const tempId = `temp-${Date.now()}`;
+        fx.emit("add");
 
         const newTodo: TodoType = {
             id: tempId,

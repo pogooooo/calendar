@@ -17,6 +17,7 @@ import useProjectStore from "@/store/useProjectStore";
 import { projectCalendarItems } from "@/lib/projectCalendar";
 import { useProjectItemActions } from "@/hooks/useProjectItemActions";
 import useChallengeStore, { ChallengeType } from "@/store/useChallengeStore";
+import { fx, rectOf } from "@/lib/fx";
 
 export interface CalendarTodoType extends ExpandedTodoType {
     isProject?: boolean;
@@ -230,21 +231,26 @@ const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
             return t.calendar.monthTitle(currentDate.getFullYear(), currentDate.getMonth() + 1);
         }, [currentDate, t.calendar]);
 
+        /** 달을 넘길 때 갈래의 효과가 달력 칸 위로 지나간다 */
+        const flipFx = (direction: 1 | -1) => fx.emit("month-flip", { direction, rect: rectOf(document.querySelector("[data-fx-zone='month']")) });
+
         const handlePrevMonth = () => {
+            flipFx(-1);
             setDirection(-1);
             setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
         };
 
         const handleNextMonth = () => {
+            flipFx(1);
             setDirection(1);
             setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
         };
 
         const handleToday = () => {
             const today = new Date();
-            setDirection(
-                today.getFullYear() * 12 + today.getMonth()
-                    < currentDate.getFullYear() * 12 + currentDate.getMonth() ? -1 : 1);
+            const back = today.getFullYear() * 12 + today.getMonth() < currentDate.getFullYear() * 12 + currentDate.getMonth();
+            if (today.getFullYear() !== currentDate.getFullYear() || today.getMonth() !== currentDate.getMonth()) flipFx(back ? -1 : 1);
+            setDirection(back ? -1 : 1);
             setCurrentDate(new Date(today.getFullYear(), today.getMonth(), 1));
             onDateChange?.(today);
         };

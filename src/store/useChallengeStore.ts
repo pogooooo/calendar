@@ -4,6 +4,7 @@ import { reportSaveFailure } from "@/lib/saveError";
 import type { AuthFetch, ChallengeType, ChallengeCompletionType } from '@/types';
 import { localDateKey } from '@/lib/dateKey';
 import { readError } from '@/lib/readError';
+import { fx } from '@/lib/fx';
 
 export type { ChallengeType, ChallengeCompletionType };
 
@@ -148,6 +149,7 @@ const useChallengeStore = create<ChallengeState>((set, get) => ({
                 c.id === challengeId ? { ...c, completions: newCompletions } : c
             )
         }));
+        if (!existingComp) fx.emit("complete");
 
         try {
             const res = await authFetch('/api/challenge/completion', {

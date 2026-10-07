@@ -336,7 +336,7 @@ const MonthCalendarView = React.forwardRef<HTMLDivElement, CelestialMonthProps>(
                 </S.MoveNotice>}
 
                 <S.SliderWrapper {...swipe}>
-                    <S.CalendarWindow>
+                    <S.CalendarWindow data-fx-zone="month">
                         <AnimatePresence initial={false} custom={direction} mode="popLayout">
                             <motion.div
                                 key={currentDate.toISOString()}

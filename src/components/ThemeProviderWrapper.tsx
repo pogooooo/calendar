@@ -12,6 +12,7 @@ import CelestialGround from "@/styles/celestial/CelestialGround";
 import type { ThemeFamily } from "@/styles/themed";
 import OceanGround from '@/styles/ocean/OceanGround';
 import ThemeAtmosphere from './ambient/ThemeAtmosphere';
+import FxStage from './fx/FxStage';
 import { MotionConfig } from 'framer-motion';
 
 /** 갈래가 화면 전체에 얹는 한 겹 (종이결 같은 것). 없는 갈래는 아무것도 안 얹는다. */
@@ -93,6 +94,7 @@ export default function ThemeProviderWrapper({ children }: { children: React.Rea
             />
             <ThemeAtmosphere />
             {children}
+            <FxStage />
             </MotionConfig>
         </ThemeProvider>
     );

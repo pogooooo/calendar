@@ -16,6 +16,7 @@ import { useDialog } from "@/components/dialog/DialogProvider";
 import SettingsView from "./SettingsView";
 import type { Translations } from "@/i18n/types";
 import { listThemes, type ThemeChoice } from "@/styles/theme";
+import { fx } from "@/lib/fx";
 
 // 테마 목록의 모양은 styles/theme.ts 가 정한다.
 export type { ThemeChoice as ThemeDef } from "@/styles/theme";
@@ -184,7 +185,7 @@ export default function SettingsPage() {
         [widgetMeta],
     );
 
-    const handleThemeChange = (themeId: string) => updateTheme(authFetch, themeId);
+    const handleThemeChange = (themeId: string) => { fx.emit("theme"); return updateTheme(authFetch, themeId); };
     const handleThemeOptionChange = (themeId: string, opt: string) => setThemeOption(themeId, opt);
 
     const runWidget = async (action: "open" | "close", kind: string) => {
@@ -196,7 +197,7 @@ export default function SettingsPage() {
         });
     };
 
-    const handleWidgetOpen = (kind: string) => { void runWidget("open", kind); };
+    const handleWidgetOpen = (kind: string) => { fx.emit("widget-open"); void runWidget("open", kind); };
     const handleWidgetClose = (kind: string) => { void runWidget("close", kind); };
 
     // 스위치가 OS 의 실제 등록 상태와 어긋나 있으면 실제 쪽에 맞춘다
