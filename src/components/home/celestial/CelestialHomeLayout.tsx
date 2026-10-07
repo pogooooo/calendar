@@ -5,7 +5,7 @@ import * as S from './CelestialHomeLayout.styles';
 
 export default function CelestialHomeLayout(p: HomeLayoutProps) {
     return <S.Observatory data-theme-layout="celestial-home">
-        <S.SkyAlmanac data-ambient="celestial-almanac">{p.arch}<CelestialArcana /></S.SkyAlmanac>
+        <S.SkyAlmanac data-ambient="celestial-almanac">{p.arch}<CelestialArcana liveMoon /></S.SkyAlmanac>
         <S.Navigation>{p.navigation}</S.Navigation>
         <S.OrbitGrid>
             <S.DailyReading {...p.listProps}>{p.today}{p.upcoming}</S.DailyReading>

@@ -1,3 +1,7 @@
+/**
+ * Celestial 바탕 장면의 모양 — 내용 뒤(z-index -1)의 하늘 캔버스, 그리고 WebGL 이 없을 때의 예전 그림.
+ * 하늘이 보이려면 그 위가 비어 있어야 한다: 바닥색은 html 에 칠하고 앱 껍데기는 투명(CelestialGround).
+ */
 import styled, { keyframes } from 'styled-components';
 import { withAlpha } from '@/styles/color';
 
@@ -5,9 +9,10 @@ const turn = keyframes`to { transform:rotate(360deg); }`;
 const glimmer = keyframes`0%,100% { opacity:.16; transform:scale(.65); } 50% { opacity:.55; transform:scale(1.15); }`;
 const lunar = keyframes`0%,100% { opacity:.24; transform:translateY(0); } 50% { opacity:.48; transform:translateY(-3px); }`;
 const shooting = keyframes`0%,82% { opacity:0; transform:translate3d(0,0,0) rotate(-30deg) scaleX(.3); } 85% { opacity:.5; } 91%,100% { opacity:0; transform:translate3d(-230px,130px,0) rotate(-30deg) scaleX(1); }`;
+const dawn = keyframes`from { opacity:0; } to { opacity:1; }`;
 
 export const Sky = styled.div`
-    position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden;
+    position:fixed; inset:0; pointer-events:none; z-index:-1; overflow:hidden;
     color:${p=>p.theme.colors.primary};
     .chart { position:absolute; right:-100px; top:5%; width:390px; height:390px; stroke:currentColor; stroke-width:.6; opacity:.13; }
     .wheel { transform-origin:160px 160px; animation:${turn} 160s linear infinite; }
@@ -21,4 +26,11 @@ export const Sky = styled.div`
     @media(max-width:768px) { .chart { width:220px; height:220px; right:-100px; opacity:.09; } .comet,.glint:nth-of-type(n+11) { display:none; } }
     @media(max-width:500px) and (max-height:350px) { display:none; }
     @media(prefers-reduced-motion:reduce) { .comet { display:none; } * { animation:none; } }
+`;
+
+/** 하늘 캔버스 — 화면 CSS px 그대로 그린다. 첫 장이 그려지면 살며시 나타난다 */
+export const SkyCanvas = styled.canvas`
+    position:absolute; inset:0; width:100%; height:100%; display:block;
+    opacity:0;
+    &[data-ready] { opacity:1; animation:${dawn} 1.2s ease-out both; }
 `;
