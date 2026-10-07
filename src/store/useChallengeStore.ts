@@ -3,8 +3,9 @@ import { coalesce, READ_TTL } from "@/lib/fetchOnce";
 import { reportSaveFailure } from "@/lib/saveError";
 import type { AuthFetch, ChallengeType, ChallengeCompletionType } from '@/types';
 import { localDateKey } from '@/lib/dateKey';
+import { addDaysToKey } from '@/lib/timezone';
 import { readError } from '@/lib/readError';
-import { fx } from '@/lib/fx';
+import { fx, stickerLevel } from '@/lib/fx';
 
 export type { ChallengeType, ChallengeCompletionType };
 
@@ -67,6 +68,7 @@ const useChallengeStore = create<ChallengeState>((set, get) => ({
             set((state) => ({
                 challenges: [...state.challenges, { ...serverChallenge, completions: serverChallenge.completions ?? [] }]
             }));
+            fx.emit("add");
             return null;
         } catch (err) {
             console.error("[CHALLENGE_ADD_ERROR]", err);
@@ -104,6 +106,7 @@ const useChallengeStore = create<ChallengeState>((set, get) => ({
     deleteChallenge: async (authFetch, challengeId) => {
         const previous = get().challenges;
         set((state) => ({ challenges: state.challenges.filter(c => c.id !== challengeId) }));
+        fx.emit("remove");
 
         try {
             const res = await authFetch(`/api/challenge?id=${challengeId}`, { method: 'DELETE' });
@@ -149,7 +152,14 @@ const useChallengeStore = create<ChallengeState>((set, get) => ({
                 c.id === challengeId ? { ...c, completions: newCompletions } : c
             )
         }));
-        if (!existingComp) fx.emit("complete");
+        if (!existingComp) {
+            // 이번 칸까지 끊기지 않고 이어 온 칸 수 — 이정표(7·30·100…)나 목표를 다 채우면 효과가 커진다
+            const done = new Set(newCompletions.map(comp => toDateKey(new Date(comp.targetDate))));
+            let streak = 0;
+            for (let key = dateKey; done.has(key) && streak < 5000; key = addDaysToKey(key, -Math.max(1, challenge.interval))) streak += 1;
+            const reached = challenge.targetCount != null && newCompletions.length >= challenge.targetCount;
+            fx.emit("sticker", { level: stickerLevel(streak, reached), count: reached ? newCompletions.length : streak });
+        }
 
         try {
             const res = await authFetch('/api/challenge/completion', {

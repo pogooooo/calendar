@@ -6,11 +6,14 @@ import { Search, X, ArrowUpRight } from "lucide-react";
 import BaseModal from "@/components/modal/baseModal/BaseModal";
 import { useT } from "@/i18n/useT";
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
+import { fx, rectOf } from "@/lib/fx";
 import * as CelestialS from "./celestial/CelestialQuickNavigation.styles";
 import * as MapleS from "./maple/MapleQuickNavigation.styles";
 import * as OceanS from './ocean/OceanQuickNavigation.styles';
 
 const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
+/** 창이 들어와 자리 잡을 즈음 갈래가 그 둘레에 작게 반짝인다 */
+const paletteFx = () => setTimeout(() => fx.emit("palette", { rect: rectOf(document.querySelector('[role="dialog"]')) }), 260);
 export const OPEN_QUICK_NAVIGATION = "cronos:quick-navigation";
 export const openQuickNavigation = () => window.dispatchEvent(new Event(OPEN_QUICK_NAVIGATION));
 
@@ -34,7 +37,7 @@ export default function QuickNavigation() {
     const go = (path: string) => { setOpen(false); router.push(path); };
 
     React.useEffect(() => {
-        const show = () => { setQuery(''); setSelected(0); setOpen(true); };
+        const show = () => { setQuery(''); setSelected(0); setOpen(true); paletteFx(); };
         const key = (e: KeyboardEvent) => {
             if (e.isComposing || e.key.toLowerCase() !== 'k' || !(e.ctrlKey || e.metaKey)) return;
             // Keep other open editors intact; their Escape key closes their own dialog.

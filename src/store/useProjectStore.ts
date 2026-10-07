@@ -31,6 +31,8 @@ async function requireSuccess(response: Response) {
     throw new Error(body?.message || "변경 내용을 저장하지 못했습니다. 연결을 확인한 뒤 다시 시도해주세요.");
 }
 const failureMessage = (error: unknown) => error instanceof Error && error.message ? error.message : "변경 내용을 저장하지 못했습니다. 연결을 확인한 뒤 다시 시도해주세요.";
+/** 보드 칸의 차례 — 옮긴 방향(효과)을 셀 때 */
+const STATUS_ORDER = ["todo", "in_progress", "done"];
 
 const useProjectStore = create<ProjectState>((set, get) => ({
     projects: [],
@@ -76,6 +78,7 @@ const useProjectStore = create<ProjectState>((set, get) => ({
         };
 
         set((state) => ({ projects: [newProject, ...state.projects] }));
+        fx.emit("add");
 
         try {
             const res = await authFetch('/api/project', {
@@ -103,6 +106,7 @@ const useProjectStore = create<ProjectState>((set, get) => ({
 
     updateProject: async (authFetch, projectId, data) => {
         const previousProjects = get().projects;
+        if (data.status === "done" && previousProjects.find(p => p.id === projectId)?.status !== "done") fx.emit("project-done");
         set((state) => ({
             projects: state.projects.map(p => p.id === projectId ? { ...p, ...data } : p)
         }));
@@ -126,6 +130,7 @@ const useProjectStore = create<ProjectState>((set, get) => ({
     deleteProject: async (authFetch, projectId) => {
         const previousProjects = get().projects;
         set((state) => ({ projects: state.projects.filter(p => p.id !== projectId) }));
+        fx.emit("remove");
 
         try {
             const res = await authFetch(`/api/project?id=${projectId}`, { method: 'DELETE' });
@@ -159,6 +164,7 @@ const useProjectStore = create<ProjectState>((set, get) => ({
                 p.id === projectId ? { ...p, tasks: [...(p.tasks ?? []), newTask] } : p
             )
         }));
+        fx.emit("add");
 
         try {
             const res = await authFetch('/api/project/task', {
@@ -188,7 +194,12 @@ const useProjectStore = create<ProjectState>((set, get) => ({
 
     updateProjectTaskStatus: async (authFetch, projectId, taskId, newStatus) => {
         const previousProjects = get().projects;
-        if (newStatus === "done") fx.emit("complete");
+        // 끝냄이면 끝냄 — 그게 마지막 할 일이었으면 프로젝트 완료로. 그 밖에는 칸을 옮긴 쪽(끝 쪽 1, 되돌림 -1)
+        const tasks = previousProjects.find(p => p.id === projectId)?.tasks ?? [];
+        const before = tasks.find(t => t.id === taskId)?.status;
+        const step = STATUS_ORDER.indexOf(newStatus) - STATUS_ORDER.indexOf(before ?? "");
+        if (newStatus === "done" && before !== "done") fx.emit(before && tasks.every(t => t.id === taskId || t.status === "done") ? "project-done" : "complete");
+        else if (before && step) fx.emit("advance", { direction: step > 0 ? 1 : -1 });
         set((state) => ({
             projects: state.projects.map(p =>
                 p.id === projectId
@@ -247,6 +258,7 @@ const useProjectStore = create<ProjectState>((set, get) => ({
 
     deleteProjectTask: async (authFetch, projectId, taskId) => {
         const previousProjects = get().projects;
+        fx.emit("remove");
         // 이 할 일을 선행 조건으로 걸어 둔 다른 할 일에서도 같이 뗀다 (서버는 관계 표에서 지운다)
         set((state) => ({
             projects: state.projects.map(p =>

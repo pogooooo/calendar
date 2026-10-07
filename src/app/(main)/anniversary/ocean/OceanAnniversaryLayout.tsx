@@ -97,7 +97,7 @@ export default function OceanAnniversaryLayout({ items, onDelete, onSubmit, fiel
                 </O.Nothing>
             ) : (
                 <>
-                    <O.Hero $today={first.isToday}>
+                    <O.Hero $today={first.isToday} data-fx-anchor={first.isToday ? "anniversary-today" : undefined}>
                         <div className="lead">
                             <span className="eyebrow" aria-hidden="true">
                                 {first.isToday ? "Today" : "Next"} · {LATIN_LONG.format(first.date)}

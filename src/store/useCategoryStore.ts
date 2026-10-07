@@ -3,6 +3,7 @@ import { coalesce, READ_TTL } from "@/lib/fetchOnce";
 import { reportSaveFailure } from "@/lib/saveError";
 import type { AuthFetch, CategoryType, ParticipantType } from '@/types';
 import { readError } from '@/lib/readError';
+import { fx } from '@/lib/fx';
 
 export type { CategoryType, ParticipantType };
 
@@ -56,6 +57,7 @@ const useCategoryStore = create<CategoryState>((set, get) => ({
             }
             const newCat = await res.json();
             set((state) => ({ categories: [...state.categories, newCat] }));
+            fx.emit("add");
             return null;
         } catch (err) {
             console.error("[CATEGORY_ADD_ERROR]", err);
@@ -100,6 +102,7 @@ const useCategoryStore = create<CategoryState>((set, get) => ({
     deleteCategory: async (authFetch, categoryId) => {
         const prev = get().categories;
         set((state) => ({ categories: state.categories.filter(c => c.id !== categoryId) }));
+        fx.emit("remove");
 
         try {
             const res = await authFetch(`/api/category?id=${categoryId}`, { method: 'DELETE' });

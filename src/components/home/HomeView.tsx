@@ -32,6 +32,7 @@ import { activeTimeZone } from "@/lib/dateKey";
 import { useCurrentDayKey } from "@/hooks/useCurrentDay";
 import * as OceanS from './ocean/OceanHome.styles';
 import OceanHomeLayout from './ocean/OceanHomeLayout';
+import useAnniversaryFx from "@/components/fx/useAnniversaryFx";
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
 const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
@@ -220,6 +221,8 @@ export default function HomeView() {
             .sort((a, b) => a.dday - b.dday)
             .slice(0, 3);
     }, [anniversaries, realTodayTime]);
+    // 오늘이 기념일이면 하루 한 번 갈래가 축하한다 (그 줄 자리에서)
+    useAnniversaryFx(upcomingAnniversaries.filter(a => a.dday === 0).map(a => a.id));
 
     const handleToggleTodo = (id: string) => toggleTodo(authFetch, id, focus.toISOString());
 
@@ -519,6 +522,7 @@ export default function HomeView() {
                     ) : (
                         upcomingAnniversaries.map(a => (
                             <S.AnniversaryRow key={a.id} role="button" tabIndex={0}
+                                data-fx-anchor={a.dday === 0 ? "anniversary-today" : undefined}
                                 onClick={() => router.push("/anniversary")}
                                 onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") router.push("/anniversary"); }}>
                                 <span className="star">✦</span>

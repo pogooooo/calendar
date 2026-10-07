@@ -3,6 +3,7 @@ import { create } from "zustand/react";
 import type { User } from '@/types';
 import { api, clientHeaders } from "@/lib/apiBase";
 import { authStorage, setRemember } from "@/lib/session";
+import { fx } from "@/lib/fx";
 
 export type { User };
 
@@ -33,6 +34,8 @@ const useAuthStore = create<AuthStore>()(
             beginSession: ({ accessToken, refreshToken, user, remember }) => {
                 setRemember(remember);
                 set({ accessToken, refreshToken: refreshToken ?? "", user });
+                // 첫 화면이 뜬 뒤 갈래가 인사한다 (FxStage 가 화면이 바뀔 때까지 기다린다)
+                fx.emit("welcome", { level: 1 });
             },
 
             // 서버 revoke 없이 이 기기의 상태만 비운다.

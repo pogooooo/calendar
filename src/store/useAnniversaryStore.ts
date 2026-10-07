@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { coalesce, READ_TTL } from "@/lib/fetchOnce";
 import { reportSaveFailure } from "@/lib/saveError";
+import { fx } from "@/lib/fx";
 import type { AuthFetch } from '@/types';
 
 export interface AnniversaryType {
@@ -57,6 +58,7 @@ const useAnniversaryStore = create<AnniversaryState>((set, get) => ({
                         (a, b) => a.month - b.month || a.day - b.day
                     ),
                 }));
+                fx.emit("add");
                 return null;
             }
             const body = await res.json().catch(() => null);
@@ -71,6 +73,7 @@ const useAnniversaryStore = create<AnniversaryState>((set, get) => ({
     deleteAnniversary: async (authFetch, id) => {
         const previous = get().anniversaries;
         set((state) => ({ anniversaries: state.anniversaries.filter(a => a.id !== id) }));
+        fx.emit("remove");
 
         try {
             const res = await authFetch(`/api/anniversary?id=${id}`, { method: 'DELETE' });

@@ -169,6 +169,7 @@ const useTodoStore = create<TodoState>((set, get) => ({
     deleteTodo: async (authFetch, todoId) => {
         const previousTodos = get().todos;
         set((state) => ({ todos: state.todos.filter(t => t.id !== todoId) }));
+        fx.emit("remove");
 
         try {
             const res = await authFetch(`/api/todo?id=${todoId}`, { method: 'DELETE' });
@@ -187,6 +188,7 @@ const useTodoStore = create<TodoState>((set, get) => ({
 
     deleteTodoOccurrence: async (authFetch, todoId, dateKey) => {
         const previousTodos = get().todos;
+        fx.emit("remove");
 
         set((state) => ({
             todos: state.todos.map(t => {

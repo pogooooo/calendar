@@ -233,6 +233,8 @@ const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
 
         /** 달을 넘길 때 갈래의 효과가 달력 칸 위로 지나간다 */
         const flipFx = (direction: 1 | -1) => fx.emit("month-flip", { direction, rect: rectOf(document.querySelector("[data-fx-zone='month']")) });
+        /** 끌어다 놓은 칸에 갈래의 효과가 내려앉는다 */
+        const dropFx = (to: string) => fx.emit("drop", { rect: rectOf(document.querySelector(`[data-calendar-date="${to}"]`)) });
 
         const handlePrevMonth = () => {
             flipFx(-1);
@@ -384,6 +386,7 @@ const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
                     : { startAt: shiftZonedDays(original.startAt, days, activeTimeZone()), endAt: shiftZonedDays(original.endAt, days, activeTimeZone()) };
                 if (!next) { setMoveNotice(t.interaction.invalidDates); return; }
                 moving.current = true;
+                dropFx(to);
                 try {
                     const { error, before } = await projectActions.reschedule(todo, next.startAt, next.endAt);
                     setMoveNotice(error || t.interaction.moved);
@@ -408,6 +411,7 @@ const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
             moving.current = true;
             try {
                 if ((original.repeat ?? 0) > 0 && !(await dialog.confirm({ title: t.interaction.moveSeries, message: edge ? t.interaction.resizeSeriesMessage : t.interaction.moveSeriesMessage, confirmLabel: t.interaction.moveAll }))) return;
+                dropFx(to);
                 const originalDates = { startAt: original.startAt, endAt: original.endAt, repeatEndDate: original.repeatEndDate ?? null, excludedDates: original.excludedDates ?? null };
                 const data = edge ? resized! : {
                     startAt: shiftZonedDays(original.startAt, days, activeTimeZone()),

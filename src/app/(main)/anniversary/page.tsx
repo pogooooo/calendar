@@ -15,6 +15,7 @@ import * as OceanS from './ocean/OceanAnniversary.styles';
 import CelestialAnniversaryLayout from "./celestial/CelestialAnniversaryLayout";
 import OceanAnniversaryLayout from "./ocean/OceanAnniversaryLayout";
 import type { AnniversaryItem } from "./AnniversaryLayout.types";
+import useAnniversaryFx from "@/components/fx/useAnniversaryFx";
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
 const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
@@ -85,6 +86,8 @@ export default function AnniversaryPage() {
         const diff = ddayDiff(a.month, a.day);
         return { anniversary: a, date: nextOccurrence(a.month, a.day), diff, isToday: diff === 0 };
     });
+    // 오늘이 기념일이면 하루 한 번 갈래가 축하한다 (그 카드 자리에서)
+    useAnniversaryFx(items.filter(i => i.isToday).map(i => i.anniversary.id));
 
     /* 서식의 칸들 — 감싸는 서식(판·제목)은 갈래의 배치가 그린다 */
     const fields = (

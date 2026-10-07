@@ -8,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 
 import { RegisterSchema } from "@/lib/schema";
 import { api, clientHeaders } from "@/lib/apiBase";
+import { fx } from "@/lib/fx";
 import { useT } from "@/i18n/useT";
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialSignUp.styles";
@@ -50,6 +51,7 @@ const SignUp = () => {
                 body: JSON.stringify(formData),
             });
             if (res.ok) {
+                fx.emit("welcome");
                 router.push("/signIn");
             } else {
                 const errorData = await res.json();

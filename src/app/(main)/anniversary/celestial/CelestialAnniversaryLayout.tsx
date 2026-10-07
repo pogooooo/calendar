@@ -52,7 +52,7 @@ export default function CelestialAnniversaryLayout({ S, items, onDelete, onSubmi
                 <S.CardGrid>
                     {items.map(({ anniversary: a, diff, isToday }, idx) => {
                         return (
-                            <S.Card key={a.id} $today={isToday}>
+                            <S.Card key={a.id} $today={isToday} data-fx-anchor={isToday ? "anniversary-today" : undefined}>
                                 <S.Corners><i /><i /><i /><i /></S.Corners>
                                 <S.CardDelete type="button" onClick={() => onDelete(a)}>
                                     <Trash2 size={13} />

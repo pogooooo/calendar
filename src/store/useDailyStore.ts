@@ -74,6 +74,7 @@ const useDailyStore = create<DailyState>((set, get) => ({
         const tempId = `temp-${Date.now()}`;
         const newTask: DailyTaskType = { id: tempId, text, isDone: false, date: date.toISOString() };
         set((state) => ({ tasks: [...state.tasks, newTask] }));
+        fx.emit("add");
 
         try {
             const res = await authFetch('/api/dailyTask', {
@@ -126,6 +127,7 @@ const useDailyStore = create<DailyState>((set, get) => ({
     deleteDailyTask: async (authFetch, taskId) => {
         const previousTasks = get().tasks;
         set((state) => ({ tasks: state.tasks.filter(t => t.id !== taskId) }));
+        fx.emit("remove");
 
         try {
             const res = await authFetch(`/api/dailyTask?id=${taskId}`, { method: 'DELETE' });

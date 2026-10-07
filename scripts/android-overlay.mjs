@@ -133,6 +133,15 @@ if (manifest.includes(LINK_OPEN)) {
     manifest = manifest.slice(0, close) + linkFilter + "\n        " + manifest.slice(close);
 }
 
+// 할 일·챌린지를 끝낼 때의 아주 짧은 떨림(웹의 navigator.vibrate — components/fx/FxStage). 웹뷰는 이 권한이 없으면
+// 조용히 무시한다. 설치 때 묻지 않는 보통 권한이다.
+if (!manifest.includes("android.permission.VIBRATE")) {
+    manifest = manifest.replace(
+        '<uses-permission android:name="android.permission.INTERNET" />',
+        '<uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.VIBRATE" />',
+    );
+}
+
 // 자판이 뜨면 창을 밀어 올리지(pan) 말고 자판 높이를 알려 달라 — MainActivity.fitSystemEdges 가 웹뷰를 줄인다.
 // 밀어 올리면 아래에서 올라오는 시트의 머리가 화면 밖으로 나간다.
 const mainTag = manifest.match(/<activity\b[^>]*android:name="\.MainActivity"[^>]*>/);
