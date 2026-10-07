@@ -7,7 +7,10 @@
  */
 import { Swarm, Trail, count, group, hex, pick, rand, type FxContext, type FxModule, type Particle } from "../engine";
 
-const GOLD = [[1, 1, 1], hex("#F6DC8C"), hex("#E8C25A"), hex("#FFF1C9")] as [number, number, number][];
+/** 금빛 — 밤하늘(어두운 벌)에서는 밝은 금, 아이보리 종이(밝은 벌)에서는 짙은 금이어야 보인다 */
+const GOLD_NIGHT = [[1, 1, 1], hex("#F6DC8C"), hex("#E8C25A"), hex("#FFF1C9")] as [number, number, number][];
+const GOLD_DAY = [hex("#B8862B"), hex("#C99A36"), hex("#A87A22"), hex("#D4A944")] as [number, number, number][];
+const gold = (ctx: FxContext) => (ctx.dark ? GOLD_NIGHT : GOLD_DAY);
 
 /** 네 갈래 빛살이 있는 별 (가운데는 하얗고 둘레는 금빛 번짐) */
 const star = (ctx: FxContext) => ctx.texture("cel-star", (g, s) => {
@@ -57,11 +60,11 @@ function constellation(ctx: FxContext, area: { x: number; y: number; w: number; 
     const life = 1.5;
     const stars = new Swarm(ctx, star(ctx), pts.map(([px, py], i): Particle => ({
         x: px, y: py, vx: 0, vy: 0, size: rand(13, 21), rz: rand(0, 0.6), vrz: 0.4,
-        life: life - i * 0.06, delay: delay + i * 0.08, tint: pick(GOLD),
+        life: life - i * 0.06, delay: delay + i * 0.08, tint: pick(gold(ctx)),
         alpha: (k) => (k < 0.12 ? k / 0.12 : k > 0.7 ? (1 - k) / 0.3 : 1),
         scale: (k) => (k < 0.12 ? 0.4 + (k / 0.12) * 0.75 : 1.15 - 0.15 * k),
     })));
-    const line = new Trail(ctx, pts, 0xe2c06a, life,
+    const line = new Trail(ctx, pts, ctx.dark ? 0xe2c06a : 0xb8862b, life,
         (k) => Math.min(1, k / 0.5),
         (k) => (k < 0.7 ? 0.5 : 0.5 * (1 - (k - 0.7) / 0.3)), delay + 0.04);
     return group(line, stars);
@@ -79,14 +82,14 @@ const mod: FxModule = {
                     y: r.y + rand(0.04, 0.96) * r.h,
                     vx: -dir * speed, vy: rand(-24, 24), drag: 0.9,
                     size: rand(7, 13), sx: rand(4, 7), sy: 0.45,
-                    life: rand(0.5, 0.85), delay: rand(0, 0.2), tint: pick(GOLD),
+                    life: rand(0.5, 0.85), delay: rand(0, 0.2), tint: pick(gold(ctx)),
                     alpha: (k) => Math.min(1, k * 6) * (1 - k),
                 };
             });
             const settle = Array.from({ length: count(ctx, 6) }, (): Particle => ({
                 x: r.x + rand(0.08, 0.92) * r.w, y: r.y + rand(0.1, 0.9) * r.h, vx: 0, vy: 0,
                 size: rand(14, 24), rz: rand(0, 1), vrz: rand(-1.2, 1.2),
-                life: rand(0.7, 1.0), delay: rand(0.22, 0.45), tint: pick(GOLD),
+                life: rand(0.7, 1.0), delay: rand(0.22, 0.45), tint: pick(gold(ctx)),
                 alpha: pop, scale: (k) => 0.4 + pop(k) * 0.8,
             }));
             return group(new Swarm(ctx, dot(ctx), streaks), new Swarm(ctx, star(ctx), settle));
@@ -104,7 +107,7 @@ const mod: FxModule = {
                 const sp = rand(130, 270);
                 return {
                     x: ctx.x, y: ctx.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, drag: 2.4,
-                    size: rand(10, 18), rz: rand(0, 6), vrz: rand(-5, 5), life: rand(0.6, 0.9), tint: pick(GOLD),
+                    size: rand(10, 18), rz: rand(0, 6), vrz: rand(-5, 5), life: rand(0.6, 0.9), tint: pick(gold(ctx)),
                     alpha: (k) => 1 - k, scale: (k) => 1 - k * 0.6,
                 };
             });
@@ -114,7 +117,7 @@ const mod: FxModule = {
 
         add: (ctx) => new Swarm(ctx, star(ctx), Array.from({ length: count(ctx, 9) }, (): Particle => ({
             x: ctx.x + rand(-14, 14), y: ctx.y + rand(-6, 6), vx: rand(-30, 30), vy: -rand(60, 140), drag: 1.2,
-            size: rand(8, 14), rz: rand(0, 3), vrz: rand(-3, 3), life: rand(0.6, 0.95), delay: rand(0, 0.12), tint: pick(GOLD),
+            size: rand(8, 14), rz: rand(0, 3), vrz: rand(-3, 3), life: rand(0.6, 0.95), delay: rand(0, 0.12), tint: pick(gold(ctx)),
             alpha: pop,
         }))),
 
@@ -125,7 +128,7 @@ const mod: FxModule = {
                 const f = i / n;
                 return {
                     x: ctx.x + (tx - ctx.x) * f, y: ctx.y + (ty - ctx.y) * f, vx: rand(-18, 18), vy: rand(-18, 18),
-                    size: rand(5, 10), life: 0.55, delay: f * dur, tint: pick(GOLD), alpha: (k) => 1 - k,
+                    size: rand(5, 10), life: 0.55, delay: f * dur, tint: pick(gold(ctx)), alpha: (k) => 1 - k,
                 };
             });
             const head: Particle = {
@@ -139,7 +142,7 @@ const mod: FxModule = {
         theme: (ctx) => {
             const twinkles = Array.from({ length: count(ctx, 22) }, (): Particle => ({
                 x: rand(0, ctx.W), y: rand(0, ctx.H * 0.85), vx: 0, vy: 0, size: rand(8, 20), rz: rand(0, 1), vrz: rand(-1, 1),
-                life: rand(0.9, 1.6), delay: rand(0, 0.7), tint: pick(GOLD), alpha: pop, scale: (k) => 0.3 + pop(k) * 0.9,
+                life: rand(0.9, 1.6), delay: rand(0, 0.7), tint: pick(gold(ctx)), alpha: pop, scale: (k) => 0.3 + pop(k) * 0.9,
             }));
             const left = ctx.W > 900 ? 280 : 16;
             return group(new Swarm(ctx, star(ctx), twinkles), constellation(ctx, { x: left, y: 80, w: ctx.W - left - 40, h: Math.min(280, ctx.H * 0.32) }, 0.3));

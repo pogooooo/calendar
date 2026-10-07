@@ -57,7 +57,7 @@ const OCEAN: ThemeFamily = 'ocean';
 /** 갈래마다 하나. 설정 화면에 보이는 이름·설명·미리보기 그림이 여기서 나온다. */
 const FAMILY_META: Record<ThemeFamily, { label: string; description: string; preview?: Record<string, string> }> = {
     celestial: { label: 'Celestial', description: 'Gold accents, Orbit typeface' },
-    ocean: { label: 'Ocean', description: 'Light through clear water — calm, airy, quietly in motion' },
+    ocean: { label: 'Ocean', description: 'Liquid glass over a sunlit lagoon — light ripples where you touch' },
     maple: {
         label: 'Maple',
         description: 'Pressed maple leaves on aged paper',
@@ -170,9 +170,9 @@ export const themes: Record<string, DefaultTheme> = {
         fonts: OCEAN_FONTS,
         colors: { background:'#EEF1EE', primary:'#0F6B6B', accent:'#4FA8A0', surface:'#FFFFFF', text:'#122120', textSecondary:'#5F6D6B', border:'#DCE3E0', success:'#2E8A6C', error:'#C2503D', weekend:'#C0604C' },
         preview: {
-            cell: 'rgba(255,255,255,0.78)', event: '#BFDCD8', today: '#0F6B6B',
-            bg: `${causticNet({ size: 160, freq: 0.03, seed: 11, alpha: 0.55 })} 0 0 / 160px 160px, linear-gradient(180deg, #DDEBE8, #ECE9E1)`,
-            rail: 'rgba(250, 249, 246, 0.92)',
+            cell: 'rgba(255,255,255,0.62)', event: '#8FD3CD', today: '#0F6B6B',
+            bg: `${causticNet({ size: 160, freq: 0.03, seed: 11, alpha: 0.85 })} 0 0 / 160px 160px, linear-gradient(180deg, #3BA6A8, #7ACFC9 45%, #D1EBE3)`,
+            rail: 'rgba(255, 255, 255, 0.55)',
         }, line:'#DCE3E0',
     },
     /* 밤바다에서 헤엄 — 먹빛 물 위에 달빛 물결, 판은 짙은 반투명 유리, 색은 맑은 물빛 하나 */
@@ -181,9 +181,9 @@ export const themes: Record<string, DefaultTheme> = {
         fonts: OCEAN_FONTS,
         colors: { background:'#0A1213', primary:'#6CCDC2', accent:'#3A9890', surface:'#121B1C', text:'#E5ECEA', textSecondary:'#93A29F', border:'#26312F', success:'#67C7A2', error:'#EE8774', weekend:'#EE917D' },
         preview: {
-            cell: 'rgba(255,255,255,0.05)', event: '#1F4A47', today: '#6CCDC2',
-            bg: `${causticNet({ size: 160, freq: 0.03, seed: 11, alpha: 0.22, color: '150 230 220' })} 0 0 / 160px 160px, linear-gradient(180deg, #0D1A1B, #091112)`,
-            rail: 'rgba(18, 27, 28, 0.94)',
+            cell: 'rgba(255,255,255,0.06)', event: '#1F5A56', today: '#6CCDC2',
+            bg: `${causticNet({ size: 160, freq: 0.03, seed: 11, alpha: 0.35, color: '150 230 220' })} 0 0 / 160px 160px, linear-gradient(180deg, #072024, #0A2A2F 50%, #0E1F21)`,
+            rail: 'rgba(10, 32, 37, 0.7)',
         }, line:'#26312F',
     },
 };

@@ -84,33 +84,48 @@ export const label = css`
 
 /* ── 겉 ─────────────────────────────────────────────────────────────── */
 /**
- * 판 — 물빛 위에 얹힌 무채색 반투명 유리. 테두리는 머리카락 선 하나, 그림자는 멀고 옅게.
+ * 커서를 따라 판 위에 고이는 빛 — OceanAtmosphere 가 커서 아래의 판(--ocean-glass: 1)에 --gx·--gy 를 적어 준다.
+ * 판 바깥에 있을 때는 -999px 라 보이지 않는다.
+ */
+const spotlight = (t: DefaultTheme, strength = 1) =>
+    `radial-gradient(560px circle at var(--gx, -999px) var(--gy, -999px), ${dark(t) ? `rgba(120, 240, 225, ${0.13 * strength})` : `rgba(255, 255, 255, ${0.42 * strength})`}, transparent 55%)`;
+
+/**
+ * 판 — 물 위에 뜬 액체 유리. 뒤의 물빛이 짙게(채도를 올려) 비치고, 왼쪽 위 가장자리에 빛이 맺히며(정반사),
+ * 커서를 따라 빛이 고인다. 그림자는 멀고 옅게.
  *   panel: 물 위에 바로 놓이는 큰 판(뒤가 흐리게 비친다)
  *   card:  판 안의 작은 조각(흐림 없이 — 여러 개여도 가볍게)
  *   float: 떠 있는 창·차림표(거의 불투명, 그림자 조금 더)
  */
 export const surface = (kind: "panel" | "card" | "float" = "panel") => css`
+    --ocean-glass: 1;
     ${(p) => {
         const d = dark(p.theme);
-        const line = hairline(p.theme);
         if (kind === "card") return css`
-            background-color: ${d ? "rgba(255, 255, 255, 0.035)" : "rgba(255, 255, 255, 0.5)"};
-            border: 1px solid ${line};
-            box-shadow: none;
+            background-color: ${d ? "rgba(255, 255, 255, 0.045)" : "rgba(255, 255, 255, 0.42)"};
+            background-image: ${spotlight(p.theme, 0.8)}, linear-gradient(140deg, ${d ? "rgba(160, 240, 230, 0.06)" : "rgba(255, 255, 255, 0.5)"}, transparent 46%);
+            border: 1px solid ${d ? "rgba(160, 240, 230, 0.1)" : "rgba(255, 255, 255, 0.7)"};
+            box-shadow: inset 0 1px 0 ${d ? "rgba(180, 250, 240, 0.08)" : "rgba(255, 255, 255, 0.85)"}, 0 6px 16px -12px ${d ? "rgba(0, 0, 0, 0.6)" : "rgba(6, 60, 66, 0.35)"};
         `;
         if (kind === "float") return css`
-            background-color: ${d ? "rgba(20, 30, 31, 0.94)" : "rgba(255, 255, 255, 0.94)"};
-            backdrop-filter: blur(24px) saturate(140%);
-            -webkit-backdrop-filter: blur(24px) saturate(140%);
-            border: 1px solid ${hairline(p.theme, true)};
-            box-shadow: 0 24px 56px -24px ${d ? "rgba(0, 0, 0, 0.7)" : "rgba(18, 33, 32, 0.32)"}, 0 2px 8px ${d ? "rgba(0, 0, 0, 0.3)" : "rgba(18, 33, 32, 0.06)"};
+            background-color: ${d ? "rgba(14, 34, 38, 0.9)" : "rgba(255, 255, 255, 0.86)"};
+            background-image: linear-gradient(140deg, ${d ? "rgba(160, 240, 230, 0.08)" : "rgba(255, 255, 255, 0.7)"}, transparent 42%);
+            backdrop-filter: blur(30px) saturate(180%);
+            -webkit-backdrop-filter: blur(30px) saturate(180%);
+            border: 1px solid ${d ? "rgba(160, 240, 230, 0.16)" : "rgba(255, 255, 255, 0.85)"};
+            box-shadow: inset 0 1px 0 ${d ? "rgba(180, 250, 240, 0.12)" : "#FFFFFF"}, 0 28px 64px -24px ${d ? "rgba(0, 0, 0, 0.75)" : "rgba(6, 60, 66, 0.42)"}, 0 2px 8px ${d ? "rgba(0, 0, 0, 0.3)" : "rgba(6, 60, 66, 0.08)"};
         `;
         return css`
-            background-color: ${d ? "rgba(17, 26, 27, 0.62)" : "rgba(255, 255, 255, 0.5)"};
-            backdrop-filter: blur(24px) saturate(160%);
-            -webkit-backdrop-filter: blur(24px) saturate(160%);
-            border: 1px solid ${line};
-            box-shadow: 0 1px 1px ${d ? "rgba(0, 0, 0, 0.2)" : "rgba(18, 33, 32, 0.03)"}, 0 16px 40px -24px ${d ? "rgba(0, 0, 0, 0.6)" : "rgba(18, 33, 32, 0.18)"};
+            background-color: ${d ? "rgba(10, 32, 37, 0.46)" : "rgba(255, 255, 255, 0.42)"};
+            background-image: ${spotlight(p.theme)}, linear-gradient(140deg, ${d ? "rgba(160, 240, 230, 0.1)" : "rgba(255, 255, 255, 0.55)"} 0%, ${d ? "rgba(160, 240, 230, 0.02)" : "rgba(255, 255, 255, 0.12)"} 38%, transparent 62%, ${d ? "rgba(160, 240, 230, 0.04)" : "rgba(255, 255, 255, 0.16)"} 100%);
+            backdrop-filter: blur(28px) saturate(160%) brightness(1.04);
+            -webkit-backdrop-filter: blur(28px) saturate(160%) brightness(1.04);
+            border: 1px solid ${d ? "rgba(160, 240, 230, 0.14)" : "rgba(255, 255, 255, 0.62)"};
+            box-shadow:
+                inset 0 1px 0 ${d ? "rgba(180, 250, 240, 0.14)" : "rgba(255, 255, 255, 0.92)"},
+                inset 0 -1px 0 ${d ? "rgba(0, 0, 0, 0.2)" : "rgba(255, 255, 255, 0.3)"},
+                0 1px 2px ${d ? "rgba(0, 0, 0, 0.25)" : "rgba(6, 60, 66, 0.06)"},
+                0 24px 56px -28px ${d ? "rgba(0, 0, 0, 0.75)" : "rgba(6, 60, 66, 0.5)"};
         `;
     }}
 `;
@@ -118,11 +133,13 @@ export const surface = (kind: "panel" | "card" | "float" = "panel") => css`
 export const seaGlass = surface;
 export const glass = (strength: "soft" | "solid" = "soft") => surface(strength === "solid" ? "float" : "panel");
 
-/** 물가 판(사이드바·폰 탭바) — 따뜻한 흰빛 반투명. 예전의 모래 그림 대신 */
+/** 물가 판(사이드바·폰 탭바) — 따뜻한 흰빛 액체 유리. 예전의 모래 그림 대신 */
 export const sand = css`
-    background-color: ${(p) => (dark(p.theme) ? "rgba(13, 20, 21, 0.74)" : "rgba(250, 250, 247, 0.62)")};
-    backdrop-filter: blur(24px) saturate(160%);
-    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    --ocean-glass: 1;
+    background-color: ${(p) => (dark(p.theme) ? "rgba(9, 26, 30, 0.6)" : "rgba(252, 252, 249, 0.46)")};
+    background-image: ${(p) => spotlight(p.theme, 0.7)}, linear-gradient(160deg, ${(p) => (dark(p.theme) ? "rgba(160, 240, 230, 0.08)" : "rgba(255, 255, 255, 0.6)")}, transparent 40%);
+    backdrop-filter: blur(28px) saturate(180%);
+    -webkit-backdrop-filter: blur(28px) saturate(180%);
     color: ${(p) => p.theme.colors.text};
 `;
 /** 물가 판 위 글씨 — 이제 그냥 글자색 */
@@ -220,9 +237,13 @@ export const seaButton = (variant: "default" | "primary" | "danger" | "ghost" = 
         if (variant === "primary") return css`
             color: ${d ? "#06110F" : "#FFFFFF"};
             background-color: ${c.primary};
-            border: 1px solid transparent;
-            box-shadow: 0 1px 2px ${d ? "rgba(0, 0, 0, 0.3)" : "rgba(15, 107, 107, 0.25)"};
-            &:hover:not(:disabled) { background-color: color-mix(in srgb, ${c.primary} 86%, ${d ? "#FFFFFF" : "#000000"}); }
+            background-image: linear-gradient(180deg, rgba(255, 255, 255, ${d ? 0.28 : 0.2}), rgba(255, 255, 255, 0) 60%);
+            border: 1px solid ${d ? "rgba(255, 255, 255, 0.25)" : "rgba(255, 255, 255, 0.16)"};
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, ${d ? 0.45 : 0.32}), 0 8px 20px -8px ${withAlpha(c.primary, d ? 0.55 : 0.7)};
+            &:hover:not(:disabled) {
+                background-color: color-mix(in srgb, ${c.primary} 88%, #FFFFFF);
+                box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 10px 26px -8px ${withAlpha(c.primary, d ? 0.7 : 0.85)};
+            }
         `;
         if (variant === "danger") return css`
             color: #FFFFFF;
@@ -238,10 +259,10 @@ export const seaButton = (variant: "default" | "primary" | "danger" | "ghost" = 
         `;
         return css`
             color: ${c.text};
-            background-color: ${d ? "rgba(255, 255, 255, 0.05)" : "rgba(255, 255, 255, 0.85)"};
-            border: 1px solid ${hairline(p.theme, true)};
-            box-shadow: 0 1px 1px ${d ? "rgba(0, 0, 0, 0.2)" : "rgba(18, 33, 32, 0.04)"};
-            &:hover:not(:disabled) { background-color: ${d ? "rgba(255, 255, 255, 0.09)" : "#FFFFFF"}; border-color: ${ink(p.theme, d ? 0.2 : 0.18)}; }
+            background-color: ${d ? "rgba(255, 255, 255, 0.06)" : "rgba(255, 255, 255, 0.62)"};
+            border: 1px solid ${d ? "rgba(160, 240, 230, 0.16)" : "rgba(255, 255, 255, 0.9)"};
+            box-shadow: inset 0 1px 0 ${d ? "rgba(180, 250, 240, 0.1)" : "#FFFFFF"}, 0 2px 8px -3px ${d ? "rgba(0, 0, 0, 0.4)" : "rgba(6, 60, 66, 0.18)"};
+            &:hover:not(:disabled) { background-color: ${d ? "rgba(255, 255, 255, 0.1)" : "rgba(255, 255, 255, 0.92)"}; box-shadow: inset 0 1px 0 #FFFFFF, 0 6px 16px -6px ${d ? "rgba(0, 0, 0, 0.5)" : "rgba(6, 60, 66, 0.28)"}; }
         `;
     }}
     &:active:not(:disabled) { transform: translateY(0.5px) scale(0.985); }

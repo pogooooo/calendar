@@ -1,12 +1,12 @@
 /**
  * 바다의 월간 — 칸 사이가 붙은 금빛 격자(Celestial), 종이 원장(Maple) 대신
- * **틈을 두고 놓인 납작한 유리 칸**. 요일은 작은 고정폭 대문자, 오늘은 청록으로 꽉 찬 동그라미 숫자,
+ * **틈을 두고 놓인 유리 칸**. 요일은 작은 고정폭 대문자, 오늘은 빛을 머금은 청록 동그라미 숫자(둘레가 천천히 숨 쉰다),
  * 일정 막대는 옅게 물든 면에 앞쪽 색 띠(여러 날이면 칸 사이 틈을 건너 이어진다), "+N" 은 날짜 줄 오른쪽의 작은 꼬리표.
- * 그림자·광택·그라데이션 없이 면과 글씨만.
+ * 달을 넘기면 칸들이 왼쪽 위에서 오른쪽 아래로 물결처럼 차례로 떠오른다.
  */
-import styled, { css } from "styled-components";
+import styled, { css, keyframes } from "styled-components";
 import * as C from "../celestial/CelestialMonthCalendar.styles";
-import { MONO, R, focusRing, hairline, ink, seaButton, surface } from "@/styles/ocean/water";
+import { EASE, MONO, R, calm, focusRing, hairline, ink, seaButton, surface } from "@/styles/ocean/water";
 import { withAlpha } from "@/styles/color";
 import { MOBILE, NOT_WIDGET } from "@/styles/breakpoints";
 
@@ -14,6 +14,19 @@ export * from "../celestial/CelestialMonthCalendar.styles";
 
 const GAP = 4;
 const dark = (p: { theme: { mode: string } }) => p.theme.mode === "dark";
+
+/** 칸이 떠오른다 — 끝 값은 적지 않는다(다른 달 칸은 옅게 남아야 하므로 원래 불투명도로 돌아간다) */
+const tileIn = keyframes`
+    from { opacity: 0; transform: translateY(10px) scale(0.96); }
+`;
+/** 칸마다 늦춤 — 줄 r·칸 c 의 대각선 순서 (r + c) */
+const CASCADE = Array.from({ length: 6 }, (_, r) => Array.from({ length: 7 }, (_, c) =>
+    `${C.WeekRowContainer}:nth-child(${r + 1}) > &:nth-child(${c + 1}) { animation-delay: ${(r + c) * 26}ms; }`).join("\n")).join("\n");
+/** 오늘 숫자 둘레의 숨 — 아주 천천히 번졌다 잦아든다 */
+const breathe = keyframes`
+    0%, 100% { box-shadow: 0 0 0 0 var(--today-halo), 0 4px 12px -2px var(--today-glow); }
+    50%      { box-shadow: 0 0 0 5px transparent, 0 4px 16px 0 var(--today-glow); }
+`;
 
 export const CelestialCalendarWrapper = styled(C.CelestialCalendarWrapper)`
     font-family: ${(p) => p.theme.fonts.body};
@@ -102,13 +115,19 @@ export const DayCell = styled(C.DayCell)`
     box-shadow: ${(p) => (p.$dropTarget
         ? `inset 0 0 0 2px ${p.theme.colors.primary}`
         : p.$isSelected
-            ? `inset 0 0 0 1.5px ${withAlpha(p.theme.colors.primary, 0.75)}`
+            ? `inset 0 0 0 1.5px ${withAlpha(p.theme.colors.primary, 0.75)}, 0 0 0 4px ${withAlpha(p.theme.colors.primary, 0.12)}`
             : "none")};
-    transition: background-color 0.15s ease, box-shadow 0.15s ease;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.25s ${EASE};
+    animation: ${tileIn} 0.5s ${EASE} both;
+    ${CASCADE}
+    ${calm}
 
     &:hover {
-        box-shadow: ${(p) => (p.$isSelected ? `inset 0 0 0 1.5px ${withAlpha(p.theme.colors.primary, 0.75)}` : `inset 0 0 0 1px ${hairline(p.theme, true)}`)};
-        background-color: ${(p) => (dark(p) ? "rgba(255, 255, 255, 0.06)" : "rgba(255, 255, 255, 0.85)")};
+        transform: translateY(-2px);
+        box-shadow: ${(p) => (p.$isSelected
+            ? `inset 0 0 0 1.5px ${withAlpha(p.theme.colors.primary, 0.75)}, 0 10px 22px -12px ${withAlpha(p.theme.colors.primary, 0.7)}`
+            : `inset 0 0 0 1px ${dark(p) ? "rgba(160, 240, 230, 0.2)" : "rgba(255, 255, 255, 0.95)"}, 0 10px 22px -14px ${dark(p) ? "rgba(0, 0, 0, 0.7)" : "rgba(6, 60, 66, 0.45)"}`)};
+        background-color: ${(p) => (dark(p) ? "rgba(255, 255, 255, 0.08)" : "rgba(255, 255, 255, 0.82)")};
     }
 
     .day-header {
@@ -121,6 +140,8 @@ export const DayCell = styled(C.DayCell)`
             line-height: 20px;
             color: ${(p) => p.theme.colors.text};
             ${(p) => p.$isToday && css`
+                --today-halo: ${withAlpha(p.theme.colors.primary, 0.35)};
+                --today-glow: ${withAlpha(p.theme.colors.primary, p.theme.mode === "dark" ? 0.5 : 0.6)};
                 display: inline-flex;
                 align-items: center;
                 justify-content: center;
@@ -130,7 +151,11 @@ export const DayCell = styled(C.DayCell)`
                 padding: 0 5px;
                 border-radius: 11px;
                 color: ${p.theme.mode === "dark" ? "#06110F" : "#FFFFFF"};
-                background: ${p.theme.colors.primary};
+                background-color: ${p.theme.colors.primary};
+                background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0) 65%);
+                box-shadow: 0 4px 12px -2px var(--today-glow);
+                animation: ${breathe} 3.6s ease-in-out infinite;
+                ${calm}
             `}
         }
     }
