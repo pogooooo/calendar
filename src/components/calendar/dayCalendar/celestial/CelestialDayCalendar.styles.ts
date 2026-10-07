@@ -365,15 +365,17 @@ export const ChallengeEmpty = styled.div`
 /* ── 이 날의 일정 (폰 전용) ──────────────────────────────────────────
    달력 칸이 좁아 일정이 점으로만 찍히는 폰에서, 손으로 집을 수 있는 목록.
    넓은 화면에는 월간 달력의 막대가 있으므로 내보내지 않는다. */
+/* 그날의 할 일 목록. 예전엔 폰에서만 보였다 — 데스크톱에서 달력의 날짜를 누르면 오른쪽 일간에
+   시간표만 바뀌고 그날 할 일이 한눈에 안 보였다. 이제 어디서나 시간표 위에 선다 (길면 안에서 굴린다). */
 export const TodoCard = styled(BaseCard)`
-    display: none;
+    display: flex;
+    flex: none;
+    margin-bottom: 10px;
+    max-height: 200px;
+    overflow: hidden;
 
     ${MOBILE} {
-        display: flex;
-        flex: none;
-        margin-bottom: 10px;
         max-height: 260px;
-        overflow: hidden;
     }
 `;
 

@@ -23,12 +23,12 @@ class PreviewRenderReceiver : BroadcastReceiver() {
             ?: Snapshot.parse(context.assets.open("widget-sample.json").bufferedReader().readText())
         val sizes = mapOf(
             "today" to (250 to 180), "nownext" to (250 to 110), "challenge" to (250 to 180), "monthgauge" to (250 to 110),
-            "week" to (250 to 110), "month" to (250 to 250), "anniversary" to (110 to 110), "dayprogress" to (110 to 110),
+            "week" to (250 to 110), "month" to (250 to 250), "month_tall" to (320 to 440), "anniversary" to (110 to 110), "dayprogress" to (110 to 110),
             "quickadd" to (250 to 40), "memo" to (250 to 110), "project" to (250 to 110),
         )
         for ((kind, size) in sizes) {
             for (dark in listOf(false, true)) {
-                val bmp = WidgetPainter(context, Palette.of(snap.theme?.family, dark, snap.theme), WidgetPrefs.DEFAULT_ALPHA, snap).paint(kind, size.first, size.second).bitmap
+                val bmp = WidgetPainter(context, Palette.of(snap.theme?.family, dark, snap.theme), WidgetPrefs.DEFAULT_ALPHA, snap).paint(kind.removeSuffix("_tall"), size.first, size.second).bitmap
                 File(dir, "widget_preview_${kind}${if (dark) "_dark" else ""}.png").outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
             }
         }

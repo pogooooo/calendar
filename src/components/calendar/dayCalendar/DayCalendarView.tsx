@@ -146,8 +146,8 @@ const DayCalendarView = React.forwardRef<HTMLDivElement, CelestialDayProps>(
                 </S.DateHeader>
 
                 <S.ContentLayout ref={contentRef}>
-                    {/* 폰에서만 나온다. 달력 칸이 좁아 일정이 점으로만 찍히므로,
-                        고치고 지우려면 손으로 집을 수 있는 목록이 있어야 한다. */}
+                    {/* 그날의 일정 목록 — 폰에서는 달력 칸이 좁아 일정이 점으로만 찍히니 고치고 지우는 유일한 길이고,
+                        데스크톱에서는 달력에서 날짜를 누르면 그날 할 일을 시간표 위에서 한눈에 본다. */}
                     <S.TodoCard>
                         <S.TodoCardHead>
                             <i />

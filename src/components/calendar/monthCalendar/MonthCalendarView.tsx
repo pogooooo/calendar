@@ -64,9 +64,12 @@ interface WeekRowProps {
     dropTarget: string | null;
 }
 
-/** 데스크톱은 바 두 층까지, 폰은 마름모라 작으니 여섯까지 — 두 줄 (그 뒤는 +N) */
-const MAX_VISIBLE_LEVELS = 2;
+/** 데스크톱·위젯의 바는 칸 높이에 들어가는 만큼(재서 정한다), 폰은 마름모라 작으니 여섯까지 — 두 줄 (그 뒤는 +N) */
+const DEFAULT_VISIBLE_LEVELS = 2;
 const MAX_VISIBLE_LEVELS_MOBILE = 6;
+/** 바를 아직 못 쟀을 때의 한 층 높이 (바 20px + 사이 2px) 와 "+N" 줄 높이 */
+const FALLBACK_BAR_PITCH = 22;
+const FALLBACK_MORE_HEIGHT = 16;
 
 const WeekRow = ({
                      dates, todos, challengeTodos, categories, todayStr, currentMonth,
@@ -78,7 +81,33 @@ const WeekRow = ({
     const t = useT();
     // 위젯 창은 폭이 좁아도 바를 그대로 두므로(styles 의 NOT_WIDGET) 층 수도 데스크톱 것을 쓴다
     const isMobile = useIsMobile() && !isWidgetWindow();
-    const maxLevels = isMobile ? MAX_VISIBLE_LEVELS_MOBILE : MAX_VISIBLE_LEVELS;
+
+    /* 칸에 바가 몇 층 들어가는지 잰다. 예전에는 데스크톱이 늘 두 층이라, 창이나 위젯을 크게 키워
+       칸이 넉넉해도 세 번째부터 "더 보기" 로 접혔다. 바 높이는 갈래마다 달라서(20·21px) 그려진 바로 잰다. */
+    const firstCellRef = React.useRef<HTMLDivElement | null>(null);
+    // all: "+N" 없이 다 그릴 때 들어가는 층, withMore: 아래에 "+N" 을 둘 때 들어가는 층
+    const [fit, setFit] = React.useState({ all: DEFAULT_VISIBLE_LEVELS, withMore: DEFAULT_VISIBLE_LEVELS });
+    React.useLayoutEffect(() => {
+        const cell = firstCellRef.current;
+        if (!cell || isMobile || typeof ResizeObserver === "undefined") return;
+        const measure = () => {
+            const row = cell.parentElement;
+            const list = cell.querySelector<HTMLElement>("[data-month-bars]");
+            const bar = row?.querySelector<HTMLElement>("[data-month-bar]");
+            const more = row?.querySelector<HTMLElement>("[data-month-more]");
+            if (!list) return;
+            const pitch = bar ? bar.offsetHeight + 2 : FALLBACK_BAR_PITCH;
+            const moreHeight = more ? more.offsetHeight + 2 : FALLBACK_MORE_HEIGHT;
+            const free = list.clientHeight; // 목록은 칸에 묶여 있다(flex:1, min-height:0) — 내용에 따라 늘지 않는다
+            const all = Math.max(1, Math.floor((free + 2) / pitch));
+            const withMore = Math.max(1, Math.floor((free - moreHeight + 2) / pitch));
+            setFit(prev => (prev.all === all && prev.withMore === withMore ? prev : { all, withMore }));
+        };
+        measure();
+        const ro = new ResizeObserver(measure);
+        ro.observe(cell);
+        return () => ro.disconnect();
+    }, [isMobile, todos]);
 
     const weekTodos = React.useMemo(() => {
         return todos.filter((todo: CalendarTodoType) => {
@@ -112,6 +141,9 @@ const WeekRow = ({
                     return isBetween(date, todo.startAt, todo.endAt);
                 });
 
+                // 이 칸이 쓰는 층 수가 들어가면 다 보이고, 넘치면 한 층을 "+N" 자리로 비운다
+                const needed = dayTodos.reduce((m: number, t: CalendarTodoType) => Math.max(m, (todoLevels[t.id] ?? 0) + 1), 0);
+                const maxLevels = isMobile ? MAX_VISIBLE_LEVELS_MOBILE : needed <= fit.all ? fit.all : fit.withMore;
                 const hiddenCount = dayTodos.filter((t: CalendarTodoType) => todoLevels[t.id] >= maxLevels).length;
 
                 const tier = dayTiers[idx];
@@ -123,6 +155,7 @@ const WeekRow = ({
                 return (
                     <S.DayCell
                         key={idx}
+                        ref={idx === 0 ? firstCellRef : undefined}
                         data-calendar-date={localDateKey(date)}
                         $dropTarget={dropTarget === localDateKey(date)}
                         $isToday={isToday}
@@ -168,7 +201,7 @@ const WeekRow = ({
                             onClick={e => { e.stopPropagation(); setMoreModalDate(date); }}>
                             {dayTodos.length}
                         </S.CompactTaskCount>}
-                        <S.TodoBarList>
+                        <S.TodoBarList data-month-bars="">
                             {Array.from({ length: Math.min(maxLevel, maxLevels) }).map((_, levelIndex) => {
                                 const todoAtThisLevel = dayTodos.find((t: CalendarTodoType) => todoLevels[t.id] === levelIndex);
 
@@ -182,6 +215,7 @@ const WeekRow = ({
 
                                     return (
                                         <S.TodoBarItem key={todoAtThisLevel.id}
+                                                       data-month-bar=""
                                                        role="button"
                                                        tabIndex={isStart || idx === 0 ? 0 : -1}
                                                        aria-label={todoAtThisLevel.title}
@@ -228,7 +262,7 @@ const WeekRow = ({
                             })}
 
                             {hiddenCount > 0 && (
-                                <S.MoreButton onClick={(e) => { e.stopPropagation(); setMoreModalDate(date); }}>
+                                <S.MoreButton data-month-more="" onClick={(e) => { e.stopPropagation(); setMoreModalDate(date); }}>
                                     <span className="full">{t.calendar.more(hiddenCount)}</span>
                                     <span className="short">{`+${hiddenCount}`}</span>
                                 </S.MoreButton>

@@ -84,6 +84,9 @@ class WidgetPainter(
         const val ARROW_W = 9
         const val ARROW_INSET = 22f
         const val MAX_ROWS = 6
+        /** 월간 위젯이 칸에 일정 이름을 적을 때: 날짜 숫자 자리와 한 줄 높이 (dp) */
+        const val MONTH_NUMBER_H = 17f
+        const val MONTH_LINE_H = 11f
         private val ROMAN = arrayOf("I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII")
     }
 
@@ -483,13 +486,22 @@ class WidgetPainter(
         val cellH = (h - dp(PAD_B) - gridTop) / rowsNeeded
         val todayKey = s.todayKey(now)
         val np = text(11.5f, pal.ink, tabular = true)
+        // 칸이 넉넉하면(크게 놓은 위젯) 점 대신 일정 이름을 줄줄이 적는다. 예전에는 크기와 상관없이 점 세 개뿐이라
+        // 위젯을 크게 놓아도 무엇이 있는지 보려면 눌러서 앱을 열어야 했다. 들어가는 만큼 적고 넘치면 "+N".
+        val lineH = dp(MONTH_LINE_H)
+        val numberH = dp(MONTH_NUMBER_H)
+        val titled = cellH >= numberH + lineH * 2 && cellW >= dp(30f)
+        val tp = text(8.5f, pal.ink)
+        val tpDone = TextPaint(tp).apply { color = pal.muted; isStrikeThruText = true }
+        val moreP = text(8f, pal.muted, tabular = true)
         val links = ArrayList<String?>()
         for (cell in 0 until 42) {
             val d = cell - firstDow + 1
             if (d < 1 || d > days) { links += null; continue }
             val col = cell % 7; val row = cell / 7
             val cx = dp(PAD_X) + cellW * col + cellW / 2f
-            val cy = gridTop + cellH * row + cellH / 2f - dp(2f)
+            val cellTop = gridTop + cellH * row
+            val cy = if (titled) cellTop + numberH / 2f + dp(1f) else cellTop + cellH / 2f - dp(2f)
             val key = String.format(java.util.Locale.US, "%04d-%02d-%02d", year, cal.get(Calendar.MONTH) + 1, d)
             val isToday = key == todayKey
             val weekend = col == 0 || col == 6
@@ -497,9 +509,27 @@ class WidgetPainter(
             if (isToday) style.todayMark(c, cx, cy, 9.5f, pal)
             drawCenter(c, "$d", cx, baseline(p, cy), p)
             val items = monthTodos.filter { it.spans(key) }
-            val dots = min(items.size, 3)
-            var dx = cx - dp(5f) * (dots - 1) / 2f
-            for (j in 0 until dots) { diamond(c, dx, cy + dp(10f), 1.8f, items[j].color, true); dx += dp(5f) }
+            if (titled) {
+                // 하루 종일 먼저, 그다음 시작 순
+                val ordered = items.sortedWith(compareBy<Snapshot.Todo>({ !it.allDay }, { it.start }))
+                val fit = max(0, floor(((cellH - numberH - dp(2f)) / lineH).toDouble()).toInt())
+                val shown = if (ordered.size <= fit) ordered.size else max(0, fit - 1)
+                val left = cx - cellW / 2f + dp(2.5f)
+                val textW = cellW - dp(9f)
+                var ly = cellTop + numberH + lineH / 2f
+                for (j in 0 until shown) {
+                    val td = ordered[j]
+                    diamond(c, left + dp(1.5f), ly, 1.4f, td.color, true)
+                    val p = if (td.doneOn(key)) tpDone else tp
+                    c.drawText(ellipsize(td.title, p, textW), left + dp(5f), baseline(p, ly), p)
+                    ly += lineH
+                }
+                if (ordered.size > shown) c.drawText("+${ordered.size - shown}", left + dp(5f), baseline(moreP, ly), moreP)
+            } else {
+                val dots = min(items.size, 3)
+                var dx = cx - dp(5f) * (dots - 1) / 2f
+                for (j in 0 until dots) { diamond(c, dx, cy + dp(10f), 1.8f, items[j].color, true); dx += dp(5f) }
+            }
             links += "cronos://day/$key"
         }
         return Painted(bmp, cellLinks = links, overlay = Overlay.MONTH, monthRows = rowsNeeded)
