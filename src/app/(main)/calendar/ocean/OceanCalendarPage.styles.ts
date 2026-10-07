@@ -27,7 +27,7 @@ export const CalendarContainer = styled(C.CalendarContainer)`
 
 /** 위: 월간 — 큰 유리 웅덩이 */
 export const MonthSection = styled(C.MonthSection)`
-    flex: ${(p) => (p.$collapsed ? "1 1 0" : "1.55 1 0")} !important;
+    flex: 1 1 0 !important;
     height: auto;
     min-height: 0;
     ${glass("soft")}
@@ -42,10 +42,11 @@ export const MonthSection = styled(C.MonthSection)`
 
 /** 아래: 그날 — 물가에 누운 띠 */
 export const DaySection = styled(C.DaySection)`
-    flex: ${(p) => (p.$collapsed ? "0 0 46px" : "1 1 0")} !important;
+    /* 띠는 화면 높이의 4분의 1 남짓만 — 월간 칸에 막대가 두 층은 들어가야 한다 (900px 화면에서 210px) */
+    flex: ${(p) => (p.$collapsed ? "0 0 46px" : "0 0 clamp(200px, calc(24vh - 6px), 320px)")} !important;
     min-width: 0;
     height: auto;
-    min-height: ${(p) => (p.$collapsed ? "46px" : "280px")};
+    min-height: ${(p) => (p.$collapsed ? "46px" : "200px")};
     border: none;
     ${glass("soft")}
     border-radius: ${R.lg};
@@ -83,7 +84,7 @@ export const DayClip = styled(C.DayClip)`
 
 export const DayBody = styled(C.DayBody)`
     height: 100%;
-    padding: 14px 18px 12px;
+    padding: 10px 16px 10px;
     transform: translateY(${(p) => (p.$collapsed ? "10px" : "0")});
 `;
 

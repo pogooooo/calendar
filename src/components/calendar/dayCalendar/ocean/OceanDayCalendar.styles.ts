@@ -22,6 +22,7 @@ export const DateHeader = styled(C.DateHeader)`
     font-family: ${(p) => p.theme.fonts.display};
     letter-spacing: 0.04em;
     hr { border: none; height: 6px; ${waveUnderline(0.45)} background-size: 18px 5px; opacity: 0.9; }
+    ${DESKTOP} { margin-bottom: 8px; padding-left: 26px; }
 `;
 
 export const ContentLayout = styled(C.ContentLayout)`

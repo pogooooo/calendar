@@ -311,7 +311,7 @@ const MonthCalendarView = React.forwardRef<HTMLDivElement, CelestialMonthProps>(
 
         return (
             <S.CelestialCalendarWrapper as={Component} ref={ref} {...props}>
-                <MonthHeader navigation={<>
+                <MonthHeader month={currentDate} navigation={<>
                     <button type="button" className="nav-btn" aria-label={t.calendar.prevMonth} onClick={handlePrevMonth}><ChevronLeft size={24} /></button>
                     <AnimatedDateText text={dateRangeText} direction={direction} />
                     <button type="button" className="nav-btn" aria-label={t.calendar.nextMonth} onClick={handleNextMonth}><ChevronRight size={24} /></button>

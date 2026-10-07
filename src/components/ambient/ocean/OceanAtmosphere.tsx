@@ -1,13 +1,24 @@
-import * as S from './OceanAtmosphere.styles';
+"use client";
+/**
+ * 바다의 바탕 장면 — 햇살이 비치는 맑은 물 속.
+ *   햇빛 번짐 · 물빛 그물(three.js, OceanCaustics) · 반짝이는 빛망울(보케) · 천천히 떠오르는 물방울
+ * 모래와 조개는 사이드바(물가, OceanSideBar)와 폰 탭바(모래 띠)가 맡는다 — 물과 뭍이 나뉘는 구조.
+ * 내용 뒤(z-index -1)에 깔리고, 화면을 누르는 것은 받지 않는다.
+ */
+import OceanCaustics from "./OceanCaustics";
+import { Bubble } from "@/assets/ocean/SeaLife";
+import * as S from "./OceanAtmosphere.styles";
+
+const SPARKS = 16;
+const BUBBLES = 6;
 
 export default function OceanAtmosphere() {
-    return <S.Shore aria-hidden="true" data-ambient="ocean">
-        <svg className="tide" viewBox="0 0 1200 120" preserveAspectRatio="none" fill="none">
-            <path className="wave back" d="M-300 70Q-150 20 0 70T300 70T600 70T900 70T1200 70T1500 70V140H-300Z" />
-            <path className="wave front" d="M-300 88Q-150 50 0 88T300 88T600 88T900 88T1200 88T1500 88V140H-300Z" />
-            <path className="foam" d="M-300 70Q-150 20 0 70T300 70T600 70T900 70T1200 70T1500 70" />
-        </svg>
-        <svg className="shell" viewBox="0 0 120 120" fill="none"><path d="M60 100 19 65Q5 52 18 43q-4-20 15-22 8-21 27-12 19-9 27 12 19 2 15 22 13 9-1 22Z" /><path d="M60 100 18 43m42 57L33 21m27 79V9m0 91 27-79m-27 79 42-57" /><path d="M44 100q16-12 32 0l-4 8H48Z" /></svg>
-        {[0,1,2].map(i=><i key={i} className={`pearl pearl-${i}`} />)}
-    </S.Shore>;
+    return (
+        <S.Sea aria-hidden="true" data-ambient="ocean">
+            <S.Glare />
+            <OceanCaustics />
+            <S.Sparks>{Array.from({ length: SPARKS }, (_, i) => <span key={i} className={`s s${i}`} />)}</S.Sparks>
+            <S.Rising>{Array.from({ length: BUBBLES }, (_, i) => <Bubble key={i} className={`b b${i}`} />)}</S.Rising>
+        </S.Sea>
+    );
 }

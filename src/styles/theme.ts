@@ -33,9 +33,12 @@ const CELESTIAL_FONTS = {
     numeral: "var(--font-orbit), 'Orbit', serif",
     body: "'Inter', sans-serif",
 };
-/** 바다: 둥근 고딕(고운돋움) + 둥근 라틴 숫자(Quicksand) — 맑은 물처럼 가볍고 둥글게. 둘 다 켤 때 Google Fonts 에서 받는다 */
+/**
+ * 바다: 라틴 제목은 가는 세리프 Marcellus(참고 그림의 "Under the Sea"), 한글은 둥근 고딕(고운돋움), 숫자는 둥근 Quicksand.
+ * 셋 다 켤 때 Google Fonts 에서 받는다. 한글 글자는 Marcellus 에 없으니 고운돋움으로 넘어간다.
+ */
 const OCEAN_FONTS = {
-    display: "'Gowun Dodum', 'Quicksand', 'Noto Sans KR', sans-serif",
+    display: "'Marcellus', 'Quicksand', 'Gowun Dodum', 'Noto Sans KR', serif",
     numeral: "'Quicksand', 'Gowun Dodum', sans-serif",
     body: "'Gowun Dodum', 'Noto Sans KR', sans-serif",
 };

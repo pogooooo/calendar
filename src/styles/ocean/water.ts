@@ -9,6 +9,7 @@
  */
 import { css, keyframes, type DefaultTheme } from "styled-components";
 import { withAlpha } from "@/styles/color";
+import { BUBBLE_FILL, causticNet, foamBand, sandGrain, scallop, starfish } from "./shoreArt";
 
 const dark = (t: DefaultTheme) => t.mode === "dark";
 
@@ -44,17 +45,101 @@ export const calm = css`
     @media (prefers-reduced-motion: reduce) { animation: none !important; }
 `;
 
-/* ── 겉 ─────────────────────────────────────────────────────────────── */
-/** 유리 — 물속에서 올려다본 수면 같은 반투명 판 */
-export const glass = (strength: "soft" | "solid" = "soft") => css`
-    background-color: ${(p) => withAlpha(p.theme.colors.surface, dark(p.theme) ? (strength === "solid" ? 0.92 : 0.66) : (strength === "solid" ? 0.94 : 0.72))};
-    backdrop-filter: blur(14px) saturate(140%);
-    -webkit-backdrop-filter: blur(14px) saturate(140%);
-    border: 1px solid ${(p) => (dark(p.theme) ? withAlpha(p.theme.colors.primary, 0.18) : "rgba(255, 255, 255, 0.7)")};
-    box-shadow:
-        0 10px 28px ${(p) => withAlpha(dark(p.theme) ? "#000000" : p.theme.colors.primary, dark(p.theme) ? 0.35 : 0.1)},
-        inset 0 1px 0 ${(p) => (dark(p.theme) ? withAlpha(p.theme.colors.primary, 0.12) : "rgba(255, 255, 255, 0.85)")};
+/* ── 물가 (2026-10-07, 참고 그림: 햇살 비치는 물가) ────────────────────
+ * 화면 = 위에서 내려다본 맑은 물. 그 위에 바다유리 판이 떠 있고, 사이드바·탭바는 모래 물가다.
+ * 물과 모래가 만나는 곳엔 하얀 물거품, 모래 위엔 조개·불가사리, 물속엔 물방울과 빛 그물. */
+
+/** 물 위 글씨(참고 그림의 "Under the Sea") — 라틴 제목은 가는 세리프 Marcellus, 한글은 둥근 고운돋움 */
+export const LATIN = "'Marcellus', 'Gowun Dodum', serif";
+
+const SAND_TONES = { light: ["#F8EDD8", "#F2E0C0", "#EAD1A9"], dark: ["#3D4651", "#333B45", "#2A313B"] } as const;
+const GRAIN = { light: sandGrain(false), dark: sandGrain(true) };
+const FOAM = { light: foamBand(false), dark: foamBand(true) };
+const NET = { light: causticNet({ freq: 0.012, seed: 11, alpha: 0.75 }), dark: causticNet({ freq: 0.012, seed: 11, alpha: 0.4, color: "150 245 235" }) };
+const STARS = { amber: starfish("amber"), aqua: starfish("aqua"), coral: starfish("coral") };
+const SHELLS = { peach: scallop("peach"), pearl: scallop("pearl"), coral: scallop("coral") };
+
+/** 모래 위 글씨 — 바랜 유목(流木) 갈색. 밤엔 달빛 모래 위 옅은 상아색 */
+export const sandInk = (t: DefaultTheme, soft = false) => (dark(t) ? (soft ? "#B9C2CC" : "#EEE8DD") : (soft ? "#9A7B5A" : "#5A4330"));
+
+/** 모래 — 사이드바(물가)·폰 탭바·작은 쪽지. 따뜻한 모래알 결, 밤에는 달빛에 식은 회청색 모래 */
+export const sand = css`
+    background-color: ${(p) => SAND_TONES[p.theme.mode][1]};
+    background-image: ${(p) => GRAIN[p.theme.mode]}, linear-gradient(180deg, ${(p) => SAND_TONES[p.theme.mode].join(", ")});
+    background-size: 200px 200px, 100% 100%;
+    color: ${(p) => sandInk(p.theme)};
 `;
+
+/** 물거품 띠 — 물(위)과 모래(아래)가 만나는 가장자리. 높이 36px 짜리 띠에 건다 */
+export const foamEdge = css`
+    background-image: ${(p) => FOAM[p.theme.mode]};
+    background-repeat: repeat-x;
+    background-size: 260px 36px;
+`;
+
+/** 멈춘 물빛 그물 — three.js 가 돌지 않는 곳(위젯 창·움직임 끔·떠 있는 창 안)에서 물로 읽히게 */
+export const stillCaustics = (size = 520) => css`
+    background-image: ${(p) => NET[p.theme.mode]};
+    background-size: ${size}px ${size}px;
+`;
+export const causticNetImage = (t: DefaultTheme) => NET[t.mode];
+
+/** 불가사리·가리비를 배경으로 (오늘 표시·빈 자리·머리글 장식) */
+export const starfishImage = (tone: keyof typeof STARS = "amber") => STARS[tone];
+export const scallopImage = (tone: keyof typeof SHELLS = "peach") => SHELLS[tone];
+
+/** 물방울 하나 — 가장자리가 밝고 속이 비치는 동그라미 */
+export const bubbleFill = css`
+    border-radius: 50%;
+    background: ${BUBBLE_FILL};
+`;
+
+/** 물 위에 바로 쓰는 글씨 — 흰 글씨에 물빛 그늘 (판 밖, 물 위) */
+export const onWater = css`
+    color: ${(p) => (dark(p.theme) ? "#E6FBF8" : "#FFFFFF")};
+    text-shadow: 0 1px 2px ${(p) => (dark(p.theme) ? "rgba(0, 0, 0, 0.5)" : "rgba(6, 74, 86, 0.35)")}, 0 0 18px ${(p) => (dark(p.theme) ? "rgba(111, 227, 218, 0.25)" : "rgba(255, 255, 255, 0.45)")};
+`;
+
+/**
+ * 바다유리 — 물에 닳은 유리 조각. 반투명하고, 위 가장자리에 햇빛이 맺히고, 아래로 물빛이 고인다.
+ *   panel: 물 위에 떠 있는 큰 판(뒤가 흐리게 비친다)
+ *   card:  판 안의 작은 조각(흐림 없이 — 마흔 개가 넘어도 가볍게)
+ *   float: 떠 있는 창·차림표(거의 불투명)
+ */
+export const seaGlass = (kind: "panel" | "card" | "float" = "panel") => css`
+    ${(p) => {
+        const d = dark(p.theme);
+        if (kind === "card") return css`
+            background: ${d ? "linear-gradient(160deg, rgba(22, 84, 100, 0.55), rgba(10, 52, 66, 0.5))" : "linear-gradient(160deg, rgba(255, 255, 255, 0.82), rgba(240, 252, 250, 0.66))"};
+            border: 1px solid ${d ? "rgba(127, 245, 234, 0.14)" : "rgba(255, 255, 255, 0.95)"};
+            box-shadow: 0 8px 18px -10px ${d ? "rgba(0, 0, 0, 0.6)" : "rgba(4, 78, 92, 0.35)"}, inset 0 1px 0 ${d ? "rgba(160, 250, 240, 0.12)" : "#FFFFFF"};
+        `;
+        if (kind === "float") return css`
+            background: ${d ? "linear-gradient(160deg, rgba(16, 66, 82, 0.96), rgba(7, 40, 52, 0.96))" : "linear-gradient(160deg, rgba(252, 255, 255, 0.96), rgba(230, 249, 247, 0.94))"};
+            backdrop-filter: blur(22px) saturate(160%);
+            -webkit-backdrop-filter: blur(22px) saturate(160%);
+            border: 1px solid ${d ? "rgba(127, 245, 234, 0.22)" : "rgba(255, 255, 255, 0.95)"};
+            box-shadow: 0 30px 60px -22px ${d ? "rgba(0, 0, 0, 0.75)" : "rgba(4, 60, 72, 0.5)"}, 0 2px 8px ${d ? "rgba(0, 0, 0, 0.3)" : "rgba(4, 60, 72, 0.1)"}, inset 0 1px 0 ${d ? "rgba(160, 250, 240, 0.18)" : "#FFFFFF"};
+        `;
+        return css`
+            background: ${d
+                ? "linear-gradient(155deg, rgba(24, 92, 110, 0.58) 0%, rgba(9, 50, 64, 0.52) 55%, rgba(5, 34, 46, 0.6) 100%)"
+                : "linear-gradient(155deg, rgba(255, 255, 255, 0.7) 0%, rgba(238, 252, 250, 0.52) 45%, rgba(206, 245, 241, 0.46) 100%)"};
+            backdrop-filter: blur(18px) saturate(165%);
+            -webkit-backdrop-filter: blur(18px) saturate(165%);
+            border: 1px solid ${d ? "rgba(127, 245, 234, 0.18)" : "rgba(255, 255, 255, 0.8)"};
+            box-shadow:
+                0 24px 46px -22px ${d ? "rgba(0, 0, 0, 0.7)" : "rgba(4, 78, 92, 0.5)"},
+                0 2px 6px ${d ? "rgba(0, 0, 0, 0.25)" : "rgba(4, 78, 92, 0.08)"},
+                inset 0 1px 0 ${d ? "rgba(160, 250, 240, 0.16)" : "rgba(255, 255, 255, 0.95)"},
+                inset 0 -16px 30px -20px ${d ? "rgba(111, 227, 218, 0.22)" : "rgba(14, 140, 150, 0.35)"};
+        `;
+    }}
+`;
+
+/* ── 겉 ─────────────────────────────────────────────────────────────── */
+/** 유리 — 예전 이름. 이제 바다유리(seaGlass)로 그린다: soft=물 위의 판, solid=떠 있는 창 */
+export const glass = (strength: "soft" | "solid" = "soft") => seaGlass(strength === "solid" ? "float" : "panel");
 
 /** 물빛 — 바닥에 어른거리는 빛 그물(caustics)을 멈춘 그림으로. three.js 효과가 없을 때도 바다로 읽히게 */
 export const caustics = (alpha = 0.16) => css`

@@ -81,6 +81,13 @@ export const THEME_FONTS: Record<string, FontOption[]> = {
             family: "'Quicksand', sans-serif",
             cssUrl: "https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&display=swap",
         },
+        {
+            key: "marcellus",
+            label: "Marcellus",
+            family: "'Marcellus', serif",
+            // 글자만 받는다(text=) — 숫자는 Marcellus 에 없게 해서 둥근 Quicksand 로 넘어가게 ("2026년 10월" 이 고전 숫자로 안 보이게)
+            cssUrl: "https://fonts.googleapis.com/css2?family=Marcellus&display=swap&text=" + encodeURIComponent("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz&'.,-:·!?()"),
+        },
     ],
     maple: [
         FONT_OPTIONS.find(f => f.key === "gowun-batang")!,
