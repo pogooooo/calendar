@@ -7,6 +7,7 @@
  *   - 손: 커서 둘레의 물이 살짝 휘며 밝아지고, 누른 자리에서 물결 고리가 번진다(작은 방울도 몇 개 올라온다)
  *     폰은 커서가 없으니 기기 기울기(parallax)가 그 자리를 맡는다 — 기울이면 빛 그물이 미끄러지고 물이 휘는 자리가 옮겨 간다
  *   - 물속의 것: 떠오르는 공기 방울과 유리 구슬(oceanBubbles) — 이 물을 굴절해 비추고 빛 그물이 지나면 반짝인다
+ *   - 큰 구슬: 화면이 맡긴 자리(oceanHero — 로그인 머리의 상표 뒤)에 액체 유리 구슬. 맺힐 때 그 자리에서 물결 고리가 번진다
  *
  * 무겁지 않게: 무거운 물 셰이더는 화면의 약 0.6 배(폰 0.45) 렌더 타깃에 그리고, 화면에는 그것을 늘려 깔면서
  * 방울만 화면 해상도로 그린다(방울 테가 뭉개지지 않게). 같은 캔버스·같은 WebGL 하나. 초당 30장까지만, 폰은 프리즘·반짝임을 뺀다.
@@ -18,6 +19,8 @@ import { useEffect, useRef } from "react";
 import { useTheme } from "styled-components";
 import useThemeMotion from "@/hooks/useThemeMotion";
 import { parallax } from "@/lib/parallax";
+import type { HeroDraw } from "./oceanBubbles";
+import { oceanHero, type OceanHeroSpot } from "./oceanHero";
 import * as S from "./OceanAtmosphere.styles";
 
 const CLICKS = 4;
@@ -198,13 +201,50 @@ export default function OceanCaustics() {
             blit.frustumCulled = false;
             viewScene.add(blit);
             const bubbles = createBubbles(THREE, { mobile, motion, dark, water: target.texture });
-            viewScene.add(bubbles.mesh);
+            viewScene.add(bubbles.mesh, bubbles.heroMesh);
 
             const draw = () => {
                 renderer.setRenderTarget(target);
                 renderer.render(waterScene, camera);
                 renderer.setRenderTarget(null);
                 renderer.render(viewScene, camera);
+            };
+
+            let nextClick = 0;
+            /** 물결 고리 하나 — 화면 px(y 아래로) */
+            const ripple = (x: number, y: number) => {
+                uniforms.uClicks.value[nextClick].set(x / window.innerWidth, 1 - y / window.innerHeight, uniforms.uTime.value);
+                nextClick = (nextClick + 1) % CLICKS;
+            };
+
+            // 화면이 맡긴 큰 구슬(oceanHero) — 맡긴 요소의 자리를 매번 읽는다. 처음 보이면 그 자리에 물결 고리가 번지며 맺힌다
+            const heroState = new WeakMap<OceanHeroSpot, { busy: number; seed: number }>();
+            const readHeroes = (now: number, dt: number, p: { x: number; y: number }): HeroDraw[] => {
+                const H = window.innerHeight;
+                const list: HeroDraw[] = [];
+                for (const spot of oceanHero.spots) {
+                    const r = spot.el.getBoundingClientRect();
+                    if (r.width < 4 || r.height < 4) continue;
+                    const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+                    let st = heroState.get(spot);
+                    if (!st) {
+                        st = { busy: 0, seed: Math.random() * 10 };
+                        heroState.set(spot, st);
+                        if (motion !== "off") ripple(cx, cy);
+                    }
+                    st.busy += ((spot.busy ? 1 : 0) - st.busy) * Math.min(1, dt * 2.5);
+                    // 작게 맺혔다가 부풀어 자리를 잡는다(살짝 넘쳤다 돌아온다)
+                    const k = motion === "off" ? 1 : Math.min(1, (now - spot.since) / (motion === "gentle" ? 1800 : 1100));
+                    const appear = k >= 1 ? 1 : 1 + 2.2 * Math.pow(k - 1, 3) + 1.2 * Math.pow(k - 1, 2);
+                    // 상표(DOM)보다 뒤에 있으니 커서·기울기에 조금 비켜 깊이가 보인다
+                    list.push({ x: cx - p.x * 10, y: H - cy + p.y * 8, r: Math.min(r.width, r.height) / 2, busy: st.busy, appear: Math.max(0.02, appear), seed: st.seed });
+                }
+                return list;
+            };
+            const stillFrame = () => {
+                bubbles.setHeroes(readHeroes(performance.now(), 1, { x: 0, y: 0 }));
+                bubbles.still();
+                draw();
             };
 
             const resize = () => {
@@ -216,27 +256,32 @@ export default function OceanCaustics() {
                 uniforms.uRes.value.set(w, h);
                 renderer.setSize(Math.max(1, Math.round(W * viewScale)), Math.max(1, Math.round(H * viewScale)), false);
                 bubbles.resize(W, H);
-                if (motion === "off") bubbles.still();
-                draw();
+                if (motion === "off") stillFrame();
+                else draw();
             };
             resize();
             window.addEventListener("resize", resize);
+            // 움직임 '끄기'에서는 구슬 자리가 바뀔 때(맡김·거둠·글꼴로 상표가 움직임·화면을 굴림)만 다시 그린다
+            const unsubHero = oceanHero.subscribe(() => { if (motion === "off") stillFrame(); });
+            let scrollFrame = 0;
+            const onScroll = () => {
+                if (scrollFrame || oceanHero.spots.size === 0) return;
+                scrollFrame = requestAnimationFrame(() => { scrollFrame = 0; stillFrame(); });
+            };
+            if (motion === "off") window.addEventListener("scroll", onScroll, { capture: true, passive: true });
 
             // 손 — 커서를 따라 물이 휘고, 누르면 물결 고리와 방울. 폰은 커서 대신 기울기. '잔잔하게'·끄기면 손에 반응하지 않는다
             const interactive = motion === "full";
             const finePointer = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
             const aim = { x: 0.5, y: 0.5 };
             let lastMove = -10;
-            let nextClick = 0;
             const onMove = (e: PointerEvent) => {
                 aim.x = e.clientX / window.innerWidth;
                 aim.y = 1 - e.clientY / window.innerHeight;
                 lastMove = performance.now();
             };
             const onDown = (e: PointerEvent) => {
-                const slot = uniforms.uClicks.value[nextClick];
-                slot.set(e.clientX / window.innerWidth, 1 - e.clientY / window.innerHeight, uniforms.uTime.value);
-                nextClick = (nextClick + 1) % CLICKS;
+                ripple(e.clientX, e.clientY);
                 bubbles.release(e.clientX, e.clientY);
             };
             const stopParallax = interactive ? parallax.start() : () => {};
@@ -275,6 +320,7 @@ export default function OceanCaustics() {
                 uniforms.uMouseOn.value += (on - uniforms.uMouseOn.value) * Math.min(1, step * 3);
                 const tk = tilted ? 0.2 : 0.04;
                 uniforms.uTilt.value.set(p.x * tk, -p.y * tk);
+                bubbles.setHeroes(readHeroes(now, step, p));
                 bubbles.step(step, p, tilted ? p.x * 0.4 : 0);
                 draw();
             };
@@ -285,6 +331,9 @@ export default function OceanCaustics() {
                 window.removeEventListener("resize", resize);
                 window.removeEventListener("pointermove", onMove);
                 window.removeEventListener("pointerdown", onDown);
+                unsubHero();
+                window.removeEventListener("scroll", onScroll, { capture: true });
+                cancelAnimationFrame(scrollFrame);
                 stopParallax();
                 bubbles.dispose();
                 waterMat.dispose();

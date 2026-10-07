@@ -189,3 +189,23 @@ export const Level = styled.div`
         background: ${(p) => p.theme.colors.primary};
     }
 `;
+
+/**
+ * 판 둘레 물속의 큰 유리 구슬 자리 — 보이지 않는 빈 상자. 바다의 물 렌더러가 이 자리에 구슬을 그린다(oceanHero).
+ * 판(반투명 유리)에 반쯤 가려 판 뒤 물속에 있는 깊이가 보인다. 폰은 작게.
+ */
+export const OrbSpot = styled.span<{ $x: number; $y: number; $size: number }>`
+    position: absolute;
+    left: ${(p) => p.$x}%;
+    top: ${(p) => p.$y}%;
+    width: ${(p) => p.$size}px;
+    height: ${(p) => p.$size}px;
+    transform: translate(-50%, -50%);
+    visibility: hidden;
+    pointer-events: none;
+
+    @media (max-width: 520px) {
+        width: ${(p) => Math.round(p.$size * 0.62)}px;
+        height: ${(p) => Math.round(p.$size * 0.62)}px;
+    }
+`;

@@ -1,5 +1,7 @@
 "use client";
 
+import { useRef } from "react";
+import { useOceanHeroSpot } from "@/components/ambient/ocean/oceanHero";
 import * as S from "./OceanHeroScene.styles";
 
 /** 일정 있는 칸(앞은 여러 날 이어지는 막대의 처음·끝) — 고정 값이라 늘 같은 그림 */
@@ -12,10 +14,14 @@ const ROWS = [{ w: 72, done: true }, { w: 58, done: false }, { w: 80, done: fals
  * 바다의 소개 그림 — 그림 대신 앱 화면을 닮은 반투명 판 두 장(달력 한 달 + 오늘 할 일 쪽지).
  * 도는 금빛 고리(Celestial)·도감 한 장(Maple)과 다르게 "쓰는 모습"을 보여 준다.
  * 마우스를 따라 두 판이 서로 다른 깊이로 아주 조금 움직인다(화면이 넘겨주는 --mx/--my). 끝없는 움직임은 없다.
+ * 큰 판 오른쪽 위 뒤의 물속에는 큰 유리 구슬 하나가 반쯤 가려 떠 있다 — 그리는 것은 바다의 물 렌더러다(oceanHero, 빈 자리만 맡긴다).
  */
 export default function OceanHeroScene() {
+    const orb = useRef<HTMLSpanElement>(null);
+    useOceanHeroSpot(orb);
     return (
         <S.Scene aria-hidden="true">
+            <S.OrbSpot ref={orb} $x={91} $y={9} $size={200} />
             <S.MonthCard>
                 <S.MonthHead>
                     <S.MonthName>October</S.MonthName>

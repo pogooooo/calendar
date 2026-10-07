@@ -18,8 +18,8 @@ import { parallax } from "@/lib/parallax";
 type T = typeof THREE_NS;
 type Motion = "full" | "gentle" | "off";
 
-/** 아틀라스 2×2 — 순서가 칸 번호(0~3) */
-const SPRITES = ["leaf-red", "leaf-orange", "leaf-yellow", "leaf-brown"];
+/** 아틀라스 2×2 — 순서가 칸 번호(0~3). 표본(specimenScene)도 같은 그림을 쓴다 */
+export const SPRITES = ["leaf-red", "leaf-orange", "leaf-yellow", "leaf-brown"];
 
 const FOV = 30;
 const TAN = Math.tan(((FOV / 2) * Math.PI) / 180);
@@ -27,7 +27,8 @@ const CAM_Z = 12;
 /** 카메라에서 잎까지 거리 — 가까운·가운데·먼 띠 */
 const BANDS: [number, number][] = [[5.6, 7.8], [9, 13.5], [15, 22]];
 
-const VERT = /* glsl */ `
+/** 잎 한 장(인스턴스)의 정점 — 표본 장면의 지나가는 잎도 같이 쓴다 */
+export const LEAF_VERT = /* glsl */ `
 attribute vec4 aLeaf;   // 칸, 말림, 떨림 위상, 투명도
 attribute vec3 aTone;
 uniform float uTime;
@@ -56,10 +57,13 @@ void main() {
 }
 `;
 
-const FRAG = /* glsl */ `
+/** 잎 한 장의 색 — 가까운·먼 거리(uNear·uFar: 카메라에서의 거리)는 장면마다 단위가 달라 밖에서 준다 */
+export const LEAF_FRAG = /* glsl */ `
 precision highp float;
 uniform sampler2D uMap;
 uniform vec3 uPaper;
+uniform vec2 uNear;
+uniform vec2 uFar;
 uniform float uDark;
 uniform float uOpacity;
 varying vec2 vUv;
@@ -69,8 +73,8 @@ varying vec3 vTone;
 varying float vAlpha;
 
 void main() {
-    float nearK = smoothstep(9.0, 5.8, vDepth);    // 가까운 잎 — 초점 밖이라 흐리고 옅게
-    float farK = smoothstep(12.0, 22.0, vDepth);   // 먼 잎 — 종이빛으로 바랜다
+    float nearK = smoothstep(uNear.x, uNear.y, vDepth); // 가까운 잎 — 초점 밖이라 흐리고 옅게
+    float farK = smoothstep(uFar.x, uFar.y, vDepth);    // 먼 잎 — 종이빛으로 바랜다
     vec4 c = texture2D(uMap, vUv, nearK * 1.7);     // 미리 곱한 알파(premultiplied)
     if (c.a < 0.003) discard;
     vec3 n = normalize(vNormal);
@@ -113,7 +117,7 @@ interface Leaf {
 const rand = (a: number, b: number) => a + Math.random() * (b - a);
 
 /** '#RRGGBB' → 0~1 (색 관리 없이 그대로 — 캔버스도 sRGB 그대로 내보낸다) */
-function hexRGB(hex: string): [number, number, number] {
+export function hexRGB(hex: string): [number, number, number] {
     const h = hex.replace("#", "");
     const v = h.length === 3 ? h.split("").map((c) => c + c).join("") : h.slice(0, 6);
     const n = parseInt(v, 16);
@@ -121,7 +125,7 @@ function hexRGB(hex: string): [number, number, number] {
 }
 
 /** 잎 그림 넷을 2×2 아틀라스로. 칸마다 여백을 두어 흐린 밉맵에서 옆 칸이 번지지 않게 */
-async function leafAtlas(THREE: T, cell: number) {
+export async function leafAtlas(THREE: T, cell: number) {
     const imgs = await Promise.all(SPRITES.map((name) => new Promise<HTMLImageElement>((res, rej) => {
         const img = new Image();
         img.decoding = "async";
@@ -187,10 +191,12 @@ export function createLeafScene(THREE: T, canvas: HTMLCanvasElement, opts: LeafS
         uDark: { value: opts.dark ? 1 : 0 },
         uOpacity: { value: 0 },
         uTime: { value: Math.random() * 100 },
+        uNear: { value: new THREE.Vector2(9, 5.8) },
+        uFar: { value: new THREE.Vector2(12, 22) },
     };
     const material = new THREE.ShaderMaterial({
-        vertexShader: VERT,
-        fragmentShader: FRAG,
+        vertexShader: LEAF_VERT,
+        fragmentShader: LEAF_FRAG,
         uniforms,
         transparent: true,
         premultipliedAlpha: true,

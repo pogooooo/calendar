@@ -130,7 +130,13 @@ export const ProgressBar = styled(C.ProgressBar)`
     box-shadow: none;
 `;
 
-/** 큰 그림 자리: 도감 한 장이 들어간다 (HeroScene 이 갈래마다 다르다) */
+/** 큰 그림 자리: 도감 한 장이 3D 로 떠 있다 (HeroScene 이 갈래마다 다르다). 카드 둘레로 잎이 지날 자리까지 넉넉히 */
 export const HeroArt = styled(C.HeroArt)`
+    width: 470px;
+    height: 410px;
+    margin-right: -28px;
+
     &::before, &::after { display: none; }
+
+    @media (max-width: 1000px) { width: 340px; height: 310px; margin-right: 0; }
 `;

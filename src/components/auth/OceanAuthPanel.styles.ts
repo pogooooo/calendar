@@ -21,6 +21,7 @@ export const Panel = styled.div`
 `;
 
 export const Wordmark = styled.h1`
+    position: relative;
     margin: 0;
     font-family: ${SERIF};
     font-style: italic;
@@ -31,6 +32,23 @@ export const Wordmark = styled.h1`
     color: ${(p) => p.theme.colors.text};
 
     @media (max-width: 768px) { font-size: 2.9rem; }
+`;
+
+/**
+ * 상표 뒤 큰 유리 구슬의 자리 — 보이지 않는 빈 상자. 바다의 물 렌더러가 이 상자의 자리·크기에 구슬을 그린다(oceanHero).
+ * 크기는 상표 글자 크기에 묶어 둔다(폰은 조금 작게).
+ */
+export const Orb = styled.span`
+    position: absolute;
+    left: 50%;
+    top: 46%;
+    width: 4.4em;
+    height: 4.4em;
+    transform: translate(-50%, -50%);
+    visibility: hidden;
+    pointer-events: none;
+
+    @media (max-width: 768px) { width: 3.9em; height: 3.9em; }
 `;
 
 export const Tagline = styled.p`

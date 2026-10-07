@@ -9,12 +9,108 @@
  * 기울기·커서(parallax)로 가까운 것이 더 비켜 깊이가 보이고, 폰은 기운 쪽으로 '위'가 바뀌어 방울이 높은 쪽으로 올라간다.
  * 누르면 그 자리에서 작은 방울 몇 개가 올라온다.
  *
+ * 큰 구슬(hero): 화면이 맡긴 자리(oceanHero — 로그인 머리의 상표 뒤 등)에 그리는 액체 유리 구슬. 가운데는 뒤 물빛이 크게 보이는
+ * 렌즈이고, 테는 물방울처럼 천천히 일렁이며(기다리는 동안에는 빨리), 처음 맡겨지면 작게 맺혔다가 부풀어 자리를 잡는다.
+ * 저절로 떠다니는 구슬·방울은 큰 구슬 둘레에서는 옅어진다(겹쳐 보이지 않게).
+ *
  * 좌표는 CSS px, y 는 위로 자란다(0 이 화면 아래). three 는 부르는 쪽이 넘겨준다 — 이 파일은 타입만 가져온다.
  */
 import type * as THREE_NS from "three";
 
 type T = typeof THREE_NS;
 type Motion = "full" | "gentle" | "off";
+
+/** 큰 구슬 하나 — 자리(px, y 위로)·반지름, 기다림(0~1)·맺힘(0~1)·씨앗 */
+export interface HeroDraw { x: number; y: number; r: number; busy: number; appear: number; seed: number }
+const MAX_HEROES = 3;
+
+const HERO_VERT = /* glsl */ `
+attribute vec3 aHero;      // 가운데 x·y(px), 반지름(px)
+attribute vec4 aHeroLook;  // 기다림, 맺힘, 씨앗, (비움)
+uniform vec2 uView;
+varying vec2 vLocal;
+varying vec2 vCenter;
+varying float vRadius;
+varying vec4 vLook;
+void main() {
+    float R = aHero.z * 1.3 + 4.0;   // 둘레에 고인 빛 자리까지
+    vLocal = position.xy * R / aHero.z;
+    vCenter = aHero.xy;
+    vRadius = aHero.z;
+    vLook = aHeroLook;
+    gl_Position = vec4((aHero.xy + position.xy * R) / uView * 2.0 - 1.0, 0.0, 1.0);
+}
+`;
+
+const HERO_FRAG = /* glsl */ `
+precision highp float;
+uniform sampler2D uWater;
+uniform vec2 uView;
+uniform float uDark;
+uniform float uTime;
+varying vec2 vLocal;
+varying vec2 vCenter;
+varying float vRadius;
+varying vec4 vLook;
+
+void main() {
+    float busy = vLook.x, appear = vLook.y, seed = vLook.z;
+    float len = length(vLocal);
+    vec2 dir = vLocal / max(len, 1e-4);
+    float ang = atan(vLocal.y, vLocal.x);
+    // 물방울처럼 테가 천천히 일렁인다 — 기다리는 동안에는 빠르고 조금 크게
+    float t = uTime * (0.45 + busy * 1.4);
+    float wob = 1.0
+        + (0.014 + busy * 0.018) * sin(3.0 * ang + t * 1.7 + seed)
+        + (0.009 + busy * 0.012) * sin(5.0 * ang - t * 1.25 + seed * 2.1)
+        + 0.006 * sin(2.0 * ang + t * 0.8 + seed * 0.7);
+    float R = wob * appear;
+    float r = len / max(R, 1e-3);
+    float aa = fwidth(r) * 1.25;
+    float mask = 1.0 - smoothstep(1.0 - aa, 1.0 + aa * 0.4, r);
+    vec3 light = mix(vec3(1.0, 1.0, 0.97), vec3(0.66, 0.96, 0.92), uDark);
+    // 둘레 물에 고인 옅은 빛
+    float halo = exp(-pow(max(r - 1.0, 0.0) * 7.0, 2.0)) * (1.0 - mask) * mix(0.1, 0.12, uDark) * appear;
+    if (mask + halo <= 0.002) discard;
+
+    float rr = min(r, 0.999);
+    float edge = 1.0 - sqrt(1.0 - rr * rr);   // 0 가운데 → 1 테
+    vec2 cuv = vCenter / uView;
+    vec2 off = vLocal * vRadius / uView;      // 가운데에서 이 픽셀까지(화면 uv)
+    // 렌즈 — 가운데는 뒤 물빛이 크게(약 1.8배), 테로 갈수록 바깥을 끌어와 접는다. 빛깔마다 조금씩 달리(무지갯빛 테)
+    float mag = 0.55 + 0.3 * rr * rr;
+    vec2 bend = dir * pow(edge, 1.5) * vRadius / uView * 0.9;
+    vec3 col = vec3(
+        texture2D(uWater, cuv + off * mag + bend).r,
+        texture2D(uWater, cuv + off * mag * 1.035 + bend * 1.1).g,
+        texture2D(uWater, cuv + off * mag * 1.07 + bend * 1.2).b);
+    float glint = texture2D(uWater, cuv + vec2(0.0, vRadius / uView.y * 0.6)).a; // 구슬 위를 지나는 빛 그물
+    col = col * mix(1.06, 1.04, uDark) + mix(0.02, 0.01, uDark);
+
+    vec3 deep = mix(vec3(0.04, 0.33, 0.35), vec3(0.01, 0.07, 0.08), uDark);
+    // 테의 반사 — 위는 수면의 빛, 아래는 깊은 물빛
+    vec3 refl = mix(deep, light * mix(0.95, 0.62, uDark), smoothstep(-0.7, 0.85, dir.y));
+    col = mix(col, refl, pow(edge, 2.8) * mix(0.5, 0.55, uDark));
+    // 아래쪽 테 안의 어두운 띠 — 밝은 물에서도 둥근 테두리가 서도록 (낮에만)
+    float band = smoothstep(0.86, 0.95, r) * (1.0 - smoothstep(0.955, 0.995, r)) * smoothstep(0.4, -0.6, dir.y);
+    col = mix(col, deep, band * 0.32 * (1.0 - uDark));
+    // 위쪽 테를 따라 흐르는 가는 빛과 초승달 창빛
+    float ring = smoothstep(0.9, 0.975, r) * (1.0 - smoothstep(0.975, 1.0, r)) * smoothstep(-0.5, 0.6, dir.y);
+    col += light * ring * mix(0.45, 0.3, uDark) * (0.8 + 0.4 * glint);
+    float arc = smoothstep(0.72, 0.83, r) * (1.0 - smoothstep(0.87, 0.92, r)) * smoothstep(0.4, 0.92, dot(dir, vec2(-0.5, 0.866)));
+    col += light * arc * mix(0.34, 0.24, uDark);
+    // 해(밤엔 달)가 비친 반짝 — 위 왼쪽의 또렷한 점과 둘레의 넓고 옅은 빛
+    vec2 hp = vLocal / max(R, 1e-3) - vec2(-0.36, 0.44);
+    float spec = exp(-dot(hp, hp) / 0.006) * 0.95 + exp(-dot(hp, hp) / 0.05) * 0.16;
+    col += light * spec * mix(1.0, 0.65, uDark) * (0.8 + 0.5 * glint);
+    // 구슬을 지난 빛이 아래쪽 안에 모인다 — 빛 그물이 지나면 더
+    float low = smoothstep(0.35, 0.85, r) * (1.0 - smoothstep(0.88, 0.99, r)) * smoothstep(0.25, 0.95, dot(dir, vec2(0.28, -0.96)));
+    col += light * low * (0.18 + 0.32 * glint) * mix(1.0, 0.8, uDark);
+
+    float a = mask * mix(0.96, 0.92, uDark);
+    gl_FragColor = vec4(col * a + light * halo, a + halo); // 미리 곱한 알파
+}
+`;
 
 const VERT = /* glsl */ `
 attribute vec3 aBubble;   // 가운데 x·y(px), 반지름(px)
@@ -162,6 +258,32 @@ export function createBubbles(THREE: T, opts: BubbleOptions) {
     mesh.frustumCulled = false;
     mesh.renderOrder = 1;
 
+    /* 큰 구슬 — 따로 한 번에 그린다(방울 위에) */
+    const heroGeo = new THREE.InstancedBufferGeometry();
+    heroGeo.setAttribute("position", new THREE.Float32BufferAttribute([-1, -1, 0, 1, -1, 0, 1, 1, 0, -1, 1, 0], 3));
+    heroGeo.setIndex([0, 1, 2, 0, 2, 3]);
+    const aHero = new THREE.InstancedBufferAttribute(new Float32Array(MAX_HEROES * 3), 3);
+    const aHeroLook = new THREE.InstancedBufferAttribute(new Float32Array(MAX_HEROES * 4), 4);
+    aHero.setUsage(THREE.DynamicDrawUsage);
+    aHeroLook.setUsage(THREE.DynamicDrawUsage);
+    heroGeo.setAttribute("aHero", aHero);
+    heroGeo.setAttribute("aHeroLook", aHeroLook);
+    heroGeo.instanceCount = 0;
+    const heroUniforms = { uWater: uniforms.uWater, uView: uniforms.uView, uDark: uniforms.uDark, uTime: { value: 0 } };
+    const heroMaterial = new THREE.ShaderMaterial({
+        vertexShader: HERO_VERT,
+        fragmentShader: HERO_FRAG,
+        uniforms: heroUniforms,
+        transparent: true,
+        premultipliedAlpha: true,
+        depthTest: false,
+        depthWrite: false,
+    });
+    const heroMesh = new THREE.Mesh(heroGeo, heroMaterial);
+    heroMesh.frustumCulled = false;
+    heroMesh.renderOrder = 2;
+    let heroes: HeroDraw[] = [];
+
     let W = 1, H = 1;
     /** 장면 시각 — 창이 숨어 있던 동안은 흐르지 않는다(돌아왔을 때 흔들림이 튀지 않게) */
     let clock = Math.random() * 100;
@@ -289,12 +411,20 @@ export function createBubbles(THREE: T, opts: BubbleOptions) {
         write(t, tilt);
     };
 
-    /** 보이는 것만 차례로 (방울 → 구슬: 구슬이 가까우니 위에) */
+    /** 보이는 것만 차례로 (방울 → 구슬: 구슬이 가까우니 위에). 큰 구슬 둘레에서는 옅어진다 */
     const write = (t: number, tilt: { x: number; y: number }) => {
         let n = 0;
         const put = (b: Bubble, x: number, y: number, alpha: number) => {
-            aBubble.setXYZ(n, x - tilt.x * b.depth * 18, y + tilt.y * b.depth * 14, b.r);
-            aLook.setXYZW(n, b.soft, alpha, b.glass, b.seed);
+            const px = x - tilt.x * b.depth * 18, py = y + tilt.y * b.depth * 14;
+            let k = 1;
+            for (const h of heroes) {
+                // 큰 구슬 둘레 — 떠다니는 구슬은 넓게, 작은 방울은 바로 둘레에서만 비킨다
+                const d = Math.hypot(px - h.x, py - h.y) - h.r - b.r - (b.glass > 0.5 ? h.r * 1.2 : 0);
+                k = Math.min(k, Math.max(0, Math.min(1, d / (h.r * 0.5))));
+            }
+            if (k <= 0.01) return;
+            aBubble.setXYZ(n, px, py, b.r);
+            aLook.setXYZW(n, b.soft, alpha * k, b.glass, b.seed);
             n++;
         };
         // 누른 방울은 바로 보이고, 저절로 난 방울은 초점 밖에서 들어오듯 천천히
@@ -308,18 +438,31 @@ export function createBubbles(THREE: T, opts: BubbleOptions) {
         geo.instanceCount = n;
         aBubble.needsUpdate = true;
         aLook.needsUpdate = true;
+        heroUniforms.uTime.value = t;
+        heroes.forEach((h, i) => {
+            aHero.setXYZ(i, h.x, h.y, h.r);
+            aHeroLook.setXYZW(i, h.busy, h.appear, h.seed, 0);
+        });
+        heroGeo.instanceCount = heroes.length;
+        aHero.needsUpdate = true;
+        aHeroLook.needsUpdate = true;
     };
 
     return {
         mesh,
+        heroMesh,
         resize,
         release,
         step,
+        /** 화면이 맡긴 큰 구슬들(이번 장면에 그릴 것) — 다음 step·still 에서 그린다 */
+        setHeroes(list: HeroDraw[]) { heroes = list.slice(0, MAX_HEROES); },
         /** 움직임 '끄기' — 한 장만 그릴 자리 */
         still() { write(clock, { x: 0, y: 0 }); },
         dispose() {
             geo.dispose();
             material.dispose();
+            heroGeo.dispose();
+            heroMaterial.dispose();
         },
     };
 }
