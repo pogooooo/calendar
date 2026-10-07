@@ -95,7 +95,7 @@ const mod: FxModule = {
         "month-flip": (ctx, e) => {
             const dir = e.direction ?? 1;
             const r = ctx.rect;
-            return new Swarm(ctx, leaf(ctx), Array.from({ length: count(ctx, 14) }, () => {
+            return new Swarm(ctx, leaf(ctx), Array.from({ length: count(ctx, 10) }, () => {
                 const sway = rand(1.5, 3);
                 const ph = rand(0, 6);
                 return flutter({
@@ -111,7 +111,7 @@ const mod: FxModule = {
 
         page: (ctx) => {
             const left = ctx.W > 900 ? 260 : 0;
-            return fall(ctx, count(ctx, 7), { x: left, w: ctx.W - left }, 2.2);
+            return fall(ctx, count(ctx, 5), { x: left, w: ctx.W - left }, 2.2);
         },
 
         complete: (ctx) => {
@@ -148,7 +148,7 @@ const mod: FxModule = {
         },
 
         theme: (ctx) => group(
-            fall(ctx, count(ctx, 18), { x: 0, w: ctx.W }, 3.2),
+            fall(ctx, count(ctx, 12), { x: 0, w: ctx.W }, 3.2),
             new Swarm(ctx, leaf(ctx), Array.from({ length: count(ctx, 6) }, () => flutter({
                 x: -40, y: rand(0.1, 0.6) * ctx.H, vx: rand(380, 620), vy: rand(-30, 30), ay: 90, drag: 0.3, size: rand(30, 46), life: rand(1.8, 2.4), delay: rand(0.2, 0.8),
             }))),

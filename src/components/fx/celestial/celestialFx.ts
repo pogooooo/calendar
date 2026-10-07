@@ -72,7 +72,7 @@ const mod: FxModule = {
         "month-flip": (ctx, e) => {
             const dir = e.direction ?? 1;
             const r = ctx.rect;
-            const streaks = Array.from({ length: count(ctx, 34) }, (): Particle => {
+            const streaks = Array.from({ length: count(ctx, 20) }, (): Particle => {
                 const speed = rand(800, 1400);
                 return {
                     x: dir > 0 ? r.x + r.w + rand(0, 60) : r.x - rand(0, 60),
@@ -83,7 +83,7 @@ const mod: FxModule = {
                     alpha: (k) => Math.min(1, k * 6) * (1 - k),
                 };
             });
-            const settle = Array.from({ length: count(ctx, 9) }, (): Particle => ({
+            const settle = Array.from({ length: count(ctx, 6) }, (): Particle => ({
                 x: r.x + rand(0.08, 0.92) * r.w, y: r.y + rand(0.1, 0.9) * r.h, vx: 0, vy: 0,
                 size: rand(14, 24), rz: rand(0, 1), vrz: rand(-1.2, 1.2),
                 life: rand(0.7, 1.0), delay: rand(0.22, 0.45), tint: pick(GOLD),
@@ -98,7 +98,7 @@ const mod: FxModule = {
         },
 
         complete: (ctx) => {
-            const n = count(ctx, 14);
+            const n = count(ctx, 10);
             const burst = Array.from({ length: n }, (_, i): Particle => {
                 const a = (i / n) * Math.PI * 2 + rand(-0.25, 0.25);
                 const sp = rand(130, 270);
@@ -137,7 +137,7 @@ const mod: FxModule = {
         },
 
         theme: (ctx) => {
-            const twinkles = Array.from({ length: count(ctx, 34) }, (): Particle => ({
+            const twinkles = Array.from({ length: count(ctx, 22) }, (): Particle => ({
                 x: rand(0, ctx.W), y: rand(0, ctx.H * 0.85), vx: 0, vy: 0, size: rand(8, 20), rz: rand(0, 1), vrz: rand(-1, 1),
                 life: rand(0.9, 1.6), delay: rand(0, 0.7), tint: pick(GOLD), alpha: pop, scale: (k) => 0.3 + pop(k) * 0.9,
             }));
