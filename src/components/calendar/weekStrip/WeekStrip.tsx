@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useT } from "@/i18n/useT";
 import useSwipe from "@/hooks/useSwipe";
+import { fx } from "@/lib/fx";
 import { expandTodos } from "@/hooks/useExpandedTodos";
 import { getWeekDates } from "@/utils/DateUtils";
 import { localDateKey } from "@/lib/dateKey";
@@ -86,6 +87,7 @@ export default function WeekStrip({ selectedDate, onSelect, todos, categories }:
     }, [weekDates, allItems, categories, todayKey, selectedKey]);
 
     const shift = React.useCallback((days: number) => {
+        fx.emit("month-flip", { direction: days > 0 ? 1 : -1 });
         const d = new Date(selectedDate);
         d.setDate(d.getDate() + days);
         onSelect(d);

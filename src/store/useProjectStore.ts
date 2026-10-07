@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { coalesce, READ_TTL } from "@/lib/fetchOnce";
 import { reportSaveFailure } from "@/lib/saveError";
+import { fx } from "@/lib/fx";
 import type { AuthFetch, ProjectType, ProjectTaskType, UserType } from '@/types';
 
 export type { ProjectType, ProjectTaskType, UserType };
@@ -187,6 +188,7 @@ const useProjectStore = create<ProjectState>((set, get) => ({
 
     updateProjectTaskStatus: async (authFetch, projectId, taskId, newStatus) => {
         const previousProjects = get().projects;
+        if (newStatus === "done") fx.emit("complete");
         set((state) => ({
             projects: state.projects.map(p =>
                 p.id === projectId

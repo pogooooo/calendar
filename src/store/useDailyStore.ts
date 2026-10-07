@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { coalesce, READ_TTL } from "@/lib/fetchOnce";
 import { reportSaveFailure } from "@/lib/saveError";
+import { fx } from "@/lib/fx";
 import useAuthStore from '@/store/useAuthStore';
 import type { AuthFetch, DailyTaskType } from '@/types';
 import { localDateKey } from '@/lib/dateKey';
@@ -106,6 +107,7 @@ const useDailyStore = create<DailyState>((set, get) => ({
         set((state) => ({
             tasks: state.tasks.map(t => t.id === taskId ? { ...t, isDone: newStatus } : t)
         }));
+        if (newStatus) fx.emit("complete");
 
         try {
             const res = await authFetch('/api/dailyTask', {
