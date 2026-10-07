@@ -1,22 +1,25 @@
 /**
- * 바다의 셋째 단추(글자 단추) — 밑줄 대신 물결 밑줄이 번져 나온다.
+ * 바다의 셋째 단추(글자 단추) — 밑줄 없이 글씨만. 올리면 글씨가 진해지고 옅은 면이 깔린다.
  */
 import styled from "styled-components";
 import * as C from "../celestial/TertiaryButton.styles";
-import { waveUnderline } from "@/styles/ocean/water";
+import { focusRing, ink } from "@/styles/ocean/water";
 
 export * from "../celestial/TertiaryButton.styles";
 
 export const TertiaryButton = styled(C.TertiaryButton)`
-    font-family: ${(p) => p.theme.fonts.display};
+    font-family: ${(p) => p.theme.fonts.body};
     font-weight: 600;
-    padding-bottom: 4px;
-    ${waveUnderline(0.6)}
-    background-size: 0 5px;
-    transition: background-size 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    padding: 4px 8px;
+    border-radius: 8px;
+    color: ${(p) => p.theme.colors.textSecondary};
+    background-image: none;
+    transition: color 0.15s ease, background-color 0.15s ease;
 
     &:hover {
         text-decoration: none;
-        background-size: 20px 5px;
+        color: ${(p) => p.theme.colors.text};
+        background-color: ${(p) => ink(p.theme, p.theme.mode === "dark" ? 0.08 : 0.05)};
     }
+    ${focusRing}
 `;
