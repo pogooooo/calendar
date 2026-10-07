@@ -33,6 +33,12 @@ const CELESTIAL_FONTS = {
     numeral: "var(--font-orbit), 'Orbit', serif",
     body: "'Inter', sans-serif",
 };
+/** 바다: 둥근 고딕(고운돋움) + 둥근 라틴 숫자(Quicksand) — 맑은 물처럼 가볍고 둥글게. 둘 다 켤 때 Google Fonts 에서 받는다 */
+const OCEAN_FONTS = {
+    display: "'Gowun Dodum', 'Quicksand', 'Noto Sans KR', sans-serif",
+    numeral: "'Quicksand', 'Gowun Dodum', sans-serif",
+    body: "'Gowun Dodum', 'Noto Sans KR', sans-serif",
+};
 const MAPLE_FONTS = {
     display: "'Gowun Batang', 'Nanum Myeongjo', 'Noto Serif KR', serif",
     numeral: "'Cormorant Garamond', 'Times New Roman', serif",
@@ -46,7 +52,7 @@ const OCEAN: ThemeFamily = 'ocean';
 /** 갈래마다 하나. 설정 화면에 보이는 이름·설명·미리보기 그림이 여기서 나온다. */
 const FAMILY_META: Record<ThemeFamily, { label: string; description: string; preview?: Record<string, string> }> = {
     celestial: { label: 'Celestial', description: 'Gold accents, Orbit typeface' },
-    ocean: { label: 'Ocean', description: 'Cool sea breeze, seashells and a sunlit beach' },
+    ocean: { label: 'Ocean', description: 'Sunlight through clear water, caustics and seashells' },
     maple: {
         label: 'Maple',
         description: 'Pressed maple leaves on aged paper',
@@ -153,17 +159,19 @@ export const themes: Record<string, DefaultTheme> = {
     'celestial-dark': celestialDark,
     maple,
     'maple-dark': mapleDark,
+    /* 맑은 얕은 물 — 흰 모래 위로 비치는 물빛. 테두리 대신 유리(반투명 + 흐림), 금빛·먹 대신 청록과 진주 */
     ocean: {
         name: 'ocean', family: OCEAN, mode: 'light', ...commonStyles,
-        fonts: { display: "'Inter', system-ui, sans-serif", numeral: "'Inter', system-ui, sans-serif", body: "'Inter', sans-serif" },
-        colors: { background:'#EEF7F6', primary:'#147F87', accent:'#88D3CE', surface:'#F6FCFB', text:'#183E4B', textSecondary:'#52717E', border:'#79ABB5', success:'#237D64', error:'#B25250', weekend:'#BD6767' },
-        preview: { cell:'#E1F0EF', event:'#B7E2DD' }, line:'#79ABB5',
+        fonts: OCEAN_FONTS,
+        colors: { background:'#EAF7F7', primary:'#0E8C96', accent:'#6FD6CF', surface:'#F7FDFC', text:'#12404C', textSecondary:'#4F7C86', border:'#9CCFD2', success:'#1F9A7A', error:'#D9604E', weekend:'#E9806E' },
+        preview: { cell:'#DDF2F1', event:'#A9E3DE' }, line:'#9CCFD2',
     },
+    /* 밤의 석호 — 깊은 남청 바탕에 달빛 같은 청록 */
     'ocean-dark': {
         name: 'ocean-dark', family: OCEAN, mode: 'dark', ...commonStyles,
-        fonts: { display: "'Inter', system-ui, sans-serif", numeral: "'Inter', system-ui, sans-serif", body: "'Inter', sans-serif" },
-        colors: { background:'#081F2C', primary:'#70D9D0', accent:'#2399AD', surface:'#0D2C3A', text:'#E4F6F5', textSecondary:'#96C0CA', border:'#79ABB5', success:'#70C9AA', error:'#F39B96', weekend:'#EF9D88' },
-        preview: { cell:'#123B48', event:'#165666' }, line:'#79ABB5',
+        fonts: OCEAN_FONTS,
+        colors: { background:'#06222E', primary:'#6FE3DA', accent:'#1FA6B4', surface:'#0B3140', text:'#E3F7F5', textSecondary:'#94C3CB', border:'#2E6A78', success:'#6FD3B0', error:'#FF9A8B', weekend:'#FF9F8A' },
+        preview: { cell:'#0F3B4A', event:'#16606E' }, line:'#2E6A78',
     },
 };
 

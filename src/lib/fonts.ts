@@ -73,6 +73,15 @@ export const FONT_OPTIONS: FontOption[] = [
  * Celestial 의 Orbit 은 next/font 가 번들에 넣으므로 여기 없다.
  */
 export const THEME_FONTS: Record<string, FontOption[]> = {
+    ocean: [
+        FONT_OPTIONS.find(f => f.key === "gowun-dodum")!,
+        {
+            key: "quicksand",
+            label: "Quicksand",
+            family: "'Quicksand', sans-serif",
+            cssUrl: "https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&display=swap",
+        },
+    ],
     maple: [
         FONT_OPTIONS.find(f => f.key === "gowun-batang")!,
         {
