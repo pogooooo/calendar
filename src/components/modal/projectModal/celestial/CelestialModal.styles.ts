@@ -67,7 +67,10 @@ export const ScrollBody = styled.fieldset`
     overflow-y: auto;
     background-color: ${(props) => props.theme.colors.surface};
     flex: 1;
-
+    min-height: 0;
+    /* fieldset 은 넘친 안쪽을 다 잘라 주지 않는다 — 종이 무늬로 relative 가 걸린 칩(선행 조건)이
+       아래 단추 줄 위로 비어져 나왔다. 그리기를 이 상자 안으로 가둔다 */
+    contain: paint;
 `;
 
 export const FieldRow = styled.div`
@@ -198,6 +201,8 @@ export const MemoTextArea = styled.textarea`
 `;
 
 export const Footer = styled.div`
+    position: relative;
+    z-index: 1;
     display: flex;
     justify-content: flex-end;
     gap: 10px;
