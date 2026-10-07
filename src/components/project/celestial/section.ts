@@ -26,7 +26,7 @@ export const SectionWrapper = styled.div<{ $mobileHeight?: string }>`
 export const SectionTitle = styled.div`
     font-family: ${(props) => props.theme.fonts.display};
     font-size: 0.9rem;
-    letter-spacing: 2px;
+    letter-spacing: 0.06em;
     color: ${(props) => props.theme.colors.textSecondary};
     padding: 8px 12px;
     border-bottom: none;

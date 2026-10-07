@@ -55,6 +55,9 @@ export const DateNumber = styled(C.DateNumber)`
  * 글은 막대 밖으로 흘러나올 수 있어(Celestial 과 같이) 테이프 결은 ::before 한 겹에만 씌운다.
  */
 export const TaskNode = styled(C.TaskNode)`
+    /* 바깥 이름표·앞쪽 금빛 띠는 Celestial 만 */
+    container-type: normal;
+    box-shadow: ${(p) => (p.$isDragging ? "0 4px 12px rgba(0,0,0,0.3)" : "none")};
     border: none;
     border-radius: 0;
     background: transparent;

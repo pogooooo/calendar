@@ -32,7 +32,7 @@ export const SwitchButton = styled.button<{ $on: boolean }>`
     color: ${(props) => (props.$on ? props.theme.colors.primary : props.theme.colors.textSecondary)};
     font-family: ${(props) => props.theme.fonts.display};
     font-size: 0.82rem;
-    letter-spacing: 3px;
+    letter-spacing: 0.1em;
     cursor: pointer;
 
     &:last-child { border-right: none; }

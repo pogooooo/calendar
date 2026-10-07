@@ -108,6 +108,8 @@ export default function HomeView() {
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const focusIdx = focus.getDate() - 1;
     const focusKey = localDateKey(focus);
+    // 날짜 키와 같은 시간대(설정)로 읽는다
+    const clock = React.useMemo(() => new Intl.DateTimeFormat("en-GB", { timeZone: activeTimeZone(), hour: "2-digit", minute: "2-digit", hourCycle: "h23" }), []);
 
     const spansDay = React.useCallback(
         (t2: { startAt?: string | number | Date | null; endAt?: string | number | Date | null }, key: string) => {
@@ -373,10 +375,13 @@ export default function HomeView() {
                                 ) : (
                                     dayTodos.map(todo => {
                                         const done = isDoneOn(todo, focusKey);
+                                        // 그날 시작하는 시각 일정만 (하루 종일·전날부터 이어진 것은 비운다)
+                                        const at = !todo.isAllDay && todo.startAt && localDateKey(todo.startAt) === focusKey ? clock.format(new Date(todo.startAt)) : null;
                                         return (
                                             <S.Row key={todo.id} type="button" aria-pressed={done} $done={done} onClick={() => handleToggleTodo(todo.originalTodo?.id ?? todo.id)}>
                                                 <S.Mark $on={done} />
                                                 <span className="name">{todo.title}</span>
+                                                {at && <em>{at}</em>}
                                             </S.Row>
                                         );
                                     })

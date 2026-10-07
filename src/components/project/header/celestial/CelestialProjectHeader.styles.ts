@@ -51,13 +51,21 @@ export const TitleText = styled.span`
 `;
 
 export const CategoryTag = styled.div<{ $color: string }>`
-    font-size: 0.7rem;
-    padding: 2px 8px;
-    letter-spacing: 1px;
-    color: ${(props) => props.$color};
-    border: 1px solid ${(props) => props.$color};
-    background-color: transparent;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.74rem;
+    color: ${(props) => props.theme.colors.textSecondary};
     white-space: nowrap;
+
+    &::before {
+        content: "";
+        width: 6px;
+        height: 6px;
+        flex-shrink: 0;
+        transform: rotate(45deg);
+        background: ${(props) => props.$color};
+    }
 `;
 
 export const HeaderLine = styled.hr`
@@ -86,7 +94,7 @@ export const HeaderActionButton = styled.button`
     color: ${(props) => props.theme.colors.primary};
     font-family: ${(props) => props.theme.fonts.display};
     font-size: 0.8rem;
-    letter-spacing: 1.5px;
+    letter-spacing: 0.04em;
     padding: 8px 18px;
     cursor: pointer;
     white-space: nowrap;
@@ -96,10 +104,16 @@ export const HeaderActionButton = styled.button`
         box-shadow: 0 0 6px ${(props) => props.theme.colors.primary}66;
     }
 
+    /* 마지막(새 프로젝트)이 이 줄의 할 일 — 금빛으로 채운다 */
+    &:last-child {
+        background: ${(props) => props.theme.colors.primary};
+        color: ${(props) => props.theme.colors.background};
+    }
+
     ${MOBILE} {
         padding: 10px 8px;
         font-size: 0.75rem;
-        letter-spacing: 1px;
+        letter-spacing: 0.02em;
     }
 `;
 
@@ -128,19 +142,37 @@ export const Tab = styled.button.attrs({ type: 'button' })<{ $active: boolean }>
     @media (max-width: 768px) { min-height: 44px; }
     display: flex;
     align-items: center;
+    position: relative;
     background: transparent;
-    border: 1px solid ${(props) => props.$active ? props.theme.colors.primary : `${props.theme.colors.primary}40`};
-    box-shadow: ${(props) => props.$active ? `0 0 6px ${props.theme.colors.primary}55` : 'none'};
-    padding: 6px 16px;
+    /* 상자 꼬리표가 금빛 상자 줄을 하나 더 만들었다 — 밑줄 하나와, 고른 것엔 가운데 작은 마름모 */
+    border: none;
+    border-bottom: 1px solid ${(props) => props.$active ? props.theme.colors.primary : `${props.theme.colors.primary}33`};
+    color: ${(props) => props.$active ? props.theme.colors.text : props.theme.colors.textSecondary};
+    padding: 6px 12px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: border-color 0.2s ease, color 0.2s ease;
+
+    &::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        bottom: -3.5px;
+        width: 6px;
+        height: 6px;
+        margin-left: -3px;
+        background: ${(props) => props.theme.colors.primary};
+        transform: rotate(45deg) scale(${(props) => (props.$active ? 1 : 0)});
+        transition: transform 0.2s ease;
+    }
+
     &:hover {
         border-color: ${(props) => props.theme.colors.primary};
+        color: ${(props) => props.theme.colors.text};
     }
 `;
 
 export const TabText = styled.span`
-    color: ${(props) => props.theme.colors.text};
+    color: inherit;
     font-family: ${(props) => props.theme.fonts.display};
     font-size: 0.85rem;
     white-space: nowrap;

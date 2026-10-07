@@ -98,6 +98,12 @@ export const CardMoveButton = styled(C.CardMoveButton)`
 
 /** 우선순위 표: 높음은 붉음, 보통은 먹, 낮음은 옅은 먹 */
 export const PriorityTag = styled(C.PriorityTag)`
+    /* 마름모 점은 Celestial 만 — Maple 은 상자 꼬리표 */
+    display: inline;
+    font-size: 0.65rem;
+    padding: 1px 4px;
+    border: 1px solid;
+    &::before { display: none; }
     color: ${(p) => p.$priority === "high" ? p.theme.colors.error : p.$priority === "low" ? p.theme.colors.textSecondary : p.theme.colors.text};
     border-color: ${(p) => p.$priority === "high" ? p.theme.colors.error : hair(p.theme, 0.4)};
 `;

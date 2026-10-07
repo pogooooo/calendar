@@ -68,6 +68,13 @@ export const FONT_OPTIONS: FontOption[] = [
     },
 ];
 
+const PRETENDARD: FontOption = {
+    key: "pretendard",
+    label: "Pretendard",
+    family: "'Pretendard Variable', Pretendard, sans-serif",
+    cssUrl: "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css",
+};
+
 /**
  * 테마 갈래가 제 글꼴로 요구하는 것. 설정의 본문 글꼴과 별개로, 그 테마를 켜면 같이 내려받는다.
  * Celestial 의 Orbit 은 next/font 가 번들에 넣으므로 여기 없다.
@@ -81,14 +88,10 @@ export const THEME_FONTS: Record<string, FontOption[]> = {
             // 글자만 받는다(text=) — 숫자·한글은 Orbit 그대로
             cssUrl: "https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&display=swap&text=" + encodeURIComponent("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz&'.,-:·!?()"),
         },
+        PRETENDARD,
     ],
     ocean: [
-        {
-            key: "pretendard",
-            label: "Pretendard",
-            family: "'Pretendard Variable', Pretendard, sans-serif",
-            cssUrl: "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css",
-        },
+        PRETENDARD,
         {
             key: "instrument-serif",
             label: "Instrument Serif",

@@ -349,7 +349,7 @@ export const Row = styled.button<{ $done: boolean; $soft?: boolean }>`
     display: flex;
     align-items: center;
     gap: 11px;
-    padding: ${p => (p.$soft ? "6px 0" : "7px 0")};
+    padding: ${p => (p.$soft ? "7px 0" : "8px 0")};
 
     @media (prefers-reduced-motion: no-preference) {
         animation: ${rowIn} 0.28s ease-out both;
@@ -364,7 +364,7 @@ export const Row = styled.button<{ $done: boolean; $soft?: boolean }>`
         min-height: 44px;
         gap: 14px;
     }
-    font-size: ${p => (p.$soft ? "0.74rem" : "0.78rem")};
+    font-size: ${p => (p.$soft ? "0.8rem" : "0.86rem")};
     color: ${p => (p.$done || p.$soft ? p.theme.colors.textSecondary : p.theme.colors.text)};
     border-bottom: 1px solid ${p => p.theme.colors.text}1A;
     cursor: pointer;
@@ -381,7 +381,8 @@ export const Row = styled.button<{ $done: boolean; $soft?: boolean }>`
     em {
         margin-left: auto;
         font-style: normal;
-        font-size: 0.6rem;
+        font-size: 0.66rem;
+        font-variant-numeric: tabular-nums;
         letter-spacing: 0.12em;
         color: ${p => p.theme.colors.textSecondary};
         flex-shrink: 0;

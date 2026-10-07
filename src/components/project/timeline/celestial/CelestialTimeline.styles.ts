@@ -190,25 +190,33 @@ export const TaskNode = styled.div<{ $status?: string; $isDragging?: boolean; $c
     position: absolute;
     /* top / left / width 는 style prop 으로 전달 (CSS 클래스 재생성 방지) */
     height: 28px;
-    background: ${(props) => props.$status === 'done' ? props.theme.colors.primary + '33' : props.theme.colors.primary + '99'};
-    border: 1px solid ${(props) => props.$status === 'done' ? props.theme.colors.primary + '66' : props.theme.colors.primary};
-    border-radius: 3px;
-    color: ${(props) => props.$status === 'done' ? props.theme.colors.textSecondary : props.theme.colors.background};
+    /* 진한 금빛 덩어리 대신 옅은 금빛 면 + 앞쪽 띠 — 월간 달력의 일정 막대와 같은 말 */
+    background: ${(props) => `color-mix(in srgb, ${props.theme.colors.primary} ${props.$status === 'done' ? "8%" : props.theme.mode === "dark" ? "14%" : "24%"}, ${props.theme.colors.background})`};
+    border: none;
+    border-radius: 2px;
+    color: ${(props) => props.$status === 'done' ? props.theme.colors.textSecondary : props.theme.colors.text};
     text-decoration: ${(props) => props.$status === 'done' ? 'line-through' : 'none'};
     display: flex;
     align-items: center;
     padding: 0 8px;
-    
+    /* 이름표가 막대 폭을 보고 안·밖을 고른다 (TaskNodeText) */
+    container-type: inline-size;
+
     cursor: ${(props) => props.$isDragging ? 'grabbing' : 'grab'};
     z-index: ${(props) => props.$isDragging ? 10 : 3};
     opacity: ${(props) => props.$isDragging ? 0.8 : 1};
-    box-shadow: ${(props) => props.$isDragging ? '0 4px 12px rgba(0,0,0,0.3)' : 'none'};
+    box-shadow: ${(props) => [
+        props.$isDragging ? '0 4px 12px rgba(0,0,0,0.3)' : '',
+        props.$status === 'done' ? '' : `inset 2px 0 0 ${props.theme.colors.primary}`,
+        // 밤에는 금빛을 섞은 면이 흙빛으로 탁해진다 — 면은 옅게 두고 금빛 머리카락 테를 두른다
+        props.$status !== 'done' && props.theme.mode === 'dark' ? `inset 0 0 0 1px ${props.theme.colors.primary}59` : '',
+    ].filter(Boolean).join(', ') || 'none'};
     will-change: transform;
     transition: ${(props) => props.$isDragging ? 'none' : 'box-shadow 0.2s, background 0.2s'};
 
     &:hover {
-        background: ${(props) => props.theme.colors.primary};
-        color: ${(props) => props.theme.colors.surface};
+        background: ${(props) => `color-mix(in srgb, ${props.theme.colors.primary} 38%, ${props.theme.colors.background})`};
+        color: ${(props) => props.theme.colors.text};
         text-decoration: none;
     }
 `;
@@ -221,6 +229,15 @@ export const TaskNodeText = styled.span`
     white-space: nowrap;
     overflow: hidden;
     user-select: none;
+
+    /* 하루·이틀짜리 막대 안에서는 "포…" 만 남았다 — 좁으면 막대 오른쪽, 잇기 단추 너머에 쓴다 */
+    @container (max-width: 110px) {
+        position: absolute;
+        left: calc(100% + 28px);
+        max-width: 260px;
+        color: inherit;
+        pointer-events: none;
+    }
 `;
 
 export const TaskResizeHandle = styled.div`

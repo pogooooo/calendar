@@ -106,6 +106,10 @@ export const Mark = styled(C.Mark)`
 
 export const Row = styled(C.Row)`
     border-bottom-color: ${(p) => withAlpha(p.theme.colors.text, 0.14)};
+    /* Celestial 만 한 단 키웠다 */
+    padding: ${(p) => (p.$soft ? "6px 0" : "7px 0")};
+    font-size: ${(p) => (p.$soft ? "0.74rem" : "0.78rem")};
+    em { font-size: 0.6rem; }
 `;
 
 export const PillarHead = styled(C.PillarHead)`

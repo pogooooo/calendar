@@ -36,7 +36,8 @@ const commonStyles = {
 const CELESTIAL_FONTS = {
     display: "'Cinzel', var(--font-orbit), 'Orbit', serif",
     numeral: "var(--font-orbit), 'Orbit', serif",
-    body: "'Inter', sans-serif",
+    // 'Inter' 는 받지 않아 OS 글꼴로 떨어졌다 — 라틴이 Inter 바탕인 Pretendard 를 받아 한글까지 한 결로
+    body: "'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Segoe UI', sans-serif",
 };
 /**
  * 바다: 요즘 한글 화면의 기본 글꼴 Pretendard 하나로 짠다(제목은 굵기·자간으로). 큰 라틴 제목만 Instrument Serif,
@@ -60,7 +61,7 @@ const OCEAN: ThemeFamily = 'ocean';
 
 /** 갈래마다 하나. 설정 화면에 보이는 이름·설명·미리보기 그림이 여기서 나온다. */
 const FAMILY_META: Record<ThemeFamily, { label: string; description: string; preview?: Record<string, string> }> = {
-    celestial: { label: 'Celestial', description: 'Gold accents, Orbit typeface' },
+    celestial: { label: 'Celestial', description: "Gold line-work on an astronomer's almanac — star charts and Roman numerals" },
     ocean: { label: 'Ocean', description: 'Liquid glass over a sunlit lagoon — light ripples where you touch' },
     maple: {
         label: 'Maple',

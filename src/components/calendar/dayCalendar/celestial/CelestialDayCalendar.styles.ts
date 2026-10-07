@@ -171,6 +171,8 @@ export const TimeRow = styled.div`
     min-height: 36px;
     border-bottom: 1px solid ${(props) => props.theme.colors.primary}33;
 
+    &:hover { --slot-rule: ${(props) => props.theme.colors.primary}40; }
+
     .time-label {
         width: 50px;
         display: flex;
@@ -192,7 +194,7 @@ export const TimeRow = styled.div`
         .slot-bar-container {
             flex: 1;
             display: flex;
-            border: 1px solid ${(props) => props.theme.colors.primary}55; /* ✨ 원래 테두리 복구 */
+            border: 1px solid transparent;
             border-radius: 4px;
             overflow: hidden;
             background-color: transparent;
@@ -201,7 +203,7 @@ export const TimeRow = styled.div`
         .slot-box {
             flex: 1;
             min-width: 0;
-            border-right: 1px dashed ${(props) => props.theme.colors.primary}40;
+            border-right: 1px dashed var(--slot-rule, transparent);
             display: flex;
             flex-direction: column;
             cursor: pointer;
@@ -227,7 +229,9 @@ export const SlotTodoItem = styled.div<{ $isContinuingPrev: boolean; $isContinui
     position: relative;
     z-index: ${(props) => (props.$isDone ? 40 : (props.$isContinuingPrev ? 10 : 30))};
 
-    background-color: ${(props) => props.theme.colors.primary};
+    background-color: ${(props) => props.theme.mode === "dark"
+        ? props.theme.colors.primary
+        : `color-mix(in srgb, ${props.theme.colors.primary} 34%, ${props.theme.colors.background})`};
     display: flex;
     align-items: center;
     justify-content: flex-start;
@@ -238,7 +242,7 @@ export const SlotTodoItem = styled.div<{ $isContinuingPrev: boolean; $isContinui
         left: 4px;
         z-index: 20;
         font-size: 0.6rem;
-        color: ${(props) => props.theme.colors.surface};
+        color: ${(props) => props.theme.mode === "dark" ? props.theme.colors.surface : props.theme.colors.text};
         white-space: nowrap;
         font-weight: 500;
         pointer-events: none;

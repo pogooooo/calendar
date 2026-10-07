@@ -144,8 +144,9 @@ export const CardBox = styled.div<{ $isLocked?: boolean }>`
     display: flex;
     flex-direction: column;
     gap: 6px;
-    background-color: transparent;
-    border: 1px solid ${(props) => props.theme.colors.border};
+    background-color: ${(props) => props.theme.colors.primary}0D;
+    border: 1px solid ${(props) => props.theme.colors.primary}33;
+    border-radius: 2px;
     padding: 8px 10px;
     cursor: pointer;
     opacity: ${(props) => props.$isLocked ? 0.6 : 1};
@@ -188,10 +189,23 @@ export const CardTitle = styled.div<{ $isDone?: boolean }>`
 `;
 
 export const PriorityTag = styled.span<{ $priority: string }>`
-    font-size: 0.65rem;
-    padding: 1px 4px;
-    border: 1px solid;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.66rem;
+    padding: 0;
+    border: none;
     white-space: nowrap;
+
+    &::before {
+        content: "";
+        width: 5px;
+        height: 5px;
+        flex-shrink: 0;
+        transform: rotate(45deg);
+        background: currentColor;
+    }
+
     color: ${(props) =>
             props.$priority === 'high' ? props.theme.colors.error :
                     props.$priority === 'low' ? props.theme.colors.textSecondary :

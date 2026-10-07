@@ -72,7 +72,7 @@ export const FormTitle = styled.h2`
     font-family: ${p => p.theme.fonts.display};
     font-size: 1.1rem;
     font-weight: 400;
-    letter-spacing: 3px;
+    letter-spacing: 0.08em;
     color: ${p => p.theme.colors.text};
     margin: 0 0 2px;
     align-self: flex-start;

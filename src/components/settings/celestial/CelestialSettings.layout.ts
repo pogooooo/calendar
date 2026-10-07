@@ -101,7 +101,7 @@ export const TabButton = styled.button<{ $active: boolean }>`
     .lbl {
         font-family: ${(p) => p.theme.fonts.display};
         font-size: 0.92rem;
-        letter-spacing: 3px;
+        letter-spacing: 0.1em;
         ${(p) => p.$active && css`text-shadow: 0 0 10px ${p.theme.colors.primary}77;`}
     }
 
@@ -121,7 +121,7 @@ export const TabButton = styled.button<{ $active: boolean }>`
         white-space: nowrap;
         min-width: 0;
 
-        .lbl { font-size: 0.8rem; letter-spacing: 1.5px; }
+        .lbl { font-size: 0.8rem; letter-spacing: 0.04em; }
         .cnt { margin-left: 0; font-size: 0.6rem; }
     }
 `;
@@ -207,11 +207,11 @@ export const PaneTitle = styled.h1`
     font-family: ${(p) => p.theme.fonts.display};
     font-weight: 400;
     font-size: 2.6rem;
-    letter-spacing: 12px;
+    letter-spacing: 0.14em;
     line-height: 1.05;
     color: ${(p) => p.theme.colors.text};
 
-    ${MOBILE} { font-size: 1.6rem; letter-spacing: 6px; }
+    ${MOBILE} { font-size: 1.6rem; letter-spacing: 0.08em; }
 `;
 
 export const PaneNote = styled.p`
@@ -255,7 +255,7 @@ export const BlockHead = styled.div<{ $danger?: boolean }>`
         font-family: ${(p) => p.theme.fonts.display};
         font-weight: 400;
         font-size: 0.84rem;
-        letter-spacing: 3.5px;
+        letter-spacing: 0.1em;
         color: ${(p) => (p.$danger ? p.theme.colors.error : p.theme.colors.text)};
     }
 
@@ -592,7 +592,7 @@ export const CardName = styled.span`
     font-family: ${(p) => p.theme.fonts.display};
     font-weight: 400;
     font-size: 0.82rem;
-    letter-spacing: 1.5px;
+    letter-spacing: 0.04em;
     color: ${(p) => p.theme.colors.text};
 `;
 
