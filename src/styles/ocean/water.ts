@@ -116,10 +116,10 @@ export const surface = (kind: "panel" | "card" | "float" = "panel") => css`
             box-shadow: inset 0 1px 0 ${d ? "rgba(180, 250, 240, 0.12)" : "#FFFFFF"}, 0 28px 64px -24px ${d ? "rgba(0, 0, 0, 0.75)" : "rgba(6, 60, 66, 0.42)"}, 0 2px 8px ${d ? "rgba(0, 0, 0, 0.3)" : "rgba(6, 60, 66, 0.08)"};
         `;
         return css`
-            background-color: ${d ? "rgba(10, 32, 37, 0.46)" : "rgba(255, 255, 255, 0.42)"};
+            background-color: ${d ? "rgba(10, 32, 37, 0.5)" : "rgba(255, 255, 255, 0.54)"};
             background-image: ${spotlight(p.theme)}, linear-gradient(140deg, ${d ? "rgba(160, 240, 230, 0.1)" : "rgba(255, 255, 255, 0.55)"} 0%, ${d ? "rgba(160, 240, 230, 0.02)" : "rgba(255, 255, 255, 0.12)"} 38%, transparent 62%, ${d ? "rgba(160, 240, 230, 0.04)" : "rgba(255, 255, 255, 0.16)"} 100%);
-            backdrop-filter: blur(28px) saturate(160%) brightness(1.04);
-            -webkit-backdrop-filter: blur(28px) saturate(160%) brightness(1.04);
+            backdrop-filter: blur(30px) saturate(135%) brightness(1.03);
+            -webkit-backdrop-filter: blur(30px) saturate(135%) brightness(1.03);
             border: 1px solid ${d ? "rgba(160, 240, 230, 0.14)" : "rgba(255, 255, 255, 0.62)"};
             box-shadow:
                 inset 0 1px 0 ${d ? "rgba(180, 250, 240, 0.14)" : "rgba(255, 255, 255, 0.92)"},

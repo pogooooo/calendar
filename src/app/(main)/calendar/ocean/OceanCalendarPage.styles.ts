@@ -153,4 +153,12 @@ export const Fab = styled(C.Fab)`
     box-shadow: 0 10px 24px -8px ${(p) => (p.theme.mode === "dark" ? "rgba(0, 0, 0, 0.6)" : "rgba(15, 107, 107, 0.45)")};
 `;
 
-export const MonthArea = styled(C.MonthArea)``;
+/** 폰의 월간 — 물 위에 바로 놓지 않고 유리 판 한 장 위에 (숫자가 물빛에 묻히지 않게) */
+export const MonthArea = styled(C.MonthArea)`
+    @media (max-width: 768px) {
+        ${surface("panel")}
+        margin: 0 8px;
+        padding: 8px 6px 6px;
+        border-radius: 20px;
+    }
+`;

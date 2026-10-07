@@ -5,7 +5,7 @@
  */
 import styled, { keyframes } from "styled-components";
 import * as C from "../celestial/CelestialDayPeek.styles";
-import { EASE, calm, focusRing, hairline, ink, label } from "@/styles/ocean/water";
+import { EASE, calm, focusRing, hairline, ink, label, surface } from "@/styles/ocean/water";
 
 export * from "../celestial/CelestialDayPeek.styles";
 
@@ -17,9 +17,12 @@ const rowIn = keyframes`
     to   { opacity: 1; transform: translateY(0); }
 `;
 
+/** 물 위에 바로 글씨를 쓰면 물빛에 묻힌다 — 유리 판 한 장 위에 */
 export const Wrap = styled(C.Wrap)`
-    margin-top: 14px;
-    padding: 0 4px;
+    ${surface("panel")}
+    margin: 10px 8px 0;
+    padding: 4px 12px 8px;
+    border-radius: 18px;
 `;
 
 /** 머리 — [점] 10. 7 · WED ─── 4  일간 › (통째로 눌러 일간으로) */

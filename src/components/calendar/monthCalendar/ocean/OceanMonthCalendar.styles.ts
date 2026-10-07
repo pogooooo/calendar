@@ -1,27 +1,35 @@
 /**
- * 바다의 월간 — 칸 사이가 붙은 금빛 격자(Celestial), 종이 원장(Maple) 대신
- * **틈을 두고 놓인 유리 칸**. 요일은 작은 고정폭 대문자, 오늘은 빛을 머금은 청록 동그라미 숫자(둘레가 천천히 숨 쉰다),
- * 일정 막대는 옅게 물든 면에 앞쪽 색 띠(여러 날이면 칸 사이 틈을 건너 이어진다), "+N" 은 날짜 줄 오른쪽의 작은 꼬리표.
- * 달을 넘기면 칸들이 왼쪽 위에서 오른쪽 아래로 물결처럼 차례로 떠오른다.
+ * 바다의 월간 — 칸마다 상자를 두지 않는다. 유리 한 장 위에 숫자가 떠 있고, 주와 주 사이에만 가는 빛줄(깎아 낸 듯한 두 겹 선)이 지난다.
+ * (Celestial: 금빛 실선이 가로세로로 칸을 가두는 격자, Maple: 종이 원장)
+ *   - 고른 날·올린 날은 칸 안쪽에 둥근 빛 판이 고이고, 오늘은 숫자가 빛을 머금은 청록 동그라미가 되어 천천히 숨 쉰다
+ *   - 일정 막대는 옅게 물든 면에 앞쪽 색 띠, 여러 날이면 칸을 건너 끊김 없이 이어진다
+ *   - "+N" 은 날짜 줄 오른쪽의 작은 글씨 하나 (상자 없음)
+ *   - 달을 넘기면 칸들이 왼쪽 위에서 오른쪽 아래로 물결처럼 차례로 떠오른다
+ * 레퍼런스: 유리 위에 숫자만 띄운 글래스 달력들, Apple 달력의 가로줄만 있는 월간, Notion Calendar 의 옅은 면 막대.
  */
 import styled, { css, keyframes } from "styled-components";
 import * as C from "../celestial/CelestialMonthCalendar.styles";
-import { EASE, MONO, R, calm, focusRing, hairline, ink, seaButton, surface } from "@/styles/ocean/water";
+import { EASE, MONO, R, calm, focusRing, ink, seaButton, surface } from "@/styles/ocean/water";
 import { withAlpha } from "@/styles/color";
 import { MOBILE, NOT_WIDGET } from "@/styles/breakpoints";
 
 export * from "../celestial/CelestialMonthCalendar.styles";
 
-const GAP = 4;
 const dark = (p: { theme: { mode: string } }) => p.theme.mode === "dark";
 
-/** 칸이 떠오른다 — 끝 값은 적지 않는다(다른 달 칸은 옅게 남아야 하므로 원래 불투명도로 돌아간다) */
+/** 깎아 낸 듯한 두 겹 줄 — 위는 옅은 그늘, 아래는 빛 (밤에는 물빛 한 줄) */
+const etched = css`
+    border-bottom: 1px solid ${(p) => (dark(p) ? "rgba(160, 240, 230, 0.09)" : "rgba(6, 60, 66, 0.085)")};
+    box-shadow: 0 1px 0 ${(p) => (dark(p) ? "rgba(0, 0, 0, 0.25)" : "rgba(255, 255, 255, 0.7)")};
+`;
+
+/** 칸 안의 글씨·막대가 떠오른다 — 끝 값은 적지 않는다(다른 달 칸은 옅게 남아야 하므로) */
 const tileIn = keyframes`
-    from { opacity: 0; transform: translateY(10px) scale(0.96); }
+    from { opacity: 0; transform: translateY(8px); }
 `;
 /** 칸마다 늦춤 — 줄 r·칸 c 의 대각선 순서 (r + c) */
 const CASCADE = Array.from({ length: 6 }, (_, r) => Array.from({ length: 7 }, (_, c) =>
-    `${C.WeekRowContainer}:nth-child(${r + 1}) > &:nth-child(${c + 1}) { animation-delay: ${(r + c) * 26}ms; }`).join("\n")).join("\n");
+    `${C.WeekRowContainer}:nth-child(${r + 1}) > &:nth-child(${c + 1}) { animation-delay: ${(r + c) * 24}ms; }`).join("\n")).join("\n");
 /** 오늘 숫자 둘레의 숨 — 아주 천천히 번졌다 잦아든다 */
 const breathe = keyframes`
     0%, 100% { box-shadow: 0 0 0 0 var(--today-halo), 0 4px 12px -2px var(--today-glow); }
@@ -60,28 +68,28 @@ export const TodayButton = styled(C.TodayButton)`
     padding: 0 11px;
     font-size: 0.76rem;
     letter-spacing: 0;
-    &:hover:not(:disabled) { box-shadow: none; }
     &:disabled { opacity: 0.4; }
 `;
 
-/** 요일 머리 — 상자 없이 작은 고정폭 대문자만 */
+/** 요일 머리 — 상자 없이 작은 고정폭 대문자, 아래로 빛줄 하나 */
 export const Header = styled(C.Header)`
     border: none;
-    margin-bottom: 2px;
+    ${etched}
+    margin-bottom: 0;
     &::after { display: none; }
-    [data-widget] & { border: none; }
+    [data-widget] & { border: none; box-shadow: none; }
 `;
 
 export const DayNameBox = styled(C.DayNameBox)`
     border: none !important;
-    height: 28px;
+    height: 30px;
     justify-content: flex-start;
-    padding-left: 8px;
+    padding-left: 10px;
     .day-name {
         font-family: ${MONO};
-        font-size: 0.66rem;
+        font-size: 0.64rem;
         font-weight: 500;
-        letter-spacing: 0.1em;
+        letter-spacing: 0.12em;
         text-transform: uppercase;
         color: ${(p) => p.theme.colors.textSecondary};
     }
@@ -91,50 +99,64 @@ export const DayNameBox = styled(C.DayNameBox)`
 
 export const GridContainer = styled(C.GridContainer)`
     border: none;
-    gap: ${GAP}px;
-    grid-template-rows: repeat(6, minmax(50px, 1fr));
-    [data-widget] & { gap: 3px; }
-    ${MOBILE} { ${NOT_WIDGET} & { gap: 3px; } }
+    gap: 0;
+    grid-template-rows: repeat(6, minmax(52px, 1fr));
 `;
 
+/** 주 한 줄 — 칸 사이에는 아무것도 없고, 줄 아래로 빛줄 하나 */
 export const WeekRowContainer = styled(C.WeekRowContainer)`
     border-bottom: none;
-    gap: ${GAP}px;
+    gap: 0;
     min-height: 0;
-    [data-widget] & { gap: 3px; }
-    ${MOBILE} { gap: 3px; }
+    ${etched}
+    &:last-child { border-bottom: none; box-shadow: none; }
+    [data-widget] & { border-bottom: none; box-shadow: none; }
 `;
 
-/** 칸 하나 — 납작한 유리 조각. 고르면 청록 테두리, 올리면 조금 더 하얘진다 */
+/**
+ * 칸 하나 — 상자 없음. 올리거나 고르면 칸 안쪽(사방 3px 안)에 둥근 빛 판이 고인다(::before).
+ * 오늘 칸은 숫자 둘레로 청록 빛이 옅게 번진다.
+ */
 export const DayCell = styled(C.DayCell)`
     border-right: none;
-    border-radius: 10px;
-    overflow: hidden; /* 둥근 칸 밖으로 막대·+N 이 비어져 나오지 않게 */
-    background-color: ${(p) => (dark(p) ? "rgba(255, 255, 255, 0.035)" : "rgba(255, 255, 255, 0.46)")};
-    opacity: ${(p) => (p.$isCurrentMonth ? 1 : 0.45)};
-    box-shadow: ${(p) => (p.$dropTarget
-        ? `inset 0 0 0 2px ${p.theme.colors.primary}`
-        : p.$isSelected
-            ? `inset 0 0 0 1.5px ${withAlpha(p.theme.colors.primary, 0.75)}, 0 0 0 4px ${withAlpha(p.theme.colors.primary, 0.12)}`
-            : "none")};
-    transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.25s ${EASE};
+    border-radius: 0;
+    background: transparent;
+    opacity: ${(p) => (p.$isCurrentMonth ? 1 : 0.4)};
+    box-shadow: none;
     animation: ${tileIn} 0.5s ${EASE} both;
     ${CASCADE}
     ${calm}
 
-    &:hover {
-        transform: translateY(-2px);
-        box-shadow: ${(p) => (p.$isSelected
-            ? `inset 0 0 0 1.5px ${withAlpha(p.theme.colors.primary, 0.75)}, 0 10px 22px -12px ${withAlpha(p.theme.colors.primary, 0.7)}`
-            : `inset 0 0 0 1px ${dark(p) ? "rgba(160, 240, 230, 0.2)" : "rgba(255, 255, 255, 0.95)"}, 0 10px 22px -14px ${dark(p) ? "rgba(0, 0, 0, 0.7)" : "rgba(6, 60, 66, 0.45)"}`)};
-        background-color: ${(p) => (dark(p) ? "rgba(255, 255, 255, 0.08)" : "rgba(255, 255, 255, 0.82)")};
+    &::before {
+        content: "";
+        position: absolute;
+        inset: 3px;
+        z-index: 0;
+        border-radius: 10px;
+        pointer-events: none;
+        transition: background-color 0.2s ease, box-shadow 0.2s ease;
+        ${(p) => (p.$dropTarget
+            ? css`box-shadow: inset 0 0 0 2px ${p.theme.colors.primary}; background: ${withAlpha(p.theme.colors.primary, 0.08)};`
+            : p.$isSelected
+                ? css`
+                    background: ${dark(p) ? "rgba(160, 240, 230, 0.08)" : "rgba(255, 255, 255, 0.62)"};
+                    box-shadow: inset 0 0 0 1.5px ${withAlpha(p.theme.colors.primary, 0.7)}, 0 6px 18px -10px ${withAlpha(p.theme.colors.primary, 0.6)};
+                `
+                : p.$isToday
+                    ? css`background: radial-gradient(140px circle at 20px 16px, ${withAlpha(p.theme.colors.primary, dark(p) ? 0.18 : 0.12)}, transparent 70%);`
+                    : css``)}
+    }
+    &:hover { box-shadow: none; }
+    &:hover::before {
+        background: ${(p) => (p.$isSelected ? undefined : dark(p) ? "rgba(255, 255, 255, 0.06)" : "rgba(255, 255, 255, 0.5)")};
+        ${(p) => !p.$isSelected && css`box-shadow: inset 0 1px 0 ${dark(p) ? "rgba(180, 250, 240, 0.08)" : "#FFFFFF"}, 0 4px 14px -8px ${dark(p) ? "rgba(0, 0, 0, 0.6)" : "rgba(6, 60, 66, 0.35)"};`}
     }
 
     .day-header {
-        padding: 5px 6px 1px;
+        padding: 7px 9px 1px;
         .day-number {
             font-family: ${(p) => p.theme.fonts.numeral};
-            font-size: 0.8rem;
+            font-size: 0.82rem;
             font-weight: ${(p) => (p.$isToday || p.$isSelected ? 700 : 500)};
             font-variant-numeric: tabular-nums;
             line-height: 20px;
@@ -145,11 +167,11 @@ export const DayCell = styled(C.DayCell)`
                 display: inline-flex;
                 align-items: center;
                 justify-content: center;
-                min-width: 22px;
-                height: 22px;
-                margin: -1px 0 -1px -2px;
-                padding: 0 5px;
-                border-radius: 11px;
+                min-width: 24px;
+                height: 24px;
+                margin: -2px 0 -2px -4px;
+                padding: 0 6px;
+                border-radius: 12px;
                 color: ${p.theme.mode === "dark" ? "#06110F" : "#FFFFFF"};
                 background-color: ${p.theme.colors.primary};
                 background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0) 65%);
@@ -160,8 +182,8 @@ export const DayCell = styled(C.DayCell)`
         }
     }
     ${MOBILE} {
-        border-radius: 8px;
-        .day-header { padding: 3px 4px 0; .day-number { font-size: 0.74rem; line-height: 18px; } }
+        &::before { inset: 2px; border-radius: 8px; }
+        .day-header { padding: 4px 4px 0; .day-number { font-size: 0.74rem; line-height: 18px; } }
     }
 `;
 
@@ -171,25 +193,27 @@ export const TodayDisc = styled(C.TodayDisc)`
 `;
 
 export const AddTodoButton = styled(C.AddTodoButton)`
+    top: 7px;
+    right: 7px;
     width: 20px;
     height: 20px;
     border-radius: 6px;
     border: none;
     color: ${(p) => p.theme.colors.textSecondary};
-    background: ${(p) => ink(p.theme, dark(p) ? 0.1 : 0.06)};
-    &:hover { transform: none; color: ${(p) => p.theme.colors.primary}; background: ${(p) => withAlpha(p.theme.colors.primary, 0.12)}; }
+    background: ${(p) => (dark(p) ? "rgba(255, 255, 255, 0.08)" : "rgba(255, 255, 255, 0.7)")};
+    &:hover { transform: none; color: ${(p) => p.theme.colors.primary}; background: ${(p) => (dark(p) ? "rgba(255, 255, 255, 0.14)" : "#FFFFFF")}; }
 `;
 
 export const TodoBarList = styled(C.TodoBarList)`
     margin-top: 3px;
-    margin-bottom: 3px;
+    margin-bottom: 4px;
     gap: 2px;
-    /* "+N" 꼬리표가 이 목록 위(날짜 줄)로 떠 있으므로 목록이 그것을 오려 내지 않게 — 칸(DayCell)이 대신 오린다 */
+    /* "+N" 글씨가 이 목록 위(날짜 줄)로 떠 있으므로 목록이 그것을 오려 내지 않게 — 칸(DayCell)이 대신 오린다 */
     ${NOT_WIDGET} & { @media (min-width: 769px) { overflow: visible; } }
 `;
 
 /**
- * 일정 막대 — 옅게 물든 면에 앞쪽 색 띠, 글씨는 진하게 (요즘 달력들의 문법). 여러 날이면 칸 사이 틈을 건너 잇는다.
+ * 일정 막대 — 옅게 물든 면에 앞쪽 색 띠, 글씨는 진하게. 여러 날이면 칸을 건너 끊김 없이 이어진다 (칸 사이 틈이 없으니).
  * 폰에서는 마름모(Celestial) 대신 작은 동그라미 점으로 늘어놓는다.
  */
 export const TodoBarItem = styled(C.TodoBarItem)`
@@ -197,19 +221,20 @@ export const TodoBarItem = styled(C.TodoBarItem)`
     height: 18px;
     font-size: 0.7rem;
     font-weight: 500;
-    background-color: ${(p) => withAlpha(p.$color ?? p.theme.colors.primary, p.$isDone ? 0.08 : dark(p) ? 0.24 : 0.15)};
+    background-color: ${(p) => withAlpha(p.$color ?? p.theme.colors.primary, p.$isDone ? 0.08 : dark(p) ? 0.22 : 0.14)};
     color: ${(p) => p.theme.colors.text};
     border-radius: ${(p) => `${p.$isStart ? 5 : 0}px ${p.$isEnd ? 5 : 0}px ${p.$isEnd ? 5 : 0}px ${p.$isStart ? 5 : 0}px`};
-    margin-left: ${(p) => (p.$isStart ? "4px" : `-${GAP}px`)};
-    margin-right: ${(p) => (p.$isEnd ? "4px" : `-${GAP}px`)};
+    margin-left: ${(p) => (p.$isStart ? "6px" : "0")};
+    margin-right: ${(p) => (p.$isEnd ? "6px" : "0")};
     box-shadow: ${(p) => (p.$isStart ? `inset 2.5px 0 0 ${p.$color ?? p.theme.colors.primary}` : "none")};
-    &:hover { background-color: ${(p) => withAlpha(p.$color ?? p.theme.colors.primary, dark(p) ? 0.32 : 0.22)}; }
+    &:hover { background-color: ${(p) => withAlpha(p.$color ?? p.theme.colors.primary, dark(p) ? 0.3 : 0.22)}; }
     .todo-title { padding-left: 7px; ${(p) => p.$isDone && css`text-decoration: line-through; opacity: 0.55;`} }
 
     ${MOBILE} {
         ${NOT_WIDGET} & {
             width: 6px;
             height: 6px;
+            margin: 0;
             border: none;
             border-radius: 50%;
             transform: none;
@@ -220,27 +245,27 @@ export const TodoBarItem = styled(C.TodoBarItem)`
 `;
 
 /**
- * "+N" — 막대 한 층을 차지하지 않고 날짜 줄 오른쪽에 뜬 작은 꼬리표.
+ * "+N" — 막대 한 층을 차지하지 않고 날짜 줄 오른쪽에 뜬 작은 글씨.
  * 칸에 들어갈 층 수는 이 단추의 키를 빼고 셈한다(MonthCalendarView 의 fit) — 키를 0 으로 두어 그 몫을 막대에 돌려준다.
  * 위젯·폰은 칸이 좁아 날짜 줄에 둘 자리가 없으니 원래대로 아래에 둔다.
  */
 export const MoreButton = styled(C.MoreButton)`
     align-self: flex-start;
-    margin-left: 4px;
-    padding: 1px 7px;
+    margin-left: 6px;
+    padding: 1px 6px;
     border-radius: 6px;
     border: none;
     font-family: ${MONO};
     font-size: 0.64rem;
     font-weight: 500;
     color: ${(p) => p.theme.colors.textSecondary};
-    background: ${(p) => ink(p.theme, dark(p) ? 0.1 : 0.06)};
+    background: transparent;
 
     ${NOT_WIDGET} & {
         @media (min-width: 769px) {
             position: absolute;
             top: -22px;
-            right: 28px;
+            right: 30px;
             height: 0;
             min-height: 0;
             padding: 0;
@@ -251,13 +276,12 @@ export const MoreButton = styled(C.MoreButton)`
             .short {
                 display: inline-block;
                 transform: translateY(-1px);
-                padding: 0 6px;
-                border-radius: 6px;
+                padding: 0 4px;
+                border-radius: 5px;
                 line-height: 17px;
                 color: ${(p) => p.theme.colors.textSecondary};
-                background: ${(p) => ink(p.theme, dark(p) ? 0.1 : 0.06)};
             }
-            &:hover { background: none; .short { color: ${(p) => p.theme.colors.text}; background: ${(p) => ink(p.theme, dark(p) ? 0.16 : 0.1)}; } }
+            &:hover { background: none; .short { color: ${(p) => p.theme.colors.primary}; background: ${(p) => withAlpha(p.theme.colors.primary, 0.1)}; } }
         }
     }
 `;

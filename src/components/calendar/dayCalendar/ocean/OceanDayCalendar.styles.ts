@@ -4,7 +4,7 @@
  * (Celestial·Maple 은 위에서 아래로 쌓고, 사이 손잡이를 위아래로 끈다.) 위아래 손잡이는 쓰지 않는다.
  * 겉: 금빛 실선 상자 대신 머리카락 선의 납작한 칸, 마름모 대신 작은 점, 체크칸은 동그라미, 시간표 막대는 청록 면.
  */
-import styled from "styled-components";
+import styled, { css } from "styled-components";
 import * as C from "../celestial/CelestialDayCalendar.styles";
 import { MONO, R, bubbleCheck, hairline, ink, label, pearl, surface, tideInput } from "@/styles/ocean/water";
 import { withAlpha } from "@/styles/color";
@@ -31,8 +31,27 @@ export const DateHeader = styled(C.DateHeader)`
 export const ContentLayout = styled(C.ContentLayout)`
     ${DESKTOP} {
         flex-direction: row;
-        gap: 10px;
+        gap: 0;
         overflow: hidden;
+    }
+`;
+
+/**
+ * 데스크톱 띠 안의 칸들은 상자(카드)를 두지 않는다 — 띠 한 장 안에서 세로 빛줄로만 나눈다 (카드 안의 카드가 촌스러웠다).
+ * 폰에서는 세로로 쌓이므로 원래대로 옅은 카드.
+ */
+const column = css`
+    ${DESKTOP} {
+        background: none;
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+    }
+`;
+const columnDivider = css`
+    ${DESKTOP} {
+        border-right: 1px solid ${(p) => (p.theme.mode === "dark" ? "rgba(160, 240, 230, 0.09)" : "rgba(6, 60, 66, 0.085)")};
+        box-shadow: 1px 0 0 ${(p) => (p.theme.mode === "dark" ? "rgba(0, 0, 0, 0.25)" : "rgba(255, 255, 255, 0.7)")};
     }
 `;
 
@@ -49,11 +68,14 @@ const card = `
 export const TodoCard = styled(C.TodoCard)`
     ${surface("card")}
     ${card}
+    ${column}
+    ${columnDivider}
     ${DESKTOP} {
-        flex: 0 0 250px;
+        flex: 0 0 260px;
         max-height: none;
         height: 100%;
         margin-bottom: 0;
+        padding-right: 8px;
     }
 `;
 
@@ -84,11 +106,14 @@ export const TimelineSection = styled(C.TimelineSection)`
     border: none;
     ${surface("card")}
     ${card}
+    ${column}
+    ${columnDivider}
     ${DESKTOP} {
         flex: 1 1 0 !important;
         min-width: 0;
         min-height: 0 !important;
         height: 100%;
+        padding: 0 8px;
     }
 `;
 
@@ -125,9 +150,20 @@ export const SlotTodoItem = styled(C.SlotTodoItem)`
 export const SideSection = styled(C.SideSection)`
     gap: 10px;
     ${DESKTOP} {
-        flex: 0 0 270px !important;
+        flex: 0 0 280px !important;
         min-width: 0;
         overflow-y: auto;
+        gap: 0;
+        padding-left: 8px;
+    }
+`;
+
+/** 오른쪽 칸 안의 묶음들(챌린지·임시 작업·메모) — 데스크톱에서는 상자 없이 가로 빛줄로만 나눈다 */
+const stacked = css`
+    ${DESKTOP} {
+        margin-bottom: 0;
+        border-bottom: 1px solid ${(p) => (p.theme.mode === "dark" ? "rgba(160, 240, 230, 0.09)" : "rgba(6, 60, 66, 0.085)")};
+        &:last-child { border-bottom: none; }
     }
 `;
 
@@ -144,6 +180,8 @@ export const ChallengeCard = styled(C.ChallengeCard)`
     ${surface("card")}
     ${card}
     ${cardHeader}
+    ${column}
+    ${stacked}
     .card-header { border-bottom: 1px solid ${(p) => hairline(p.theme)}; font-family: ${(p) => p.theme.fonts.body}; }
 `;
 
@@ -152,6 +190,8 @@ export const TaskCard = styled(C.TaskCard)`
     ${surface("card")}
     ${card}
     ${cardHeader}
+    ${column}
+    ${stacked}
     .card-header { border-bottom: 1px solid ${(p) => hairline(p.theme)}; font-family: ${(p) => p.theme.fonts.body}; }
 `;
 
@@ -160,6 +200,8 @@ export const MemoCard = styled(C.MemoCard)`
     ${surface("card")}
     ${card}
     ${cardHeader}
+    ${column}
+    ${stacked}
     .card-header { border-bottom: 1px solid ${(p) => hairline(p.theme)}; font-family: ${(p) => p.theme.fonts.body}; }
     textarea { ${tideInput} margin: 8px; width: calc(100% - 16px); }
 `;
