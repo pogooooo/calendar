@@ -72,6 +72,9 @@ export const DayNameBox = styled(C.DayNameBox)`
     ${MOBILE} {
         .day-name { font-size: 0.7rem; }
     }
+
+    /* 낮춘 요일 줄(40px)은 Celestial 만 */
+    height: 50px;
 `;
 
 export const GridContainer = styled(C.GridContainer)`
@@ -118,6 +121,21 @@ export const DayCell = styled(C.DayCell)`
         .day-header .day-number { font-size: 0.86rem; }
         &:active { background-color: ${(p) => withAlpha(p.theme.colors.accent, 0.3)}; }
     }
+
+    /* 오늘을 금빛 알약으로 채운 것은 Celestial 만 — Maple 의 오늘은 붉은 숫자와 그 뒤의 말린 잎(TodayDisc) */
+    ${(p) => p.$isToday && css`
+        .day-header .day-number {
+            display: inline;
+            min-width: 0;
+            height: auto;
+            margin: 0;
+            padding: 0;
+            border-radius: 0;
+            background: none;
+            box-shadow: none;
+            color: ${p.theme.colors.primary};
+        }
+    `}
 `;
 
 /** 오늘: 눌러 말린 잎(F3)이 숫자 뒤에 깔린다 */
@@ -135,6 +153,8 @@ export const TodayDisc = styled(C.TodayDisc)`
         height: 40px;
         margin: -21px 0 0 -20px;
     }
+
+    opacity: 1;
 `;
 
 /** 일정 막대 = 마스킹테이프. 카테고리 색을 종이에 옅게 섞고, 위아래는 찢긴 결 */
@@ -168,6 +188,9 @@ export const TodoBarItem = styled(C.TodoBarItem)`
             opacity: 1;
         }
     }
+
+    /* 앞쪽 색 띠는 Celestial 만 — 테이프에는 없다 */
+    box-shadow: none;
 `;
 
 export const MoreButton = styled(C.MoreButton)`

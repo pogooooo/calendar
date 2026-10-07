@@ -13,6 +13,7 @@ export * from "../celestial/CelestialDayCalendar.styles";
 
 export const DateHeader = styled(C.DateHeader)`
     & > hr { border-top-color: ${(p) => hair(p.theme, 0.45)}; }
+    letter-spacing: 2px;
 `;
 
 export const SectionToggle = styled(C.SectionToggle)`

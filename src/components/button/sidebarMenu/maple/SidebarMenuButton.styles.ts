@@ -102,4 +102,7 @@ export const SidebarButton = styled(C.SidebarButton)`
             transform: translateY(-50%) scale(1);
         }
     `}
+
+    /* 아이콘을 한 단 작고 가늘게 한 것은 Celestial 만 (Maple 의 메뉴 그림은 svg 가 아니고, 남는 것은 찾기 돋보기뿐) */
+    svg { width: 24px; height: 24px; stroke-width: 2; }
 `;

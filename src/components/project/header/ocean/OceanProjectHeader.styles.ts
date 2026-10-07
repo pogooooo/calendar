@@ -63,6 +63,8 @@ export const CategoryTag = styled(C.CategoryTag)`
         border-radius: 50%;
         background: ${(p) => p.$color};
     }
+
+    &::before { transform: none; }
 `;
 
 /** 실선은 두지 않는다 — 제목과 단추 사이는 빈 자리 */
@@ -145,6 +147,9 @@ export const Tab = styled(C.Tab)`
         &:hover { box-shadow: none; }
         &:active { background: ${(p) => ink(p.theme, dark(p) ? 0.1 : 0.06)}; }
     }
+
+    /* 고른 꼬리표 밑 마름모는 Celestial 만 */
+    &::after { display: none; }
 `;
 
 export const TabText = styled(C.TabText)`

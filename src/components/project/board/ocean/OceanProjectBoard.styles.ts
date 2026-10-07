@@ -206,6 +206,10 @@ export const PriorityTag = styled(C.PriorityTag)`
             ? css`color: ${c}; background: ${withAlpha(c, dark(p) ? 0.18 : 0.12)};`
             : css`color: ${p.theme.colors.textSecondary}; background: ${ink(p.theme, dark(p) ? 0.12 : 0.07)};`;
     }}
+
+    /* 마름모 점은 Celestial 만 */
+    display: inline;
+    &::before { display: none; }
 `;
 
 /** 대기 — 앞선 일을 기다리는 중: 먹 꼬리표 */

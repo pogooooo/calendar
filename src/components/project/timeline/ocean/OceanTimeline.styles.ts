@@ -195,6 +195,9 @@ export const TaskNode = styled(C.TaskNode)`
     }
 
     ${focusRing}
+
+    /* 좁은 막대의 이름을 밖에 쓰는 것은 Celestial 만 */
+    container-type: normal;
 `;
 
 export const TaskNodeText = styled(C.TaskNodeText)`

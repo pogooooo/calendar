@@ -40,3 +40,8 @@ export const CategoryTag = styled(C.CategoryTag)`
     border: 1px solid ${(p) => p.$color};
     &::before { display: none; }
 `;
+
+/** 머리글 자간을 좁힌 것은 Celestial 만 */
+export const TitleText = styled(C.TitleText)`
+    letter-spacing: 2px;
+`;
