@@ -5,6 +5,15 @@ const flutter = keyframes`0%,100% { transform:translateX(-14px) rotate(-22deg); 
 const sway = keyframes`0%,100% { transform:rotate(-2deg); opacity:.08; } 50% { transform:rotate(2deg); opacity:.13; }`;
 const sunlight = keyframes`0%,100% { opacity:.03; transform:translateX(-10%); } 50% { opacity:.08; transform:translateX(10%); }`;
 
+/** 3D 잎 캔버스 — 화면보다 작게 그린 것을 화면에 늘린다 (mapleLeafScene) */
+export const Leaves = styled.canvas`
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+`;
+
+/** .fall 잎 다섯 장은 WebGL 이 없을 때만 그려진다 (예전 모습 그대로) */
 export const Garden = styled.div`
     position:fixed; inset:0; pointer-events:none; overflow:hidden; z-index:0; color:${p=>p.theme.colors.primary};
     .fall { position:absolute; top:0; right:3%; width:34px; animation:${fall} 34s linear infinite; opacity:0; }
