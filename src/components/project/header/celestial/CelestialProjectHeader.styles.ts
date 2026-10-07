@@ -46,7 +46,7 @@ export const TitleText = styled.span`
     font-family: ${(props) => props.theme.fonts.display};
     font-size: 1rem;
     color: ${(props) => props.theme.colors.text};
-    letter-spacing: 2px;
+    letter-spacing: 0.06em;
     white-space: nowrap;
 `;
 

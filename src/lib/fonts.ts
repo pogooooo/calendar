@@ -73,6 +73,15 @@ export const FONT_OPTIONS: FontOption[] = [
  * Celestial 의 Orbit 은 next/font 가 번들에 넣으므로 여기 없다.
  */
 export const THEME_FONTS: Record<string, FontOption[]> = {
+    celestial: [
+        {
+            key: "cinzel",
+            label: "Cinzel",
+            family: "'Cinzel', serif",
+            // 글자만 받는다(text=) — 숫자·한글은 Orbit 그대로
+            cssUrl: "https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&display=swap&text=" + encodeURIComponent("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz&'.,-:·!?()"),
+        },
+    ],
     ocean: [
         {
             key: "pretendard",

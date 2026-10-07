@@ -201,7 +201,7 @@ export const SectionHead = styled.div`
     flex-shrink: 0;
     font-family: ${p => p.theme.fonts.display};
     font-size: 0.74rem;
-    letter-spacing: 0.2em;
+    letter-spacing: 0.08em;
     color: ${p => p.theme.colors.primary};
     margin-bottom: 12px;
 
@@ -408,7 +408,7 @@ export const PillarHead = styled.button`
     cursor: pointer;
     font-family: ${p => p.theme.fonts.display};
     font-size: 0.72rem;
-    letter-spacing: 0.2em;
+    letter-spacing: 0.08em;
     color: ${p => p.theme.colors.primary};
     margin-bottom: 11px;
 

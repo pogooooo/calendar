@@ -28,7 +28,7 @@ export const DateHeader = styled.div`
     font-size: 1rem;
     font-weight: 500;
     color: ${(props) => props.theme.colors.text};
-    letter-spacing: 2px;
+    letter-spacing: 1px;
     width: 100%;
     display: flex;
     align-items: center;
@@ -259,7 +259,7 @@ export const SideSection = styled.div`
 `;
 
 const BaseCard = styled.div`
-    border: 1px solid ${(props) => props.theme.colors.primary};
+    border: 1px solid ${(props) => props.theme.colors.primary}73;
     background-color: transparent;
     display: flex;
     flex-direction: column;
@@ -269,7 +269,7 @@ const BaseCard = styled.div`
         font-size: 0.95rem;
         color: ${(props) => props.theme.colors.text};
         padding: 8px 12px;
-        border-bottom: 1px solid ${(props) => props.theme.colors.primary};
+        border-bottom: 1px solid ${(props) => props.theme.colors.primary}40;
     }
 `;
 
@@ -384,7 +384,7 @@ export const TodoCardHead = styled.div`
     align-items: center;
     gap: 8px;
     padding: 8px 12px;
-    border-bottom: 1px solid ${(props) => props.theme.colors.primary};
+    border-bottom: 1px solid ${(props) => props.theme.colors.primary}40;
     font-family: ${(props) => props.theme.fonts.display};
     font-size: 0.95rem;
     color: ${(props) => props.theme.colors.text};

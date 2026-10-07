@@ -188,17 +188,19 @@ export const DayNameBox = styled.div<{ $isToday?: boolean }>`
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 50px;
+    height: 40px;
     position: relative;
     box-sizing: border-box;
-    border-right: 1px solid ${(props) => props.theme.colors.primary};
+    /* 안쪽 선은 옅게, 바깥 틀만 또렷하게 — 금빛 실선이 칸마다 같은 굵기면 격자가 무겁다 */
+    border-right: 1px solid ${(props) => props.theme.colors.primary}40;
 
     &:last-child {
         border-right: none;
     }
 
     .day-name {
-        font-size: ${(props) => props.theme.fontSizes.h4};
+        font-size: 0.78rem;
+        letter-spacing: 0.24em;
     }
 
     /* 요일 줄에 50px 를 내주면 그만큼 날짜 칸이 눌린다. */
@@ -253,7 +255,7 @@ export const WeekRowContainer = styled.div`
     grid-template-columns: repeat(7, 1fr);
     flex: 1;
     min-height: 0;
-    border-bottom: 1px solid ${(props) => props.theme.colors.primary};
+    border-bottom: 1px solid ${(props) => props.theme.colors.primary}40;
 
     [data-widget] & {
         min-height: 0;
@@ -276,7 +278,7 @@ export const DayCell = styled.div<{ $isToday: boolean; $isCurrentMonth: boolean;
     flex-direction: column;
     min-width: 0;
     position: relative;
-    border-right: 1px solid ${(props) => props.theme.colors.primary};
+    border-right: 1px solid ${(props) => props.theme.colors.primary}40;
     opacity: ${(props) => props.$isCurrentMonth ? 1 : 0.4};
 
     [data-widget] & {
@@ -285,14 +287,14 @@ export const DayCell = styled.div<{ $isToday: boolean; $isCurrentMonth: boolean;
     }
     /* 배경을 채우지 않는다 — 셀 내용(날짜·할 일 바)이 가려지지 않도록
        선택/호버는 테두리로만, 오늘은 모서리 브래킷으로 표시한다 */
-    background-color: transparent;
+    background-color: ${(props) => props.$isSelected ? `${props.theme.colors.primary}0F` : "transparent"};
     box-shadow: ${(props) => props.$dropTarget
         ? `inset 0 0 0 2px ${props.theme.colors.primary}`
         : props.$isSelected
-        ? `inset 0 0 0 1px ${props.theme.colors.primary}66`
+        ? `inset 0 0 0 1px ${props.theme.colors.primary}99`
         : 'none'};
     cursor: pointer;
-    transition: box-shadow 0.2s ease;
+    transition: box-shadow 0.2s ease, background-color 0.2s ease;
 
     &:last-child {
         border-right: none;
@@ -320,7 +322,19 @@ export const DayCell = styled.div<{ $isToday: boolean; $isCurrentMonth: boolean;
             display: block;
             font-family: ${(props) => props.theme.fonts.display};
             font-weight: ${(props) => (props.$isToday || props.$isSelected) ? 'bold' : 'normal'};
-            color: ${(props) => props.$isToday ? props.theme.colors.primary : props.theme.colors.text};
+            color: ${(props) => props.$isToday ? props.theme.colors.background : props.theme.colors.text};
+            ${(props) => props.$isToday && css`
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                min-width: 24px;
+                height: 24px;
+                margin: -3px 0 -3px -3px;
+                padding: 0 6px;
+                border-radius: 12px;
+                background-color: ${props.theme.colors.primary};
+                box-shadow: 0 0 0 3px ${props.theme.colors.primary}26, 0 0 14px ${props.theme.colors.primary}55;
+            `}
         }
     }
 
@@ -350,6 +364,7 @@ export const DayCell = styled.div<{ $isToday: boolean; $isCurrentMonth: boolean;
  * 모서리를 비워 챌린지 단계 장식과 자리가 겹치지 않는다.
  */
 export const TodayDisc = styled.svg`
+    opacity: 0.55;
     position: absolute;
     top: 50%;
     left: 50%;
@@ -527,12 +542,11 @@ export const TodoBarItem = styled.div<{ $isStart: boolean; $isEnd: boolean; $col
     cursor: ${(p) => p.$dragging ? 'grabbing' : p.$movable ? 'grab' : 'pointer'};
     transition: opacity 0.18s ease, box-shadow 0.18s ease;
 
-    /* 오늘 원반이 바 뒤로 지나가도록 불투명하게 (셀 배경과 같은 색이라 겉보기는 동일) */
-    background-color: ${(props) => props.theme.colors.background};
-    border-top: 1px solid ${(props) => props.theme.colors.primary};
-    border-bottom: 1px solid ${(props) => props.theme.colors.primary};
-    border-left: ${(props) => props.$isStart ? `1px solid ${props.theme.colors.primary}` : 'none'};
-    border-right: ${(props) => props.$isEnd ? `1px solid ${props.theme.colors.primary}` : 'none'};
+    /* 금빛 테두리만 있던 빈 상자는 읽기 어려웠다 — 카테고리 색을 바탕에 옅게 섞은 면(불투명이라 오늘 원반이 비치지 않는다)과
+       시작 칸 앞쪽의 색 띠 하나로 */
+    background-color: ${(props) => `color-mix(in srgb, ${props.$color ?? props.theme.colors.primary} ${props.theme.mode === "dark" ? "24%" : "16%"}, ${props.theme.colors.background})`};
+    border: none;
+    box-shadow: ${(props) => props.$isStart ? `inset 2px 0 0 ${props.$color ?? props.theme.colors.primary}` : "none"};
 
     height: 20px;
     display: flex;
@@ -542,10 +556,10 @@ export const TodoBarItem = styled.div<{ $isStart: boolean; $isEnd: boolean; $col
 
     margin-left: ${(props) => props.$isStart ? '4px' : '0'};
     margin-right: ${(props) => props.$isEnd ? '4px' : '0'};
-    border-top-left-radius: ${(props) => props.$isStart ? '4px' : '0'};
-    border-bottom-left-radius: ${(props) => props.$isStart ? '4px' : '0'};
-    border-top-right-radius: ${(props) => props.$isEnd ? '4px' : '0'};
-    border-bottom-right-radius: ${(props) => props.$isEnd ? '4px' : '0'};
+    border-top-left-radius: ${(props) => props.$isStart ? '2px' : '0'};
+    border-bottom-left-radius: ${(props) => props.$isStart ? '2px' : '0'};
+    border-top-right-radius: ${(props) => props.$isEnd ? '2px' : '0'};
+    border-bottom-right-radius: ${(props) => props.$isEnd ? '2px' : '0'};
     cursor: ${(p) => p.$dragging ? 'grabbing' : p.$movable ? 'grab' : 'pointer'};
     transition: background-color 0.2s ease, opacity 0.2s ease, box-shadow 0.18s ease;
 
@@ -560,7 +574,7 @@ export const TodoBarItem = styled.div<{ $isStart: boolean; $isEnd: boolean; $col
     }
 
     &:hover {
-        background-color: ${(props) => props.theme.colors.primary}1A;
+        background-color: ${(props) => `color-mix(in srgb, ${props.$color ?? props.theme.colors.primary} 30%, ${props.theme.colors.background})`};
     }
 
     ${(props) => props.$isDone && css`

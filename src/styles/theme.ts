@@ -29,8 +29,12 @@ const commonStyles = {
  * Orbit 은 next/font 가 번들에 넣어 --font-orbit 변수로 건네주고(이름이 해시라 변수로만 닿는다),
  * Maple 의 두 글꼴은 한글 조각이 커서 번들에 넣지 않고 켤 때 Google Fonts 에서 받는다 (lib/fonts.ts 의 THEME_FONTS).
  */
+/**
+ * Celestial: 한글·숫자는 Orbit. 라틴 글자만 Cinzel(로마 비문 대문자) — Orbit 의 라틴 글꼴은 대소문자가 섞여
+ * "CROnOS"·"SUn mOn" 처럼 깨져 보였다. Cinzel 은 글자만 받아(text=) 숫자·한글은 Orbit 으로 넘어간다.
+ */
 const CELESTIAL_FONTS = {
-    display: "var(--font-orbit), 'Orbit', serif",
+    display: "'Cinzel', var(--font-orbit), 'Orbit', serif",
     numeral: "var(--font-orbit), 'Orbit', serif",
     body: "'Inter', sans-serif",
 };

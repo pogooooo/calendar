@@ -83,8 +83,11 @@ export const SidebarButton = styled.button<ButtonProps>`
     display: flex;
     align-items: center;
     gap: 8px;
-    
+
     ${celestial_sidebar_menuButton}
+
+    /* 26px·굵기 2 의 선 아이콘은 가는 금빛 선들 사이에서 혼자 무거웠다 — 한 단 작고 가늘게 */
+    svg { width: 21px; height: 21px; stroke-width: 1.6; }
 
     ${({ $isDropdown, $isOpen }) => $isDropdown && css`
         &:hover ${MainIcon} {
