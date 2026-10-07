@@ -349,7 +349,26 @@ export const DetailArea = styled.div`
             display: flex;
             flex-direction: column;
             gap: 8px;
-            border: 1px dashed ${(props) => props.theme.colors.primary}40;
+            /* 점선 상자 대신 위아래 금빛 머리카락 선 사이의 장부 — 이름 · 점선 · 값 */
+            border: 1px solid transparent;
+            border-top-color: ${(props) => props.theme.colors.primary}40;
+            border-bottom-color: ${(props) => props.theme.colors.primary}40;
+
+            & > div { display: flex; align-items: baseline; gap: 10px; }
+            & > div > strong {
+                order: -2;
+                font-weight: 400;
+                font-size: 0.8rem;
+                color: ${(props) => props.theme.colors.textSecondary};
+            }
+            & > div::before {
+                content: "";
+                order: -1;
+                flex: 1;
+                min-width: 16px;
+                border-bottom: 1px dotted ${(props) => props.theme.colors.primary}66;
+                transform: translateY(-3px);
+            }
         }
 
         .actions {

@@ -80,7 +80,7 @@ export const PageHeader = styled.div`
     span {
         font-family: ${(p) => p.theme.fonts.display};
         font-size: 1.3rem;
-        letter-spacing: 5px;
+        letter-spacing: 0.12em;
         color: ${(p) => p.theme.colors.text};
         white-space: nowrap;
     }
@@ -352,7 +352,7 @@ export const PlateText = styled.div`
     .title-input {
         font-family: ${(p) => p.theme.fonts.display};
         font-size: 1.35rem;
-        letter-spacing: 3px;
+        letter-spacing: 0.06em;
         color: ${(p) => p.theme.colors.text};
         background: transparent;
         border: none;
@@ -368,7 +368,7 @@ export const PlateText = styled.div`
 
     .sub {
         font-size: 0.66rem;
-        letter-spacing: 2px;
+        letter-spacing: 0.06em;
         color: ${(p) => p.theme.colors.textSecondary};
         white-space: nowrap;
         overflow: hidden;
@@ -389,7 +389,7 @@ export const DetailHeader = styled.div<{ $activeTab: string }>`
         padding: 4px 2px 8px;
         font-family: ${(p) => p.theme.fonts.display};
         font-size: 0.85rem;
-        letter-spacing: 2px;
+        letter-spacing: 0.08em;
         color: ${(p) => p.theme.colors.textSecondary};
         cursor: pointer;
         transition: color 0.2s ease, text-shadow 0.2s ease;
@@ -435,7 +435,7 @@ export const LoreRow = styled.div`
 
     .k {
         font-size: 0.72rem;
-        letter-spacing: 2px;
+        letter-spacing: 0.06em;
         color: ${(p) => p.theme.colors.textSecondary};
         white-space: nowrap;
         flex-shrink: 0;
@@ -473,7 +473,7 @@ export const DescBlock = styled.div`
         padding: 0 8px;
         background: ${(p) => p.theme.colors.background};
         font-size: 0.66rem;
-        letter-spacing: 3px;
+        letter-spacing: 0.1em;
         color: ${(p) => p.theme.colors.primary};
     }
 
@@ -501,7 +501,7 @@ export const SectionCap = styled.div`
     align-items: center;
     gap: 12px;
     font-size: 0.72rem;
-    letter-spacing: 3px;
+    letter-spacing: 0.1em;
     color: ${(p) => p.theme.colors.textSecondary};
 
     b {
@@ -726,7 +726,7 @@ export const EmptyStateContainer = styled.div`
     gap: 18px;
     color: ${(p) => p.theme.colors.textSecondary};
     font-size: 0.88rem;
-    letter-spacing: 1.5px;
+    letter-spacing: 0.04em;
 
     svg {
         width: 72px;

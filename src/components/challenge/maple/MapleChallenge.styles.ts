@@ -102,6 +102,10 @@ export const DetailArea = styled(C.DetailArea)`
         border-style: solid;
         border-color: ${(p) => hair(p.theme, 0.3)};
         strong { font-family: ${(p) => p.theme.fonts.display}; font-weight: 500; }
+        /* 장부 줄(이름 · 점선 · 값)은 Celestial 만 */
+        & > div { display: block; }
+        & > div > strong { order: 0; font-size: inherit; color: inherit; }
+        & > div::before { content: none; }
     }
 `;
 

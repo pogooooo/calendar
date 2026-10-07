@@ -128,6 +128,12 @@ export const EmblemWrap = styled(C.EmblemWrap)`
     }
 `;
 
+/** 이름판 글 — 자간을 좁힌 것은 Celestial 만 */
+export const PlateText = styled(C.PlateText)`
+    .title-input { letter-spacing: 3px; }
+    .sub { letter-spacing: 2px; }
+`;
+
 /** 정보·할 일 탭: 종이 탭 — 고른 탭 밑에 붓 획(J3) */
 export const DetailHeader = styled(C.DetailHeader)`
     button {
@@ -152,10 +158,12 @@ export const DetailHeader = styled(C.DetailHeader)`
 
 export const LoreRow = styled(C.LoreRow)`
     border-color: ${(p) => hair(p.theme, 0.3)};
+    .k { letter-spacing: 2px; }
 `;
 
 export const DescBlock = styled(C.DescBlock)`
     border-color: ${(p) => hair(p.theme, 0.3)};
+    .cap { letter-spacing: 3px; }
 `;
 
 export const SectionCap = styled(C.SectionCap)`
@@ -220,6 +228,7 @@ export const EmptyStateContainer = styled(C.EmptyStateContainer)`
         background-color: ${(p) => p.theme.colors.text};
         opacity: 0.5;
     }
+    letter-spacing: 1.5px;
 `;
 
 export const ModalContent = styled(C.ModalContent)`

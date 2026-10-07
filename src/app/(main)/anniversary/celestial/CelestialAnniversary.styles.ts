@@ -55,7 +55,7 @@ export const PageHeader = styled.div`
     span {
         font-family: ${p => p.theme.fonts.display};
         font-size: 1.3rem;
-        letter-spacing: 5px;
+        letter-spacing: 0.12em;
         white-space: nowrap;
     }
 
@@ -103,7 +103,7 @@ export const FormCaption = styled.span`
     background: ${p => p.theme.colors.background};
     font-family: ${p => p.theme.fonts.display};
     font-size: 0.72rem;
-    letter-spacing: 4px;
+    letter-spacing: 0.16em;
     color: ${p => p.theme.colors.primary};
     white-space: nowrap;
 `;
