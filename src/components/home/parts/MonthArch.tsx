@@ -14,6 +14,8 @@ export interface MonthArchProps {
     monthLoad: number[];
     /** 마감(due)·기념일(anv) 표식 */
     marks: { day: number; kind: "due" | "anv" }[];
+    /** 보고 있는 날 그 자체 — 날짜를 글로 쓰는 갈래(Ocean 의 물때판)만 읽는다 */
+    focus?: Date;
 }
 
 /** 갈래마다 제 그림 — Celestial 은 금빛 눈금 반원, Maple 은 놋쇠 해시계 */

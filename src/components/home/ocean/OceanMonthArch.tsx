@@ -1,12 +1,42 @@
-import type { MonthArchProps } from '../parts/MonthArch';
-import * as S from './OceanMonthArch.styles';
-/** Daily loads form a shoreline; the shell marks the selected day. */
-export default function OceanMonthArch({daysInMonth,focusIdx,monthLoad,marks}: MonthArchProps) {
-    const x = (day: number) => 20+day/Math.max(1,daysInMonth-1)*560;
-    return <S.Shoreline viewBox="0 0 600 100" aria-hidden="true" data-ambient="month-tide">
-        <path className="wash" d="M0 70q75-20 150 0t150 0t150 0t150 0v30H0Z" /><path className="foam" d="M0 70q75-20 150 0t150 0t150 0t150 0" />
-        {monthLoad.map((load,i)=><line key={i} className="day" x1={x(i)} x2={x(i)} y1="77" y2={77-5-Math.min(load,6)*4} opacity={.2+Math.min(load,6)*.1} />)}
-        {marks.map(m=><circle key={`${m.kind}-${m.day}`} className="mark" cx={x(m.day-1)} cy="87" r={m.kind==='anv'?2.6:1.7} />)}
-        <g className="pointer" transform={`translate(${x(focusIdx)} 31)`}><path d="M0 15-13 3q-4-5 1-8-2-6 5-6 3-6 7-3 4-3 7 3 7 0 5 6 5 3 1 8Z" /><path d="M0 15-12-5m12 20L-7-11m7 26V-14m0 29 7-26m-7 26 12-20" /><circle cy="14" r="2" /></g>
-    </S.Shoreline>;
+"use client";
+
+import type { MonthArchProps } from "../parts/MonthArch";
+import * as S from "./OceanMonthArch.styles";
+
+/* 큰 날짜는 장식 글씨라 라틴 이름으로 (달력 머리의 "October" 와 같은 손) */
+const LATIN_MONTH = new Intl.DateTimeFormat("en", { month: "long" });
+const LATIN_DAY = new Intl.DateTimeFormat("en", { weekday: "long" });
+
+/**
+ * 바다의 달 — 잡지 표지처럼 쓴 날짜와 그달의 가는 눈금 띠.
+ * 위: 작은 고정폭 꼬리표(오늘·요일), 기울인 세리프 달 이름 + 굵은 날 숫자.
+ * 아래: 날마다 눈금 하나 — 지난날은 옅은 먹, 보는 날은 청록, 일정이 있는 날엔 점 하나(기념일은 산호).
+ * 요약 한 줄(10월 · 남은 n · 끝낸 n)은 HomeView 의 ArchFoot 이 둘 사이에 선다 (order 로 자리를 잡는다).
+ */
+export default function OceanMonthArch({ daysInMonth, focusIdx, monthLoad, marks, focus }: MonthArchProps) {
+    const isToday = !!focus && focus.toDateString() === new Date().toDateString();
+    const anniversary = new Set(marks.filter((m) => m.kind === "anv").map((m) => m.day - 1));
+    const due = new Set(marks.filter((m) => m.kind === "due").map((m) => m.day - 1));
+
+    const tick = (i: number) => [
+        i < focusIdx ? "past" : i === focusIdx ? "now" : "",
+        anniversary.has(i) ? "anv" : (monthLoad[i] ?? 0) > 0 || due.has(i) ? "busy" : "",
+    ].filter(Boolean).join(" ");
+
+    return (
+        <>
+            {focus && (
+                <S.Hero aria-hidden="true">
+                    <span className="eyebrow">{isToday ? "Today · " : ""}{LATIN_DAY.format(focus)}</span>
+                    <span className="date">
+                        <em>{LATIN_MONTH.format(focus)}</em>
+                        <b>{focus.getDate()}</b>
+                    </span>
+                </S.Hero>
+            )}
+            <S.Strip aria-hidden="true">
+                {Array.from({ length: daysInMonth }, (_, i) => <i key={i} className={tick(i)} />)}
+            </S.Strip>
+        </>
+    );
 }

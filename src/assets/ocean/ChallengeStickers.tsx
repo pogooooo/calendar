@@ -1,5 +1,28 @@
-import * as S from './ChallengeStickers.styles';
-import { memo } from 'react';
-export const CrescentMoonAndLineIndicator = ({className=''}: {width?:string;height?:string;className?:string}) => <S.Sticker className={className} $filled={false} aria-hidden="true" viewBox="0 0 52 52"><path d="M26 43 8 22q-3-6 3-7-1-8 7-8 4-8 8-3 4-5 8 3 8 0 7 8 6 1 3 7Z" /><path d="M26 43 11 15m15 28L18 7m8 36V4m0 39 8-36m-8 36 15-28" /></S.Sticker>;
-export const SparkleIndicator = ({className=''}: {width?:string;height?:string;className?:string}) => <S.Sticker className={className} $filled aria-hidden="true" viewBox="0 0 52 52"><path d="M26 43 8 22q-3-6 3-7-1-8 7-8 4-8 8-3 4-5 8 3 8 0 7 8 6 1 3 7Z" /><path d="M26 43 11 15m15 28L18 7m8 36V4m0 39 8-36m-8 36 15-28" /><circle cx="26" cy="39" r="3" /></S.Sticker>;
-export const DynamicSticker = memo(function OceanSticker({isFilled}: {isFilled:boolean;idx:number}) { return isFilled ? <SparkleIndicator /> : <CrescentMoonAndLineIndicator />; });
+"use client";
+
+import React, { useEffect, useRef, useState } from "react";
+import { Check } from "lucide-react";
+import * as S from "./ChallengeStickers.styles";
+
+/**
+ * 바다의 챌린지 칸 — 번호가 적힌 가는 동그라미. 해낸 날은 청록으로 차고 흰 체크가 선다.
+ * 처음 그릴 때는 가만히, 그 뒤 바뀔 때만 한 번 살짝 커졌다 앉는다.
+ * (Celestial: 초승달 → 보름달, Maple: 잎 윤곽 → 채운 잎)
+ */
+const OceanStickerInner = ({ isFilled, idx }: { isFilled: boolean; idx: number }) => {
+    const first = useRef(true);
+    const [animate, setAnimate] = useState(false);
+    useEffect(() => {
+        if (first.current) { first.current = false; return; }
+        setAnimate(true);
+    }, [isFilled]);
+
+    return (
+        <S.Sticker $on={isFilled} $animate={animate} aria-hidden="true">
+            {isFilled ? <Check size={16} strokeWidth={2.25} /> : idx + 1}
+        </S.Sticker>
+    );
+};
+
+// isFilled 가 바뀐 칸만 다시 그린다
+export const DynamicSticker = React.memo(OceanStickerInner);

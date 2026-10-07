@@ -305,7 +305,7 @@ export default function HomeView() {
 
     const regions = {
         arch: (<S.ArchWrap>
-                        <MonthArch daysInMonth={daysInMonth} focusIdx={focusIdx} monthLoad={monthLoad} marks={marks} />
+                        <MonthArch daysInMonth={daysInMonth} focusIdx={focusIdx} monthLoad={monthLoad} marks={marks} focus={focus} />
 
                         <S.ArchFoot>
                             <span className="edge">1</span>
