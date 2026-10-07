@@ -14,6 +14,15 @@ export const FormWrapper = styled.form`
         height: auto;
         min-height: 0;
     }
+
+    /* 키 작은 창(데스크톱 위젯, 가로로 눕힌 폰, 자판이 올라온 폰): 머리·몸통·단추 줄을 한 덩어리로 굴린다.
+       몸통만 굴리면 320px 위젯에서 굴릴 칸이 60px 남짓이라 사실상 스크롤이 안 됐다. 단추 줄은 아래에 붙어 있다. */
+    @media (max-height: 520px) {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+    }
 `;
 
 export const Header = styled.div`
@@ -87,6 +96,11 @@ export const ScrollBody = styled.div`
         flex: 1;
         min-height: 0;
         padding: 14px 16px;
+    }
+
+    @media (max-height: 520px) {
+        flex: none;
+        overflow: visible;
     }
 `;
 
@@ -431,4 +445,12 @@ export const Footer = styled.div`
     background-color: ${(props) => props.theme.colors.surface};
     border-top: 1px solid ${(props) => props.theme.colors.primary}40;
     border-radius: 0 0 5px 5px;
+
+    @media (max-height: 520px) {
+        position: sticky;
+        bottom: 0;
+        z-index: 1;
+        padding-top: 8px;
+        padding-bottom: 8px;
+    }
 `;

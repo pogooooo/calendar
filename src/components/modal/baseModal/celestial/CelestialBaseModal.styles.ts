@@ -48,4 +48,9 @@ export const Container = styled(motion.div)<{ $maxWidth: string }>`
         box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.45);
         padding-bottom: ${SAFE_B};
     }
+
+    /* 키 작은 창(데스크톱 위젯 등)에서는 창 높이를 다 쓴다 — 85vh 로 두면 320px 위젯에서 시트가 더 작아진다 */
+    @media (max-height: 520px) {
+        max-height: calc(100% - 8px);
+    }
 `;
