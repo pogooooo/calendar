@@ -17,11 +17,6 @@ interface Props {
     step?: number;
 }
 
-const ROMAN = [
-    "XXIV", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI",
-    "XII", "XIII", "XIV", "XV", "XVI", "XVII", "XVIII", "XIX", "XX", "XXI", "XXII", "XXIII",
-];
-
 const pad = (n: number) => String(n).padStart(2, "0");
 
 const polar = (r: number, deg: number): [number, number] => {
@@ -56,7 +51,7 @@ const MINUTES_PER_TURN = { outer: 360, inner: 60 } as const;
  *
  * 데스크톱에서는 손가락 대신 자판과 마우스 포인터가 있다. 그래서 세 가지 길을 함께 둔다:
  *   - 적기: 다이얼 위 칸에 "14" "35" 를 바로 친다. 칸 안에서 ↑↓ 는 한 칸씩, 옆의 작은 화살표도 같은 일을 한다
- *   - 짚기: 문자판의 로마 숫자를 누르면 그 시로 간다 (마우스는 정확하니까 짚어도 튀지 않는다)
+ *   - 짚기: 문자판의 숫자(갈래마다 — S.HOUR_NAMES, Celestial 은 로마 숫자)를 누르면 그 시로 간다 (마우스는 정확하니까 짚어도 튀지 않는다)
  *   - 자주 쓰는 분(00·15·30·45)은 한 번 누르면 맞는다
  * 손가락은 여전히 다이얼을 돌린다.
  */
@@ -278,7 +273,7 @@ export default function TimeDial({ hour, minute, onChange, step = 5 }: Props) {
                             onPointerDown={(e) => e.stopPropagation()}
                             onClick={() => pickHour(i)}
                         >
-                            {ROMAN[i]}
+                            {S.HOUR_NAMES[i]}
                         </text>
                     );
                 })}

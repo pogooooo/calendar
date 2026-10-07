@@ -7,6 +7,12 @@
 import styled from "styled-components";
 import { MOBILE } from "@/styles/breakpoints";
 
+/** 문자판의 시 이름 (0~23시). Celestial 은 로마 숫자 — 갈래가 제 숫자를 줄 수 있게 모양과 함께 둔다 */
+export const HOUR_NAMES: readonly string[] = [
+    "XXIV", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI",
+    "XII", "XIII", "XIV", "XV", "XVI", "XVII", "XVIII", "XIX", "XX", "XXI", "XXII", "XXIII",
+];
+
 export const Wrap = styled.div`
     padding: 4px 0 2px;
 `;
