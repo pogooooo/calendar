@@ -362,6 +362,34 @@ export const QuickInput = styled.input`
     &::placeholder { color: ${p => p.theme.colors.textSecondary}88; }
 `;
 
+/* 빠른 입력 한 줄 — 입력칸과 "+" 단추. 엔터만 되던 때는 넣는 길이 눈에 안 보였다 */
+export const QuickRow = styled.div`
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+    margin-bottom: 8px;
+
+    & > input {
+        flex: 1;
+        min-width: 0;
+        margin-bottom: 0;
+    }
+`;
+
+export const AddBtn = styled.button.attrs({ type: "button" })`
+    flex: none;
+    width: 30px;
+    border: 1px solid ${p => p.theme.colors.primary}66;
+    background: transparent;
+    color: ${p => p.theme.colors.primary};
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+
+    &:hover:not(:disabled) { border-color: ${p => p.theme.colors.primary}; background-color: ${p => p.theme.colors.primary}14; }
+    &:disabled { opacity: 0.4; cursor: default; }
+`;
+
 export const DelBtn = styled.button`
     min-width: 24px;
     min-height: 24px;

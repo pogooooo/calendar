@@ -90,6 +90,31 @@ function useMinuteTick(ms = 30000) {
     }, [ms]);
 }
 
+/**
+ * 빠른 입력의 엔터.
+ * 한글을 조합하던 중에 누른 엔터는 글자를 맺기만 한다(그 keydown 은 isComposing·229). 예전에는 그 엔터를 버려서
+ * 한 번 더 눌러야 들어갔다 — "넣기가 잘 안 된다". 이제 조합 중 엔터는 기억해 두었다가 조합이 끝나는 순간 넣는다.
+ * 같은 엔터가 맺은 뒤 한 번 더(13) 오는 IME 도 있으나, 넣는 중에는 submit 이 스스로 막는다.
+ */
+function useEnterSubmit(submit: (value: string) => void) {
+    const enterWhileComposing = React.useRef(false);
+    return {
+        onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => {
+            if (e.key !== "Enter") return;
+            e.preventDefault();
+            if (e.nativeEvent.isComposing || e.keyCode === 229) { enterWhileComposing.current = true; return; }
+            submit(e.currentTarget.value);
+        },
+        onCompositionEnd: (e: React.CompositionEvent<HTMLInputElement>) => {
+            if (!enterWhileComposing.current) return;
+            enterWhileComposing.current = false;
+            const input = e.currentTarget;
+            // 맺어진 글자가 value 에 들어간 뒤에 읽는다
+            window.setTimeout(() => submit(input.value), 0);
+        },
+    };
+}
+
 export function TodayPanel() {
     const S = usePickTheme(STYLES);
     const { todos, toggleTodo, addTodo } = useTodoStore();
@@ -117,13 +142,15 @@ export function TodayPanel() {
 
     const theme = useTheme();
     const color = (id: string) => categories.find(c => c.id === id)?.color || theme.colors.primary;
+    const todayEnter = useEnterSubmit((value) => void submit(value));
 
-    const submit = async () => {
-        const v = draft.trim();
+    const submit = async (value: string = draft) => {
+        const v = value.trim();
         if (!v || submitting.current) return;
 
+        // 카테고리가 없으면 넣을 곳이 없다 — 예전엔 입력칸을 말없이 잠갔다
         const cat = categories[0];
-        if (!cat) return;
+        if (!cat) { setError(tr.category.selectOrAdd); return; }
 
         // 보고 있는 날에 넣는다 (오늘이면 지금부터 한 시간)
         const start = new Date(day.date);
@@ -148,17 +175,19 @@ export function TodayPanel() {
 
     return (
         <S.Pad>
-            <S.QuickInput
-                value={draft}
-                aria-label={tr.calendar.addTask}
-                maxLength={120}
-                disabled={pending || categories.length === 0}
-                placeholder={tr.calendar.addTask}
-                onChange={(e) => setDraft(e.target.value)}
-                onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.nativeEvent.isComposing && e.keyCode !== 229) { e.preventDefault(); void submit(); }
-                }}
-            />
+            {/* 넣는 동안 잠그지 않는다 — 잠그면 초점이 빠져, 하나 넣을 때마다 입력칸을 다시 눌러야 했다 */}
+            <S.QuickRow>
+                <S.QuickInput
+                    value={draft}
+                    aria-label={tr.calendar.addTask}
+                    aria-busy={pending}
+                    maxLength={120}
+                    placeholder={tr.calendar.addTask}
+                    onChange={(e) => { setDraft(e.target.value); if (error) setError(null); }}
+                    {...todayEnter}
+                />
+                <S.AddBtn aria-label={tr.calendar.addTask} disabled={pending || !draft.trim()} onClick={() => void submit()}>+</S.AddBtn>
+            </S.QuickRow>
             {error && <S.More role="alert">{error}</S.More>}
             <S.DayNav>
                 <S.NavBtn type="button" onClick={() => day.shift(-1)} aria-label={tr.calendar.prevDay}>‹</S.NavBtn>
@@ -602,8 +631,10 @@ export function QuickTaskPanel() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [key]);
 
-    const submit = async () => {
-        const v = text.trim();
+    const quickEnter = useEnterSubmit((value) => void submit(value));
+
+    const submit = async (value: string = text) => {
+        const v = value.trim();
         if (!v || submitting.current) return;
         submitting.current = true;
         setPending(true);
@@ -617,17 +648,18 @@ export function QuickTaskPanel() {
 
     return (
         <S.Column>
-            <S.QuickInput
-                value={text}
-                aria-label={tr.calendar.addTask}
-                maxLength={120}
-                disabled={pending}
-                placeholder={tr.calendar.addTask}
-                onChange={(e) => setText(e.target.value)}
-                onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.nativeEvent.isComposing && e.keyCode !== 229) { e.preventDefault(); void submit(); }
-                }}
-            />
+            <S.QuickRow>
+                <S.QuickInput
+                    value={text}
+                    aria-label={tr.calendar.addTask}
+                    aria-busy={pending}
+                    maxLength={120}
+                    placeholder={tr.calendar.addTask}
+                    onChange={(e) => { setText(e.target.value); if (error) setError(null); }}
+                    {...quickEnter}
+                />
+                <S.AddBtn aria-label={tr.calendar.addTask} disabled={pending || !text.trim()} onClick={() => void submit()}>+</S.AddBtn>
+            </S.QuickRow>
             {error && <S.More role="alert">{error}</S.More>}
             <S.Fit>
                 {tasks.length === 0
