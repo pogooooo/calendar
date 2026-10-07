@@ -74,19 +74,23 @@ export const FONT_OPTIONS: FontOption[] = [
  */
 export const THEME_FONTS: Record<string, FontOption[]> = {
     ocean: [
-        FONT_OPTIONS.find(f => f.key === "gowun-dodum")!,
         {
-            key: "quicksand",
-            label: "Quicksand",
-            family: "'Quicksand', sans-serif",
-            cssUrl: "https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&display=swap",
+            key: "pretendard",
+            label: "Pretendard",
+            family: "'Pretendard Variable', Pretendard, sans-serif",
+            cssUrl: "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css",
         },
         {
-            key: "marcellus",
-            label: "Marcellus",
-            family: "'Marcellus', serif",
-            // 글자만 받는다(text=) — 숫자는 Marcellus 에 없게 해서 둥근 Quicksand 로 넘어가게 ("2026년 10월" 이 고전 숫자로 안 보이게)
-            cssUrl: "https://fonts.googleapis.com/css2?family=Marcellus&display=swap&text=" + encodeURIComponent("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz&'.,-:·!?()"),
+            key: "instrument-serif",
+            label: "Instrument Serif",
+            family: "'Instrument Serif', serif",
+            cssUrl: "https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap",
+        },
+        {
+            key: "geist-mono",
+            label: "Geist Mono",
+            family: "'Geist Mono', monospace",
+            cssUrl: "https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500&display=swap",
         },
     ],
     maple: [

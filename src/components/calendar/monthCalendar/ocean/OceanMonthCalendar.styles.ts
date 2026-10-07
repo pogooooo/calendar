@@ -1,64 +1,79 @@
 /**
  * 바다의 월간 — 칸 사이가 붙은 금빛 격자(Celestial), 종이 원장(Maple) 대신
- * **틈을 두고 물 위에 떠 있는 바다유리 조각들**. 요일은 가는 세리프 글자만, 오늘은 숫자 뒤에 앉은 주황 불가사리,
- * 일정 막대는 물빛 알약(여러 날짜면 틈을 건너 이어진다), "+N" 은 물방울 알약.
+ * **틈을 두고 놓인 납작한 유리 칸**. 요일은 작은 고정폭 대문자, 오늘은 청록으로 꽉 찬 동그라미 숫자,
+ * 일정 막대는 옅게 물든 면에 앞쪽 색 띠(여러 날이면 칸 사이 틈을 건너 이어진다), "+N" 은 날짜 줄 오른쪽의 작은 꼬리표.
+ * 그림자·광택·그라데이션 없이 면과 글씨만.
  */
-import styled, { css, keyframes } from "styled-components";
+import styled, { css } from "styled-components";
 import * as C from "../celestial/CelestialMonthCalendar.styles";
-import { R, glass, calm, seaButton, LATIN, starfishImage } from "@/styles/ocean/water";
+import { MONO, R, focusRing, hairline, ink, seaButton, surface } from "@/styles/ocean/water";
 import { withAlpha } from "@/styles/color";
 import { MOBILE, NOT_WIDGET } from "@/styles/breakpoints";
 
 export * from "../celestial/CelestialMonthCalendar.styles";
 
-const GAP = 5;
+const GAP = 4;
+const dark = (p: { theme: { mode: string } }) => p.theme.mode === "dark";
 
 export const CelestialCalendarWrapper = styled(C.CelestialCalendarWrapper)`
     font-family: ${(p) => p.theme.fonts.body};
 `;
 
-/** ‹ 2026년 10월 › — 동그란 물방울 화살표 */
+/** ‹ 2026년 10월 › — 작은 날짜와 글씨만 있는 화살표 */
 export const DateRangeDisplay = styled(C.DateRangeDisplay)`
-    font-family: ${(p) => p.theme.fonts.numeral};
-    font-weight: 700;
+    font-family: ${(p) => p.theme.fonts.body};
+    font-size: 0.95rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: ${(p) => p.theme.colors.text};
+    gap: 2px;
     .nav-btn {
-        width: 34px;
-        height: 34px;
-        border-radius: 50%;
-        ${seaButton("default")}
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
+        width: 30px;
+        height: 30px;
+        padding: 0;
+        border-radius: 8px;
+        color: ${(p) => p.theme.colors.textSecondary};
+        transition: background-color 0.15s ease, color 0.15s ease;
+        &:hover { transform: none; color: ${(p) => p.theme.colors.text}; background-color: ${(p) => ink(p.theme, dark(p) ? 0.08 : 0.05)}; }
+        ${focusRing}
+        svg { width: 18px; height: 18px; }
     }
 `;
 
 export const TodayButton = styled(C.TodayButton)`
     ${seaButton("default")}
-    height: 30px;
-    padding: 0 14px;
-    font-size: 0.8rem;
+    height: 28px;
+    margin-left: 8px;
+    padding: 0 11px;
+    font-size: 0.76rem;
+    letter-spacing: 0;
+    &:hover:not(:disabled) { box-shadow: none; }
     &:disabled { opacity: 0.4; }
 `;
 
-/** 요일 머리 — 실선 상자·모서리 사선(Celestial) 대신 상자 없이 글자만 물 위에 */
+/** 요일 머리 — 상자 없이 작은 고정폭 대문자만 */
 export const Header = styled(C.Header)`
     border: none;
-    margin-bottom: 4px;
+    margin-bottom: 2px;
     &::after { display: none; }
     [data-widget] & { border: none; }
 `;
 
 export const DayNameBox = styled(C.DayNameBox)`
     border: none !important;
-    height: 30px;
+    height: 28px;
+    justify-content: flex-start;
+    padding-left: 8px;
     .day-name {
-        font-family: ${LATIN};
-        font-size: 0.8rem;
-        letter-spacing: 0.22em;
+        font-family: ${MONO};
+        font-size: 0.66rem;
+        font-weight: 500;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
         color: ${(p) => p.theme.colors.textSecondary};
     }
     &:first-child .day-name { color: ${(p) => p.theme.colors.weekend}; }
-    ${MOBILE} { height: 24px; .day-name { font-size: 0.62rem; letter-spacing: 0.12em; } }
+    ${MOBILE} { height: 24px; justify-content: center; padding-left: 0; .day-name { font-size: 0.58rem; letter-spacing: 0.06em; } }
 `;
 
 export const GridContainer = styled(C.GridContainer)`
@@ -77,131 +92,130 @@ export const WeekRowContainer = styled(C.WeekRowContainer)`
     ${MOBILE} { gap: 3px; }
 `;
 
-const glassTile = (dark: boolean) => dark
-    ? "linear-gradient(160deg, rgba(40, 120, 136, 0.30), rgba(12, 62, 78, 0.22))"
-    : "linear-gradient(160deg, rgba(255, 255, 255, 0.80), rgba(226, 249, 246, 0.52))";
-
-/** 칸 하나 — 물 위에 뜬 바다유리 조각. 고르면 물빛 테두리가 맺히고, 올리면 살짝 떠오른다 */
+/** 칸 하나 — 납작한 유리 조각. 고르면 청록 테두리, 올리면 조금 더 하얘진다 */
 export const DayCell = styled(C.DayCell)`
     border-right: none;
-    border-radius: 14px;
-    overflow: hidden; /* 둥근 타일 밖으로 막대·+N 이 비어져 나오지 않게 */
-    background: ${(p) => glassTile(p.theme.mode === "dark")};
-    opacity: ${(p) => (p.$isCurrentMonth ? 1 : 0.42)};
-    box-shadow: ${(p) => p.$dropTarget
+    border-radius: 10px;
+    overflow: hidden; /* 둥근 칸 밖으로 막대·+N 이 비어져 나오지 않게 */
+    background-color: ${(p) => (dark(p) ? "rgba(255, 255, 255, 0.035)" : "rgba(255, 255, 255, 0.46)")};
+    opacity: ${(p) => (p.$isCurrentMonth ? 1 : 0.45)};
+    box-shadow: ${(p) => (p.$dropTarget
         ? `inset 0 0 0 2px ${p.theme.colors.primary}`
         : p.$isSelected
-            ? `inset 0 0 0 1.5px ${withAlpha(p.theme.colors.primary, 0.75)}, 0 8px 18px -8px ${withAlpha(p.theme.colors.primary, 0.55)}, inset 0 1px 0 rgba(255, 255, 255, 0.9)`
-            : `inset 0 1px 0 ${p.theme.mode === "dark" ? "rgba(160, 250, 240, 0.12)" : "rgba(255, 255, 255, 0.95)"}, 0 3px 8px -5px ${p.theme.mode === "dark" ? "rgba(0, 0, 0, 0.6)" : "rgba(4, 78, 92, 0.35)"}`};
-    transition: transform 0.2s ease, box-shadow 0.25s ease, background-color 0.25s ease;
+            ? `inset 0 0 0 1.5px ${withAlpha(p.theme.colors.primary, 0.75)}`
+            : "none")};
+    transition: background-color 0.15s ease, box-shadow 0.15s ease;
 
-    &:hover { transform: translateY(-1px); background-color: ${(p) => withAlpha(p.theme.colors.accent, 0.18)}; }
+    &:hover {
+        box-shadow: ${(p) => (p.$isSelected ? `inset 0 0 0 1.5px ${withAlpha(p.theme.colors.primary, 0.75)}` : `inset 0 0 0 1px ${hairline(p.theme, true)}`)};
+        background-color: ${(p) => (dark(p) ? "rgba(255, 255, 255, 0.06)" : "rgba(255, 255, 255, 0.85)")};
+    }
 
     .day-header {
         padding: 5px 6px 1px;
         .day-number {
             font-family: ${(p) => p.theme.fonts.numeral};
-            font-weight: ${(p) => (p.$isToday || p.$isSelected ? 700 : 600)};
-            position: relative;
+            font-size: 0.8rem;
+            font-weight: ${(p) => (p.$isToday || p.$isSelected ? 700 : 500)};
+            font-variant-numeric: tabular-nums;
+            line-height: 20px;
+            color: ${(p) => p.theme.colors.text};
             ${(p) => p.$isToday && css`
-                color: #FFFFFF;
-                padding-left: 3px;
-                text-shadow: 0 1px 2px rgba(120, 60, 10, 0.55), 0 0 6px rgba(160, 80, 10, 0.35);
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                min-width: 22px;
+                height: 22px;
+                margin: -1px 0 -1px -2px;
+                padding: 0 5px;
+                border-radius: 11px;
+                color: ${p.theme.mode === "dark" ? "#06110F" : "#FFFFFF"};
+                background: ${p.theme.colors.primary};
             `}
         }
     }
+    ${MOBILE} {
+        border-radius: 8px;
+        .day-header { padding: 3px 4px 0; .day-number { font-size: 0.74rem; line-height: 18px; } }
+    }
 `;
 
-const sway = keyframes`
-    0%, 100% { transform: rotate(-14deg) scale(1); }
-    50%      { transform: rotate(-4deg) scale(1.04); }
-`;
-
-/** 오늘 — 별 시계 원반(Celestial) 대신 숫자 뒤에 앉은 주황 불가사리. 천천히 팔을 흔든다 */
+/** 오늘 원반(별 시계)은 바다에 없다 — 숫자 자체가 청록 동그라미가 된다 */
 export const TodayDisc = styled(C.TodayDisc)`
-    top: -5px;
-    left: -6px;
-    width: 38px;
-    height: 38px;
-    margin: 0;
-    z-index: 1;
-    background: ${starfishImage("amber")} center / contain no-repeat;
-    filter: drop-shadow(0 2px 3px rgba(120, 70, 20, 0.3));
-    transform: rotate(-14deg);
-    animation: ${sway} 6s ease-in-out infinite;
-    ${calm}
-    & > * { display: none; }
-    ${MOBILE} { top: -4px; left: -5px; width: 28px; height: 28px; margin: 0; }
+    display: none;
 `;
 
 export const AddTodoButton = styled(C.AddTodoButton)`
-    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
     border: none;
-    color: ${(p) => p.theme.colors.primary};
-    background: ${(p) => withAlpha(p.theme.colors.accent, 0.22)};
+    color: ${(p) => p.theme.colors.textSecondary};
+    background: ${(p) => ink(p.theme, dark(p) ? 0.1 : 0.06)};
+    &:hover { transform: none; color: ${(p) => p.theme.colors.primary}; background: ${(p) => withAlpha(p.theme.colors.primary, 0.12)}; }
 `;
 
 export const TodoBarList = styled(C.TodoBarList)`
     margin-top: 3px;
     margin-bottom: 3px;
     gap: 2px;
-    /* "+N" 알약이 이 목록 위(날짜 줄)로 떠 있으므로 목록이 그것을 오려 내지 않게 — 칸(DayCell)이 대신 오린다 */
+    /* "+N" 꼬리표가 이 목록 위(날짜 줄)로 떠 있으므로 목록이 그것을 오려 내지 않게 — 칸(DayCell)이 대신 오린다 */
     ${NOT_WIDGET} & { @media (min-width: 769px) { overflow: visible; } }
 `;
 
 /**
- * 일정 막대 — 물빛 알약(18px). 여러 날에 걸치면 칸 사이 틈을 건너 이어지고, 위쪽에 햇빛 한 줄이 맺힌다.
- * 폰에서는 마름모(Celestial) 대신 작은 진주 알갱이로 늘어놓는다.
+ * 일정 막대 — 옅게 물든 면에 앞쪽 색 띠, 글씨는 진하게 (요즘 달력들의 문법). 여러 날이면 칸 사이 틈을 건너 잇는다.
+ * 폰에서는 마름모(Celestial) 대신 작은 동그라미 점으로 늘어놓는다.
  */
 export const TodoBarItem = styled(C.TodoBarItem)`
     border: none;
     height: 18px;
-    font-size: 0.72rem;
-    background:
-        linear-gradient(180deg, rgba(255, 255, 255, ${(p) => (p.theme.mode === "dark" ? 0.06 : 0.45)}), rgba(255, 255, 255, 0) 60%),
-        ${(p) => withAlpha(p.$color ?? p.theme.colors.primary, p.$isDone ? 0.12 : p.theme.mode === "dark" ? 0.32 : 0.26)};
+    font-size: 0.7rem;
+    font-weight: 500;
+    background-color: ${(p) => withAlpha(p.$color ?? p.theme.colors.primary, p.$isDone ? 0.08 : dark(p) ? 0.24 : 0.15)};
     color: ${(p) => p.theme.colors.text};
-    border-radius: ${(p) => `${p.$isStart ? 999 : 0}px ${p.$isEnd ? 999 : 0}px ${p.$isEnd ? 999 : 0}px ${p.$isStart ? 999 : 0}px`};
+    border-radius: ${(p) => `${p.$isStart ? 5 : 0}px ${p.$isEnd ? 5 : 0}px ${p.$isEnd ? 5 : 0}px ${p.$isStart ? 5 : 0}px`};
     margin-left: ${(p) => (p.$isStart ? "4px" : `-${GAP}px`)};
     margin-right: ${(p) => (p.$isEnd ? "4px" : `-${GAP}px`)};
-    box-shadow: ${(p) => (p.$isStart ? `inset 3px 0 0 ${p.$color ?? p.theme.colors.primary}` : "none")};
-    &:hover { background-color: transparent; filter: brightness(1.04) saturate(1.15); }
-    .todo-title { font-weight: 600; padding-left: 8px; ${(p) => p.$isDone && css`text-decoration: line-through; opacity: 0.6;`} }
+    box-shadow: ${(p) => (p.$isStart ? `inset 2.5px 0 0 ${p.$color ?? p.theme.colors.primary}` : "none")};
+    &:hover { background-color: ${(p) => withAlpha(p.$color ?? p.theme.colors.primary, dark(p) ? 0.32 : 0.22)}; }
+    .todo-title { padding-left: 7px; ${(p) => p.$isDone && css`text-decoration: line-through; opacity: 0.55;`} }
 
     ${MOBILE} {
         ${NOT_WIDGET} & {
-            width: 7px;
-            height: 7px;
+            width: 6px;
+            height: 6px;
             border: none;
             border-radius: 50%;
             transform: none;
-            box-shadow: 0 1px 2px ${(p) => withAlpha(p.$color ?? p.theme.colors.primary, 0.5)};
-            background: radial-gradient(circle at 34% 30%, rgba(255, 255, 255, 0.9) 0 22%, transparent 50%), ${(p) => (p.$isDone ? withAlpha(p.$color ?? p.theme.colors.primary, 0.35) : p.$color ?? p.theme.colors.primary)};
+            box-shadow: none;
+            background: ${(p) => (p.$isDone ? withAlpha(p.$color ?? p.theme.colors.primary, 0.35) : p.$color ?? p.theme.colors.primary)};
         }
     }
 `;
 
 /**
- * "+N" — 막대 한 층을 차지하지 않고 날짜 줄 오른쪽에 떠 있는 물방울 알약.
+ * "+N" — 막대 한 층을 차지하지 않고 날짜 줄 오른쪽에 뜬 작은 꼬리표.
  * 칸에 들어갈 층 수는 이 단추의 키를 빼고 셈한다(MonthCalendarView 의 fit) — 키를 0 으로 두어 그 몫을 막대에 돌려준다.
  * 위젯·폰은 칸이 좁아 날짜 줄에 둘 자리가 없으니 원래대로 아래에 둔다.
  */
 export const MoreButton = styled(C.MoreButton)`
     align-self: flex-start;
     margin-left: 4px;
-    padding: 1px 9px;
-    border-radius: ${R.pill};
+    padding: 1px 7px;
+    border-radius: 6px;
     border: none;
-    font-family: ${(p) => p.theme.fonts.numeral};
-    font-weight: 700;
-    color: ${(p) => p.theme.colors.primary};
-    background: ${(p) => withAlpha(p.theme.colors.accent, 0.22)};
+    font-family: ${MONO};
+    font-size: 0.64rem;
+    font-weight: 500;
+    color: ${(p) => p.theme.colors.textSecondary};
+    background: ${(p) => ink(p.theme, dark(p) ? 0.1 : 0.06)};
 
     ${NOT_WIDGET} & {
         @media (min-width: 769px) {
             position: absolute;
             top: -22px;
-            right: 26px;
+            right: 28px;
             height: 0;
             min-height: 0;
             padding: 0;
@@ -212,27 +226,28 @@ export const MoreButton = styled(C.MoreButton)`
             .short {
                 display: inline-block;
                 transform: translateY(-1px);
-                padding: 1px 7px;
-                border-radius: ${R.pill};
-                font-size: 0.68rem;
-                line-height: 15px;
-                color: ${(p) => (p.theme.mode === "dark" ? "#062A36" : "#FFFFFF")};
-                background: radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.55) 0 18%, transparent 45%), linear-gradient(135deg, ${(p) => p.theme.colors.accent}, ${(p) => p.theme.colors.primary});
-                box-shadow: 0 2px 6px ${(p) => withAlpha(p.theme.colors.primary, 0.35)};
+                padding: 0 6px;
+                border-radius: 6px;
+                line-height: 17px;
+                color: ${(p) => p.theme.colors.textSecondary};
+                background: ${(p) => ink(p.theme, dark(p) ? 0.1 : 0.06)};
             }
-            &:hover { background: none; .short { filter: brightness(1.08); } }
+            &:hover { background: none; .short { color: ${(p) => p.theme.colors.text}; background: ${(p) => ink(p.theme, dark(p) ? 0.16 : 0.1)}; } }
         }
     }
 `;
 
 export const CompactTaskCount = styled(C.CompactTaskCount)`
-    border-radius: ${R.pill};
+    border-radius: 6px;
     border: none;
-    background: ${(p) => withAlpha(p.theme.colors.accent, 0.3)};
-    color: ${(p) => p.theme.colors.primary};
+    font-family: ${MONO};
+    background: ${(p) => ink(p.theme, 0.08)};
+    color: ${(p) => p.theme.colors.text};
 `;
 
 export const MoveNotice = styled(C.MoveNotice)`
-    ${glass("solid")}
-    border-radius: ${R.pill};
+    ${surface("float")}
+    border-radius: ${R.md};
+    margin-bottom: 8px;
+    button { font-weight: 600; }
 `;

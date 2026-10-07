@@ -1,6 +1,6 @@
 import { DefaultTheme } from "styled-components";
 import { THEME_FAMILIES, type ThemeFamily } from "./themed";
-import { causticNet, sandGrain } from "./ocean/shoreArt";
+import { causticNet } from "./ocean/shoreArt";
 
 const commonStyles = {
     fontSizes: {
@@ -35,13 +35,14 @@ const CELESTIAL_FONTS = {
     body: "'Inter', sans-serif",
 };
 /**
- * 바다: 라틴 제목은 가는 세리프 Marcellus(참고 그림의 "Under the Sea"), 한글은 둥근 고딕(고운돋움), 숫자는 둥근 Quicksand.
- * 셋 다 켤 때 Google Fonts 에서 받는다. 한글 글자는 Marcellus 에 없으니 고운돋움으로 넘어간다.
+ * 바다: 요즘 한글 화면의 기본 글꼴 Pretendard 하나로 짠다(제목은 굵기·자간으로). 큰 라틴 제목만 Instrument Serif,
+ * 작은 꼬리표는 Geist Mono — 이 둘은 water.ts 의 SERIF·MONO 로 따로 쓴다. 모두 켤 때 받는다 (lib/fonts.ts THEME_FONTS).
  */
+const PRETENDARD = "'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Segoe UI', sans-serif";
 const OCEAN_FONTS = {
-    display: "'Marcellus', 'Quicksand', 'Gowun Dodum', 'Noto Sans KR', serif",
-    numeral: "'Quicksand', 'Gowun Dodum', sans-serif",
-    body: "'Gowun Dodum', 'Noto Sans KR', sans-serif",
+    display: PRETENDARD,
+    numeral: PRETENDARD,
+    body: PRETENDARD,
 };
 const MAPLE_FONTS = {
     display: "'Gowun Batang', 'Nanum Myeongjo', 'Noto Serif KR', serif",
@@ -56,7 +57,7 @@ const OCEAN: ThemeFamily = 'ocean';
 /** 갈래마다 하나. 설정 화면에 보이는 이름·설명·미리보기 그림이 여기서 나온다. */
 const FAMILY_META: Record<ThemeFamily, { label: string; description: string; preview?: Record<string, string> }> = {
     celestial: { label: 'Celestial', description: 'Gold accents, Orbit typeface' },
-    ocean: { label: 'Ocean', description: 'Sunlight through clear water, caustics and seashells' },
+    ocean: { label: 'Ocean', description: 'Light through clear water — calm, airy, quietly in motion' },
     maple: {
         label: 'Maple',
         description: 'Pressed maple leaves on aged paper',
@@ -163,27 +164,27 @@ export const themes: Record<string, DefaultTheme> = {
     'celestial-dark': celestialDark,
     maple,
     'maple-dark': mapleDark,
-    /* 맑은 얕은 물 — 흰 모래 위로 비치는 물빛. 테두리 대신 유리(반투명 + 흐림), 금빛·먹 대신 청록과 진주 */
+    /* 맑은 물 아래 흰 모래 — 옅은 바다 안개빛 바탕에 물빛이 어른거리고, 판은 무채색 반투명 유리. 색은 깊은 청록 하나만 */
     ocean: {
         name: 'ocean', family: OCEAN, mode: 'light', ...commonStyles,
         fonts: OCEAN_FONTS,
-        colors: { background:'#EAF7F7', primary:'#0E8C96', accent:'#6FD6CF', surface:'#F7FDFC', text:'#12404C', textSecondary:'#4F7C86', border:'#9CCFD2', success:'#1F9A7A', error:'#D9604E', weekend:'#E9806E' },
+        colors: { background:'#EEF1EE', primary:'#0F6B6B', accent:'#4FA8A0', surface:'#FFFFFF', text:'#122120', textSecondary:'#5F6D6B', border:'#DCE3E0', success:'#2E8A6C', error:'#C2503D', weekend:'#C0604C' },
         preview: {
-            cell: 'rgba(255,255,255,0.72)', event: '#7FD9D2', today: '#F5A847',
-            bg: `${causticNet({ size: 160, freq: 0.03, seed: 11, alpha: 0.7 })} 0 0 / 160px 160px, linear-gradient(180deg, #A6ECE7, #3FC8D0)`,
-            rail: `${sandGrain(false)} 0 0 / 120px 120px, linear-gradient(180deg, #F8EDD8, #EAD1A9)`,
-        }, line:'#9CCFD2',
+            cell: 'rgba(255,255,255,0.78)', event: '#BFDCD8', today: '#0F6B6B',
+            bg: `${causticNet({ size: 160, freq: 0.03, seed: 11, alpha: 0.55 })} 0 0 / 160px 160px, linear-gradient(180deg, #DDEBE8, #ECE9E1)`,
+            rail: 'rgba(250, 249, 246, 0.92)',
+        }, line:'#DCE3E0',
     },
-    /* 밤의 석호 — 깊은 남청 바탕에 달빛 같은 청록 */
+    /* 밤바다에서 헤엄 — 먹빛 물 위에 달빛 물결, 판은 짙은 반투명 유리, 색은 맑은 물빛 하나 */
     'ocean-dark': {
         name: 'ocean-dark', family: OCEAN, mode: 'dark', ...commonStyles,
         fonts: OCEAN_FONTS,
-        colors: { background:'#06222E', primary:'#6FE3DA', accent:'#1FA6B4', surface:'#0B3140', text:'#E3F7F5', textSecondary:'#94C3CB', border:'#2E6A78', success:'#6FD3B0', error:'#FF9A8B', weekend:'#FF9F8A' },
+        colors: { background:'#0A1213', primary:'#6CCDC2', accent:'#3A9890', surface:'#121B1C', text:'#E5ECEA', textSecondary:'#93A29F', border:'#26312F', success:'#67C7A2', error:'#EE8774', weekend:'#EE917D' },
         preview: {
-            cell: 'rgba(40,120,136,0.35)', event: '#1F8C98', today: '#F5A847',
-            bg: `${causticNet({ size: 160, freq: 0.03, seed: 11, alpha: 0.35, color: '150 245 235' })} 0 0 / 160px 160px, linear-gradient(180deg, #0B3D4C, #04202B)`,
-            rail: `${sandGrain(true)} 0 0 / 120px 120px, linear-gradient(180deg, #3D4651, #2A313B)`,
-        }, line:'#2E6A78',
+            cell: 'rgba(255,255,255,0.05)', event: '#1F4A47', today: '#6CCDC2',
+            bg: `${causticNet({ size: 160, freq: 0.03, seed: 11, alpha: 0.22, color: '150 230 220' })} 0 0 / 160px 160px, linear-gradient(180deg, #0D1A1B, #091112)`,
+            rail: 'rgba(18, 27, 28, 0.94)',
+        }, line:'#26312F',
     },
 };
 

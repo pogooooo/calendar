@@ -35,14 +35,21 @@ float caustic(vec2 uv, float t) {
 }
 
 void main() {
-    vec2 uv = vUv * vec2(uRes.x / uRes.y, 1.0) * 0.9;
-    float a = caustic(uv, uTime * 0.45 + 23.0);
-    float b = caustic(uv * 1.35 + vec2(0.31, 0.17), uTime * 0.33 + 11.0);
-    float light = clamp(a * 0.75 + b * 0.45, 0.0, 1.0);
-    // 위쪽(먼 물)은 옅게, 가운데가 가장 밝게
-    float fade = smoothstep(0.0, 0.35, vUv.y) * (1.0 - smoothstep(0.75, 1.0, vUv.y) * 0.5);
-    float alpha = light * fade * mix(0.62, 0.26, uDark);
-    gl_FragColor = vec4(mix(vec3(1.0, 1.0, 0.96), vec3(0.62, 1.0, 0.96), uDark), alpha);
+    vec2 uv = vUv * vec2(uRes.x / uRes.y, 1.0) * 1.45;
+    float t = uTime;
+    float a = caustic(uv, t * 0.3 + 23.0);
+    float b = caustic(uv * 1.3 + vec2(0.31, 0.17), t * 0.22 + 11.0);
+    float light = clamp(a * 0.85 + b * 0.45, 0.0, 1.0);
+    // 빛 그물 아래 물바닥의 옅은 그늘 — 같은 무늬를 살짝 비껴 (밝은 물에서만)
+    float shade = caustic(uv + vec2(0.006, 0.009), t * 0.3 + 23.0);
+    // 큰 물결의 밝고 어두움 — 화면이 고르게 덮이지 않게
+    float swell = 0.6 + 0.4 * sin(uv.x * 1.6 + t * 0.05) * sin(uv.y * 1.2 - t * 0.04);
+    float aL = light * swell * mix(0.74, 0.2, uDark);
+    float aS = shade * 0.06 * (1.0 - uDark);
+    float alpha = aL + aS * (1.0 - aL);
+    vec3 lightCol = mix(vec3(1.0), vec3(0.6, 0.9, 0.86), uDark);
+    vec3 col = (lightCol * aL + vec3(0.12, 0.42, 0.41) * aS * (1.0 - aL)) / max(alpha, 0.0001);
+    gl_FragColor = vec4(col, alpha);
 }
 `;
 
@@ -74,7 +81,8 @@ export default function OceanCaustics() {
                 return; // WebGL 이 없으면 CSS 물빛(정지 그림)만 남는다
             }
             const mobile = window.matchMedia("(max-width: 768px)").matches;
-            const scale = mobile ? 0.35 : 0.5;
+            // 빛 그물이 또렷해야 물로 읽힌다 — 화면의 2/3 해상도(폰은 절반)로 그리고 늘린다
+            const scale = mobile ? 0.5 : 0.66;
             renderer.setPixelRatio(1);
             renderer.setClearColor(0x000000, 0);
             const scene = new THREE.Scene();

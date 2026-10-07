@@ -1,18 +1,17 @@
 /**
  * 바다의 달력 화면 틀 — Celestial(월간 왼쪽·일간 오른쪽, 사이 나눔선을 끌어 폭 조절)과도,
- * Maple(일간 먼저)과도 다르게 **월간이 위에 넓게 펼쳐지고 그날은 아래 물가 띠**로 눕는다.
+ * Maple(일간 먼저)과도 다르게 **월간이 위에 넓게 펼쳐지고 그날은 아래 띠**로 눕는다.
  * 띠 안은 가로로 [그날 목록 | 시간표 | 챌린지·체크·메모] (OceanDayCalendar.styles).
- * 두 판은 유리 웅덩이처럼 떠 있고, 좌우로 끄는 나눔선은 쓰지 않는다.
+ * 두 판은 물 위에 뜬 반투명 판이고, 좌우로 끄는 나눔선은 쓰지 않는다.
  */
-import styled, { css } from "styled-components";
+import styled from "styled-components";
 import * as C from "../celestial/CelestialCalendarPage.styles";
-import { glass, R, waveRule, surfaceIn, calm, seaButton } from "@/styles/ocean/water";
-import { withAlpha } from "@/styles/color";
+import { EASE, MONO, R, calm, focusRing, ink, seaButton, surface, surfaceIn } from "@/styles/ocean/water";
 
 export * from "../celestial/CelestialCalendarPage.styles";
 
 export const PageWrapper = styled(C.PageWrapper)`
-    padding: 22px 28px 26px;
+    padding: 20px 24px 20px 4px;
     background: transparent;
 
     @media (max-width: 1250px) { padding: 16px; }
@@ -21,52 +20,39 @@ export const PageWrapper = styled(C.PageWrapper)`
 
 export const CalendarContainer = styled(C.CalendarContainer)`
     flex-direction: column;
-    gap: ${(p) => (p.$collapsed ? "12px" : "18px")};
+    gap: 12px;
     max-width: 1500px;
 `;
 
-/** 위: 월간 — 큰 유리 웅덩이 */
+/** 위: 월간 — 큰 판 */
 export const MonthSection = styled(C.MonthSection)`
     flex: 1 1 0 !important;
     height: auto;
     min-height: 0;
-    ${glass("soft")}
+    ${surface("panel")}
     border-radius: ${R.lg};
-    padding: 14px 16px 10px;
-    transition: flex-grow 0.45s cubic-bezier(0.22, 1, 0.36, 1);
-    animation: ${surfaceIn} 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+    padding: 18px 18px 12px;
+    animation: ${surfaceIn} 0.5s ${EASE} both;
     ${calm}
 
     @media (max-width: 1250px) { height: auto; }
 `;
 
-/** 아래: 그날 — 물가에 누운 띠 */
+/** 아래: 그날 — 띠. 화면 높이의 4분의 1 남짓만 (월간 칸에 막대가 두 층은 들어가야 한다, 900px 화면에서 210px) */
 export const DaySection = styled(C.DaySection)`
-    /* 띠는 화면 높이의 4분의 1 남짓만 — 월간 칸에 막대가 두 층은 들어가야 한다 (900px 화면에서 210px) */
     flex: ${(p) => (p.$collapsed ? "0 0 46px" : "0 0 clamp(200px, calc(24vh - 6px), 320px)")} !important;
     min-width: 0;
     height: auto;
     min-height: ${(p) => (p.$collapsed ? "46px" : "200px")};
     border: none;
-    ${glass("soft")}
+    ${surface("panel")}
     border-radius: ${R.lg};
     padding: 0;
     margin: 0;
     overflow: visible;
-    transition: flex-basis 0.45s cubic-bezier(0.22, 1, 0.36, 1), min-height 0.45s cubic-bezier(0.22, 1, 0.36, 1);
-    animation: ${surfaceIn} 0.6s 0.06s cubic-bezier(0.22, 1, 0.36, 1) both;
+    transition: flex-basis 0.4s ${EASE}, min-height 0.4s ${EASE};
+    animation: ${surfaceIn} 0.55s 0.05s ${EASE} both;
     ${calm}
-
-    /* 띠 위쪽 가장자리에 잔물결 한 줄 */
-    &::before {
-        content: "";
-        position: absolute;
-        left: 22px;
-        right: 22px;
-        top: -12px;
-        ${waveRule(0.35)}
-        pointer-events: none;
-    }
 
     @media (max-width: 1250px) {
         border-top: none;
@@ -87,40 +73,40 @@ export const DayClip = styled(C.DayClip)`
 
 export const DayBody = styled(C.DayBody)`
     height: 100%;
-    padding: 10px 16px 10px;
-    transform: translateY(${(p) => (p.$collapsed ? "10px" : "0")});
+    padding: 12px 16px 12px;
+    transform: translateY(${(p) => (p.$collapsed ? "8px" : "0")});
 `;
 
-/** 접힌 띠의 이름표 — 세로 글씨(Celestial) 대신 가로로 누운 물결 이름표 */
+/** 접힌 띠의 이름표 — 세로 글씨(Celestial) 대신 가로로 누운 작은 꼬리표 */
 export const CollapsedRail = styled(C.CollapsedRail)`
     flex-direction: row;
-    gap: 10px;
-    .label { writing-mode: horizontal-tb; letter-spacing: 0.08em; font-family: ${(p) => p.theme.fonts.display}; }
-    .star {
-        font-size: 0;
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        opacity: 1;
-        background: radial-gradient(circle at 35% 30%, #FFFFFF 0 22%, transparent 45%), ${(p) => p.theme.colors.primary};
+    gap: 8px;
+    .label {
+        writing-mode: horizontal-tb;
+        font-family: ${MONO};
+        font-size: 0.68rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: ${(p) => p.theme.colors.textSecondary};
     }
+    .star { display: none; }
     @media (max-width: 1250px) { display: flex; }
 `;
 
-/** 띠를 접고 펴는 단추 — 오른쪽 위에 뜬 진주 단추 */
+/** 띠를 접고 펴는 단추 — 오른쪽 위의 작은 글씨 단추 */
 export const ToggleButton = styled(C.ToggleButton)`
     top: 10px;
-    left: auto;
-    right: 12px;
-    width: 30px;
-    height: 30px;
-    ${seaButton("default")}
+    left: calc(100% - 38px) !important;
+    right: auto;
+    width: 28px;
+    height: 28px;
+    ${seaButton("ghost")}
     display: flex;
     align-items: center;
     justify-content: center;
-    svg { transform: rotate(${(p) => (p.$collapsed ? "-90deg" : "90deg")}); transition: transform 0.35s ease; }
+    svg { transform: rotate(${(p) => (p.$collapsed ? "-90deg" : "90deg")}); transition: transform 0.3s ${EASE}; }
 
-    @media (max-width: 1250px) { top: 10px; right: 12px; left: auto; }
+    @media (max-width: 1250px) { top: 10px; }
 `;
 
 /** 좌우로 끄는 나눔선은 바다에 없다 — 위아래로 쌓으니 */
@@ -130,41 +116,41 @@ export const Resizer = styled(C.Resizer)`
 
 /* ── 폰: 월간·일간 갈아 끼우기 ── */
 
-/** 전환 단추 — 네모 칸 둘(Celestial) 대신 아래로 뜬 알약 하나 안의 두 물방울 */
+/** 전환 단추 — 네모 칸 둘(Celestial) 대신 홈 안에서 미끄러지는 흰 판 (분절 단추) */
 export const ViewSwitch = styled(C.ViewSwitch)`
     border: none;
-    padding: 4px;
-    gap: 4px;
-    ${glass("solid")}
-    border-radius: ${R.pill};
+    padding: 3px;
+    gap: 2px;
+    border-radius: 12px;
+    background: ${(p) => ink(p.theme, p.theme.mode === "dark" ? 0.1 : 0.06)};
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
 `;
 
 export const SwitchButton = styled(C.SwitchButton)`
     border: none;
-    border-radius: ${R.pill};
-    font-family: ${(p) => p.theme.fonts.display};
-    letter-spacing: 0.06em;
-    font-size: 0.86rem;
-    padding: 10px 0;
-    background: ${(p) => (p.$on ? `linear-gradient(135deg, ${p.theme.colors.primary}, ${p.theme.colors.accent})` : "transparent")};
-    color: ${(p) => (p.$on ? (p.theme.mode === "dark" ? p.theme.colors.background : "#FFFFFF") : p.theme.colors.textSecondary)};
-    box-shadow: ${(p) => (p.$on ? `0 4px 12px ${withAlpha(p.theme.colors.primary, 0.3)}` : "none")};
-    transition: background 0.3s ease, color 0.3s ease;
-    &:active { background-color: transparent; transform: scale(0.97); }
+    border-radius: 9px;
+    font-family: ${(p) => p.theme.fonts.body};
+    font-weight: ${(p) => (p.$on ? 600 : 500)};
+    font-size: 0.85rem;
+    padding: 8px 0;
+    background: ${(p) => (p.$on ? (p.theme.mode === "dark" ? "rgba(255, 255, 255, 0.12)" : "#FFFFFF") : "transparent")};
+    color: ${(p) => (p.$on ? p.theme.colors.text : p.theme.colors.textSecondary)};
+    box-shadow: ${(p) => (p.$on ? "0 1px 3px rgba(18, 33, 32, 0.12)" : "none")};
+    transition: background-color 0.2s ease, color 0.2s ease;
+    &:active { background-color: transparent; transform: scale(0.98); }
+    ${focusRing}
 `;
 
-/** 떠 있는 + — 네모 단추 대신 물방울 */
+/** 떠 있는 + — 청록 동그라미 하나 */
 export const Fab = styled(C.Fab)`
-    width: 56px;
-    height: 56px;
+    width: 52px;
+    height: 52px;
     border-radius: 50%;
     border: none;
-    color: ${(p) => (p.theme.mode === "dark" ? p.theme.colors.background : "#FFFFFF")};
-    background:
-        radial-gradient(circle at 34% 28%, rgba(255, 255, 255, 0.75) 0 10%, transparent 32%),
-        linear-gradient(145deg, ${(p) => p.theme.colors.accent}, ${(p) => p.theme.colors.primary});
-    box-shadow: 0 10px 22px ${(p) => withAlpha(p.theme.colors.primary, 0.38)};
-    ${(p) => p.theme.mode === "dark" && css`box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5);`}
+    color: ${(p) => (p.theme.mode === "dark" ? "#06110F" : "#FFFFFF")};
+    background: ${(p) => p.theme.colors.primary};
+    box-shadow: 0 10px 24px -8px ${(p) => (p.theme.mode === "dark" ? "rgba(0, 0, 0, 0.6)" : "rgba(15, 107, 107, 0.45)")};
 `;
 
 export const MonthArea = styled(C.MonthArea)``;

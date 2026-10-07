@@ -1,20 +1,24 @@
 /**
- * 바다의 바닥 — 화면 전체가 맑은 물이다. 위(먼 물)는 옅은 물빛, 아래로 갈수록 깊은 청록.
- * 앱 껍데기는 비워서(투명) 물과 물빛 그물(OceanAtmosphere)이 판 사이로 비치게 한다.
- * 위젯 창은 html·body 에 인라인 !important 로 투명을 걸어 두므로 여기 물이 덮지 않는다.
+ * 바다의 바닥 — 맑은 물 아래 흰 모래. 위(먼 물)는 옅은 물빛, 아래로 갈수록 따뜻한 모래빛.
+ * 그 위에 물빛(OceanAtmosphere 의 three.js)이 어른거린다.
+ *
+ * 바닥색은 html 에만 칠하고 body 는 비운다 — body 에도 칠하면 그 면이 z-index:-1 로 깔린 물빛 캔버스를 덮어
+ * 물빛이 아예 안 보인다(한동안 그랬다). 앱 껍데기도 비워서(투명) 바닥이 판 사이로 비치게 한다.
+ * 밤에는 먹빛 물 — 달빛 물결만 옅게. 위젯 창은 html·body 에 인라인 !important 로 투명을 걸어 두므로 덮지 않는다.
  */
 import { createGlobalStyle } from "styled-components";
 
 const OceanGround = createGlobalStyle`
-    html, body {
-        background-color: ${(p) => (p.theme.mode === "dark" ? "#05202B" : "#58D3D4")} !important;
+    html {
+        background-color: ${(p) => (p.theme.mode === "dark" ? "#0A1213" : "#D6E8E3")} !important;
         background-image: ${(p) => (p.theme.mode === "dark"
-            ? "linear-gradient(180deg, #0B3D4C 0%, #07303D 45%, #04202B 100%)"
-            : "linear-gradient(180deg, #A6ECE7 0%, #6CDAD8 30%, #3FC8D0 62%, #25B1C3 100%)")} !important;
+            ? "linear-gradient(180deg, #0E1F21 0%, #0B1617 55%, #091011 100%)"
+            : "linear-gradient(180deg, #C6E2DD 0%, #D3E7E2 40%, #E2E7DF 75%, #E9E6DD 100%)")} !important;
         background-attachment: fixed !important;
     }
+    body { background: transparent !important; }
     [data-app-shell] { background: transparent !important; }
-    ::selection { background: ${(p) => (p.theme.mode === "dark" ? "rgba(111, 227, 218, 0.35)" : "rgba(255, 214, 165, 0.75)")}; }
+    ::selection { background: ${(p) => (p.theme.mode === "dark" ? "rgba(108, 205, 194, 0.3)" : "rgba(15, 107, 107, 0.16)")}; }
 `;
 
 export default OceanGround;

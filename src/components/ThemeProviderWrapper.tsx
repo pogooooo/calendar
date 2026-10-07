@@ -57,15 +57,17 @@ export default function ThemeProviderWrapper({ children }: { children: React.Rea
 
     const fontOption = getFontOption(fontKey);
 
+    // "기본" 은 갈래가 정한 본문 글꼴이다 — Celestial·Maple 은 Inter, 바다는 Pretendard
+    const bodyFamily = fontOption.key === "default" ? baseTheme.fonts.body : fontOption.family;
     const theme = useMemo(() => ({
         ...baseTheme,
-        fonts: { ...baseTheme.fonts, body: fontOption.family },
-    }), [baseTheme, fontOption]);
+        fonts: { ...baseTheme.fonts, body: bodyFamily },
+    }), [baseTheme, bodyFamily]);
 
     useEffect(() => {
         ensureFontLoaded(fontOption);
-        document.body.style.fontFamily = fontOption.family;
-    }, [fontOption]);
+        document.body.style.fontFamily = bodyFamily;
+    }, [fontOption, bodyFamily]);
 
     // 테마가 제 글꼴을 요구하면(Maple 의 고운바탕·Cormorant) 같이 내려받는다
     useEffect(() => {
