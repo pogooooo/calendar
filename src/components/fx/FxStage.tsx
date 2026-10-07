@@ -107,10 +107,19 @@ export default function FxStage() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [load, inWidget]);
 
-    // 개발 중에만: 콘솔·시험 도구에서 window.__fx.emit("complete") 로 효과를 불러 볼 수 있게
+    // 개발 중에만: 콘솔·시험 도구에서 효과를 불러 본다.
+    //   window.__fx.emit("complete")              — 지금 갈래로
+    //   window.__fxTry("maple", "month-flip", {…}) — 테마를 안 바꾸고 다른 갈래의 효과를
     useEffect(() => {
         if (process.env.NODE_ENV === "production") return;
-        (window as unknown as { __fx?: typeof fx }).__fx = fx;
+        const w = window as unknown as { __fx?: typeof fx; __fxTry?: (family: keyof typeof LOADERS, kind: FxEvent["kind"], detail?: Omit<FxEvent, "kind">) => Promise<void> };
+        w.__fx = fx;
+        w.__fxTry = async (family, kind, detail = {}) => {
+            const mod = await LOADERS[family]();
+            const eng = await engine();
+            eng?.play(mod, { kind, ...detail }, { gentle: false, dark: darkRef.current, x: window.innerWidth / 2, y: window.innerHeight / 2 });
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     useEffect(() => {

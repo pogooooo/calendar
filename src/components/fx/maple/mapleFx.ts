@@ -85,7 +85,7 @@ const flutter = (p: Partial<Particle> & Pick<Particle, "x" | "y" | "vx" | "vy" |
 function fall(ctx: FxContext, n: number, area: { x: number; w: number }, fallFor: number) {
     return new Swarm(ctx, leaf(ctx), Array.from({ length: n }, () => flutter({
         x: area.x + rand(0, area.w), y: -rand(20, 80), vx: rand(-25, 35), vy: rand(80, 150),
-        size: rand(18, 34), life: fallFor * rand(0.85, 1.15), delay: rand(0, 0.6),
+        size: rand(26, 44), life: fallFor * rand(0.85, 1.15), delay: rand(0, 0.6),
         wobble: { amp: rand(20, 50), freq: rand(1.4, 2.6), phase: rand(0, 6) },
     })));
 }
@@ -102,7 +102,7 @@ const mod: FxModule = {
                     x: dir > 0 ? r.x + r.w + rand(0, 120) : r.x - rand(0, 120),
                     y: r.y + rand(0, 0.75) * r.h,
                     vx: -dir * rand(520, 900), vy: rand(-50, 20), ay: 140, drag: 0.45,
-                    size: rand(20, 38), life: rand(1.3, 1.9), delay: rand(0, 0.25),
+                    size: rand(30, 52), life: rand(1.3, 1.9), delay: rand(0, 0.25),
                     // 바람결 — 위아래로 출렁이며 간다
                     step: (p, dt) => { p.vy += Math.sin((p.age ?? 0) * sway * 3 + ph) * 260 * dt; },
                 });
@@ -115,15 +115,15 @@ const mod: FxModule = {
         },
 
         complete: (ctx) => {
-            const big = flutter({ x: ctx.x, y: ctx.y, vx: rand(-70, 70), vy: -rand(300, 380), ay: 560, drag: 0.6, size: 34, life: 1.35 });
+            const big = flutter({ x: ctx.x, y: ctx.y, vx: rand(-70, 70), vy: -rand(300, 380), ay: 560, drag: 0.6, size: 46, life: 1.35 });
             const small = Array.from({ length: count(ctx, 4) }, () => flutter({
-                x: ctx.x, y: ctx.y, vx: rand(-160, 160), vy: -rand(180, 300), ay: 620, drag: 0.8, size: rand(12, 18), life: rand(0.9, 1.2), delay: rand(0, 0.08),
+                x: ctx.x, y: ctx.y, vx: rand(-160, 160), vy: -rand(180, 300), ay: 620, drag: 0.8, size: rand(16, 24), life: rand(0.9, 1.2), delay: rand(0, 0.08),
             }));
             return new Swarm(ctx, leaf(ctx), [big, ...small]);
         },
 
         add: (ctx) => new Swarm(ctx, leaf(ctx), Array.from({ length: count(ctx, 3) }, () => flutter({
-            x: ctx.x, y: ctx.y, vx: rand(-90, 90), vy: -rand(160, 240), ay: 520, drag: 0.8, size: rand(12, 18), life: rand(0.8, 1.1),
+            x: ctx.x, y: ctx.y, vx: rand(-90, 90), vy: -rand(160, 240), ay: 520, drag: 0.8, size: rand(16, 24), life: rand(0.8, 1.1),
         }))),
 
         "widget-open": (ctx) => {
@@ -134,7 +134,7 @@ const mod: FxModule = {
                 const w = rand(5, 7.5);
                 const rise = rand(90, 150);
                 return flutter({
-                    x: cx, y: cy, vx: 0, vy: 0, size: rand(14, 26), life: rand(1.5, 1.9), delay: rand(0, 0.15),
+                    x: cx, y: cy, vx: 0, vy: 0, size: rand(20, 34), life: rand(1.5, 1.9), delay: rand(0, 0.15),
                     // 회오리 — 도는 반지름이 커지며 위로 솟는다 (옆에서 본 듯 납작한 타원)
                     step: (p) => {
                         const t = p.age ?? 0;
@@ -150,7 +150,7 @@ const mod: FxModule = {
         theme: (ctx) => group(
             fall(ctx, count(ctx, 18), { x: 0, w: ctx.W }, 3.2),
             new Swarm(ctx, leaf(ctx), Array.from({ length: count(ctx, 6) }, () => flutter({
-                x: -40, y: rand(0.1, 0.6) * ctx.H, vx: rand(380, 620), vy: rand(-30, 30), ay: 90, drag: 0.3, size: rand(22, 36), life: rand(1.8, 2.4), delay: rand(0.2, 0.8),
+                x: -40, y: rand(0.1, 0.6) * ctx.H, vx: rand(380, 620), vy: rand(-30, 30), ay: 90, drag: 0.3, size: rand(30, 46), life: rand(1.8, 2.4), delay: rand(0.2, 0.8),
             }))),
         ),
     },
