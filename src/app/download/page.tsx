@@ -393,8 +393,8 @@ export default function DownloadPage() {
             <S.Hero>
                 <S.HeroText>
                     <S.Brand>CRONOS</S.Brand>
-                    {/* 갈래마다 제 말 — Celestial 은 별자리, Maple 은 도감 */}
-                    <S.Tagline>{family === "maple" ? t.download.taglineMaple : t.download.tagline}</S.Tagline>
+                    {/* 갈래마다 제 말 — Celestial 은 별자리, Maple 은 도감, Ocean 은 맑은 물 */}
+                    <S.Tagline>{family === "maple" ? t.download.taglineMaple : family === "ocean" ? t.download.taglineOcean : t.download.tagline}</S.Tagline>
                     <S.Lead>{t.download.lead}</S.Lead>
 
                     <S.CtaRow>

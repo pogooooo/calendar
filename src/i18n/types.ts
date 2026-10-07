@@ -601,6 +601,8 @@ export interface Translations {
         tagline: string;
         /** Maple 갈래에서 쓰는 한 줄 — 별자리 대신 도감의 말 */
         taglineMaple: string;
+        /** Ocean 갈래에서 쓰는 한 줄 — 맑은 물의 말 (로그인 머리에도 쓴다) */
+        taglineOcean: string;
         lead: string;
         downloadFor: (os: string) => string;
         download: string;
