@@ -156,11 +156,27 @@ export const PATCH = async (request: NextRequest) => {
             updateData.participants = { ...updateData.participants, disconnect: { id: removeParticipantId } };
         }
 
-        const updatedCategory = await prisma.category.update({
+        const update = prisma.category.update({
             where: { id },
             data: updateData,
             include: { participants: { select: publicUserSelect } }
         });
+
+        // 빠진 사람은 이 카테고리의 프로젝트·작업 담당에서도 뺀다 — 예전엔 나간 뒤에도 담당자로 남아 남은 사람들 화면에 보였다
+        const assigned = removeParticipantId ? await Promise.all([
+            prisma.project.findMany({ where: { categoryId: id, assignees: { some: { id: removeParticipantId } } }, select: { id: true } }),
+            prisma.projectTask.findMany({ where: { project: { categoryId: id }, assignees: { some: { id: removeParticipantId } } }, select: { id: true } }),
+        ]) : null;
+        const [updatedCategory] = removeParticipantId && assigned && (assigned[0].length || assigned[1].length)
+            ? await prisma.$transaction([
+                update,
+                prisma.user.update({
+                    where: { id: removeParticipantId },
+                    data: { assignedProjects: { disconnect: assigned[0] }, assignedTasks: { disconnect: assigned[1] } },
+                    select: { id: true },
+                }),
+            ])
+            : [await update];
 
         return NextResponse.json(updatedCategory);
     } catch (error) {
