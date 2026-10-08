@@ -2,7 +2,13 @@ import { publicUserSelect } from "@/lib/publicUser";
 import { NextResponse } from "next/server";
 import prisma from '@/lib/prisma';
 import { CreateProjectSchema, UpdateProjectSchema } from '@/lib/schema';
-import { getUserId, categoryAccessWhere, checkCategoryPermission } from '@/lib/apiAuth';
+import { getUserId, categoryAccessWhere, checkCategoryPermission, onlyCategoryMembers } from '@/lib/apiAuth';
+
+/**
+ * 선행 할 일은 id·제목·상태만 싣는다 (할 일 라우트와 같게). 통째로 실으면 다른 카테고리에 있는 선행 할 일의
+ * 메모·날짜까지 나갔다 — 그 카테고리에서 빠진 뒤에도
+ */
+const blockedBySelect = { select: { id: true, title: true, status: true } } as const;
 
 export async function GET(request: Request) {
     try {
@@ -21,7 +27,7 @@ export async function GET(request: Request) {
                 assignees: { select: publicUserSelect },
                 tasks: {
                     include: {
-                        blockedBy: true,
+                        blockedBy: blockedBySelect,
                         assignees: { select: publicUserSelect },
                     }
                 },
@@ -52,6 +58,7 @@ export async function POST(request: Request) {
         const hasPermission = await checkCategoryPermission(categoryId, userId);
         if (!hasPermission) return NextResponse.json({ message: "카테고리를 찾을 수 없거나 권한이 없습니다." }, { status: 403 });
 
+        const assigneeIds = await onlyCategoryMembers(categoryId, assignees ?? []);
         const newProject = await prisma.project.create({
             data: {
                 title,
@@ -59,8 +66,8 @@ export async function POST(request: Request) {
                 categoryId,
                 startAt: startAt ? new Date(startAt) : null,
                 endAt: endAt ? new Date(endAt) : null,
-                assignees: assignees?.length ? {
-                    connect: assignees.map((id) => ({ id }))
+                assignees: assigneeIds.length ? {
+                    connect: assigneeIds.map((id) => ({ id }))
                 } : undefined,
             },
             include: { assignees: { select: publicUserSelect } }
@@ -88,9 +95,14 @@ export async function PATCH(request: Request) {
 
         const owned = await prisma.project.findFirst({
             where: { id, category: categoryAccessWhere(userId) },
-            select: { id: true },
+            select: { id: true, categoryId: true },
         });
         if (!owned) return NextResponse.json({ message: "프로젝트를 찾을 수 없거나 권한이 없습니다." }, { status: 404 });
+        // 옮겨 갈 카테고리도 내가 쓸 수 있는 곳이어야 한다
+        if (rest.categoryId && !(await checkCategoryPermission(rest.categoryId, userId))) {
+            return NextResponse.json({ message: "카테고리를 찾을 수 없거나 권한이 없습니다." }, { status: 403 });
+        }
+        const assigneeIds = assignees ? await onlyCategoryMembers(rest.categoryId ?? owned.categoryId, assignees) : null;
 
         const updatedProject = await prisma.project.update({
             where: { id },
@@ -98,12 +110,12 @@ export async function PATCH(request: Request) {
                 ...rest,
                 ...(startAt !== undefined ? { startAt: startAt ? new Date(startAt) : null } : {}),
                 ...(endAt !== undefined ? { endAt: endAt ? new Date(endAt) : null } : {}),
-                ...(assignees ? { assignees: { set: assignees.map((uid) => ({ id: uid })) } } : {}),
+                ...(assigneeIds ? { assignees: { set: assigneeIds.map((uid) => ({ id: uid })) } } : {}),
             },
             include: {
                 assignees: { select: publicUserSelect },
                 tasks: {
-                    include: { blockedBy: true, assignees: { select: publicUserSelect } }
+                    include: { blockedBy: blockedBySelect, assignees: { select: publicUserSelect } }
                 }
             }
         });

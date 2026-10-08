@@ -1,10 +1,11 @@
 import { NextResponse, NextRequest } from "next/server";
 import bcrypt from "bcryptjs";
-import prisma from "@/lib/prisma";
+import prisma, { isUniqueViolation } from "@/lib/prisma";
 import { generateAccessToken, generateRefreshToken, refreshCookie, refreshExpiresAt, rememberFrom } from "@/lib/jwt";
 import { cookies } from "next/headers";
 import { LoginSchema } from "@/lib/schema";
 import { checkRateLimit, resetRateLimit } from "@/lib/rateLimiter";
+import { userIdByEmail } from "@/lib/userEmail";
 
 // 로그인 Rate Limit: 10분 내 10회 초과 시 15분 차단
 const LOGIN_LIMIT = { maxAttempts: 10, windowMs: 10 * 60 * 1000, blockMs: 15 * 60 * 1000 };
@@ -49,10 +50,12 @@ export async function POST(request: NextRequest) {
         const { email, password } = validation.data;
         const remember = rememberFrom(body);
 
-        const user = await prisma.user.findUnique({
-            where: { email },
+        // 대소문자를 가리지 않고 찾는다 — 폰 자판이 첫 글자를 대문자로 바꿔 가입한 계정도 (src/lib/userEmail.ts)
+        const userId = await userIdByEmail(email);
+        const user = userId ? await prisma.user.findUnique({
+            where: { id: userId },
             include: { settings: true },
-        });
+        }) : null;
 
         // 이메일 존재 여부를 구분하지 않음 (계정 열거 공격 방지)
         if (!user || !user.password) {
@@ -74,7 +77,12 @@ export async function POST(request: NextRequest) {
         resetRateLimit(`login:${ip}`);
 
         if (!user.settings) {
-            await prisma.userSettings.create({ data: { userId: user.id } });
+            // 로그인 단추를 두 번 누르면 둘 다 만들려다 유일 제약으로 500 이 났다 — 이미 있으면 됐다
+            try {
+                await prisma.userSettings.create({ data: { userId: user.id } });
+            } catch (e) {
+                if (!isUniqueViolation(e)) throw e;
+            }
         }
 
         const accessToken = await generateAccessToken({ userId: user.id, email: user.email });

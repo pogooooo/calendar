@@ -80,6 +80,10 @@ export async function PATCH(req: Request) {
             select: { id: true },
         });
         if (!owned) return NextResponse.json({ message: "챌린지를 찾을 수 없거나 권한이 없습니다." }, { status: 404 });
+        // 옮겨 갈 카테고리도 내가 쓸 수 있는 곳이어야 한다
+        if (rest.categoryId && !(await checkCategoryPermission(rest.categoryId, userId))) {
+            return NextResponse.json({ message: "카테고리를 찾을 수 없거나 권한이 없습니다." }, { status: 403 });
+        }
 
         const challenge = await prisma.challenge.update({
             where: { id },

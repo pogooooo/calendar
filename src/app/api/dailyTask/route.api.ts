@@ -12,7 +12,8 @@ function dayStart(input: unknown): Date | null {
     const key = input.slice(0, 10);
     if (!/^\d{4}-\d{2}-\d{2}$/.test(key)) return null;
     const d = new Date(`${key}T00:00:00.000Z`);
-    return Number.isNaN(d.getTime()) ? null : d;
+    // 2026-02-31 은 3월 3일로 넘어가 엉뚱한 날에 적혔다 — 되읽어 같은 날일 때만 받는다
+    return Number.isNaN(d.getTime()) || d.toISOString().slice(0, 10) !== key ? null : d;
 }
 
 export async function GET(req: Request) {

@@ -57,3 +57,7 @@ const client = new Proxy({} as PrismaClient, {
 })
 
 export default client
+
+/** 유일 제약 위반(P2002) — 겹쳐 들어온 두 요청이 같은 줄을 만들려 할 때. 500 대신 "이미 있음" 으로 다룬다 */
+export const isUniqueViolation = (e: unknown) =>
+    typeof e === 'object' && e !== null && (e as { code?: unknown }).code === 'P2002'

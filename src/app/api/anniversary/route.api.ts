@@ -57,8 +57,15 @@ export async function PATCH(req: Request) {
 
         const { id, ...data } = parsed.data;
 
-        const owned = await prisma.anniversary.findFirst({ where: { id, userId }, select: { id: true } });
+        const owned = await prisma.anniversary.findFirst({ where: { id, userId }, select: { id: true, month: true, day: true } });
         if (!owned) return NextResponse.json({ message: "기념일을 찾을 수 없거나 권한이 없습니다." }, { status: 404 });
+
+        // 달·날 중 하나만 바꿀 때는 스키마가 날짜를 못 본다 — 남은 쪽과 합쳐 2월 31일 같은 날을 막는다
+        const month = data.month ?? owned.month;
+        const day = data.day ?? owned.day;
+        if (!UpdateAnniversarySchema.safeParse({ id, month, day }).success) {
+            return NextResponse.json({ message: "존재하지 않는 날짜입니다." }, { status: 400 });
+        }
 
         const anniversary = await prisma.anniversary.update({ where: { id }, data });
 

@@ -2,23 +2,25 @@ import { publicUserSelect } from "@/lib/publicUser";
 import { NextResponse } from "next/server";
 import prisma from '@/lib/prisma';
 import { CreateProjectTaskSchema, UpdateProjectTaskSchema } from '@/lib/schema';
-import { getUserId, categoryAccessWhere } from '@/lib/apiAuth';
+import { getUserId, categoryAccessWhere, onlyCategoryMembers } from '@/lib/apiAuth';
 import { dependencyIssue } from '@/lib/taskInteractions';
 
-const canAccessProject = async (projectId: string, userId: string) => {
+/** 쓸 수 있는 프로젝트면 그 카테고리 id (담당자를 거를 때 쓴다), 아니면 null */
+const accessibleProjectCategory = async (projectId: string, userId: string) => {
     const project = await prisma.project.findFirst({
         where: { id: projectId, category: categoryAccessWhere(userId) },
-        select: { id: true },
+        select: { categoryId: true },
     });
-    return !!project;
+    return project?.categoryId ?? null;
 };
 
-const canAccessTask = async (taskId: string, userId: string) => {
+/** 쓸 수 있는 할 일이면 그 프로젝트의 카테고리 id, 아니면 null */
+const accessibleTaskCategory = async (taskId: string, userId: string) => {
     const task = await prisma.projectTask.findFirst({
         where: { id: taskId, project: { category: categoryAccessWhere(userId) } },
-        select: { id: true },
+        select: { project: { select: { categoryId: true } } },
     });
-    return !!task;
+    return task?.project.categoryId ?? null;
 };
 
 /** blockedBy 는 검증을 거치지 않은 원본 body 에서 오므로 형태와 접근 권한을 모두 확인한다 */
@@ -64,13 +66,15 @@ export async function POST(request: Request) {
 
         const { title, description, status, priority, projectId, startAt, endAt, isAllDay, assignees } = parsed.data;
 
-        if (!(await canAccessProject(projectId, userId))) {
+        const categoryId = await accessibleProjectCategory(projectId, userId);
+        if (!categoryId) {
             return NextResponse.json({ message: "프로젝트를 찾을 수 없거나 권한이 없습니다." }, { status: 403 });
         }
         const blockedBy = normalizeBlockedBy(body.blockedBy) ?? [];
         if (!(await assertBlockedByAccessible(blockedBy, userId))) {
             return NextResponse.json({ message: "연결할 수 없는 항목이 포함돼 있습니다." }, { status: 403 });
         }
+        const assigneeIds = await onlyCategoryMembers(categoryId, assignees ?? []);
 
         const task = await prisma.projectTask.create({
             data: {
@@ -85,8 +89,8 @@ export async function POST(request: Request) {
                 blockedBy: blockedBy.length > 0 ? {
                     connect: blockedBy.map((id) => ({ id }))
                 } : undefined,
-                assignees: assignees?.length ? {
-                    connect: assignees.map((id) => ({ id }))
+                assignees: assigneeIds.length ? {
+                    connect: assigneeIds.map((id) => ({ id }))
                 } : undefined,
             },
             include: { blockedBy: blockedBySelect, assignees: { select: publicUserSelect } }
@@ -112,7 +116,8 @@ export async function PATCH(request: Request) {
 
         const { id, startAt, endAt, assignees, ...rest } = parsed.data;
 
-        if (!(await canAccessTask(id, userId))) {
+        const categoryId = await accessibleTaskCategory(id, userId);
+        if (!categoryId) {
             return NextResponse.json({ message: "할 일을 찾을 수 없거나 권한이 없습니다." }, { status: 404 });
         }
         const blockedBy = normalizeBlockedBy(body.blockedBy);
@@ -133,7 +138,7 @@ export async function PATCH(request: Request) {
                     blockedBy: { set: blockedBy.map((id) => ({ id })) }
                 } : {}),
                 ...(assignees !== undefined ? {
-                    assignees: { set: assignees.map((id) => ({ id })) }
+                    assignees: { set: (await onlyCategoryMembers(categoryId, assignees)).map((id) => ({ id })) }
                 } : {}),
             },
             include: { blockedBy: blockedBySelect, assignees: { select: publicUserSelect } }
@@ -156,7 +161,7 @@ export async function DELETE(request: Request) {
         if (!id) {
             return NextResponse.json({ message: "ID가 필요합니다." }, { status: 400 });
         }
-        if (!(await canAccessTask(id, userId))) {
+        if (!(await accessibleTaskCategory(id, userId))) {
             return NextResponse.json({ message: "할 일을 찾을 수 없거나 권한이 없습니다." }, { status: 404 });
         }
         await prisma.projectTask.delete({ where: { id } });

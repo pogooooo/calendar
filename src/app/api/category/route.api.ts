@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { verifyToken } from "@/lib/jwt";
 import { CreateCategorySchema, UpdateCategorySchema } from "@/lib/schema";
+import { userIdByEmail } from "@/lib/userEmail";
 
 const getUserId = async (request: NextRequest): Promise<string | null> => {
     try {
@@ -118,6 +119,14 @@ export const PATCH = async (request: NextRequest) => {
         if (!isCreator && !isParticipant) {
             return NextResponse.json({ message: "수정 권한이 없습니다." }, { status: 403 });
         }
+        // 초대·내보내기는 만든 사람만, 참여자는 자기 자신만 뺄 수 있다(나가기).
+        // 예전엔 참여자가 해도 200 으로 조용히 넘어가서 창은 닫히는데 아무 일도 없었고, 참여자는 나갈 길이 없었다
+        if (addParticipantEmail && !isCreator) {
+            return NextResponse.json({ message: "멤버 초대는 카테고리를 만든 사람만 할 수 있습니다." }, { status: 403 });
+        }
+        if (removeParticipantId && !isCreator && removeParticipantId !== userId) {
+            return NextResponse.json({ message: "다른 멤버를 내보내는 것은 카테고리를 만든 사람만 할 수 있습니다." }, { status: 403 });
+        }
 
         type ParticipantOp = { connect?: { id: string }; disconnect?: { id: string } };
         const updateData: {
@@ -132,14 +141,15 @@ export const PATCH = async (request: NextRequest) => {
         if (description !== undefined) updateData.description = description;
 
         if (addParticipantEmail && isCreator) {
-            const userToInvite = await prisma.user.findUnique({ where: { email: addParticipantEmail } });
-            if (!userToInvite) {
+            // 대소문자를 가리지 않는다 — "Friend@…" 로 초대해도 "friend@…" 로 가입한 사람을 찾는다
+            const inviteeId = await userIdByEmail(addParticipantEmail);
+            if (!inviteeId) {
                 return NextResponse.json({ message: "해당 이메일의 사용자를 찾을 수 없습니다." }, { status: 404 });
             }
-            updateData.participants = { connect: { id: userToInvite.id } };
+            updateData.participants = { connect: { id: inviteeId } };
         }
 
-        if (removeParticipantId && isCreator) {
+        if (removeParticipantId) {
             if (removeParticipantId === existingCategory.creatorId) {
                 return NextResponse.json({ message: "제작자 본인은 삭제할 수 없습니다." }, { status: 400 });
             }

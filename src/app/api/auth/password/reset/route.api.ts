@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { ResetPasswordSchema } from "@/lib/schema";
 import { checkRateLimit } from "@/lib/rateLimiter";
 import { RESET_IDENTIFIER_PREFIX, hashResetToken } from "@/lib/passwordReset";
+import { userIdByEmail } from "@/lib/userEmail";
 
 // 재설정 실행 Rate Limit: 10분 내 10회 초과 시 15분 차단 (토큰 무차별 대입 방지)
 const RESET_LIMIT = { maxAttempts: 10, windowMs: 10 * 60 * 1000, blockMs: 15 * 60 * 1000 };
@@ -56,20 +57,27 @@ export async function POST(request: NextRequest) {
             return NextResponse.json(INVALID, { status: 400 });
         }
 
+        // 식별자는 소문자다 — 대문자가 섞여 저장된 예전 계정도 찾아야 한다 (src/lib/userEmail.ts)
         const email = record.identifier.slice(RESET_IDENTIFIER_PREFIX.length);
-        const user = await prisma.user.findUnique({ where: { email } });
+        const userId = await userIdByEmail(email);
+        const user = userId ? { id: userId } : null;
 
         if (!user) {
             await prisma.verificationToken.deleteMany({ where: { token: record.token } });
             return NextResponse.json(INVALID, { status: 400 });
         }
 
+        const hashed = await bcrypt.hash(password, 12);
+
+        // 토큰은 1회용이다. 지우는 쪽이 이긴다 — 같은 링크로 두 요청이 겹쳐도 한 번만 바뀐다
+        const claimed = await prisma.verificationToken.deleteMany({ where: { token: record.token } });
+        if (claimed.count === 0) return NextResponse.json(INVALID, { status: 400 });
+
         await prisma.user.update({
             where: { id: user.id },
-            data: { password: await bcrypt.hash(password, 12) },
+            data: { password: hashed },
         });
 
-        // 토큰은 1회용이다.
         await prisma.verificationToken.deleteMany({ where: { identifier: record.identifier } });
 
         // 비밀번호가 바뀌었으니 기존 세션을 전부 끊는다 — 계정을 탈취당한 상태에서

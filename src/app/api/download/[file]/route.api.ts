@@ -11,9 +11,11 @@ import { assetResponse, fetchAsset, findInReleases } from "@/lib/githubRelease";
  */
 export async function GET(_req: NextRequest, ctx: { params: Promise<{ file: string }> }) {
     const { file } = await ctx.params;
-    const name = decodeURIComponent(file);
 
     try {
+        // 이미 풀려 온 이름에 % 가 있으면 다시 풀다 URIError 가 난다 — 그때는 받은 그대로 찾는다 (try 밖이라 500 이었다)
+        let name = file;
+        try { name = decodeURIComponent(file); } catch {}
         const hit = await findInReleases((a) => a.name === name);
         if (!hit) return NextResponse.json({ message: "그런 파일이 없습니다." }, { status: 404 });
 

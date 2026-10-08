@@ -81,10 +81,25 @@ export function rememberFrom(body: unknown): boolean {
     return typeof v === "boolean" ? v : true;
 }
 
+/** 접근 토큰(1시간)만 받는다 — API 의 Authorization: Bearer 확인용 */
 export async function verifyToken(token: string) {
     try {
         const { payload } = await jwtVerify(token, getKey(), { algorithms: ["HS256"] });
         // 쓰임이 정해진 열쇠(홈 위젯용)는 일반 API 에 못 쓴다 — 흘러나가도 할 일 넣기밖에 못 하게
+        if (payload.scope !== undefined) return null;
+        // 리프레시 토큰(jti·remember 가 있다)도 같은 키로 서명돼서, Bearer 로 내밀면 30일 동안 API 가 열렸다.
+        // 로그아웃·비밀번호 재설정은 DB 의 줄만 지우므로 그 뒤에도 그대로 통했다
+        if (payload.jti !== undefined || payload.remember !== undefined) return null;
+        return payload;
+    } catch {
+        return null;
+    }
+}
+
+/** 리프레시 토큰의 서명·만료만 본다. DB 에 살아 있는지는 refresh 라우트가 먼저 확인한다 */
+export async function verifyRefreshToken(token: string) {
+    try {
+        const { payload } = await jwtVerify(token, getKey(), { algorithms: ["HS256"] });
         if (payload.scope !== undefined) return null;
         return payload;
     } catch {

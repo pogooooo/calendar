@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
+import prisma, { isUniqueViolation } from "@/lib/prisma";
 import { verifyToken } from "@/lib/jwt";
 import { CreateTodoSchema, ToggleTodoSchema, UpdateTodoSchema } from "@/lib/schema";
 
@@ -81,6 +81,10 @@ export const GET = async (request: NextRequest) => {
             return NextResponse.json([]);
         }
 
+        if ((start && Number.isNaN(Date.parse(start))) || (end && Number.isNaN(Date.parse(end)))) {
+            return NextResponse.json({ message: "날짜 형식이 올바르지 않습니다." }, { status: 400 });
+        }
+
         const dateFilter = (start && end) ? {
             OR: [
                 { startAt: { gte: new Date(start), lte: new Date(end) } },
@@ -158,12 +162,12 @@ export const PATCH = async (request: NextRequest) => {
         const body = await request.json();
 
         // targetDate 있으면 완료 토글, 없으면 내용 수정
-        if (body.targetDate !== undefined) {
+        if (body?.targetDate !== undefined) {
             const toggled = ToggleTodoSchema.safeParse(body);
             if (!toggled.success) {
                 return NextResponse.json({ message: toggled.error.issues[0].message }, { status: 400 });
             }
-            const { id: todoId, targetDate } = toggled.data;
+            const { id: todoId, targetDate, completed } = toggled.data;
 
             // 다른 분기와 달리 여기만 권한 검사가 빠져 있어, 남의 카테고리 일정도 토글됐다
             const target = await prisma.todo.findUnique({
@@ -180,22 +184,32 @@ export const PATCH = async (request: NextRequest) => {
             // 클라이언트가 사용자의 시간대로 계산한 날짜 키만 받는다.
             // 순간(instant)을 받으면 UTC 정규화 과정에서 하루가 밀린다.
             const dayKey = String(targetDate).slice(0, 10);
-            if (!/^\d{4}-\d{2}-\d{2}$/.test(dayKey)) {
+            const dateObj = new Date(`${dayKey}T00:00:00.000Z`);
+            // 2026-13-45 처럼 모양만 맞는 날은 Invalid Date 로 500 이 났다 — 되읽어 같은 날인지 본다
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(dayKey) || Number.isNaN(dateObj.getTime()) || dateObj.toISOString().slice(0, 10) !== dayKey) {
                 return NextResponse.json({ message: "날짜 형식이 올바르지 않습니다." }, { status: 400 });
             }
-            const dateObj = new Date(`${dayKey}T00:00:00.000Z`);
 
             const existing = await prisma.todoCompletion.findFirst({
                 where: { todoId, targetDate: dateObj }
             });
 
-            if (existing) {
-                await prisma.todoCompletion.delete({ where: { id: existing.id } });
+            // 바라는 상태가 오면 그대로 둔다. 뒤집기만 하면 다른 기기에서 이미 끝낸 것을 옛 화면에서 누를 때 도로 풀렸다
+            const done = completed ?? !existing;
+            if (!done) {
+                // deleteMany — 두 요청이 겹쳐도 P2025 로 500 이 나지 않는다
+                await prisma.todoCompletion.deleteMany({ where: { todoId, targetDate: dateObj } });
                 return NextResponse.json({ message: "완료 취소됨" });
-            } else {
-                await prisma.todoCompletion.create({ data: { todoId, targetDate: dateObj } });
-                return NextResponse.json({ message: "완료됨" });
             }
+            if (!existing) {
+                try {
+                    await prisma.todoCompletion.create({ data: { todoId, targetDate: dateObj } });
+                } catch (e) {
+                    // 겹친 요청이 먼저 만들었으면 이미 끝난 것이다
+                    if (!isUniqueViolation(e)) throw e;
+                }
+            }
+            return NextResponse.json({ message: "완료됨" });
         }
 
         const parsedUpdate = UpdateTodoSchema.safeParse(body);

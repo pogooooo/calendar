@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { ForgotPasswordSchema } from "@/lib/schema";
 import { checkRateLimit } from "@/lib/rateLimiter";
 import { buildResetMail, sendMail } from "@/lib/mailer";
+import { userIdByEmail } from "@/lib/userEmail";
 import {
     RESET_TOKEN_TTL_MS,
     buildResetUrl,
@@ -49,11 +50,13 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ message: firstError }, { status: 400 });
         }
 
-        const email = validation.data.email.toLowerCase();
-        const user = await prisma.user.findUnique({ where: { email } });
+        // 대소문자를 가리지 않고 찾는다 — 예전엔 소문자로만 찾아서 대문자가 섞여 가입한 계정에는 메일이 안 갔다
+        const userId = await userIdByEmail(validation.data.email);
+        const user = userId ? await prisma.user.findUnique({ where: { id: userId }, select: { email: true } }) : null;
 
         // 계정이 없어도 성공 응답을 준다 (계정 열거 방지).
-        if (!user) return NextResponse.json(GENERIC_OK);
+        if (!user?.email) return NextResponse.json(GENERIC_OK);
+        const email = user.email;
 
         const identifier = resetIdentifier(email);
 

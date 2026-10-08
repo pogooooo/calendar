@@ -1,7 +1,8 @@
 import { NextResponse, NextRequest } from "next/server";
-import prisma from "@/lib/prisma";
+import prisma, { isUniqueViolation } from "@/lib/prisma";
 import { generateAccessToken, generateRefreshToken, refreshCookie, refreshExpiresAt, rememberFrom } from "@/lib/jwt";
 import {cookies} from "next/headers";
+import { normalizeEmail, userIdByEmail } from "@/lib/userEmail";
 
 const GOOGLE_CLIENT_ID =
     process.env.GOOGLE_CLIENT_ID ?? process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
@@ -83,15 +84,17 @@ export async function POST(request: NextRequest) {
 
         const { email, name, googleId, image } = verified;
 
-        let user = await prisma.user.findUnique({
-            where: { email },
+        // 대소문자만 다르게 가입한 계정도 같은 사람이다 — 예전엔 못 찾아서 계정을 하나 더 만들었다 (src/lib/userEmail.ts)
+        const existingId = await userIdByEmail(email);
+        let user = existingId ? await prisma.user.findUnique({
+            where: { id: existingId },
             include: { settings: true }
-        });
+        }) : null;
 
         if (!user) {
             user = await prisma.user.create({
                 data: {
-                    email,
+                    email: normalizeEmail(email),
                     name,
                     image,
                     settings: { create: {} },
@@ -121,21 +124,28 @@ export async function POST(request: NextRequest) {
         });
 
         if (!existingAccount) {
-            await prisma.account.create({
-                data: {
-                    userId: user.id,
-                    type: "oauth",
-                    provider: "google",
-                    providerAccountId: googleId,
-                },
-            });
+            try {
+                await prisma.account.create({
+                    data: {
+                        userId: user.id,
+                        type: "oauth",
+                        provider: "google",
+                        providerAccountId: googleId,
+                    },
+                });
+            } catch (e) {
+                // 두 요청이 겹쳐 이미 이어졌으면 그대로 간다
+                if (!isUniqueViolation(e)) throw e;
+            }
         }
 
         const newAccessToken = await generateAccessToken({userId: user.id, email: user.email});
         const remember = rememberFrom(body);
         const refreshToken = await generateRefreshToken({ userId: user.id }, remember);
 
-        await prisma.refreshToken.deleteMany({ where: { userId: user.id } });
+        // 만료된 것만 지운다 (이메일 로그인과 같게). 전부 지우면 구글로 한 번 들어올 때마다
+        // 다른 기기(데스크톱·폰 앱)와 홈 위젯이 모두 로그아웃됐다
+        await prisma.refreshToken.deleteMany({ where: { userId: user.id, expires: { lt: new Date() } } });
         await prisma.refreshToken.create({
             data: {
                 userId: user.id,

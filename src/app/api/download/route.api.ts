@@ -31,7 +31,8 @@ export async function GET(req: NextRequest) {
         return NextResponse.redirect(back, 303);
     };
 
-    if (!platform || !(platform in MATCHERS)) {
+    // in 은 "constructor"·"toString" 같은 프로토타입 이름도 참이라 그 값이 500 으로 떨어졌다
+    if (!platform || !Object.prototype.hasOwnProperty.call(MATCHERS, platform)) {
         return fail("platform", "지원하지 않는 플랫폼입니다.", 400);
     }
 
