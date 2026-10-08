@@ -33,6 +33,15 @@ interface SettingState {
 /** 이 창에서 테마를 고른 횟수 — 고르기 전에 나간 읽기가 늦게 돌아와 옛 테마로 되돌리지 않게 */
 let themeEdits = 0;
 
+/** 지금 갈래를 바꾸면 하던 일이 날아가는가 — 창(대화상자)이 열려 있거나 글을 치는 중 */
+const busy = () => {
+    if (typeof document === "undefined") return false;
+    if (document.querySelector('[role="dialog"], [role="alertdialog"], [aria-modal="true"]')) return true;
+    const a = document.activeElement as HTMLElement | null;
+    return !!a && (a.tagName === "INPUT" || a.tagName === "TEXTAREA" || a.isContentEditable);
+};
+let deferTimer: ReturnType<typeof setInterval> | undefined;
+
 const useSettingStore = create<SettingState>()(
     persist(
         (set, get) => ({
@@ -70,7 +79,19 @@ const useSettingStore = create<SettingState>()(
                         if (res.ok) {
                             const data = await res.json();
                             // 읽는 사이에 테마를 골랐으면 그 값이 맞다 (서버에는 PATCH 가 따로 간다)
-                            if (edits === themeEdits && typeof data.theme === 'string' && data.theme) set({ theme: data.theme, isLoading: false });
+                            const next = edits === themeEdits && typeof data.theme === 'string' && data.theme ? data.theme as string : null;
+                            clearInterval(deferTimer);
+                            if (next && next !== get().theme && busy()) {
+                                // 다른 기기에서 바꾼 테마 — 갈래가 바뀌면 화면이 통째로 다시 그려져, 열린 창에 치던 글·고른 날이 사라졌다.
+                                // 손을 놓을 때(창을 닫고 칸을 떠날 때)까지 미룬다. 그사이 이 창에서 고르면 그쪽이 이긴다
+                                deferTimer = setInterval(() => {
+                                    if (edits !== themeEdits) { clearInterval(deferTimer); return; }
+                                    if (busy()) return;
+                                    clearInterval(deferTimer);
+                                    set({ theme: next });
+                                }, 1500);
+                                set({ isLoading: false });
+                            } else if (next) set({ theme: next, isLoading: false });
                             else set({ isLoading: false });
                         } else {
                             set({ isLoading: false });
