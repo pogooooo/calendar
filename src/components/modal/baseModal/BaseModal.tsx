@@ -104,13 +104,13 @@ export default function BaseModal({ isOpen, onClose, children, maxWidth = "400px
 
     const keyboardBox = useKeyboardBox(isOpen && isMobile);
 
+    // 초점은 열릴 때 한 번만 옮긴다. 예전엔 이름표(ariaLabel)도 의존성이라, 이름표가 치는 제목을 따라가는
+    // 프로젝트·작업 창에서는 한 글자마다 이 효과가 다시 돌아 초점이 창으로 튀었다 — 한글 조합이 "ㅎ하할" 로 끊겼다.
     React.useEffect(() => {
         if (!isOpen) return;
         const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
         const container = containerRef.current;
         if (!container) return;
-        const heading = container.querySelector('h1, h2, h3, .title-input');
-        container.setAttribute('aria-label', ariaLabel || heading?.textContent?.trim() || heading?.getAttribute('placeholder') || 'CRONOS');
         // Focusing the sheet itself on phones avoids opening the keyboard before the user chooses a field.
         container.focus({ preventScroll: true });
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -123,6 +123,15 @@ export default function BaseModal({ isOpen, onClose, children, maxWidth = "400px
             window.removeEventListener('keydown', handleKeyDown);
             if (previousFocus?.isConnected) previousFocus.focus({ preventScroll: true });
         };
+    }, [isOpen]);
+
+    // 이름표만 따로 맞춘다 — 초점은 건드리지 않는다
+    React.useEffect(() => {
+        if (!isOpen) return;
+        const container = containerRef.current;
+        if (!container) return;
+        const heading = container.querySelector('h1, h2, h3, .title-input');
+        container.setAttribute('aria-label', ariaLabel || heading?.textContent?.trim() || heading?.getAttribute('placeholder') || 'CRONOS');
     }, [isOpen, ariaLabel]);
 
     const handleTab = (e: React.KeyboardEvent) => {

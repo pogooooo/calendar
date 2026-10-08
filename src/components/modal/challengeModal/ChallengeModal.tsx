@@ -48,24 +48,33 @@ export default function ChallengeModal(props: ChallengeModalProps) {
     const [categoryId, setCategoryId] = React.useState<string>("");
     const [isSubmitting, setIsSubmitting] = React.useState(false);
 
+    // 칸은 열릴 때 한 번만 채운다 — 예전엔 categories·initialData 의 참조가 바뀔 때마다(다시 읽기만 해도) 치던 제목이 지워졌다
+    const wasOpen = React.useRef(false);
     React.useEffect(() => {
-        if (isOpen) {
-            if (initialData) {
-                setTitle(initialData.title);
-                setDescription(initialData.description || "");
-                setInterval(initialData.interval);
-                setTargetCount(initialData.targetCount ? String(initialData.targetCount) : "");
-                setCategoryId(initialData.categoryId);
-            } else {
-                setTitle("");
-                setDescription("");
-                setInterval(1);
-                setTargetCount("");
-                setCategoryId(categories.length > 0 ? categories[0].id : "");
-            }
-            setIsSubmitting(false);
+        if (!isOpen) { wasOpen.current = false; return; }
+        if (wasOpen.current) return;
+        wasOpen.current = true;
+        if (initialData) {
+            setTitle(initialData.title);
+            setDescription(initialData.description || "");
+            setInterval(initialData.interval);
+            setTargetCount(initialData.targetCount ? String(initialData.targetCount) : "");
+            setCategoryId(initialData.categoryId);
+        } else {
+            setTitle("");
+            setDescription("");
+            setInterval(1);
+            setTargetCount("");
+            setCategoryId(categories.length > 0 ? categories[0].id : "");
         }
-    }, [isOpen, initialData, categories]);
+        setIsSubmitting(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isOpen]);
+
+    // 카테고리가 열린 뒤에 도착하면 빈 자리만 채운다
+    React.useEffect(() => {
+        if (isOpen && !categoryId && categories.length > 0) setCategoryId(categories[0].id);
+    }, [isOpen, categoryId, categories]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

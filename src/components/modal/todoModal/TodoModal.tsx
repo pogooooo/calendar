@@ -122,8 +122,18 @@ export default function TodoModal(props: TodoModalProps) {
 
     const selectedRepeatEndLabel = repeatEndOptions.find(o => o.value === repeatEndType)?.label;
 
+    /**
+     * 칸을 채우는 것은 창이 열릴 때(그리고 열린 채 다른 일정으로 바뀔 때)뿐이다.
+     * 예전엔 categories·selectedDate·todo 의 "참조"가 바뀔 때마다 다시 채웠다 — 토큰 갱신·위젯 동기화·안드로이드 위젯 폴링으로
+     * 카테고리를 다시 읽기만 해도 치던 제목이 지워졌다(데스크톱·앱에서 "제목 입력이 안 된다").
+     */
+    const initKey = isOpen ? `${todo?.id ?? "new"}|${selectedDate ? new Date(selectedDate).getTime() : ""}` : null;
+    const initDone = React.useRef<string | null>(null);
     React.useEffect(() => {
-        if (isOpen) {
+        if (!initKey) { initDone.current = null; return; }
+        if (initDone.current === initKey) return;
+        initDone.current = initKey;
+        {
             if (todo) {
                 setTitle(todo.title);
                 setCategoryId(todo.categoryId);
@@ -166,7 +176,14 @@ export default function TodoModal(props: TodoModalProps) {
                 setEndAt(getLocalDatetimeString(defaultEndDate));
             }
         }
-    }, [isOpen, todo, categories, selectedDate, initialTitle]);
+    // 열릴 때의 값만 읽는다 — 나머지가 바뀌어도 사용자가 고치던 칸을 덮지 않는다
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [initKey]);
+
+    // 카테고리가 창이 열린 뒤에 도착하면 빈 자리만 채운다 (다른 칸은 그대로)
+    React.useEffect(() => {
+        if (isOpen && !categoryId && categories.length > 0) setCategoryId(categories[0].id);
+    }, [isOpen, categoryId, categories]);
 
     React.useEffect(() => {
         const closeDropdowns = () => {
