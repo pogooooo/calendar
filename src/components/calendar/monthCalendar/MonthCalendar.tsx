@@ -8,6 +8,7 @@ import { TodoType } from "@/store/useTodoStore";
 import { useExpandedTodos, ExpandedTodoType } from "@/hooks/useExpandedTodos";
 import useTodoStore from "@/store/useTodoStore";
 import { useT } from "@/i18n/useT";
+import { useCurrentDayKey } from "@/hooks/useCurrentDay";
 import { localDateKey, activeTimeZone, parseExcludedDates } from "@/lib/dateKey";
 import { addDaysToKey } from "@/lib/timezone";
 import { calendarDayDelta, shiftZonedDays, resizeZonedRange } from "@/lib/taskInteractions";
@@ -18,6 +19,8 @@ import { projectCalendarItems } from "@/lib/projectCalendar";
 import { useProjectItemActions } from "@/hooks/useProjectItemActions";
 import useChallengeStore, { ChallengeType } from "@/store/useChallengeStore";
 import { fx, rectOf } from "@/lib/fx";
+import { completionKey, completionTargetFor, slotIndexOn } from "@/lib/challengeDays";
+import { todayKey as labelKey } from "@/lib/localTime";
 
 export interface CalendarTodoType extends ExpandedTodoType {
     isProject?: boolean;
@@ -95,7 +98,16 @@ const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
         const [currentDate, setCurrentDate] = React.useState(
             () => (followSelectedDate && selectedDate ? new Date(selectedDate) : new Date()));
         const [direction, setDirection] = React.useState(0);
-        const [selectedCategoryIds, setSelectedCategoryIds] = React.useState<string[]>([]);
+        /**
+         * 끈 카테고리를 기억한다 (켠 것이 아니라). 예전엔 카테고리가 처음 왔을 때 전부 켜 둔 목록을 들고 있어서,
+         * 그 뒤에 생긴 카테고리(본 창에서 만든 것, 새로 공유받은 것)는 켜지지 않았다 — 늘 떠 있는 월간·주간 위젯에서
+         * 새 카테고리의 일정이 다시 열 때까지 보이지 않았고, 다 끈 뒤 목록을 다시 받으면 도로 다 켜졌다
+         */
+        const [hiddenCategoryIds, setHiddenCategoryIds] = React.useState<string[]>([]);
+        const selectedCategoryIds = React.useMemo(
+            () => categories.filter(c => !hiddenCategoryIds.includes(c.id)).map(c => c.id),
+            [categories, hiddenCategoryIds]
+        );
 
         const [showProjects, setShowProjects] = React.useState(true);
         const [showChallenges, setShowChallenges] = React.useState(true);
@@ -120,14 +132,6 @@ const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
         // 프로젝트·프로젝트 할 일도 여기서 바로 고치고 끝내고 옮긴다 (예전엔 "프로젝트 화면에서" 안내만)
         const projectActions = useProjectItemActions();
 
-        React.useEffect(() => {
-            if (categories.length > 0 && selectedCategoryIds.length === 0) {
-                setSelectedCategoryIds(categories.map(c => c.id));
-            }
-        // 카테고리가 처음 도착했을 때 한 번만 전부 고른다. 고른 개수를 의존성에 넣으면
-        // 사용자가 다 해제한 순간 도로 전부 골라 버린다.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        }, [categories]);
 
         React.useEffect(() => {
             fetchProjects(authFetch);
@@ -172,32 +176,16 @@ const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
             challenges.forEach(challenge => {
                 if (!selectedCategoryIds.includes(challenge.categoryId)) return;
 
-                const start = new Date(challenge.startAt);
-                start.setHours(0, 0, 0, 0);
-
-                const safeTargetCount = challenge.targetCount ?? null;
-
                 flatDates.forEach(date => {
                     const current = new Date(date);
                     current.setHours(0, 0, 0, 0);
 
-                    const diffTime = current.getTime() - start.getTime();
-                    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-
-                    if (diffDays >= 0 && diffDays % challenge.interval === 0) {
-                        const pastDatesCount = Math.floor(diffDays / challenge.interval) + 1;
-
-                        if (safeTargetCount !== null && pastDatesCount > safeTargetCount) {
-                            return;
-                        }
-
-                        const currentStr = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}-${String(current.getDate()).padStart(2, '0')}`;
-
-                        const isCompleted = (challenge.completions || []).some(comp => {
-                            const cDate = new Date(comp.targetDate);
-                            const compStr = `${cDate.getFullYear()}-${String(cDate.getMonth() + 1).padStart(2, '0')}-${String(cDate.getDate()).padStart(2, '0')}`;
-                            return compStr === currentStr;
-                        });
+                    // 칸·완료는 날짜 키로 센다 (src/lib/challengeDays.ts, 챌린지 화면·홈과 같은 셈).
+                    // 예전엔 기기 0시끼리 빼서 서머타임이 시작된 뒤로 칸이 하루씩 밀렸고, 완료(그날 UTC 0시)를
+                    // 기기 시각으로 읽어 서쪽(UTC-) 시간대에선 하루 앞 날에 찍혔다
+                    const currentStr = labelKey(current);
+                    if (slotIndexOn(challenge, currentStr) !== null) {
+                        const isCompleted = (challenge.completions || []).some(comp => completionKey(comp) === currentStr);
 
                         items.push({
                             id: `challenge-${challenge.id}-${current.getTime()}`,
@@ -226,7 +214,9 @@ const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
             weeks.length > 0 ? weeks[5][6] : undefined
         ) as CalendarTodoType[];
 
-        const todayStr = React.useMemo(() => new Date().toDateString(), []);
+        // 오늘 표시는 자정을 넘기면 따라간다 — 예전엔 처음 그린 날에 묶여, 켜 둔 데스크톱 앱·위젯이 다음 날에도 어제를 오늘로 칠했다
+        const todayKey = useCurrentDayKey();
+        const todayStr = React.useMemo(() => new Date(`${todayKey}T00:00:00`).toDateString(), [todayKey]);
         const dateRangeText = React.useMemo(() => {
             return t.calendar.monthTitle(currentDate.getFullYear(), currentDate.getMonth() + 1);
         }, [currentDate, t.calendar]);
@@ -254,7 +244,9 @@ const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
             if (today.getFullYear() !== currentDate.getFullYear() || today.getMonth() !== currentDate.getMonth()) flipFx(back ? -1 : 1);
             setDirection(back ? -1 : 1);
             setCurrentDate(new Date(today.getFullYear(), today.getMonth(), 1));
-            onDateChange?.(today);
+            // 이미 오늘을 골라 둔 채면 다시 알리지 않는다 — 폰은 "고른 날을 또 누름 = 일간으로" 라서,
+            // 다른 달을 보다 "오늘" 을 누르면 이번 달로 오는 대신 일간 화면으로 넘어갔다
+            if (selectedDate?.toDateString() !== today.toDateString()) onDateChange?.(today);
         };
 
         const isOnToday = React.useMemo(() => {
@@ -273,7 +265,7 @@ const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
         }, [followSelectedDate, selectedDate]);
 
         const toggleCategory = (categoryId: string) => {
-            setSelectedCategoryIds(prev =>
+            setHiddenCategoryIds(prev =>
                 prev.includes(categoryId)
                     ? prev.filter(id => id !== categoryId)
                     : [...prev, categoryId]
@@ -361,11 +353,8 @@ const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
             const challengeId = challengeTodo.originalChallenge?.id;
             if (!challengeId) return;
 
-            const cellDate = new Date(challengeTodo.startAt as string);
-            const offset = cellDate.getTimezoneOffset() * 60000;
-            const localISOTime = (new Date(cellDate.getTime() - offset)).toISOString().split('T')[0] + 'T00:00:00.000Z';
-
-            await toggleChallengeCompletion(authFetch, challengeId, localISOTime);
+            // 칸의 날짜 키를 그날 정오(UTC)로 보낸다 — 서버·스토어가 그 UTC 날로 적는다
+            await toggleChallengeCompletion(authFetch, challengeId, completionTargetFor(labelKey(new Date(challengeTodo.startAt as string))));
         };
 
         const handleCreateTodo = (date: Date) => {

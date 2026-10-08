@@ -37,7 +37,7 @@ const DayCalendarView = React.forwardRef<HTMLDivElement, CelestialDayProps>(
          dayChallenges, toggleChallenge,
          tasks, newTaskText, setNewTaskText, handleAddTask,
          toggleDailyTask, deleteDailyTask,
-         localMemo, setLocalMemo, handleMemoBlur, memoError,
+         localMemo, setLocalMemo, handleMemoBlur, memoError, memoReady,
          categories, selectedCategoryIds, toggleCategory,
          showProjects, onToggleProjects,
          dayTodos, selectedDate, isModalOpen, modalTodo, setIsModalOpen,
@@ -341,6 +341,10 @@ const DayCalendarView = React.forwardRef<HTMLDivElement, CelestialDayProps>(
                                             value={newTaskText}
                                             onChange={(e) => setNewTaskText(e.target.value)}
                                             placeholder={t.calendar.addTask}
+                                            // 한글 조합을 끝내는 Enter 로 폼이 넘어가면(사파리·맥) 마지막 글자가 칸에 남거나 두 번 들어간다 — 홈의 빠른 추가와 같게
+                                            onKeyDown={(e) => {
+                                                if (e.key === "Enter" && (e.nativeEvent.isComposing || e.keyCode === 229)) e.preventDefault();
+                                            }}
                                         />
                                         <button type="submit"><Plus size={18} /></button>
                                     </S.TaskForm>
@@ -372,6 +376,7 @@ const DayCalendarView = React.forwardRef<HTMLDivElement, CelestialDayProps>(
                                 <>
                                     <textarea
                                         value={localMemo}
+                                        readOnly={!memoReady}
                                         onChange={(e) => setLocalMemo(e.target.value)}
                                         onBlur={handleMemoBlur}
                                         placeholder={t.calendar.memoPlaceholder}

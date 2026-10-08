@@ -19,6 +19,8 @@ export interface TodoModalProps {
     selectedDate?: Date;
     /** 새로 만들 때 제목을 미리 채운다 (홈의 빠른 추가에서 "자세히" 로 넘어올 때) */
     initialTitle?: string;
+    /** 저장이 끝났을 때 (onClose 앞에). 그냥 닫은 것과 가려야 하는 곳(홈의 빠른 추가 칸)이 쓴다 */
+    onSaved?: () => void;
 }
 
 export interface TodoModalThemeProps extends TodoModalProps {
@@ -194,9 +196,20 @@ export default function TodoModal(props: TodoModalProps) {
         return () => window.removeEventListener('click', closeDropdowns);
     }, []);
 
+    // 저장 단추를 두 번 누르면(느린 망에서 흔하다) 같은 일정이 두 개 생겼다 — 저장하는 동안은 다시 받지 않는다
+    const submitting = React.useRef(false);
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (submitting.current) return;
+        submitting.current = true;
+        try {
+            await submit();
+        } finally {
+            submitting.current = false;
+        }
+    };
 
+    const submit = async () => {
         if (!categoryId) {
             await dialog.notify({ title: t.todo.selectCategoryAlert });
             return;
@@ -204,7 +217,10 @@ export default function TodoModal(props: TodoModalProps) {
 
         const start = new Date(startAt);
         const end = new Date(endAt);
-        if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+        // 끝이 시작보다 앞서면 (끝 고르개의 "지금"·시계로 쉽게 생긴다) 달력·시간표 어디에도 서지 않아 고칠 길도 없어졌다.
+        // 하루 종일은 날짜만 본다 — 시각은 화면에 없으니
+        const inverted = isAllDay ? endAt.slice(0, 10) < startAt.slice(0, 10) : end.getTime() < start.getTime();
+        if (isNaN(start.getTime()) || isNaN(end.getTime()) || inverted) {
             await dialog.notify({ title: t.form.timeCheckTitle, message: t.form.timeCheckMsg });
             return;
         }
@@ -226,6 +242,7 @@ export default function TodoModal(props: TodoModalProps) {
                 await dialog.notify({ title: t.alert.saveFailed, message: error });
                 return;
             }
+            props.onSaved?.();
             onClose();
             return;
         }
@@ -241,7 +258,9 @@ export default function TodoModal(props: TodoModalProps) {
             isAllDay,
             location,
             repeat: safeRepeat,
-            repeatEndDate: safeRepeat > 0 && repeatEndType === 'until' && repeatEndDate ? new Date(repeatEndDate).toISOString() : null,
+            // "YYYY-MM-DD" 를 new Date 로 읽으면 UTC 0시가 된다 — 서쪽(UTC-) 시간대에서는 그게 전날이라 반복이 하루 일찍 끝나고,
+            // 다시 열면 전날로 보여 저장할 때마다 하루씩 당겨졌다. 이 기기의 그날 0시로 둔다(읽는 쪽도 이 기기의 날로 읽는다)
+            repeatEndDate: safeRepeat > 0 && repeatEndType === 'until' && repeatEndDate ? new Date(`${repeatEndDate.slice(0, 10)}T00:00`).toISOString() : null,
             repeatCount: safeRepeat > 0 && repeatEndType === 'count' && repeatCount ? Number(repeatCount) : null,
         };
 
@@ -254,6 +273,7 @@ export default function TodoModal(props: TodoModalProps) {
             return;
         }
 
+        props.onSaved?.();
         onClose();
     };
 
@@ -276,11 +296,15 @@ export default function TodoModal(props: TodoModalProps) {
 
         setter(composed);
 
-        // 시작을 옮기면 종료는 자동으로 1시간 뒤(종일 일정은 같은 날)로 따라간다.
+        // 시작을 옮기면 종료도 같은 길이만큼 따라간다 (새 일정은 1시간짜리라 1시간 뒤).
+        // 예전엔 늘 1시간 뒤(종일은 같은 날)로 다시 맞춰서, 며칠짜리 일정의 시작 시각만 고쳐도 끝 날짜가 시작 날로 당겨졌다
         if (setter === setStartAt && composed) {
             const start = new Date(composed);
             if (!isNaN(start.getTime())) {
-                const end = isAllDay ? start : new Date(start.getTime() + 60 * 60 * 1000);
+                const length = new Date(endAt).getTime() - new Date(startAt).getTime();
+                const end = Number.isFinite(length) && length >= 0
+                    ? new Date(start.getTime() + length)
+                    : isAllDay ? start : new Date(start.getTime() + 60 * 60 * 1000);
                 setEndAt(getLocalDatetimeString(end));
             }
         }

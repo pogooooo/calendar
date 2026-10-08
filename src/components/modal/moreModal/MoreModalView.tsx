@@ -53,9 +53,12 @@ export default function MoreModalView({
                     <S.TodoList>
                         {dayTodos.map((todo) => {
                             const category = categories.find(c => c.id === todo.categoryId);
+                            // 달력이 펼친 회차는 제 완료 여부(isDone — 그 회차 시작일의 기록, 프로젝트는 상태)를 들고 온다. 바와 같은 값을 쓴다.
+                            // 칸 날짜로 다시 세면 며칠짜리 일정은 둘째 날부터, 프로젝트 항목은 늘 안 끝난 것으로 보였다
+                            const expanded = (todo as { isDone?: boolean }).isDone;
                             // date 는 캘린더 셀의 로컬 자정이라 toISOString 하면 하루가 밀린다
                             const dateStr = localDateKey(date);
-                            const isDone = (todo.completions ?? []).some(c =>
+                            const isDone = typeof expanded === "boolean" ? expanded : (todo.completions ?? []).some(c =>
                                 utcDayKey(c.targetDate) === dateStr
                             );
 

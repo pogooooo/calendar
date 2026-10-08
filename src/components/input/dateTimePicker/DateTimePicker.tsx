@@ -143,7 +143,9 @@ export default function DateTimePicker({ value, onChange, mode = "datetime", ran
             return;
         }
 
-        const picked = emit(d, hour, minute, mode);
+        // 고르는 쪽 끝의 시각을 지킨다. 예전엔 이 고르개의 시각을 붙여서, 시작 고르개에서 끝 날짜를 고르면 끝 시각이 시작 시각으로 바뀌었다
+        const own = parseValue(edge === "start" ? range.start : range.end, mode);
+        const picked = emit(d, own.getHours(), own.getMinutes(), mode);
         const otherRaw = edge === "start" ? range.end : range.start;
         const other = parseValue(otherRaw, mode);
         const inverted = edge === "start"
@@ -178,7 +180,7 @@ export default function DateTimePicker({ value, onChange, mode = "datetime", ran
             return;
         }
 
-        const picked = emit(next, hour, minute, mode);
+        const picked = emit(next, base.getHours(), base.getMinutes(), mode);
         if (edge === "start") {
             const other = parseValue(range.end, mode);
             range.onRangeChange(picked, toKey(next) > toKey(other) ? picked : range.end);
@@ -206,7 +208,9 @@ export default function DateTimePicker({ value, onChange, mode = "datetime", ran
 
     const onGridKey = (e: React.KeyboardEvent) => {
         const map: Record<string, number> = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 };
-        if (map[e.key] !== undefined) {
+        // 시·분 칸에 적는 중의 ←·→ 는 글자 사이를 오가는 것이다 — 예전엔 여기까지 올라와 날짜가 하루씩 옮겨졌다
+        const inField = (e.target as HTMLElement).tagName === "INPUT";
+        if (map[e.key] !== undefined && !inField) {
             e.preventDefault();
             shiftActive(map[e.key]);
         } else if (e.key === "Enter") {

@@ -17,6 +17,8 @@ import { useT } from "@/i18n/useT";
 import { useDialog } from "@/components/dialog/DialogProvider";
 import { localDateKey } from "@/lib/dateKey";
 import { isBetween } from "@/utils/DateUtils";
+import { completionKey, completionTargetFor, slotIndexOn } from "@/lib/challengeDays";
+import { todayKey as labelKey } from "@/lib/localTime";
 
 export interface CalendarTodoType extends ExpandedTodoType {
     isProject?: boolean;
@@ -57,6 +59,8 @@ export interface DayThemeProps {
     setLocalMemo: (text: string) => void;
     handleMemoBlur: () => void;
     memoError: string | null;
+    /** 이 날의 메모를 받아 왔는가 — 받기 전에는 칸을 읽기 전용으로 둔다(치던 글이 도착한 메모에 덮이거나 저장되지 않는다) */
+    memoReady: boolean;
 
     categories: CategoryType[];
     selectedCategoryIds: string[];
@@ -86,10 +90,19 @@ export interface DayThemeProps {
 const DayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
     ({ asChild = false, selectedDate = new Date(), todos = [], categories = [], ...props }, ref) => {
 
-        const [selectedCategoryIds, setSelectedCategoryIds] = React.useState<string[]>([]);
+        /**
+         * 끈 카테고리를 기억한다 (켠 것이 아니라). 예전엔 카테고리가 처음 왔을 때 전부 켜 둔 목록을 들고 있어서,
+         * 그 뒤에 생긴 카테고리(본 창에서 만든 것, 새로 공유받은 것)는 켜지지 않았다 — 늘 떠 있는 월간·주간 위젯에서
+         * 새 카테고리의 일정이 다시 열 때까지 보이지 않았고, 다 끈 뒤 목록을 다시 받으면 도로 다 켜졌다
+         */
+        const [hiddenCategoryIds, setHiddenCategoryIds] = React.useState<string[]>([]);
+        const selectedCategoryIds = React.useMemo(
+            () => categories.filter(c => !hiddenCategoryIds.includes(c.id)).map(c => c.id),
+            [categories, hiddenCategoryIds]
+        );
         const [showProjects, setShowProjects] = React.useState(true);
 
-        const { tasks, memo, fetchDailyData, addDailyTask, toggleDailyTask, deleteDailyTask, updateDailyMemo } = useDailyStore();
+        const { tasks, memo, memoDate, fetchDailyData, addDailyTask, toggleDailyTask, deleteDailyTask, updateDailyMemo } = useDailyStore();
         const { projects, fetchProjects } = useProjectStore();
         const { challenges, fetchChallenges, toggleChallengeCompletion } = useChallengeStore();
         const { deleteTodo, deleteTodoOccurrence, toggleTodo } = useTodoStore();
@@ -101,14 +114,13 @@ const DayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
         const [localMemo, setLocalMemo] = React.useState("");
         const [memoError, setMemoError] = React.useState<string | null>(null);
 
-        React.useEffect(() => {
-            if (categories.length > 0 && selectedCategoryIds.length === 0) {
-                setSelectedCategoryIds(categories.map(c => c.id));
-            }
-        // 카테고리가 처음 도착했을 때 한 번만 전부 고른다. 고른 개수를 의존성에 넣으면
-        // 사용자가 다 해제한 순간 도로 전부 골라 버린다.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        }, [categories]);
+        /**
+         * 일간 스토어는 한 날짜만 든다. 토큰이 갱신될 때마다(한 시간쯤) StoreInitializer 가 '오늘'을 다시 읽어서,
+         * 다른 날을 보던 일간 머리 밑에 오늘 메모·임시 작업이 앉았고 — 거기서 메모를 고치면 오늘 메모가 이 날에 덮어써졌다.
+         * 스토어가 이 날 것을 들고 있을 때만 보여 주고 저장하며, 다른 날 것이 앉으면 이 날 것을 다시 부른다.
+         */
+        const dayKey = localDateKey(selectedDate);
+        const fresh = memoDate === dayKey;
 
         // 날짜가 바뀔 때는 그날 자료만. 프로젝트·챌린지는 날짜와 상관없으니 처음 한 번
         React.useEffect(() => {
@@ -116,14 +128,67 @@ const DayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
             // eslint-disable-next-line react-hooks/exhaustive-deps
         }, [selectedDate]);
         React.useEffect(() => {
+            if (memoDate && memoDate !== dayKey) fetchDailyData(authFetch, selectedDate);
+            // eslint-disable-next-line react-hooks/exhaustive-deps
+        }, [memoDate, dayKey]);
+        React.useEffect(() => {
             fetchProjects(authFetch);
             fetchChallenges(authFetch);
             // eslint-disable-next-line react-hooks/exhaustive-deps
         }, []);
 
+        /** 이 칸이 마지막으로 받은 서버 값과 날 */
+        const memoBase = React.useRef<{ key: string; memo: string } | null>(null);
+        /** 사용자가 쳐서 아직 저장하지 않은 글이 있는가 — 칸에 친 때만 켠다 (값을 견주면 다시 그리기 전의 낡은 값과 견주게 된다) */
+        const memoDirty = React.useRef(false);
+        const localMemoRef = React.useRef(localMemo);
+        localMemoRef.current = localMemo;
+        const memoErrorRef = React.useRef(memoError);
+        memoErrorRef.current = memoError;
+        const editMemo = React.useCallback((text: string) => {
+            memoDirty.current = true;
+            setLocalMemo(text);
+        }, []);
+
+        // 날을 넘길 때: 폰에서 쓸어 넘기면 칸이 초점을 잃지 않아(blur 가 없다) 적던 메모가 저장되지 않은 채 사라졌다 — 그 날에 마저 저장한다.
+        // (아래 맞추기보다 먼저 돈다 — 새 날 것이 이미 와 있으면 그쪽이 비운 칸을 다시 채운다)
+        const shownDay = React.useRef({ key: dayKey, date: selectedDate });
         React.useEffect(() => {
-            setLocalMemo(memo || "");
-        }, [memo]);
+            const prev = shownDay.current;
+            shownDay.current = { key: dayKey, date: selectedDate };
+            if (prev.key === dayKey) return;
+            const base = memoBase.current;
+            if (base && base.key === prev.key && (memoDirty.current || memoErrorRef.current)) {
+                void updateDailyMemo(authFetch, prev.date, localMemoRef.current);
+            }
+            memoDirty.current = false;
+            // 새 날 것이 오기 전까지 지난 날 메모를 이 날 머리 밑에 두지 않는다
+            setLocalMemo("");
+            setMemoError(null);
+            // eslint-disable-next-line react-hooks/exhaustive-deps
+        }, [dayKey]);
+        // 일간이 내려갈 때도 (폰의 월간·주간 전환, 위젯에서 연 길) 적던 메모를 그 날에 저장한다
+        const authFetchRef = React.useRef(authFetch);
+        authFetchRef.current = authFetch;
+        React.useEffect(() => () => {
+            const base = memoBase.current;
+            const day = shownDay.current;
+            if (base && base.key === day.key && (memoDirty.current || memoErrorRef.current)) {
+                void useDailyStore.getState().updateDailyMemo(authFetchRef.current, day.date, localMemoRef.current);
+            }
+        }, []);
+
+        React.useEffect(() => {
+            if (!fresh) return;
+            const base = memoBase.current;
+            const next = memo || "";
+            // 다른 날에서 넘어왔거나 손대지 않은 칸만 서버 값으로 맞춘다 — 다시 읽기가 치던 글을 덮지 않게
+            if (!base || base.key !== dayKey || !memoDirty.current) {
+                memoDirty.current = false;
+                setLocalMemo(next);
+            }
+            memoBase.current = { key: dayKey, memo: next };
+        }, [fresh, dayKey, memo]);
 
         const filteredTodos = React.useMemo(() => {
             const baseTodos = todos.filter(todo => selectedCategoryIds.includes(todo.categoryId));
@@ -146,25 +211,14 @@ const DayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
         const dayChallenges = React.useMemo<DayChallengeItem[]>(() => {
             const current = new Date(selectedDate);
             current.setHours(0, 0, 0, 0);
-            const key = (d: Date) =>
-                `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-            const currentStr = key(current);
+            // 칸·완료는 날짜 키로 센다 (src/lib/challengeDays.ts) — 월간 달력과 같은 까닭
+            const currentStr = labelKey(current);
 
             return challenges.reduce<DayChallengeItem[]>((acc, challenge) => {
                 if (!selectedCategoryIds.includes(challenge.categoryId)) return acc;
+                if (slotIndexOn(challenge, currentStr) === null) return acc;
 
-                const start = new Date(challenge.startAt);
-                start.setHours(0, 0, 0, 0);
-
-                const diffDays = Math.floor((current.getTime() - start.getTime()) / 86400000);
-                if (diffDays < 0 || diffDays % challenge.interval !== 0) return acc;
-
-                const occurrence = Math.floor(diffDays / challenge.interval) + 1;
-                if (challenge.targetCount != null && occurrence > challenge.targetCount) return acc;
-
-                const isDone = (challenge.completions ?? []).some(
-                    comp => key(new Date(comp.targetDate)) === currentStr
-                );
+                const isDone = (challenge.completions ?? []).some(comp => completionKey(comp) === currentStr);
 
                 acc.push({
                     id: `challenge-${challenge.id}-${current.getTime()}`,
@@ -177,16 +231,14 @@ const DayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
         }, [challenges, selectedCategoryIds, selectedDate]);
 
         const handleToggleChallenge = React.useCallback((item: DayChallengeItem) => {
-            const target = new Date(selectedDate);
-            target.setHours(0, 0, 0, 0);
-            const offset = target.getTimezoneOffset() * 60000;
-            const targetDate = new Date(target.getTime() - offset).toISOString().split('T')[0] + 'T00:00:00.000Z';
-            toggleChallengeCompletion(authFetch, item.challengeId, targetDate);
+            // 그날의 날짜 키를 정오(UTC)로 보낸다 — 서버·스토어가 그 UTC 날로 적는다
+            toggleChallengeCompletion(authFetch, item.challengeId, completionTargetFor(labelKey(selectedDate)));
         }, [authFetch, selectedDate, toggleChallengeCompletion]);
 
         const handleAddTask = async (e: React.FormEvent) => {
             e.preventDefault();
-            if (!newTaskText.trim()) return;
+            // 이 날 것을 받기 전에 넣으면 다른 날 목록 끝에 붙었다가, 이 날 것이 오면서 사라진다 — 받을 때까지 기다린다(글은 칸에 남는다)
+            if (!newTaskText.trim() || !fresh) return;
             const text = newTaskText.trim();
             setNewTaskText("");
             const error = await addDailyTask(authFetch, selectedDate, text);
@@ -194,10 +246,15 @@ const DayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
         };
 
         const handleMemoBlur = async () => {
-            if (localMemo !== memo) {
-                const error = await updateDailyMemo(authFetch, selectedDate, localMemo);
-                setMemoError(error);
-            }
+            const base = memoBase.current;
+            // 이 날 것을 받기 전에는 저장하지 않는다 — 다른 날 메모를 이 날에 덮어쓰게 된다
+            if (!fresh || !base || base.key !== dayKey) return;
+            // 저장이 실패했으면 같은 글이라도 다시 보낸다. 실패해도 스토어는 이 글을 들고 있어서
+            // 예전엔 '바뀐 것 없음' 으로 보고 넘어갔다 — "다시 시도" 단추가 아무 일도 하지 않았다
+            if (localMemo === base.memo && !memoError) { memoDirty.current = false; return; }
+            memoDirty.current = false;
+            const error = await updateDailyMemo(authFetch, selectedDate, localMemo);
+            setMemoError(error);
         };
 
         const getSlotTodos = React.useCallback((hour: number, slotIdx: number) => {
@@ -209,9 +266,12 @@ const DayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
 
             return expandedTodos.filter(todo => {
                 if (todo.isAllDay || !todo.startAt || !todo.endAt) return false;
-                const start = new Date(todo.startAt as string | number | Date);
-                const end = new Date(todo.endAt as string | number | Date);
-                return start <= slotEnd && end >= slotStart;
+                const start = new Date(todo.startAt as string | number | Date).getTime();
+                const end = new Date(todo.endAt as string | number | Date).getTime();
+                // 끝 시각은 칸에 들지 않는다 — 예전엔 19:00~20:00 일정이 20:00 칸까지 칠했다(모든 일정이 10분 길게).
+                // 길이가 0 인 일정은 시작 칸 하나를 칠한다
+                const last = end > start ? end - 1 : end;
+                return start <= slotEnd.getTime() && last >= slotStart.getTime();
             });
         }, [expandedTodos, selectedDate]);
 
@@ -313,14 +373,14 @@ const DayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
         const handleDeleteTask = (task: { id: string; title: string; isDone: boolean }) => deleteDailyTask(authFetch, task.id);
 
         // 서버가 title 로 주는 판과 text 로 주는 판이 섞여 있어 둘 다 받는다.
-        const mappedTasks = tasks.map((t: { id: string; title?: string; text?: string; isDone: boolean }) => ({
+        const mappedTasks = (fresh ? tasks : []).map((t: { id: string; title?: string; text?: string; isDone: boolean }) => ({
             id: t.id,
             title: t.title || t.text || "",
             isDone: t.isDone
         }));
 
         const toggleCategory = (categoryId: string) => {
-            setSelectedCategoryIds(prev =>
+            setHiddenCategoryIds(prev =>
                 prev.includes(categoryId)
                     ? prev.filter(id => id !== categoryId)
                     : [...prev, categoryId]
@@ -341,9 +401,10 @@ const DayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
             toggleDailyTask: handleToggleTask,
             deleteDailyTask: handleDeleteTask,
             localMemo,
-            setLocalMemo,
+            setLocalMemo: editMemo,
             handleMemoBlur,
             memoError,
+            memoReady: fresh,
             categories,
             selectedCategoryIds,
             toggleCategory,

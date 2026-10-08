@@ -10,6 +10,7 @@ import { getWeekDates } from "@/utils/DateUtils";
 import { useTodoLevels } from "@/hooks/useTodoLevels";
 import useTodoStore from "@/store/useTodoStore";
 import { useT } from "@/i18n/useT";
+import { useCurrentDayKey } from "@/hooks/useCurrentDay";
 import { localDateKey } from "@/lib/dateKey";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useDialog } from "@/components/dialog/DialogProvider";
@@ -18,6 +19,8 @@ import useProjectStore from "@/store/useProjectStore";
 import { projectCalendarItems } from "@/lib/projectCalendar";
 import { useProjectItemActions } from "@/hooks/useProjectItemActions";
 import useChallengeStore, { ChallengeType } from "@/store/useChallengeStore";
+import { completionKey, slotIndexOn } from "@/lib/challengeDays";
+import { todayKey as labelKey } from "@/lib/localTime";
 
 export interface CalendarTodoType extends ExpandedTodoType {
     isProject?: boolean;
@@ -87,7 +90,16 @@ const WeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
     ({ asChild = false, todos = [], categories = [], selectedDate, onDateChange, ...props }, ref) => {
         const [currentDate, setCurrentDate] = React.useState(new Date());
         const [direction, setDirection] = React.useState(0);
-        const [selectedCategoryIds, setSelectedCategoryIds] = React.useState<string[]>([]);
+        /**
+         * 끈 카테고리를 기억한다 (켠 것이 아니라). 예전엔 카테고리가 처음 왔을 때 전부 켜 둔 목록을 들고 있어서,
+         * 그 뒤에 생긴 카테고리(본 창에서 만든 것, 새로 공유받은 것)는 켜지지 않았다 — 늘 떠 있는 월간·주간 위젯에서
+         * 새 카테고리의 일정이 다시 열 때까지 보이지 않았고, 다 끈 뒤 목록을 다시 받으면 도로 다 켜졌다
+         */
+        const [hiddenCategoryIds, setHiddenCategoryIds] = React.useState<string[]>([]);
+        const selectedCategoryIds = React.useMemo(
+            () => categories.filter(c => !hiddenCategoryIds.includes(c.id)).map(c => c.id),
+            [categories, hiddenCategoryIds]
+        );
         const [showProjects, setShowProjects] = React.useState(true);
         const [showChallenges, setShowChallenges] = React.useState(true);
 
@@ -107,16 +119,10 @@ const WeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
         const t = useT();
 
         const weekDates = React.useMemo(() => getWeekDates(currentDate), [currentDate]);
-        const todayStr = React.useMemo(() => new Date().toDateString(), []);
+        // 오늘 표시는 자정을 넘기면 따라간다 — 예전엔 처음 그린 날에 묶여, 켜 둔 데스크톱 앱·위젯이 다음 날에도 어제를 오늘로 칠했다
+        const todayKey = useCurrentDayKey();
+        const todayStr = React.useMemo(() => new Date(`${todayKey}T00:00:00`).toDateString(), [todayKey]);
 
-        React.useEffect(() => {
-            if (categories.length > 0 && selectedCategoryIds.length === 0) {
-                setSelectedCategoryIds(categories.map(c => c.id));
-            }
-        // 카테고리가 처음 도착했을 때 한 번만 전부 고른다. 고른 개수를 의존성에 넣으면
-        // 사용자가 다 해제한 순간 도로 전부 골라 버린다.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        }, [categories]);
 
         React.useEffect(() => {
             fetchProjects(authFetch);
@@ -141,32 +147,14 @@ const WeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
             challenges.forEach(challenge => {
                 if (!selectedCategoryIds.includes(challenge.categoryId)) return;
 
-                const start = new Date(challenge.startAt);
-                start.setHours(0, 0, 0, 0);
-
-                const safeTargetCount = challenge.targetCount ?? null;
-
                 weekDates.forEach(date => {
                     const current = new Date(date);
                     current.setHours(0, 0, 0, 0);
 
-                    const diffTime = current.getTime() - start.getTime();
-                    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-
-                    if (diffDays >= 0 && diffDays % challenge.interval === 0) {
-                        const pastDatesCount = Math.floor(diffDays / challenge.interval) + 1;
-
-                        if (safeTargetCount !== null && pastDatesCount > safeTargetCount) {
-                            return;
-                        }
-
-                        const currentStr = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}-${String(current.getDate()).padStart(2, '0')}`;
-
-                        const isCompleted = (challenge.completions || []).some(comp => {
-                            const cDate = new Date(comp.targetDate);
-                            const compStr = `${cDate.getFullYear()}-${String(cDate.getMonth() + 1).padStart(2, '0')}-${String(cDate.getDate()).padStart(2, '0')}`;
-                            return compStr === currentStr;
-                        });
+                    // 칸·완료는 날짜 키로 센다 (src/lib/challengeDays.ts) — 월간 달력과 같은 까닭
+                    const currentStr = labelKey(current);
+                    if (slotIndexOn(challenge, currentStr) !== null) {
+                        const isCompleted = (challenge.completions || []).some(comp => completionKey(comp) === currentStr);
 
                         items.push({
                             id: `challenge-${challenge.id}-${current.getTime()}`,
@@ -215,7 +203,7 @@ const WeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
         };
 
         const toggleCategory = (categoryId: string) => {
-            setSelectedCategoryIds(prev =>
+            setHiddenCategoryIds(prev =>
                 prev.includes(categoryId)
                     ? prev.filter(id => id !== categoryId)
                     : [...prev, categoryId]

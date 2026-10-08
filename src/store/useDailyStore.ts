@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { coalesce, READ_TTL } from "@/lib/fetchOnce";
+import { bustFetchCache, coalesce, READ_TTL } from "@/lib/fetchOnce";
 import { reportSaveFailure } from "@/lib/saveError";
 import { fx } from "@/lib/fx";
 import useAuthStore from '@/store/useAuthStore';
@@ -17,12 +17,24 @@ interface DailyState {
     error: string | null;
     memoError: string | null;
 
-    fetchDailyData: (authFetch: AuthFetch, date: Date) => Promise<void>;
+    /** date 를 주면 그 날을 화면에 올린다(일간·위젯 패널). 안 주면 배경 다시 읽기 — 화면이 보고 있는 날, 없으면 오늘 */
+    fetchDailyData: (authFetch: AuthFetch, date?: Date) => Promise<void>;
     addDailyTask: (authFetch: AuthFetch, date: Date, text: string) => Promise<string | null>;
     toggleDailyTask: (authFetch: AuthFetch, taskId: string) => Promise<void>;
     deleteDailyTask: (authFetch: AuthFetch, taskId: string) => Promise<void>;
     updateDailyMemo: (authFetch: AuthFetch, date: Date, content: string) => Promise<string | null>;
 }
+
+/**
+ * 화면(일간·위젯 패널)이 마지막으로 고른 날과 그때의 경로. 그 화면에 있는 동안은 그 날의 응답만 스토어에 올린다.
+ * 예전에는 늦게 온 응답이 이겼다 — 일간이 10/5 를 여는 사이 켤 때 읽은 오늘 것이 늦게 오거나,
+ * 토큰 갱신·위젯의 메모 저장으로 본 창이 "오늘" 을 다시 읽으면, 10/5 머리 밑에 오늘 메모·할 일이 떴고
+ * 거기서 메모를 고치면 오늘 메모가 10/5 에 저장됐다.
+ * 경로를 같이 적는 까닭: 일간을 떠나면 배경 다시 읽기는 다시 오늘을 읽어야 한다 (폰 홈 위젯의 오늘 메모).
+ */
+let viewed: { date: Date; path: string } | null = null;
+const here = () => (typeof window === "undefined" ? "" : window.location.pathname);
+const dayInView = (): Date | null => (viewed && viewed.path === here() ? viewed.date : null);
 
 const useDailyStore = create<DailyState>((set, get) => ({
     tasks: [],
@@ -33,14 +45,20 @@ const useDailyStore = create<DailyState>((set, get) => ({
     memoError: null,
 
     fetchDailyData: async (authFetch, date) => {
+        if (date) viewed = { date, path: here() };
+        const target = date ?? dayInView() ?? new Date();
+        const dateStr = localDateKey(target);
+        // 방금 읽은 날이라도 지금 들고 있는 날이 아니면 다시 읽는다 (다른 날을 들렀다 1.5초 안에 돌아오면 그 날 것이 남아 있었다)
+        if (get().memoDate !== dateStr) bustFetchCache(`daily:${dateStr}`);
         // 같은 읽기가 겹치면 하나만 (src/lib/fetchOnce.ts)
-        await coalesce(`daily:${localDateKey(date)}`, READ_TTL, async () => {
+        await coalesce(`daily:${dateStr}`, READ_TTL, async () => {
             const userId = useAuthStore.getState().user?.id;
             if (!userId) return;
-    
+            // 그사이 화면이 다른 날을 골랐으면 이 응답은 버린다
+            const stale = () => { const v = dayInView(); return !!v && localDateKey(v) !== dateStr; };
+
             set({ isLoading: true, error: null });
             try {
-                const dateStr = localDateKey(date);
                 // 켤 때는 요청 여덟 개가 한꺼번에 나가 이 둘 중 하나가 간혹 떨어진다 (폰 앱에서 실제로 봤다).
                 // 한 번은 다시 묻는다 — 안 그러면 오늘 메모가 홈 위젯에 안 실린 채로 남는다.
                 const load = () => Promise.all([
@@ -57,8 +75,10 @@ const useDailyStore = create<DailyState>((set, get) => ({
     
                 const tasks = await taskRes.json();
                 const memoData = await memoRes.json();
+                if (stale()) return;
                 set({ tasks, memo: memoData.content, memoDate: dateStr, isLoading: false });
             } catch (err: unknown) {
+                if (stale()) return;
                 const message = err instanceof Error ? err.message : "알 수 없는 오류가 발생했습니다.";
                 set({ error: message, isLoading: false, tasks: [], memo: "" });
                 console.error("[DAILY_FETCH_ERROR]", err);

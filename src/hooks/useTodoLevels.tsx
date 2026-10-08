@@ -3,8 +3,10 @@ import type { TodoType } from '@/types';
 
 export const useTodoLevels = (todos: TodoType[], weekDates: Date[]) => {
     return useMemo(() => {
-        const weekStart = weekDates[0].getTime();
-        const weekEnd = weekDates[6].getTime() + 86399999;
+        // 주의 첫날 0시 ~ 끝날 23:59:59. 주간 위젯의 날짜들은 지금 시각을 달고 와서(getWeekDates(new Date())),
+        // 예전처럼 그대로 쓰면 일요일 이 시각 전에 끝나는 일정이 층을 못 받아 칸에서 사라졌다
+        const weekStart = new Date(weekDates[0]).setHours(0, 0, 0, 0);
+        const weekEnd = new Date(weekDates[6]).setHours(23, 59, 59, 999);
 
         const currentWeekTodos = todos.filter(todo => {
             if (!todo.startAt || !todo.endAt) return false;
