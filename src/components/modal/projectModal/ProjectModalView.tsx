@@ -21,7 +21,7 @@ const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: Ma
 
 export default function ProjectModalView({
                                                   isOpen, mode, data, categories, modalCategoryParticipants,
-                                                  onClose, onSave, setData, toggleParticipant, pending = false, error
+                                                  onClose, onSave, onDelete, setData, toggleParticipant, pending = false, error
                                               }: ProjectModalProps) {
     const S = usePickTheme(STYLES);
     const t = useT();
@@ -146,6 +146,12 @@ export default function ProjectModalView({
 
                 {error && <S.ErrorMessage role="alert">{error}</S.ErrorMessage>}
                 <S.Footer>
+                    {mode === 'edit' && onDelete && (
+                        <SecondaryButton type="button" onClick={onDelete} disabled={pending} $width="70px" $height="36px" $variant="danger">
+                            {t.project.deleteProject}
+                        </SecondaryButton>
+                    )}
+                    <S.FooterSpacer />
                     <SecondaryButton type="button" onClick={onClose} disabled={pending} $width="70px" $height="36px" $variant="default">
                         {f.cancel}
                     </SecondaryButton>

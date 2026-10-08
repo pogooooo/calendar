@@ -34,7 +34,7 @@ export default function ProjectPage() {
     const authFetch = useAuthFetch();
     const dialog = useDialog();
     const t = useT();
-    const { projects, fetchProjects, addProject, updateProject, updateProjectTaskStatus, updateProjectTask } = useProjectStore();
+    const { projects, fetchProjects, addProject, updateProject, deleteProject, updateProjectTaskStatus, updateProjectTask } = useProjectStore();
     const { categories, fetchCategories } = useCategoryStore();
 
     const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
@@ -127,6 +127,16 @@ export default function ProjectPage() {
         } finally { savingRef.current = false; setSaving(false); }
     };
 
+    const handleDeleteProject = async () => {
+        const { id, title } = projectModal.data;
+        if (!id || savingRef.current) return;
+        const ok = await dialog.confirmDanger({ title: t.project.deleteProjectConfirm, message: t.project.deleteProjectMsg(title || "") });
+        if (!ok) return;
+        setProjectModal(prev => ({ ...prev, isOpen: false }));
+        // 바로 목록에서 빼고, 실패하면 되돌리며 알린다 (저장소가 한다)
+        await deleteProject(authFetch, id);
+    };
+
     const handleMoveTaskStatus = async (taskId: string, newStatus: string) => {
         if (!selectedProjectId) return;
         await updateProjectTaskStatus(authFetch, selectedProjectId, taskId, newStatus);
@@ -201,6 +211,7 @@ export default function ProjectPage() {
                 modalCategoryParticipants={modalCategoryParticipants}
                 onClose={() => { if (!savingRef.current) setProjectModal(prev => ({ ...prev, isOpen: false })); }}
                 onSave={handleSaveProject}
+                onDelete={projectModal.mode === 'edit' ? handleDeleteProject : undefined}
                 setData={(d) => setProjectModal(prev => ({ ...prev, data: { ...prev.data, ...d } }))}
                 toggleParticipant={(user) => {
                     const isSelected = projectModal.data.assignees?.some(a => a.id === user.id);

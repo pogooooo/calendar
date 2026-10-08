@@ -555,6 +555,9 @@ export interface Translations {
         deleteTask: string;
         deleteTaskConfirm: string;
         deleteTaskMsg: (title: string) => string;
+        deleteProject: string;
+        deleteProjectConfirm: string;
+        deleteProjectMsg: (title: string) => string;
         inProject: string;
         noProject: string;
         projectTaskHint: string;
