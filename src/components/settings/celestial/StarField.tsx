@@ -1,11 +1,8 @@
 "use client";
-/**
- * 설정 화면의 Celestial 바탕 — 이제 비워 둔다.
- * 예전에는 화면 위에 반짝이는 점 마흔둘을 얹었는데, 바탕 하늘(CelestialAtmosphere 의 three.js 별·별자리)이 생긴 뒤로는
- * 별이 두 겹이 되어 글 위에서까지 반짝였다. 하늘 한 겹이면 된다(WebGL 이 없을 때도 하늘의 예전 그림이 별을 맡는다).
- */
-import type { ReactElement } from "react";
-
-export default function StarField(): ReactElement | null {
-    return null;
+import * as S from './StarField.styles';
+/** Bounded SVG twinkles avoid continuous canvas drawing and resize allocations. */
+export default function StarField() {
+    return <S.Canvas viewBox="0 0 1000 700" preserveAspectRatio="none" aria-hidden="true" data-ambient="celestial-stars">
+        {Array.from({length:42},(_,i)=><circle key={i} cx={(i*137+29)%1000} cy={(i*83+11)%700} r={i%4===0?1.3:.7} style={{animationDelay:'-'+i%9+'s',animationDuration:5+i%5+'s'}} />)}
+    </S.Canvas>;
 }

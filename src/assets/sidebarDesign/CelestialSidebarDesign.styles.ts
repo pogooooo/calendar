@@ -12,6 +12,11 @@ export const orbit = keyframes`
     to { offset-distance: 100%; }
 `;
 
+export const moonBreathe = keyframes`
+    0%, 100% { filter: drop-shadow(0 0 1.5px var(--sigil-glow-soft)); }
+    50% { filter: drop-shadow(0 0 5px var(--sigil-glow-strong)); }
+`;
+
 export const breathe = keyframes`
     0%, 100% { opacity: 1; }
     50% { opacity: 0.55; }
@@ -34,37 +39,36 @@ export const beadFlow = keyframes`
     100% { offset-distance: 100%; opacity: 0; }
 `;
 
-/** 세로선 그림과 혼천의 칸을 겹쳐 두는 틀 — 그림 크기 그대로라 사이드바 짜임은 예전과 같다 */
-export const Frame = styled.div`
-    position: relative;
-    width: 160px;
-    height: 954px;
-
-    & > svg { display: block; }
-`;
-
-/** 혼천의 자리 — 칸 자체는 누름을 받지 않고(옆선의 폭 조절 그대로), 캔버스만 끌기를 받는다 */
-export const Emblem = styled.span`
-    position: absolute;
-    display: block;
-    pointer-events: none;
-`;
-
 export const AnimatedSvg = styled.svg<{ $hovered?: boolean }>`
     /* 그림 전체가 이 색을 쓴다(SVG 는 currentColor). 테마가 바뀌면 그림도 따라 바뀐다. */
     color: ${(props) => props.theme.colors.primary};
+
+    /* keyframes 는 props 를 못 읽는다. 빛무리 색은 여기서 내려보낸다. */
+    --sigil-glow-soft: ${(props) => withAlpha(props.theme.colors.primary, 0.3)};
+    --sigil-glow-strong: ${(props) => withAlpha(props.theme.colors.primary, 0.85)};
     filter: none;
     transition: filter 0.35s ease;
 
     ${(props) => props.$hovered && css`
         filter: drop-shadow(0 0 3px ${withAlpha(props.theme.colors.primary, 0.75)});
+
+        .moon {
+            animation: ${moonBreathe} 8s ease-in-out infinite;
+        }
     `}
+
+    .satellite {
+        offset-path: path("M85.5856 226.264C100.47 219.702 114.627 215.354 125.478 213.621C130.907 212.753 135.479 212.546 138.889 213.028C142.331 213.515 144.426 214.677 145.179 216.385C145.932 218.092 145.376 220.423 143.414 223.292C141.47 226.135 138.232 229.37 133.93 232.793C125.332 239.634 112.572 247.153 97.6875 253.715C82.8035 260.276 68.6456 264.625 57.7954 266.358C52.3665 267.225 47.7943 267.432 44.384 266.95C40.9424 266.464 38.847 265.302 38.0942 263.594C37.3414 261.886 37.897 259.556 39.8592 256.687C41.8036 253.844 45.0408 250.608 49.343 247.185C57.9413 240.344 70.7015 232.826 85.5856 226.264Z");
+        animation: ${orbit} 14s linear infinite;
+    }
 
     .spark {
         animation: ${breathe} 4.5s ease-in-out infinite;
     }
 
     .s-b { animation-duration: 5.4s; animation-delay: 1.2s; }
+    .s-c { animation-duration: 6.2s; animation-delay: 2.4s; }
+    .s-d { animation-duration: 5.8s; animation-delay: 0.6s; }
 
     .bigstar {
         transform-box: fill-box;
@@ -78,9 +82,12 @@ export const AnimatedSvg = styled.svg<{ $hovered?: boolean }>`
         animation: ${breathe} 5s ease-in-out infinite;
     }
 
+    .d2 { animation-duration: 6.1s; animation-delay: 0.9s; }
     .d3 { animation-duration: 4.4s; animation-delay: 1.7s; }
+    .d4 { animation-duration: 5.7s; animation-delay: 2.5s; }
     .d5 { animation-duration: 4.8s; animation-delay: 0.4s; }
     .d6 { animation-duration: 6.4s; animation-delay: 3.1s; }
+    .d7 { animation-duration: 5.2s; animation-delay: 1.4s; }
 
     .mini {
         animation: ${miniTwinkle} 3.4s ease-in-out infinite;
@@ -96,7 +103,7 @@ export const AnimatedSvg = styled.svg<{ $hovered?: boolean }>`
     .m9 { animation-duration: 4.4s; animation-delay: 0.2s; }
 
     .bead {
-        offset-path: path("M102.384 395V954");
+        offset-path: path("M102.384 359V954");
         animation: ${beadFlow} 16s linear infinite;
     }
 
@@ -104,19 +111,5 @@ export const AnimatedSvg = styled.svg<{ $hovered?: boolean }>`
         offset-path: path("M102.384 0V106");
         animation: ${beadFlow} 9s linear infinite;
         animation-delay: 4s;
-    }
-`;
-
-/** WebGL 이 없을 때의 예전 그림 — 초승달과 기운 궤도, 궤도를 도는 작은 별 */
-export const OldEmblem = styled.svg`
-    display: block;
-    width: 100%;
-    height: 100%;
-    overflow: visible;
-    color: ${(props) => props.theme.colors.primary};
-
-    .satellite {
-        offset-path: path("M85.5856 226.264C100.47 219.702 114.627 215.354 125.478 213.621C130.907 212.753 135.479 212.546 138.889 213.028C142.331 213.515 144.426 214.677 145.179 216.385C145.932 218.092 145.376 220.423 143.414 223.292C141.47 226.135 138.232 229.37 133.93 232.793C125.332 239.634 112.572 247.153 97.6875 253.715C82.8035 260.276 68.6456 264.625 57.7954 266.358C52.3665 267.225 47.7943 267.432 44.384 266.95C40.9424 266.464 38.847 265.302 38.0942 263.594C37.3414 261.886 37.897 259.556 39.8592 256.687C41.8036 253.844 45.0408 250.608 49.343 247.185C57.9413 240.344 70.7015 232.826 85.5856 226.264Z");
-        animation: ${orbit} 14s linear infinite;
     }
 `;

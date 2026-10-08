@@ -1,22 +1,20 @@
 /**
- * 오브제 이름표 — '갈래/이름' (예: 'celestial/armillary').
+ * 오브제 이름표 — '갈래/이름' (예: 'maple/leaf').
  *
- * 갈래마다 제 목록(celestial/index.ts·maple/index.ts·ocean/index.ts)을 갖고, 처음 쓸 때 받는다(동적 import) —
+ * 갈래마다 제 목록(maple/index.ts·ocean/index.ts)을 갖고, 처음 쓸 때 받는다(동적 import) —
  * three 와 오브제 코드가 첫 화면을 무겁게 하지 않는다. 새 오브제는 그 갈래의 index.ts 에 한 줄 더하면
  * 이름(ObjetName)이 타입으로 바로 잡힌다.
+ * Celestial 은 오브제를 두지 않는다 — 3D 천문 기구는 이 테마의 중심(천체 타로·금 선화)과 따로 놀았다.
  */
 import type { ObjetDef, ObjetRegistry } from "./types";
-import type { CelestialObjetName } from "./celestial";
 import type { MapleObjetName } from "./maple";
 import type { OceanObjetName } from "./ocean";
 
 export type ObjetName =
-    | `celestial/${CelestialObjetName}`
     | `maple/${MapleObjetName}`
     | `ocean/${OceanObjetName}`;
 
 const FAMILIES: Record<string, () => Promise<ObjetRegistry>> = {
-    celestial: () => import("./celestial").then((m) => m.default),
     maple: () => import("./maple").then((m) => m.default),
     ocean: () => import("./ocean").then((m) => m.default),
 };

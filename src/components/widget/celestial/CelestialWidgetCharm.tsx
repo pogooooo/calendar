@@ -1,19 +1,11 @@
 "use client";
 /**
- * Celestial 위젯의 장식 — 손잡이 줄 가운데의 작은 금 혼천의(3D 오브제, 멈춘 한 장).
- * 위젯 창은 투명 창이라 끝없이 다시 그리면 깜빡인다 — 오브제 무대가 /widget 에서는 한 장만 그리고 맥락도 곧 돌려준다.
- * 잠그면 손잡이 줄이 사라지고 그 자리를 내용이 쓰므로 함께 사라진다. 예전 모서리 나침 문양(글 뒤의 옅은 무늬)은 두지 않는다.
+ * Celestial 위젯의 장식 — 모서리의 옅은 나침 문양(움직이지 않는다).
+ * 손잡이 줄의 3D 혼천의는 선화 테마와 따로 놀아 걷고 예전 문양으로 돌렸다.
  */
-import Objet from "@/components/objet/Objet";
-import * as S from "./CelestialWidgetCharm.styles";
+import * as S from "./WidgetCharm.styles";
 
-const MARK = { detail: "mark", still: true };
-
-export default function CelestialWidgetCharm({ locked = false }: { locked?: boolean }) {
-    if (locked) return null;
-    return (
-        <S.Jewel aria-hidden="true">
-            <Objet name="celestial/armillary" size="100%" options={MARK} interaction="none" />
-        </S.Jewel>
-    );
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export default function CelestialWidgetCharm(_props: { locked?: boolean }) {
+    return <S.Charm aria-hidden="true" data-ambient="widget-charm"><svg viewBox="0 0 60 60" fill="none"><S.Shape /></svg></S.Charm>;
 }

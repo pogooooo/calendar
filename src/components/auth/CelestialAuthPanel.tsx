@@ -1,24 +1,9 @@
 "use client";
-/**
- * 로그인·가입 옆의 그림 — 판에 새긴 별자리 고리(SVG) 한가운데에 금 혼천의(3D 오브제)가 떠 있고,
- * 그 아래 고리 사이 띠에 CRONOS 와 올해의 로마 숫자. 로그인하는 동안(busy)은 고리도 천구도 빨리 돈다.
- * 혼천의는 끌어서 돌릴 수 있다. WebGL 이 없으면 예전처럼 가운데 고리와 행성이 그 자리를 채운다.
- */
+
 import React, { useRef, useState, useCallback, useEffect } from "react";
-import Objet from "@/components/objet/Objet";
 import * as S from "./CelestialAuthPanel.styles";
 
 export { BrandPanel, BrandContent, ServiceName } from "./CelestialAuthPanel.styles";
-
-/** 올해를 로마 숫자로 — 연감 표지의 연도처럼 */
-function roman(n: number) {
-    const map: [number, string][] = [[1000, "M"], [900, "CM"], [500, "D"], [400, "CD"], [100, "C"], [90, "XC"], [50, "L"], [40, "XL"], [10, "X"], [9, "IX"], [5, "V"], [4, "IV"], [1, "I"]];
-    let out = "";
-    for (const [v, s] of map) while (n >= v) { out += s; n -= v; }
-    return out;
-}
-
-const HERO_OPTIONS = { detail: "hero", tilt: 0.41 };
 
 /* ── Component ───────────────────────────────────────────────────────────── */
 function CelestialAuthPanel({ busy = false }: { busy?: boolean }) {
@@ -29,10 +14,6 @@ function CelestialAuthPanel({ busy = false }: { busy?: boolean }) {
     const svgRef = useRef<SVGSVGElement>(null);
     const rafRef = useRef(0);
     const [mouse, setMouse] = useState({ x: 0, y: 0 });
-    // WebGL 이 없으면 예전 가운데(안쪽 고리·방사선·행성)를 다시 그린다
-    const [flat, setFlat] = useState(false);
-    const [year, setYear] = useState("");
-    useEffect(() => { setYear(roman(new Date().getFullYear())); }, []);
 
     useEffect(() => {
         const svg = svgRef.current;
@@ -59,7 +40,7 @@ function CelestialAuthPanel({ busy = false }: { busy?: boolean }) {
         rafRef.current = requestAnimationFrame(step);
 
         return () => cancelAnimationFrame(rafRef.current);
-    }, [busy, flat]);
+    }, [busy]);
 
     const handleMouseMove = useCallback((e: React.MouseEvent) => {
         const rect = panelRef.current?.getBoundingClientRect();
@@ -70,16 +51,12 @@ function CelestialAuthPanel({ busy = false }: { busy?: boolean }) {
     }, []);
 
     const handleMouseLeave = useCallback(() => setMouse({ x: 0, y: 0 }), []);
-    const onFail = useCallback(() => setFlat(true), []);
 
     /* 시차 레이어 헬퍼 */
     const parallax = (factor: number) => ({
         transform: `translate(${mouse.x * factor}px, ${mouse.y * factor}px)`,
         transition: "transform 0.45s cubic-bezier(0.25,0.46,0.45,0.94)",
     });
-
-    // 혼천의가 있으면 방사선은 r2 바깥에서 시작한다 (가운데는 혼천의 자리)
-    const rayFrom = flat ? R.r1 : R.r2 + 6;
 
     return (
         <S.BrandPanel ref={panelRef} onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
@@ -107,8 +84,8 @@ function CelestialAuthPanel({ busy = false }: { busy?: boolean }) {
                             const isMain = i % 4 === 0;
                             return (
                                 <line key={i}
-                                    x1={CX + Math.cos(a) * rayFrom}
-                                    y1={CY + Math.sin(a) * rayFrom}
+                                    x1={CX + Math.cos(a) * R.r1}
+                                    y1={CY + Math.sin(a) * R.r1}
                                     x2={CX + Math.cos(a) * R.r4}
                                     y2={CY + Math.sin(a) * R.r4}
                                     stroke="currentColor"
@@ -118,14 +95,14 @@ function CelestialAuthPanel({ busy = false }: { busy?: boolean }) {
                             );
                         })}
                     </S.RotCW>
-                    {flat && <S.BreathCircle cx={CX} cy={CY} r={R.r1}
-                        stroke="currentColor" strokeWidth="0.8" strokeOpacity="1" $delay="0s" />}
+                    <S.BreathCircle cx={CX} cy={CY} r={R.r1}
+                        stroke="currentColor" strokeWidth="0.8" strokeOpacity="1" $delay="0s" />
                 </g>
 
                 {/* ━━━ Layer 2 — r2·r3 동심원 + 교차 마커 (중간 시차) ━━━━━ */}
                 <g style={parallax(7)}>
                     <circle cx={CX} cy={CY} r={R.r2}
-                        stroke="currentColor" strokeWidth="1.1" strokeOpacity={flat ? "0.65" : "0.4"} />
+                        stroke="currentColor" strokeWidth="1.1" strokeOpacity="0.65" />
                     <circle cx={CX} cy={CY} r={R.r3}
                         stroke="currentColor" strokeWidth="1.3" strokeOpacity="0.70" />
 
@@ -142,7 +119,7 @@ function CelestialAuthPanel({ busy = false }: { busy?: boolean }) {
                         <ellipse cx={CX} cy={CY}
                             rx={R.r3} ry={R.r2 - 20}
                             transform={`rotate(28 ${CX} ${CY})`}
-                            stroke="currentColor" strokeWidth="0.9" strokeOpacity={flat ? "0.52" : "0.3"}
+                            stroke="currentColor" strokeWidth="0.9" strokeOpacity="0.52"
                             strokeDasharray="6 5"
                         />
                     </S.RotCW>
@@ -155,11 +132,11 @@ function CelestialAuthPanel({ busy = false }: { busy?: boolean }) {
                         />
                     </S.RotCCW>
 
-                    {/* r2 행성 — 혼천의가 없을 때만 */}
-                    {flat && <S.RotCW $dur="22s">
+                    {/* r2 행성 */}
+                    <S.RotCW $dur="22s">
                         <circle cx={CX + R.r2} cy={CY} r="4.5" fill="currentColor" fillOpacity="0.82" />
                         <circle cx={CX + R.r2} cy={CY} r="7.5" stroke="currentColor" strokeWidth="0.7" strokeOpacity="0.42" fill="none" />
-                    </S.RotCW>}
+                    </S.RotCW>
                     {/* r3 행성 */}
                     <S.RotCW $dur="42s" style={{ animationDelay: "-14s" }}>
                         <circle cx={CX + R.r3} cy={CY} r="5" fill="currentColor" fillOpacity="0.78" />
@@ -210,16 +187,8 @@ function CelestialAuthPanel({ busy = false }: { busy?: boolean }) {
 
             </svg>
 
-            {/* 한가운데 — 혼천의 (r2 고리 안쪽에 맞춘 크기, 시차는 중간 고리와 같이) */}
-            {!flat && (
-                <S.Hero style={parallax(7)}>
-                    <Objet name="celestial/armillary" size="100%" active={busy} options={HERO_OPTIONS} onFail={onFail} />
-                </S.Hero>
-            )}
-
-            <S.BrandContent $below={!flat}>
+            <S.BrandContent>
                 <S.ServiceName>CRONOS</S.ServiceName>
-                {!flat && year && <S.Year>{year}</S.Year>}
             </S.BrandContent>
         </S.BrandPanel>
     );

@@ -23,17 +23,31 @@ type L = typeof Layout;
 
 /** 갈래마다의 오브제 — 작은 자리(타일)와 큰 자리(무대) */
 const OBJET: Record<string, { name: ObjetName; small: Record<string, unknown>; large: Record<string, unknown> }> = {
-    celestial: { name: "celestial/armillary", small: { detail: "mark", still: true }, large: { still: true } },
     maple: { name: "maple/leaf", small: { still: true }, large: { still: true } },
     ocean: { name: "ocean/orb", small: { still: true }, large: { still: true } },
 };
 
-/** 그 갈래의 오브제 — 그 갈래의 색(지금 화면의 밝기)으로 칠한다. 오브제가 없는 갈래는 빈자리 */
+/**
+ * Celestial 의 표 — 3D 기구 대신 천체 타로 한 장(금 선화: 겉테·속테·별). 이 테마의 중심은 타로 카드다.
+ */
+function ArcanaMark() {
+    return (
+        <P.Arcana viewBox="0 0 24 34" fill="none" aria-hidden="true">
+            <rect x="1.5" y="1.5" width="21" height="31" rx="2" />
+            <rect x="4" y="4" width="16" height="26" rx="1" className="inner" />
+            <path d="M12 10.2l1.15 3.65L16.8 15l-3.65 1.15L12 19.8l-1.15-3.65L7.2 15l3.65-1.15z" className="star" />
+            <path d="M9 25.5h6" className="inner" />
+        </P.Arcana>
+    );
+}
+
+/** 그 갈래의 오브제 — 그 갈래의 색(지금 화면의 밝기)으로 칠한다. Celestial 은 타로 한 장(선화) */
 function FamilyObjet({ id, size, active, large = false }: { id: string; size: string; active: boolean; large?: boolean }) {
     const page = useTheme();
+    const family = themes[page.mode === "dark" ? `${id}-dark` : id] ?? themes[id] ?? page;
+    if (id === "celestial") return <ThemeProvider theme={family}><ArcanaMark /></ThemeProvider>;
     const spec = OBJET[id];
     if (!spec) return null;
-    const family = themes[page.mode === "dark" ? `${id}-dark` : id] ?? themes[id] ?? page;
     return (
         <ThemeProvider theme={family}>
             <Objet name={spec.name} size={size} active={active} options={large ? spec.large : spec.small} interaction="none" />

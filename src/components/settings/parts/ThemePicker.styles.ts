@@ -44,3 +44,15 @@ export const StageObjet = styled.span`
 
     ${MOBILE} { width: 64px; height: 64px; margin: -8px -2px -10px 0; }
 `;
+
+/** Celestial 의 타로 한 장 — 금 선화. 자리(타일·무대)를 가득 채우되 카드 비율(24:34)은 지킨다 */
+export const Arcana = styled.svg`
+    display: block;
+    width: 100%;
+    height: 100%;
+    color: ${(p) => p.theme.colors.primary};
+    stroke: currentColor;
+    stroke-width: 1.1;
+    .inner { opacity: 0.55; }
+    .star { fill: currentColor; stroke: none; }
+`;
