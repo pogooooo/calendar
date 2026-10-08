@@ -359,6 +359,8 @@ export const Feature = styled.article`
     position: relative;
     height: 100%;
     padding: 20px;
+    /* 바탕 별(✦)이 비쳐 폰에서 설명 글 사이에 박혀 보였다 — 카드는 바탕색으로 덮는다(Maple·Ocean 은 제 바탕으로 덮어 쓴다) */
+    background-color: ${p => p.theme.colors.background};
     border: 1px solid ${p => p.theme.colors.primary}33;
     outline: none;
     transform: perspective(700px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateY(var(--lift, 0px));

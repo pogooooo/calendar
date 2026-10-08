@@ -148,6 +148,7 @@ export default function HeroScene() {
         let lastY = 0;
         let raf = 0;
         let running = true;
+        let inView = true;
         const clock = new THREE.Clock();
 
         const onDown = (e: PointerEvent) => {
@@ -179,6 +180,8 @@ export default function HeroScene() {
         renderer.domElement.addEventListener("pointerdown", onDown);
         window.addEventListener("pointermove", onMove);
         window.addEventListener("pointerup", onUp);
+        // 폰에서 세로로 끌면 브라우저가 스크롤로 가져가며 pointerup 대신 pointercancel 을 준다 — 예전엔 쥔 채로 남아 저절로 돌지 않고, 그 뒤 화면 어디를 문질러도 장면이 돌았다
+        window.addEventListener("pointercancel", onUp);
 
         const render = () => {
             const dt = Math.min(clock.getDelta(), 0.05);
@@ -206,17 +209,21 @@ export default function HeroScene() {
             if (running) raf = requestAnimationFrame(render);
         };
 
-        const onVisibility = () => {
-            if (document.hidden) {
+        // 탭이 숨었거나 스크롤로 화면 밖에 나가면 쉰다 — 예전엔 아래 내용을 읽는 내내 보이지 않는 장면을 매 프레임 그렸다
+        const sync = () => {
+            const want = inView && !document.hidden;
+            if (!want && running) {
                 running = false;
                 cancelAnimationFrame(raf);
-            } else if (!running) {
+            } else if (want && !running) {
                 running = true;
                 clock.getDelta();
                 raf = requestAnimationFrame(render);
             }
         };
-        document.addEventListener("visibilitychange", onVisibility);
+        document.addEventListener("visibilitychange", sync);
+        const io = new IntersectionObserver(([entry]) => { inView = entry.isIntersecting; sync(); });
+        io.observe(mount);
 
         const resize = () => {
             const w = mount.clientWidth;
@@ -236,10 +243,12 @@ export default function HeroScene() {
             running = false;
             cancelAnimationFrame(raf);
             ro.disconnect();
-            document.removeEventListener("visibilitychange", onVisibility);
+            io.disconnect();
+            document.removeEventListener("visibilitychange", sync);
             renderer.domElement.removeEventListener("pointerdown", onDown);
             window.removeEventListener("pointermove", onMove);
             window.removeEventListener("pointerup", onUp);
+            window.removeEventListener("pointercancel", onUp);
             disposables.forEach(d => d.dispose());
             renderer.dispose();
             mount.removeChild(renderer.domElement);
