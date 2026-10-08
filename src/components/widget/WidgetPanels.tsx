@@ -9,7 +9,7 @@ import { Check } from "lucide-react";
 import useTodoStore from "@/store/useTodoStore";
 import useCategoryStore from "@/store/useCategoryStore";
 import useProjectStore from "@/store/useProjectStore";
-import useChallengeStore, { ChallengeType } from "@/store/useChallengeStore";
+import useChallengeStore from "@/store/useChallengeStore";
 import useDailyStore from "@/store/useDailyStore";
 import useAnniversaryStore from "@/store/useAnniversaryStore";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
@@ -20,6 +20,7 @@ import { addDaysToKey, zonedDayStart } from "@/lib/timezone";
 import { expandTodos } from "@/hooks/useExpandedTodos";
 import { weeklyTaskStats } from "@/lib/widgetStats";
 import { nextAnniversary } from "@/lib/anniversary";
+import { challengeExpired, completionTargetFor } from "@/lib/challengeDays";
 import * as OceanS from './ocean/OceanWidgetPanels.styles';
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
@@ -493,30 +494,16 @@ export function ChallengePanel() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    const today = new Date();
-    const expired = (c: ChallengeType) => {
-        const t = c.targetCount ?? null;
-        if (t === null) return false;
-        const s = new Date(c.startAt);
-        s.setHours(0, 0, 0, 0);
-        const last = new Date(s);
-        last.setDate(s.getDate() + (t - 1) * c.interval);
-        const now = new Date();
-        now.setHours(0, 0, 0, 0);
-        return now > last;
-    };
-
+    // 오늘·끝남·보낼 날을 홈과 같은 셈으로 — 예전엔 기기 시각의 정오를 보내서 UTC+13(뉴질랜드 여름 등)에서는 어제로 기록됐고,
+    // 고른 시간대가 기기와 다르면 위젯만 다른 날을 오늘로 봤다
+    const key = useCurrentDayKey();
     const active = challenges.filter(c => {
         const t = c.targetCount ?? null;
         if (t !== null && (c.completions?.length ?? 0) >= t) return false;
-        return !expired(c);
+        return !challengeExpired(c, key);
     });
 
-    const key = localDateKey(today);
-    const toggle = (id: string, d: Date) => {
-        const safe = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 12, 0, 0);
-        toggleChallengeCompletion(authFetch, id, safe.toISOString());
-    };
+    const toggle = (id: string, dayKey: string) => toggleChallengeCompletion(authFetch, id, completionTargetFor(dayKey));
 
     if (active.length === 0) {
         return <S.Pad ref={ref}><S.SectionHead>{tr.home.challenge}</S.SectionHead><S.Thin>{tr.home.noChallenges}</S.Thin></S.Pad>;
@@ -526,9 +513,8 @@ export function ChallengePanel() {
         const c = active[0];
         const set = new Set((c.completions ?? []).map(x => utcDayKey(x.targetDate)));
         const days = Array.from({ length: 14 }, (_, i) => {
-            const d = new Date(today);
-            d.setDate(d.getDate() - 13 + i);
-            return { d, on: set.has(localDateKey(d)), isToday: i === 13 };
+            const k = addDaysToKey(key, i - 13);
+            return { k, on: set.has(k), isToday: i === 13 };
         });
         return (
             <S.Pad ref={ref}>
@@ -537,7 +523,7 @@ export function ChallengePanel() {
                 <S.NowMeta>{c.targetCount ? `${c.completions?.length ?? 0}/${c.targetCount}` : `${c.completions?.length ?? 0}`}</S.NowMeta>
                 <S.Streak>
                     {days.map((x, i) => (
-                        <S.Dot key={i} $on={x.on} $today={x.isToday} aria-label={`${c.title} ${localDateKey(x.d)}`} aria-pressed={x.on} onClick={() => toggle(c.id, x.d)} />
+                        <S.Dot key={i} $on={x.on} $today={x.isToday} aria-label={`${c.title} ${x.k}`} aria-pressed={x.on} onClick={() => toggle(c.id, x.k)} />
                     ))}
                 </S.Streak>
             </S.Pad>
@@ -552,7 +538,7 @@ export function ChallengePanel() {
                 const count = c.completions?.length ?? 0;
                 return (
                     <S.Row key={c.id}>
-                        <S.Box $done={done} aria-label={c.title} aria-pressed={done} onClick={() => toggle(c.id, today)}>
+                        <S.Box $done={done} aria-label={c.title} aria-pressed={done} onClick={() => toggle(c.id, key)}>
                             {done && <Check size={9} strokeWidth={3} />}
                         </S.Box>
                         <S.Name $done={done}>{c.title}</S.Name>
