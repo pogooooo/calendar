@@ -1,6 +1,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import useAuthStore from "@/store/useAuthStore";
+import type { User } from "@/types";
 import { api, clientHeaders, isDesktopApp } from "@/lib/apiBase";
 import { kindFromUrl, notifyDataChange } from "@/lib/dataSync";
 
@@ -102,8 +103,15 @@ export async function refreshSession(): Promise<RefreshResult> {
                 const data = await refreshRes.json();
                 if (!data.accessToken) return { ok: false, reason: "invalid" };
 
-                useAuthStore.getState().setAccessToken(data.accessToken);
-                if (data.refreshToken) useAuthStore.getState().setRefreshToken(data.refreshToken);
+                // 한 번에 쓴다 — 다른 창은 저장소를 다시 읽으므로 반쯤 바뀐 세션을 보지 않게
+                const fresh = typeof data.user?.id === "string" ? data.user as Partial<User> & { id: string } : null;
+                const { user } = useAuthStore.getState();
+                useAuthStore.setState({
+                    accessToken: data.accessToken,
+                    ...(data.refreshToken ? { refreshToken: data.refreshToken } : {}),
+                    // 토큰만 쿠키로 되살린 창("로그인 유지" 끔, 새 탭)은 사용자 정보가 없어 이름·오늘 메모가 비었다
+                    ...(fresh ? { user: { ...(user?.id === fresh.id ? user : {}), ...fresh } as User } : {}),
+                });
                 return { ok: true, token: data.accessToken as string };
             } catch {
                 // fetch 자체가 실패 = 서버에 닿지도 못함. 토큰은 멀쩡할 수 있다.

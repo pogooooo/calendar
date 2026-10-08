@@ -70,4 +70,16 @@ const useAuthStore = create<AuthStore>()(
     )
 );
 
+/**
+ * 다른 창(위젯 창·다른 탭)이 세션을 새로 쓰면 이 창의 메모리도 그걸 다시 읽는다.
+ * persist 는 창끼리 맞춰 주지 않는다. 그래서 위젯 창은 켜질 때 읽은 토큰을 끝까지 들고 있었다 —
+ * 본 창이 갱신해 리프레시 토큰이 바뀌면(옛것은 1분 뒤 지워진다) 위젯의 다음 갱신이 거부돼 위젯이 로그아웃되고
+ * 그 빈 세션을 저장소에 써서 다음에 켤 때 앱까지 로그아웃됐다. 본 창의 로그인·로그아웃도 위젯은 몰랐다.
+ */
+if (typeof window !== "undefined") {
+    window.addEventListener("storage", (e) => {
+        if (e.key === "auth-store") void useAuthStore.persist.rehydrate();
+    });
+}
+
 export default useAuthStore;

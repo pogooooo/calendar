@@ -9,13 +9,15 @@ import { useT } from "@/i18n/useT";
 
 export default function TimezoneSelect({ size = "md" }: { size?: "sm" | "md" }) {
     const t = useT();
+    const locale = useSettingStore((s) => s.locale);
     const timezone = useSettingStore((s) => s.timezone);
     const setTimezone = useSettingStore((s) => s.setTimezone);
 
+    const named = TIMEZONE_OPTIONS.map(o => ({ value: o.value, label: locale === "en" ? o.labelEn ?? o.label : o.label }));
     // 저장된 값이 목록에 없으면(직접 지정했거나 OS 값) 항목을 하나 덧붙여 표시한다
-    const options = TIMEZONE_OPTIONS.some(o => o.value === timezone) || !isValidTimeZone(timezone)
-        ? TIMEZONE_OPTIONS
-        : [...TIMEZONE_OPTIONS, { value: timezone, label: timezone }];
+    const options = named.some(o => o.value === timezone) || !isValidTimeZone(timezone)
+        ? named
+        : [...named, { value: timezone, label: timezone }];
 
     return (
         <Row>

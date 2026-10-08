@@ -3,27 +3,29 @@ export const DEFAULT_TIMEZONE = "Asia/Seoul";
 export interface TimeZoneOption {
     value: string;
     label: string;
+    /** 영어 화면의 이름 (없으면 label) — 예전엔 영어 화면에도 "서울 (UTC+9)" 이 떴다 */
+    labelEn?: string;
 }
 
 export const TIMEZONE_OPTIONS: TimeZoneOption[] = [
-    { value: "Asia/Seoul", label: "서울 (UTC+9)" },
-    { value: "Asia/Tokyo", label: "도쿄 (UTC+9)" },
-    { value: "Asia/Shanghai", label: "상하이 (UTC+8)" },
-    { value: "Asia/Singapore", label: "싱가포르 (UTC+8)" },
-    { value: "Asia/Kolkata", label: "인도 (UTC+5:30)" },
-    { value: "Asia/Dubai", label: "두바이 (UTC+4)" },
-    { value: "Europe/Moscow", label: "모스크바 (UTC+3)" },
-    { value: "Europe/Berlin", label: "베를린 (UTC+1/+2)" },
-    { value: "Europe/London", label: "런던 (UTC+0/+1)" },
-    { value: "UTC", label: "협정 세계시 (UTC)" },
-    { value: "America/Sao_Paulo", label: "상파울루 (UTC-3)" },
-    { value: "America/New_York", label: "뉴욕 (UTC-5/-4)" },
-    { value: "America/Chicago", label: "시카고 (UTC-6/-5)" },
-    { value: "America/Denver", label: "덴버 (UTC-7/-6)" },
-    { value: "America/Los_Angeles", label: "로스앤젤레스 (UTC-8/-7)" },
-    { value: "Pacific/Honolulu", label: "호놀룰루 (UTC-10)" },
-    { value: "Australia/Sydney", label: "시드니 (UTC+10/+11)" },
-    { value: "Pacific/Auckland", label: "오클랜드 (UTC+12/+13)" },
+    { value: "Asia/Seoul", label: "서울 (UTC+9)", labelEn: "Seoul (UTC+9)" },
+    { value: "Asia/Tokyo", label: "도쿄 (UTC+9)", labelEn: "Tokyo (UTC+9)" },
+    { value: "Asia/Shanghai", label: "상하이 (UTC+8)", labelEn: "Shanghai (UTC+8)" },
+    { value: "Asia/Singapore", label: "싱가포르 (UTC+8)", labelEn: "Singapore (UTC+8)" },
+    { value: "Asia/Kolkata", label: "인도 (UTC+5:30)", labelEn: "India (UTC+5:30)" },
+    { value: "Asia/Dubai", label: "두바이 (UTC+4)", labelEn: "Dubai (UTC+4)" },
+    { value: "Europe/Moscow", label: "모스크바 (UTC+3)", labelEn: "Moscow (UTC+3)" },
+    { value: "Europe/Berlin", label: "베를린 (UTC+1/+2)", labelEn: "Berlin (UTC+1/+2)" },
+    { value: "Europe/London", label: "런던 (UTC+0/+1)", labelEn: "London (UTC+0/+1)" },
+    { value: "UTC", label: "협정 세계시 (UTC)", labelEn: "Coordinated Universal Time (UTC)" },
+    { value: "America/Sao_Paulo", label: "상파울루 (UTC-3)", labelEn: "São Paulo (UTC-3)" },
+    { value: "America/New_York", label: "뉴욕 (UTC-5/-4)", labelEn: "New York (UTC-5/-4)" },
+    { value: "America/Chicago", label: "시카고 (UTC-6/-5)", labelEn: "Chicago (UTC-6/-5)" },
+    { value: "America/Denver", label: "덴버 (UTC-7/-6)", labelEn: "Denver (UTC-7/-6)" },
+    { value: "America/Los_Angeles", label: "로스앤젤레스 (UTC-8/-7)", labelEn: "Los Angeles (UTC-8/-7)" },
+    { value: "Pacific/Honolulu", label: "호놀룰루 (UTC-10)", labelEn: "Honolulu (UTC-10)" },
+    { value: "Australia/Sydney", label: "시드니 (UTC+10/+11)", labelEn: "Sydney (UTC+10/+11)" },
+    { value: "Pacific/Auckland", label: "오클랜드 (UTC+12/+13)", labelEn: "Auckland (UTC+12/+13)" },
 ];
 
 export function isValidTimeZone(tz: string): boolean {

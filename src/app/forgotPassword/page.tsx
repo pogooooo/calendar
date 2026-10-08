@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { z } from "zod";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import { ForgotPasswordSchema } from "@/lib/schema";
+import { makeAuthSchemas, type ForgotPasswordInput } from "@/lib/schema";
 import { api, clientHeaders } from "@/lib/apiBase";
+import { authFailure } from "@/lib/authFailure";
+import { useRevalidateOnLocale } from "@/hooks/useRevalidateOnLocale";
+import useSettingStore from "@/store/useSettingStore";
 import { useT } from "@/i18n/useT";
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialForgotPassword.styles";
@@ -21,7 +23,7 @@ import GlobalError from "@/components/error/globalError/GlobalError";
 import AuthPanel from "@/components/auth/AuthPanel";
 import * as OceanS from './ocean/OceanForgotPassword.styles';
 
-type ForgotFormData = z.infer<typeof ForgotPasswordSchema>;
+type ForgotFormData = ForgotPasswordInput;
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
 const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
@@ -30,14 +32,18 @@ const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: Ma
 const ForgotPassword = () => {
     const S = usePickTheme(STYLES);
     const t = useT();
+    const locale = useSettingStore((s) => s.locale);
 
     const [globalError, setGlobalError] = useState<string>(" ");
     const [sent, setSent] = useState(false);
 
-    const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<ForgotFormData>({
-        resolver: zodResolver(ForgotPasswordSchema),
+    // 검사 문구가 화면 언어를 따르게 (규칙은 서버와 같은 src/lib/schema.ts)
+    const schema = useMemo(() => makeAuthSchemas(t.auth.validation).forgot, [t]);
+    const { register, handleSubmit, trigger, formState: { errors, isSubmitting } } = useForm<ForgotFormData>({
+        resolver: zodResolver(schema),
         defaultValues: { email: "" },
     });
+    useRevalidateOnLocale(schema, errors, trigger);
 
     const handleForgot = async (formData: ForgotFormData) => {
         setGlobalError(" ");
@@ -47,15 +53,15 @@ const ForgotPassword = () => {
                 headers: { "Content-Type": "application/json", ...clientHeaders() },
                 body: JSON.stringify(formData),
             });
-            const data = await res.json();
             if (!res.ok) {
-                setGlobalError(data.message || t.auth.requestFailed);
+                setGlobalError(await authFailure(res, { locale, t, fallback: t.auth.requestFailed }));
                 return;
             }
             // 계정 존재 여부와 무관하게 같은 화면을 보여준다.
             setSent(true);
-        } catch (err) {
-            setGlobalError(err instanceof Error ? err.message : t.auth.requestError);
+        } catch {
+            // 서버에 닿지 못했다 — 'Failed to fetch' 같은 날것 대신
+            setGlobalError(t.auth.networkError);
         }
     };
 

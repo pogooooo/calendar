@@ -8,7 +8,7 @@ import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { mirrorWidgetStateToFile } from "@/lib/widgetStateFile";
 import { useT } from "@/i18n/useT";
 import useIsMobile from "@/hooks/useIsMobile";
-import { isDesktopShell } from "@/lib/platform";
+import { isDesktopShell, isMobileShell } from "@/lib/platform";
 import { checkForUpdate } from "@/lib/updater";
 import { RELEASE_NOTES, type ReleaseNote } from "@/lib/releaseNotes";
 import { WIDGET_KINDS } from "@/lib/widgetKinds";
@@ -17,6 +17,8 @@ import SettingsView from "./SettingsView";
 import type { Translations } from "@/i18n/types";
 import { listThemes, type ThemeChoice } from "@/styles/theme";
 import { fx } from "@/lib/fx";
+import { makeAuthSchemas } from "@/lib/schema";
+import { authFailure } from "@/lib/authFailure";
 
 // 테마 목록의 모양은 styles/theme.ts 가 정한다.
 export type { ThemeChoice as ThemeDef } from "@/styles/theme";
@@ -132,9 +134,11 @@ export default function SettingsPage() {
      * 폰에서 그 단추를 내보이면 눌러도 아무 일이 없다.
      */
     const [desktopShell, setDesktopShell] = React.useState(false);
-    React.useEffect(() => setDesktopShell(isDesktopShell()), []);
+    const [mobileShell, setMobileShell] = React.useState(false);
+    React.useEffect(() => { setDesktopShell(isDesktopShell()); setMobileShell(isMobileShell()); }, []);
     // 데스크톱 웹에서는 위젯이 새 창으로 뜨므로 그대로 쓸 수 있다.
-    const showWidgets = !isMobile;
+    // 폰 앱은 화면이 넓어져도(가로로 눕히기·태블릿) 위젯 창이 없다 — 폭만 보면 탭이 떠서 누르면 "열지 못했다" 만 나왔다
+    const showWidgets = !isMobile && !mobileShell;
     const showAutostart = desktopShell;
     const locale = useSettingStore((s) => s.locale);
     const dialog = useDialog();
@@ -224,6 +228,9 @@ export default function SettingsPage() {
 
     const handleNameSave = async () => {
         if (!newName.trim() || newName.trim() === user?.name) return;
+        // 규칙(2자 이상)은 서버와 같은 것으로 먼저 본다 — 서버 문구는 한국어뿐이라 영어 화면에 한국어가 떴다
+        const nameCheck = makeAuthSchemas(t.auth.validation).name.safeParse(newName.trim());
+        if (!nameCheck.success) { setNameStatus({ type: "error", msg: nameCheck.error.issues[0]?.message ?? t.account.genericError }); return; }
         setNamePending(true); setNameStatus(null);
         try {
             const res = await authFetch("/api/user", {
@@ -231,10 +238,10 @@ export default function SettingsPage() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ name: newName.trim() }),
             });
-            const data = await res.json();
             if (!res.ok) {
-                setNameStatus({ type: "error", msg: data.message ?? t.account.genericError });
+                setNameStatus({ type: "error", msg: await authFailure(res, { locale, t, fallback: t.account.genericError }) });
             } else {
+                const data = await res.json();
                 setUser({ ...user!, name: data.user.name });
                 setNameStatus({ type: "success", msg: t.account.nameChanged });
             }
@@ -256,16 +263,20 @@ export default function SettingsPage() {
     const handlePasswordSave = async () => {
         if (pwForm.next !== pwForm.confirm) { setPwStatus({ type: "error", msg: t.account.passwordMismatch }); return; }
         if (pwForm.next.length < 8)         { setPwStatus({ type: "error", msg: t.account.passwordTooShort }); return; }
+        // 숫자·특수문자 규칙도 서버와 같은 것으로 먼저 — 서버가 돌려주는 한국어 문구 대신 화면 언어로
+        const pwCheck = makeAuthSchemas(t.auth.validation).password.safeParse(pwForm.next);
+        if (!pwCheck.success) { setPwStatus({ type: "error", msg: pwCheck.error.issues[0]?.message ?? t.account.genericError }); return; }
         setPwPending(true); setPwStatus(null);
         try {
+            // 서버는 비밀번호가 바뀌면 다른 기기의 세션을 끊는다. 이 기기 것은 남기게 알린다 (웹은 쿠키로 간다)
+            const stored = useAuthStore.getState().refreshToken;
             const res = await authFetch("/api/user", {
                 method: "PATCH",
-                headers: { "Content-Type": "application/json" },
+                headers: { "Content-Type": "application/json", ...(stored ? { "X-Refresh-Token": stored } : {}) },
                 body: JSON.stringify({ currentPassword: pwForm.current, newPassword: pwForm.next }),
             });
-            const data = await res.json();
             if (!res.ok) {
-                setPwStatus({ type: "error", msg: data.message ?? t.account.genericError });
+                setPwStatus({ type: "error", msg: await authFailure(res, { locale, t, byStatus: { 400: t.account.currentPasswordRejected }, fallback: t.account.genericError }) });
             } else {
                 setPwStatus({ type: "success", msg: t.account.passwordChanged });
                 setPwForm({ current: "", next: "", confirm: "" });
@@ -297,9 +308,8 @@ export default function SettingsPage() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ password: deletePassword }),
             });
-            const data = await res.json();
             if (!res.ok) {
-                setDeleteStatus({ type: "error", msg: data.message ?? t.account.genericError });
+                setDeleteStatus({ type: "error", msg: await authFailure(res, { locale, t, byStatus: { 400: t.account.deletePasswordRejected }, fallback: t.account.genericError }) });
             } else {
                 await logout();
                 // 라우트 이름은 /signIn 이다. /login 으로 보내면 탈퇴 직후 404 가 뜬다.

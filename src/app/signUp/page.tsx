@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import { RegisterSchema } from "@/lib/schema";
+import { makeAuthSchemas, type RegisterInput } from "@/lib/schema";
 import { api, clientHeaders } from "@/lib/apiBase";
+import { authFailure } from "@/lib/authFailure";
+import { useRevalidateOnLocale } from "@/hooks/useRevalidateOnLocale";
+import useSettingStore from "@/store/useSettingStore";
 import { fx } from "@/lib/fx";
 import { useT } from "@/i18n/useT";
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
@@ -24,7 +26,7 @@ import InlineError from "@/components/error/inlineError/InlineError";
 import AuthPanel from "@/components/auth/AuthPanel";
 import * as OceanS from './ocean/OceanSignUp.styles';
 
-type RegisterFormData = z.infer<typeof RegisterSchema>;
+type RegisterFormData = RegisterInput;
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
 const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
@@ -34,13 +36,17 @@ const SignUp = () => {
     const S = usePickTheme(STYLES);
     const router = useRouter();
     const t = useT();
+    const locale = useSettingStore((s) => s.locale);
     const [registerError, setRegisterError] = useState<string>(" ");
 
-    const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<RegisterFormData>({
-        resolver: zodResolver(RegisterSchema),
+    // 검사 문구가 화면 언어를 따르게 (규칙은 서버와 같은 src/lib/schema.ts)
+    const schema = useMemo(() => makeAuthSchemas(t.auth.validation).register, [t]);
+    const { register, handleSubmit, trigger, formState: { errors, isSubmitting } } = useForm<RegisterFormData>({
+        resolver: zodResolver(schema),
         defaultValues: { name: "", email: "", password: "" },
         mode: "onChange",
     });
+    useRevalidateOnLocale(schema, errors, trigger);
 
     const handleRegister = async (formData: RegisterFormData) => {
         setRegisterError(" ");
@@ -54,8 +60,7 @@ const SignUp = () => {
                 fx.emit("welcome");
                 router.push("/signIn");
             } else {
-                const errorData = await res.json();
-                setRegisterError(errorData.message || t.auth.signUpError);
+                setRegisterError(await authFailure(res, { locale, t, byStatus: { 409: t.auth.emailTaken }, fallback: t.auth.signUpError }));
             }
         } catch {
             setRegisterError(t.auth.networkError);

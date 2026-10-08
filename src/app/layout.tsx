@@ -29,10 +29,28 @@ export const metadata: Metadata = {
     description: "일정과 목표를 하나의 별자리처럼 — 캘린더 · 프로젝트 · 챌린지를 한 곳에서 관리하는 할 일 앱",
 }
 
+/**
+ * 첫 그림 전에 바탕색부터. 화면은 스크립트가 돈 뒤에야 그려져서(StoreInitializer) 그 전 한순간이 흰 바탕이었다 —
+ * 어두운 테마로 켜면 매번 하얗게 번쩍였다. 저장된 테마의 바탕을 html 에 먼저 칠해 두고, 그린 뒤에는
+ * ThemeProviderWrapper 가 지운다(그때부터는 갈래의 Ground 가 칠한다). 위젯 창은 투명해야 하므로 건드리지 않는다.
+ * 색은 styles/theme.ts 의 바탕(바다는 OceanGround 의 물빛)과 같게.
+ */
+const PRE_PAINT = `(function(){try{
+if(location.pathname.indexOf("/widget")===0)return;
+var s=JSON.parse(localStorage.getItem("setting-store")||"null");s=s&&s.state;if(!s||!s.theme)return;
+var o=(s.themeOptions||{})[s.theme];var k=o&&o!=="light"?s.theme+"-"+o:s.theme;
+var c={"celestial":"#FAF8F2","celestial-dark":"#121725","maple":"#F4EADB","maple-dark":"#1F1612","ocean":"#7ACFC9","ocean-dark":"#0A2226"}[k];
+if(!c)return;var d=document.documentElement;d.style.backgroundColor=c;d.style.colorScheme=/-dark$/.test(k)?"dark":"light";d.setAttribute("data-prepaint","");
+}catch(e){}})();`;
+
 export default function RootLayout({children,}: Readonly<{ children: React.ReactNode; }>) {
 
     return (
-        <html lang="ko" translate="no">
+        // PRE_PAINT 가 하이드레이션 전에 html 의 style 을 건드리므로 그 한 겹만 비교에서 뺀다
+        <html lang="ko" translate="no" suppressHydrationWarning>
+        <head>
+            <script dangerouslySetInnerHTML={{ __html: PRE_PAINT }} />
+        </head>
         <body className={`relative notranslate ${orbit.variable}`}>
             <ThemeProviderWrapper>
                 <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!}>

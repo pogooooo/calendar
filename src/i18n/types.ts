@@ -134,6 +134,7 @@ export interface Translations {
         groupCalendar: string;
         groupRecord: string;
         loading: string;
+        /** 위젯 창에 세션이 없을 때 (WidgetAuthNotice — 토큰이 아예 없을 때만 뜬다. 네트워크가 끊기면 토큰은 남는다) */
         waiting: string;
         waitingSub: string;
     };
@@ -169,6 +170,10 @@ export interface Translations {
         passwordTooShort: string;
         deleteKeyword: string;
         typeExactly: (keyword: string) => string;
+        /** 영어 화면에서 서버가 비밀번호 바꾸기를 400 으로 거절했을 때 (현재 비밀번호가 틀렸거나 구글 계정) */
+        currentPasswordRejected: string;
+        /** 영어 화면에서 서버가 탈퇴를 400 으로 거절했을 때 (비밀번호가 틀림) */
+        deletePasswordRejected: string;
     };
     system: {
         autostart: string;
@@ -280,13 +285,20 @@ export interface Translations {
         googleWindowClosed: string;
         googleError: string;
         signInFailed: string;
-        signInError: string;
         signUpError: string;
         networkError: string;
         requestFailed: string;
-        requestError: string;
         resetFailed: string;
         passwordConfirmRequired: string;
+        /** 서버 문구는 한국어뿐이라 영어 화면은 상태 코드로 이것을 고른다 (src/lib/authFailure.ts) */
+        invalidCredentials: string;
+        emailTaken: string;
+        resetLinkExpired: string;
+        serverError: string;
+        /** 몇 초 뒤에 다시 — 서버가 Retry-After 를 주지 않으면 null */
+        tooManyAttempts: (seconds: number | null) => string;
+        /** 입력 검사 문구 — src/lib/schema.ts 의 makeAuthSchemas 가 같은 규칙에 입힌다 */
+        validation: AuthValidation;
     };
 
     todo: {
@@ -329,6 +341,10 @@ export interface Translations {
         kick: string;
         kickTitle: string;
         kickConfirm: (name: string) => string;
+        /** 참여자가 자기 자신을 뺄 때(나가기) */
+        leave: string;
+        leaveTitle: string;
+        leaveConfirm: string;
         deleteCategory: string;
         noTodos: string;
         selectOrAdd: string;
@@ -641,3 +657,17 @@ export interface Translations {
 }
 
 export type Locale = 'ko' | 'en';
+
+/** 로그인·가입·비밀번호 칸의 검사 문구 (규칙은 src/lib/schema.ts 한 곳) */
+export interface AuthValidation {
+    emailRequired: string;
+    emailInvalid: string;
+    passwordRequired: string;
+    passwordMin: string;
+    passwordMax: string;
+    passwordDigit: string;
+    passwordSpecial: string;
+    nameRequired: string;
+    nameMin: string;
+    nameMax: (max: number) => string;
+}

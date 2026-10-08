@@ -44,6 +44,14 @@ export function notifyDataChange(kind: DataKind) {
     }
 }
 
+/**
+ * 그것이 바뀌면 함께 달라지는 자료. 카테고리를 지우거나(안의 할 일·프로젝트·챌린지가 같이 지워진다) 나가거나
+ * 색을 바꾸면 다른 창의 할 일 목록도 달라진다 — 예전엔 카테고리만 다시 읽어서 지운 카테고리의 할 일이 위젯에 남았다.
+ */
+const DEPENDENTS: Partial<Record<DataKind, DataKind[]>> = {
+    categories: ["todos", "projects", "challenges"],
+};
+
 /** 다른 창이 자료를 바꾸면 부른다. 정리 함수를 돌려준다. */
 export function subscribeDataChange(handler: (kind: DataKind) => void): () => void {
     if (typeof window === "undefined") return () => {};
@@ -52,7 +60,9 @@ export function subscribeDataChange(handler: (kind: DataKind) => void): () => vo
         if (e.key !== KEY || !e.newValue) return;
         try {
             const parsed = JSON.parse(e.newValue) as { kind?: DataKind };
-            if (parsed?.kind) handler(parsed.kind);
+            if (!parsed?.kind) return;
+            handler(parsed.kind);
+            for (const dep of DEPENDENTS[parsed.kind] ?? []) handler(dep);
         } catch {
             // 값이 깨져 있으면 그냥 넘긴다.
         }

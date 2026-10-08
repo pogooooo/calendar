@@ -1,17 +1,18 @@
 "use client";
 
 import { useGoogleLogin } from "@react-oauth/google";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import useSettingStore from "@/store/useSettingStore";
 import useAuthStore from "@/store/useAuthStore";
-import { LoginSchema } from "@/lib/schema";
+import { makeAuthSchemas, type LoginInput } from "@/lib/schema";
 import { api, clientHeaders } from "@/lib/apiBase";
 import { getRemember } from "@/lib/session";
+import { authFailure } from "@/lib/authFailure";
+import { useRevalidateOnLocale } from "@/hooks/useRevalidateOnLocale";
 import { useT } from "@/i18n/useT";
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialSignIn.styles";
@@ -28,7 +29,7 @@ import AuthPanel from "@/components/auth/AuthPanel";
 import GoogleSignInButton from "@/components/button/googleSignIn/GoogleSignInButton";
 import * as OceanS from './ocean/OceanSignIn.styles';
 
-type LoginFormData = z.infer<typeof LoginSchema>;
+type LoginFormData = LoginInput;
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
 const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
@@ -61,17 +62,21 @@ const SignIn = () => {
     const S = usePickTheme(STYLES);
     const router = useRouter();
     const t = useT();
+    const locale = useSettingStore((state) => state.locale);
     const setTheme = useSettingStore((state) => state.setTheme);
     const beginSession = useAuthStore((state) => state.beginSession);
 
     const [globalError, setGlobalError] = useState<string>(" ");
     const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
-    const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm<LoginFormData>({
-        resolver: zodResolver(LoginSchema),
+    // 검사 문구가 화면 언어를 따르게 (규칙은 서버와 같은 src/lib/schema.ts)
+    const schema = useMemo(() => makeAuthSchemas(t.auth.validation).login, [t]);
+    const { register, handleSubmit, watch, trigger, formState: { errors, isSubmitting } } = useForm<LoginFormData>({
+        resolver: zodResolver(schema),
         // 유지 여부는 지난번 고른 대로. 처음이면 켜짐.
         defaultValues: { email: "", password: "", remember: getRemember() },
     });
+    useRevalidateOnLocale(schema, errors, trigger);
     const remember = watch("remember") ?? true;
 
     const handleGoogleToken = async (accessToken: string) => {
@@ -82,8 +87,12 @@ const SignIn = () => {
                 headers: { "Content-Type": "application/json", ...clientHeaders() },
                 body: JSON.stringify({ accessToken, remember }),
             });
+            if (!res.ok) {
+                setGlobalError(await authFailure(res, { locale, t, fallback: t.auth.googleFailed }));
+                setIsGoogleLoading(false);
+                return;
+            }
             const data = await res.json();
-            if (!res.ok) { setGlobalError(data.message || t.auth.googleFailed); setIsGoogleLoading(false); return; }
             setTheme(data.user.theme);
             beginSession({ accessToken: data.accessToken, refreshToken: data.refreshToken, user: data.user, remember });
             router.push("/");
@@ -106,13 +115,17 @@ const SignIn = () => {
                 headers: { "Content-Type": "application/json", ...clientHeaders() },
                 body: JSON.stringify(formData),
             });
+            if (!res.ok) {
+                setGlobalError(await authFailure(res, { locale, t, byStatus: { 401: t.auth.invalidCredentials }, fallback: t.auth.signInFailed }));
+                return;
+            }
             const data = await res.json();
-            if (!res.ok) { setGlobalError(data.message || t.auth.signInFailed); return; }
             setTheme(data.user.theme);
             beginSession({ accessToken: data.accessToken, refreshToken: data.refreshToken, user: data.user, remember: formData.remember ?? true });
             router.push("/");
-        } catch (err) {
-            setGlobalError(err instanceof Error ? err.message : t.auth.signInError);
+        } catch {
+            // 서버에 닿지 못했다 — 'Failed to fetch' 같은 날것 대신
+            setGlobalError(t.auth.networkError);
         }
     };
 

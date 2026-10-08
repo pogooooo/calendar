@@ -25,6 +25,7 @@ export default function ThemeProviderWrapper({ children }: { children: React.Rea
     const fontSizeKey = useSettingStore((state) => state.fontSize);
     const fontWeightKey = useSettingStore((state) => state.fontWeight);
     const motion = useSettingStore((state) => state.motion);
+    const locale = useSettingStore((state) => state.locale);
 
     useEffect(() => {
         const root = document.documentElement;
@@ -75,6 +76,20 @@ export default function ThemeProviderWrapper({ children }: { children: React.Rea
     }, [theme.family]);
 
     const Ground = GROUNDS[theme.family];
+
+    // 첫 그림 전에 layout 의 PRE_PAINT 가 칠해 둔 바탕 — 이제 갈래의 Ground 가 칠하므로 걷는다
+    // (남겨 두면 html 의 바탕을 덮어 테마를 바꿔도 처음 색이 비쳤다). 위젯 창의 투명은 제 것이라 손대지 않는다
+    useEffect(() => {
+        const root = document.documentElement;
+        if (!root.hasAttribute('data-prepaint')) return;
+        root.style.removeProperty('background-color');
+        root.removeAttribute('data-prepaint');
+    }, []);
+
+    // 화면 언어를 html 에도 — layout 은 늘 lang="ko" 라 영어 화면을 화면 읽기 프로그램이 한국어 발음으로 읽었다
+    useEffect(() => {
+        document.documentElement.lang = locale;
+    }, [locale]);
 
     // 테마가 스스로 밝은 벌인지 어두운 벌인지 말해 준다.
     // 이름이 '-dark' 로 끝나는지 보던 예전 방식은 테마 이름 규칙에 묶여 있었다.
