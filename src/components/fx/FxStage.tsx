@@ -95,6 +95,8 @@ export default function FxStage() {
     const welcome = useRef(0);
     const signedIn = useRef<{ at: number; e: FxEvent; timer?: ReturnType<typeof setTimeout> } | null>(null);
     const greetUntil = useRef(0);
+    /** 차례를 기다리는 인사 (종류마다 하나) */
+    const waiting = useRef(new Map<FxKind, { at: number; timer: ReturnType<typeof setTimeout> }>());
     const idleTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
     const motionRef = useRef(motion);
     motionRef.current = motion;
@@ -155,13 +157,24 @@ export default function FxStage() {
         }, IDLE_DISPOSE_MS);
     };
 
-    /** 인사는 겹치지 않게 — 앞 인사가 끝나 갈 때 다음 것 */
+    /**
+     * 인사는 겹치지 않게 — 앞 인사가 끝나 갈 때 다음 것.
+     * 같은 인사가 이미 차례를 기다리고 있으면 그 자리를 이어받는다: 테마 타일을 잇달아 누르면 바꾼 수만큼 인사가
+     * 1.7초 간격으로 줄줄이 이어져, 다 고른 뒤에도 몇 초씩 화면 가득 효과가 돌았다.
+     */
     const greet = (e: FxEvent) => {
         const now = performance.now();
+        const run = () => { waiting.current.delete(e.kind); void play(e); };
+        const prev = waiting.current.get(e.kind);
+        if (prev && prev.at > now) {
+            clearTimeout(prev.timer);
+            prev.timer = setTimeout(run, prev.at - now);
+            return;
+        }
         const at = Math.max(now, greetUntil.current);
         greetUntil.current = at + GREET_GAP_MS;
-        if (at <= now) void play(e);
-        else setTimeout(() => void play(e), at - now);
+        if (at <= now) { void play(e); return; }
+        waiting.current.set(e.kind, { at, timer: setTimeout(run, at - now) });
     };
 
     /** 아주 짧은 떨림 — 손가락으로 쓰는 기기에서, 끝냄 계열에만 (안드로이드 앱은 VIBRATE 권한이 있어야 실제로 떤다) */

@@ -445,6 +445,11 @@ export class FxEngine {
         this.stopAll();
         this.textures.forEach((t) => t.dispose());
         this.textures.clear();
+        // 다음 엔진이 같은 캔버스(같은 맥락)에 선다 — 그림을 올리며 켜 둔 뒤집기·미리 곱하기가 남아 있으면
+        // three 가 빈 3D 텍스처를 만들다 경고를 냈다(쉬었다 다시 그릴 때마다). 기본값으로 돌려 둔다
+        const gl = this.renderer.getContext();
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+        gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
         this.renderer.dispose();
     }
 }

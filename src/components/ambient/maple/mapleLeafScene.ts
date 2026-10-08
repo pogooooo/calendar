@@ -433,6 +433,9 @@ export function createLeafScene(THREE: T, canvas: HTMLCanvasElement, opts: LeafS
         if (motion === "off" && ready) render();
     };
     window.addEventListener("resize", onResize);
+    // 맥락이 돌아오면(GPU 재시작·절전 뒤) 멈춘 한 장도 다시 그린다 — 움직이는 동안은 다음 장이 그린다
+    const onRestored = () => { if (motion === "off" && ready) render(); };
+    canvas.addEventListener("webglcontextrestored", onRestored);
 
     let texture: THREE_NS.Texture | null = null;
     leafAtlas(THREE, mobile ? 192 : 256).then((tex) => {
@@ -457,11 +460,16 @@ export function createLeafScene(THREE: T, canvas: HTMLCanvasElement, opts: LeafS
             cancelAnimationFrame(raf);
             window.removeEventListener("resize", onResize);
             window.removeEventListener("pointerdown", onDown);
+            canvas.removeEventListener("webglcontextrestored", onRestored);
             stopParallax();
             texture?.dispose();
             geo.dispose();
             material.dispose();
             mesh.dispose();
+            // 밝기·움직임을 바꾸면 같은 캔버스에 새 렌더러가 선다 — 남은 뒤집기·미리 곱하기 설정에 three 가 경고를 냈다
+            const gl = renderer.getContext();
+            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+            gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
             renderer.dispose();
         },
     };

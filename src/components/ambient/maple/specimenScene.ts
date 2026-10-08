@@ -623,6 +623,9 @@ export function createSpecimenScene(THREE: T, canvas: HTMLCanvasElement, opts: S
     io.observe(canvas);
     const onVis = () => { if (!document.hidden) run(); };
     document.addEventListener("visibilitychange", onVis);
+    // 맥락이 돌아오면(GPU 재시작·절전 뒤) 멈춘 한 장('끄기'·화면 밖)도 다시 그린다 — 도는 동안은 다음 장이 그린다
+    const onRestored = () => { if (ready && !raf) { step(0); render(); } };
+    canvas.addEventListener("webglcontextrestored", onRestored);
     const ro = new ResizeObserver(() => {
         resize();
         if (ready && !raf) { step(0); render(); }
@@ -688,9 +691,14 @@ export function createSpecimenScene(THREE: T, canvas: HTMLCanvasElement, opts: S
             io.disconnect();
             ro.disconnect();
             document.removeEventListener("visibilitychange", onVis);
+            canvas.removeEventListener("webglcontextrestored", onRestored);
             stopParallax();
             disposables.forEach((d) => d.dispose());
             layers.forEach((lay) => lay.mesh.dispose());
+            // 밝기·움직임을 바꾸면 같은 캔버스에 새 렌더러가 선다 — 남은 뒤집기·미리 곱하기 설정에 three 가 경고를 냈다
+            const gl = renderer.getContext();
+            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+            gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
             renderer.dispose();
         },
     };

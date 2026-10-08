@@ -84,10 +84,11 @@ class Slot {
         this.create();
     }
 
-    create() {
+    /** stale: 맥락을 잃었다 돌아왔다 — 옛 장면의 GPU 자원은 이미 없으니 돌려주지 않고 놓기만 한다(돌려주면 경고만 쏟아진다) */
+    create(stale = false) {
         const s = this.stage;
         if (!this.def || !s.THREE || !s.env) return;
-        this.inst?.dispose();
+        if (!stale) this.inst?.dispose();
         this.inst = this.def.create({ THREE: s.THREE, tone: this.init.tone, env: s.env, options: this.init.options, lite: s.lite });
         this.lastT = 0;
         if (this.w > 0) this.applySize();
@@ -249,6 +250,8 @@ class Stage {
     /** 멈춘 한 장들을 다 그리고 맥락을 돌려준 상태 */
     private asleep = false;
     private reviving = false;
+    /** 맥락을 잃었다(GPU 재시작·절전 등) — 돌아올 때까지 그리지 않는다 */
+    private lost = false;
     private onVisibility = () => {
         if (document.hidden) { cancelAnimationFrame(this.raf); this.raf = 0; return; }
         this.slots.forEach((s) => { s.lastT = 0; });
@@ -272,15 +275,36 @@ class Stage {
                     renderer.outputColorSpace = THREE.SRGBColorSpace;
                     renderer.toneMapping = THREE.NeutralToneMapping;
                     renderer.toneMappingExposure = 1;
-                    const pmrem = new THREE.PMREMGenerator(renderer);
-                    const room = new RoomEnvironment();
-                    this.env = pmrem.fromScene(room, 0.04).texture;
-                    room.dispose();
-                    pmrem.dispose();
+                    const bake = () => {
+                        const pmrem = new THREE.PMREMGenerator(renderer);
+                        const room = new RoomEnvironment();
+                        const env = pmrem.fromScene(room, 0.04).texture;
+                        room.dispose();
+                        pmrem.dispose();
+                        return env;
+                    };
+                    this.env = bake();
                     renderer.setClearColor(0x000000, 0);
                     renderer.setScissorTest(true);
-                    canvas.addEventListener("webglcontextlost", (e) => { e.preventDefault(); cancelAnimationFrame(this.raf); this.raf = 0; });
-                    canvas.addEventListener("webglcontextrestored", () => { this.slots.forEach((s) => { s.dirty = true; }); this.wake(); });
+                    // 맥락을 잃은 동안에는 그리지 않는다 — 빈 버퍼를 칸에 옮겨 담으면 오브제가 지워진다.
+                    // 스스로 돌려준(releaseGpu) 맥락의 소식은 늦게 온다 — 그때는 이미 다른 렌더러다
+                    canvas.addEventListener("webglcontextlost", (e) => {
+                        e.preventDefault();
+                        if (this.renderer !== renderer) return;
+                        this.lost = true;
+                        cancelAnimationFrame(this.raf);
+                        this.raf = 0;
+                    });
+                    canvas.addEventListener("webglcontextrestored", () => {
+                        if (this.renderer !== renderer) return;
+                        // three 는 버퍼·그림은 다시 올리지만 구워 둔 반사광(렌더 타깃)은 빈 채로 둔다 — 금빛이 검게 죽어 남았다.
+                        // 다시 굽고, 옛 반사광을 쥔 오브제는 새로 만든다(옛 것은 옛 맥락과 함께 이미 사라졌다 — 놓기만 한다)
+                        this.lost = false;
+                        this.env = bake();
+                        renderer.setScissorTest(true);
+                        this.slots.forEach((s) => { if (s.inst) s.create(true); else s.dirty = true; });
+                        this.wake();
+                    });
                     this.THREE = THREE;
                     this.renderer = renderer;
                     this.lite = window.matchMedia("(hover: none)").matches;
@@ -371,6 +395,7 @@ class Stage {
         this.renderer?.dispose();
         this.renderer?.forceContextLoss();
         this.renderer = null;
+        this.lost = false;
         document.removeEventListener("visibilitychange", this.onVisibility);
     }
 
@@ -407,14 +432,14 @@ class Stage {
             if ([...this.slots].some((s) => s.visible && s.dirty)) this.revive();
             return;
         }
-        if (this.raf || !this.renderer || document.hidden) return;
+        if (this.raf || !this.renderer || this.lost || document.hidden) return;
         this.raf = requestAnimationFrame(this.tick);
     }
 
     private tick = (now: number) => {
         this.raf = 0;
         const r = this.renderer;
-        if (!r || document.hidden) return;
+        if (!r || this.lost || document.hidden) return;
         let again = false;
         for (const s of this.slots) {
             if (!s.inst || !s.visible || s.w < 2 || s.h < 2) continue;

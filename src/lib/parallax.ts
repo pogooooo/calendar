@@ -45,18 +45,31 @@ function attach() {
     // 손가락 기기: 기울기. 처음 값이 기준(0), 기준은 천천히 지금 자세를 따라온다
     let base: { beta: number; gamma: number } | null = null;
     let lastT = 0;
+    // 기울기 값(beta·gamma)은 기기 몸체 기준이라, 화면을 가로로 눕히면 화면의 가로·세로와 엇갈린다 —
+    // 화면이 돈 만큼 돌려 읽고, 방향이 바뀌면 기준 자세도 새로 잡는다(예전엔 가로 화면에서 옆으로 기울이면 위아래로 움직였다)
+    const screenAngle = () => {
+        const a = window.screen?.orientation?.angle ?? Number((window as { orientation?: number }).orientation ?? 0);
+        return (((Math.round(a / 90) * 90) % 360) + 360) % 360;
+    };
+    let angle = screenAngle();
     const onTilt = (e: DeviceOrientationEvent) => {
         if (e.beta == null || e.gamma == null) return;
         source = "tilt";
         const now = performance.now();
+        const a = screenAngle();
+        if (a !== angle) { angle = a; base = null; }
         if (!base) { base = { beta: e.beta, gamma: e.gamma }; lastT = now; }
         const dt = Math.min(0.25, (now - lastT) / 1000);
         lastT = now;
         const k = 1 - Math.exp(-RECENTER_PER_SEC * dt);
         base.beta += (e.beta - base.beta) * k;
         base.gamma += (e.gamma - base.gamma) * k;
-        target.x = clamp((e.gamma - base.gamma) / TILT_RANGE_DEG);
-        target.y = clamp((e.beta - base.beta) / TILT_RANGE_DEG);
+        const gx = (e.gamma - base.gamma) / TILT_RANGE_DEG; // 몸체 기준: 오른쪽 변이 내려가면 +
+        const gy = (e.beta - base.beta) / TILT_RANGE_DEG;   // 몸체 기준: 윗변이 다가오면 +
+        // 화면 기준으로 — 90 은 기기를 왼쪽으로 눕힌 가로(윗변이 왼쪽), 270 은 그 반대, 180 은 거꾸로 든 세로
+        const [x, y] = angle === 90 ? [gy, -gx] : angle === 180 ? [-gx, -gy] : angle === 270 ? [-gy, gx] : [gx, gy];
+        target.x = clamp(x);
+        target.y = clamp(y);
     };
     window.addEventListener("deviceorientation", onTilt);
     return () => window.removeEventListener("deviceorientation", onTilt);

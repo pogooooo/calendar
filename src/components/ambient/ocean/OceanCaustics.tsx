@@ -269,6 +269,9 @@ export default function OceanCaustics() {
                 scrollFrame = requestAnimationFrame(() => { scrollFrame = 0; stillFrame(); });
             };
             if (motion === "off") window.addEventListener("scroll", onScroll, { capture: true, passive: true });
+            // 맥락이 돌아오면(GPU 재시작·절전 뒤) 멈춘 한 장도 다시 그린다 — 움직이는 동안은 다음 장이 그린다
+            const onRestored = () => { if (motion === "off") stillFrame(); };
+            canvas.addEventListener("webglcontextrestored", onRestored);
 
             // 손 — 커서를 따라 물이 휘고, 누르면 물결 고리와 방울. 폰은 커서 대신 기울기. '잔잔하게'·끄기면 손에 반응하지 않는다
             const interactive = motion === "full";
@@ -333,6 +336,7 @@ export default function OceanCaustics() {
                 window.removeEventListener("pointerdown", onDown);
                 unsubHero();
                 window.removeEventListener("scroll", onScroll, { capture: true });
+                canvas.removeEventListener("webglcontextrestored", onRestored);
                 cancelAnimationFrame(scrollFrame);
                 stopParallax();
                 bubbles.dispose();

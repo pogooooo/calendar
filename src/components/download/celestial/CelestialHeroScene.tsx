@@ -18,10 +18,12 @@ export default function HeroScene() {
     const theme = useTheme();
     const gold = theme.colors.primary;
     const motion = useThemeMotion();
+    // WebGL 이 없으면(막힌 GPU·WebGL2 가 없는 옛 기기) 움직임 끔과 같은 그림으로 — 렌더러가 던지면 내려받기 화면 전체가 오류 화면이 됐다
+    const [flat, setFlat] = React.useState(false);
 
     React.useEffect(() => {
         const mount = mountRef.current;
-        if (!mount || motion === 'off') return;
+        if (!mount || motion === 'off' || flat) return;
 
         const reduced = motion === 'gentle';
         const color = new THREE.Color(gold);
@@ -30,7 +32,13 @@ export default function HeroScene() {
         const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 60);
         camera.position.z = 5.4;
 
-        const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+        let renderer: THREE.WebGLRenderer;
+        try {
+            renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+        } catch {
+            setFlat(true);
+            return;
+        }
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         renderer.domElement.style.display = "block";
         renderer.domElement.style.touchAction = "pan-y";
@@ -236,8 +244,8 @@ export default function HeroScene() {
             renderer.dispose();
             mount.removeChild(renderer.domElement);
         };
-    }, [gold,motion]);
+    }, [gold,motion,flat]);
 
-    return <S.Mount ref={mountRef} aria-hidden="true">{motion === 'off' && <CelestialArcana />}</S.Mount>;
+    return <S.Mount ref={mountRef} aria-hidden="true">{(motion === 'off' || flat) && <CelestialArcana />}</S.Mount>;
 }
 
