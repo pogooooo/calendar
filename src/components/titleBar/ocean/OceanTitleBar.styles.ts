@@ -22,8 +22,13 @@ export const Bar = styled(C.Bar)`
     border-bottom: 1px solid ${(p) => hairline(p.theme)};
 `;
 
-/** 글자는 CRONOS 로 들어오지만 기울인 세리프에는 Cronos 가 어울린다 */
+/**
+ * 글자는 CRONOS 로 들어오지만 기울인 세리프에는 Cronos 가 어울린다.
+ * 앞의 작은 물방울(OceanTitleMark)은 글자 흐름 밖에 떠 있고 제목이 그만큼 비켜 준다 — 글자 앞에 칸이 끼면 ::first-letter 가 듣지 않는다.
+ */
 export const Title = styled(C.Title)`
+    position: relative;
+    &:has(> span) { margin-left: 26px; }
     font-family: ${SERIF};
     font-style: italic;
     font-size: 1.02rem;

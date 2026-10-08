@@ -1,6 +1,8 @@
 /**
  * 물방울 — 위가 뾰족한 눈물 모양의 액체 유리(glass.ts). 천천히 돌며 겉이 물처럼 일렁이고 살짝 떠오른다 가라앉는다.
  * 빈 할 일 — "맑은 물 한 방울". 올리면 빨리 일렁인다.
+ *
+ * options.still: 가만히 있다가 올렸을 때(active)만 돌고 일렁인다 — 멈추면 그리기도 쉰다(제목 줄·위젯 손잡이 줄의 작은 자리)
  */
 import * as THREE from "three";
 import type { ObjetDef, ObjetInput } from "../types";
@@ -19,7 +21,8 @@ function dropProfile(steps: number) {
 
 export const drop: ObjetDef = {
     interaction: "hover",
-    create({ tone, lite }) {
+    create({ tone, options, lite }) {
+        const still = options.still === true;
         const bag = new Bag();
         const glass = glassMaterial(tone, { thick: 0.55 });
         bag.add(glass.material);
@@ -35,20 +38,22 @@ export const drop: ObjetDef = {
         scene.add(body);
 
         let t = Math.random() * 10;
-        let flow = 0.3;
-        let wob = 0.006;
+        const idle = still ? 0 : 0.3;
+        let flow = idle;
+        let wob = still ? 0 : 0.006;
         return {
             scene,
             camera,
             update(dt: number, input: ObjetInput) {
-                t += dt;
-                flow = approach(flow, input.hover ? 1.2 : 0.3, 2, dt);
-                wob = approach(wob, input.hover ? 0.02 : 0.006, 2, dt);
+                flow = approach(flow, input.hover ? 1.2 : idle, 2, dt);
+                wob = approach(wob, input.hover ? 0.02 : still ? 0 : 0.006, 2, dt);
+                t += dt * (still ? flow : 1);
                 glass.uniforms.uTime.value += dt * flow * 3;
                 glass.uniforms.uWobble.value = wob;
-                body.rotation.y += dt * (0.25 + flow * 0.2);
+                body.rotation.y += dt * (still ? flow * 0.6 : 0.25 + flow * 0.2);
                 body.position.y = 0.12 + Math.sin(t * 0.9) * 0.04;
-                return true;
+                // 가만히 있는 물방울(still)은 다 멈추면 그리기를 쉰다
+                return !still || flow > 0.003 || wob > 0.0005;
             },
             setTone: (tn) => glass.setTone(tn),
             dispose: () => bag.dispose(),

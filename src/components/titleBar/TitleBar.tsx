@@ -9,12 +9,13 @@ import * as CelestialS from "./celestial/CelestialTitleBar.styles";
 import * as MapleS from "./maple/MapleTitleBar.styles";
 import * as OceanS from './ocean/OceanTitleBar.styles';
 import CelestialTitleMark from "./celestial/CelestialTitleMark";
+import MapleTitleMark from "./maple/MapleTitleMark";
+import OceanTitleMark from "./ocean/OceanTitleMark";
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
 const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
-/** 이름 앞의 작은 표 — Celestial 은 3D 혼천의, 다른 갈래는 아직 없다 */
-const NoMark = () => null;
-const MARKS: ThemeImpls<() => ReactElement | null> = { celestial: CelestialTitleMark, maple: NoMark, ocean: NoMark };
+/** 이름 앞의 작은 표(3D 오브제) — Celestial 혼천의 · Maple 오늘의 단풍잎 · Ocean 유리 물방울 */
+const MARKS: ThemeImpls<() => ReactElement | null> = { celestial: CelestialTitleMark, maple: MapleTitleMark, ocean: OceanTitleMark };
 
 export default function TitleBar() {
     const S = usePickTheme(STYLES);
