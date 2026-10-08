@@ -7,6 +7,7 @@ import SecondaryButton from "@/components/button/secondary/SecondaryButton";
 import BaseModal from "@/components/modal/baseModal/BaseModal";
 import Select from "@/components/input/select/Select";
 import { useT } from "@/i18n/useT";
+import { TARGET_MAX } from "@/lib/schema";
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialChallengeModal.styles";
 import * as MapleS from "./maple/MapleChallengeModal.styles";
@@ -61,7 +62,7 @@ export default function ChallengeModalView({
                         </div>
                         <div className="form-group">
                             <label>{t.challenge.targetLabel}</label>
-                            <input type="number" min="1" inputMode="numeric" value={targetCount}
+                            <input type="number" min="1" max={TARGET_MAX} inputMode="numeric" value={targetCount}
                                    onChange={e => setTargetCount(e.target.value)}
                                    placeholder={t.challenge.targetPlaceholder} />
                         </div>

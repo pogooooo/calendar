@@ -85,11 +85,13 @@ export default function CelestialCategoryLayout({
                                     {members}
                                 </div>
 
-                                <S.ActionFooter>
-                                    <SecondaryButton $height={32} $width={140} $variant="danger" onClick={onDelete}>
-                                        {t.category.deleteCategory}
-                                    </SecondaryButton>
-                                </S.ActionFooter>
+                                {onDelete && (
+                                    <S.ActionFooter>
+                                        <SecondaryButton $height={32} $width={140} $variant="danger" onClick={onDelete}>
+                                            {t.category.deleteCategory}
+                                        </SecondaryButton>
+                                    </S.ActionFooter>
+                                )}
                             </S.InfoContainer>
                         ) : (
                             <S.TodoListContainer>

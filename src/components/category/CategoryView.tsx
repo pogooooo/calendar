@@ -297,7 +297,7 @@ export default function CategoryView(props: CategoryThemeProps) {
             selectedCategory={selectedCategory}
             select={setSelectedCategoryId}
             onAdd={() => setIsAddModalOpen(true)}
-            onDelete={() => { if (selectedCategory) handleDelete(selectedCategory.id); }}
+            onDelete={isCreator ? () => { if (selectedCategory) handleDelete(selectedCategory.id); } : undefined}
             activeTab={activeTab}
             plate={plate}
             tabs={tabs}

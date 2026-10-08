@@ -62,9 +62,11 @@ export default function OceanCategoryLayout({
                         {members}
                         <O.PanelFoot>
                             {creator}
-                            <O.Remove type="button" onClick={onDelete}>
-                                <Trash2 />{t.category.deleteCategory}
-                            </O.Remove>
+                            {onDelete && (
+                                <O.Remove type="button" onClick={onDelete}>
+                                    <Trash2 />{t.category.deleteCategory}
+                                </O.Remove>
+                            )}
                         </O.PanelFoot>
                     </O.Panel>
                 </O.Bento>

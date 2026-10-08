@@ -17,8 +17,8 @@ export interface CategoryLayoutProps {
     select: (id: string) => void;
     /** 새 카테고리 창 열기 */
     onAdd: () => void;
-    /** 고른 카테고리 지우기 (묻고 나서) */
-    onDelete: () => void;
+    /** 고른 카테고리 지우기 (묻고 나서). 만든 이에게만 있다 — 없으면 삭제 단추를 그리지 않는다(눌러도 서버가 403 으로 막던 단추) */
+    onDelete?: () => void;
     activeTab: 'info' | 'todos';
     /** 색 견본(눌러 색 바꾸기)과 이름 입력칸·요약 */
     plate: ReactNode;

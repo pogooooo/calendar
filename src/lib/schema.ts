@@ -14,6 +14,8 @@ const TITLE_MAX = 1000;
 const TEXT_MAX = 50_000;
 const title = (message: string) => z.string().min(1, message).max(TITLE_MAX, "제목이 너무 깁니다.");
 const longText = z.string().max(TEXT_MAX, "내용이 너무 깁니다.");
+/** 챌린지 목표 횟수의 끝 — 그보다 크면 스티커 판이 수천 장을 그려 화면이 멎었다(하루 한 번이면 2년 남짓) */
+export const TARGET_MAX = 1000;
 
 // ── Auth ─────────────────────────────────────────────────────────────────────
 
@@ -187,7 +189,7 @@ export const CreateChallengeSchema = z.object({
     description: longText.nullable().optional(),
     startAt: dateText.refine((v) => v !== "", "시작일을 입력해주세요."),
     interval: z.number().int().min(1).max(INTERVAL_MAX).optional().default(1),
-    targetCount: z.number().int().positive().nullable().optional(),
+    targetCount: z.number().int().positive().max(TARGET_MAX).nullable().optional(),
     categoryId: z.string().min(1, "카테고리를 선택해주세요."),
 });
 
@@ -197,7 +199,7 @@ export const UpdateChallengeSchema = z.object({
     description: longText.nullable().optional(),
     startAt: dateText.optional(),
     interval: z.number().int().min(1).max(INTERVAL_MAX).optional(),
-    targetCount: z.number().int().positive().nullable().optional(),
+    targetCount: z.number().int().positive().max(TARGET_MAX).nullable().optional(),
     // 고치기 창에서 카테고리를 옮긴다 — 예전엔 이 칸이 없어 조용히 버려졌다 (권한은 라우트가 본다)
     categoryId: z.string().min(1).optional(),
 });
