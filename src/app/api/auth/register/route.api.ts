@@ -72,7 +72,8 @@ export async function POST(request: NextRequest) {
                 color: "#808080",
                 creatorId: user.id,
                 creatorName: user.name,
-                participants: {},
+                // 만든 이도 참여자 — 다른 카테고리처럼. 예전엔 비워 둬서 담당자 고르개에 자기가 없고 멤버 수가 0 이었다
+                participants: { connect: { id: user.id } },
             },
         });
 

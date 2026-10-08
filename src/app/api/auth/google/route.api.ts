@@ -108,8 +108,8 @@ export async function POST(request: NextRequest) {
                     color: "#808080",
                     creatorId: user.id,
                     creatorName: user.name,
-                    participants: {
-                    }
+                    // 만든 이도 참여자 — 다른 카테고리처럼 (가입 라우트와 같다)
+                    participants: { connect: { id: user.id } },
                 }
             })
         }
