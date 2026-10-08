@@ -84,6 +84,18 @@ assert.equal(shiftZonedDays("2026-03-08T09:00:00-07:00", -1, "America/Los_Angele
 assert.equal(shiftZonedDays("2026-03-07T02:30:00-08:00", 1, "America/Los_Angeles"), "2026-03-08T10:30:00.000Z", "A nonexistent 2:30 AM advances to 3:30 AM during the DST gap");
 assert.ok(overlapsCalendarDays("2026-10-03T09:30:00+09:00", "2026-10-03T10:30:00+09:00", "2026-09-27", "2026-10-03", "Asia/Seoul"), "A task starting after midnight on Saturday must remain visible in its week");
 assert.equal(overlapsCalendarDays("2026-10-04T00:00:00+09:00", "2026-10-04T10:30:00+09:00", "2026-09-27", "2026-10-03", "Asia/Seoul"), false);
+// 끝이 딱 0시인 일정(밤 11시 + 기본 한 시간)은 다음 날에 걸치지 않는다
+assert.equal(overlapsCalendarDays("2026-10-03T23:00:00+09:00", "2026-10-04T00:00:00+09:00", "2026-10-04", "2026-10-10", "Asia/Seoul"), false, "An event ending exactly at midnight must not reach into the next week");
+assert.ok(overlapsCalendarDays("2026-10-03T23:00:00+09:00", "2026-10-04T00:00:00+09:00", "2026-09-27", "2026-10-03", "Asia/Seoul"));
+const { endDateKey } = sourceModule("src/lib/dateKey.ts");
+assert.equal(endDateKey("2026-10-03T23:00:00+09:00", "2026-10-04T00:00:00+09:00"), "2026-10-03");
+assert.equal(endDateKey("2026-10-04T00:00:00+09:00", "2026-10-04T00:00:00+09:00"), "2026-10-04", "A zero-length event at midnight stays on its own day");
+assert.equal(endDateKey("2026-10-03T23:00:00+09:00", "2026-10-04T00:30:00+09:00"), "2026-10-04");
+assert.equal(weeklyTaskStats([{ ...task, startAt: "2026-10-03T23:00:00+09:00", endAt: "2026-10-04T00:00:00+09:00", completions: [] }], "2026-10-04").total, 0, "A Saturday 23:00-24:00 event must not count in the next week");
+const { isBetween } = sourceModule("src/utils/DateUtils.tsx");
+assert.equal(isBetween(new Date(2026, 9, 4), new Date(2026, 9, 3, 23), new Date(2026, 9, 4, 0)), false, "The calendar must not draw a 23:00-24:00 event on the next day");
+assert.ok(isBetween(new Date(2026, 9, 3), new Date(2026, 9, 3, 23), new Date(2026, 9, 4, 0)));
+assert.ok(isBetween(new Date(2026, 9, 4), new Date(2026, 9, 3, 23), new Date(2026, 9, 4, 0, 30)));
 const graph = [{ id: "a", blockedBy: [] }, { id: "b", blockedBy: [{ id: "a" }] }, { id: "c", blockedBy: [{ id: "b" }] }, { id: "d", blockedBy: [] }];
 assert.equal(dependencyIssue(graph, "a", "a"), "self");
 assert.equal(dependencyIssue(graph, "a", "b"), "duplicate");

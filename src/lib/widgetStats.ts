@@ -1,4 +1,4 @@
-import { localDateKey, utcDayKey } from '@/lib/dateKey';
+import { localDateKey, utcDayKey, endDateKey } from '@/lib/dateKey';
 import { addDaysToKey } from '@/lib/timezone';
 
 type StatsTodo = {
@@ -16,7 +16,7 @@ export function weeklyTaskStats(todos: StatsTodo[], weekStart: string) {
     for (const todo of todos) {
         if (!todo.startAt || !todo.endAt) continue;
         const start = localDateKey(todo.startAt);
-        const end = localDateKey(todo.endAt);
+        const end = endDateKey(todo.startAt, todo.endAt);
         const completed = new Set((todo.completions ?? []).map(c => utcDayKey(c.targetDate)));
         for (let day = 0; day < 7; day++) {
             const key = addDaysToKey(weekStart, day);

@@ -10,7 +10,7 @@ import useAnniversaryStore from "@/store/useAnniversaryStore";
 import useCategoryStore from "@/store/useCategoryStore";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useT } from "@/i18n/useT";
-import { localDateKey, utcDayKey } from "@/lib/dateKey";
+import { localDateKey, utcDayKey, endDateKey } from "@/lib/dateKey";
 import { Plus, SlidersHorizontal } from "lucide-react";
 import Arrow from "@/assets/Arrow";
 import DateTimePicker from "@/components/input/dateTimePicker/DateTimePicker";
@@ -32,6 +32,7 @@ import { activeTimeZone } from "@/lib/dateKey";
 import { challengeExpired, completionTargetFor } from "@/lib/challengeDays";
 import { anniversaryDayIn, nextAnniversary } from "@/lib/anniversary";
 import { useCurrentDayKey } from "@/hooks/useCurrentDay";
+import { lastInstant } from "@/utils/DateUtils";
 import * as OceanS from './ocean/OceanHome.styles';
 import OceanHomeLayout from './ocean/OceanHomeLayout';
 import useAnniversaryFx from "@/components/fx/useAnniversaryFx";
@@ -117,7 +118,7 @@ export default function HomeView() {
     const spansDay = React.useCallback(
         (t2: { startAt?: string | number | Date | null; endAt?: string | number | Date | null }, key: string) => {
             if (!t2.startAt || !t2.endAt) return false;
-            return localDateKey(t2.startAt) <= key && key <= localDateKey(t2.endAt);
+            return localDateKey(t2.startAt) <= key && key <= endDateKey(t2.startAt, t2.endAt);
         },
         []
     );
@@ -162,7 +163,7 @@ export default function HomeView() {
         projects.forEach(p => {
             (p.tasks ?? []).forEach(task => {
                 if (!task.endAt || task.status === "done") return;
-                const d = new Date(task.endAt);
+                const d = new Date(lastInstant(task.startAt ?? task.endAt, task.endAt));
                 if (d.getFullYear() !== year || d.getMonth() !== month) return;
                 const id = `due-${d.getDate()}`;
                 if (seen.has(id)) return;

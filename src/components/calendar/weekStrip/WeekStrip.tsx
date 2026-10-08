@@ -6,7 +6,7 @@ import useSwipe from "@/hooks/useSwipe";
 import { fx } from "@/lib/fx";
 import { expandTodos } from "@/hooks/useExpandedTodos";
 import { getWeekDates } from "@/utils/DateUtils";
-import { localDateKey } from "@/lib/dateKey";
+import { localDateKey, endDateKey } from "@/lib/dateKey";
 import useProjectStore from "@/store/useProjectStore";
 import { projectCalendarItems } from "@/lib/projectCalendar";
 import type { TodoType, CategoryType } from "@/types";
@@ -72,7 +72,7 @@ export default function WeekStrip({ selectedDate, onSelect, todos, categories }:
         return weekDates.map((date) => {
             const key = localDateKey(date);
             const onDay = expanded.filter(td =>
-                td.startAt && td.endAt && localDateKey(td.startAt) <= key && key <= localDateKey(td.endAt));
+                td.startAt && td.endAt && localDateKey(td.startAt) <= key && key <= endDateKey(td.startAt, td.endAt));
             // 점 하나가 일정 하나. 셋을 넘으면 +N 으로 줄인다.
             const dots = onDay.slice(0, 3).map(td => colorOf(td.categoryId) || "currentColor");
             return {

@@ -6,7 +6,7 @@ import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 
 import { MonthThemeProps, CalendarTodoType } from "./MonthCalendar";
-import { isSameDay, isBetween } from "@/utils/DateUtils";
+import { isSameDay, isBetween, lastInstant } from "@/utils/DateUtils";
 import { useTodoLevels } from "@/hooks/useTodoLevels";
 import { CategoryType } from "@/store/useCategoryStore";
 
@@ -207,7 +207,7 @@ const WeekRow = ({
 
                                 if (todoAtThisLevel && todoAtThisLevel.startAt && todoAtThisLevel.endAt) {
                                     const isStart = isSameDay(date, new Date(todoAtThisLevel.startAt as string | number | Date));
-                                    const isEnd = isSameDay(date, new Date(todoAtThisLevel.endAt as string | number | Date));
+                                    const isEnd = isSameDay(date, new Date(lastInstant(todoAtThisLevel.startAt, todoAtThisLevel.endAt)));
                                     const color = categories.find((c: CategoryType) => c.id === todoAtThisLevel.categoryId)?.color;
 
                                     const isDone = !!todoAtThisLevel.isDone;

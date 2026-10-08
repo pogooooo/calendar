@@ -398,9 +398,9 @@ class WidgetPainter(
         c.drawText("1", cx - R - dp(2f), cy + dp(3f), ep)
         drawRight(c, "$days", cx + R + dp(3f), cy + dp(3f), ep)
         // 바닥 글: 로마 숫자 달 · 요약 · 오늘
-        val monthTodos = s.todos.filter { it.start <= monthEnd(cal) && it.end >= monthStart(cal) }
+        val monthTodos = s.todos.filter { it.start <= monthEnd(cal) && it.last >= monthStart(cal) }
         val done = monthTodos.count { it.done }
-        val left = monthTodos.count { !it.done && it.end >= Snapshot.startOfDay(now) }
+        val left = monthTodos.count { !it.done && it.last >= Snapshot.startOfDay(now) }
         val fp = text(9.5f, pal.muted, orbit, 0.18f, tabular = true)
         val fy = h - dp(PAD_B) + dp(1f)
         c.drawText(ROMAN[monthIdx], dp(PAD_X), fy, fp)
@@ -474,7 +474,7 @@ class WidgetPainter(
         val firstDow = first.get(Calendar.DAY_OF_WEEK) - Calendar.SUNDAY // 0..6
         val year = cal.get(Calendar.YEAR)
         val ms = monthStart(cal); val me = monthEnd(cal)
-        val monthTodos = s.todos.filter { it.start <= me && it.end >= ms }
+        val monthTodos = s.todos.filter { it.start <= me && it.last >= ms }
         val y0 = header(c, w, s.formatDate(cal.timeInMillis, "monthFmt", "MMM"), "$year · " + s.label("events") + " ", "${monthTodos.size}", inset = dp(ARROW_INSET))
         val cellW = (w - dp(2 * PAD_X)) / 7f
         val names = text(8f, pal.muted, orbit, 0.08f)

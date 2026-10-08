@@ -33,8 +33,10 @@ class Snapshot private constructor(
         val allDay: Boolean, val done: Boolean, val color: Int,
         val completedDates: Set<String>? = null,
     ) {
+        /** 머무는 마지막 순간 — 끝이 딱 0시면 그날은 걸치지 않는다(23:00~0:00 이 다음 날에도 섰다). 웹의 lastInstant 와 같다 */
+        val last: Long get() = maxOf(start, end - 1)
         /** 사용자 시간대의 날짜 키(yyyy-MM-dd)로 그날을 지나는가 */
-        fun spans(key: String): Boolean = dayKey(start) <= key && key <= dayKey(end)
+        fun spans(key: String): Boolean = dayKey(start) <= key && key <= dayKey(last)
         fun timeRange(): String = "${hhmm(start)}–${hhmm(end)}"
         fun doneOn(key: String): Boolean = completedDates?.contains(key) ?: (done && dayKey(start) == key)
     }

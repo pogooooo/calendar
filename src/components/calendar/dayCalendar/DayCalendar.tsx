@@ -15,7 +15,7 @@ import useChallengeStore from "@/store/useChallengeStore";
 import useTodoStore from "@/store/useTodoStore";
 import { useT } from "@/i18n/useT";
 import { useDialog } from "@/components/dialog/DialogProvider";
-import { localDateKey } from "@/lib/dateKey";
+import { localDateKey, endDateKey } from "@/lib/dateKey";
 import { isBetween } from "@/utils/DateUtils";
 import { completionKey, completionTargetFor, slotIndexOn } from "@/lib/challengeDays";
 import { todayKey as labelKey } from "@/lib/localTime";
@@ -198,7 +198,7 @@ const DayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
             const projectItems: TodoType[] = projectCalendarItems(projects, { categoryIds: selectedCategoryIds, marked: true })
                 // 며칠에 걸친 할 일은 시간대에 놓지 않는다. 그 기간 매일 00~24시가 막대로 꽉 차서
                 // 타임라인이 쓸모없어진다. 그런 건 위 "할 일" 목록에 '하루 종일' 로 선다.
-                .map(item => item.isProjectTask && !item.isAllDay && localDateKey(item.startAt!) !== localDateKey(item.endAt!)
+                .map(item => item.isProjectTask && !item.isAllDay && localDateKey(item.startAt!) !== endDateKey(item.startAt!, item.endAt!)
                     ? { ...item, isAllDay: true }
                     : item);
 

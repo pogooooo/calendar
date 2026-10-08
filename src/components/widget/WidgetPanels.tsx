@@ -15,7 +15,7 @@ import useAnniversaryStore from "@/store/useAnniversaryStore";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useT } from "@/i18n/useT";
 import { useCurrentDayKey } from "@/hooks/useCurrentDay";
-import { localDateKey, utcDayKey, activeTimeZone } from "@/lib/dateKey";
+import { localDateKey, utcDayKey, activeTimeZone, endDateKey } from "@/lib/dateKey";
 import { addDaysToKey, zonedDayStart } from "@/lib/timezone";
 import { expandTodos } from "@/hooks/useExpandedTodos";
 import { weeklyTaskStats } from "@/lib/widgetStats";
@@ -32,7 +32,7 @@ const NARROW_PX = 300;
 
 const spansDay = (t: { startAt?: string | number | Date | null; endAt?: string | number | Date | null }, key: string) => {
     if (!t.startAt || !t.endAt) return false;
-    return localDateKey(t.startAt) <= key && key <= localDateKey(t.endAt);
+    return localDateKey(t.startAt) <= key && key <= endDateKey(t.startAt, t.endAt);
 };
 
 const doneOn = (t: { completions?: { targetDate: string | Date }[] }, key: string) =>
@@ -323,7 +323,7 @@ export function DuePanel() {
             if (!t.endAt) return false;
             const end = new Date(t.endAt).getTime();
             if (end < now || end > now + 86400000 * 2) return false;
-            return !doneOn(t, localDateKey(t.endAt));
+            return !doneOn(t, endDateKey(t.startAt ?? t.endAt, t.endAt));
         })
         .sort((a, b) => new Date(a.endAt!).getTime() - new Date(b.endAt!).getTime());
 
@@ -341,7 +341,7 @@ export function DuePanel() {
             {list.length === 0
                 ? <S.Thin>{tr.widget.noDue}</S.Thin>
                 : list.map(t => {
-                    const k = localDateKey(t.endAt!);
+                    const k = endDateKey(t.startAt ?? t.endAt!, t.endAt!);
                     return (
                         <S.Row key={t.id}>
                             <S.Box $done={false} aria-label={t.title} aria-pressed={false} onClick={() => toggleTodo(authFetch, t.originalTodo?.id ?? t.id, k)} />

@@ -1,4 +1,5 @@
 import { addDaysToKey, zonedDateKey } from "./timezone";
+import { lastInstant } from "@/utils/DateUtils";
 
 /** Calendar-day arithmetic preserves wall-clock time across DST and month/year boundaries. */
 export function shiftZonedDays(value: string | number | Date, days: number, timeZone: string): string {
@@ -27,7 +28,7 @@ export function shiftZonedDays(value: string | number | Date, days: number, time
 }
 
 export function overlapsCalendarDays(start: string | number | Date, end: string | number | Date, from: string, to: string, timeZone: string): boolean {
-    return zonedDateKey(start, timeZone) <= to && zonedDateKey(end, timeZone) >= from;
+    return zonedDateKey(start, timeZone) <= to && zonedDateKey(lastInstant(start, end), timeZone) >= from;
 }
 
 export function calendarDayDelta(from: string, to: string): number {

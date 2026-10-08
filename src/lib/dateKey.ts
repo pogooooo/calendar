@@ -1,5 +1,6 @@
 import useSettingStore from "@/store/useSettingStore";
 import { zonedDateKey, DEFAULT_TIMEZONE } from "@/lib/timezone";
+import { lastInstant } from "@/utils/DateUtils";
 
 /**
  * 날짜 키는 사용자가 설정에서 고른 시간대를 기준으로 만든다.
@@ -15,6 +16,10 @@ export const activeTimeZone = (): string => {
 
 export const localDateKey = (input: Date | string | number) =>
     zonedDateKey(input, activeTimeZone());
+
+/** 일정이 걸친 마지막 날 — 끝이 딱 0시면 앞날까지 (lastInstant) */
+export const endDateKey = (start: Date | string | number, end: Date | string | number) =>
+    localDateKey(lastInstant(start, end));
 
 /**
  * 완료 기록(TodoCompletion.targetDate)처럼 서버가 UTC 자정으로 저장하는 값을 읽을 때 쓴다.

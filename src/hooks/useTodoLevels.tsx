@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import type { TodoType } from '@/types';
+import { lastInstant } from '@/utils/DateUtils';
 
 export const useTodoLevels = (todos: TodoType[], weekDates: Date[]) => {
     return useMemo(() => {
@@ -11,7 +12,7 @@ export const useTodoLevels = (todos: TodoType[], weekDates: Date[]) => {
         const currentWeekTodos = todos.filter(todo => {
             if (!todo.startAt || !todo.endAt) return false;
             const s = new Date(todo.startAt).getTime();
-            const e = new Date(todo.endAt).getTime();
+            const e = lastInstant(todo.startAt, todo.endAt);
             return (s <= weekEnd && e >= weekStart);
         });
 
@@ -34,7 +35,7 @@ export const useTodoLevels = (todos: TodoType[], weekDates: Date[]) => {
                 const lastTodoIdInLevel = levels[i][levels[i].length - 1];
                 const lastTodo = currentWeekTodos.find(t => t.id === lastTodoIdInLevel);
                 if (lastTodo) {
-                    const lastTodoEnd = new Date(lastTodo.endAt!).setHours(0, 0, 0, 0);
+                    const lastTodoEnd = new Date(lastInstant(lastTodo.startAt!, lastTodo.endAt!)).setHours(0, 0, 0, 0);
                     if (lastTodoEnd < todoStart) {
                         assignedLevel = i;
                         break;

@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useT } from "@/i18n/useT";
 import { expandTodos } from "@/hooks/useExpandedTodos";
-import { localDateKey } from "@/lib/dateKey";
+import { localDateKey, endDateKey } from "@/lib/dateKey";
 import useProjectStore from "@/store/useProjectStore";
 import { projectCalendarItems } from "@/lib/projectCalendar";
 import type { TodoType, CategoryType } from "@/types";
@@ -56,10 +56,10 @@ export default function DayPeek({ date, todos, categories, onOpenDay }: DayPeekP
         const dayEnd = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
         const colorOf = (id: string) => categories.find(c => c.id === id)?.color ?? "";
         return expandTodos(all, dayStart, dayEnd)
-            .filter(td => td.startAt && td.endAt && localDateKey(td.startAt) <= key && key <= localDateKey(td.endAt))
+            .filter(td => td.startAt && td.endAt && localDateKey(td.startAt) <= key && key <= endDateKey(td.startAt, td.endAt))
             .map(td => {
                 const s = new Date(td.startAt!); const e = new Date(td.endAt!);
-                const allDay = !!td.isAllDay || localDateKey(s) !== localDateKey(e);
+                const allDay = !!td.isAllDay || localDateKey(s) !== endDateKey(s, e);
                 return {
                     id: td.id, title: td.title, color: colorOf(td.categoryId), done: !!td.isDone, allDay,
                     time: allDay ? null : `${hhmm(s)}–${hhmm(e)}`,

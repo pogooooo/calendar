@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Plus } from 'lucide-react';
 
 import { WeekThemeProps } from "./WeekCalendar";
-import { isSameDay, isBetween } from "@/utils/DateUtils";
+import { isSameDay, isBetween, lastInstant } from "@/utils/DateUtils";
 import Arrow from "@/assets/Arrow";
 import CategoryFilter from "@/components/calendar/parts/categoryFilter/CategoryFilter";
 import AnimatedDateText from "@/components/calendar/parts/animatedDateText/AnimatedDateText";
@@ -162,7 +162,7 @@ const WeekCalendarView = React.forwardRef<HTMLDivElement, CelestialWeekProps>(
 
                                                         if (todoAtThisLevel && todoAtThisLevel.startAt && todoAtThisLevel.endAt) {
                                                             const isStart = isSameDay(date, new Date(todoAtThisLevel.startAt as string | number | Date));
-                                                            const isEnd = isSameDay(date, new Date(todoAtThisLevel.endAt as string | number | Date));
+                                                            const isEnd = isSameDay(date, new Date(lastInstant(todoAtThisLevel.startAt, todoAtThisLevel.endAt)));
                                                             const color = categories.find(c => c.id === todoAtThisLevel.categoryId)?.color;
 
                                                             const item = todoAtThisLevel as (typeof todoAtThisLevel & { isDone?: boolean; check?: string; status?: string });
