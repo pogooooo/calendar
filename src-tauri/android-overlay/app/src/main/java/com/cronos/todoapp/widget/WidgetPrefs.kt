@@ -37,7 +37,11 @@ object WidgetPrefs {
     /** 스냅샷이 이 달 + 2주까지만 담으므로 그 밖으로는 넘기지 않는다 */
     const val MAX_OFFSET = 31
 
-    private fun todayBase(): Long = System.currentTimeMillis() / 86_400_000L
+    /** 기기 시간대의 날 번호. UTC 로 나누면 한국에서는 아침 9시에 날이 바뀌어, 자정이 지나도 옮긴 날이 그대로 남았다 */
+    private fun todayBase(): Long {
+        val now = System.currentTimeMillis()
+        return (now + java.util.TimeZone.getDefault().getOffset(now)) / 86_400_000L
+    }
 
     fun save(context: Context, id: Int, alpha: Int, mode: String) {
         prefs(context).edit().putInt("alpha_$id", alpha.coerceIn(20, 100)).putString("mode_$id", mode).apply()

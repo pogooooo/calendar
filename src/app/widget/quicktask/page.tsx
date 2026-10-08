@@ -9,7 +9,7 @@ import { QuickTaskPanel } from "@/components/widget/WidgetPanels";
 
 export default function QuickTaskWidget() {
     const title = useWidgetTitle("quicktask");
-    const { ready, authed } = useWidgetInit([]);
+    const { ready, authed } = useWidgetInit(["daily"]);
     if (!ready || !authed) {
         return <WidgetAuthNotice kind="quicktask" title={title} authed={authed} />;
     }

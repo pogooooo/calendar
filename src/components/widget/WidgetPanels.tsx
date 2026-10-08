@@ -19,6 +19,7 @@ import { localDateKey, utcDayKey, activeTimeZone } from "@/lib/dateKey";
 import { addDaysToKey, zonedDayStart } from "@/lib/timezone";
 import { expandTodos } from "@/hooks/useExpandedTodos";
 import { weeklyTaskStats } from "@/lib/widgetStats";
+import { nextAnniversary } from "@/lib/anniversary";
 import * as OceanS from './ocean/OceanWidgetPanels.styles';
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
@@ -161,6 +162,8 @@ export function TodayPanel() {
         submitting.current = true;
         setPending(true);
         setError(null);
+        // 넣자마자 비운다 — 답을 기다렸다 비우면 그사이 쳐 둔 다음 할 일까지 지워졌다. 실패하면 칸이 비어 있을 때만 되돌린다
+        setDraft("");
         const message = await addTodo(authFetch, {
             title: v,
             categoryId: cat.id,
@@ -169,8 +172,7 @@ export function TodayPanel() {
         });
         submitting.current = false;
         setPending(false);
-        if (message) setError(message);
-        else setDraft("");
+        if (message) { setError(message); setDraft(cur => cur || v); }
     };
 
     return (
@@ -357,22 +359,16 @@ export function AnniversaryPanel() {
     const { anniversaries, fetchAnniversaries } = useAnniversaryStore();
     const authFetch = useAuthFetch();
     const tr = useT();
-    useCurrentDayKey();
+    const todayKey = useCurrentDayKey();
 
     React.useEffect(() => {
         fetchAnniversaries(authFetch);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    const t0 = new Date().setHours(0, 0, 0, 0);
-    const year = new Date(t0).getFullYear();
-
+    // 기념일 화면·홈과 같은 셈 (평년의 2월 29일은 28일 — src/lib/anniversary.ts)
     const list = anniversaries
-        .map(a => {
-            let d = new Date(year, a.month - 1, a.day).getTime();
-            if (d < t0) d = new Date(year + 1, a.month - 1, a.day).getTime();
-            return { ...a, dday: Math.round((d - t0) / 86400000) };
-        })
+        .map(a => ({ ...a, dday: nextAnniversary(a, new Date(`${todayKey}T00:00:00`)).diff }))
         .sort((a, b) => a.dday - b.dday);
 
     return (
@@ -591,9 +587,31 @@ export function MemoPanel() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [key]);
 
+    // 첫 읽기가 실패해도(부팅 때 망이 늦게 올라오면) 나중의 다시 읽기가 성공하면 그때 연다 — 예전엔 창을 다시 열 때까지 잠겨 있었다
     React.useEffect(() => {
-        if (loaded && memoDate === key && !dirty.current) setDraft(memo ?? "");
-    }, [loaded, memo, memoDate, key]);
+        if (memoDate === key && !error) setLoaded(true);
+    }, [memoDate, key, error]);
+
+    // 다시 읽기가 실패하면 스토어의 memo 는 "" 가 된다 — 그걸 받아 쓰면 메모가 빈 칸으로 보이고, 고치면 서버 메모를 덮는다
+    React.useEffect(() => {
+        if (loaded && memoDate === key && !error && !dirty.current) setDraft(memo ?? "");
+    }, [loaded, memo, memoDate, key, error]);
+
+    const save = async () => {
+        if (!loaded || !dirty.current) return;
+        const savedDraft = draftRef.current;
+        const message = await updateDailyMemo(authFetch, zonedDayStart(key, activeTimeZone())!, savedDraft);
+        if (!message && draftRef.current === savedDraft) dirty.current = false;
+    };
+
+    // 치다가 잠깐 멈추면 저장한다. blur 에만 기대면 설정에서 위젯을 끄거나 앱이 꺼질 때(마지막 위젯을 닫으면 곧바로 끝난다)
+    // 저장이 오지 않거나 도중에 끊겨, 방금 쓴 메모가 사라졌다. 칸에는 손대지 않으므로 한글 조합을 끊지 않는다
+    React.useEffect(() => {
+        if (!loaded || !dirty.current) return;
+        const id = window.setTimeout(() => { void save(); }, 1200);
+        return () => window.clearTimeout(id);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [draft, loaded]);
 
     return (
         <S.MemoColumn>
@@ -603,12 +621,7 @@ export function MemoPanel() {
             disabled={!loaded}
             placeholder={tr.calendar.memoPlaceholder}
             onChange={(e) => { dirty.current = true; setDraft(e.target.value); }}
-            onBlur={async () => {
-                if (!loaded || !dirty.current) return;
-                const savedDraft = draft;
-                const message = await updateDailyMemo(authFetch, zonedDayStart(key, activeTimeZone())!, savedDraft);
-                if (!message && draftRef.current === savedDraft) dirty.current = false;
-            }}
+            onBlur={() => { void save(); }}
         />
         {(error || memoError) && <S.More role="alert">{error || memoError}</S.More>}
         </S.MemoColumn>
@@ -639,11 +652,12 @@ export function QuickTaskPanel() {
         submitting.current = true;
         setPending(true);
         setError(null);
+        // 넣자마자 비운다 (TodayPanel 과 같은 까닭)
+        setText("");
         const message = await addDailyTask(authFetch, zonedDayStart(key, activeTimeZone())!, v);
         submitting.current = false;
         setPending(false);
-        if (message) setError(message);
-        else setText("");
+        if (message) { setError(message); setText(cur => cur || v); }
     };
 
     return (

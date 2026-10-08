@@ -17,6 +17,7 @@ import { buildWidgetSnapshot } from "@/lib/widgetSnapshot";
 import useAuthStore from "@/store/useAuthStore";
 import { useAuthFetch, isTokenExpired } from "@/hooks/useAuthFetch";
 import { API_BASE } from "@/lib/apiBase";
+import { bustFetchCache } from "@/lib/fetchOnce";
 
 const WIDGET_KEY = "cronos-widget-key";
 /** 남은 수명이 이보다 짧으면 새로 받는다 (열쇠는 30일) */
@@ -93,6 +94,10 @@ export default function AndroidWidgetSync() {
     const timer = React.useRef<number | null>(null);
     // 일간 화면이 다른 날을 보면 store 의 memo 가 그날 것으로 바뀐다. 오늘 것만 기억해 둔다.
     const todayMemo = React.useRef("");
+    const userId = useAuthStore((s) => s.user?.id ?? null);
+    // 할 일을 한 번이라도 받아 왔는가 (받으면 처음의 빈 배열이 새 배열로 바뀐다).
+    // 받기 전의 빈 목록으로 쓰면 켤 때마다 홈 위젯이 잠깐 비고, 오프라인으로 켜면 그대로 빈 채로 남았다
+    const todosLoaded = todos !== useTodoStore.getInitialState().todos;
 
     React.useEffect(() => {
         if (!isMobileShell()) return;
@@ -102,9 +107,20 @@ export default function AndroidWidgetSync() {
 
     React.useEffect(() => {
         if (!isMobileShell()) return;
-        if (memoDate === localDateKey(new Date())) todayMemo.current = memo;
         // 연달아 바뀌면 마지막 것만 쓴다
-        if (timer.current !== null) window.clearTimeout(timer.current);
+        if (timer.current !== null) { window.clearTimeout(timer.current); timer.current = null; }
+        // 로그아웃하면 곧바로 비운다 (Kotlin 은 읽지 못한 재료를 "없음" 으로 그리고, 누르면 앱을 연다).
+        // 기다렸다 쓰면 그사이 로그인 화면으로 넘어가며 이 컴포넌트가 내려가, 지난 사용자의 일정·메모와
+        // 빠른 추가 열쇠가 홈 위젯에 그대로 남았다
+        if (!userId) {
+            todayMemo.current = "";
+            void import("@tauri-apps/api/core")
+                .then(({ invoke }) => invoke("save_widget_snapshot", { snapshot: "" }))
+                .catch(() => {});
+            return;
+        }
+        if (!todosLoaded) return;
+        if (memoDate === localDateKey(new Date())) todayMemo.current = memo;
         timer.current = window.setTimeout(async () => {
             timer.current = null;
             try {
@@ -121,7 +137,7 @@ export default function AndroidWidgetSync() {
             }
         }, 400);
         return () => { if (timer.current !== null) window.clearTimeout(timer.current); };
-    }, [todos, categories, challenges, anniversaries, projects, memo, memoDate, t, locale, theme, tick, widgetKey]);
+    }, [userId, todosLoaded, todos, categories, challenges, anniversaries, projects, memo, memoDate, t, locale, theme, tick, widgetKey]);
 
     // 위젯에서 열었을 때 갈 곳
     React.useEffect(() => {
@@ -135,6 +151,8 @@ export default function AndroidWidgetSync() {
                 // 위젯의 빠른 추가(QuickAddActivity)가 서버에 바로 넣고 남긴 신호 — 길은 그대로, 할 일만 다시 받는다.
                 // 안 받으면 뒤에 살아 있던 앱이 옛 목록으로 위젯 재료를 덮어써 방금 넣은 것이 위젯에서 사라진다.
                 if (link.startsWith("cronos://refresh")) {
+                    // 방금(1.5초 안에) 읽었어도 그건 넣기 전의 목록일 수 있다
+                    bustFetchCache("todo:");
                     void useTodoStore.getState().fetchTodos(authFetch);
                     return;
                 }

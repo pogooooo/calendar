@@ -9,7 +9,7 @@ import { ChallengePanel } from "@/components/widget/WidgetPanels";
 
 export default function ChallengeWidget() {
     const title = useWidgetTitle("challenge");
-    const { ready, authed } = useWidgetInit([]);
+    const { ready, authed } = useWidgetInit(["challenges"]);
     if (!ready || !authed) {
         return <WidgetAuthNotice kind="challenge" title={title} authed={authed} />;
     }

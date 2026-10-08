@@ -63,4 +63,15 @@ const useWidgetStore = create<WidgetStore>()(
     )
 );
 
+/**
+ * 위젯 창마다 이 스토어를 따로 들고, 저장할 때는 모든 위젯의 설정을 통째로 쓴다.
+ * 다른 창이 쓴 것을 다시 읽지 않으면 — 오늘 위젯을 유리로 바꾼 뒤 메모 위젯의 투명도를 만지면
+ * 메모 창의 낡은 사본(오늘=테마)이 그 위를 덮어써, 다음에 켤 때 오늘 위젯이 테마 바탕으로 돌아갔다.
+ */
+if (typeof window !== "undefined") {
+    window.addEventListener("storage", (e) => {
+        if (e.key === "cronos-widget-settings" && e.newValue) void useWidgetStore.persist.rehydrate();
+    });
+}
+
 export default useWidgetStore;

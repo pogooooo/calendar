@@ -2,8 +2,9 @@
 
 import * as React from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { Home, Calendar, Kanban, Trophy, MoreHorizontal, Layers, Cake, Settings, MonitorDown, X, Search } from "lucide-react";
+import { Home, Calendar, Kanban, Trophy, MoreHorizontal, Layers, Cake, Settings, MonitorDown, X, Search, LogOut } from "lucide-react";
 import { openQuickNavigation } from "@/components/navigation/QuickNavigation";
+import useAuthStore from "@/store/useAuthStore";
 import NavIcon from "@/assets/NavIcon";
 import { useT } from "@/i18n/useT";
 import { isDesktopApp } from "@/lib/apiBase";
@@ -52,6 +53,14 @@ export default function MobileTabBar() {
         router.push(p);
     };
 
+    // 로그아웃은 사이드바의 프로필 메뉴에만 있었는데, 폰에서는 사이드바를 감춘다 — 폰(앱)에서는 로그아웃할 길이 아예 없었다
+    const logout = useAuthStore((s) => s.logout);
+    const handleLogout = async () => {
+        setMore(false);
+        await logout();
+        router.push("/signIn");
+    };
+
     return (
         <>
             {more && (
@@ -71,6 +80,7 @@ export default function MobileTabBar() {
                             </S.SheetRow>
                         ))}
                         <S.SheetRow $on={false} onClick={() => { setMore(false); openQuickNavigation(); }}><Search size={18} /><span>{t.interaction.quickFind}</span></S.SheetRow>
+                        <S.SheetRow $on={false} onClick={() => { void handleLogout(); }}><LogOut size={18} /><span>{t.sidebar.logout}</span></S.SheetRow>
                     </S.SheetBody>
                 </S.Sheet>
             )}

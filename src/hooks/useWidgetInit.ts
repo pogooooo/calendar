@@ -8,10 +8,17 @@ import useCategoryStore from "@/store/useCategoryStore";
 import useProjectStore from "@/store/useProjectStore";
 import useChallengeStore from "@/store/useChallengeStore";
 import useAnniversaryStore from "@/store/useAnniversaryStore";
+import useDailyStore from "@/store/useDailyStore";
 import { useAuthFetch, refreshSession, isTokenExpired } from "@/hooks/useAuthFetch";
 import { subscribeDataChange, type DataKind } from "@/lib/dataSync";
 
-export type WidgetData = "todos" | "categories" | "projects" | "challenges" | "anniversaries";
+/**
+ * 위젯이 보여 주는 자료 — 처음 읽기와 "다른 창이 바꿨다" 신호에 다시 읽기를 함께 정한다.
+ * daily(오늘 메모·간단 할 일)는 처음 읽기를 패널이 그날 날짜로 하고, 여기서는 다시 읽기만 한다.
+ * 예전에는 메모·빠른 할 일·챌린지 위젯이 [] 를 넘겨, 본 창에서 바꾼 것이 창을 다시 열 때까지 안 보였다
+ * (옛 메모를 보고 고치면 본 창에서 쓴 새 메모를 덮어썼다).
+ */
+export type WidgetData = "todos" | "categories" | "projects" | "challenges" | "anniversaries" | "daily";
 
 const ALL: WidgetData[] = ["todos", "categories", "projects", "challenges", "anniversaries"];
 
@@ -123,6 +130,7 @@ export function useWidgetInit(need: WidgetData[] = ALL) {
             if (kinds.has("projects") && wanted.includes("projects")) fetchProjects(authFetch);
             if (kinds.has("challenges") && wanted.includes("challenges")) fetchChallenges(authFetch);
             if (kinds.has("anniversaries") && wanted.includes("anniversaries")) fetchAnniversaries(authFetch);
+            if (kinds.has("daily") && wanted.includes("daily")) useDailyStore.getState().fetchDailyData(authFetch);
         };
 
         const stop = subscribeDataChange((kind) => {
@@ -131,7 +139,22 @@ export function useWidgetInit(need: WidgetData[] = ALL) {
             timer = setTimeout(flush, 180);
         });
 
-        return () => { stop(); clearTimeout(timer); };
+        // 다른 기기(폰·웹)에서 바꾼 것은 신호가 오지 않는다. 부팅 때 망보다 먼저 뜬 위젯은 첫 읽기가 실패한 채
+        // 빈 목록으로 남았다 — 망이 돌아오면, 그리고 10분마다 다시 읽는다
+        const refreshAll = () => {
+            (["todos", "categories", "projects", "challenges", "anniversaries", "daily"] as DataKind[]).forEach((k) => pending.add(k));
+            clearTimeout(timer);
+            timer = setTimeout(flush, 180);
+        };
+        window.addEventListener("online", refreshAll);
+        const every = window.setInterval(refreshAll, 10 * 60 * 1000);
+
+        return () => {
+            stop();
+            clearTimeout(timer);
+            window.removeEventListener("online", refreshAll);
+            window.clearInterval(every);
+        };
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [authed, needKey]);
 

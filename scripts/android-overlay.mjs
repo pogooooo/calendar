@@ -184,7 +184,8 @@ const signBlock = `    ${SIGN_OPEN}
     ${SIGN_CLOSE}`;
 
 if (gradle.includes(SIGN_OPEN)) {
-    gradle = gradle.replace(new RegExp(`    ${SIGN_OPEN}[\s\S]*?${SIGN_CLOSE}`), signBlock);
+    // 틀 문자열 안이라 \\ 를 두 번 써야 한다 — 예전의 [\s\S] 는 [sS] 가 되어 이미 깁은 블록을 못 찾고 그대로 두었다
+    gradle = gradle.replace(new RegExp(`    ${SIGN_OPEN}[\\s\\S]*?${SIGN_CLOSE}`), signBlock);
 } else {
     gradle = gradle.replace("    buildTypes {", `${signBlock}
     buildTypes {`);

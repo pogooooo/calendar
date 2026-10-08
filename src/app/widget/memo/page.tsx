@@ -9,7 +9,7 @@ import { MemoPanel } from "@/components/widget/WidgetPanels";
 
 export default function MemoWidget() {
     const title = useWidgetTitle("memo");
-    const { ready, authed } = useWidgetInit([]);
+    const { ready, authed } = useWidgetInit(["daily"]);
     if (!ready || !authed) {
         return <WidgetAuthNotice kind="memo" title={title} authed={authed} />;
     }
