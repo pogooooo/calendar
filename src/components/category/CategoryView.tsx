@@ -7,6 +7,7 @@ import { CategoryThemeProps } from "./CategoryPage";
 import { useT } from "@/i18n/useT";
 import { localDateKey, utcDayKey, dayKeyToIso } from "@/lib/dateKey";
 import { useDialog } from "@/components/dialog/DialogProvider";
+import useAuthStore from "@/store/useAuthStore";
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialCategory.styles";
 import * as MapleS from "./maple/MapleCategory.styles";
@@ -42,6 +43,10 @@ export default function CategoryView(props: CategoryThemeProps) {
         kickTarget, setKickTarget, closeKickModal, handleKickSubmit,
         setIsAddModalOpen
     } = props;
+
+    // 내보내기(×)는 만든 사람만, 참여자는 자기 자신만(나가기) — 서버도 같은 규칙이다
+    const me = useAuthStore((s) => s.user?.id);
+    const isCreator = !!selectedCategory && selectedCategory.creatorId === me;
 
     const selectedIdx = categories.findIndex((c) => c.id === selectedCategoryId);
     const memberCount = selectedCategory?.participants?.length ?? 0;
@@ -130,15 +135,17 @@ export default function CategoryView(props: CategoryThemeProps) {
                 <S.MedalRow>
                     {(selectedCategory.participants ?? []).map((participant: { id: string; name: string; email: string }) => {
                         const isOwner = participant.id === selectedCategory.creatorId;
+                        const isMe = participant.id === me;
                         return (
                             <S.Medal key={participant.id} title={participant.email}>
                                 <span className="av">
                                     {participant.name.charAt(0)}
-                                    {!isOwner && (
+                                    {!isOwner && (isCreator || isMe) && (
                                         <button
                                             type="button"
                                             className="kick"
-                                            title={t.category.kick}
+                                            title={isMe ? t.category.leave : t.category.kick}
+                                            aria-label={isMe ? t.category.leave : `${t.category.kick} — ${participant.name}`}
                                             onClick={() => setKickTarget({ id: participant.id, name: participant.name })}
                                         >
                                             ×
@@ -151,7 +158,9 @@ export default function CategoryView(props: CategoryThemeProps) {
                         );
                     })}
 
-                    <S.Medal $ghost onClick={openInviteModal}>
+                    {/* 자판으로도 열리게 — 예전엔 div 라 Tab 으로 닿지 않았다 */}
+                    <S.Medal $ghost role="button" tabIndex={0} onClick={openInviteModal}
+                        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openInviteModal(); } }}>
                         <span className="av">＋</span>
                         <span>{t.category.invite}</span>
                     </S.Medal>
@@ -247,7 +256,7 @@ export default function CategoryView(props: CategoryThemeProps) {
                                 placeholder="example@email.com"
                                 value={inviteEmail}
                                 onChange={(e) => setInviteEmail(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleInviteSubmit()}
+                                onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) handleInviteSubmit(); }}
                                 autoFocus
                             />
                             {inviteError && <InlineError>{inviteError}</InlineError>}
@@ -265,14 +274,14 @@ export default function CategoryView(props: CategoryThemeProps) {
                     <S.ModalContent onClick={(e) => e.stopPropagation()}>
                         <S.Corners><i /><i /><i /><i /></S.Corners>
                         <div className="modal-header">
-                            <h3>{t.category.kickTitle}</h3>
+                            <h3>{kickTarget.id === me ? t.category.leaveTitle : t.category.kickTitle}</h3>
                         </div>
                         <div className="modal-body">
-                            <p>{t.category.kickConfirm(kickTarget.name)}</p>
+                            <p>{kickTarget.id === me ? t.category.leaveConfirm : t.category.kickConfirm(kickTarget.name)}</p>
                         </div>
                         <div className="modal-actions">
                             <SecondaryButton $width={70} $height={32} onClick={closeKickModal}>{t.category.cancel}</SecondaryButton>
-                            <SecondaryButton $width={80} $height={32} $variant="danger" onClick={handleKickSubmit}>{t.category.kick}</SecondaryButton>
+                            <SecondaryButton $width={80} $height={32} $variant="danger" onClick={handleKickSubmit}>{kickTarget.id === me ? t.category.leave : t.category.kick}</SecondaryButton>
                         </div>
                     </S.ModalContent>
                 </S.ModalOverlay>

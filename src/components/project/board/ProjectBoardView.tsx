@@ -120,7 +120,14 @@ function TaskCard({ task, allTasks, onEdit, onMove, prevStatus, prevLabel, nextS
     const isDone = task.status === 'done';
 
     return (
-        <S.CardBox onClick={onEdit} $isLocked={isLocked}>
+        <S.CardBox
+            onClick={onEdit}
+            // 자판으로도 열리게 — 안의 옮기기 단추에서 누른 Enter 는 그 단추 몫이다
+            role="button"
+            tabIndex={0}
+            onKeyDown={e => { if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); onEdit(); } }}
+            $isLocked={isLocked}
+        >
             <S.CardMain>
                 <S.CardTitle $isDone={isDone}>
                     <S.PriorityTag $priority={task.priority || 'medium'}>{priorityLabel}</S.PriorityTag>
@@ -128,7 +135,8 @@ function TaskCard({ task, allTasks, onEdit, onMove, prevStatus, prevLabel, nextS
                     <span className="title-text">{task.title}</span>
                 </S.CardTitle>
                 <S.CardActionGroup className="action-group">
-                    {!isLocked && prevStatus && prevLabel && <S.CardMoveButton onClick={e => { e.stopPropagation(); onMove(task.id, prevStatus); }}>{prevLabel}</S.CardMoveButton>}
+                    {/* 대기(선행 조건이 안 끝남)는 앞으로만 막는다 — 이미 진행 중·완료였던 할 일에 조건이 걸리면 되돌릴 길까지 없어졌다 */}
+                    {prevStatus && prevLabel && <S.CardMoveButton onClick={e => { e.stopPropagation(); onMove(task.id, prevStatus); }}>{prevLabel}</S.CardMoveButton>}
                     {!isLocked && nextStatus && nextLabel && <S.CardMoveButton onClick={e => { e.stopPropagation(); onMove(task.id, nextStatus); }}>{nextLabel}</S.CardMoveButton>}
                 </S.CardActionGroup>
             </S.CardMain>

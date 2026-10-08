@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { coalesce, READ_TTL } from "@/lib/fetchOnce";
 import { reportSaveFailure } from "@/lib/saveError";
 import type { AuthFetch, ChallengeType, ChallengeCompletionType } from '@/types';
-import { localDateKey } from '@/lib/dateKey';
+import { utcDayKey } from '@/lib/dateKey';
 import { addDaysToKey } from '@/lib/timezone';
 import { readError } from '@/lib/readError';
 import { fx, stickerLevel } from '@/lib/fx';
@@ -21,8 +21,9 @@ interface ChallengeState {
     toggleChallengeCompletion: (authFetch: AuthFetch, challengeId: string, targetDate: string) => Promise<void>;
 }
 
-// 사용자가 고른 시간대를 따른다. 브라우저 시간대를 쓰면 여행 중에 날짜가 어긋난다.
-const toDateKey = (d: Date) => localDateKey(d);
+// 서버는 보낸 시각의 UTC 날(그날 0시)로 완료를 적고 지운다. 미리 고칠 때도 같은 날로 셈한다 —
+// 예전엔 사용자 시간대로 읽어서 서쪽(UTC-) 시간대에선 기록이 하루 앞 날로 읽히고, 다시 누르면 서버에서 지워졌다
+const toDateKey = (d: Date | string) => utcDayKey(d);
 
 const useChallengeStore = create<ChallengeState>((set, get) => ({
     challenges: [],
@@ -128,11 +129,10 @@ const useChallengeStore = create<ChallengeState>((set, get) => ({
         const challenge = previous.find(c => c.id === challengeId);
         if (!challenge) return;
 
-        const tDate = new Date(targetDate);
-        const dateKey = toDateKey(tDate);
+        const dateKey = toDateKey(targetDate);
 
         const existingComp = (challenge.completions ?? []).find(comp =>
-            toDateKey(new Date(comp.targetDate)) === dateKey
+            toDateKey(comp.targetDate) === dateKey
         );
 
         let newCompletions: ChallengeCompletionType[];
@@ -154,7 +154,7 @@ const useChallengeStore = create<ChallengeState>((set, get) => ({
         }));
         if (!existingComp) {
             // 이번 칸까지 끊기지 않고 이어 온 칸 수 — 이정표(7·30·100…)나 목표를 다 채우면 효과가 커진다
-            const done = new Set(newCompletions.map(comp => toDateKey(new Date(comp.targetDate))));
+            const done = new Set(newCompletions.map(comp => toDateKey(comp.targetDate)));
             let streak = 0;
             for (let key = dateKey; done.has(key) && streak < 5000; key = addDaysToKey(key, -Math.max(1, challenge.interval))) streak += 1;
             const reached = challenge.targetCount != null && newCompletions.length >= challenge.targetCount;
@@ -165,7 +165,8 @@ const useChallengeStore = create<ChallengeState>((set, get) => ({
             const res = await authFetch('/api/challenge/completion', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ challengeId, targetDate }),
+                // 바라는 상태를 같이 보낸다 — 다른 기기에서 이미 바뀐 것을 옛 화면에서 눌러도 서버가 거꾸로 뒤집지 않게
+                body: JSON.stringify({ challengeId, targetDate, done: !existingComp }),
             });
             if (!res.ok) throw new Error("업데이트 실패");
 

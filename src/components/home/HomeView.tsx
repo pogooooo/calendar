@@ -29,6 +29,8 @@ import MapleHomeLayout from "./maple/MapleHomeLayout";
 import { expandTodos } from "@/hooks/useExpandedTodos";
 import { addDaysToKey, zonedDayStart } from "@/lib/timezone";
 import { activeTimeZone } from "@/lib/dateKey";
+import { challengeExpired, completionTargetFor } from "@/lib/challengeDays";
+import { anniversaryDayIn, nextAnniversary } from "@/lib/anniversary";
 import { useCurrentDayKey } from "@/hooks/useCurrentDay";
 import * as OceanS from './ocean/OceanHome.styles';
 import OceanHomeLayout from './ocean/OceanHomeLayout';
@@ -171,10 +173,12 @@ export default function HomeView() {
 
         anniversaries.forEach(a => {
             if (a.month !== month + 1) return;
-            const id = `anv-${a.day}`;
+            // 평년의 2월 29일은 28일에 (src/lib/anniversary.ts)
+            const day = anniversaryDayIn(a, year);
+            const id = `anv-${day}`;
             if (seen.has(id)) return;
             seen.add(id);
-            out.push({ day: a.day, kind: "anv" });
+            out.push({ day, kind: "anv" });
         });
 
         return out;
@@ -204,20 +208,17 @@ export default function HomeView() {
             challenges
                 .filter(c => {
                     const target = c.targetCount ?? null;
-                    return target === null || (c.completions?.length ?? 0) < target;
+                    // 마지막 칸이 지난 챌린지는 끝난 것 — 챌린지 화면·위젯처럼 뺀다 (예전엔 여기서만 진행 중으로 남아 지난 칸을 눌렀다)
+                    return (target === null || (c.completions?.length ?? 0) < target) && !challengeExpired(c, todayKey);
                 })
                 .slice(0, 3),
-        [challenges]
+        [challenges, todayKey]
     );
 
     const upcomingAnniversaries = React.useMemo(() => {
-        const thisYear = new Date(realTodayTime).getFullYear();
         return anniversaries
-            .map(a => {
-                let d = new Date(thisYear, a.month - 1, a.day);
-                if (d.getTime() < realTodayTime) d = new Date(thisYear + 1, a.month - 1, a.day);
-                return { ...a, dday: Math.round((d.getTime() - realTodayTime) / 86400000) };
-            })
+            // 다음에 돌아오는 날은 기념일 화면과 같은 셈으로 (평년의 2월 29일은 28일)
+            .map(a => ({ ...a, dday: nextAnniversary(a, new Date(realTodayTime)).diff }))
             .sort((a, b) => a.dday - b.dday)
             .slice(0, 3);
     }, [anniversaries, realTodayTime]);
@@ -267,8 +268,17 @@ export default function HomeView() {
     const quickCategory = categories[0];
     // "자세히": 적던 제목을 들고 할 일 창(시간·카테고리·반복·메모)을 연다. 빠른 추가는 하루 종일로만 넣기 때문
     const [detailOpen, setDetailOpen] = React.useState(false);
-    const openDetail = () => { setQuickError(null); setDetailOpen(true); };
-    const closeDetail = () => { setDetailOpen(false); setQuick(""); };
+    // 창도 보고 있는 날(지금 시각)로 연다 — 예전엔 늘 오늘로 열려, 다른 날을 보다 적은 일정이 오늘에 들어갔다.
+    // 열 때 한 번 정한다: 열린 동안 값이 바뀌면 할 일 창이 칸을 다시 채워 적던 것이 지워진다
+    const [detailDate, setDetailDate] = React.useState<Date | undefined>(undefined);
+    const openDetail = () => {
+        const now = new Date();
+        setDetailDate(new Date(focus.getFullYear(), focus.getMonth(), focus.getDate(), now.getHours(), now.getMinutes()));
+        setQuickError(null);
+        setDetailOpen(true);
+    };
+    // 그냥 닫으면 적던 제목은 칸에 남긴다 (예전엔 닫기만 해도 지워졌다). 저장했을 때만 비운다
+    const closeDetail = () => setDetailOpen(false);
 
     const handleQuickAdd = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -294,17 +304,17 @@ export default function HomeView() {
         setQuick("");
     };
 
-    const handleToggleChallenge = (id: string, d: Date) => {
-        const safe = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 12, 0, 0);
-        return toggleChallengeCompletion(authFetch, id, safe.toISOString());
-    };
+    // 칸의 날짜 키를 그날 정오(UTC)로 보낸다 — 서버가 그날 0시로 자르므로 어느 시간대에서든 같은 날이다
+    const handleToggleChallenge = (id: string, key: string) =>
+        toggleChallengeCompletion(authFetch, id, completionTargetFor(key));
 
+    /* 지난 이레 — 날짜 키로 센다. 예전엔 기기 0시를 사용자 시간대로 다시 읽어서, 고른 시간대가 기기보다 서쪽이면
+       칸이 하루씩 밀려 오늘 칸을 눌러도 불이 들어오지 않았다 */
     const streakOf = (completions?: { targetDate: string | Date }[]) => {
         const set = new Set((completions ?? []).map(c => utcDayKey(c.targetDate)));
         return Array.from({ length: 7 }, (_, i) => {
-            const d = new Date(realTodayTime);
-            d.setDate(d.getDate() - 6 + i);
-            return { date: d, done: set.has(localDateKey(d)), isToday: i === 6 };
+            const key = addDaysToKey(todayKey, i - 6);
+            return { key, done: set.has(key), isToday: i === 6 };
         });
     };
 
@@ -430,9 +440,10 @@ export default function HomeView() {
                             const done = tasks.filter(task => task.status === "done").length;
                             const pct = tasks.length ? Math.round((done / tasks.length) * 100) : 0;
                             return (
+                                // 그 프로젝트를 열어 준다 — 예전엔 /project 로만 보내서 늘 첫 프로젝트가 열렸다
                                 <S.ProjectRow key={p.id} role="button" tabIndex={0}
-                                    onClick={() => router.push("/project")}
-                                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") router.push("/project"); }}>
+                                    onClick={() => router.push(`/project?id=${encodeURIComponent(p.id)}`)}
+                                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); router.push(`/project?id=${encodeURIComponent(p.id)}`); } }}>
                                     <span className="name">{p.title}</span>
                                     <i className="bar">
                                         <b style={{ width: `${pct}%` }} />
@@ -475,9 +486,9 @@ export default function HomeView() {
                                                 type="button"
                                                 $on={s.done}
                                                 $today={s.isToday}
-                                                aria-label={`${c.title} ${localDateKey(s.date)}`}
+                                                aria-label={`${c.title} ${s.key}`}
                                                 aria-pressed={s.done}
-                                                onClick={() => handleToggleChallenge(c.id, s.date)}
+                                                onClick={() => handleToggleChallenge(c.id, s.key)}
                                             />
                                         ))}
                                     </span>
@@ -537,6 +548,8 @@ export default function HomeView() {
                 onClose={closeDetail}
                 categories={categories}
                 initialTitle={quick}
+                selectedDate={detailDate}
+                onSaved={() => setQuick("")}
             />
 
             <ChallengeModal

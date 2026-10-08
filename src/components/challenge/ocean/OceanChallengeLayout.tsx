@@ -8,6 +8,7 @@ import { useT } from "@/i18n/useT";
 import type { ChallengeType } from "@/types";
 import type { ChallengeLayoutProps } from "../ChallengeLayout.types";
 import { streakOf, weekOf } from "./challengeWeek";
+import { useCurrentDayKey } from "@/hooks/useCurrentDay";
 import * as O from "./OceanChallenge.styles";
 
 /** 진행 고리 — 가는 홈 위로 청록이 찬다. ratio 가 null 이면(목표 없음) 홈만 */
@@ -34,11 +35,11 @@ function Ring({ ratio, size, stroke, children }: { ratio: number | null; size: n
 }
 
 /** 지난 이레 — 오늘이 맨 오른쪽 */
-function WeekStrip({ challenge, days }: { challenge: ChallengeType; days: readonly string[] }) {
+function WeekStrip({ challenge, days, todayKey }: { challenge: ChallengeType; days: readonly string[]; todayKey: string }) {
     return (
         <O.Week aria-hidden="true">
-            {weekOf(challenge).map((d) => (
-                <span key={d.date.getTime()} className={`day ${d.mark}${d.today ? " today" : ""}`}>
+            {weekOf(challenge, todayKey).map((d) => (
+                <span key={d.key} className={`day ${d.mark}${d.today ? " today" : ""}`}>
                     <b>{days[d.date.getDay()].charAt(0)}</b>
                     <i />
                 </span>
@@ -62,6 +63,8 @@ export default function OceanChallengeLayout({
     const t = useT();
     const tr = t.challenge;
     const days = t.calendar.days;
+    // 오늘은 사용자 시간대의 날 — 자정을 넘기면 이레 줄·연속 칸이 다시 셈된다
+    const todayKey = useCurrentDayKey();
 
     const catOf = (c: ChallengeType) => categories.find((x) => x.id === c.categoryId);
     const cadence = (c: ChallengeType) =>
@@ -114,7 +117,7 @@ export default function OceanChallengeLayout({
         const target = c.targetCount ?? null;
         const ratio = target ? Math.min(1, count / target) : null;
         const reached = target !== null && count >= target;
-        const streak = streakOf(c);
+        const streak = streakOf(c, todayKey);
         const current = c.id === selectedId;
         return (
             <O.Tile
@@ -135,7 +138,7 @@ export default function OceanChallengeLayout({
                         {target === null ? "∞" : reached ? <Check strokeWidth={2.25} /> : <>{Math.round((ratio ?? 0) * 100)}<small>%</small></>}
                     </Ring>
                 </span>
-                <WeekStrip challenge={c} days={days} />
+                <WeekStrip challenge={c} days={days} todayKey={todayKey} />
                 <span className="foot">
                     <span>{target === null ? tr.indefinite(count) : <><b>{count}</b><em> / {target}</em></>}</span>
                     {streak > 1 && <span className="streak">{tr.streak(streak)}</span>}
@@ -216,7 +219,7 @@ export default function OceanChallengeLayout({
         const count = sel.completions?.length ?? 0;
         const target = sel.targetCount ?? null;
         const ratio = target ? Math.min(1, count / target) : null;
-        const streak = streakOf(sel);
+        const streak = streakOf(sel, todayKey);
         return (
             <O.Stage key={sel.id}>
                 <O.Brief>
@@ -256,7 +259,7 @@ export default function OceanChallengeLayout({
                     <div className="board">{board}</div>
                     <footer>
                         <span className="label">{t.home.thisWeek}</span>
-                        <WeekStrip challenge={sel} days={days} />
+                        <WeekStrip challenge={sel} days={days} todayKey={todayKey} />
                         {streak > 1 && <span className="streak">{tr.streak(streak)}</span>}
                     </footer>
                 </O.Board>

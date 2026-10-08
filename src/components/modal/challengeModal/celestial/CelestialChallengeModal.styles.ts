@@ -25,10 +25,15 @@ export const FormArea = styled.form`
         display: flex;
         flex-direction: column;
         gap: 6px;
+        /* 칸이 제 글자 폭보다 좁아질 수 있게 — 폰(390px)에서 "반복 주기 | 목표 횟수" 줄의 목표 칸이 창 밖으로 잘렸다 */
+        min-width: 0;
 
         label { font-size: 0.8rem; color: ${(props) => props.theme.colors.textSecondary}; }
 
         input, select {
+            width: 100%;
+            min-width: 0;
+            box-sizing: border-box;
             background: ${(props) => props.theme.colors.surface};
             border: 1px solid ${(props) => props.theme.colors.primary}55;
             border-radius: 4px;

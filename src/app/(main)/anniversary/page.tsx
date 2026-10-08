@@ -16,6 +16,8 @@ import CelestialAnniversaryLayout from "./celestial/CelestialAnniversaryLayout";
 import OceanAnniversaryLayout from "./ocean/OceanAnniversaryLayout";
 import type { AnniversaryItem } from "./AnniversaryLayout.types";
 import useAnniversaryFx from "@/components/fx/useAnniversaryFx";
+import { nextAnniversary } from "@/lib/anniversary";
+import { useCurrentDayKey } from "@/hooks/useCurrentDay";
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
 const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
@@ -25,22 +27,6 @@ const LAYOUTS = { celestial: CelestialAnniversaryLayout, maple: CelestialAnniver
 
 // 윤년이 아닌 해도 있으므로 2월은 29일까지 허용한다
 const DAYS_IN_MONTH = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-
-function nextOccurrence(month: number, day: number) {
-    const now = new Date();
-    const thisYear = new Date(now.getFullYear(), month - 1, day);
-    thisYear.setHours(0, 0, 0, 0);
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    if (thisYear.getTime() >= today.getTime()) return thisYear;
-    return new Date(now.getFullYear() + 1, month - 1, day);
-}
-
-function ddayDiff(month: number, day: number) {
-    const target = nextOccurrence(month, day);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return Math.round((target.getTime() - today.getTime()) / 86400000);
-}
 
 export default function AnniversaryPage() {
     const S = usePickTheme(STYLES);
@@ -79,13 +65,15 @@ export default function AnniversaryPage() {
         if (ok) deleteAnniversary(authFetch, a.id);
     };
 
-    const sorted = [...anniversaries].sort(
-        (a, b) => nextOccurrence(a.month, a.day).getTime() - nextOccurrence(b.month, b.day).getTime()
-    );
-    const items: AnniversaryItem[] = sorted.map((a) => {
-        const diff = ddayDiff(a.month, a.day);
-        return { anniversary: a, date: nextOccurrence(a.month, a.day), diff, isToday: diff === 0 };
-    });
+    /* 다음에 돌아오는 날·남은 날은 src/lib/anniversary.ts 하나로 (2월 29일은 평년에 2월 28일).
+       오늘은 사용자 시간대의 날이고 자정을 넘기면 다시 셈한다 — 켜 둔 화면의 D-숫자가 어제에 머물지 않게 */
+    const todayKey = useCurrentDayKey();
+    const items: AnniversaryItem[] = anniversaries
+        .map((a) => {
+            const { date, diff } = nextAnniversary(a, new Date(`${todayKey}T00:00:00`));
+            return { anniversary: a, date, diff, isToday: diff === 0 };
+        })
+        .sort((x, y) => x.diff - y.diff);
     // 오늘이 기념일이면 하루 한 번 갈래가 축하한다 (그 카드 자리에서)
     useAnniversaryFx(items.filter(i => i.isToday).map(i => i.anniversary.id));
 

@@ -103,7 +103,12 @@ export default function CelestialChallengeLayout({
         return (
             <S.ChallengeRow
                 key={challenge.id}
+                // 자판으로도 고르게 — 예전엔 div 라 Tab 으로 닿지 않아 "오늘 달성"까지 갈 길이 없었다
+                role="button"
+                tabIndex={0}
+                aria-pressed={selectedChallenge?.id === challenge.id}
                 onClick={() => select(challenge.id)}
+                onKeyDown={(e) => { if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); select(challenge.id); } }}
                 $isSelected={selectedChallenge?.id === challenge.id}
                 style={{ opacity: isCompleted ? 0.6 : 1 }}
             >

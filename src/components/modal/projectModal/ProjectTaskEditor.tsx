@@ -88,8 +88,8 @@ export default function ProjectTaskEditor({ target, onClose }: { target: TaskEdi
             setError(t.interaction.invalidDates);
             return;
         }
-        // 담당자는 id 로 보낸다 (서버가 연결만 한다)
-        const payload = { ...data, assignees: data.assignees?.map((a) => a.id) as unknown as ProjectTaskType["assignees"] };
+        // 담당자는 사람 그대로 — 서버에 id 로 보내는 건 저장소가 한다 (그래야 응답 전에도 카드에 이름이 선다)
+        const payload = { ...data };
         await run(() => target.taskId
             ? updateProjectTask(authFetch, target.projectId, target.taskId, payload)
             : addProjectTask(authFetch, target.projectId, payload));

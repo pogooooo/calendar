@@ -73,7 +73,11 @@ export default function ProjectModalView({
                         <div style={{ width: '180px' }}>
                             <Dropdown
                                 value={data.categoryId || ''}
-                                onChange={(val: string) => setData({ ...data, categoryId: val })}
+                                // 카테고리를 옮기면 그 카테고리 멤버가 아닌 담당자는 뺀다 — 고르개엔 안 보이는데 저장엔 실려 갔다
+                                onChange={(val: string) => {
+                                    const members = categories.find((c: CategoryType) => c.id === val)?.participants ?? [];
+                                    setData({ ...data, categoryId: val, assignees: (data.assignees ?? []).filter((a: UserType) => members.some(m => m.id === a.id)) });
+                                }}
                                 placeholder={f.choose}
                                 options={categories.map((c: CategoryType) => ({
                                     label: c.name,

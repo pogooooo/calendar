@@ -1,62 +1,42 @@
 /**
  * 바다의 챌린지 카드가 쓰는 셈 — 지난 이레의 칸과, 끊기지 않고 이어 온 칸 수.
- * 날짜는 스티커 판(ChallengeView)과 같은 셈을 쓴다: 시작일의 그날 0시에서 interval 일마다 한 칸, 완료 기록은 기기 시간대의 그날.
+ * 날 셈은 스티커 판(ChallengeView)과 같은 src/lib/challengeDays.ts: 오늘·시작일은 사용자 시간대의 날,
+ * 완료 기록은 서버가 적은 UTC 날 (예전엔 기기 시간대로 읽어 서쪽 시간대에서 하루씩 밀렸다).
  */
 import type { ChallengeType } from "@/types";
+import { localDateKey } from "@/lib/dateKey";
+import { addDaysToKey } from "@/lib/timezone";
+import { completionKey, slotIndexOn, slotKey, slotsUntil } from "@/lib/challengeDays";
 
-const DAY = 86_400_000;
-const pad = (n: number) => String(n).padStart(2, "0");
-const keyOf = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-const midnight = (v: string | number | Date) => {
-    const d = new Date(v);
-    d.setHours(0, 0, 0, 0);
-    return d;
-};
-const doneKeys = (c: ChallengeType) => new Set((c.completions ?? []).map((x) => keyOf(new Date(x.targetDate))));
-
-/** 그날이 몇 번째 칸인가 — 칸이 아니면 null (시작 전, 사이 날, 목표 뒤) */
-function slotOf(c: ChallengeType, day: Date): number | null {
-    const diff = Math.round((day.getTime() - midnight(c.startAt).getTime()) / DAY);
-    if (diff < 0 || diff % c.interval !== 0) return null;
-    const i = diff / c.interval;
-    if (c.targetCount != null && i >= c.targetCount) return null;
-    return i;
-}
+const doneKeys = (c: ChallengeType) => new Set((c.completions ?? []).map(completionKey));
 
 /** done: 해낸 칸 · miss: 놓친 칸 · open: 아직 비어 있는 오늘 칸 · off: 칸이 아닌 날 */
 export type DayMark = "done" | "miss" | "open" | "off";
-export interface WeekDay { date: Date; mark: DayMark; today: boolean }
+/** date 는 그날 0시(기기 시각) — 요일 글자를 고르는 데만 쓴다 */
+export interface WeekDay { key: string; date: Date; mark: DayMark; today: boolean }
 
 /** 오늘로 끝나는 이레 */
-export function weekOf(c: ChallengeType, now = new Date()): WeekDay[] {
-    const today = midnight(now);
+export function weekOf(c: ChallengeType, todayKey = localDateKey(new Date())): WeekDay[] {
     const done = doneKeys(c);
     return Array.from({ length: 7 }, (_, i) => {
-        const date = new Date(today);
-        date.setDate(today.getDate() - 6 + i);
+        const key = addDaysToKey(todayKey, i - 6);
+        const date = new Date(`${key}T00:00:00`);
         const isToday = i === 6;
-        if (slotOf(c, date) === null) return { date, mark: "off", today: isToday };
-        if (done.has(keyOf(date))) return { date, mark: "done", today: isToday };
-        return { date, mark: isToday ? "open" : "miss", today: isToday };
+        if (slotIndexOn(c, key) === null) return { key, date, mark: "off", today: isToday };
+        if (done.has(key)) return { key, date, mark: "done", today: isToday };
+        return { key, date, mark: isToday ? "open" : "miss", today: isToday };
     });
 }
 
 /** 마지막 칸에서 거꾸로, 끊기지 않고 해낸 칸 수. 오늘 칸이 아직 비었으면 그 앞 칸부터 센다 (하루가 끝나야 끊긴 것) */
-export function streakOf(c: ChallengeType, now = new Date()): number {
-    const today = midnight(now);
-    const start = midnight(c.startAt);
-    const diff = Math.round((today.getTime() - start.getTime()) / DAY);
-    if (diff < 0) return 0;
+export function streakOf(c: ChallengeType, todayKey = localDateKey(new Date())): number {
+    const passed = slotsUntil(c, todayKey);
+    if (passed === 0) return 0;
     const done = doneKeys(c);
-    const slotDate = (i: number) => {
-        const d = new Date(start);
-        d.setDate(start.getDate() + i * c.interval);
-        return d;
-    };
-    let i = Math.floor(diff / c.interval);
+    let i = passed - 1;
     if (c.targetCount != null) i = Math.min(i, c.targetCount - 1);
-    if (i >= 0 && keyOf(slotDate(i)) === keyOf(today) && !done.has(keyOf(today))) i -= 1;
+    if (i >= 0 && slotKey(c, i) === todayKey && !done.has(todayKey)) i -= 1;
     let n = 0;
-    while (i >= 0 && done.has(keyOf(slotDate(i)))) { n += 1; i -= 1; }
+    while (i >= 0 && done.has(slotKey(c, i))) { n += 1; i -= 1; }
     return n;
 }

@@ -31,6 +31,15 @@ async function requireSuccess(response: Response) {
     throw new Error(body?.message || "변경 내용을 저장하지 못했습니다. 연결을 확인한 뒤 다시 시도해주세요.");
 }
 const failureMessage = (error: unknown) => error instanceof Error && error.message ? error.message : "변경 내용을 저장하지 못했습니다. 연결을 확인한 뒤 다시 시도해주세요.";
+/** 담당자는 화면(저장소)에선 사람으로 들고 서버에는 id 만 보낸다 — 예전엔 id 를 저장소에 그대로 넣어서,
+    한 번 저장한 프로젝트를 다시 열면 담당자가 풀려 보이고 다시 저장하면 null 이 실려 실패했다 */
+const toWire = <T extends { assignees?: unknown }>(data: T) => Array.isArray(data.assignees)
+    ? { ...data, assignees: (data.assignees as (UserType | string)[]).map((a) => (typeof a === "string" ? a : a.id)) }
+    : data;
+/* 실패하면 그 일만 되돌린다. 예전엔 요청 직전의 목록 전체로 돌려서, 그사이 옮긴 다른 카드가 제자리로 튀거나
+   (서버엔 저장됐는데) 먼저 실패한 요청의 변경이 다음 실패 때 되살아나 화면과 서버가 어긋났다 */
+const mapTasks = (projects: ProjectType[], projectId: string, fn: (tasks: ProjectTaskType[]) => ProjectTaskType[]) =>
+    projects.map(p => p.id === projectId ? { ...p, tasks: fn(p.tasks ?? []) } : p);
 /** 보드 칸의 차례 — 옮긴 방향(효과)을 셀 때 */
 const STATUS_ORDER = ["todo", "in_progress", "done"];
 
@@ -63,7 +72,6 @@ const useProjectStore = create<ProjectState>((set, get) => ({
     },
 
     addProject: async (authFetch, data) => {
-        const previousProjects = get().projects;
         const tempId = `temp-proj-${Date.now()}`;
         const newProject: ProjectType = {
             id: tempId,
@@ -73,7 +81,7 @@ const useProjectStore = create<ProjectState>((set, get) => ({
             description: data.description ?? null,
             startAt: data.startAt ?? null,
             endAt: data.endAt ?? null,
-            assignees: [],
+            assignees: data.assignees ?? [],
             tasks: [],
         };
 
@@ -84,7 +92,7 @@ const useProjectStore = create<ProjectState>((set, get) => ({
             const res = await authFetch('/api/project', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data),
+                body: JSON.stringify(toWire(data)),
             });
             await requireSuccess(res);
             if (res.ok) {
@@ -97,7 +105,7 @@ const useProjectStore = create<ProjectState>((set, get) => ({
             }
             return null;
         } catch (err) {
-            set({ projects: previousProjects });
+            set((state) => ({ projects: state.projects.filter(p => p.id !== tempId) }));
             console.error("[PROJECT_ADD_ERROR]", err);
             reportSaveFailure("project");
             return failureMessage(err);
@@ -105,8 +113,8 @@ const useProjectStore = create<ProjectState>((set, get) => ({
     },
 
     updateProject: async (authFetch, projectId, data) => {
-        const previousProjects = get().projects;
-        if (data.status === "done" && previousProjects.find(p => p.id === projectId)?.status !== "done") fx.emit("project-done");
+        const before = get().projects.find(p => p.id === projectId);
+        if (data.status === "done" && before?.status !== "done") fx.emit("project-done");
         set((state) => ({
             projects: state.projects.map(p => p.id === projectId ? { ...p, ...data } : p)
         }));
@@ -115,12 +123,20 @@ const useProjectStore = create<ProjectState>((set, get) => ({
             const res = await authFetch('/api/project', {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: projectId, ...data }),
+                body: JSON.stringify({ id: projectId, ...toWire(data) }),
             });
             await requireSuccess(res);
+            // 담당자는 서버가 고칠 수 있다(카테고리 멤버가 아니면 뺀다) — 보낸 것 말고 서버가 적은 것으로 맞춘다
+            if (data.assignees) {
+                const server = await res.json().catch(() => null) as ProjectType | null;
+                if (server?.id === projectId && Array.isArray(server.assignees)) {
+                    set((state) => ({ projects: state.projects.map(p => p.id === projectId ? { ...p, assignees: server.assignees } : p) }));
+                }
+            }
             return null;
         } catch (err) {
-            set({ projects: previousProjects });
+            // 이 프로젝트의 칸만 되돌린다 (할 일 목록은 지금 것 그대로)
+            if (before) set((state) => ({ projects: state.projects.map(p => p.id === projectId ? { ...before, tasks: p.tasks } : p) }));
             console.error("[PROJECT_UPDATE_ERROR]", err);
             reportSaveFailure("project");
             return failureMessage(err);
@@ -143,7 +159,6 @@ const useProjectStore = create<ProjectState>((set, get) => ({
     },
 
     addProjectTask: async (authFetch, projectId, data) => {
-        const previousProjects = get().projects;
         const tempId = `temp-task-${Date.now()}`;
 
         const newTask: ProjectTaskType = {
@@ -157,6 +172,8 @@ const useProjectStore = create<ProjectState>((set, get) => ({
             startAt: data.startAt ?? null,
             endAt: data.endAt ?? null,
             isAllDay: data.isAllDay ?? true,
+            blockedBy: data.blockedBy ?? [],
+            assignees: data.assignees ?? [],
         };
 
         set((state) => ({
@@ -170,7 +187,7 @@ const useProjectStore = create<ProjectState>((set, get) => ({
             const res = await authFetch('/api/project/task', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...data, projectId }),
+                body: JSON.stringify({ ...toWire(data), projectId }),
             });
             await requireSuccess(res);
             if (res.ok) {
@@ -185,7 +202,7 @@ const useProjectStore = create<ProjectState>((set, get) => ({
             } else throw new Error();
             return null;
         } catch (err) {
-            set({ projects: previousProjects });
+            set((state) => ({ projects: mapTasks(state.projects, projectId, tasks => tasks.filter(t => t.id !== tempId)) }));
             console.error("[PROJECT_TASK_ADD_ERROR]", err);
             reportSaveFailure("project");
             return failureMessage(err);
@@ -216,14 +233,15 @@ const useProjectStore = create<ProjectState>((set, get) => ({
             });
             await requireSuccess(res);
         } catch (err) {
-            set({ projects: previousProjects });
+            // 그사이 다시 옮겼으면(지금 칸이 이번 것이 아니면) 그대로 둔다
+            set((state) => ({ projects: mapTasks(state.projects, projectId, ts => ts.map(t => t.id === taskId && t.status === newStatus && before ? { ...t, status: before } : t)) }));
             console.error("[PROJECT_TASK_STATUS_ERROR]", err);
             reportSaveFailure("project");
         }
     },
 
     updateProjectTask: async (authFetch, projectId, taskId, data) => {
-        const previousProjects = get().projects;
+        const prevTask = get().projects.find(p => p.id === projectId)?.tasks?.find(t => t.id === taskId);
         set((state) => ({
             projects: state.projects.map(p =>
                 p.id === projectId
@@ -236,7 +254,7 @@ const useProjectStore = create<ProjectState>((set, get) => ({
             const res = await authFetch('/api/project/task', {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: taskId, ...data }),
+                body: JSON.stringify({ id: taskId, ...toWire(data) }),
             });
             await requireSuccess(res);
             const serverTask = await res.json();
@@ -249,7 +267,11 @@ const useProjectStore = create<ProjectState>((set, get) => ({
             }));
             return null;
         } catch (err) {
-            set({ projects: previousProjects });
+            // 이번에 바꾼 칸만 그 전 값으로
+            if (prevTask) {
+                const restored = Object.fromEntries(Object.keys(data).map(k => [k, prevTask[k as keyof ProjectTaskType]])) as Partial<ProjectTaskType>;
+                set((state) => ({ projects: mapTasks(state.projects, projectId, ts => ts.map(t => t.id === taskId ? { ...t, ...restored } : t)) }));
+            }
             console.error("[PROJECT_TASK_UPDATE_ERROR]", err);
             reportSaveFailure("project");
             return failureMessage(err);
@@ -257,7 +279,7 @@ const useProjectStore = create<ProjectState>((set, get) => ({
     },
 
     deleteProjectTask: async (authFetch, projectId, taskId) => {
-        const previousProjects = get().projects;
+        const prevTasks = get().projects.find(p => p.id === projectId)?.tasks ?? [];
         fx.emit("remove");
         // 이 할 일을 선행 조건으로 걸어 둔 다른 할 일에서도 같이 뗀다 (서버는 관계 표에서 지운다)
         set((state) => ({
@@ -278,7 +300,17 @@ const useProjectStore = create<ProjectState>((set, get) => ({
             await requireSuccess(res);
             return null;
         } catch (err) {
-            set({ projects: previousProjects });
+            // 지운 할 일과 그것을 선행 조건으로 걸어 둔 연결만 되살린다 (제자리에)
+            const removed = prevTasks.find(t => t.id === taskId);
+            if (removed) set((state) => ({
+                projects: mapTasks(state.projects, projectId, ts => {
+                    const linked = new Set(prevTasks.filter(t => t.blockedBy?.some(b => b.id === taskId)).map(t => t.id));
+                    const next = ts.map(t => linked.has(t.id) && !t.blockedBy?.some(b => b.id === taskId) ? { ...t, blockedBy: [...(t.blockedBy ?? []), removed] } : t);
+                    if (next.some(t => t.id === taskId)) return next;
+                    next.splice(Math.min(prevTasks.indexOf(removed), next.length), 0, removed);
+                    return next;
+                }),
+            }));
             console.error("[PROJECT_TASK_DELETE_ERROR]", err);
             reportSaveFailure("project");
             return failureMessage(err);

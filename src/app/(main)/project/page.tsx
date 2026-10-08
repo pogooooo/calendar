@@ -61,7 +61,10 @@ export default function ProjectPage() {
     }, []);
 
     useEffect(() => {
-        if (projects.length === 0 || selectedProjectId) return;
+        if (projects.length === 0) return;
+        // 고른 프로젝트가 목록에서 사라지면 첫 것으로. 예전엔 처음 만든 프로젝트를 임시 id 로 골라 둔 채 서버 id 로 바뀌어서
+        // 탭은 생겼는데 "프로젝트 없음"만 보였다 (다른 창에서 카테고리를 지우거나 나갔을 때도 같았다)
+        if (selectedProjectId && projects.some(p => p.id === selectedProjectId)) return;
         const wanted = new URLSearchParams(window.location.search).get('id');
         setSelectedProjectId(projects.some(p => p.id === wanted) ? wanted : projects[0].id);
     }, [projects, selectedProjectId]);
@@ -109,7 +112,8 @@ export default function ProjectPage() {
             await dialog.notify({ title: t.form.categoryRequiredTitle, message: t.form.categoryRequiredMsg });
             return;
         }
-        const projectData = { ...projectModal.data, assignees: projectModal.data.assignees?.map(a => a.id) as unknown as ProjectType["assignees"] };
+        // 담당자는 사람 그대로 넘긴다 — id 로 바꾸는 건 저장소가 보낼 때 (useProjectStore toWire)
+        const projectData = { ...projectModal.data };
 
         savingRef.current = true;
         setSaving(true);

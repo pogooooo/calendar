@@ -8,6 +8,8 @@ import useChallengeStore from "@/store/useChallengeStore";
 import useCategoryStore from "@/store/useCategoryStore";
 import { ChallengeData } from "@/components/modal/challengeModal/ChallengeModal";
 import { localDateKey } from "@/lib/dateKey";
+import { useCurrentDayKey } from "@/hooks/useCurrentDay";
+import { challengeExpired, completionKey, completionTargetFor, slotIndexOn } from "@/lib/challengeDays";
 import { useDialog } from "@/components/dialog/DialogProvider";
 import { useT } from "@/i18n/useT";
 
@@ -83,62 +85,36 @@ export default function ChallengePage() {
         setIsModalOpen(false);
     };
 
-    const toDateKey = (d: Date) => localDateKey(d);
+    /* 날 셈은 날짜 키로 (src/lib/challengeDays.ts) — 오늘은 사용자가 고른 시간대의 날이고 자정을 넘기면 바뀐다.
+       예전엔 고른 순간의 기기 날짜에 묶여서, 밤을 넘겨 켜 둔 화면에서 "오늘 달성"을 누르면 어제 칸이 찍혔다 */
+    const todayKey = useCurrentDayKey();
 
-    const todayValidSlot = React.useMemo(() => {
-        if (!selectedChallenge) return null;
-        const start = new Date(selectedChallenge.startAt);
-        start.setHours(0, 0, 0, 0);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const diffMs = today.getTime() - start.getTime();
-        if (diffMs < 0) return null;
-        const diffDays = Math.round(diffMs / 86400000);
-        if (diffDays % selectedChallenge.interval !== 0) return null;
-        const slotIndex = diffDays / selectedChallenge.interval;
-        const target = selectedChallenge.targetCount ?? null;
-        if (target !== null && slotIndex >= target) return null;
-        return new Date(start.getFullYear(), start.getMonth(), start.getDate() + diffDays, 12, 0, 0);
-    }, [selectedChallenge]);
+    const isTodayValidDay = React.useMemo(
+        () => !!selectedChallenge && slotIndexOn(selectedChallenge, todayKey) !== null,
+        [selectedChallenge, todayKey]
+    );
 
     const isCompletedToday = React.useMemo(() => {
-        if (!selectedChallenge || !todayValidSlot) return false;
-        const todayKey = toDateKey(todayValidSlot);
-        return selectedChallenge.completions.some(comp => {
-            const d = new Date(comp.targetDate);
-            return toDateKey(d) === todayKey;
-        });
-    }, [selectedChallenge, todayValidSlot]);
+        if (!selectedChallenge || !isTodayValidDay) return false;
+        return (selectedChallenge.completions ?? []).some(comp => completionKey(comp) === todayKey);
+    }, [selectedChallenge, isTodayValidDay, todayKey]);
 
     const handleToggleToday = async () => {
-        if (!selectedChallenge || !todayValidSlot) return;
-        await toggleChallengeCompletion(
-            authFetch,
-            selectedChallenge.id,
-            todayValidSlot.toISOString()
-        );
+        if (!selectedChallenge || !isTodayValidDay) return;
+        await toggleChallengeCompletion(authFetch, selectedChallenge.id, completionTargetFor(todayKey));
     };
 
-    const isChallengeEnded = React.useMemo(() => {
-        if (!selectedChallenge) return false;
-        const target = selectedChallenge.targetCount ?? null;
-        if (target === null) return false;
-        const start = new Date(selectedChallenge.startAt);
-        start.setHours(0, 0, 0, 0);
-        const lastSlot = new Date(start);
-        lastSlot.setDate(start.getDate() + (target - 1) * selectedChallenge.interval);
-        lastSlot.setHours(0, 0, 0, 0);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        return today > lastSlot;
-    }, [selectedChallenge]);
+    const isChallengeEnded = React.useMemo(
+        () => !!selectedChallenge && challengeExpired(selectedChallenge, todayKey),
+        [selectedChallenge, todayKey]
+    );
 
     const themeProps = {
         categories, challenges: filteredChallenges, selectedCategoryIds, toggleCategory,
         selectedChallenge, setSelectedChallengeId,
         handleCreateNew, handleEditClick, handleDelete, handleToggleToday, isCompletedToday,
-        isTodayValidDay: todayValidSlot !== null,
-        isChallengeEnded,
+        isTodayValidDay,
+        isChallengeEnded, todayKey,
         isModalOpen, setIsModalOpen, modalMode, handleSaveChallenge,
     };
 

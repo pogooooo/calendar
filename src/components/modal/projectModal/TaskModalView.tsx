@@ -194,7 +194,8 @@ export default function TaskModalView({
 
                     <S.ParticipantRow>
                         <S.FieldLabel><Link size={16} /> {f.blockedBy}</S.FieldLabel>
-                        <S.FieldInput type="search" value={query} onChange={e => setQuery(e.target.value)} placeholder={t.interaction.searchDependencies} aria-label={t.interaction.searchDependencies} style={{ textAlign: 'left', cursor: 'text' }} />
+                        {/* 검색칸의 Enter 는 창 전체를 저장하고 닫지 않는다 — 목록은 치는 대로 걸러진다 */}
+                        <S.FieldInput type="search" value={query} onChange={e => setQuery(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) e.preventDefault(); }} placeholder={t.interaction.searchDependencies} aria-label={t.interaction.searchDependencies} style={{ textAlign: 'left', cursor: 'text' }} />
                         <S.ParticipantPicker>
                             {candidates.length === 0 && <S.ParticipantName>{t.interaction.noMatches}</S.ParticipantName>}
                             {candidates.map((task: ProjectTaskType) => {

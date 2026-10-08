@@ -55,7 +55,8 @@ export default function ChallengeModalView({
                     <div className="form-group-row">
                         <div className="form-group">
                             <label>{t.challenge.intervalLabel}</label>
-                            <input type="number" min="1" inputMode="numeric" value={interval}
+                            {/* 비우면 0 이 아니라 빈칸으로 — 예전엔 지우는 순간 "0" 이 박혀 "05" 처럼 쳐졌다 (빈칸은 required 가 막는다) */}
+                            <input type="number" min="1" inputMode="numeric" value={interval || ""}
                                    onChange={e => setInterval(Number(e.target.value))} required />
                         </div>
                         <div className="form-group">

@@ -5,6 +5,8 @@ import useCategoryStore from "@/store/useCategoryStore";
 import useTodoStore from "@/store/useTodoStore";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { readError } from "@/lib/readError";
+import { bustFetchCache } from "@/lib/fetchOnce";
+import useAuthStore from "@/store/useAuthStore";
 import { useDialog } from "@/components/dialog/DialogProvider";
 import { useT } from "@/i18n/useT";
 import type { AuthFetch, CategoryType, TodoType } from "@/types";
@@ -55,7 +57,7 @@ export interface CategoryThemeProps {
 
 export default function CategoryPage() {
     const { categories, deleteCategory, updateCategory, addCategory, fetchCategories } = useCategoryStore();
-    const { todos, toggleTodo, deleteTodo } = useTodoStore();
+    const { todos, toggleTodo, deleteTodo, fetchTodos } = useTodoStore();
     const authFetch = useAuthFetch();
     const dialog = useDialog();
     const t = useT();
@@ -107,7 +109,8 @@ export default function CategoryPage() {
 
     const handleAddCategorySubmit = async (data: { name: string; color: string; description: string }) => {
         const error = await addCategory(authFetch, data);
-        if (error) await dialog.notify({ title: t.category.addFailedTitle, message: error });
+        if (error) { await dialog.notify({ title: t.category.addFailedTitle, message: error }); return false; }
+        return true;
     };
 
     const handleInviteSubmit = async () => {
@@ -137,7 +140,8 @@ export default function CategoryPage() {
                 return;
             }
 
-            // 목록을 다시 받지 않으면 초대해도 화면에 멤버가 나타나지 않는다
+            // 목록을 다시 받지 않으면 초대해도 화면에 멤버가 나타나지 않는다 (방금 읽었어도 건너뛰지 않게)
+            bustFetchCache("category");
             await fetchCategories(authFetch);
             closeInviteModal();
         } catch {
@@ -159,7 +163,15 @@ export default function CategoryPage() {
                 await dialog.notify({ title: t.category.kickFailedTitle, message: await readError(res, t.alert.retryLater) });
                 return;
             }
+            // 방금 읽었어도 다시 읽는다 — 1.5초 안에 읽은 적이 있으면 읽기를 건너뛰어 내보낸 사람이 남아 보일 수 있다
+            bustFetchCache("category");
             await fetchCategories(authFetch);
+            // 나 자신이 나갔으면 그 카테고리의 할 일도 이제 내 것이 아니다
+            if (kickTarget.id === useAuthStore.getState().user?.id) {
+                bustFetchCache("todo");
+                void fetchTodos(authFetch);
+                setSelectedCategoryId(null);
+            }
             closeKickModal();
         } catch (err) {
             console.error(err);

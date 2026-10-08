@@ -179,8 +179,13 @@ const ProjectTimelineView = React.forwardRef<HTMLDivElement, ProjectTimelineProp
             if (drag.hasMoved && onUpdateTaskDates) {
                 const task = tasks.find(t => t.id === drag.taskId);
                 if (task) {
-                    const { startTs, endTs } = getBaseTaskBounds(task);
+                    const { startTs } = getBaseTaskBounds(task);
                     const daysShifted = Math.round(drag.currentDeltaX / DAY_WIDTH);
+                    /* 저장된 시각을 그날 수만큼만 옮긴다 — 예전엔 그날 0시로 잘라 보내서 9시~10시 반 할 일이 0시~0시가 되고,
+                       하루 종일 할 일의 끝(23:59)도 0시로 당겨졌다. 날짜가 없던 할 일은 오늘 하루(0시~23:59)에서 시작한다 */
+                    const startAt = task.startAt ?? new Date(startTs).toISOString();
+                    const endAt = task.endAt ?? task.startAt ?? new Date(new Date(startTs).setHours(23, 59, 0, 0)).toISOString();
+                    const shift = (iso: string, days: number) => { const d = new Date(iso); d.setDate(d.getDate() + days); return d.toISOString(); };
 
                     if (drag.mode === 'move' && daysShifted !== 0) {
                         // 스냅백 방지: 최종 위치를 미리 style.left에 적용 후 transform 제거
@@ -189,17 +194,17 @@ const ProjectTimelineView = React.forwardRef<HTMLDivElement, ProjectTimelineProp
                             el.style.left      = `${finalLeft}px`;
                             el.style.transform = '';
                         }
-                        const ns = new Date(startTs); ns.setDate(ns.getDate() + daysShifted);
-                        const ne = new Date(endTs);   ne.setDate(ne.getDate() + daysShifted);
-                        onUpdateTaskDates(task.id, ns.toISOString(), ne.toISOString());
+                        onUpdateTaskDates(task.id, shift(startAt, daysShifted), shift(endAt, daysShifted));
 
                     } else if (drag.mode === 'resize-right' && daysShifted !== 0) {
-                        // 스냅백 방지: 최종 폭 유지, React 리렌더가 같은 값으로 덮어씀
                         const actualShift = Math.max(daysShifted, -Math.round(drag.initialWidth / DAY_WIDTH) + 1);
+                        const newEnd = shift(endAt, actualShift);
+                        // 같은 날로 줄였는데 끝 시각이 시작보다 앞이면(9시 시작·8시 끝) 끝을 시작에 맞춘다
+                        const safeEnd = Date.parse(newEnd) < Date.parse(startAt) ? startAt : newEnd;
+                        // 스냅백 방지: 최종 폭 유지, React 리렌더가 같은 값으로 덮어씀
                         const finalWidth = Math.max(DAY_WIDTH, drag.initialWidth + actualShift * DAY_WIDTH);
                         if (el) el.style.width = `${finalWidth}px`;
-                        const ne = new Date(endTs); ne.setDate(ne.getDate() + actualShift);
-                        onUpdateTaskDates(task.id, new Date(startTs).toISOString(), ne.toISOString());
+                        onUpdateTaskDates(task.id, startAt, safeEnd);
 
                     } else {
                         // 이동했지만 그리드 경계 미달 — 원위치

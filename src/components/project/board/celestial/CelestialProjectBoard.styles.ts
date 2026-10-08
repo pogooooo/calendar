@@ -161,6 +161,12 @@ export const CardBox = styled.div<{ $isLocked?: boolean }>`
             pointer-events: auto;
         }
     }
+
+    /* 자판으로 카드·옮기기 단추에 닿으면 올렸을 때처럼 단추가 보인다 (예전엔 초점이 보이지 않는 단추에 갔다) */
+    &:focus-within .action-group {
+        opacity: 1;
+        pointer-events: auto;
+    }
 `;
 
 export const CardMain = styled.div`

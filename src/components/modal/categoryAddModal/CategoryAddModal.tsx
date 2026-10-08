@@ -8,7 +8,8 @@ import { useT } from "@/i18n/useT";
 export interface CategoryAddModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onAdd: (data: { name: string; color: string; description: string }) => Promise<void>;
+    /** 넣었으면 true — 실패하면 창을 닫지 않는다 (적던 이름·설명이 남게) */
+    onAdd: (data: { name: string; color: string; description: string }) => Promise<boolean>;
 }
 
 export interface CategoryAddThemeProps extends CategoryAddModalProps {
@@ -51,8 +52,7 @@ export default function CategoryAddModal(props: CategoryAddModalProps) {
 
         setIsSubmitting(true);
         try {
-            await onAdd({ name: trimmedName, color, description: description.trim() });
-            onClose();
+            if (await onAdd({ name: trimmedName, color, description: description.trim() })) onClose();
         } catch (error) {
             console.error(error);
         } finally {

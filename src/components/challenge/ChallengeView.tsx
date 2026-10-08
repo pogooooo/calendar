@@ -14,6 +14,7 @@ import * as OceanS from './ocean/OceanChallenge.styles';
 import CelestialChallengeLayout from "./celestial/CelestialChallengeLayout";
 import OceanChallengeLayout from "./ocean/OceanChallengeLayout";
 import type { ChallengeTodayState } from "./ChallengeLayout.types";
+import { challengeExpired, completionKey, slotKey, slotsUntil } from "@/lib/challengeDays";
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
 const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
@@ -35,6 +36,8 @@ interface CelestialChallengeProps {
     isCompletedToday: boolean;
     isTodayValidDay: boolean;
     isChallengeEnded: boolean;
+    /** 오늘 (사용자 시간대의 날짜 키) */
+    todayKey: string;
     isModalOpen: boolean;
     setIsModalOpen: (isOpen: boolean) => void;
     modalMode: 'create' | 'edit';
@@ -45,26 +48,15 @@ export default function ChallengeView({
     categories, challenges, selectedCategoryIds, toggleCategory,
     selectedChallenge, setSelectedChallengeId,
     handleCreateNew, handleEditClick, handleDelete,
-    handleToggleToday, isCompletedToday, isTodayValidDay, isChallengeEnded,
+    handleToggleToday, isCompletedToday, isTodayValidDay, isChallengeEnded, todayKey,
     isModalOpen, setIsModalOpen, modalMode, handleSaveChallenge,
 }: CelestialChallengeProps) {
     const S = usePickTheme(STYLES);
     const Layout = usePickTheme(LAYOUTS);
     const tr = useT().challenge;
 
-    // ── 유틸 ─────────────────────────────────────────────────────────────────
-    const isChallengeExpired = (c: typeof challenges[0]) => {
-        const t = c.targetCount ?? null;
-        if (t === null) return false;
-        const start = new Date(c.startAt);
-        start.setHours(0, 0, 0, 0);
-        const lastSlot = new Date(start);
-        lastSlot.setDate(start.getDate() + (t - 1) * c.interval);
-        lastSlot.setHours(0, 0, 0, 0);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        return today > lastSlot;
-    };
+    // ── 유틸 — 날 셈은 날짜 키로 (src/lib/challengeDays.ts) ────────────────────
+    const isChallengeExpired = (c: typeof challenges[0]) => challengeExpired(c, todayKey);
 
     const ongoingChallenges  = challenges.filter(c => {
         const t = c.targetCount ?? null;
@@ -80,36 +72,12 @@ export default function ChallengeView({
     const renderStickerBoard = () => {
         if (!selectedChallenge) return <span className="placeholder">{tr.selectForBoard}</span>;
 
-        const start    = new Date(selectedChallenge.startAt);
-        start.setHours(0, 0, 0, 0);
-        const interval = selectedChallenge.interval;
         const target   = selectedChallenge.targetCount ?? null;
-        const now      = new Date(); now.setHours(0, 0, 0, 0);
-
-        const completedSet = new Set(
-            (selectedChallenge.completions ?? []).map(comp => {
-                const d = new Date(comp.targetDate);
-                return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-            })
-        );
-
-        const toKey = (d: Date) =>
-            `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-
-        let slots: boolean[];
-        if (target !== null) {
-            slots = Array.from({ length: target }, (_, i) => {
-                const d = new Date(start); d.setDate(start.getDate() + i * interval);
-                return completedSet.has(toKey(d));
-            });
-        } else {
-            const pastCount = Math.floor(Math.max(0, now.getTime() - start.getTime()) / (86400000 * interval)) + 1;
-            if (pastCount === 0) return <span className="placeholder">{tr.notStarted}</span>;
-            slots = Array.from({ length: pastCount }, (_, i) => {
-                const d = new Date(start); d.setDate(start.getDate() + i * interval);
-                return completedSet.has(toKey(d));
-            });
-        }
+        // 완료는 서버가 적은 UTC 날로, 칸은 시작일에서 interval 일마다 (서쪽 시간대에서 하루씩 밀려 보이던 것)
+        const completedSet = new Set((selectedChallenge.completions ?? []).map(completionKey));
+        const count = target !== null ? target : slotsUntil(selectedChallenge, todayKey);
+        if (count === 0) return <span className="placeholder">{tr.notStarted}</span>;
+        const slots: boolean[] = Array.from({ length: count }, (_, i) => completedSet.has(slotKey(selectedChallenge, i)));
 
         if (slots.length === 0) return <span className="placeholder">{tr.firstSticker}</span>;
 
