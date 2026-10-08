@@ -609,7 +609,8 @@ export function MemoPanel() {
             onChange={(e) => { dirty.current = true; setDraft(e.target.value); }}
             onBlur={() => { void save(); }}
         />
-        {(error || memoError) && <S.More role="alert">{error || memoError}</S.More>}
+        {/* 화면 언어로 — 예전엔 읽기가 끊기면 'Failed to fetch' 가 날것으로, 영어 화면에도 한국어 저장 실패 문구가 떴다 */}
+        {(error || memoError) && <S.More role="alert">{error ? tr.alert.checkConnection : `${tr.alert.saveFailed} · ${tr.alert.checkConnection}`}</S.More>}
         </S.MemoColumn>
     );
 }

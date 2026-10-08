@@ -79,7 +79,8 @@ const useDailyStore = create<DailyState>((set, get) => ({
                 set({ tasks, memo: memoData.content, memoDate: dateStr, isLoading: false });
             } catch (err: unknown) {
                 if (stale()) return;
-                const message = err instanceof Error ? err.message : "알 수 없는 오류가 발생했습니다.";
+                // 망이 끊기면 err.message 가 'Failed to fetch' 라 그대로 보여 주지 않는다
+                const message = "일간 데이터를 불러오지 못했습니다. 연결을 확인한 뒤 다시 시도해주세요.";
                 set({ error: message, isLoading: false, tasks: [], memo: "" });
                 console.error("[DAILY_FETCH_ERROR]", err);
             }
