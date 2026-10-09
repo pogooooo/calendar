@@ -27,6 +27,8 @@ const note = NOTES.find((n) => n.version === version);
 const notesText = note
     ? note.notes.ko.map((l) => `• ${l}`).join("\n")
     : "";
+// 영어 화면용 — 업데이터는 notes(한국어)만 읽으므로 따로 둔다. 1.3.0 부터의 앱이 화면 언어로 고른다(rawJson)
+const notesEn = note ? note.notes.en.map((l) => `• ${l}`).join("\n") : "";
 // --release-body 를 주면 latest.json 대신 GitHub 릴리스 본문(마크다운)을 찍는다
 if (process.argv.includes("--release-body")) {
     const body = note
@@ -71,6 +73,7 @@ if (missing.length) console.error(`참고: 빠진 플랫폼 ${missing.join(", ")
 process.stdout.write(JSON.stringify({
     version,
     notes: notesText || (release.body ?? ""),
+    ...(notesEn ? { notes_en: notesEn } : {}),
     pub_date: new Date().toISOString(),
     platforms,
 }, null, 2) + "\n");

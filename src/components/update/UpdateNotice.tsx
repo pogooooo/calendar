@@ -4,6 +4,7 @@ import * as React from "react";
 import { X, Download } from "lucide-react";
 import { useT } from "@/i18n/useT";
 import { checkForUpdate, UPDATE_FOUND_EVENT, type FoundUpdate } from "@/lib/updater";
+import useSettingStore from "@/store/useSettingStore";
 
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialUpdateNotice.styles";
@@ -18,6 +19,8 @@ type Phase = "idle" | "available" | "downloading" | "ready" | "failed";
 interface UpdateInfo {
     version: string;
     notes?: string;
+    /** 영어 화면이면 이걸 — 예전엔 영어 화면에도 한국어 패치 노트가 떴다 */
+    notesEn?: string;
 }
 
 export default function UpdateNotice() {
@@ -27,13 +30,14 @@ export default function UpdateNotice() {
     const [info, setInfo] = React.useState<UpdateInfo | null>(null);
     const [percent, setPercent] = React.useState(0);
     const updateRef = React.useRef<FoundUpdate | null>(null);
+    const locale = useSettingStore((s) => s.locale);
 
     React.useEffect(() => {
         // 어디서 찾았든(켜질 때·6시간마다·설정의 확인 단추) 여기로 모인다
         const onFound = (e: Event) => {
             const update = (e as CustomEvent<FoundUpdate>).detail;
             updateRef.current = update;
-            setInfo({ version: update.version, notes: update.body });
+            setInfo({ version: update.version, notes: update.body, notesEn: typeof update.rawJson?.notes_en === "string" ? update.rawJson.notes_en : undefined });
             setPhase((p) => (p === "idle" || p === "failed" ? "available" : p));
         };
         window.addEventListener(UPDATE_FOUND_EVENT, onFound);
@@ -84,6 +88,7 @@ export default function UpdateNotice() {
     }, []);
 
     if (phase === "idle" || !info) return null;
+    const notes = locale === "en" && info.notesEn ? info.notesEn : info.notes;
 
     return (
         <S.Panel role="status">
@@ -101,10 +106,10 @@ export default function UpdateNotice() {
 
             {phase === "available" && (
                 <>
-                    {/* latest.json 의 notes — 릴리스 스크립트가 그 판의 패치 노트를 넣는다. 한 줄에 하나씩. */}
-                    {info.notes && info.notes.trim() && (
+                    {/* latest.json 의 notes(영어 화면은 notes_en) — 릴리스 스크립트가 그 판의 패치 노트를 넣는다. 한 줄에 하나씩. */}
+                    {notes && notes.trim() && (
                         <S.Notes>
-                            {info.notes.split(/\r?\n/).map(l => l.replace(/^[•\-]\s*/, "").trim()).filter(Boolean).slice(0, 6).map((line, i) => (
+                            {notes.split(/\r?\n/).map(l => l.replace(/^[•\-]\s*/, "").trim()).filter(Boolean).slice(0, 6).map((line, i) => (
                                 <li key={i}>{line}</li>
                             ))}
                         </S.Notes>

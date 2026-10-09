@@ -14,6 +14,8 @@ export const UPDATE_FOUND_EVENT = "cronos:update-found";
 export interface FoundUpdate {
     version: string;
     body?: string;
+    /** 업데이트 자리의 응답 그대로 — notes_en(영어 패치 노트)이 여기 있다 */
+    rawJson?: Record<string, unknown>;
     downloadAndInstall: (
         cb: (event: { event: string; data?: { contentLength?: number; chunkLength?: number } }) => void,
     ) => Promise<void>;
