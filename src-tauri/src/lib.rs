@@ -1,6 +1,6 @@
 use tauri::Manager;
 #[cfg(desktop)]
-use tauri::{WebviewWindowBuilder, WebviewUrl};
+use tauri::{Emitter, WebviewWindowBuilder, WebviewUrl};
 use std::sync::{Arc, Mutex};
 use std::collections::HashSet;
 
@@ -713,6 +713,11 @@ async fn open_widget(
                     let closed_kind = kind_for_cleanup.clone();
                     let app_for_exit = app2.clone();
                     win.on_window_event(move |event| {
+                        // 사람이 위젯 창을 닫으면(Alt+F4·위젯의 ✕) 본 창에 알려 "열려 있음" 표시를 지운다 — 예전엔 Alt+F4 로 닫으면
+                        // 표시가 남아 다음 부팅에 다시 떴다. 앱을 끝낼 때(트레이의 끝내기·윈도우 종료)는 이 이벤트가 오지 않아 다음에 그대로 되살아난다
+                        if matches!(event, tauri::WindowEvent::CloseRequested { .. }) {
+                            let _ = app_for_exit.emit_to("main", "widget-closed", closed_kind.clone());
+                        }
                         if matches!(event, tauri::WindowEvent::Destroyed) {
                             if let Ok(mut set) = bottom.lock() {
                                 set.remove(&closed_kind);

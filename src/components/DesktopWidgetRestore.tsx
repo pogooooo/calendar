@@ -2,9 +2,22 @@
 
 import React from "react";
 import useSettingStore from "@/store/useSettingStore";
-import { hydrateWidgetStateFromFile } from "@/lib/widgetStateFile";
+import { hydrateWidgetStateFromFile, mirrorWidgetStateToFile } from "@/lib/widgetStateFile";
 
 export default function DesktopWidgetRestore() {
+    // 위젯 창을 Alt+F4 등으로 닫으면 Rust 가 알려 준다 — 위젯의 ✕ 처럼 "열려 있음" 을 지운다(안 지우면 다음 부팅에 다시 뜬다)
+    React.useEffect(() => {
+        if (typeof window === "undefined" || !("__TAURI_INTERNALS__" in window)) return;
+        if (window.location.pathname.startsWith("/widget")) return;
+        let stop: (() => void) | undefined;
+        let gone = false;
+        import("@tauri-apps/api/event").then(({ listen }) => listen<string>("widget-closed", (e) => {
+            try { localStorage.setItem(`cronos-widget-open:${e.payload}`, "0"); } catch {}
+            void mirrorWidgetStateToFile();
+        })).then((un) => { if (gone) un(); else stop = un; }).catch(() => {});
+        return () => { gone = true; stop?.(); };
+    }, []);
+
     React.useEffect(() => {
         if (typeof window === "undefined" || !("__TAURI_INTERNALS__" in window)) return;
         if (window.location.pathname.startsWith("/widget")) return;
