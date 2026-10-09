@@ -110,8 +110,20 @@ export async function fetchAsset(asset: Asset): Promise<Response | null> {
     return first.ok && first.body ? first : null;
 }
 
+/** 같은 워커가 잠깐 들고 있는 latest.json — 앱마다 켤 때·6시간마다 묻는데 그때마다 GitHub 에 서너 번씩 다녀왔다 */
+const MANIFEST_TTL_MS = 5 * 60 * 1000;
+let manifestCache: { at: number; value: UpdaterManifest | null } | null = null;
+
 /** 릴리스에 올라 있는 latest.json (업데이터가 읽는 파일) — 그게 있는 가장 최신 릴리스에서 */
 export async function fetchUpdaterManifest(): Promise<UpdaterManifest | null> {
+    if (manifestCache && Date.now() - manifestCache.at < MANIFEST_TTL_MS) return manifestCache.value;
+    const value = await readUpdaterManifest();
+    // 못 읽은 것(null)은 들고 있지 않는다 — 잠깐의 실패로 5분 동안 "새 판 없음" 이 되지 않게
+    if (value) manifestCache = { at: Date.now(), value };
+    return value;
+}
+
+async function readUpdaterManifest(): Promise<UpdaterManifest | null> {
     const hit = await findInReleases((a) => a.name === "latest.json");
     if (!hit) return null;
     const res = await fetchAsset(hit.asset);
