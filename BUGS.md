@@ -6,6 +6,7 @@
 
 | 날짜 | 증상 | 까닭 | 고친 방법 |
 |---|---|---|---|
+| 2026-10-09 | Ocean 의 할 일·프로젝트·카테고리 창에서 폰 자판이 올라오면(키 작은 화면) 시작·종료 시간·장소 줄이 서로 겹침 (에뮬레이터에서 봄) | 줄에 `min-height: 40px` 을 주면 flex 항목의 기본 "내용보다 작아지지 않음"(min-height: auto)이 풀린다 — 굴러가는 세로 flex 몸통에서 두 줄짜리 칸이 40px 로 눌렸다 | Ocean 줄에 `flex-shrink: 0` (`OceanTodoModal`·`OceanModal`·`OceanCategoryAddModal` 의 FieldRow) |
 | 2026-10-09 | 설정의 시간대가 기기와 다르면(여행 중·서울로 저장된 예전 설치) 달력·일간·할 일 창이 홈·위젯과 다른 날·시각을 보임 | 달력 칸·시간표·고르개가 기기 Date(setHours·getDate·toDateString)로 셌다. 칸에 localDateKey 를 쓰면 하루가 밀리기도 했다 | 칸 Date 에는 고른 시간대의 날·벽시계를 담고(`labelKey`), 일정과는 날 키로, 순간은 `zonedTime`·`wallTime` 으로 바꾼다(`dateKey.ts`·`localTime.ts`). 기기와 같은 시간대면 예전 셈 그대로. `zonedDayStart` 의 서머타임 날 한 시간 어긋남도 |
 | 2026-10-09 | 데스크톱·앱에서 할 일·프로젝트 제목을 치면 글이 끊기거나 지워짐(한글 조합 "ㅎ하할") | ① `BaseModal` 이 이름표(ariaLabel)가 바뀔 때마다 초점을 창으로 옮겼는데, 창들이 치는 제목을 이름표로 넘겼다 ② `TodoModal`·`ChallengeModal` 이 categories·selectedDate 같은 참조가 바뀔 때마다(토큰 갱신·위젯 동기화의 다시 읽기) 칸을 처음부터 채웠다 | 초점 효과는 열릴 때만, 이름표는 따로. 칸은 열릴 때·고치는 대상이 바뀔 때만 채운다 |
 | 2026-10-09 | 다른 기기에서 테마를 바꾸면 열린 창에 치던 글·고른 날이 사라짐 | 다시 읽기(토큰 갱신·연결 복구·앱으로 돌아오기)가 테마를 바로 바꿔 갈래 배치가 통째로 다시 그려졌다 | 창이 열려 있거나 글을 치는 중이면 손을 놓을 때까지 미룬다 (`useSettingStore.fetchSettings`) |

@@ -47,6 +47,8 @@ export const ScrollBody = styled(C.ScrollBody)`
 /** 색 — 고리를 두른 동그라미 하나 */
 export const FieldRow = styled(C.FieldRow)`
     min-height: 40px;
+    /* 굴러가는 몸통(세로 flex)에서 줄어들지 않게 — min-height 를 주면 기본의 "내용보다 작아지지 않음" 이 풀려, 키 작은 화면(폰 자판이 올라온 때)에서 두 줄짜리 칸이 40px 로 눌려 다음 줄과 겹쳤다 */
+    flex-shrink: 0;
     padding: 4px 0;
     border-bottom: none;
 
