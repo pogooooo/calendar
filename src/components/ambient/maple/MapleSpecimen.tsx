@@ -41,13 +41,23 @@ export default function MapleSpecimen({ variant, busy = false, avoidRef, onState
             try {
                 const [THREE, { createSpecimenScene }] = await Promise.all([import("three"), import("./specimenScene")]);
                 if (disposed) return;
-                sceneRef.current = createSpecimenScene(THREE, canvas, {
+                // 그림을 못 읽으면 예전 그림으로 물러나면서 장면도 바로 치운다 — 예전엔 화면을 떠날 때까지 관찰자·기울기 듣기·GPU 맥락이 남았다
+                let failed = false;
+                const fail = () => {
+                    failed = true;
+                    sceneRef.current?.dispose();
+                    sceneRef.current = null;
+                    if (!disposed) setState("flat");
+                };
+                const scene = createSpecimenScene(THREE, canvas, {
                     variant, dark, motion, colors: { ink, accent, paper },
                     avoid: () => avoidRef?.current ?? null,
                     onReady: () => { if (!disposed) setState("three"); },
-                    onFail: () => { if (!disposed) setState("flat"); },
+                    onFail: fail,
                 });
-                sceneRef.current.setBusy(busyRef.current);
+                if (failed) { scene.dispose(); return; }
+                sceneRef.current = scene;
+                scene.setBusy(busyRef.current);
             } catch {
                 if (!disposed) setState("flat"); // WebGL 이 없다 — 예전 그림으로
             }
