@@ -14,7 +14,8 @@
  * 창(window): 이 달 첫날부터, 이 달 끝과 오늘+14일 중 늦은 쪽까지.
  * 월간 위젯이 지난 날의 점까지 찍고, "다음" 이 달을 넘겨서도 보이게.
  */
-import { localDateKey, utcDayKey } from "@/lib/dateKey";
+import { localDateKey, utcDayKey, zonedTime } from "@/lib/dateKey";
+import { challengeExpired } from "@/lib/challengeDays";
 import { expandTodos } from "@/hooks/useExpandedTodos";
 import type { Translations } from "@/i18n/types";
 import type { TodoType, CategoryType, ChallengeType, ProjectType } from "@/types";
@@ -114,9 +115,11 @@ export function buildWidgetSnapshot(input: SnapshotInput): WidgetSnapshot {
     const now = input.now ?? new Date();
     const todayKey = localDateKey(now);
 
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
-    const twoWeeks = new Date(now); twoWeeks.setDate(twoWeeks.getDate() + 14);
+    // 이번 달 첫날 ~ 끝날(또는 두 주 뒤 중 늦은 쪽) — 고른 시간대의 날로. 예전엔 기기의 달로 잘라 시간대가 다르면 첫날·끝날 일정이 빠졌다
+    const [y, m] = todayKey.split("-").map(Number);
+    const monthStart = zonedTime(`${todayKey.slice(0, 7)}-01`);
+    const monthEnd = zonedTime(new Date(Date.UTC(y, m, 0)).toISOString().slice(0, 10), 23, 59);
+    const twoWeeks = new Date(now.getTime() + 14 * 86_400_000);
     const windowEnd = monthEnd > twoWeeks ? monthEnd : twoWeeks;
 
     const fallbackColor = theme.colors.primary;
@@ -134,15 +137,9 @@ export function buildWidgetSnapshot(input: SnapshotInput): WidgetSnapshot {
         }))
         .sort((a, b) => a.startAt.localeCompare(b.startAt));
 
-    const dayStart = new Date(now); dayStart.setHours(0, 0, 0, 0);
-    const expired = (c: ChallengeType) => {
-        if (c.targetCount == null) return false;
-        const s = new Date(c.startAt); s.setHours(0, 0, 0, 0);
-        const last = new Date(s); last.setDate(s.getDate() + (c.targetCount - 1) * c.interval);
-        return dayStart > last;
-    };
+    // 끝난 챌린지(마지막 칸이 지남)는 뺀다 — 홈·위젯과 같은 셈(고른 시간대의 오늘, src/lib/challengeDays.ts)
     const snapChallenges: SnapshotChallenge[] = challenges
-        .filter(c => (c.targetCount == null || (c.completions?.length ?? 0) < c.targetCount) && !expired(c))
+        .filter(c => (c.targetCount == null || (c.completions?.length ?? 0) < c.targetCount) && !challengeExpired(c, todayKey))
         .map(c => ({
             id: c.id,
             title: c.title,

@@ -1,6 +1,7 @@
 "use client";
 
 import type { MonthArchProps } from "../parts/MonthArch";
+import { labelKey, localDateKey } from "@/lib/dateKey";
 import * as S from "./OceanMonthArch.styles";
 
 /* 큰 날짜는 장식 글씨라 라틴 이름으로 (달력 머리의 "October" 와 같은 손) */
@@ -14,7 +15,8 @@ const LATIN_DAY = new Intl.DateTimeFormat("en", { weekday: "long" });
  * 요약 한 줄(10월 · 남은 n · 끝낸 n)은 HomeView 의 ArchFoot 이 둘 사이에 선다 (order 로 자리를 잡는다).
  */
 export default function OceanMonthArch({ daysInMonth, focusIdx, monthLoad, marks, focus }: MonthArchProps) {
-    const isToday = !!focus && focus.toDateString() === new Date().toDateString();
+    // focus 는 칸 Date(고른 시간대의 날) — 오늘도 고른 시간대로 견준다 (기기 시각과 견주면 시간대가 다를 때 'Today' 가 엉뚱한 날에 붙었다)
+    const isToday = !!focus && labelKey(focus) === localDateKey(new Date());
     const anniversary = new Set(marks.filter((m) => m.kind === "anv").map((m) => m.day - 1));
     const due = new Set(marks.filter((m) => m.kind === "due").map((m) => m.day - 1));
 

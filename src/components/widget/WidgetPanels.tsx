@@ -15,7 +15,7 @@ import useAnniversaryStore from "@/store/useAnniversaryStore";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useT } from "@/i18n/useT";
 import { useCurrentDayKey } from "@/hooks/useCurrentDay";
-import { localDateKey, utcDayKey, activeTimeZone, endDateKey, zonedTime } from "@/lib/dateKey";
+import { localDateKey, utcDayKey, activeTimeZone, endDateKey, zonedTime, wallTime } from "@/lib/dateKey";
 import { addDaysToKey, zonedDayStart } from "@/lib/timezone";
 import { expandTodos } from "@/hooks/useExpandedTodos";
 import { weeklyTaskStats } from "@/lib/widgetStats";
@@ -267,9 +267,10 @@ export function NowNextPanel() {
         return tr.widget.inHours(Math.floor(m / 60), m % 60);
     };
 
+    // 고른 시간대의 시각으로 — 예전엔 기기 시각이라 시간대가 다르면 홈·달력과 다른 시각이 떴다
     const hhmm = (v: string | number | Date) => {
-        const d = new Date(v);
-        return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+        const w = wallTime(v);
+        return w ? `${String(w.hour).padStart(2, "0")}:${String(w.minute).padStart(2, "0")}` : "";
     };
 
     const pct = current

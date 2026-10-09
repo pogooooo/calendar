@@ -97,13 +97,9 @@ export function dateKeyToUtcAnchor(key: string): Date | null {
 
 /** 그 시간대의 달력일 시작 순간을 실제 시각(Date)으로 돌려준다 */
 export function zonedDayStart(key: string, tz: string): Date | null {
-    const anchor = dateKeyToUtcAnchor(key);
-    if (!anchor) return null;
-    const safeTz = isValidTimeZone(tz) ? tz : DEFAULT_TIMEZONE;
-    // 기준시각을 해당 시간대로 읽었을 때의 오차만큼 되민다
-    const asUtc = new Date(anchor.toLocaleString("en-US", { timeZone: "UTC" }));
-    const asZone = new Date(anchor.toLocaleString("en-US", { timeZone: safeTz }));
-    return new Date(anchor.getTime() + (asUtc.getTime() - asZone.getTime()));
+    if (!dateKeyToUtcAnchor(key)) return null;
+    // 그 시간대의 그날 0시 — 예전엔 그날 UTC 0시의 시차를 써서, 시드니·오클랜드처럼 동쪽 시간대의 서머타임이 바뀌는 날에 한 시간 어긋났다
+    return zonedTimeToDate(key, 0, 0, isValidTimeZone(tz) ? tz : DEFAULT_TIMEZONE);
 }
 
 export function addDaysToKey(key: string, days: number): string {
