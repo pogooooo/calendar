@@ -12,6 +12,7 @@ import useTodoStore from "@/store/useTodoStore";
 import { useT } from "@/i18n/useT";
 import { useCurrentDayKey } from "@/hooks/useCurrentDay";
 import { localDateKey } from "@/lib/dateKey";
+import { toggleOccurrence } from "@/lib/todoDone";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useDialog } from "@/components/dialog/DialogProvider";
 import { formatDate } from "@/utils/DateUtils";
@@ -270,11 +271,8 @@ const WeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
             }
 
             const actualId = expandedTodo.originalTodo?.id || expandedTodo.id;
-            const targetDateStr = expandedTodo.date
-                ? expandedTodo.date.toISOString()
-                : new Date(expandedTodo.startAt || new Date()).toISOString();
-
-            await toggleTodo(authFetch, actualId, targetDateStr);
+            // 회차의 첫날에 적는다 — 여러 날 일정은 한 번 끝낸다(홈·위젯과 같은 셈, src/lib/todoDone.ts)
+            await toggleOccurrence(expandedTodo, (key) => toggleTodo(authFetch, actualId, key));
             setTodoContextMenu(null);
         };
 

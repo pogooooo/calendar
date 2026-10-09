@@ -5,7 +5,12 @@ import SecondaryButton from "@/components/button/secondary/SecondaryButton";
 import InlineError from "@/components/error/inlineError/InlineError";
 import { CategoryThemeProps } from "./CategoryPage";
 import { useT } from "@/i18n/useT";
-import { localDateKey, utcDayKey, dayKeyToIso } from "@/lib/dateKey";
+import { localDateKey, utcDayKey, endDateKey, activeTimeZone } from "@/lib/dateKey";
+import { zonedDayStart } from "@/lib/timezone";
+import { expandTodos, type ExpandedTodoType } from "@/hooks/useExpandedTodos";
+import { useCurrentDayKey } from "@/hooks/useCurrentDay";
+import { isOccurrenceDone, occurrenceKey, toggleOccurrence } from "@/lib/todoDone";
+import type { TodoType } from "@/types";
 import { useDialog } from "@/components/dialog/DialogProvider";
 import useAuthStore from "@/store/useAuthStore";
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
@@ -26,11 +31,26 @@ const ROMAN = [
     "XI", "XII", "XIII", "XIV", "XV", "XVI", "XVII", "XVIII", "XIX", "XX",
 ];
 
+const DAY_MS = 86400000;
+/** 카테고리 화면의 한 줄이 가리키는 회차 — 반복이면 오늘 걸린 회차, 없으면 가장 가까운 지난 회차, 그것도 없으면 다음 회차 */
+function focusOccurrence(todo: TodoType, todayKey: string): ExpandedTodoType {
+    if (!todo.repeat || todo.repeat <= 0 || !todo.startAt) return todo;
+    const today = zonedDayStart(todayKey, activeTimeZone());
+    if (!today) return todo;
+    const past = expandTodos([todo], new Date(today.getTime() - 400 * DAY_MS), new Date(today.getTime() + DAY_MS - 1));
+    const onToday = past.filter(o => localDateKey(o.startAt!) <= todayKey && todayKey <= endDateKey(o.startAt!, o.endAt!));
+    if (onToday.length) return onToday[onToday.length - 1];
+    const started = past.filter(o => localDateKey(o.startAt!) < todayKey);
+    if (started.length) return started[started.length - 1];
+    return expandTodos([todo], today, new Date(today.getTime() + 400 * DAY_MS))[0] ?? todo;
+}
+
 export default function CategoryView(props: CategoryThemeProps) {
     const S = usePickTheme(STYLES);
     const Layout = usePickTheme(LAYOUTS);
     const t = useT();
     const dialog = useDialog();
+    const todayKey = useCurrentDayKey();
 
     const {
         categories, selectedCategory, selectedCategoryId, setSelectedCategoryId,
@@ -178,18 +198,23 @@ export default function CategoryView(props: CategoryThemeProps) {
                 {categoryTodos.length > 0 ? (
                     <S.TodoGrid>
                         {categoryTodos.map(todo => {
-                            // 완료는 그 일정이 놓인 날짜에 기록해야 한다. '오늘'로 찍으면 다른 날 일정의 체크가 엉뚱한 날에 남는다.
-                            const todoDateStr = localDateKey(todo.startAt ?? new Date());
-                            const isDone = (todo.completions ?? []).some(c =>
-                                utcDayKey(c.targetDate) === todoDateStr
-                            );
+                            // 완료는 그 일정이 놓인 회차의 첫날에 적는다(여러 날 일정은 한 번, src/lib/todoDone.ts). 날짜 없는 일정은 오늘에.
+                            // 반복 일정은 오늘 걸린 회차를 — 예전엔 늘 첫 회차로 체크해, 오늘 끝내도 이 화면엔 안 끝난 것으로 남았다
+                            const occ = focusOccurrence(todo, todayKey);
+                            const occKey = todo.startAt ? occurrenceKey(occ) : todayKey;
+                            const isDone = todo.startAt
+                                ? isOccurrenceDone(occ)
+                                : (todo.completions ?? []).some(c => utcDayKey(c.targetDate) === todayKey);
+                            const [y, m, d] = occKey.split("-").map(Number);
                             return (
                             <S.TodoCard key={todo.id} $isDone={isDone} onClick={() => handleEditTodo(todo)}>
                                 <button
                                     className="check-btn"
                                     onClick={(e) => {
                                         e.stopPropagation();
-                                        toggleTodo(authFetch, todo.id, dayKeyToIso(todoDateStr));
+                                        // 날짜 키 그대로 넘긴다 — UTC 0시로 바꿔 넘기면 서쪽 시간대에서 전날에 적혔다
+                                        if (todo.startAt) void toggleOccurrence(occ, async (k) => { await toggleTodo(authFetch, todo.id, k); });
+                                        else toggleTodo(authFetch, todo.id, todayKey);
                                     }}
                                 >
                                     {isDone ? '✦' : ''}
@@ -198,7 +223,7 @@ export default function CategoryView(props: CategoryThemeProps) {
                                 <div className="todo-info">
                                     <span className="title">{todo.title}</span>
                                     <span className="date">
-                                        {`${todo.startAt ? (() => { const d = new Date(todo.startAt as string); return t.calendar.dayTitle(d.getFullYear(), d.getMonth() + 1, d.getDate()); })() : t.category.noDate}${todo.repeat > 0 ? ` (↻ ${todo.repeat}${t.todo.perNDays})` : ''}`}
+                                        {`${todo.startAt ? t.calendar.dayTitle(y, m, d) : t.category.noDate}${todo.repeat > 0 ? ` (↻ ${todo.repeat}${t.todo.perNDays})` : ''}`}
                                     </span>
                                 </div>
 

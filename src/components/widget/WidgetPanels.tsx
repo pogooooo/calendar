@@ -20,6 +20,7 @@ import { addDaysToKey, zonedDayStart } from "@/lib/timezone";
 import { expandTodos } from "@/hooks/useExpandedTodos";
 import { weeklyTaskStats } from "@/lib/widgetStats";
 import { nextAnniversary } from "@/lib/anniversary";
+import { isOccurrenceDone, toggleOccurrence, type Occurrence } from "@/lib/todoDone";
 import { challengeExpired, completionTargetFor } from "@/lib/challengeDays";
 import * as OceanS from './ocean/OceanWidgetPanels.styles';
 
@@ -35,8 +36,8 @@ const spansDay = (t: { startAt?: string | number | Date | null; endAt?: string |
     return localDateKey(t.startAt) <= key && key <= endDateKey(t.startAt, t.endAt);
 };
 
-const doneOn = (t: { completions?: { targetDate: string | Date }[] }, key: string) =>
-    (t.completions ?? []).some(c => utcDayKey(c.targetDate) === key);
+/** 회차를 끝냈는가 — 여러 날 일정은 한 번(첫날 기록). 예전엔 보던 날의 기록만 봐서 달력·홈과 어긋났다 (src/lib/todoDone.ts) */
+const doneOn = (t: Occurrence) => isOccurrenceDone(t);
 
 function useFrame(rowPx = ROW_PX, reserved = 0) {
     const ref = React.useRef<HTMLDivElement>(null);
@@ -204,10 +205,10 @@ export function TodayPanel() {
             {today.length === 0
                 ? <S.Thin>{day.offset === 0 ? tr.home.noTodayTodos : tr.home.noDayTodos}</S.Thin>
                 : today.map(t => {
-                    const done = doneOn(t, key);
+                    const done = doneOn(t);
                     return (
                         <S.Row key={t.id}>
-                            <S.Box $done={done} aria-label={t.title} aria-pressed={done} onClick={() => toggleTodo(authFetch, t.originalTodo?.id ?? t.id, key)}>
+                            <S.Box $done={done} aria-label={t.title} aria-pressed={done} onClick={() => void toggleOccurrence(t, (k) => toggleTodo(authFetch, t.originalTodo?.id ?? t.id, k))}>
                                 {done && <Check size={9} strokeWidth={3} />}
                             </S.Box>
                             <S.Mark $c={color(t.categoryId)} />
@@ -219,12 +220,11 @@ export function TodayPanel() {
                 <>
                     <S.SectionHead className="mt">{tr.home.upcoming}</S.SectionHead>
                     {next.map(t => {
-                        const k = localDateKey(t.startAt!);
-                        const done = doneOn(t, k);
+                        const done = doneOn(t);
                         const d = new Date(t.startAt!);
                         return (
                             <S.Row key={t.id}>
-                                <S.Box $done={done} aria-label={t.title} aria-pressed={done} onClick={() => toggleTodo(authFetch, t.originalTodo?.id ?? t.id, k)}>
+                                <S.Box $done={done} aria-label={t.title} aria-pressed={done} onClick={() => void toggleOccurrence(t, (key) => toggleTodo(authFetch, t.originalTodo?.id ?? t.id, key))}>
                                     {done && <Check size={9} strokeWidth={3} />}
                                 </S.Box>
                                 <S.Mark $c={color(t.categoryId)} />
@@ -248,7 +248,7 @@ export function NowNextPanel() {
 
     const now = Date.now();
     const timed = expandTodos(todos, new Date(now), new Date(now + 7 * 86400000))
-        .filter(t => t.startAt && t.endAt && !t.isAllDay && !doneOn(t, localDateKey(Math.max(now, new Date(t.startAt!).getTime()))));
+        .filter(t => t.startAt && t.endAt && !t.isAllDay && !doneOn(t));
 
     const current = timed
         .filter(t => new Date(t.startAt!).getTime() <= now && now < new Date(t.endAt!).getTime())
@@ -323,7 +323,7 @@ export function DuePanel() {
             if (!t.endAt) return false;
             const end = new Date(t.endAt).getTime();
             if (end < now || end > now + 86400000 * 2) return false;
-            return !doneOn(t, endDateKey(t.startAt ?? t.endAt, t.endAt));
+            return !doneOn(t);
         })
         .sort((a, b) => new Date(a.endAt!).getTime() - new Date(b.endAt!).getTime());
 
@@ -341,10 +341,9 @@ export function DuePanel() {
             {list.length === 0
                 ? <S.Thin>{tr.widget.noDue}</S.Thin>
                 : list.map(t => {
-                    const k = endDateKey(t.startAt ?? t.endAt!, t.endAt!);
                     return (
                         <S.Row key={t.id}>
-                            <S.Box $done={false} aria-label={t.title} aria-pressed={false} onClick={() => toggleTodo(authFetch, t.originalTodo?.id ?? t.id, k)} />
+                            <S.Box $done={false} aria-label={t.title} aria-pressed={false} onClick={() => void toggleOccurrence(t, (k) => toggleTodo(authFetch, t.originalTodo?.id ?? t.id, k))} />
                             <S.Mark $c={color(t.categoryId)} />
                             <S.Name $done={false}>{t.title}</S.Name>
                             <S.Meta>{left(t.endAt!)}</S.Meta>

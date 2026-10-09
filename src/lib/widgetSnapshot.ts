@@ -27,9 +27,8 @@ export interface SnapshotTodo {
     startAt: string;   // ISO
     endAt: string;     // ISO
     allDay: boolean;
+    /** 이 회차를 끝냈는가 — 여러 날 일정은 한 번 끝낸다(src/lib/todoDone.ts). 위젯은 그 회차의 모든 날에 같은 값을 쓴다 */
     done: boolean;
-    /** Completion is per calendar day, including tasks that span several days. */
-    completedDates: string[];
     color: string;
 }
 
@@ -131,7 +130,6 @@ export function buildWidgetSnapshot(input: SnapshotInput): WidgetSnapshot {
             endAt: new Date(td.endAt!).toISOString(),
             allDay: !!td.isAllDay,
             done: !!td.isDone,
-            completedDates: (td.completions ?? []).map(c => utcDayKey(c.targetDate)),
             color: color(td.categoryId),
         }))
         .sort((a, b) => a.startAt.localeCompare(b.startAt));

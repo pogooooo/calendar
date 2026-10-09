@@ -1,10 +1,12 @@
-import { localDateKey, utcDayKey, endDateKey } from '@/lib/dateKey';
+import { localDateKey, endDateKey } from '@/lib/dateKey';
+import { isOccurrenceDone } from '@/lib/todoDone';
 import { addDaysToKey } from '@/lib/timezone';
 
 type StatsTodo = {
     categoryId?: string | null;
     startAt?: string | number | Date | null;
     endAt?: string | number | Date | null;
+    repeat?: number | null;
     completions?: { targetDate: string | Date }[];
 };
 
@@ -17,11 +19,12 @@ export function weeklyTaskStats(todos: StatsTodo[], weekStart: string) {
         if (!todo.startAt || !todo.endAt) continue;
         const start = localDateKey(todo.startAt);
         const end = endDateKey(todo.startAt, todo.endAt);
-        const completed = new Set((todo.completions ?? []).map(c => utcDayKey(c.targetDate)));
+        // 여러 날 일정은 한 번 끝낸다 — 끝냈으면 그 회차의 날이 모두 끝난 날로 센다 (src/lib/todoDone.ts)
+        const finished = isOccurrenceDone(todo);
         for (let day = 0; day < 7; day++) {
             const key = addDaysToKey(weekStart, day);
             if (key < start || key > end) continue;
-            const count = completed.has(key) ? 1 : 0;
+            const count = finished ? 1 : 0;
             total++;
             done += count;
             if (todo.categoryId) {

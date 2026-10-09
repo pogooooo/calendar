@@ -10,6 +10,7 @@ import useTodoStore from "@/store/useTodoStore";
 import { useT } from "@/i18n/useT";
 import { useCurrentDayKey } from "@/hooks/useCurrentDay";
 import { localDateKey, activeTimeZone, parseExcludedDates } from "@/lib/dateKey";
+import { toggleOccurrence } from "@/lib/todoDone";
 import { addDaysToKey } from "@/lib/timezone";
 import { calendarDayDelta, shiftZonedDays, resizeZonedRange } from "@/lib/taskInteractions";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
@@ -341,11 +342,8 @@ const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
 
             const actualId = expandedTodo.originalTodo?.id || expandedTodo.id;
 
-            const targetDateStr = expandedTodo.date
-                ? expandedTodo.date.toISOString()
-                : new Date(expandedTodo.startAt || new Date()).toISOString();
-
-            await toggleTodo(authFetch, actualId, targetDateStr);
+            // 회차의 첫날에 적는다 — 여러 날 일정은 한 번 끝낸다(홈·위젯과 같은 셈, src/lib/todoDone.ts)
+            await toggleOccurrence(expandedTodo, (key) => toggleTodo(authFetch, actualId, key));
             setContextMenu(null);
         };
 

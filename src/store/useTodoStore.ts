@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { coalesce, READ_TTL } from "@/lib/fetchOnce";
 import { reportSaveFailure } from "@/lib/saveError";
 import type { AuthFetch, TodoType, TodoCompletionType } from '@/types';
-import { toUtcAnchorIso, utcDayKey } from '@/lib/dateKey';
+import { toUtcAnchorIso, utcDayKey, dayKeyToIso } from '@/lib/dateKey';
 import { readError } from '@/lib/readError';
 import { fx } from '@/lib/fx';
 
@@ -78,7 +78,9 @@ const useTodoStore = create<TodoState>((set, get) => ({
 
         // 호출부가 순간(instant)을 넘기든 날짜를 넘기든, 사용자의 시간대 기준 달력일로 통일한다.
         // 그러지 않으면 KST 오전 9시 이전 일정이 전날로 기록돼 체크가 유지되지 않는다.
-        const anchorIso = toUtcAnchorIso(targetDate);
+        // 날짜 키(YYYY-MM-DD)는 그 날 그대로 — new Date("2026-10-09") 는 UTC 0시라, 서쪽 시간대(미주 등)에서는 전날로 읽혀
+        // 위젯·카테고리 화면의 체크가 하루 앞에 적혔다
+        const anchorIso = /^\d{4}-\d{2}-\d{2}$/.test(targetDate) ? dayKeyToIso(targetDate) : toUtcAnchorIso(targetDate);
         const targetDateStr = anchorIso.slice(0, 10);
 
         const isCompleted = !!target.completions?.some(c =>

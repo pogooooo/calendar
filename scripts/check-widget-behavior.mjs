@@ -56,7 +56,9 @@ const snapshot = buildWidgetSnapshot({
     memo: "오늘의 메모", t, locale: "ko", theme: themes.celestial, now: new Date("2026-10-02T00:30:00+09:00"),
 });
 assert.equal(snapshot.date, "2026-10-02");
-assert.deepEqual(snapshot.todos.find(td => td.id === "multi-day").completedDates, ["2026-10-02"]);
+// 여러 날 일정은 한 번 끝낸다 — 가운데 날에 적힌 예전 기록도 그 회차를 끝낸 것으로 (src/lib/todoDone.ts)
+assert.equal(snapshot.todos.find(td => td.id === "multi-day").done, true, "A multi-day task ticked on any of its days is done");
+assert.equal("completedDates" in snapshot.todos[0], false);
 const occurrences = snapshot.todos.filter(td => td.id === "repeat");
 assert.equal(occurrences.length, 3);
 assert.deepEqual(occurrences.map(td => td.done), [false, true, false]);
@@ -66,10 +68,21 @@ const { localDateKey } = sourceModule("src/lib/dateKey.ts");
 const { weeklyTaskStats } = sourceModule("src/lib/widgetStats.ts");
 const weekStats = weeklyTaskStats([task], '2026-09-27');
 assert.equal(weekStats.total, 3, 'Multi-day tasks count each scheduled day in the week');
-assert.equal(weekStats.done, 1, 'A completion on another day of the week must count');
-assert.deepEqual(weekStats.categories.get('c'), { total: 3, done: 1 }, 'Category rows must use the same weekly measure as the total');
+assert.equal(weekStats.done, 3, 'A finished multi-day task counts as done on each of its days');
+assert.deepEqual(weekStats.categories.get('c'), { total: 3, done: 3 }, 'Category rows must use the same weekly measure as the total');
 const clippedStats = weeklyTaskStats([task], '2026-10-03');
-assert.deepEqual(clippedStats.categories.get('c'), { total: 1, done: 0 });
+assert.deepEqual(clippedStats.categories.get('c'), { total: 1, done: 1 });
+const openTask = { ...task, completions: [] };
+assert.deepEqual(weeklyTaskStats([openTask], '2026-09-27').categories.get('c'), { total: 3, done: 0 });
+const { doneKeysIn, toggleOccurrence } = sourceModule('src/lib/todoDone.ts');
+assert.deepEqual(doneKeysIn(task), ['2026-10-02']);
+assert.deepEqual(doneKeysIn({ ...task, repeat: 1 }), [], 'Repeating occurrences only count a tick on their own first day');
+const toggled = [];
+await toggleOccurrence(task, async (k) => { toggled.push(k); });
+assert.deepEqual(toggled, ['2026-10-02'], 'Unticking a finished occurrence clears the tick inside it');
+toggled.length = 0;
+await toggleOccurrence(openTask, async (k) => { toggled.push(k); });
+assert.deepEqual(toggled, ['2026-10-01'], 'Ticking writes the first day of the occurrence');
 const { zonedDayStart, addDaysToKey } = sourceModule("src/lib/timezone.ts");
 const { shiftZonedDays, calendarDayDelta, dependencyIssue, overlapsCalendarDays } = sourceModule("src/lib/taskInteractions.ts");
 const { resizeZonedRange } = sourceModule("src/lib/taskInteractions.ts");

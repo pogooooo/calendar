@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import type { TodoType } from '@/types';
 import { localDateKey, utcDayKey, parseExcludedDates } from '@/lib/dateKey';
+import { isOccurrenceDone } from '@/lib/todoDone';
 
 export interface ExpandedTodoType extends TodoType {
     originalTodo?: TodoType;
@@ -41,11 +42,8 @@ export function expandTodos(
                 const end = new Date(todo.endAt);
                 if (end.getTime() < startLimit.getTime() || start.getTime() > endLimit.getTime()) return;
 
-                const dateStr = localDateKey(todo.startAt);
-                // 완료 기록은 서버가 UTC 자정으로 저장하므로 UTC 로 읽어야 키가 맞는다
-                const isDone = todo.completions?.some(c =>
-                    utcDayKey(c.targetDate) === dateStr
-                );
+                // 여러 날 일정은 한 번 끝낸다 — 첫날 기록, 예전에 가운데 날에 적힌 기록도 센다 (src/lib/todoDone.ts)
+                const isDone = isOccurrenceDone(todo);
 
                 expanded.push({
                     ...todo,

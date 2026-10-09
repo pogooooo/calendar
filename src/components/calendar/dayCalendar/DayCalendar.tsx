@@ -16,6 +16,7 @@ import useTodoStore from "@/store/useTodoStore";
 import { useT } from "@/i18n/useT";
 import { useDialog } from "@/components/dialog/DialogProvider";
 import { localDateKey, endDateKey } from "@/lib/dateKey";
+import { toggleOccurrence } from "@/lib/todoDone";
 import { isBetween } from "@/utils/DateUtils";
 import { completionKey, completionTargetFor, slotIndexOn } from "@/lib/challengeDays";
 import { todayKey as labelKey } from "@/lib/localTime";
@@ -365,8 +366,8 @@ const DayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
                 await projectActions.toggle(todo);
                 return;
             }
-            const occurrence = todo.date ?? new Date(todo.startAt || Date.now());
-            await toggleTodo(authFetch, todo.originalTodo?.id || todo.id, occurrence.toISOString());
+            // 회차의 첫날에 적는다 — 여러 날 일정은 한 번 끝낸다(홈·위젯과 같은 셈, src/lib/todoDone.ts)
+            await toggleOccurrence(todo, (key) => toggleTodo(authFetch, todo.originalTodo?.id || todo.id, key));
         };
 
         const handleToggleTask = (task: { id: string; title: string; isDone: boolean }) => toggleDailyTask(authFetch, task.id);

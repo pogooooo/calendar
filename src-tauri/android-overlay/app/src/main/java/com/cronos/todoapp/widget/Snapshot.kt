@@ -38,7 +38,9 @@ class Snapshot private constructor(
         /** 사용자 시간대의 날짜 키(yyyy-MM-dd)로 그날을 지나는가 */
         fun spans(key: String): Boolean = dayKey(start) <= key && key <= dayKey(last)
         fun timeRange(): String = "${hhmm(start)}–${hhmm(end)}"
-        fun doneOn(key: String): Boolean = completedDates?.contains(key) ?: (done && dayKey(start) == key)
+        /** 그날 이 회차를 끝낸 것으로 그리는가 — 여러 날 일정은 한 번 끝내므로 회차의 모든 날에 done (웹의 src/lib/todoDone.ts).
+         *  completedDates 는 1.2 의 스냅숏에만 있다(날마다 따로 셌다) */
+        fun doneOn(key: String): Boolean = completedDates?.contains(key) ?: done
     }
 
     class Challenge(val id: String, val title: String, val count: Int, val target: Int?, val doneToday: Boolean)

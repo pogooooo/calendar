@@ -11,6 +11,7 @@ import useCategoryStore from "@/store/useCategoryStore";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useT } from "@/i18n/useT";
 import { localDateKey, utcDayKey, endDateKey } from "@/lib/dateKey";
+import { isOccurrenceDone, toggleOccurrence, type Occurrence } from "@/lib/todoDone";
 import { Plus, SlidersHorizontal } from "lucide-react";
 import Arrow from "@/assets/Arrow";
 import DateTimePicker from "@/components/input/dateTimePicker/DateTimePicker";
@@ -26,7 +27,7 @@ import MonthArch from "./parts/MonthArch";
 import EmptyArt from "@/components/empty/EmptyArt";
 import CelestialHomeLayout from "./celestial/CelestialHomeLayout";
 import MapleHomeLayout from "./maple/MapleHomeLayout";
-import { expandTodos } from "@/hooks/useExpandedTodos";
+import { expandTodos, type ExpandedTodoType } from "@/hooks/useExpandedTodos";
 import { addDaysToKey, zonedDayStart } from "@/lib/timezone";
 import { activeTimeZone } from "@/lib/dateKey";
 import { challengeExpired, completionTargetFor } from "@/lib/challengeDays";
@@ -123,11 +124,8 @@ export default function HomeView() {
         []
     );
 
-    const isDoneOn = React.useCallback(
-        (t2: { completions?: { targetDate: string | Date }[] }, key: string) =>
-            (t2.completions ?? []).some(c => utcDayKey(c.targetDate) === key),
-        []
-    );
+    // 회차를 끝냈는가 — 여러 날 일정은 한 번(첫날 기록). 예전엔 보던 날의 기록만 봐서 둘째 날에 끝내면 달력 막대는 그대로였다
+    const isDoneOn = React.useCallback((t2: Occurrence) => isOccurrenceDone(t2), []);
 
     const monthDays = React.useMemo(
         () => Array.from({ length: daysInMonth }, (_, i) => `${year}-${pad2(month + 1)}-${pad2(i + 1)}`),
@@ -150,7 +148,7 @@ export default function HomeView() {
             homeTodos.forEach(t2 => {
                 if (!spansDay(t2, k)) return;
                 total += 1;
-                if (isDoneOn(t2, k)) done += 1;
+                if (isDoneOn(t2)) done += 1;
             });
         });
         return { left: total - done, done };
@@ -226,7 +224,9 @@ export default function HomeView() {
     // 오늘이 기념일이면 하루 한 번 갈래가 축하한다 (그 줄 자리에서)
     useAnniversaryFx(upcomingAnniversaries.filter(a => a.dday === 0).map(a => a.id));
 
-    const handleToggleTodo = (id: string) => toggleTodo(authFetch, id, focus.toISOString());
+    // 회차의 첫날에 적는다 (여러 날 일정은 한 번) — src/lib/todoDone.ts
+    const handleToggleTodo = (todo: ExpandedTodoType) =>
+        toggleOccurrence(todo, (key) => toggleTodo(authFetch, todo.originalTodo?.id ?? todo.id, key));
 
     /* ── 홈에서 바로 만들기 ───────────────────────────────────────────────
        챌린지는 물어볼 것이 많아 기존 창을 그대로 띄우고,
@@ -388,11 +388,11 @@ export default function HomeView() {
                                     <S.Empty><EmptyArt kind="todos" />{isToday ? t.home.noTodayTodos : t.home.noDayTodos}</S.Empty>
                                 ) : (
                                     dayTodos.map(todo => {
-                                        const done = isDoneOn(todo, focusKey);
+                                        const done = isDoneOn(todo);
                                         // 그날 시작하는 시각 일정만 (하루 종일·전날부터 이어진 것은 비운다)
                                         const at = !todo.isAllDay && todo.startAt && localDateKey(todo.startAt) === focusKey ? clock.format(new Date(todo.startAt)) : null;
                                         return (
-                                            <S.Row key={todo.id} type="button" aria-pressed={done} $done={done} onClick={() => handleToggleTodo(todo.originalTodo?.id ?? todo.id)}>
+                                            <S.Row key={todo.id} type="button" aria-pressed={done} $done={done} onClick={() => handleToggleTodo(todo)}>
                                                 <S.Mark $on={done} />
                                                 <span className="name">{todo.title}</span>
                                                 {at && <em>{at}</em>}
@@ -415,7 +415,7 @@ export default function HomeView() {
                                 ) : (
                                     upcomingTodos.map(todo => {
                                         const key = localDateKey(todo.startAt!);
-                                        const done = isDoneOn(todo, key);
+                                        const done = isDoneOn(todo);
                                         return (
                                             // 그 날로 데려간다. 그냥 /calendar 로 보내면 오늘이 열려 다시 찾아야 한다.
                                             <S.Row key={todo.id} type="button" $done={done} $soft onClick={() => router.push(`/calendar?date=${key}`)}>
