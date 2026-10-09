@@ -3,6 +3,7 @@ import prisma, { isUniqueViolation } from "@/lib/prisma";
 import { generateAccessToken, generateRefreshToken, refreshCookie, refreshExpiresAt, rememberFrom } from "@/lib/jwt";
 import {cookies} from "next/headers";
 import { normalizeEmail, userIdByEmail } from "@/lib/userEmail";
+import { readJson, badJson } from "@/lib/readJson";
 
 const GOOGLE_CLIENT_ID =
     process.env.GOOGLE_CLIENT_ID ?? process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
@@ -70,7 +71,8 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ message: "서버 설정 오류입니다." }, { status: 500 });
         }
 
-        const body = await request.json();
+        const body = await readJson(request);
+        if (body === undefined) return badJson();
         const { accessToken } = body as { accessToken?: string };
 
         if (!accessToken) {

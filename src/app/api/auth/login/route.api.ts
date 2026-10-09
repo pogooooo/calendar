@@ -6,6 +6,7 @@ import { cookies } from "next/headers";
 import { LoginSchema } from "@/lib/schema";
 import { checkRateLimit, resetRateLimit } from "@/lib/rateLimiter";
 import { userIdByEmail } from "@/lib/userEmail";
+import { readJson, badJson } from "@/lib/readJson";
 
 // 로그인 Rate Limit: 10분 내 10회 초과 시 15분 차단
 const LOGIN_LIMIT = { maxAttempts: 10, windowMs: 10 * 60 * 1000, blockMs: 15 * 60 * 1000 };
@@ -37,7 +38,8 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-        const body = await request.json();
+        const body = await readJson(request);
+        if (body === undefined) return badJson();
 
         const validation = LoginSchema.safeParse(body);
         if (!validation.success) {

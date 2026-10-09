@@ -2,13 +2,15 @@ import { NextResponse } from 'next/server';
 import prisma, { isUniqueViolation } from '@/lib/prisma';
 import { ToggleChallengeSchema } from '@/lib/schema';
 import { getUserId, categoryAccessWhere } from '@/lib/apiAuth';
+import { readJson, badJson } from "@/lib/readJson";
 
 export async function POST(req: Request) {
     try {
         const userId = await getUserId(req);
         if (!userId) return NextResponse.json({ message: "인증되지 않은 사용자입니다." }, { status: 401 });
 
-        const body = await req.json();
+        const body = await readJson(req);
+        if (body === undefined) return badJson();
         const parsed = ToggleChallengeSchema.safeParse(body);
         if (!parsed.success) {
             return NextResponse.json({ message: parsed.error.issues[0].message }, { status: 400 });

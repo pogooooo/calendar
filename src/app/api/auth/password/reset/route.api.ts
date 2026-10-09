@@ -5,6 +5,7 @@ import { ResetPasswordSchema } from "@/lib/schema";
 import { checkRateLimit } from "@/lib/rateLimiter";
 import { RESET_IDENTIFIER_PREFIX, hashResetToken } from "@/lib/passwordReset";
 import { userIdByEmail } from "@/lib/userEmail";
+import { readJson, badJson } from "@/lib/readJson";
 
 // 재설정 실행 Rate Limit: 10분 내 10회 초과 시 15분 차단 (토큰 무차별 대입 방지)
 const RESET_LIMIT = { maxAttempts: 10, windowMs: 10 * 60 * 1000, blockMs: 15 * 60 * 1000 };
@@ -33,7 +34,8 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-        const body = await request.json();
+        const body = await readJson(request);
+        if (body === undefined) return badJson();
 
         const validation = ResetPasswordSchema.safeParse(body);
         if (!validation.success) {

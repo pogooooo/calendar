@@ -4,6 +4,7 @@ import prisma, { isUniqueViolation } from "@/lib/prisma";
 import { RegisterSchema } from "@/lib/schema";
 import { checkRateLimit } from "@/lib/rateLimiter";
 import { emailInUse, normalizeEmail } from "@/lib/userEmail";
+import { readJson, badJson } from "@/lib/readJson";
 
 // 회원가입 Rate Limit: 1시간 내 5회 초과 시 1시간 차단
 const REGISTER_LIMIT = { maxAttempts: 5, windowMs: 60 * 60 * 1000, blockMs: 60 * 60 * 1000 };
@@ -31,7 +32,8 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-        const body = await request.json();
+        const body = await readJson(request);
+        if (body === undefined) return badJson();
 
         const validation = RegisterSchema.safeParse(body);
         if (!validation.success) {

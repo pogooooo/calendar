@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma, { isUniqueViolation } from "@/lib/prisma";
 import { verifyToken } from "@/lib/jwt";
 import { CreateTodoSchema, ToggleTodoSchema, UpdateTodoSchema } from "@/lib/schema";
+import { readJson, badJson } from "@/lib/readJson";
 
 const getUserId = async (request: NextRequest): Promise<string | null> => {
     try {
@@ -118,7 +119,8 @@ export const POST = async (request: NextRequest) => {
         const userId = await getUserId(request);
         if (!userId) return NextResponse.json({ message: "인증되지 않은 사용자입니다." }, { status: 401 });
 
-        const body = await request.json();
+        const body = await readJson(request);
+        if (body === undefined) return badJson();
         const parsed = CreateTodoSchema.safeParse(body);
         if (!parsed.success) {
             return NextResponse.json({ message: parsed.error.issues[0].message }, { status: 400 });
@@ -159,7 +161,8 @@ export const PATCH = async (request: NextRequest) => {
         const userId = await getUserId(request);
         if (!userId) return NextResponse.json({ message: "인증되지 않은 사용자입니다." }, { status: 401 });
 
-        const body = await request.json();
+        const body = await readJson(request);
+        if (body === undefined) return badJson();
 
         // targetDate 있으면 완료 토글, 없으면 내용 수정
         if (body?.targetDate !== undefined) {

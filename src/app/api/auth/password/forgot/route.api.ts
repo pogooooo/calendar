@@ -11,6 +11,7 @@ import {
     hashResetToken,
     resetIdentifier,
 } from "@/lib/passwordReset";
+import { readJson, badJson } from "@/lib/readJson";
 
 // 재설정 요청 Rate Limit: 1시간 내 5회 초과 시 1시간 차단
 const FORGOT_LIMIT = { maxAttempts: 5, windowMs: 60 * 60 * 1000, blockMs: 60 * 60 * 1000 };
@@ -42,7 +43,8 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-        const body = await request.json();
+        const body = await readJson(request);
+        if (body === undefined) return badJson();
 
         const validation = ForgotPasswordSchema.safeParse(body);
         if (!validation.success) {

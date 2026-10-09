@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { CreateAnniversarySchema, UpdateAnniversarySchema } from '@/lib/schema';
 import { getUserId } from '@/lib/apiAuth';
+import { readJson, badJson } from "@/lib/readJson";
 
 export async function GET(req: Request) {
     try {
@@ -25,7 +26,8 @@ export async function POST(req: Request) {
         const userId = await getUserId(req);
         if (!userId) return NextResponse.json({ message: "인증되지 않은 사용자입니다." }, { status: 401 });
 
-        const body = await req.json();
+        const body = await readJson(req);
+        if (body === undefined) return badJson();
         const parsed = CreateAnniversarySchema.safeParse(body);
         if (!parsed.success) {
             return NextResponse.json({ message: parsed.error.issues[0].message }, { status: 400 });
@@ -49,7 +51,8 @@ export async function PATCH(req: Request) {
         const userId = await getUserId(req);
         if (!userId) return NextResponse.json({ message: "인증되지 않은 사용자입니다." }, { status: 401 });
 
-        const body = await req.json();
+        const body = await readJson(req);
+        if (body === undefined) return badJson();
         const parsed = UpdateAnniversarySchema.safeParse(body);
         if (!parsed.success) {
             return NextResponse.json({ message: parsed.error.issues[0].message }, { status: 400 });

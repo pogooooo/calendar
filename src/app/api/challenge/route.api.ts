@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { CreateChallengeSchema, UpdateChallengeSchema } from '@/lib/schema';
 import { getUserId, categoryAccessWhere, checkCategoryPermission } from '@/lib/apiAuth';
+import { readJson, badJson } from "@/lib/readJson";
 
 export async function GET(req: Request) {
     try {
@@ -32,7 +33,8 @@ export async function POST(req: Request) {
         const userId = await getUserId(req);
         if (!userId) return NextResponse.json({ message: "인증되지 않은 사용자입니다." }, { status: 401 });
 
-        const body = await req.json();
+        const body = await readJson(req);
+        if (body === undefined) return badJson();
         const parsed = CreateChallengeSchema.safeParse(body);
         if (!parsed.success) {
             return NextResponse.json({ message: parsed.error.issues[0].message }, { status: 400 });
@@ -67,7 +69,8 @@ export async function PATCH(req: Request) {
         const userId = await getUserId(req);
         if (!userId) return NextResponse.json({ message: "인증되지 않은 사용자입니다." }, { status: 401 });
 
-        const body = await req.json();
+        const body = await readJson(req);
+        if (body === undefined) return badJson();
         const parsed = UpdateChallengeSchema.safeParse(body);
         if (!parsed.success) {
             return NextResponse.json({ message: parsed.error.issues[0].message }, { status: 400 });

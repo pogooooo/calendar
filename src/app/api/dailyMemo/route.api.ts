@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getUserId } from '@/lib/apiAuth';
+import { readJson, badJson } from "@/lib/readJson";
 
 /**
  * 클라이언트는 반드시 사용자의 시간대로 계산한 날짜 키를 보낸다.
@@ -50,7 +51,8 @@ export async function POST(req: Request) {
             return NextResponse.json({ message: "권한 없음" }, { status: 401 });
         }
 
-        const body = await req.json();
+        const body = await readJson(req);
+        if (body === undefined) return badJson();
         const { content, date } = body;
 
         if (typeof content !== "string" || content.length > 20000) {

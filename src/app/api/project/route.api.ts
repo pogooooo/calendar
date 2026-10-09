@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import prisma from '@/lib/prisma';
 import { CreateProjectSchema, UpdateProjectSchema } from '@/lib/schema';
 import { getUserId, categoryAccessWhere, checkCategoryPermission, onlyCategoryMembers } from '@/lib/apiAuth';
+import { readJson, badJson } from "@/lib/readJson";
 
 /**
  * 선행 할 일은 id·제목·상태만 싣는다 (할 일 라우트와 같게). 통째로 실으면 다른 카테고리에 있는 선행 할 일의
@@ -47,7 +48,8 @@ export async function POST(request: Request) {
         const userId = await getUserId(request);
         if (!userId) return NextResponse.json({ message: "인증되지 않은 사용자입니다." }, { status: 401 });
 
-        const body = await request.json();
+        const body = await readJson(request);
+        if (body === undefined) return badJson();
         const parsed = CreateProjectSchema.safeParse(body);
         if (!parsed.success) {
             return NextResponse.json({ message: parsed.error.issues[0].message }, { status: 400 });
@@ -85,7 +87,8 @@ export async function PATCH(request: Request) {
         const userId = await getUserId(request);
         if (!userId) return NextResponse.json({ message: "인증되지 않은 사용자입니다." }, { status: 401 });
 
-        const body = await request.json();
+        const body = await readJson(request);
+        if (body === undefined) return badJson();
         const parsed = UpdateProjectSchema.safeParse(body);
         if (!parsed.success) {
             return NextResponse.json({ message: parsed.error.issues[0].message }, { status: 400 });

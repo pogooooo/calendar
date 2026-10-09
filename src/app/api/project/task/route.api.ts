@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma';
 import { CreateProjectTaskSchema, UpdateProjectTaskSchema } from '@/lib/schema';
 import { getUserId, categoryAccessWhere, onlyCategoryMembers } from '@/lib/apiAuth';
 import { dependencyIssue } from '@/lib/taskInteractions';
+import { readJson, badJson } from "@/lib/readJson";
 
 /** 쓸 수 있는 프로젝트면 그 카테고리 id (담당자를 거를 때 쓴다), 아니면 null */
 const accessibleProjectCategory = async (projectId: string, userId: string) => {
@@ -58,7 +59,8 @@ export async function POST(request: Request) {
         const userId = await getUserId(request);
         if (!userId) return NextResponse.json({ message: "인증되지 않은 사용자입니다." }, { status: 401 });
 
-        const body = await request.json();
+        const body = await readJson(request);
+        if (body === undefined) return badJson();
         const parsed = CreateProjectTaskSchema.safeParse(body);
         if (!parsed.success) {
             return NextResponse.json({ message: parsed.error.issues[0].message }, { status: 400 });
@@ -108,7 +110,8 @@ export async function PATCH(request: Request) {
         const userId = await getUserId(request);
         if (!userId) return NextResponse.json({ message: "인증되지 않은 사용자입니다." }, { status: 401 });
 
-        const body = await request.json();
+        const body = await readJson(request);
+        if (body === undefined) return badJson();
         const parsed = UpdateProjectTaskSchema.safeParse(body);
         if (!parsed.success) {
             return NextResponse.json({ message: parsed.error.issues[0].message }, { status: 400 });
