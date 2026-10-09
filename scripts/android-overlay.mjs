@@ -80,7 +80,8 @@ const extras = `
             </intent-filter>
         </activity>
         <!-- 빠른 추가 위젯을 누르면 뜨는 입력 창. 앱을 열지 않고 할 일을 넣는다.
-             taskAffinity 를 비워 앱의 작업과 따로 떠야 뒤에 앱이 아니라 홈 화면이 보인다 -->
+             taskAffinity 를 비워 앱의 작업과 따로 떠야 뒤에 앱이 아니라 홈 화면이 보인다.
+             화면을 돌려도 다시 만들지 않는다(configChanges) — 다시 만들면 치던 글이 사라지고, 넣는 중이면 같은 할 일이 둘 생길 수 있었다 -->
         <activity
             android:name=".widget.QuickAddActivity"
             android:exported="false"
@@ -88,6 +89,7 @@ const extras = `
             android:taskAffinity=""
             android:excludeFromRecents="true"
             android:launchMode="singleTask"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboard|keyboardHidden|uiMode"
             android:windowSoftInputMode="stateAlwaysVisible|adjustResize" />
         <!-- 개발용: 위젯 미리보기 그림 만들기 (디버그 빌드에서만 일한다) -->
         <receiver

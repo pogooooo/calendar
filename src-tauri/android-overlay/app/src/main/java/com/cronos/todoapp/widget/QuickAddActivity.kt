@@ -290,15 +290,17 @@ class QuickAddActivity : Activity() {
         setBusy(true)
         thread {
             val result = post(title, category.id, start, end)
+            // 창이 먼저 닫혀도(뒤로 가기) 넣은 것은 위젯에 싣는다 — 예전엔 닫힌 창이면 건너뛰어 위젯이 옛 목록에 머물렀다
+            if (result.ok) remember(result.body, title, category, start, end)
             runOnUiThread {
                 if (isFinishing || isDestroyed) return@runOnUiThread
                 if (result.ok) {
-                    remember(result.body, title, category, start, end)
                     Toast.makeText(this, label("qaSaved", "추가했어요"), Toast.LENGTH_SHORT).show()
                     finish()
                 } else {
                     setBusy(false)
-                    status.text = result.message ?: label("qaFailed", "넣지 못했어요. 연결을 확인해 주세요.")
+                    // 서버 문구는 한국어뿐이다 — 영어 화면이면 화면 언어의 문구로
+                    status.text = (if (snap?.locale == Locale.ENGLISH) null else result.message) ?: label("qaFailed", "넣지 못했어요. 연결을 확인해 주세요.")
                     status.visibility = View.VISIBLE
                 }
             }
@@ -372,7 +374,7 @@ class QuickAddActivity : Activity() {
             tmp.writeText("cronos://refresh/todos")
             tmp.renameTo(File(dir, "pending-link.txt"))
         } catch (e: Throwable) { Log.w("CronosQuickAdd", "앱에 남길 신호를 못 썼다", e) }
-        WidgetRefresh.broadcast(this)
+        WidgetRefresh.broadcast(applicationContext)
     }
 
     private fun openApp() {
