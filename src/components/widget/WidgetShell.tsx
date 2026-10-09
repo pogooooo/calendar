@@ -235,6 +235,8 @@ export default function WidgetShell({ kind, title, children }: Props) {
         let cancelled = false;
         let rafId = 0;
         let timerId = 0;
+        let wallTimer = 0;
+        let onFocus: (() => void) | undefined;
         let unlistenMove: (() => void) | undefined;
 
         async function setupWallpaperSync() {
@@ -244,19 +246,24 @@ export default function WidgetShell({ kind, title, children }: Props) {
                 const path = await invoke<string>("get_wallpaper_path");
                 if (!path) return;
 
-                const assetUrl = convertFileSrc(path);
-                let objUrl = assetUrl;
-
-                try {
-                    const res = await fetch(assetUrl);
-                    const blob = await res.blob();
-                    objUrl = URL.createObjectURL(blob);
-                } catch {}
-
+                let wallPath = path;
+                let assetUrl = convertFileSrc(path);
                 const img = new Image();
                 img.crossOrigin = "anonymous";
-                img.src = objUrl;
-                await new Promise(r => { img.onload = r; img.onerror = r; });
+                let objUrl = "";
+                // 벽지를 읽어 들인다 — 켤 때, 그리고 벽지가 바뀌었을 때(슬라이드 쇼·바꿈). 예전엔 켤 때 한 번뿐이라 바뀐 벽지와 어긋났다
+                const loadImage = async () => {
+                    let next = assetUrl;
+                    try {
+                        const res = await fetch(assetUrl);
+                        next = URL.createObjectURL(await res.blob());
+                    } catch {}
+                    if (objUrl) URL.revokeObjectURL(objUrl);
+                    objUrl = next.startsWith("blob:") ? next : "";
+                    img.src = next;
+                    await new Promise(r => { img.onload = r; img.onerror = r; });
+                };
+                await loadImage();
 
                 const win = getCurrentWindow();
                 let mx = 0, my = 0, mw = 1920, mh = 1080, sf = 1;
@@ -271,6 +278,21 @@ export default function WidgetShell({ kind, title, children }: Props) {
                     my = (monitor?.position.y ?? 0) / sf;
                     setWallpaper({ url: assetUrl, mw, mh });
                 };
+
+                const refreshWallpaper = async () => {
+                    if (cancelled) return;
+                    try {
+                        const now = await invoke<string>("get_wallpaper_path");
+                        if (!now || now === wallPath) return;
+                        wallPath = now;
+                        assetUrl = convertFileSrc(now);
+                        await loadImage();
+                        setWallpaper({ url: assetUrl, mw, mh });
+                    } catch {}
+                };
+                wallTimer = window.setInterval(refreshWallpaper, 5 * 60 * 1000);
+                onFocus = () => { void refreshWallpaper(); };
+                window.addEventListener("focus", onFocus);
 
                 const syncOffset = async () => {
                     const pos = await win.outerPosition();
@@ -368,7 +390,10 @@ export default function WidgetShell({ kind, title, children }: Props) {
                 };
                 tick();
 
-                unlistenMove = await win.onMoved(async () => {
+                unlistenMove = await win.onMoved(async ({ payload }) => {
+                    // 다른 모니터로 옮겨 가면 그 모니터의 자리·크기·배율로 다시 — 예전엔 켤 때의 모니터만 알아 유리 바탕이 어긋났다
+                    const x = payload.x / sf, y = payload.y / sf;
+                    if (x < mx || y < my || x >= mx + mw || y >= my + mh) await updateMonitor();
                     await syncOffset();
                 });
             } catch {}
@@ -380,6 +405,8 @@ export default function WidgetShell({ kind, title, children }: Props) {
             cancelled = true;
             cancelAnimationFrame(rafId);
             clearTimeout(timerId);
+            clearInterval(wallTimer);
+            if (onFocus) window.removeEventListener("focus", onFocus);
             if (unlistenMove) unlistenMove();
         };
     }, []);
