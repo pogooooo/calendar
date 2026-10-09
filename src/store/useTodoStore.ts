@@ -39,6 +39,8 @@ function setDone(set: SetTodos, todoId: string, dayKey: string, anchorIso: strin
 /** 같은 일정·같은 날의 완료 요청 줄 — 차례로 보내고, 서버가 마지막으로 받아들인 상태를 기억한다 */
 const toggleLines = new Map<string, { chain: Promise<void>; confirmed: boolean; seq: number }>();
 
+let tempSeq = 0;
+
 const useTodoStore = create<TodoState>((set, get) => ({
     todos: [],
     isLoading: false,
@@ -125,7 +127,8 @@ const useTodoStore = create<TodoState>((set, get) => ({
     },
 
     addTodo: async (authFetch, data) => {
-        const tempId = `temp-${Date.now()}`;
+        // 같은 밀리초에 둘을 넣어도 겹치지 않게 — 겹치면 한쪽의 응답이 두 임시 항목을 함께 바꾸거나 지웠다
+        const tempId = `temp-${Date.now()}-${++tempSeq}`;
         // 실패하면 이 임시 항목만 뺀다 — 목록 전체를 넣기 전 것으로 되돌리면 그사이 들어온 다른 변경까지 사라졌다
         const dropTemp = () => set((state) => ({ todos: state.todos.filter(t => t.id !== tempId) }));
         fx.emit("add");
