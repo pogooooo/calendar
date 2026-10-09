@@ -44,6 +44,15 @@ export const dotMark = (size: string) => css`
     transform: none;
 `;
 
+/** 틀의 네 모서리에 꿴 네 갈래 별 — 모서리 장식 <i> 넷(1·2 위, 3·4 아래)에 건다 */
+export const cornerStars = (size = 9) => css`
+    i { ${star4Mark(`${size}px`)} color: ${(p) => p.theme.colors.primary}; }
+    i:nth-child(1) { top: ${-size / 2}px; left: ${-size / 2}px; }
+    i:nth-child(2) { top: ${-size / 2}px; right: ${-size / 2}px; }
+    i:nth-child(3) { bottom: ${-size / 2}px; left: ${-size / 2}px; }
+    i:nth-child(4) { bottom: ${-size / 2}px; right: ${-size / 2}px; }
+`;
+
 /** 빈 고리(삭) — 안 끝난 것 */
 export const ringMark = (size: string) => css`
     width: ${size};

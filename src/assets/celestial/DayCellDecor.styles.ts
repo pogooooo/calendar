@@ -38,7 +38,7 @@ export const FrameWrap = styled.div`
     }
     .f-out { stroke-width: 1; }
     .f-in { stroke-width: 0.8; opacity: 0.4; }
-    .corner { stroke-width: 1; stroke-linecap: round; }
+    .corner { stroke-width: 4; stroke-linecap: round; }
 
     .fr-base { animation: ${appear} 0.55s ease-out both; }
 
@@ -59,5 +59,6 @@ export const FrameWrap = styled.div`
         );
     }
     .fr-glow .fr-line { stroke-width: 1.6; opacity: 1; }
+    .fr-glow .corner { stroke-width: 5; }
 
 `;

@@ -3,7 +3,8 @@
  *
  * 집 규칙: 화면은 갈래 공용 JSX 하나, 모양은 갈래마다 *.styles.ts (scripts/check-theme-styles.mjs).
  */
-import styled, { keyframes } from "styled-components";
+import styled, { css, keyframes } from "styled-components";
+import { celestialOnly } from "@/styles/celestial/ornaments";
 
 /* ── 모양 ─────────────────────────────────────────────────────────── */
 
@@ -63,6 +64,11 @@ export const GlossOverlay = styled.div`
     z-index: 0;
     background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.03) 15%, transparent 30%);
     box-shadow: inset 0px 0px 15px rgba(255, 255, 255, 0.05);
+
+    /* Celestial: 비스듬한 윤 대신 위에서 내려오는 곧은 윤 */
+    ${celestialOnly(css`
+        background: linear-gradient(to bottom, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0.03) 14%, transparent 30%);
+    `)}
 `;
 
 export const VirtualMonitor = styled.div<{ $url: string; $mw: number; $mh: number }>`
@@ -127,6 +133,11 @@ export const Gem = styled.span<{ $grip?: boolean; $active?: boolean; $danger?: b
         box-shadow: 0 0 5px ${p => p.theme?.colors?.primary}80;
     }
 
+    /* Celestial: 보석은 마름모 대신 동그라미 */
+    ${celestialOnly(css`
+        border-radius: 50%;
+        transform: none;
+    `)}
 `;
 
 export const Rule = styled.span`
@@ -218,6 +229,10 @@ export const PanelDone = styled.button`
         border: 1px solid ${p => p.theme?.colors?.primary};
     }
 
+    /* Celestial: 마름모 대신 고리 */
+    ${celestialOnly(css`
+        &::before { border-radius: 50%; transform: none; }
+    `)}
 `;
 
 export const PanelLabel = styled.div`

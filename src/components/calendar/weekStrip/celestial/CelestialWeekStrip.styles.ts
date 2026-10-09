@@ -3,7 +3,8 @@
  *
  * 집 규칙: 테마 갈래 컴포넌트는 JSX 만 들고, styled-components 는 형제 *.styles.ts 에 둔다.
  */
-import styled, { keyframes } from "styled-components";
+import styled, { css, keyframes } from "styled-components";
+import { celestialOnly } from "@/styles/celestial/ornaments";
 
 const slideIn = keyframes`
     from { opacity: 0; transform: translateY(-3px); }
@@ -126,4 +127,9 @@ export const Day = styled.button<{ $selected: boolean; $today: boolean; $weekend
     }
 
     &:active { background: ${p => p.theme.colors.primary}26; }
+
+    /* Celestial: 일정 점은 마름모 대신 둥근 점(달) */
+    ${celestialOnly(css`
+        .dots i { border-radius: 50%; transform: none; }
+    `)}
 `;

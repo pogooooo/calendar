@@ -9,13 +9,9 @@ const RAYS = [0, 45, 90, 135, 180, 225, 270, 315];
 export default function ArcanaEmblem({ kind, size }: { kind: DialogKind; size: number }) {
     return (
         <Svg viewBox="0 0 100 100" width={size} height={size} aria-hidden="true">
-            <rect
-                className="ln"
-                x="28" y="28" width="44" height="44"
-                transform="rotate(45 50 50)"
-                strokeWidth="0.9"
-                opacity="0.55"
-            />
+            {/* 바탕 — 점선 고리와 네 방위의 눈금 (Celestial 은 비스듬한 마름모를 쓰지 않는다) */}
+            <circle className="ln" cx="50" cy="50" r="27" strokeWidth="0.9" strokeDasharray="2 3.2" opacity="0.55" />
+            <path className="ln" strokeWidth="0.9" opacity="0.55" d="M50 16v5M50 79v5M16 50h5M79 50h5" />
 
             {kind === "info" && (
                 <>
@@ -33,11 +29,12 @@ export default function ArcanaEmblem({ kind, size }: { kind: DialogKind; size: n
                 </>
             )}
 
+            {/* XIII — 해를 가리는 달(식). 모래시계의 사선 대신 고리와 그 위에 겹친 어두운 원반 */}
             {kind === "danger" && (
                 <>
-                    <path className="ln stroke" pathLength={100} strokeWidth="1.5" d="M34 30h32L50 50 66 70H34L50 50z" />
+                    <circle className="ln stroke" pathLength={100} cx="50" cy="50" r="17" strokeWidth="1.5" />
+                    <circle className="fl" cx="56" cy="47" r="13" opacity="0.55" />
                     <path className="ln" strokeWidth="1.6" d="M30 28h40M30 72h40" />
-                    <path className="fl" opacity="0.55" d="M50 50l7 14H43z" />
                 </>
             )}
 

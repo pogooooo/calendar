@@ -13,12 +13,13 @@ const dark = (t: DefaultTheme) => t.mode === "dark";
 /** 금박 위의 글씨·아이콘 색 */
 export const giltInk = (t: DefaultTheme) => (dark(t) ? "#1B1608" : "#3B2E0C");
 
-/** 금박 면 — 밝은 결·그늘이 엇갈리는 금속 + 위는 빛, 아래는 그늘이 맺힌 가장자리 */
+/** 금박 면 — 밝은 결·그늘이 가로로 엇갈리는 금속 + 위는 빛, 아래는 그늘이 맺힌 가장자리.
+ *  결은 곧게(위→아래) — Celestial 은 비스듬한 선을 쓰지 않는다 */
 export const gilt = css`
     background-color: ${(p) => p.theme.colors.primary};
     background-image: ${(p) => dark(p.theme)
-        ? "linear-gradient(135deg, #F7E7B6 0%, #D9BD78 34%, #B39652 58%, #EBD497 82%, #CDB06C 100%)"
-        : "linear-gradient(135deg, #F3DD8E 0%, #D4AF37 34%, #B08A24 58%, #E8C96A 82%, #C9A23A 100%)"};
+        ? "linear-gradient(180deg, #F7E7B6 0%, #D9BD78 34%, #B39652 58%, #EBD497 82%, #CDB06C 100%)"
+        : "linear-gradient(180deg, #F3DD8E 0%, #D4AF37 34%, #B08A24 58%, #E8C96A 82%, #C9A23A 100%)"};
     box-shadow: inset 0 1px 0 rgba(255, 248, 220, ${(p) => (dark(p.theme) ? 0.55 : 0.7)}), inset 0 -1px 0 rgba(110, 80, 10, 0.3);
     color: ${(p) => giltInk(p.theme)};
 `;
@@ -32,7 +33,7 @@ export const giltSmall = css`
     color: ${(p) => giltInk(p.theme)};
 `;
 
-/** 올리면 금박 위로 빛이 한 번 스친다 (끝없이 돌지 않는다). ::after 를 쓴다 — 그 자리를 쓰는 요소에는 붙이지 말 것 */
+/** 올리면 금박 위로 곧은 빛줄기가 한 번 가로질러 스친다 (끝없이 돌지 않는다). ::after 를 쓴다 — 그 자리를 쓰는 요소에는 붙이지 말 것 */
 export const sheen = css`
     position: relative;
     overflow: hidden;
@@ -41,7 +42,7 @@ export const sheen = css`
         content: "";
         position: absolute;
         inset: 0;
-        background: linear-gradient(105deg, transparent 30%, rgba(255, 252, 235, 0.55) 48%, rgba(255, 252, 235, 0.1) 56%, transparent 66%);
+        background: linear-gradient(90deg, transparent 30%, rgba(255, 252, 235, 0.55) 48%, rgba(255, 252, 235, 0.1) 56%, transparent 66%);
         transform: translateX(-130%);
         pointer-events: none;
     }

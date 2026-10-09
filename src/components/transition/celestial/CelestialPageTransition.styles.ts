@@ -6,9 +6,14 @@
  */
 import styled, { keyframes, css } from "styled-components";
 import { MOBILE } from "@/styles/breakpoints";
+import { star4Mark } from "@/styles/celestial/ornaments";
 
 export const C = 200;
 
+/**
+ * 문양이 그려졌다 지워지는 시간. 넓은 화면에서는 1.45초가 근사하지만, 폰에서는 탭을 자주 오가므로
+ * 매번 기다리는 느낌이 된다. CSS 변수로 두고 폰에서만 짧게 줄인다.
+ */
 export const DURATION = "var(--cronos-transition, 1.45s)";
 
 export const MOBILE_DURATION = "0.55s";
@@ -36,14 +41,15 @@ export const pipCycle = keyframes`
     100% { opacity: 0; transform: scale(1.3); }
 `;
 
+/* 점선 고리는 오는 쪽으로(--turn), 눈금은 그 반대로 조금 덜 돈다 */
 export const turn = keyframes`
     from { transform: rotate(0deg); }
-    to   { transform: rotate(24deg); }
+    to   { transform: rotate(var(--turn, 24deg)); }
 `;
 
 export const turnBack = keyframes`
     from { transform: rotate(0deg); }
-    to   { transform: rotate(-18deg); }
+    to   { transform: rotate(calc(var(--turn, 24deg) * -0.75)); }
 `;
 
 export const sigilCycle = keyframes`
@@ -127,20 +133,18 @@ export const Corners = styled.div`
     position: absolute;
     inset: 26px;
 
+    /* 화면 네 귀퉁이의 네 갈래 별 */
     i {
         position: absolute;
-        width: 9px;
-        height: 9px;
-        border: 1px solid currentColor;
-        transform: rotate(45deg);
+        ${star4Mark("13px")}
         opacity: 0;
         animation: ${pipCycle} ${DURATION} ease-out both;
     }
 
-    .tl { top: -4px; left: -4px; }
-    .tr { top: -4px; right: -4px; animation-delay: 0.06s; }
-    .bl { bottom: -4px; left: -4px; animation-delay: 0.12s; }
-    .br { bottom: -4px; right: -4px; animation-delay: 0.18s; }
+    .tl { top: -6px; left: -6px; }
+    .tr { top: -6px; right: -6px; animation-delay: 0.06s; }
+    .bl { bottom: -6px; left: -6px; animation-delay: 0.12s; }
+    .br { bottom: -6px; right: -6px; animation-delay: 0.18s; }
 `;
 
 export const Sigil = styled.svg`
@@ -151,8 +155,8 @@ export const Sigil = styled.svg`
     animation: ${sigilCycle} ${DURATION} cubic-bezier(0.33, 0, 0.2, 1) both;
 
     .rim,
-    .star12,
-    .tri,
+    .ring,
+    .axis,
     .moon {
         fill: none;
         stroke: currentColor;
@@ -160,8 +164,8 @@ export const Sigil = styled.svg`
     }
 
     .rim,
-    .star12,
-    .tri,
+    .ring,
+    .axis,
     .moon {
         stroke-dasharray: 100;
         animation: ${strokeCycle} ${DURATION} cubic-bezier(0.4, 0, 0.3, 1) both;
@@ -191,19 +195,19 @@ export const Sigil = styled.svg`
         }
     }
 
-    .star12 {
-        stroke-width: 0.9;
-        opacity: 0.7;
-        animation-delay: 0.06s;
-    }
+    /* 혼천의 — 축이 먼저, 고리들이 차례로 */
+    .axis { stroke-width: 0.8; opacity: 0.5; animation-delay: 0.02s; }
+    .ring { stroke-width: 0.9; opacity: 0.66; animation-delay: 0.06s; }
+    .ring.ecl { animation-delay: 0.11s; }
+    .ring.thin { stroke-width: 0.7; opacity: 0.45; animation-delay: 0.15s; }
 
-    .tri {
-        stroke-width: 0.8;
-        opacity: 0.55;
-        animation-delay: 0.13s;
+    /* 달의 위상·축 끝의 점 — 그어지지 않고 떠오른다 */
+    .phases, .ends {
+        opacity: 0;
+        animation: ${fadeCycle} ${DURATION} ease-in-out 0.08s both;
     }
-
-    .tri-b { animation-delay: 0.16s; }
+    .phases .disc { fill: none; stroke: currentColor; stroke-width: 0.8; vector-effect: non-scaling-stroke; opacity: 0.7; }
+    .phases .lit, .ends circle { fill: currentColor; opacity: 0.85; }
 
     .moon {
         stroke-width: 1.5;
@@ -211,10 +215,8 @@ export const Sigil = styled.svg`
     }
 
     .pip {
-        fill: none;
-        stroke: currentColor;
-        stroke-width: 1;
-        vector-effect: non-scaling-stroke;
+        fill: currentColor;
+        stroke: none;
         opacity: 0;
         transform-box: fill-box;
         transform-origin: center;

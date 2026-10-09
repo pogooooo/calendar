@@ -1,19 +1,20 @@
 /**
- * Celestial 의 화면 효과 — 천체 타로. 금 선화의 카드 한 장(겉테·속테·네 귀퉁이 마름모, 위에 아르카나 번호, 가운데 문장,
- * 아래 이름)과 별·별자리·별똥별. 천문 기구(아스트롤라베 눈금·궤도·태양계)는 쓰지 않는다 — 이 테마의 중심은 타로다.
- *   달 넘김: 넘기는 쪽으로 흐르는 별똥 줄기와, 자리 잡으며 반짝이는 별 몇 개
+ * Celestial 의 화면 효과 — 천체 타로. 금 선화의 카드 한 장(겉테·속테·네 귀퉁이 네 갈래 별, 위에 아르카나 번호, 가운데 문장,
+ * 아래 이름)과 별·달·곧은 금선. 비스듬한 선(지그재그 별자리·비스듬히 가르는 별똥별)은 쓰지 않는다 —
+ * 선은 가로·세로로만 긋고, 별은 똑바로 선 채 반짝인다 (사용자: "사선은 없애고 직선·달·별·혼천의로").
+ *   달 넘김: 넘기는 쪽으로 가로로 흐르는 빛줄기와, 자리 잡으며 반짝이는 별 몇 개
  *   화면 옮김: 효과 없음 — 화면을 옮길 때마다 새 화면 위쪽을 별자리가 가로질러, 뜨는 화면을 가렸다(사용자가 뺐다)
  *   끝냄: 누른 자리에서 네 갈래 별이 터진다 · 넣음: 잔별이 피어오른다
  *   챌린지 칸: 여덟 갈래 별 하나와 둘레의 일곱 잔별(XVII 별 카드의 그림) — 연속 이정표면 XVII · THE STAR 카드가
  *             뒤집히며 놓이고 위에 이어 온 수(로마 숫자), 목표를 다 채우면 XXI · THE WORLD
  *   보드 옮김: 별똥별이 다음 칸 쪽으로 (되돌리면 흐린 별똥별이 짧게 뒤로)
- *   프로젝트 완료: XXI · THE WORLD 카드가 누른 자리에 놓이고, 위쪽엔 큰 별자리, 별이 조금 내린다
+ *   프로젝트 완료: XXI · THE WORLD 카드가 누른 자리에 놓이고, 위쪽엔 곧은 금선 위에 별과 달(상현·보름·하현)이 맺히고, 별이 조금 내린다
  *   끌어 놓기: 놓은 칸의 테두리를 금선이 한 바퀴 긋고(카드의 겉테처럼) 네 귀퉁이가 반짝인다
  *   지우기: 그 자리가 옅은 금가루로 흩어져 오른다 — 축하가 아니라 조용히
- *   로그인: 석 장 펼치기 — XVIII 달 · XVII 별 · XIX 해가 한 묶음에서 부채꼴로 펼쳐졌다 사라진다 (가입은 XVII 한 장)
- *   기념일: XIX · THE SUN 카드가 그 줄 위에 놓이고, 줄 아래로 금선 장식, 하늘엔 별똥별
+ *   로그인: 석 장 펼치기 — XVIII 달 · XVII 별 · XIX 해가 한 묶음에서 한 줄로 펼쳐졌다 사라진다 (가입은 XVII 한 장)
+ *   기념일: XIX · THE SUN 카드가 그 줄 위에 놓이고, 줄 아래로 금선 장식, 하늘엔 별이 내린다
  *   빠른 이동: 창 위 가장자리에 금선이 가운데서 양쪽으로 그어지고 네 귀퉁이에 별이 돋는다
- *   위젯 띄움: 누른 자리에서 오른쪽 위로 별똥별 · 테마로 바꿈: 화면 가득 별이 돋고 별자리 하나
+ *   위젯 띄움: 누른 자리에서 가로로, 다시 위로 꺾여 오른쪽 위까지 빛이 간다 · 테마로 바꿈: 화면 가득 별이 돋고 별과 달을 꿴 금선 하나
  * 카드는 작게(폰은 더 작게), 누른 자리를 가운데로, 1.6~1.8초 안에 사라진다 — 글을 오래 가리지 않는다.
  */
 import {
@@ -81,6 +82,25 @@ const dot = (ctx: FxContext) => ctx.texture("cel-dot", (g, s) => {
     glow.addColorStop(1, "rgba(240,206,120,0)");
     g.fillStyle = glow;
     g.fillRect(0, 0, s, s);
+}, 64);
+
+/** 달 — 금빛 테와 위상만큼 찬 면(0.25 상현 · 0.5 보름 · 0.75 하현), 둘레는 옅은 번짐. 차오르면 오른쪽이 밝다 */
+const moon = (ctx: FxContext, phase: number) => ctx.texture(`cel-moon:${phase}`, (g, s) => {
+    const c = s / 2, r = s * 0.25;
+    const glow = g.createRadialGradient(c, c, 0, c, c, c);
+    glow.addColorStop(0, "rgba(255,244,210,0.5)");
+    glow.addColorStop(0.5, "rgba(240,206,120,0.16)");
+    glow.addColorStop(1, "rgba(240,206,120,0)");
+    g.fillStyle = glow;
+    g.fillRect(0, 0, s, s);
+    g.strokeStyle = "rgba(255,246,218,0.95)";
+    g.lineWidth = s * 0.028;
+    g.beginPath(); g.arc(c, c, r, 0, Math.PI * 2); g.stroke();
+    g.fillStyle = "rgba(255,246,218,1)";
+    g.beginPath();
+    if (Math.abs(phase - 0.5) < 0.01) g.arc(c, c, r, 0, Math.PI * 2);
+    else { g.arc(c, c, r, -Math.PI / 2, Math.PI / 2, phase > 0.5); g.closePath(); }
+    g.fill();
 }, 64);
 
 /* ── 타로 카드 그리기 ───────────────────────────────────────────────── */
@@ -191,7 +211,7 @@ const EMBLEM: Record<ArcanumId, (g: CanvasRenderingContext2D, cx: number, cy: nu
         g.fillStyle = ink.gold;
         g.beginPath(); g.arc(cx, cy, R * 0.09, 0, Math.PI * 2); g.fill();
     },
-    // XXI 세계 — 엮은 화환(두 겹 타원과 빗금), 위아래 매듭, 가운데 별, 네 귀퉁이 잔별
+    // XXI 세계 — 두 겹 타원의 화환과 그 사이의 눈금(빗금 없이 곧게), 위아래 고리 매듭, 가운데 별, 네 귀퉁이 잔별
     world: (g, cx, cy, R, lw, ink) => {
         const rx = R * 0.66, ry = R * 1.0;
         g.strokeStyle = ink.gold;
@@ -204,14 +224,14 @@ const EMBLEM: Record<ArcanumId, (g: CanvasRenderingContext2D, cx: number, cy: nu
             if (Math.abs(Math.cos(t)) > 0.97) continue; // 매듭 자리는 비운다
             g.beginPath();
             g.moveTo(cx + Math.cos(t) * rx * 0.84, cy + Math.sin(t) * ry * 0.9);
-            g.lineTo(cx + Math.cos(t + 0.1) * rx, cy + Math.sin(t + 0.1) * ry);
+            g.lineTo(cx + Math.cos(t) * rx, cy + Math.sin(t) * ry);
             g.stroke();
         }
         g.globalAlpha = 1;
         g.lineWidth = lw;
         ([-1, 1] as const).forEach((side) => {
             const y = cy + side * ry * 0.95, d = R * 0.09;
-            g.beginPath(); g.moveTo(cx - d, y - d); g.lineTo(cx + d, y + d); g.moveTo(cx + d, y - d); g.lineTo(cx - d, y + d); g.stroke();
+            g.beginPath(); g.arc(cx, y, d, 0, Math.PI * 2); g.fillStyle = ink.face; g.fill(); g.stroke();
         });
         g.fillStyle = ink.gold;
         fourPoint(g, cx, cy, R * 0.3); g.fill();
@@ -219,7 +239,7 @@ const EMBLEM: Record<ArcanumId, (g: CanvasRenderingContext2D, cx: number, cy: nu
     },
 };
 
-/** 카드 한 장 — 창(Dialog)의 카드와 같은 문법: 겉테·속테·네 귀퉁이 마름모·위 번호·가운데 문장·아래 이름판 */
+/** 카드 한 장 — 창(Dialog)의 카드와 같은 문법: 겉테·속테·네 귀퉁이 네 갈래 별·위 번호·가운데 문장·아래 이름판 */
 const cardTex = (ctx: FxContext, id: ArcanumId) => {
     const ready = fontReady();
     return ctx.texture(`cel-card:${id}:${ctx.dark ? "d" : "l"}:${ready ? 1 : 0}`, (g, s) => {
@@ -247,11 +267,11 @@ const cardTex = (ctx: FxContext, id: ArcanumId) => {
         g.globalAlpha = 0.42; g.lineWidth = lw * 0.8;
         g.strokeRect(x0 + ins, y0 + ins, w - ins * 2, h - ins * 2);
         g.globalAlpha = 1;
-        // 네 귀퉁이 마름모 (창의 핍)
-        const d = s * 0.011;
+        // 네 귀퉁이 네 갈래 별 (창의 핍) — 겉테의 모서리에 꿴다
+        const d = s * 0.019;
         ([[x0, y0], [x0 + w, y0], [x0 + w, y0 + h], [x0, y0 + h]] as const).forEach(([px, py]) => {
-            g.beginPath(); g.moveTo(px, py - d); g.lineTo(px + d, py); g.lineTo(px, py + d); g.lineTo(px - d, py); g.closePath();
-            g.fillStyle = ink.face; g.fill(); g.lineWidth = lw * 0.8; g.strokeStyle = ink.gold; g.stroke();
+            g.beginPath(); g.arc(px, py, d * 0.42, 0, Math.PI * 2); g.fillStyle = ink.face; g.fill();
+            fourPoint(g, px, py, d, d * 0.26); g.fillStyle = ink.gold; g.fill();
         });
         // 위 번호와 그 아래 가는 줄
         spaced(g, ARCANA[id].num, cx, y0 + h * 0.125, `600 ${w * 0.118}px ${LATIN}`, ink.gold, w * 0.03);
@@ -269,7 +289,7 @@ const cardTex = (ctx: FxContext, id: ArcanumId) => {
 };
 
 /**
- * 이어 온 수 — 로마 숫자를 양쪽 금선과 마름모 사이에 (연감의 장 번호처럼). 카드 위 번호(아르카나)와 헷갈리지 않게
+ * 이어 온 수 — 로마 숫자를 양쪽 금선 사이에, 금선 끝엔 점 (연감의 장 번호처럼). 카드 위 번호(아르카나)와 헷갈리지 않게
  * 카드 밖에서 더 크게, 줄을 달아 다른 글자로 읽히게 한다.
  */
 const tallyTex = (ctx: FxContext, n: number) => {
@@ -281,7 +301,7 @@ const tallyTex = (ctx: FxContext, n: number) => {
         let px = s * 0.17;
         const widthAt = (size: number) => { g.font = `600 ${size}px ${LATIN}`; return [...text].reduce((a, ch) => a + g.measureText(ch).width, 0) + size * 0.14 * (text.length - 1); };
         let tw = widthAt(px);
-        // 줄과 마름모 자리를 남기고 판에 들어가게
+        // 줄과 끝점 자리를 남기고 판에 들어가게
         if (tw > s * 0.56) { px *= (s * 0.56) / tw; tw = widthAt(px); }
         spaced(g, text, s / 2, cy, `600 ${px}px ${LATIN}`, ink.gold, px * 0.14);
         const lw = s * 0.006, gap = px * 0.42, len = Math.min(s * 0.13, (s - tw) / 2 - gap - s * 0.05);
@@ -292,7 +312,7 @@ const tallyTex = (ctx: FxContext, n: number) => {
             g.globalAlpha = 0.75;
             g.beginPath(); g.moveTo(x0, cy); g.lineTo(x1, cy); g.stroke();
             g.globalAlpha = 1;
-            g.beginPath(); g.moveTo(x1 + side * d, cy); g.lineTo(x1, cy - d); g.lineTo(x1 - side * d, cy); g.lineTo(x1, cy + d); g.closePath(); g.fill();
+            g.beginPath(); g.arc(x1, cy, d * 0.85, 0, Math.PI * 2); g.fill();
         });
     }, 512);
 };
@@ -373,7 +393,7 @@ function glints(ctx: FxContext, x: number, y: number, h: number, n: number, dela
         const a = (i / n) * Math.PI * 2 + rand(-0.3, 0.3);
         const rx = w * rand(0.62, 0.9), ry = h * rand(0.56, 0.72);
         return {
-            x: x + Math.cos(a) * rx, y: y + Math.sin(a) * ry, vx: 0, vy: -rand(4, 12), size: rand(8, 15), rz: rand(0, 1), vrz: rand(-1, 1),
+            x: x + Math.cos(a) * rx, y: y + Math.sin(a) * ry, vx: 0, vy: -rand(4, 12), size: rand(8, 15), rz: 0, vrz: 0,
             life: life * rand(0.7, 1), delay: delay + rand(0, 0.35), tint: pick(gold(ctx)), alpha: twinkle, scale: (k) => 0.4 + pop(k) * 0.7,
         };
     }));
@@ -412,33 +432,39 @@ const pop = (k: number) => Math.sin(Math.min(1, k) * Math.PI);
 /** 반짝임 — 차오르고 빠지는 동안 가늘게 떤다 */
 const twinkle = (k: number) => pop(k) * (0.72 + 0.28 * Math.sin(k * 26));
 
-/** 별자리 — 점들을 차례로 긋고, 꼭짓점에 별이 맺혔다가 함께 사라진다 */
-function stars(ctx: FxContext, pts: [number, number][], delay = 0, life = 1.5, big = 1): Effect {
-    const s = new Swarm(ctx, star(ctx), pts.map(([px, py], i): Particle => ({
-        x: px, y: py, vx: 0, vy: 0, size: rand(13, 21) * big, rz: rand(0, 0.6), vrz: 0.4,
-        life: life - i * 0.06, delay: delay + i * 0.08, tint: pick(gold(ctx)),
-        alpha: (k) => (k < 0.12 ? k / 0.12 : k > 0.7 ? (1 - k) / 0.3 : 1),
-        scale: (k) => (k < 0.12 ? 0.4 + (k / 0.12) * 0.75 : 1.15 - 0.15 * k),
-    })));
-    const l = new Trail(ctx, pts, line(ctx), life,
+/**
+ * 별과 달을 꿴 금선 — 영역을 곧게 가로지르는 금선이 그어지고, 금선이 지나는 자리마다 별과 달(상현·보름·하현)이
+ * 번갈아 맺혔다가 함께 사라진다. 양 끝엔 점. (예전의 지그재그 별자리 대신 — 비스듬한 선을 쓰지 않는다)
+ */
+function alignment(ctx: FxContext, area: FxRect, delay = 0, life = 1.5, n = 7): Effect {
+    const y = area.y + area.h * rand(0.35, 0.65);
+    const x0 = area.x + area.w * 0.06, x1 = area.x + area.w * 0.94;
+    const draw = 0.5 * life;
+    const at = (x: number) => delay + 0.04 + ((x - x0 + 18) / (x1 - x0 + 36)) * draw;
+    const m = Math.max(3, n);
+    const pts = Array.from({ length: m }, (_, i) => x0 + ((x1 - x0) * i) / (m - 1));
+    const bead = (x: number, size: number): Particle => {
+        const d = at(x);
+        return {
+            x, y, vx: 0, vy: 0, size, rz: 0, vrz: 0, life: life - (d - delay), delay: d, tint: pick(gold(ctx)),
+            alpha: (k) => (k < 0.12 ? k / 0.12 : k > 0.7 ? (1 - k) / 0.3 : 1),
+            scale: (k) => (k < 0.12 ? 0.4 + (k / 0.12) * 0.75 : 1.15 - 0.15 * k),
+        };
+    };
+    const PHASES = [0.25, 0.5, 0.75];
+    const moons = PHASES.map((ph, j) => {
+        const mine = pts.filter((_, i) => i % 2 === 1 && ((i - 1) / 2) % PHASES.length === j);
+        return mine.length ? new Swarm(ctx, moon(ctx, ph), mine.map((x) => bead(x, rand(20, 24)))) : null;
+    });
+    const l = new Trail(ctx, [[x0 - 18, y], [x1 + 18, y]], line(ctx), life,
         (k) => Math.min(1, k / 0.5),
         (k) => (k < 0.7 ? 0.5 : 0.5 * (1 - (k - 0.7) / 0.3)), delay + 0.04);
-    return group(l, s);
-}
-
-/** 영역을 가로지르는 별자리 하나 */
-function constellation(ctx: FxContext, area: FxRect, delay = 0, life = 1.5, n = 5 + Math.floor(Math.random() * 3)) {
-    const pts: [number, number][] = [];
-    let x = area.x + rand(0.05, 0.2) * area.w;
-    let y = area.y + rand(0.2, 0.8) * area.h;
-    const stepX = (area.w * 0.85) / n;
-    for (let i = 0; i < n; i++) {
-        pts.push([x, y]);
-        x += stepX * rand(0.75, 1.2);
-        y = Math.max(area.y + 10, Math.min(area.y + area.h - 10, y + rand(-0.35, 0.35) * area.h));
-        if (x > area.x + area.w - 10) break;
-    }
-    return stars(ctx, pts, delay, life);
+    return group(
+        l,
+        new Swarm(ctx, star(ctx), pts.filter((_, i) => i % 2 === 0).map((x) => bead(x, rand(15, 21)))),
+        ...moons,
+        new Swarm(ctx, dot(ctx), [bead(x0 - 18, 9), bead(x1 + 18, 9)]),
+    );
 }
 
 /** 박히는 별 — 작게 시작해 한 번 부풀었다 자리 잡고 사라진다 */
@@ -458,7 +484,7 @@ function sevenStars(ctx: FxContext, x: number, y: number, r: number, life: numbe
             const a = -Math.PI / 2 + Math.PI / 7 + (i * Math.PI * 2) / 7;
             return {
                 x: x + Math.cos(a) * r * 0.55, y: y + Math.sin(a) * r * 0.55, vx: Math.cos(a) * r * 1.4, vy: Math.sin(a) * r * 1.4, drag: 4.2,
-                size: i % 2 ? 10 : 13, rz: rand(0, 1), vrz: rand(-1, 1), life: life * 0.85, delay: delay + 0.08 + i * 0.035, tint: pick(gold(ctx)),
+                size: i % 2 ? 10 : 13, rz: 0, vrz: 0, life: life * 0.85, delay: delay + 0.08 + i * 0.035, tint: pick(gold(ctx)),
                 alpha: (k) => inOut(k, 0.1, 0.55), scale: (k) => 0.4 + pop(Math.min(1, k * 1.6)) * 0.7,
             };
         })),
@@ -468,23 +494,10 @@ function sevenStars(ctx: FxContext, x: number, y: number, r: number, life: numbe
 /** 별비 — 화면 위쪽에서 별이 반짝이며 천천히 내려온다 */
 function starfall(ctx: FxContext, n: number, life: number, delay = 0) {
     return new Swarm(ctx, star(ctx), Array.from({ length: n }, (): Particle => ({
-        x: rand(0.04, 0.96) * ctx.W, y: rand(-0.02, 0.4) * ctx.H, vx: rand(-6, 6), vy: rand(26, 64),
-        size: rand(7, 15), rz: rand(0, 1), vrz: rand(-1, 1), life: rand(life * 0.65, life), delay: delay + rand(0, 0.35), tint: pick(gold(ctx)),
+        x: rand(0.04, 0.96) * ctx.W, y: rand(-0.02, 0.4) * ctx.H, vx: 0, vy: rand(26, 64),
+        size: rand(7, 15), rz: 0, vrz: 0, life: rand(life * 0.65, life), delay: delay + rand(0, 0.35), tint: pick(gold(ctx)),
         alpha: twinkle, scale: (k) => 0.45 + pop(k) * 0.65,
     })));
-}
-
-/** 하늘을 비스듬히 가르는 별똥별 n 개 */
-function meteors(ctx: FxContext, n: number, delay = 0) {
-    return new Swarm(ctx, dot(ctx), Array.from({ length: n }, (_, i): Particle => {
-        const a = rand(0.32, 0.55);
-        const sp = rand(760, 1050);
-        return {
-            x: rand(0.08, 0.7) * ctx.W, y: rand(0.03, 0.2) * ctx.H, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, drag: 0.6,
-            size: rand(9, 12), sx: rand(7, 10), sy: 0.42, rz: -a, life: rand(0.5, 0.7), delay: delay + i * 0.32 + rand(0, 0.12), tint: pick(gold(ctx)),
-            alpha: (k) => Math.min(1, k * 7) * (1 - k),
-        };
-    }));
 }
 
 /** 상자의 테두리를 금선이 한 바퀴 긋고(카드의 겉테처럼), 다 그을 즈음 네 귀퉁이가 반짝인다 */
@@ -492,7 +505,7 @@ function frame(ctx: FxContext, r: FxRect, life: number, delay = 0, peak = 0.85) 
     const trace = new Trail(ctx, rectPoints(r, 1.5, 4, 5), line(ctx), life,
         (k) => Math.min(1, k / 0.42), (k) => peak * inOut(k, 0.03, 0.62), delay);
     const corners = new Swarm(ctx, star(ctx), ([[r.x, r.y], [r.x + r.w, r.y], [r.x + r.w, r.y + r.h], [r.x, r.y + r.h]] as const).map(([x, y], i): Particle => ({
-        x, y, vx: 0, vy: 0, size: 15, rz: 0, vrz: 1.2, life: life * 0.62, delay: delay + life * 0.26 + i * 0.06, tint: pick(gold(ctx)),
+        x, y, vx: 0, vy: 0, size: 15, rz: 0, vrz: 0, life: life * 0.62, delay: delay + life * 0.26 + i * 0.06, tint: pick(gold(ctx)),
         alpha: pop, scale: (k) => 0.3 + pop(k) * 0.9,
     })));
     return group(trace, corners);
@@ -534,7 +547,7 @@ const mod: FxModule = {
             });
             const settle = Array.from({ length: count(ctx, 6) }, (): Particle => ({
                 x: r.x + rand(0.08, 0.92) * r.w, y: r.y + rand(0.1, 0.9) * r.h, vx: 0, vy: 0,
-                size: rand(14, 24), rz: rand(0, 1), vrz: rand(-1.2, 1.2),
+                size: rand(14, 24), rz: 0, vrz: 0,
                 life: rand(0.7, 1.0), delay: rand(0.22, 0.45), tint: pick(gold(ctx)),
                 alpha: pop, scale: (k) => 0.4 + pop(k) * 0.8,
             }));
@@ -544,8 +557,8 @@ const mod: FxModule = {
         complete: (ctx) => burst(ctx, ctx.x, ctx.y, count(ctx, 10), 270),
 
         add: (ctx) => new Swarm(ctx, star(ctx), Array.from({ length: count(ctx, 9) }, (): Particle => ({
-            x: ctx.x + rand(-14, 14), y: ctx.y + rand(-6, 6), vx: rand(-30, 30), vy: -rand(60, 140), drag: 1.2,
-            size: rand(8, 14), rz: rand(0, 3), vrz: rand(-3, 3), life: rand(0.6, 0.95), delay: rand(0, 0.12), tint: pick(gold(ctx)),
+            x: ctx.x + rand(-14, 14), y: ctx.y + rand(-6, 6), vx: 0, vy: -rand(60, 140), drag: 1.2,
+            size: rand(8, 14), rz: 0, vrz: 0, life: rand(0.6, 0.95), delay: rand(0, 0.12), tint: pick(gold(ctx)),
             alpha: pop,
         }))),
 
@@ -596,14 +609,14 @@ const mod: FxModule = {
             );
         },
 
-        // 프로젝트를 다 끝냄 — XXI 세계 카드가 누른 자리에 놓이고, 위쪽을 큰 별자리가 가로지르고, 별이 조금 내린다
+        // 프로젝트를 다 끝냄 — XXI 세계 카드가 누른 자리에 놓이고, 위쪽을 별과 달을 꿴 금선이 가로지르고, 별이 조금 내린다
         "project-done": (ctx) => {
             const left = contentLeft(ctx);
             const top = Math.max(60, ctx.H * 0.1);
             return group(
                 burst(ctx, ctx.x, ctx.y, count(ctx, 14), 320, 1.1),
                 arcanum(ctx, "world", ctx.x, ctx.y, { big: true, life: 1.8, glints: 9 }),
-                constellation(ctx, { x: left, y: top, w: ctx.W - left - 40, h: Math.min(200, ctx.H * 0.22) }, 0.15, 1.5, ctx.lite ? 6 : 8),
+                alignment(ctx, { x: left, y: top, w: ctx.W - left - 40, h: Math.min(200, ctx.H * 0.22) }, 0.15, 1.5, ctx.lite ? 5 : 9),
                 starfall(ctx, count(ctx, 16), 1.25, 0.25),
             );
         },
@@ -636,7 +649,7 @@ const mod: FxModule = {
             return group(ghost, dust);
         },
 
-        // 로그인 — 석 장 펼치기: XVIII 달 · XVII 별 · XIX 해가 한 묶음에서 부채꼴로 펼쳐졌다 사라진다. 가입은 XVII 한 장
+        // 로그인 — 석 장 펼치기: XVIII 달 · XVII 별 · XIX 해가 한 묶음에서 한 줄로(기울지 않게) 펼쳐졌다 사라진다. 가입은 XVII 한 장
         welcome: (ctx, e) => {
             const left = contentLeft(ctx);
             const cx = left + (ctx.W - left) / 2, cy = ctx.H * 0.44;
@@ -648,7 +661,7 @@ const mod: FxModule = {
             const life = 1.8;
             // 가운데 카드가 맨 위에 오도록 마지막에 놓는다
             const side = (id: ArcanumId, dir: 1 | -1, delay: number) => new Swarm(ctx, cardTex(ctx, id), [deal({
-                x, y, h, life: life - delay, delay, tilt: -dir * 0.16, to: [dir * gap, 10], inFor: 0.5,
+                x, y, h, life: life - delay, delay, to: [dir * gap, 0], inFor: 0.5,
             })]);
             return group(
                 aura(ctx, x, y, h * 1.25, life),
@@ -659,7 +672,7 @@ const mod: FxModule = {
             );
         },
 
-        // 오늘이 기념일 — XIX 해 카드가 그 줄 위에 놓이고, 줄 아래로 금선 장식이 양쪽으로, 하늘엔 별똥별
+        // 오늘이 기념일 — XIX 해 카드가 그 줄 위에 놓이고, 줄 아래로 금선 장식이 양쪽으로, 하늘엔 별이 곧게 내린다
         anniversary: (ctx) => {
             const r = ctx.hasRect ? ctx.rect : { x: ctx.W / 2 - 120, y: ctx.H * 0.3, w: 240, h: 60 };
             const cx = r.x + r.w / 2, cy = r.y + r.h / 2;
@@ -670,7 +683,7 @@ const mod: FxModule = {
                 ctx.hasRect ? flourish(r.x + 4) : null,
                 ctx.hasRect ? flourish(r.x + r.w - 4) : null,
                 arcanum(ctx, "sun", cx, cy, { life: 1.7, glints: 8 }),
-                meteors(ctx, ctx.lite ? 2 : 3, 0.3),
+                starfall(ctx, count(ctx, 10), 1.2, 0.3),
             );
         },
 
@@ -682,37 +695,46 @@ const mod: FxModule = {
             const edge = (to: number) => new Trail(ctx, [[cx, top], [to, top]], line(ctx), 0.95,
                 (k) => easeOut(k / 0.45), (k) => 0.7 * inOut(k, 0.04, 0.55));
             const corners = new Swarm(ctx, star(ctx), ([[r.x, r.y], [r.x + r.w, r.y], [r.x + r.w, r.y + r.h], [r.x, r.y + r.h]] as const).map(([px, py], i): Particle => ({
-                x: px, y: py, vx: 0, vy: 0, size: 14, rz: 0, vrz: 1.4, life: 0.75, delay: 0.14 + i * 0.05, tint: pick(gold(ctx)),
+                x: px, y: py, vx: 0, vy: 0, size: 14, rz: 0, vrz: 0, life: 0.75, delay: 0.14 + i * 0.05, tint: pick(gold(ctx)),
                 alpha: pop, scale: (k) => 0.3 + pop(k) * 0.9,
             })));
             return group(edge(r.x + 12), edge(r.x + r.w - 12), corners, seal(ctx, cx, top, 18, 0.7));
         },
 
+        // 위젯 띄움 — 누른 자리에서 가로로 가다가 위로 꺾여 오른쪽 위(위젯이 뜨는 쪽)까지. 비스듬히 가로지르지 않는다
         "widget-open": (ctx) => {
             const tx = ctx.W - 70, ty = 56, dur = 0.85;
+            const run = Math.abs(tx - ctx.x), rise = Math.abs(ty - ctx.y), total = Math.max(1, run + rise);
+            const path = (f: number): [number, number] => {
+                const d = f * total;
+                return d <= run
+                    ? [ctx.x + Math.sign(tx - ctx.x) * d, ctx.y]
+                    : [tx, ctx.y + Math.sign(ty - ctx.y) * (d - run)];
+            };
             const n = count(ctx, 26);
             const trail = Array.from({ length: n }, (_, i): Particle => {
                 const f = i / n;
+                const [px, py] = path(f);
                 return {
-                    x: ctx.x + (tx - ctx.x) * f, y: ctx.y + (ty - ctx.y) * f, vx: rand(-18, 18), vy: rand(-18, 18),
+                    x: px, y: py, vx: 0, vy: 0,
                     size: rand(5, 10), life: 0.55, delay: f * dur, tint: pick(gold(ctx)), alpha: (k) => 1 - k,
                 };
             });
             const head: Particle = {
-                x: ctx.x, y: ctx.y, vx: (tx - ctx.x) / dur, vy: (ty - ctx.y) / dur, size: 28, rz: 0, vrz: 4,
+                x: ctx.x, y: ctx.y, vx: 0, vy: 0, size: 28, rz: 0, vrz: 0,
                 life: dur + 0.25, alpha: (k) => (k < 0.75 ? 1 : (1 - k) / 0.25),
-                step: (p) => { if ((p.age ?? 0) > dur) { p.vx = 0; p.vy = 0; } },
+                step: (p) => { const [px, py] = path(Math.min(1, (p.age ?? 0) / dur)); p.x = px; p.y = py; },
             };
-            return group(new Swarm(ctx, dot(ctx), trail), new Swarm(ctx, star(ctx), [head]));
+            return group(new Swarm(ctx, dot(ctx), trail), new Swarm(ctx, star(ctx), [head]), seal(ctx, tx, ty, 22, 0.6, dur * 0.9));
         },
 
         theme: (ctx) => {
             const twinkles = Array.from({ length: count(ctx, 22) }, (): Particle => ({
-                x: rand(0, ctx.W), y: rand(0, ctx.H * 0.85), vx: 0, vy: 0, size: rand(8, 20), rz: rand(0, 1), vrz: rand(-1, 1),
+                x: rand(0, ctx.W), y: rand(0, ctx.H * 0.85), vx: 0, vy: 0, size: rand(8, 20), rz: 0, vrz: 0,
                 life: rand(0.9, 1.6), delay: rand(0, 0.7), tint: pick(gold(ctx)), alpha: pop, scale: (k) => 0.3 + pop(k) * 0.9,
             }));
             const left = ctx.W > 900 ? 280 : 16;
-            return group(new Swarm(ctx, star(ctx), twinkles), constellation(ctx, { x: left, y: 80, w: ctx.W - left - 40, h: Math.min(280, ctx.H * 0.32) }, 0.3));
+            return group(new Swarm(ctx, star(ctx), twinkles), alignment(ctx, { x: left, y: 80, w: ctx.W - left - 40, h: Math.min(280, ctx.H * 0.32) }, 0.3, 1.5, ctx.lite ? 5 : 9));
         },
     },
 };

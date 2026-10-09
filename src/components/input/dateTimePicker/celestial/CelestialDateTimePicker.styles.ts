@@ -6,6 +6,7 @@
  */
 import styled, { keyframes, css } from "styled-components";
 import { MOBILE, SAFE_B } from "@/styles/breakpoints";
+import { celestialOnly } from "@/styles/celestial/ornaments";
 
 export const POP_WIDTH = 272;
 
@@ -227,6 +228,15 @@ export const Day = styled.button<{
         }
         span { color: ${p.theme.colors.primary}; font-weight: 600; }
     `}
+
+    /* Celestial: 고른 날은 마름모 대신 겹고리(궤도) */
+    ${celestialOnly(css`
+        &::after {
+            border-radius: 50%;
+            transform: none;
+            box-shadow: 0 0 0 2px ${(p) => p.theme.colors.surface}, 0 0 0 3px ${(p) => p.theme.colors.primary}55;
+        }
+    `)}
 `;
 
 export const TimeArea = styled.div`

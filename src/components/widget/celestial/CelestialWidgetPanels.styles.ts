@@ -5,6 +5,7 @@
  */
 import styled, { css, keyframes } from "styled-components";
 import { inkOnFill } from "@/styles/color";
+import { celestialOnly, ringMark, star4Mark } from "@/styles/celestial/ornaments";
 
 const settle = keyframes`
     from { opacity: 0; }
@@ -166,6 +167,12 @@ export const Mark = styled.div<{ $c: string }>`
     transform: rotate(45deg);
     /* 위젯 페이지의 "& * { background-color: transparent }" 가 색을 지우므로 그라데이션으로 칠한다 */
     background-image: ${p => `linear-gradient(${p.$c}, ${p.$c})`};
+
+    /* Celestial: 마름모 대신 둥근 점 */
+    ${celestialOnly(css`
+        border-radius: 50%;
+        transform: none;
+    `)}
 `;
 
 export const Star = styled.span`
@@ -253,6 +260,16 @@ export const Dot = styled.button<{ $on: boolean; $today: boolean }>`
     border: 1px solid ${p => p.$today ? p.theme.colors.primary : `${p.theme.colors.primary}66`};
     background: ${p => p.$on ? p.theme.colors.primary : "transparent"};
     box-shadow: ${p => p.$today ? `0 0 4px ${p.theme.colors.primary}66` : "none"};
+
+    /* Celestial: 채운 칸은 네 갈래 별, 빈 칸은 고리 — 위젯 창은 배경색을 지우므로 별은 그라데이션으로 칠한다 */
+    ${celestialOnly(css<{ $on: boolean; $today: boolean }>`
+        ${p => (p.$on ? star4Mark("14px") : ringMark("14px"))}
+        ${p => (p.$on ? "background-image: linear-gradient(currentColor, currentColor);" : "transform: scale(0.7);")}
+        color: ${p => p.theme.colors.primary};
+        opacity: ${p => (p.$on || p.$today ? 1 : 0.6)};
+        box-shadow: none;
+        filter: ${p => (p.$today ? `drop-shadow(0 0 3px ${p.theme.colors.primary})` : "none")};
+    `)}
 `;
 
 export const Big = styled.div`

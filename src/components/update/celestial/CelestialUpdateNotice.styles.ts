@@ -3,7 +3,8 @@
  *
  * 집 규칙: 화면은 갈래 공용 JSX 하나, 모양은 갈래마다 *.styles.ts (scripts/check-theme-styles.mjs).
  */
-import styled, { keyframes } from "styled-components";
+import styled, { css, keyframes } from "styled-components";
+import { celestialOnly, star4Mark } from "@/styles/celestial/ornaments";
 
 /* ── 모양 ─────────────────────────────────────────────────────────── */
 
@@ -33,6 +34,14 @@ export const Corner = styled.span`
     height: 16px;
     background: linear-gradient(315deg, transparent 48%, ${p => p.theme.colors.primary} 50%, transparent 52%);
     pointer-events: none;
+
+    /* Celestial: 사선 대신 네 갈래 별 */
+    ${celestialOnly(css`
+        top: 6px;
+        left: 6px;
+        ${star4Mark("9px")}
+        color: ${p => p.theme.colors.primary};
+    `)}
 `;
 
 export const Head = styled.div`

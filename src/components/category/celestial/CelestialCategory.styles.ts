@@ -1,5 +1,6 @@
 import styled, { css, keyframes } from "styled-components";
 import { MOBILE } from "@/styles/breakpoints";
+import { celestialOnly, cornerStars, star4Mark } from "@/styles/celestial/ornaments";
 
 /* ── 등장 모션 (한 번만, 잔잔하게) ─────────────────────── */
 const fadeUp = keyframes`
@@ -92,6 +93,11 @@ export const PageHeader = styled.div`
         margin: 0;
         background: linear-gradient(to right, ${(p) => p.theme.colors.primary}, transparent);
     }
+
+    /* Celestial: 머리 표식은 마름모 대신 네 갈래 별 */
+    ${celestialOnly(css`
+        i { ${star4Mark("11px")} color: ${(p) => p.theme.colors.primary}; }
+    `)}
 `;
 
 export const BodyRow = styled.div`
@@ -278,6 +284,9 @@ export const Corners = styled.span`
     i:nth-child(2) { top: -3.5px; right: -3.5px; }
     i:nth-child(3) { bottom: -3.5px; left: -3.5px; }
     i:nth-child(4) { bottom: -3.5px; right: -3.5px; }
+
+    /* Celestial: 모서리의 마름모 대신 네 갈래 별 */
+    ${celestialOnly(cornerStars())}
 `;
 
 /* ── ② 표제부(플레이트): 엠블럼 + 이름 ─────────────────── */

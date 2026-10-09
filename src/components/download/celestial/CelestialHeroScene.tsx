@@ -7,11 +7,23 @@ import * as S from "./CelestialHeroScene.styles";
 import useThemeMotion from '@/hooks/useThemeMotion';
 import CelestialArcana from '@/assets/celestial/CelestialArcana';
 
-const RINGS = [
-    { radius: 1.55, tiltX: 1.25, tiltZ: -0.3, speed: 0.28, size: 0.052, phase: 0 },
-    { radius: 1.15, tiltX: 0.5, tiltZ: 0.45, speed: -0.2, size: 0.04, phase: 2.1 },
-    { radius: 1.95, tiltX: 0.9, tiltZ: 0.9, speed: 0.14, size: 0.045, phase: 4.4 },
+type Ring = { radius: number; rot: [number, number, number]; opacity: number; planet?: { size: number; speed: number; phase: number } };
+
+/**
+ * 혼천의의 고리 — 적도환(가로), 축을 품은 자오환 둘(세로), 23.4° 기운 황도환, 안팎의 궤도.
+ * 축은 늘 세로로 선다(저절로 도는 것도, 끄는 것도 축 둘레와 앞뒤 기울기뿐) — 비스듬히 기운 것은 황도환 하나다.
+ * 행성은 황도환과 안팎의 궤도를 돈다.
+ */
+const RINGS: Ring[] = [
+    { radius: 1.5, rot: [0, 0, 0], opacity: 0.42 },
+    { radius: 1.5, rot: [Math.PI / 2, 0, 0], opacity: 0.34 },
+    { radius: 1.5, rot: [0, 0, Math.PI / 2], opacity: 0.22 },
+    { radius: 1.5, rot: [0, 0, 0.41], opacity: 0.5, planet: { size: 0.055, speed: 0.28, phase: 0 } },
+    { radius: 1.98, rot: [0, 0, 0], opacity: 0.2, planet: { size: 0.045, speed: -0.14, phase: 2.6 } },
+    { radius: 1.1, rot: [0, 0, 0], opacity: 0.18, planet: { size: 0.036, speed: 0.22, phase: 4.4 } },
 ];
+/** 축의 반 길이 — 남북극 */
+const POLE = 2.15;
 
 export default function HeroScene() {
     const mountRef = React.useRef<HTMLDivElement>(null);
@@ -76,11 +88,11 @@ export default function HeroScene() {
         disposables.push(starGeo, starMat);
         root.add(new THREE.Points(starGeo, starMat));
 
-        const planetPivots: THREE.Group[] = [];
+        const planetPivots: { pivot: THREE.Group; speed: number }[] = [];
 
         RINGS.forEach(cfg => {
             const tilt = new THREE.Group();
-            tilt.rotation.set(cfg.tiltX, 0, cfg.tiltZ);
+            tilt.rotation.set(...cfg.rot);
             root.add(tilt);
 
             const segs = 128;
@@ -93,18 +105,19 @@ export default function HeroScene() {
             }
             const ringGeo = new THREE.BufferGeometry();
             ringGeo.setAttribute("position", new THREE.BufferAttribute(ringPos, 3));
-            const ringMat = new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.32 });
+            const ringMat = new THREE.LineBasicMaterial({ color, transparent: true, opacity: cfg.opacity });
             disposables.push(ringGeo, ringMat);
             tilt.add(new THREE.LineLoop(ringGeo, ringMat));
 
+            if (!cfg.planet) return;
             const pivot = new THREE.Group();
-            pivot.rotation.y = cfg.phase;
+            pivot.rotation.y = cfg.planet.phase;
             tilt.add(pivot);
-            planetPivots.push(pivot);
+            planetPivots.push({ pivot, speed: cfg.planet.speed });
 
-            const planetGeo = new THREE.SphereGeometry(cfg.size, 14, 14);
+            const planetGeo = new THREE.SphereGeometry(cfg.planet.size, 14, 14);
             const planetMat = new THREE.MeshBasicMaterial({ color });
-            const haloGeo = new THREE.SphereGeometry(cfg.size * 2.1, 14, 14);
+            const haloGeo = new THREE.SphereGeometry(cfg.planet.size * 2.1, 14, 14);
             const haloMat = new THREE.MeshBasicMaterial({
                 color,
                 transparent: true,
@@ -121,18 +134,30 @@ export default function HeroScene() {
             pivot.add(planet, halo);
         });
 
-        const coreGeo = new THREE.IcosahedronGeometry(0.36, 1);
-        const coreWire = new THREE.WireframeGeometry(coreGeo);
-        const coreMat = new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.75 });
-        const core = new THREE.LineSegments(coreWire, coreMat);
-        disposables.push(coreGeo, coreWire, coreMat);
-        root.add(core);
+        // 축 — 남북극을 잇는 곧은 선, 끝에 작은 구슬
+        const axisGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, -POLE, 0), new THREE.Vector3(0, POLE, 0)]);
+        const axisMat = new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.4 });
+        const poleGeo = new THREE.SphereGeometry(0.034, 10, 10);
+        const poleMat = new THREE.MeshBasicMaterial({ color });
+        disposables.push(axisGeo, axisMat, poleGeo, poleMat);
+        root.add(new THREE.Line(axisGeo, axisMat));
+        [-POLE, POLE].forEach(y => {
+            const pole = new THREE.Mesh(poleGeo, poleMat);
+            pole.position.y = y;
+            root.add(pole);
+        });
 
-        const glowGeo = new THREE.SphereGeometry(0.14, 16, 16);
+        // 가운데 — 작은 구(땅)와 옅은 빛 (예전의 삼각 철망 구 대신)
+        const coreGeo = new THREE.SphereGeometry(0.15, 24, 24);
+        const coreMat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.9 });
+        disposables.push(coreGeo, coreMat);
+        root.add(new THREE.Mesh(coreGeo, coreMat));
+
+        const glowGeo = new THREE.SphereGeometry(0.3, 16, 16);
         const glowMat = new THREE.MeshBasicMaterial({
             color,
             transparent: true,
-            opacity: 0.5,
+            opacity: 0.22,
             blending: THREE.AdditiveBlending,
             depthWrite: false,
         });
@@ -198,11 +223,9 @@ export default function HeroScene() {
             root.rotation.y += (targetRY - root.rotation.y) * 0.08;
 
             if (!reduced) {
-                planetPivots.forEach((p, i) => {
-                    p.rotation.y += RINGS[i].speed * dt;
+                planetPivots.forEach(({ pivot, speed }) => {
+                    pivot.rotation.y += speed * dt;
                 });
-                core.rotation.y += dt * 0.25;
-                core.rotation.x += dt * 0.1;
             }
 
             renderer.render(scene, camera);

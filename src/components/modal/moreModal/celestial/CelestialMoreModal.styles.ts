@@ -1,5 +1,6 @@
 import styled, { css } from "styled-components";
 import { inkOnFill } from '@/styles/color';
+import { celestialOnly, star4Mark } from "@/styles/celestial/ornaments";
 
 export const ContentWrapper = styled.div`
     position: relative;
@@ -18,6 +19,11 @@ export const ContentWrapper = styled.div`
         background: linear-gradient(315deg, transparent 48%, ${(props) => props.theme.colors.primary} 50%, transparent 52%);
         pointer-events: none;
     }
+
+    /* Celestial: 모서리의 사선 대신 네 갈래 별 */
+    ${celestialOnly(css`
+        &::after { top: 7px; left: 7px; ${star4Mark("10px")} color: ${(p) => p.theme.colors.primary}; }
+    `)}
 `;
 
 export const Header = styled.div`
@@ -214,4 +220,9 @@ export const TodoItem = styled.button<{ $color?: string; $isDone?: boolean }>`
             color: ${(props) => props.theme.colors.textSecondary};
         }
     `}
+
+    /* Celestial: 색 표식은 마름모 대신 동그라미(끝낸 것은 빈 고리) */
+    ${celestialOnly(css`
+        .color-bar { border-radius: 50%; transform: none; }
+    `)}
 `;

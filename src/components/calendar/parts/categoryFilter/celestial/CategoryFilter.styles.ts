@@ -1,4 +1,5 @@
-import styled from "styled-components";
+import styled, { css } from "styled-components";
+import { celestialOnly, star4Mark } from "@/styles/celestial/ornaments";
 
 export const SettingsContainer = styled.div`
     position: relative;
@@ -69,6 +70,11 @@ export const SettingsPopover = styled.div<{ $openUp?: boolean }>`
         display: flex;
         flex-direction: column;
     }
+
+    /* Celestial: 모서리의 사선 대신 네 갈래 별 */
+    ${celestialOnly(css`
+        &::after { top: 6px; left: 6px; ${star4Mark("9px")} color: ${(p) => p.theme.colors.primary}; }
+    `)}
 `;
 
 export const PopoverLabel = styled.div`
@@ -123,6 +129,12 @@ export const CategoryColorDot = styled.div<{ $color: string, $isSelected: boolea
     background-color: ${(props) => props.$isSelected ? props.$color : 'transparent'};
     border: 1px solid ${(props) => props.$isSelected ? props.$color : props.theme.colors.textSecondary};
     transition: background-color 0.25s ease, border-color 0.25s ease;
+
+    /* Celestial: 마름모 대신 동그라미 — 고른 것은 찬 달, 안 고른 것은 빈 고리 */
+    ${celestialOnly(css`
+        border-radius: 50%;
+        transform: none;
+    `)}
 `;
 
 export const Divider = styled.hr`

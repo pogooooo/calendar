@@ -18,14 +18,18 @@ const buildFrame = (inset: number, connectLeft: boolean, connectRight: boolean) 
     return d;
 };
 
+/* 겉테 꼭짓점의 둥근 점 — 길이 0 인 획에 둥근 끝을 달아, 칸에 맞춰 늘어나도 동그랗게 남는다.
+   (사선 대신 점. 십자(+)는 할 일 넣기 단추로 읽혀 쓰지 않는다) */
+const dot = (x: number, y: number) => `M${x} ${y} h0`;
+
 const buildCorners = (connectLeft: boolean, connectRight: boolean) => {
     const parts: string[] = [];
-    if (!connectLeft) parts.push("M6 22 L22 6", "M6 108 L22 124");
-    if (!connectRight) parts.push("M104 22 L88 6", "M104 108 L88 124");
+    if (!connectLeft) parts.push(dot(6, 6), dot(6, 124));
+    if (!connectRight) parts.push(dot(104, 6), dot(104, 124));
     return parts.join(" ");
 };
 
-/* level 1: 단일 프레임 / 2: + 코너 사선 / 3: 겹 프레임 + 코너 사선 */
+/* level 1: 단일 프레임 / 3: 겹 프레임 + 꼭짓점의 둥근 점 */
 const FrameShapes = ({
     level,
     connectLeft,

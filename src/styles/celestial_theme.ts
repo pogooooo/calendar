@@ -1,4 +1,5 @@
 import {css} from "styled-components";
+import { celestialOnly, star4Mark } from "./celestial/ornaments";
 
 export const celestial_corner_accent = css`
     position: relative;
@@ -13,6 +14,11 @@ export const celestial_corner_accent = css`
         left: 0;
         pointer-events: none;
     }
+
+    /* Celestial: 모서리는 사선 대신 네 갈래 별 */
+    ${celestialOnly(css`
+        &::after { top: 7px; left: 7px; ${star4Mark("10px")} color: ${(p) => p.theme.colors.primary}; }
+    `)}
 `;
 
 export const celestial_star = css`

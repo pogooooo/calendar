@@ -3,7 +3,8 @@
  *
  * 집 규칙: 화면은 갈래 공용 JSX 하나, 모양은 갈래마다 *.styles.ts (scripts/check-theme-styles.mjs).
  */
-import styled, { keyframes } from "styled-components";
+import styled, { css, keyframes } from "styled-components";
+import { celestialOnly } from "@/styles/celestial/ornaments";
 import { MOBILE, SAFE_T } from "@/styles/breakpoints";
 
 /* ── 모양 ─────────────────────────────────────────────────────────── */
@@ -138,6 +139,11 @@ export const RememberRow = styled.div`
         color: ${p => p.theme.colors.textSecondary};
         padding-left: 18px;
     }
+
+    /* Celestial: 마름모 대신 고리 — 고르면 찬 달 */
+    ${celestialOnly(css`
+        .box { border-radius: 50%; transform: none; }
+    `)}
 `;
 
 export const SwitchLink = styled.p`

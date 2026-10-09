@@ -60,7 +60,11 @@ export default function CelestialAnniversaryLayout({ S, items, onDelete, onSubmi
                                 <S.CardNumeral>{ROMAN[idx] ?? String(idx + 1)}</S.CardNumeral>
                                 <S.CardEmblem $today={isToday}>
                                     <svg viewBox="0 0 64 64">
-                                        <rect className="dia" x="21" y="21" width="22" height="22" transform="rotate(45 32 32)" />
+                                        {/* 안쪽 고리와 네 방위의 눈금 — Maple 은 감춘다 */}
+                                        <g className="dia">
+                                            <circle cx="32" cy="32" r="17" />
+                                            <path d="M32 8V12M32 52V56M8 32H12M52 32H56" />
+                                        </g>
                                         <circle className="orbit" cx="32" cy="32" r={RING_R} />
                                         {/* 다가올수록 차오르는 궤도 — 남은 날이 적을수록 호가 길어진다 */}
                                         <circle

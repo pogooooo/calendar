@@ -1,5 +1,6 @@
-import styled from "styled-components";
+import styled, { css } from "styled-components";
 import { MOBILE } from "@/styles/breakpoints";
+import { celestialOnly, star4Mark } from "@/styles/celestial/ornaments";
 
 export const CelestialCalendarWrapper = styled.div`
     display: flex;
@@ -407,6 +408,11 @@ export const TodoCardHead = styled.div`
         color: ${(props) => props.theme.colors.primary};
         opacity: 0.85;
     }
+
+    /* Celestial: 머리 표식은 마름모 대신 네 갈래 별 */
+    ${celestialOnly(css`
+        i { ${star4Mark("10px")} color: ${(p) => p.theme.colors.primary}; }
+    `)}
 `;
 
 export const TodoList = styled.div`
@@ -463,6 +469,11 @@ export const TodoRow = styled.button<{ $isDone: boolean }>`
         font-variant-numeric: tabular-nums;
         color: ${(props) => props.theme.colors.textSecondary};
     }
+
+    /* Celestial: 일정 점은 마름모 대신 둥근 점 */
+    ${celestialOnly(css`
+        .dot { border-radius: 50%; transform: none; }
+    `)}
 `;
 
 export const TaskList = styled.div`

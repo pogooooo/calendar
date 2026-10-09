@@ -3,6 +3,7 @@
  */
 import styled, { css, keyframes } from "styled-components";
 import { MOBILE } from "@/styles/breakpoints";
+import { celestialOnly, cornerStars, star4Mark } from "@/styles/celestial/ornaments";
 
 export const todayGlow = keyframes`
     0%, 100% { box-shadow: 0 0 8px 0 currentColor inset, 0 0 10px -4px currentColor; }
@@ -65,6 +66,11 @@ export const PageHeader = styled.div`
         height: 1px;
         background: linear-gradient(to right, ${p => p.theme.colors.primary}, transparent);
     }
+
+    /* Celestial: 머리 표식은 마름모 대신 네 갈래 별 */
+    ${celestialOnly(css`
+        i { ${star4Mark("11px")} color: ${p => p.theme.colors.primary}; }
+    `)}
 `;
 
 export const Corners = styled.span`
@@ -82,6 +88,9 @@ export const Corners = styled.span`
     i:nth-child(2) { top: -3.5px; right: -3.5px; }
     i:nth-child(3) { bottom: -3.5px; left: -3.5px; }
     i:nth-child(4) { bottom: -3.5px; right: -3.5px; }
+
+    /* Celestial: 모서리의 마름모 대신 네 갈래 별 */
+    ${celestialOnly(cornerStars())}
 `;
 
 export const AddForm = styled.form`

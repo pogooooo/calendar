@@ -1,5 +1,6 @@
 import styled, { css } from "styled-components";
 import { giltSmall } from "@/styles/celestial/almanac";
+import { celestialOnly, star4Mark } from "@/styles/celestial/ornaments";
 import { NOT_WIDGET, MOBILE, TOUCH, SAFE_T, SAFE_B } from "@/styles/breakpoints";
 import { motion } from "framer-motion";
 import { hide_scrollbar } from "@/styles/shared";
@@ -183,6 +184,11 @@ export const Header = styled.div`
         left: 0;
         pointer-events: none;
     }
+
+    /* Celestial: 모서리의 사선 대신 작은 네 갈래 별 */
+    ${celestialOnly(css`
+        &::after { top: 6px; left: 6px; ${star4Mark("10px")} color: ${(p) => p.theme.colors.primary}; }
+    `)}
 `;
 
 export const DayNameBox = styled.div<{ $isToday?: boolean }>`
@@ -605,6 +611,11 @@ export const TodoBarItem = styled.div<{ $isStart: boolean; $isEnd: boolean; $col
             & > * { display: none; }
         }
     }
+
+    /* Celestial: 폰의 일정 표식은 마름모 대신 동그라미(끝낸 것은 찬 달) */
+    ${celestialOnly(css`
+        ${MOBILE} { ${NOT_WIDGET} & { width: 7px; height: 7px; border-radius: 50%; transform: none; } }
+    `)}
 `;
 
 export const RangeHandle = styled.button<{ $edge: 'start' | 'end' }>`

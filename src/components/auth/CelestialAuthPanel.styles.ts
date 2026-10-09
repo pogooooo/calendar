@@ -26,6 +26,14 @@ export const BreathCircle = styled.circle<{ $delay?: string }>`
     animation-delay: ${p => p.$delay ?? "0s"};
 `;
 
+const revolve = keyframes`from { offset-distance: 0%; } to { offset-distance: 100%; }`;
+/** 혼천의의 황도환을 따라 도는 행성 (offset-path 는 놓는 쪽에서 준다) */
+export const Planet = styled.circle`
+    offset-rotate: 0deg;
+    animation: ${revolve} 60s linear infinite;
+    @media (prefers-reduced-motion: reduce) { animation: none; }
+`;
+
 /* ── Panel ───────────────────────────────────────────────────────────────── */
 export const fadeUp = keyframes`
     from { opacity: 0; transform: translateY(14px); }

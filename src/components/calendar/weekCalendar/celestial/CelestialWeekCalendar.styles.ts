@@ -1,5 +1,6 @@
 import styled, {css, keyframes} from "styled-components";
 import { motion } from "framer-motion";
+import { celestialOnly, dotMark, star4Mark } from "@/styles/celestial/ornaments";
 
 const beadRun = keyframes`
     0% { left: 0; opacity: 0; }
@@ -160,6 +161,12 @@ export const Header = styled.div`
         pointer-events: none;
         z-index: 2;
     }
+
+    /* Celestial: 모서리의 사선 대신 작은 네 갈래 별 */
+    ${celestialOnly(css`
+        &::after { top: 6px; left: 6px; ${star4Mark("9px")} color: ${(p) => p.theme.colors.primary}; }
+        &::before { top: 6px; right: 6px; ${star4Mark("9px")} color: ${(p) => p.theme.colors.primary}; }
+    `)}
 `;
 
 export const DayNameBox = styled.div<{ $isToday?: boolean; $tier?: number }>`
@@ -211,6 +218,11 @@ export const DayNameBox = styled.div<{ $isToday?: boolean; $tier?: number }>`
         .day-mark.done::before { left: -5px; }
         .day-mark.done::after { right: -5px; }
     `}
+
+    /* Celestial: 밑선 양끝의 마름모 대신 둥근 점 */
+    ${celestialOnly(css`
+        .day-mark.done::before, .day-mark.done::after { ${dotMark("3px")} transform: translateY(-50%); }
+    `)}
 
     ${(props) => props.$isToday && css`
         &::before {
@@ -267,6 +279,12 @@ export const BarContainer = styled.div`
         pointer-events: none;
         z-index: 2;
     }
+
+    /* Celestial: 아래 모서리도 사선 대신 네 갈래 별 */
+    ${celestialOnly(css`
+        &::after { bottom: 6px; right: 6px; ${star4Mark("9px")} color: ${(p) => p.theme.colors.primary}; }
+        &::before { bottom: 6px; left: 6px; ${star4Mark("9px")} color: ${(p) => p.theme.colors.primary}; }
+    `)}
 `;
 
 export const AddTodoButton = styled.button`

@@ -1,5 +1,6 @@
 import styled, { css, keyframes } from "styled-components";
 import { MOBILE } from "@/styles/breakpoints";
+import { celestialOnly } from "@/styles/celestial/ornaments";
 
 const drop = keyframes`
     from { opacity: 0; transform: translateY(-4px); }
@@ -101,6 +102,12 @@ export const Diamond = styled.span<{ $on: boolean }>`
     transform: rotate(45deg);
     border: 1px solid ${p => (p.$on ? p.theme.colors.primary : p.theme.colors.textSecondary)};
     background-color: ${p => (p.$on ? p.theme.colors.primary : "transparent")};
+
+    /* Celestial: 마름모 대신 동그라미 — 고른 것은 찬 달, 아닌 것은 빈 고리 */
+    ${celestialOnly(css`
+        border-radius: 50%;
+        transform: none;
+    `)}
 `;
 
 export const Dot = styled.span<{ $color: string }>`

@@ -1,11 +1,24 @@
 import * as S from './CelestialAtmosphere.styles';
 import { Armillary, MoonDisc, Orbit, Star4, Star8, SunMoon, f } from '@/components/ornament/celestial/CelestialOrnaments';
 
-/** 오른쪽 가장자리 세로 금선 위의 문양 — 화면 높이에 맞춰 퍼센트 자리에 */
-const RAIL: { top: string; kind: 'orb' | 'star' | 'moon' | 'dash' | 'armillary' | 'dot' }[] = [
-    { top: '14%', kind: 'orb' }, { top: '22%', kind: 'dot' }, { top: '31%', kind: 'star' }, { top: '40%', kind: 'dot' },
-    { top: '49%', kind: 'moon' }, { top: '58%', kind: 'dot' }, { top: '67%', kind: 'dash' }, { top: '76%', kind: 'dot' }, { top: '86%', kind: 'armillary' },
-];
+type Bead = { top: string; kind: 'orb' | 'star' | 'moon' | 'dash' | 'armillary' | 'dot' | 'loop'; phase?: number };
+
+/**
+ * 오른쪽 가장자리 세로 금선 위의 문양 — 화면 높이에 맞춰 퍼센트 자리에, 4% 마다 하나씩 촘촘히.
+ * 위에서 아래로 달이 차고 기운다(삭 → 보름 → 삭). 사이사이 점·네 갈래 별·고리, 위엔 궤도, 아래엔 혼천의.
+ * 모두 지름 16px 안 — 금선에서 8px 넘게 나가지 않아 오른쪽 끝의 글에 닿지 않는다.
+ */
+const RAIL: Bead[] = Array.from({ length: 22 }, (_, i): Bead => {
+    const top = `${8 + i * 4}%`;
+    if (i === 1) return { top, kind: 'orb' };
+    if (i === 20) return { top, kind: 'armillary' };
+    if (i === 10) return { top, kind: 'dash' };
+    switch (i % 4) {
+        case 0: return { top, kind: 'moon', phase: Math.round((i / 21) * 8) / 8 };
+        case 2: return { top, kind: i % 8 === 2 ? 'star' : 'loop' };
+        default: return { top, kind: 'dot' };
+    }
+});
 
 /**
  * Celestial 의 바탕 — 오른쪽 위 모서리에 걸친 큰 천체 궤도(겹고리·점선 고리·행성·달), 오른쪽 가장자리를 따라 내려오는 세로 금선과
@@ -35,14 +48,17 @@ export default function CelestialAtmosphere() {
         </svg>
 
         <span className="rail" />
-        {RAIL.map(({ top, kind }) => (
+        {/* 곁줄 — 금선 안쪽으로 나란히 내려오는 가는 선 (끝에 점) */}
+        <span className="rail side" />
+        {RAIL.map(({ top, kind, phase }) => (
             <svg key={top} className={`bead ${kind}`} style={{ top }} viewBox="-20 -20 40 40">
-                {kind === 'orb' && <Orbit cx={0} cy={0} r={9} at={30} size={1.8} />}
-                {kind === 'dot' && <circle className="fill" cx={0} cy={0} r={1.6} />}
-                {kind === 'star' && <Star4 cx={0} cy={0} r={7} />}
-                {kind === 'moon' && <MoonDisc cx={0} cy={0} r={8} phase={0.25} />}
-                {kind === 'dash' && <><circle className="line dash" cx={0} cy={0} r={11} /><circle className="line" cx={3} cy={3} r={6} /></>}
-                {kind === 'armillary' && <Armillary cx={0} cy={0} r={11} axis={1.5} planet={false} />}
+                {kind === 'orb' && <Orbit cx={0} cy={0} r={7} at={30} size={1.6} />}
+                {kind === 'dot' && <circle className="fill" cx={0} cy={0} r={1.5} />}
+                {kind === 'star' && <Star4 cx={0} cy={0} r={6} />}
+                {kind === 'loop' && <circle className="line" cx={0} cy={0} r={3.2} />}
+                {kind === 'moon' && <MoonDisc cx={0} cy={0} r={5.5} phase={phase ?? 0.5} />}
+                {kind === 'dash' && <><circle className="line dash" cx={0} cy={0} r={8} /><circle className="fill" cx={0} cy={0} r={2} /></>}
+                {kind === 'armillary' && <Armillary cx={0} cy={0} r={7.5} axis={1.4} planet={false} />}
             </svg>
         ))}
 

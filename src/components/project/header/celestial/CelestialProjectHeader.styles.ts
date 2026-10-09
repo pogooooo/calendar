@@ -4,7 +4,8 @@
  * 집 규칙: 테마 갈래 컴포넌트는 JSX 만 들고, styled-components 는 형제 *.styles.ts 에 둔다.
  * 새 테마 폴더를 만들 때 어떤 파일을 만들어야 하는지가 파일 이름만으로 드러난다.
  */
-import styled from "styled-components";
+import styled, { css } from "styled-components";
+import { celestialOnly, star4Mark } from "@/styles/celestial/ornaments";
 import { MOBILE } from "@/styles/breakpoints";
 import { gilt, sheen } from "@/styles/celestial/almanac";
 
@@ -67,6 +68,11 @@ export const CategoryTag = styled.div<{ $color: string }>`
         transform: rotate(45deg);
         background: ${(props) => props.$color};
     }
+
+    /* Celestial: 색 표식은 마름모 대신 동그라미 */
+    ${celestialOnly(css`
+        &::before { border-radius: 50%; transform: none; }
+    `)}
 `;
 
 export const HeaderLine = styled.hr`
@@ -165,6 +171,17 @@ export const Tab = styled.button.attrs({ type: 'button' })<{ $active: boolean }>
         transform: rotate(45deg) scale(${(props) => (props.$active ? 1 : 0)});
         transition: transform 0.2s ease;
     }
+
+    /* Celestial: 고른 탭 밑의 마름모 대신 네 갈래 별 */
+    ${celestialOnly(css<{ $active: boolean }>`
+        &::after {
+            ${star4Mark("9px")}
+            bottom: -4.5px;
+            margin-left: -4.5px;
+            color: ${(p) => p.theme.colors.primary};
+            transform: scale(${(p) => (p.$active ? 1 : 0)});
+        }
+    `)}
 
     &:hover {
         border-color: ${(props) => props.theme.colors.primary};

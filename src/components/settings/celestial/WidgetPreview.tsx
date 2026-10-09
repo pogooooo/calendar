@@ -41,9 +41,9 @@ const shapes: Record<string, React.ReactNode> = {
     ),
     upcoming: (
         <>
-            <rect className="fill" x="10" y="17" width="5" height="5" transform="rotate(45 12.5 19.5)" />
-            <rect className="fill" x="10" y="30" width="5" height="5" transform="rotate(45 12.5 32.5)" />
-            <rect className="fill" x="10" y="43" width="5" height="5" transform="rotate(45 12.5 45.5)" />
+            <circle className="fill" cx="12.5" cy="19.5" r="2.8" />
+            <circle className="fill" cx="12.5" cy="32.5" r="2.8" />
+            <circle className="fill" cx="12.5" cy="45.5" r="2.8" />
             <path className="ln" d="M22 19.5 H60 M22 32.5 H54 M22 45.5 H58" />
             <path className="ln dim" d="M68 19.5 H82 M68 32.5 H82 M68 45.5 H82" />
         </>
@@ -123,10 +123,10 @@ const shapes: Record<string, React.ReactNode> = {
     ),
     anniversary: (
         <>
-            <rect className="fill" x="11" y="16" width="6" height="6" transform="rotate(45 14 19)" />
+            <circle className="fill" cx="14" cy="19" r="3.2" />
             <path className="ln" d="M25 19 H58" />
             <path className="ln dim" d="M66 19 H82" />
-            <rect className="fill" x="11" y="33" width="6" height="6" transform="rotate(45 14 36)" />
+            <circle className="fill" cx="14" cy="36" r="3.2" />
             <path className="ln" d="M25 36 H50" />
             <path className="ln dim" d="M66 36 H82" />
             <path className="ln dim" d="M11 50 H82" />
@@ -156,7 +156,7 @@ const shapes: Record<string, React.ReactNode> = {
         <>
             {[0, 1, 2, 3].map(i => (
                 <g key={i}>
-                    <rect className="fill" x="10" y={15 + i * 11} width="5" height="5" transform={`rotate(45 12.5 ${17.5 + i * 11})`} />
+                    <circle className="fill" cx="12.5" cy={17.5 + i * 11} r="2.8" />
                     <path className="ln dim" d={`M22 ${17.5 + i * 11} H82`} />
                     <path className="ln" d={`M22 ${17.5 + i * 11} H${70 - i * 14}`} />
                 </g>

@@ -3,7 +3,8 @@
  *
  * 세 파일의 styled-components 를 한곳에 모았다 — 갈래를 더할 때 이 파일 하나를 maple/ 에 짝지어 두면 된다.
  */
-import styled from "styled-components";
+import styled, { css } from "styled-components";
+import { celestialOnly, star4Mark } from "@/styles/celestial/ornaments";
 import { motion } from "framer-motion";
 import { celestial_corner_accent, celestial_star } from "@/styles/celestial_theme";
 
@@ -92,6 +93,11 @@ export const Divider = styled.div`
         border: 1px solid ${(props) => props.theme.colors.primary};
         background: ${(props) => props.theme.colors.background};
     }
+
+    /* Celestial: 가운데 마름모 대신 네 갈래 별 */
+    ${celestialOnly(css`
+        i { ${star4Mark("9px")} color: ${(p) => p.theme.colors.primary}; transform: translate(-50%, -50%); }
+    `)}
 `
 
 export const ProfileWrapper = styled.div`

@@ -18,6 +18,7 @@ import * as OceanS from './ocean/OceanSettings.styles';
 import * as OceanLS from './ocean/OceanSettings.layout';
 import useSettingStore from '@/store/useSettingStore';
 import ThemeShop from '@/components/billing/ThemeShop';
+import { Armillary, MoonDisc, Orbit, Star4, Star8, SunMoon } from '@/components/ornament/celestial/CelestialOrnaments';
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
 const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
@@ -31,11 +32,11 @@ const LAYOUTS: ThemeImpls<typeof CelestialLS> = { celestial: CelestialLS, maple:
 type TabId = "look" | "widget" | "system" | "account" | "about";
 
 /**
- * 성좌 좌표. 일직선이 아니라 좌우로 꺾여야 별자리로 읽힌다.
- * 판이 몇 개인지는 환경에 따라 달라지므로(폰에서는 위젯 판이 빠진다)
- * 자리마다 x 를 미리 정해 두고 순서대로 꽂는다.
+ * 목차의 축. 표지별은 모두 이 세로 금선에 꿰인다 — 비스듬히 꺾인 성좌선 대신 곧은 축과 고리·구슬
+ * (Celestial 의 문양은 직선·달·별·혼천의만 쓴다. 이 그림은 Celestial 만 보이고 Maple·Ocean 은 감춘다).
+ * 판이 몇 개인지는 환경에 따라 달라지므로(폰에서는 위젯 판이 빠진다) 자리마다 y 를 순서대로 꽂는다.
  */
-const MARK_X = [30, 51, 26, 47];
+const MARK_X = 38;
 const MARK_Y0 = 67;
 const MARK_DY = 74;
 
@@ -81,9 +82,10 @@ export default function SettingsView({
 
     const TAB_MARKS = TABS.map((x, i) => ({
         id: x.id,
-        x: MARK_X[i % MARK_X.length],
+        x: MARK_X,
         y: MARK_Y0 + i * MARK_DY,
     }));
+    const lastMarkY = TAB_MARKS[TAB_MARKS.length - 1].y;
 
     // 위젯 판이 사라진 뒤에도 그 판이 골라져 있으면 빈 화면이 남는다.
     React.useEffect(() => {
@@ -117,12 +119,18 @@ export default function SettingsView({
             <L.Frame>
                 <L.Constellation>
                     <L.ConstellationArt viewBox="0 0 210 340" aria-hidden="true">
-                        <polyline
-                            points={TAB_MARKS.map((m) => `${m.x},${m.y}`).join(" ")}
-                            fill="none" strokeWidth="1"
-                        />
-                        {/* 이름 없는 잔별. 성좌는 표지별만으로 이뤄지지 않는다. */}
-                        <circle cx="72" cy="104" r="1.1" /><circle cx="16" cy="176" r="1.1" /><circle cx="66" cy="248" r="1.1" />
+                        {/* 곧은 축 — 위는 반달, 아래는 점으로 끝난다. 곁에 가는 줄이 나란히 */}
+                        <line className="hair" x1={MARK_X} y1={23} x2={MARK_X} y2={lastMarkY + 34} />
+                        <MoonDisc cx={MARK_X} cy={15} r={5} phase={0.25} />
+                        <circle className="fill" cx={MARK_X} cy={lastMarkY + 37} r={1.6} />
+                        <line className="hair" x1={MARK_X - 18} y1={44} x2={MARK_X - 18} y2={lastMarkY - 16} />
+                        <circle className="fill" cx={MARK_X - 18} cy={44} r={1.2} />
+                        <circle className="fill" cx={MARK_X - 18} cy={lastMarkY - 16} r={1.2} />
+                        {/* 표지별마다 점선 고리, 그 사이엔 작은 구슬 */}
+                        {TAB_MARKS.map((m) => <circle key={m.id} className="hair dash" cx={MARK_X} cy={m.y} r={12} />)}
+                        {TAB_MARKS.slice(1).map((m, i) => (
+                            <circle key={m.id} className="line" cx={MARK_X} cy={(TAB_MARKS[i].y + m.y) / 2} r={2.4} />
+                        ))}
                     </L.ConstellationArt>
 
                     <L.TabList role="tablist" aria-orientation="vertical">
@@ -147,16 +155,35 @@ export default function SettingsView({
 
                 <L.Pane>
                     <L.PaneHeader>
-                        {tab === "look" && (
-                            <L.Orbit viewBox="0 0 200 200" aria-hidden="true" fill="none" strokeWidth=".6">
-                                <ellipse cx="100" cy="100" rx="80" ry="31" opacity=".55" />
-                                <ellipse cx="100" cy="100" rx="80" ry="31" opacity=".55" transform="rotate(60 100 100)" />
-                                <ellipse cx="100" cy="100" rx="80" ry="31" opacity=".55" transform="rotate(120 100 100)" />
-                                <circle cx="100" cy="100" r="10" opacity=".85" />
-                                <circle className="pip" cx="180" cy="100" r="3.2" />
-                                <circle className="pip" cx="60" cy="31" r="2.4" />
-                            </L.Orbit>
-                        )}
+                        {/* 판 머리의 천체 — 판마다 다른 하나(혼천의·해와 달·달의 궤도·보름·팔각별) */}
+                        <L.Orbit viewBox="0 0 200 200" aria-hidden="true">
+                            <circle className="hair" cx="100" cy="100" r="96" />
+                            <circle className="hair dash" cx="100" cy="100" r="88" />
+                            {tab === "look" && <>
+                                <Orbit cx={100} cy={100} r={76} at={250} size={3.2} spin />
+                                <Armillary cx={100} cy={100} r={50} axis={1.4} />
+                            </>}
+                            {tab === "widget" && <>
+                                <Orbit cx={100} cy={100} r={76} at={200} size={2.6} hollow spin />
+                                <SunMoon cx={100} cy={100} r={62} rays={40} />
+                            </>}
+                            {tab === "system" && <>
+                                <Orbit cx={100} cy={100} r={76} at={230} size={3} spin />
+                                <Orbit cx={100} cy={100} r={52} at={300} size={2.2} hollow spin />
+                                <MoonDisc cx={100} cy={100} r={24} phase={0.62} />
+                            </>}
+                            {tab === "account" && <>
+                                <Orbit cx={100} cy={100} r={76} at={210} size={3} spin />
+                                <MoonDisc cx={100} cy={100} r={30} phase={0.5} />
+                                <circle className="hair" cx="100" cy="100" r="40" />
+                            </>}
+                            {tab === "about" && <>
+                                <Orbit cx={100} cy={100} r={76} at={240} size={3} spin />
+                                <circle className="line dash" cx="100" cy="100" r="50" />
+                                <Star8 cx={100} cy={100} r={34} />
+                            </>}
+                            <Star4 cx={22} cy={150} r={6} />
+                        </L.Orbit>
                         <L.Eyebrow>{ROMAN[activeIndex]}</L.Eyebrow>
                         <L.PaneTitle>{active.label}</L.PaneTitle>
                         {active.note && <L.PaneNote>{active.note}</L.PaneNote>}

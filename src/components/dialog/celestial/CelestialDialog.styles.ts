@@ -1,5 +1,6 @@
 import styled, { css, keyframes } from "styled-components";
 import type { DialogKind } from "../arcana";
+import { celestialOnly, star4Mark } from "@/styles/celestial/ornaments";
 
 const fade = keyframes`
     from { opacity: 0; }
@@ -70,6 +71,16 @@ export const Pip = styled.i`
     &:nth-of-type(2) { top: -3.5px; right: -3.5px; }
     &:nth-of-type(3) { bottom: -3.5px; left: -3.5px; }
     &:nth-of-type(4) { bottom: -3.5px; right: -3.5px; }
+
+    /* Celestial: 모서리의 마름모 대신 네 갈래 별 — 틀의 모서리에 꿴다 */
+    ${celestialOnly(css`
+        ${star4Mark("10px")}
+        color: ${p => p.theme.colors.primary};
+        &:nth-of-type(1) { top: -5px; left: -5px; }
+        &:nth-of-type(2) { top: -5px; right: -5px; }
+        &:nth-of-type(3) { bottom: -5px; left: -5px; }
+        &:nth-of-type(4) { bottom: -5px; right: -5px; }
+    `)}
 `;
 
 export const Numeral = styled.div`

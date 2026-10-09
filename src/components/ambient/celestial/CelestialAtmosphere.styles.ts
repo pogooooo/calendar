@@ -19,8 +19,12 @@ export const Sky = styled.div`
     .halo { left:34%; bottom:-170px; width:320px; height:320px; opacity:.06; }
 
     .rail { position:absolute; right:22px; top:0; bottom:0; width:1px; background:currentColor; opacity:.22; }
+    /* 곁줄은 화면 가운데 토막만, 양 끝에 점 */
+    .rail.side { right:30px; top:30%; bottom:30%; opacity:.14; }
+    .rail.side::before, .rail.side::after { content:""; position:absolute; left:-1.5px; width:4px; height:4px; border-radius:50%; background:currentColor; }
+    .rail.side::before { top:-2px; } .rail.side::after { bottom:-2px; }
     .bead { right:3px; width:40px; height:40px; margin-top:-20px; opacity:.4; }
-    .bead.dot { opacity:.5; }
+    .bead.dot, .bead.loop { opacity:.5; }
 
     .glint { position:absolute; width:3px; height:3px; border-radius:50%; background:currentColor; opacity:.16; animation:${glimmer} 7s ease-in-out infinite; }
     .glint.star { ${star4Mark('7px')} }

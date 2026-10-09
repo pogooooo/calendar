@@ -5,6 +5,8 @@
 import styled, { css, keyframes } from "styled-components";
 import { MOBILE } from "@/styles/breakpoints";
 import { celestial_star } from "@/styles/celestial_theme";
+import { celestialOnly, star4Mark } from "@/styles/celestial/ornaments";
+import { ornamentStrokes } from "@/components/ornament/celestial/CelestialOrnaments.styles";
 
 const hair = (a: number) => css`${(p) => p.theme.colors.primary}${a}`;
 
@@ -60,8 +62,8 @@ export const ConstellationArt = styled.svg`
     pointer-events: none;
     overflow: visible;
 
-    polyline { stroke: ${hair(26)}; }
-    circle { fill: ${hair(44)}; }
+    ${ornamentStrokes}
+    color: ${hair(55)};
 
     ${MOBILE} { display: none; }
 `;
@@ -176,9 +178,9 @@ export const Orbit = styled.svg`
     height: 300px;
     opacity: 0.42;
     pointer-events: none;
-    stroke: ${(p) => p.theme.colors.primary};
-
-    .pip { fill: ${(p) => p.theme.colors.primary}; stroke: none; }
+    overflow: visible;
+    color: ${(p) => p.theme.colors.primary};
+    ${ornamentStrokes}
     ${MOBILE} { display: none; }
 `;
 
@@ -338,6 +340,11 @@ export const FamilyTile = styled.button<{ $selected: boolean }>`
             background: linear-gradient(315deg, transparent 49%, ${p.theme.colors.primary} 50%, transparent 51%);
         }
     `}
+
+    /* Celestial: 고른 갈래 모서리는 사선 대신 네 갈래 별 */
+    ${celestialOnly(css`
+        &::after { top: 8px; left: 8px; ${star4Mark("11px")} color: ${(p) => p.theme.colors.primary}; }
+    `)}
 `;
 
 export const FamilyFoot = styled.span`
@@ -373,6 +380,11 @@ export const VariantDots = styled.span`
         border: 1px solid ${hair(99)};
     }
     i.on { background-color: ${(p) => p.theme.colors.primary}; border-color: ${(p) => p.theme.colors.primary}; }
+
+    /* Celestial: 마름모 대신 동그라미 — 지금 벌은 찬 달 */
+    ${celestialOnly(css`
+        i { width: 6px; height: 6px; border-radius: 50%; transform: none; }
+    `)}
 `;
 
 const stageIn = keyframes`
@@ -535,6 +547,11 @@ const cornerAccent = css`
         pointer-events: none;
         background: linear-gradient(315deg, transparent 49%, ${(p) => p.theme.colors.primary} 50%, transparent 51%);
     }
+
+    /* Celestial: 사선 대신 네 갈래 별 */
+    ${celestialOnly(css`
+        &::after { top: 7px; left: 7px; ${star4Mark("10px")} color: ${(p) => p.theme.colors.primary}; }
+    `)}
 `;
 
 export const FontGrid = styled.div`

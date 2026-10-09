@@ -3,8 +3,9 @@
  *
  * 집 규칙: 화면은 갈래 공용 JSX 하나, 모양은 갈래마다 *.styles.ts (scripts/check-theme-styles.mjs).
  */
-import styled, { keyframes } from "styled-components";
+import styled, { css, keyframes } from "styled-components";
 import { gilt } from "@/styles/celestial/almanac";
+import { celestialOnly } from "@/styles/celestial/ornaments";
 import { TAB_BAR_HEIGHT, SAFE_B } from "@/styles/breakpoints";
 
 /* ── 폰 전용 ─────────────────────────────────────────────────────────── */
@@ -322,6 +323,11 @@ export const Resizer = styled.div<{ $hidden: boolean }>`
         background-color: ${(props) => props.theme.colors.primary};
         box-shadow: 0 0 8px ${(props) => props.theme.colors.primary}CC;
     }
+
+    /* Celestial: 마름모 손잡이 대신 세로 금선에 꿴 둥근 구슬 */
+    ${celestialOnly(css`
+        .grip { border-radius: 50%; transform: none; }
+    `)}
 
     @media (max-width: 1250px) {
         display: none;

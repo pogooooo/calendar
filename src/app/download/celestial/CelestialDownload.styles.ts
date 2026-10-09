@@ -5,6 +5,7 @@
  */
 import styled, { css, keyframes } from "styled-components";
 import { Loader2 } from "lucide-react";
+import { celestialOnly, star4Mark } from "@/styles/celestial/ornaments";
 
 /* ── 모양 ─────────────────────────────────────────────────────────── */
 
@@ -384,6 +385,12 @@ export const Feature = styled.article`
     }
 
     &:hover::after, &:focus-visible::after { width: 24px; height: 24px; }
+
+    /* Celestial: 모서리는 사선 대신 네 갈래 별 — 올리면 조금 커진다 */
+    ${celestialOnly(css`
+        &::after { top: 8px; left: 8px; ${star4Mark("9px")} color: ${p => p.theme.colors.primary}; transition: width 0.3s, height 0.3s; }
+        &:hover::after, &:focus-visible::after { width: 13px; height: 13px; }
+    `)}
 `;
 
 export const FeatureVisual = styled.div`

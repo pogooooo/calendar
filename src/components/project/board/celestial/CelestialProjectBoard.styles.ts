@@ -4,7 +4,8 @@
  * 집 규칙: 테마 갈래 컴포넌트는 JSX 만 들고, styled-components 는 형제 *.styles.ts 에 둔다.
  * 새 테마 폴더를 만들 때 어떤 파일을 만들어야 하는지가 파일 이름만으로 드러난다.
  */
-import styled from "styled-components";
+import styled, { css } from "styled-components";
+import { celestialOnly } from "@/styles/celestial/ornaments";
 import { TOUCH, MOBILE } from "@/styles/breakpoints";
 import { SectionWrapper, SectionTitle } from "@/components/project/celestial/section";
 export { SectionWrapper, SectionTitle };
@@ -220,6 +221,11 @@ export const PriorityTag = styled.span<{ $priority: string }>`
             props.$priority === 'high' ? props.theme.colors.error :
                     props.$priority === 'low' ? props.theme.colors.textSecondary :
                             props.theme.colors.primary};
+
+    /* Celestial: 마름모 대신 둥근 점 */
+    ${celestialOnly(css`
+        &::before { border-radius: 50%; transform: none; }
+    `)}
 `;
 
 export const LockedTag = styled.span`

@@ -1,7 +1,8 @@
 /**
  * 폰 탭바(MobileTabBar)의 Celestial 모양 — 금빛 마름모가 고른 탭 위에 뜬다.
  */
-import styled, { keyframes } from "styled-components";
+import styled, { css, keyframes } from "styled-components";
+import { celestialOnly, star4Mark } from "@/styles/celestial/ornaments";
 import { MOBILE_BREAKPOINT, TAB_BAR_HEIGHT, SAFE_B } from "@/styles/breakpoints";
 
 export const Bar = styled.nav`
@@ -65,6 +66,17 @@ export const Tab = styled.button<{ $on: boolean }>`
         background: ${p => p.theme.colors.primary};
         transition: transform 0.18s ease;
     }
+
+    /* Celestial: 고른 탭 위의 마름모 대신 네 갈래 별 */
+    ${celestialOnly(css<{ $on: boolean }>`
+        &::before {
+            ${star4Mark("9px")}
+            top: 2px;
+            margin-left: -4.5px;
+            color: ${p => p.theme.colors.primary};
+            transform: scale(${p => (p.$on ? 1 : 0)});
+        }
+    `)}
 `;
 
 export const scrimIn = keyframes`
@@ -119,6 +131,11 @@ export const SheetHead = styled.div`
         transform: rotate(45deg);
         border: 1px solid ${p => p.theme.colors.primary};
     }
+
+    /* Celestial: 머리 표식은 네 갈래 별 */
+    ${celestialOnly(css`
+        i { ${star4Mark("10px")} color: ${p => p.theme.colors.primary}; }
+    `)}
 `;
 
 export const CloseBtn = styled.button`
