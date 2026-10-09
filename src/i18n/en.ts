@@ -568,6 +568,8 @@ const en: Translations = {
         deleteProject: 'Delete',
         deleteProjectConfirm: 'Delete this project?',
         deleteProjectMsg: (title: string) => `"${title}" — all of its tasks go too. This can't be undone.`,
+        waitingTitle: 'Prerequisites unfinished',
+        waitingMsg: 'Finish the tasks this one waits on before starting or completing it. Moving it back is always allowed.',
         inProject: 'Project',
         noProject: 'None (regular event)',
         projectTaskHint: "Project tasks don't use repeat or location.",

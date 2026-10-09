@@ -59,3 +59,17 @@ export function dependencyIssue(tasks: DependencyTask[], predecessor: string, su
     }
     return null;
 }
+
+const STATUS_ORDER: Record<string, number> = { todo: 0, in_progress: 1, done: 2 };
+
+/** 선행 조건이 끝나지 않아 '대기' 인 할 일 — 보드·편집 창·달력이 같은 규칙을 쓴다 (예전엔 보드에서만 막았다) */
+export function isTaskWaiting(task: { blockedBy?: { id: string }[] | null }, tasks: { id: string; status?: string | null }[]): boolean {
+    return !!task.blockedBy?.some(dep => {
+        const prerequisite = tasks.find(t => t.id === dep.id);
+        return prerequisite ? prerequisite.status !== "done" : false;
+    });
+}
+
+/** 대기면 막히는 옮김인가 — 앞으로(진행·완료)만. 뒤로는 늘 된다(이미 진행·완료였던 할 일에 조건이 걸려도 되돌릴 수 있게) */
+export const isForwardMove = (from: string | null | undefined, to: string): boolean =>
+    (STATUS_ORDER[to] ?? 0) > (STATUS_ORDER[from ?? "todo"] ?? 0);

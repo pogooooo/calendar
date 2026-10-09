@@ -558,6 +558,8 @@ export interface Translations {
         deleteProject: string;
         deleteProjectConfirm: string;
         deleteProjectMsg: (title: string) => string;
+        waitingTitle: string;
+        waitingMsg: string;
         inProject: string;
         noProject: string;
         projectTaskHint: string;

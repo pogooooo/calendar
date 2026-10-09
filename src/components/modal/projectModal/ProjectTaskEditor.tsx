@@ -8,6 +8,7 @@ import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useDialog } from "@/components/dialog/DialogProvider";
 import { useT } from "@/i18n/useT";
 import type { UserType } from "@/types";
+import { isForwardMove, isTaskWaiting } from "@/lib/taskInteractions";
 
 /** 어떤 할 일을 열지. taskId 가 없으면 그 프로젝트에 새로 만든다 */
 export interface TaskEditTarget {
@@ -86,6 +87,12 @@ export default function ProjectTaskEditor({ target, onClose }: { target: TaskEdi
         if (!target || pendingRef.current) return;
         if (data.startAt && data.endAt && new Date(data.endAt) < new Date(data.startAt)) {
             setError(t.interaction.invalidDates);
+            return;
+        }
+        // 대기(선행 조건이 안 끝남)면 앞으로(진행·완료) 옮길 수 없다 — 보드와 같은 규칙. 예전엔 여기서 상태를 고르면 그냥 넘어갔다
+        const was = target.taskId ? tasks.find((x) => x.id === target.taskId)?.status : "todo";
+        if (data.status && isForwardMove(was, data.status) && isTaskWaiting({ blockedBy: data.blockedBy }, tasks)) {
+            setError(t.project.waitingMsg);
             return;
         }
         // 담당자는 사람 그대로 — 서버에 id 로 보내는 건 저장소가 한다 (그래야 응답 전에도 카드에 이름이 선다)

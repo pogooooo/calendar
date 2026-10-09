@@ -9,6 +9,7 @@ import { useT } from "@/i18n/useT";
 import ProjectTaskEditor, { type TaskEditTarget } from "@/components/modal/projectModal/ProjectTaskEditor";
 import { projectIdOfItem, taskIdOfItem, type ProjectCalendarItem } from "@/lib/projectCalendar";
 import type { ProjectTaskType } from "@/types";
+import { isTaskWaiting } from "@/lib/taskInteractions";
 
 /** 달력이 들고 있는 항목 꼴 — 펼친 뒤에도 프로젝트 표시(projectId·isDone·originalData)는 그대로 따라온다 */
 type Item = Pick<ProjectCalendarItem, "id" | "title" | "isDone" | "projectId" | "originalData">;
@@ -47,8 +48,16 @@ export function useProjectItemActions() {
         const { projectId, taskId } = idsOf(item);
         if (!projectId) return;
         const store = useProjectStore.getState();
-        if (taskId) await store.updateProjectTaskStatus(authFetch, projectId, taskId, item.isDone ? "todo" : "done");
-        else {
+        if (taskId) {
+            // 대기(선행 조건이 안 끝남)면 끝낼 수 없다 — 보드와 같은 규칙. 예전엔 달력의 체크로는 그냥 끝났다
+            const tasks = store.projects.find((p) => p.id === projectId)?.tasks ?? [];
+            const task = tasks.find((x) => x.id === taskId);
+            if (!item.isDone && task && isTaskWaiting(task, tasks)) {
+                await dialog.notify({ title: t.project.waitingTitle, message: t.project.waitingMsg });
+                return;
+            }
+            await store.updateProjectTaskStatus(authFetch, projectId, taskId, item.isDone ? "todo" : "done");
+        } else {
             const error = await store.updateProject(authFetch, projectId, { status: item.isDone ? "todo" : "done" });
             if (error) await dialog.notify({ title: t.alert.saveFailed, message: error });
         }

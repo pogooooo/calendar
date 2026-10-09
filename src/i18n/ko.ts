@@ -569,6 +569,8 @@ const ko: Translations = {
         deleteProject: '삭제',
         deleteProjectConfirm: '프로젝트를 삭제할까요',
         deleteProjectMsg: (title: string) => `"${title}" — 안의 할 일도 모두 함께 사라집니다. 되돌릴 수 없습니다.`,
+        waitingTitle: '먼저 끝낼 할 일이 남았습니다',
+        waitingMsg: '선행 할 일이 끝나야 진행·완료로 옮길 수 있습니다. 되돌리는 것은 언제든 됩니다.',
         inProject: '프로젝트',
         noProject: '넣지 않음 (일반 일정)',
         projectTaskHint: '프로젝트 할 일로 넣으면 반복·장소는 쓰지 않습니다.',
