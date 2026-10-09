@@ -4,7 +4,9 @@
  * 집 규칙: 테마 갈래 컴포넌트는 JSX 만 들고, styled-components 는 형제 *.styles.ts 에 둔다.
  * 새 테마 폴더를 만들 때 어떤 파일을 만들어야 하는지가 파일 이름만으로 드러난다.
  */
-import styled, { keyframes } from "styled-components";
+import styled, { css, keyframes } from "styled-components";
+import { celestialOnly, dotMark, ringMark, star4Mark } from "@/styles/celestial/ornaments";
+import { ornamentStrokes } from "@/components/ornament/celestial/CelestialOrnaments.styles";
 import { hide_scrollbar } from "@/styles/shared";
 
 export const ArchWrap = styled.div`
@@ -16,29 +18,27 @@ export const ArchWrap = styled.div`
     }
 `;
 
+/** 한 달의 달빛 눈금(CelestialMonthArch) — 가로 금선·세로 눈금·달. 문양의 붓(ornamentStrokes)을 쓴다 */
 export const Arch = styled.svg`
     display: block;
     width: 100%;
     height: auto;
-    max-height: 210px;
+    max-height: 168px;
+    overflow: visible;
+    color: ${p => p.theme.colors.primary};
+    ${ornamentStrokes}
 
     @media (max-width: 768px) {
-        max-height: 170px;
+        max-height: 120px;
     }
 
-    .basel { stroke: ${p => p.theme.colors.primary}; stroke-opacity: 0.26; stroke-width: 0.7; }
-    .spoke { stroke: ${p => p.theme.colors.primary}; stroke-opacity: 0.09; stroke-width: 0.5; }
-    .base { fill: none; stroke: ${p => p.theme.colors.primary}; stroke-opacity: 0.3; stroke-width: 0.8; }
-    .base2 { fill: none; stroke: ${p => p.theme.colors.primary}; stroke-opacity: 0.14; stroke-width: 0.6; }
-    .tick { stroke: ${p => p.theme.colors.primary}; stroke-width: 1.2; }
-    .major { stroke: ${p => p.theme.colors.primary}; stroke-opacity: 0.4; stroke-width: 0.7; }
-    .mkline { stroke: ${p => p.theme.colors.primary}; stroke-opacity: 0.36; stroke-width: 0.7; }
-    .mkanv { fill: ${p => p.theme.colors.primary}; }
-    .mkdue { fill: ${p => p.theme.colors.background}; stroke: ${p => p.theme.colors.primary}; stroke-width: 1; }
-    .nray { stroke: ${p => p.theme.colors.primary}; stroke-width: 0.9; }
-    .ncross { stroke: ${p => p.theme.colors.primary}; stroke-width: 1.1; }
-    .ncap,
-    .fin { fill: ${p => p.theme.colors.background}; stroke: ${p => p.theme.colors.primary}; stroke-width: 1.1; }
+    .basel { stroke-opacity: 0.55; }
+    .faint { opacity: 0.5; }
+    .tick { stroke-width: 1.4; }
+    .needle { stroke-width: 1; }
+    .halo { opacity: 0.55; }
+    .due { stroke-width: 1.1; }
+    .quarter { opacity: 0.8; }
 `;
 
 export const ArchFoot = styled.div`
@@ -219,6 +219,13 @@ export const SectionHead = styled.div`
         background: ${p => p.theme.colors.primary}42;
     }
 
+    /* Celestial 은 마름모 대신 네 갈래 별, 괘선 끝엔 점 (사선 없이 직선·별·달) */
+    ${celestialOnly(css`
+        .hd { ${star4Mark("10px")} color: ${p => p.theme.colors.primary}; }
+        .hr { position: relative; }
+        .hr::after { content: ""; position: absolute; right: -1px; top: -1.5px; ${dotMark("4px")} color: ${p => p.theme.colors.primary}; opacity: 0.7; }
+    `)}
+
     b {
         font-weight: 500;
         font-size: 0.66rem;
@@ -253,6 +260,7 @@ export const QuickForm = styled.form`
         transform: rotate(45deg);
         background: ${p => p.theme.colors.primary};
     }
+    ${celestialOnly(css`.dot { ${star4Mark("9px")} color: ${p => p.theme.colors.primary}; }`)}
 
     input {
         flex: 1;
@@ -332,6 +340,16 @@ export const Mark = styled.span<{ $on: boolean }>`
     border: 1px solid ${p => p.theme.colors.primary}75;
     background: ${p => (p.$on ? p.theme.colors.primary : "transparent")};
     transition: border-color 0.18s, box-shadow 0.18s;
+
+    /* Celestial: 안 끝난 것은 빈 고리(삭), 끝낸 것은 찬 달(보름) — 고리 안에 한 겹 띄운 달 */
+    ${celestialOnly(css<{ $on: boolean }>`
+        width: 11px;
+        height: 11px;
+        transform: none;
+        border-radius: 50%;
+        border-color: ${p => (p.$on ? p.theme.colors.primary : `${p.theme.colors.primary}99`)};
+        background: ${p => (p.$on ? `radial-gradient(circle, ${p.theme.colors.primary} 0 3.5px, transparent 4px)` : "transparent")};
+    `)}
 `;
 
 /* 목록이 한 줄씩 차례로 들어온다. 새로 넣은 줄만 다시 재생된다(마운트 기준). */
@@ -668,6 +686,21 @@ export const Slot = styled.button<{ $on: boolean; $today: boolean }>`
 
         &:active { background-color: ${p => p.theme.colors.primary}17; }
     }
+
+    /* Celestial: 채운 칸은 네 갈래 별, 빈 칸은 고리 (마름모 없이) */
+    ${celestialOnly(css<{ $on: boolean; $today: boolean }>`
+        ${p => (p.$on ? star4Mark("10px") : ringMark("7px"))}
+        color: ${p => p.theme.colors.primary};
+        opacity: ${p => (p.$on || p.$today ? 1 : 0.6)};
+        box-shadow: none;
+        filter: ${p => (p.$today ? `drop-shadow(0 0 3px ${p.theme.colors.primary})` : "none")};
+        &:hover { box-shadow: none; filter: drop-shadow(0 0 3px ${p => p.theme.colors.primary}); }
+
+        @media (max-width: 768px) {
+            width: auto; height: 30px; background: none; border: none; -webkit-mask: none; mask: none;
+            &::after { ${p => (p.$on ? star4Mark("12px") : ringMark("8px"))} box-shadow: none; }
+        }
+    `)}
 `;
 
 export const AnniversaryRow = styled.div`

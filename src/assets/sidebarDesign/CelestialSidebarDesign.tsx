@@ -1,7 +1,16 @@
 import { useEffect, useRef } from "react";
 import * as S from "./CelestialSidebarDesign.styles";
+import { Armillary, MoonDisc, Orbit, Star4, Star8, SunMoon } from "@/components/ornament/celestial/CelestialOrnaments";
 
+/** 사이드바 경계선(세로 금선)의 x — 그림 전체가 이 축에 꿰인다 */
+const AX = 102.4;
 
+/**
+ * 사이드바 경계에 꿰인 천체 기둥 — 고리·해와 달·반달·보름과 팔각별·혼천의를 한 축에 쌓고,
+ * 내비 옆으로는 작은 별·점·고리가 일정한 간격으로 이어진다. 비스듬한 선 없이 세로선·동그라미·달·별만.
+ * 큰 그림은 프로필과 내비 사이의 빈 자리에만, 내비 옆의 것은 축에서 ±10 안쪽이라 글자에 닿지 않는다.
+ * 경계에 올리면 행성들이 빨리 돈다.
+ */
 const CelestialSidebarDesign = ({ isHovered = false }: { isHovered?: boolean }) => {
     const svgRef = useRef<SVGSVGElement>(null);
     const rafRef = useRef(0);
@@ -9,103 +18,91 @@ const CelestialSidebarDesign = ({ isHovered = false }: { isHovered?: boolean }) 
     useEffect(() => {
         const svg = svgRef.current;
         if (!svg) return;
-        const anims = [...svg.querySelectorAll('.orbiter')].flatMap(el =>
-            typeof el.getAnimations === 'function' ? el.getAnimations() : []
+        const anims = [...svg.querySelectorAll(".orbiter")].flatMap(el =>
+            typeof el.getAnimations === "function" ? el.getAnimations() : []
         );
         if (anims.length === 0) return;
-
-        const target = isHovered ? 3.5 : 1;
+        const target = isHovered ? 6 : 1;
         cancelAnimationFrame(rafRef.current);
-
         const step = () => {
             let settled = true;
             anims.forEach(anim => {
-                const next = anim.playbackRate + (target - anim.playbackRate) * 0.05;
-                if (Math.abs(next - target) < 0.02) {
-                    anim.playbackRate = target;
-                } else {
-                    anim.playbackRate = next;
-                    settled = false;
-                }
+                const next = anim.playbackRate + (target - anim.playbackRate) * 0.06;
+                if (Math.abs(next - target) < 0.02) anim.playbackRate = target;
+                else { anim.playbackRate = next; settled = false; }
             });
             if (!settled) rafRef.current = requestAnimationFrame(step);
         };
         rafRef.current = requestAnimationFrame(step);
-
         return () => cancelAnimationFrame(rafRef.current);
     }, [isHovered]);
 
-    return (
-        <S.AnimatedSvg aria-hidden="true" data-ambient="celestial-sidebar" ref={svgRef} $hovered={isHovered} width="160" height="954" viewBox="0 0 160 954" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path className="orn spark"
-                    d="M102.384 115.625C102.384 118.317 103.727 120.5 105.384 120.5C103.727 120.5 102.384 122.683 102.384 125.375C102.384 122.683 101.041 120.5 99.384 120.5C101.041 120.5 102.384 118.317 102.384 115.625Z"
-                    stroke="currentColor" strokeWidth="0.768" strokeLinecap="round" strokeLinejoin="round"/>
-                <path className="orn spark s-b"
-                    d="M112.384 282.375C112.384 286.31 114.063 289.5 116.134 289.5C114.063 289.5 112.384 292.69 112.384 296.625C112.384 292.69 110.705 289.5 108.634 289.5C110.705 289.5 112.384 286.31 112.384 282.375Z"
-                    stroke="currentColor" strokeWidth="0.768" strokeLinecap="round" strokeLinejoin="round"/>
-                <path className="orn bigstar"
-                    d="M102.384 136.375C102.384 167.5 102.384 167.5 109.884 167.5C102.384 167.5 102.384 167.5 102.384 198.625C102.384 167.5 102.384 167.5 94.884 167.5C102.384 167.5 102.384 167.5 102.384 136.375Z"
-                    stroke="currentColor" strokeWidth="0.768" strokeLinecap="round" strokeLinejoin="round"/>
-                <path className="moon"
-                    d="M124.384 243.14C122.434 247.212 119.427 250.686 115.678 253.2C111.928 255.714 107.573 257.177 103.066 257.435C98.559 257.693 94.0652 256.738 90.053 254.668C86.0408 252.599 82.6571 249.491 80.2546 245.669C77.8522 241.847 76.5189 237.45 76.3937 232.938C76.2686 228.425 77.3562 223.961 79.5431 220.012C81.73 216.063 84.9363 212.772 88.8276 210.484C92.7189 208.195 97.1529 206.992 101.667 207C103.94 206.995 106.202 207.302 108.391 207.913C103.955 209.319 100.169 212.266 97.7162 216.221C95.2633 220.175 94.3055 224.877 95.016 229.476C95.7264 234.075 98.0582 238.268 101.59 241.298C105.122 244.328 109.621 245.995 114.274 245.998C117.844 246.003 121.345 245.014 124.384 243.14Z"
-                    stroke="currentColor" strokeMiterlimit="10"/>
-                <path d="M112.384 234V284.5" stroke="currentColor" strokeLinecap="round"/>
-                <path className="orn spark s-c"
-                    d="M120.134 223C120.134 226.935 120.134 230.125 158.884 230.125C120.134 230.125 120.134 233.315 120.134 237.25C120.134 233.315 115.455 230 113.384 230C115.455 230 120.134 226.935 120.134 223Z"
-                    stroke="currentColor" strokeWidth="0.768" strokeLinecap="round" strokeLinejoin="round"/>
-                <path className="orn spark s-d"
-                    d="M67.134 223C67.134 230 39.134 230 0.384033 230C39.134 230 67.134 230 67.134 237.25C67.134 233.315 71.813 230 73.884 230C71.813 230 67.134 226.935 67.134 223Z"
-                    stroke="currentColor" strokeWidth="0.768" strokeLinecap="round" strokeLinejoin="round"/>
-                <path className="orn dotstar"
-                    d="M102.384 229C102.384 228.333 102.784 227 104.384 227C105.984 227 106.384 228.333 106.384 229C106.384 229.667 105.984 231 104.384 231C102.784 231 102.384 229.667 102.384 229Z"
-                    stroke="currentColor"/>
-                <path className="orn bigstar b-b"
-                    d="M102.384 282.375C102.384 313.5 102.384 313.5 109.884 313.5C102.384 313.5 102.384 313.5 102.384 344.625C102.384 313.5 102.384 313.5 94.884 313.5C102.384 313.5 102.384 313.5 102.384 282.375Z"
-                    stroke="currentColor" strokeWidth="0.768" strokeLinecap="round" strokeLinejoin="round"/>
-                <path className="orn dotstar d2"
-                    d="M92.634 280.75C92.634 280.417 92.834 279.75 93.634 279.75C94.434 279.75 94.634 280.417 94.634 280.75C94.634 281.083 94.434 281.75 93.634 281.75C92.834 281.75 92.634 281.083 92.634 280.75Z"
-                    stroke="currentColor"/>
-                <path className="orn dotstar d3"
-                    d="M138.384 253.5C138.384 253.167 138.584 252.5 139.384 252.5C140.184 252.5 140.384 253.167 140.384 253.5C140.384 253.833 140.184 254.5 139.384 254.5C138.584 254.5 138.384 253.833 138.384 253.5Z"
-                    stroke="currentColor"/>
-                <path className="orn dotstar d4"
-                    d="M132.884 282C132.884 281.667 133.084 281 133.884 281C134.684 281 134.884 281.667 134.884 282C134.884 282.333 134.684 283 133.884 283C133.084 283 132.884 282.333 132.884 282Z"
-                    stroke="currentColor"/>
-                <path className="orn dotstar d5"
-                    d="M51.384 208C51.384 207.667 51.584 207 52.384 207C53.184 207 53.384 207.667 53.384 208C53.384 208.333 53.184 209 52.384 209C51.584 209 51.384 208.333 51.384 208Z"
-                    stroke="currentColor"/>
-                <path className="orn dotstar d6"
-                    d="M51.384 253C51.384 252.667 51.584 252 52.384 252C53.184 252 53.384 252.667 53.384 253C53.384 253.333 53.184 254 52.384 254C51.584 254 51.384 253.333 51.384 253Z"
-                    stroke="currentColor"/>
-                <path className="orn dotstar d7"
-                    d="M59.884 286C59.884 285.667 60.084 285 60.884 285C61.684 285 61.884 285.667 61.884 286C61.884 286.333 61.684 287 60.884 287C60.084 287 59.884 286.333 59.884 286Z"
-                    stroke="currentColor"/>
-                <path d="M62.8964 213C44.396 263 103.896 288 126.896 248" stroke="currentColor"/>
-                <path d="M75.384 262L62.384 284" stroke="currentColor" strokeLinecap="round"/>
-                <path d="M117.384 260L132.384 280" stroke="currentColor" strokeLinecap="round"/>
-                <path
-                    d="M85.5856 226.264C100.47 219.702 114.627 215.354 125.478 213.621C130.907 212.753 135.479 212.546 138.889 213.028C142.331 213.515 144.426 214.677 145.179 216.385C145.932 218.092 145.376 220.423 143.414 223.292C141.47 226.135 138.232 229.37 133.93 232.793C125.332 239.634 112.572 247.153 97.6875 253.715C82.8035 260.276 68.6456 264.625 57.7954 266.358C52.3665 267.225 47.7943 267.432 44.384 266.95C40.9424 266.464 38.847 265.302 38.0942 263.594C37.3414 261.886 37.897 259.556 39.8592 256.687C41.8036 253.844 45.0408 250.608 49.343 247.185C57.9413 240.344 70.7015 232.826 85.5856 226.264Z"
-                    stroke="currentColor"/>
-                <circle className="orbiter satellite" r="1.8" fill="currentColor"/>
-                <path d="M62.884 213.5L54.884 208.881" stroke="currentColor" strokeLinecap="round"/>
-                <path d="M62.384 247L54.384 251.619" stroke="currentColor" strokeLinecap="round"/>
-                <path d="M94.384 268L93.884 278.5" stroke="currentColor" strokeLinecap="round"/>
-                <path d="M126.884 248L136.884 252.5" stroke="currentColor" strokeLinecap="round"/>
-                <path d="M102.384 0V106" stroke="currentColor" strokeLinecap="round"/>
-                <path d="M102.384 359V954" stroke="currentColor" strokeLinecap="round"/>
-                <circle className="mini" cx="96" cy="58" r="0.9" fill="currentColor"/>
-                <circle className="mini m2" cx="110" cy="84" r="0.7" fill="currentColor"/>
-                <circle className="mini m3" cx="95" cy="388" r="0.8" fill="currentColor"/>
-                <circle className="mini m4" cx="108" cy="436" r="1" fill="currentColor"/>
-                <circle className="mini m5" cx="97" cy="522" r="0.7" fill="currentColor"/>
-                <circle className="mini m6" cx="109" cy="604" r="0.9" fill="currentColor"/>
-                <circle className="mini m7" cx="95" cy="694" r="0.8" fill="currentColor"/>
-                <circle className="mini m8" cx="107" cy="782" r="0.7" fill="currentColor"/>
-                <circle className="mini m9" cx="98" cy="872" r="0.9" fill="currentColor"/>
-                <circle className="bead" r="1" fill="currentColor"/>
-                <circle className="bead-top" r="1" fill="currentColor"/>
-        </S.AnimatedSvg>
-    )
-}
+    /* 내비 옆의 작은 문양 — 별·점·고리·점선 고리가 번갈아 */
+    const beads = [400, 452, 504, 556, 608, 660, 712, 764];
 
-export default CelestialSidebarDesign
+    return (
+        <S.AnimatedSvg aria-hidden="true" data-ambient="celestial-sidebar" ref={svgRef} $hovered={isHovered}
+            width="160" height="954" viewBox="0 0 160 954" fill="none" xmlns="http://www.w3.org/2000/svg">
+            {/* 축 — 큰 그림 사이사이로 이어진다 */}
+            <line className="line axis" x1={AX} y1={0} x2={AX} y2={57} />
+            <line className="line axis" x1={AX} y1={87} x2={AX} y2={94} />
+            <line className="line axis" x1={AX} y1={142} x2={AX} y2={148} />
+            <line className="line axis" x1={AX} y1={364} x2={AX} y2={954} />
+            <circle className="fill" cx={AX} cy={57} r={1.6} />
+
+            {/* 곁줄 — 축 옆으로 나란히 내려오는 가는 선 둘(끝에 점) */}
+            <line className="hair" x1={AX + 15} y1={14} x2={AX + 15} y2={96} />
+            <circle className="fill" cx={AX + 15} cy={14} r={1.8} />
+            <line className="hair" x1={AX - 13} y1={152} x2={AX - 13} y2={214} />
+            <circle className="fill" cx={AX - 13} cy={214} r={1.6} />
+            <line className="hair" x1={AX + 14} y1={300} x2={AX + 14} y2={392} />
+            <circle className="fill" cx={AX + 14} cy={392} r={1.6} />
+
+            {/* 고리 하나 */}
+            <g className="orb o1"><Orbit cx={AX} cy={72} r={14} at={60} size={1.7} spin /></g>
+
+            {/* 해와 달 — 점선 테, 빛살, 초승달 */}
+            <g className="sun"><SunMoon cx={AX} cy={118} r={23} /></g>
+
+            {/* 반달을 품은 궤도 — 바깥에 행성 둘 */}
+            <g className="orb o2">
+                <Orbit cx={AX} cy={182} r={27} at={40} size={3} spin />
+                <Orbit cx={AX} cy={182} r={27} at={220} size={2.4} hollow spin />
+                <MoonDisc cx={AX} cy={182} r={15} phase={0.25} />
+                <circle className="line" cx={AX - 27} cy={182} r={3.6} />
+            </g>
+
+            {/* 보름과 팔각별 — 겹고리 */}
+            <g className="orb o3">
+                <Orbit cx={AX} cy={262} r={36} at={300} size={3.4} spin />
+                <circle className="line" cx={AX} cy={262} r={29} />
+                <circle className="fill" cx={AX - 9} cy={262} r={12} />
+                <Star8 cx={AX + 17} cy={262} r={7.5} />
+                <circle className="line" cx={AX + 8} cy={262 + 29} r={3.2} />
+            </g>
+            <Star4 cx={AX - 30} cy={300} r={4.5} />
+
+            {/* 혼천의 */}
+            <g className="orb o4"><Armillary cx={AX} cy={336} r={20} axis={1.4} /></g>
+
+            {/* 내비 옆 — 축에 꿴 작은 문양들 */}
+            {beads.map((y, i) => {
+                const k = i % 4;
+                if (k === 0) return <Star4 key={y} cx={AX} cy={y} r={4.2} className="fill twinkle" />;
+                if (k === 1) return <circle key={y} className="fill" cx={AX} cy={y} r={1.8} />;
+                if (k === 2) return <circle key={y} className="line" cx={AX} cy={y} r={4.5} />;
+                return <circle key={y} className="line dash" cx={AX} cy={y} r={7} />;
+            })}
+
+            {/* 아래 — 점선 고리와 고리가 겹치고, 곁줄이 내려와 점으로 끝난다 */}
+            <circle className="line dash" cx={AX - 4} cy={828} r={16} />
+            <g className="orb o5"><Orbit cx={AX + 3} cy={846} r={12} at={150} size={1.8} spin /></g>
+            <line className="hair" x1={AX + 18} y1={790} x2={AX + 18} y2={900} />
+            <circle className="fill" cx={AX + 18} cy={900} r={1.6} />
+            <Star4 cx={AX} cy={890} r={5} className="fill twinkle" />
+            <circle className="fill" cx={AX} cy={946} r={1.6} />
+        </S.AnimatedSvg>
+    );
+};
+
+export default CelestialSidebarDesign;

@@ -1,17 +1,36 @@
 "use client";
-import { useId } from 'react';
 import * as S from './CelestialArcana.styles';
+import { Armillary, MoonDisc, Orbit, Star4, Star8, f } from '@/components/ornament/celestial/CelestialOrnaments';
 
-/** Decorative star, lunar crescent and engraved astrolabe; never intercepts input. */
+/**
+ * 혼천의 인장 — 가운데 혼천의, 둘레엔 점선 궤도와 행성, 위엔 팔각별, 아래엔 달의 위상 줄과 아르카나 번호.
+ * 비스듬한 선(엑스자·별자리 지그재그) 없이 동그라미·세로·가로선·달·별만. 입력은 받지 않는다.
+ */
 export default function CelestialArcana() {
-    const id = useId().replace(/:/g, '');
-    return <S.Seal viewBox="0 0 180 200" aria-hidden="true" focusable="false">
-        <defs><mask id={`moon-${id}`}><circle cx="90" cy="94" r="22" fill="white"/><circle cx="100" cy="87" r="21" fill="black"/></mask></defs>
-        <g className="engraving"><path d="M22 150V62Q90-8 158 62V150"/><path d="M28 147V65Q90 2 152 65V147"/><circle cx="90" cy="94" r="60"/><circle cx="90" cy="94" r="49" strokeDasharray="1 5"/><path d="M20 94H160M90 24V164M48 52L132 136M48 136L132 52"/></g>
-        <g className="orbit">{Array.from({length:24},(_,i)=><path key={i} d="M90 30V35" transform={`rotate(${i*15} 90 94)`}/>)}</g>
-        <circle className="moon" cx="90" cy="94" r="22" mask={`url(#moon-${id})`}/>
-        <path className="star" d="M90 12L93 23L104 26L93 29L90 40L87 29L76 26L87 23Z"/>
-        <g className="constellation"><path d="M42 164L61 175L90 164L119 175L138 164"/>{[42,61,90,119,138].map((x,i)=><circle key={x} cx={x} cy={i%2?175:164} r="2"/>)}</g>
-        <text x="90" y="194" textAnchor="middle">XVII · XVIII · XIX</text>
+    return <S.Seal viewBox="0 0 180 204" aria-hidden="true" focusable="false">
+        <g className="engraving">
+            <circle className="line dash" cx="90" cy="92" r="64" />
+            <circle className="hair" cx="90" cy="92" r="58" />
+            {Array.from({ length: 36 }, (_, i) => {
+                const a = (i / 36) * Math.PI * 2;
+                const r1 = 58, r2 = i % 3 === 0 ? 53 : 55.5;
+                return <line key={i} className="hair" x1={f(90 + r1 * Math.cos(a))} y1={f(92 + r1 * Math.sin(a))} x2={f(90 + r2 * Math.cos(a))} y2={f(92 + r2 * Math.sin(a))} />;
+            })}
+        </g>
+        <g className="orbits">
+            <Orbit cx={90} cy={92} r={64} at={50} size={3} spin />
+            <Orbit cx={90} cy={92} r={58} at={230} size={2.2} hollow spin />
+        </g>
+        <Armillary cx={90} cy={92} r={34} axis={1.25} />
+        <Star8 cx={90} cy={14} r={9} />
+        <Star4 cx={24} cy={30} r={4.5} className="fill twinkle" />
+        <Star4 cx={156} cy={30} r={4.5} className="fill twinkle" />
+        <g className="phases">
+            <line className="hair" x1="26" y1="170" x2="154" y2="170" />
+            <circle className="fill" cx="26" cy="170" r="1.6" />
+            <circle className="fill" cx="154" cy="170" r="1.6" />
+            {[0.125, 0.25, 0.5, 0.75, 0.875].map((ph, i) => <MoonDisc key={ph} cx={50 + i * 20} cy={170} r={4.6} phase={ph} />)}
+        </g>
+        <text x="90" y="198" textAnchor="middle">XVII · XVIII · XIX</text>
     </S.Seal>;
 }

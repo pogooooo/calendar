@@ -1,24 +1,36 @@
 import styled, { keyframes } from 'styled-components';
-import { withAlpha } from '@/styles/color';
+import { ornamentStrokes } from '@/components/ornament/celestial/CelestialOrnaments.styles';
+import { star4Mark } from '@/styles/celestial/ornaments';
 
-const turn = keyframes`to { transform:rotate(360deg); }`;
 const glimmer = keyframes`0%,100% { opacity:.16; transform:scale(.65); } 50% { opacity:.55; transform:scale(1.15); }`;
-const lunar = keyframes`0%,100% { opacity:.24; transform:translateY(0); } 50% { opacity:.48; transform:translateY(-3px); }`;
-const shooting = keyframes`0%,82% { opacity:0; transform:translate3d(0,0,0) rotate(-30deg) scaleX(.3); } 85% { opacity:.5; } 91%,100% { opacity:0; transform:translate3d(-230px,130px,0) rotate(-30deg) scaleX(1); }`;
 
+/**
+ * Celestial 의 바탕 모양 — 고정된 한 겹(z-index 0, 누르는 것은 받지 않는다). 글 뒤라 옅게:
+ * 오른쪽 위 천체 궤도 .14, 아래 해와 달 .06, 가장자리 금선과 문양 .3, 반짝이 .16~.55.
+ * 폰에서는 궤도를 줄이고 가장자리 금선을 걷는다(내용이 화면 끝까지 온다).
+ */
 export const Sky = styled.div`
     position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden;
     color:${p=>p.theme.colors.primary};
-    .chart { position:absolute; right:-100px; top:5%; width:390px; height:390px; stroke:currentColor; stroke-width:.6; opacity:.13; }
-    .wheel { transform-origin:160px 160px; animation:${turn} 160s linear infinite; }
-    .constellation { opacity:.7; } .constellation circle,.moon { fill:currentColor; }
-    .moon { transform-origin:center; animation:${lunar} 9s ease-in-out infinite; }
+
+    svg { ${ornamentStrokes} position:absolute; overflow:visible; }
+    .orrery { right:-300px; top:-300px; width:640px; height:640px; opacity:.14; }
+    .orrery .o1 { --orbit: 240s; } .orrery .o2 { --orbit: 160s; }
+    .halo { left:34%; bottom:-170px; width:320px; height:320px; opacity:.06; }
+
+    .rail { position:absolute; right:22px; top:0; bottom:0; width:1px; background:currentColor; opacity:.22; }
+    .bead { right:3px; width:40px; height:40px; margin-top:-20px; opacity:.4; }
+    .bead.dot { opacity:.5; }
+
     .glint { position:absolute; width:3px; height:3px; border-radius:50%; background:currentColor; opacity:.16; animation:${glimmer} 7s ease-in-out infinite; }
-    .glint:nth-of-type(4n) { border-radius:0; width:5px; height:5px; clip-path:polygon(50% 0,60% 40%,100% 50%,60% 60%,50% 100%,40% 60%,0 50%,40% 40%); }
-    .comet { position:absolute; right:6%; top:7%; width:100px; height:1px; background:linear-gradient(90deg,transparent,${p=>withAlpha(p.theme.colors.primary,.7)}); opacity:0; animation:${shooting} 27s linear infinite; }
-    .comet-1 { right:34%; top:2%; animation-delay:-14s; animation-duration:39s; }
-    html[data-theme-motion="gentle"] & { .comet { display:none; } .wheel { animation-duration:240s; } }
-    @media(max-width:768px) { .chart { width:220px; height:220px; right:-100px; opacity:.09; } .comet,.glint:nth-of-type(n+11) { display:none; } }
+    .glint.star { ${star4Mark('7px')} }
+
+    html[data-theme-motion="gentle"] & .glint { animation-duration:14s; }
+    @media(max-width:768px) {
+        .orrery { width:380px; height:380px; right:-200px; top:-190px; opacity:.1; }
+        .halo, .rail, .bead { display:none; }
+        .glint:nth-of-type(n+12) { display:none; }
+    }
     @media(max-width:500px) and (max-height:350px) { display:none; }
-    @media(prefers-reduced-motion:reduce) { .comet { display:none; } * { animation:none; } }
+    @media(prefers-reduced-motion:reduce) { * { animation:none; } }
 `;
