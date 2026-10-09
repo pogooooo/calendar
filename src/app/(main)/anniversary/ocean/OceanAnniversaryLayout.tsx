@@ -5,6 +5,7 @@ import { Plus, Trash2, X } from "lucide-react";
 import { useT } from "@/i18n/useT";
 import AnniversaryIcon from "@/assets/AnniversaryIcon";
 import EmptyArt from "@/components/empty/EmptyArt";
+import { useLeaveMotion, useListMotion, useSwapMotion } from "@/hooks/useMotion";
 import type { AnniversaryLayoutProps } from "../AnniversaryLayout.types";
 import * as O from "./OceanAnniversary.styles";
 
@@ -27,6 +28,10 @@ export default function OceanAnniversaryLayout({ items, onDelete, onSubmit, fiel
     const tp = t.anniversaryPage;
     const [open, setOpen] = React.useState(false);
     const composerRef = React.useRef<HTMLFormElement>(null);
+    // 접을 때는 서식이 위로 걷히며 나간 뒤에 닫는다 (열 때는 서식의 drop 몸짓)
+    const leave = useLeaveMotion();
+    const closeRef = React.useRef(() => {});
+    closeRef.current = () => leave(composerRef.current, () => setOpen(false));
 
     /* 서식을 열면 이름 칸에 바로 적게 하고, Esc 로 접는다 (고르개 목록·창이 떠 있으면 그쪽이 먼저) */
     React.useEffect(() => {
@@ -34,13 +39,20 @@ export default function OceanAnniversaryLayout({ items, onDelete, onSubmit, fiel
         composerRef.current?.querySelector<HTMLInputElement>("input")?.focus();
         const onKey = (e: KeyboardEvent) => {
             if (e.key !== "Escape" || document.querySelector('[role="dialog"], [role="alertdialog"]')) return;
-            setOpen(false);
+            closeRef.current();
         };
         window.addEventListener("keydown", onKey);
         return () => window.removeEventListener("keydown", onKey);
     }, [open]);
 
     const [first, ...rest] = items;
+
+    /* 맨 앞 날이 바뀌면(지움·더 가까운 날을 넣음) 큰 판이 물때 줄 쪽에서 떠오르듯 갈린다. 물때 줄에서 지운 정거장은 제자리에서 흐려지며 빠진다
+       (새 정거장은 제 arrive 몸짓이 있다) */
+    const heroRef = React.useRef<HTMLElement>(null);
+    const stopsRef = React.useRef<HTMLOListElement>(null);
+    useSwapMotion(first?.anniversary.id ?? null, heroRef, { dir: 1, axis: "y" });
+    useListMotion(stopsRef, { enter: false, exit: "auto" });
 
     /* 물때 줄이 넘치면 마우스 바퀴(세로)로도 옆으로 민다 — 끝에 닿으면 손을 떼고 화면이 굴러가게 둔다.
        폰에서는 줄이 세로로 서서 넘치지 않으니 아무 일도 하지 않는다 */
@@ -62,7 +74,7 @@ export default function OceanAnniversaryLayout({ items, onDelete, onSubmit, fiel
     }, [hasTide]);
 
     const compose = (
-        <O.Compose type="button" $open={open} aria-expanded={open} onClick={() => setOpen((v) => !v)}>
+        <O.Compose type="button" $open={open} aria-expanded={open} onClick={() => (open ? closeRef.current() : setOpen(true))}>
             <Plus />{t.home.addAnniversary}
         </O.Compose>
     );
@@ -81,7 +93,7 @@ export default function OceanAnniversaryLayout({ items, onDelete, onSubmit, fiel
                 <O.Composer ref={composerRef} onSubmit={onSubmit}>
                     <div className="head">
                         <span className="cap">{tp.formCaption}</span>
-                        <O.Close type="button" onClick={() => setOpen(false)} aria-label={t.widget.close} title={t.widget.close}>
+                        <O.Close type="button" onClick={() => closeRef.current()} aria-label={t.widget.close} title={t.widget.close}>
                             <X />
                         </O.Close>
                     </div>
@@ -97,7 +109,7 @@ export default function OceanAnniversaryLayout({ items, onDelete, onSubmit, fiel
                 </O.Nothing>
             ) : (
                 <>
-                    <O.Hero $today={first.isToday} data-fx-anchor={first.isToday ? "anniversary-today" : undefined}>
+                    <O.Hero ref={heroRef} $today={first.isToday} data-fx-anchor={first.isToday ? "anniversary-today" : undefined}>
                         <div className="lead">
                             <span className="eyebrow" aria-hidden="true">
                                 {first.isToday ? "Today" : "Next"} · {LATIN_LONG.format(first.date)}
@@ -122,7 +134,7 @@ export default function OceanAnniversaryLayout({ items, onDelete, onSubmit, fiel
                         <O.Tide>
                             <O.TideHead aria-hidden="true">Upcoming<b>{rest.length}</b></O.TideHead>
                             <O.Track ref={trackRef}>
-                                <O.Stops>
+                                <O.Stops ref={stopsRef}>
                                     {rest.map((it, i) => {
                                         const a = it.anniversary;
                                         const before = i === 0 ? 0 : spacing(it.diff - rest[i - 1].diff);

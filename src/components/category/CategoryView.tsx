@@ -19,6 +19,10 @@ import * as MapleS from "./maple/MapleCategory.styles";
 import * as OceanS from './ocean/OceanCategory.styles';
 import CelestialCategoryLayout from "./celestial/CelestialCategoryLayout";
 import OceanCategoryLayout from "./ocean/OceanCategoryLayout";
+import { useListMotion, useSwapMotion } from "@/hooks/useMotion";
+
+/** 탭의 차례 — 할 일 목록(뒤 탭)으로 가면 오른쪽에서 들어온다 */
+const TAB_ORDER = ["info", "todos"] as const;
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
 const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
@@ -69,6 +73,18 @@ export default function CategoryView(props: CategoryThemeProps) {
     const isCreator = !!selectedCategory && selectedCategory.creatorId === me;
 
     const selectedIdx = categories.findIndex((c) => c.id === selectedCategoryId);
+
+    /* 움직임 — 할 일 목록에 든 줄은 들어오고 지운 줄은 빠지며 끝낸 줄은 한 번(다른 카테고리로 갈아 끼운 때는 빼고).
+       Celestial·Maple 의 배치(CelestialCategoryLayout — 갈래 폴더라 ref 를 달 수 없다)는 모양 이름(S.X 의 고유 클래스)으로 찾는다:
+       다른 카테고리를 고르면 내용이 덱의 차례 쪽(아래 카드면 아래)에서, 탭을 바꾸면 그 탭 쪽에서 들어온다.
+       카테고리를 바꾸며 탭이 '상세 정보' 로 돌아가는 때는 탭 몸짓을 겹쳐 하지 않는다. 바다는 제 배치가 따로 한다 */
+    const todoGridRef = React.useRef<HTMLDivElement>(null);
+    useListMotion(todoGridRef, { reset: selectedCategoryId, exit: "auto" });
+    const tabCategory = React.useRef(selectedCategoryId);
+    const sameCategory = tabCategory.current === selectedCategoryId;
+    React.useEffect(() => { tabCategory.current = selectedCategoryId; });
+    useSwapMotion(selectedCategoryId, () => document.querySelector(`${S.DetailInfo}`), { order: categories.map((c) => c.id), axis: "y" });
+    useSwapMotion(activeTab, () => document.querySelector(`${S.InfoContainer}, ${S.TodoListContainer}`), { order: TAB_ORDER, disabled: !sameCategory });
     const memberCount = selectedCategory?.participants?.length ?? 0;
 
     /* ── 고른 카테고리의 조각들 — 놓는 자리는 갈래의 배치가 정한다 ── */
@@ -196,7 +212,7 @@ export default function CategoryView(props: CategoryThemeProps) {
                 </S.SectionCap>
 
                 {categoryTodos.length > 0 ? (
-                    <S.TodoGrid>
+                    <S.TodoGrid ref={todoGridRef}>
                         {categoryTodos.map(todo => {
                             // 완료는 그 일정이 놓인 회차의 첫날에 적는다(여러 날 일정은 한 번, src/lib/todoDone.ts). 날짜 없는 일정은 오늘에.
                             // 반복 일정은 오늘 걸린 회차를 — 예전엔 늘 첫 회차로 체크해, 오늘 끝내도 이 화면엔 안 끝난 것으로 남았다
@@ -207,9 +223,10 @@ export default function CategoryView(props: CategoryThemeProps) {
                                 : (todo.completions ?? []).some(c => utcDayKey(c.targetDate) === todayKey);
                             const [y, m, d] = occKey.split("-").map(Number);
                             return (
-                            <S.TodoCard key={todo.id} $isDone={isDone} onClick={() => handleEditTodo(todo)}>
+                            <S.TodoCard key={todo.id} $isDone={isDone} data-done={isDone ? "" : undefined} onClick={() => handleEditTodo(todo)}>
                                 <button
                                     className="check-btn"
+                                    data-motion-mark=""
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         // 날짜 키 그대로 넘긴다 — UTC 0시로 바꿔 넘기면 서쪽 시간대에서 전날에 적혔다

@@ -18,6 +18,7 @@ import type { AnniversaryItem } from "./AnniversaryLayout.types";
 import useAnniversaryFx from "@/components/fx/useAnniversaryFx";
 import { nextAnniversary } from "@/lib/anniversary";
 import { useCurrentDayKey } from "@/hooks/useCurrentDay";
+import { useListMotion } from "@/hooks/useMotion";
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
 const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
@@ -76,6 +77,9 @@ export default function AnniversaryPage() {
         .sort((x, y) => x.diff - y.diff);
     // 오늘이 기념일이면 하루 한 번 갈래가 축하한다 (그 카드 자리에서)
     useAnniversaryFx(items.filter(i => i.isToday).map(i => i.anniversary.id));
+    // 새로 넣은 카드는 들어오고 지운 카드는 제자리에서 빠진다 — Celestial·Maple 의 카드 격자(배치는 갈래 폴더라 모양 이름으로 찾는다).
+    // 바다는 제 배치(OceanAnniversaryLayout)가 따로 한다 — 그 화면엔 이 이름이 없어 여기서는 아무 일도 없다
+    useListMotion(() => document.querySelector(`${S.CardGrid}`), { exit: "auto" });
 
     /* 서식의 칸들 — 감싸는 서식(판·제목)은 갈래의 배치가 그린다 */
     const fields = (

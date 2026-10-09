@@ -7,6 +7,7 @@ import { ProjectTaskType } from '@/store/useProjectStore';
 import useIsMobile from "@/hooks/useIsMobile";
 import useSwipe from "@/hooks/useSwipe";
 import { localDateKey } from "@/lib/dateKey";
+import { useListMotion, useSwapMotion } from "@/hooks/useMotion";
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialProjectBoard.styles";
 import * as MapleS from "./maple/MapleProjectBoard.styles";
@@ -14,6 +15,20 @@ import * as OceanS from './ocean/OceanProjectBoard.styles';
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
 const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
+
+/** 칸의 차례 — 끝 쪽 칸으로 가면 오른쪽에서 들어온다 */
+const COLUMN_ORDER = ["todo", "in_progress", "done"];
+
+/**
+ * 한 칸의 카드 목록 — 새로 들거나 옆 칸에서 옮겨 온 카드는 들어오고, 옮겨 간·지운 카드는 접히며 빠진다.
+ * 다른 프로젝트로 갈면(reset) 목록이 통째로 갈린 것이라 카드마다 움직이지 않는다 — 판이 통째로 들어온다(project/page)
+ */
+function CardColumnList({ reset, children }: { reset: unknown; children: React.ReactNode }) {
+    const S = usePickTheme(STYLES);
+    const ref = React.useRef<HTMLDivElement>(null);
+    useListMotion(ref, { reset, exit: "collapse" });
+    return <S.CardList ref={ref}>{children}</S.CardList>;
+}
 
 const ProjectBoardView = React.forwardRef<HTMLDivElement, ProjectBoardProps>(({
                                                                                        tasks,
@@ -47,6 +62,9 @@ const ProjectBoardView = React.forwardRef<HTMLDivElement, ProjectBoardProps>(({
         if (next) setPicked(next.s);
     };
     const swipe = useSwipe(() => step(1), () => step(-1));
+    // 폰에서 칸을 바꾸면(이름표·쓸기) 새 칸이 그 차례 쪽(오른쪽 칸이면 오른쪽)에서 들어온다
+    const gridRef = React.useRef<HTMLDivElement>(null);
+    useSwapMotion(picked, () => Array.from(gridRef.current?.children ?? []), { order: COLUMN_ORDER });
 
     return (
         <S.SectionWrapper ref={ref} style={{ flex }} $mobileHeight="420px">
@@ -69,7 +87,7 @@ const ProjectBoardView = React.forwardRef<HTMLDivElement, ProjectBoardProps>(({
                 </S.ColumnPicker>
             )}
 
-            <S.BoardGrid {...(isMobile ? swipe : {})}>
+            <S.BoardGrid ref={gridRef} {...(isMobile ? swipe : {})}>
                 {shown.map(col => (
                     <S.BoardColumn key={col.s}>
                         <S.ColumnHeader>
@@ -82,7 +100,7 @@ const ProjectBoardView = React.forwardRef<HTMLDivElement, ProjectBoardProps>(({
                                 </S.AddTaskButton>
                             )}
                         </S.ColumnHeader>
-                        <S.CardList>
+                        <CardColumnList reset={tasks[0]?.projectId}>
                             {col.d.length === 0 && <S.ColumnEmpty>{tr.noTasks}</S.ColumnEmpty>}
                             {col.d.map(task => (
                                 <TaskCard
@@ -97,7 +115,7 @@ const ProjectBoardView = React.forwardRef<HTMLDivElement, ProjectBoardProps>(({
                                     nextLabel={col.nextLabel}
                                 />
                             ))}
-                        </S.CardList>
+                        </CardColumnList>
                     </S.BoardColumn>
                 ))}
             </S.BoardGrid>

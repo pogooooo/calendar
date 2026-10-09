@@ -18,6 +18,9 @@ import * as OceanS from './ocean/OceanSettings.styles';
 import * as OceanLS from './ocean/OceanSettings.layout';
 import useSettingStore from '@/store/useSettingStore';
 import ThemeShop from '@/components/billing/ThemeShop';
+import useIsMobile from '@/hooks/useIsMobile';
+import { useSwapMotion } from '@/hooks/useMotion';
+import type { Axis } from '@/styles/motion';
 import { Armillary, MoonDisc, Orbit, Star4, Star8, SunMoon } from '@/components/ornament/celestial/CelestialOrnaments';
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
@@ -95,6 +98,13 @@ export default function SettingsView({
 
     const active = TABS.find((x) => x.id === tab) ?? TABS[0];
     const activeIndex = TABS.findIndex((x) => x.id === tab);
+
+    /* 판을 갈아 끼우면 새 판이 고른 탭 쪽에서 들어온다 — 아래(뒤) 탭이면 아래·오른쪽에서. 세로 목록(데스크톱 성좌)은 위아래로,
+       가로 탭(폰·바다의 분절 단추)은 옆으로. 갈래가 배치 모듈에 PANE_AXIS 를 적으면 그것을 쓴다 */
+    const isMobile = useIsMobile();
+    const paneBodyRef = React.useRef<HTMLDivElement>(null);
+    const paneAxis: Axis = isMobile ? "x" : ((L as { PANE_AXIS?: Axis }).PANE_AXIS ?? "y");
+    useSwapMotion(tab, paneBodyRef, { order: TABS.map((x) => x.id), axis: paneAxis });
 
     // 위젯은 kind 마다 group 이 붙어 있다. 평평하게 늘어놓으면 그 정보가 버려진다.
     const widgetGroups = React.useMemo(() => {
@@ -189,7 +199,7 @@ export default function SettingsView({
                         {active.note && <L.PaneNote>{active.note}</L.PaneNote>}
                     </L.PaneHeader>
 
-                    <L.PaneBody key={tab}>
+                    <L.PaneBody key={tab} ref={paneBodyRef}>
                         {/* ── 모양 ──────────────────────────────────────────── */}
                         {tab === "look" && (
                             <>

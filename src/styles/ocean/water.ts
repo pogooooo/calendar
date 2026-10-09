@@ -13,6 +13,7 @@
  */
 import { css, keyframes, type DefaultTheme } from "styled-components";
 import { withAlpha } from "@/styles/color";
+import { EASE_IN, gentleSwap, widgetSwap, type Ease, type MotionSet } from "@/styles/motion";
 import { causticNet } from "./shoreArt";
 
 const dark = (t: DefaultTheme) => t.mode === "dark";
@@ -56,6 +57,54 @@ export const calm = css`
     html[data-theme-motion="off"] &, [data-widget] & { animation: none !important; }
     @media (prefers-reduced-motion: reduce) { animation: none !important; }
 `;
+
+/** EASE 와 같은 결 — 움직임의 꼴(MotionSet)이 읽는 네 수 */
+const SEA: Ease = [0.22, 1, 0.36, 1];
+
+/**
+ * 바다의 몸짓 (src/styles/motion.ts 의 MotionSet) — 물속에서 떠오르듯, 흐림이 걷히며 오는 쪽에서 미끄러져 들어온다.
+ *   날짜·판이 바뀜: 다음이면 오른쪽(아래)에서, 이전이면 왼쪽(위)에서. 화면 한 판(월간)은 크게, 판 안의 내용은 짧게.
+ *   목록에 든 줄: 위에서 살짝 내려앉으며 맑아진다 · 빠지는 줄: 옆으로 흘러가며 흐려진다.
+ *   끝냄: 체크칸이 톡 부풀며 둘레로 물결 고리가 번지고, 줄에 청록 빛이 한 번 고였다 빠진다.
+ * 흐림은 유리(backdrop-filter)를 품지 않은 상자에만 건다 — 흐림·투명도가 걸린 상자 안의 유리는 뒤를 못 본다.
+ */
+export const tideMotion: MotionSet = {
+    swapIn: (a) => {
+        if (a.widget) return widgetSwap(a);
+        if (a.level === "gentle") return gentleSwap(a);
+        if (a.size === "line") return { pose: { opacity: 0, [a.axis]: a.dir * 12, blur: 3 }, duration: 360, ease: SEA };
+        if (a.size === "page") return { pose: { opacity: 0, [a.axis]: a.dir * 64, scale: 0.975, blur: 10 }, duration: 560, ease: SEA };
+        return { pose: { opacity: 0, [a.axis]: a.dir * 30, blur: 6 }, duration: 460, ease: SEA };
+    },
+    swapOut: (a) => {
+        if (a.widget || a.level === "gentle") return { pose: { opacity: 0 }, duration: 140, ease: EASE_IN };
+        if (a.size === "page") return { pose: { opacity: 0, [a.axis]: -a.dir * 40, scale: 0.985, blur: 8 }, duration: 300, ease: EASE_IN };
+        return { pose: { opacity: 0, [a.axis]: -a.dir * 16, blur: 4 }, duration: 220, ease: EASE_IN };
+    },
+    itemIn: (level) => level === "gentle"
+        ? { pose: { opacity: 0 }, duration: 200, ease: SEA }
+        : { pose: { opacity: 0, y: -8, scale: 0.97, blur: 4 }, duration: 420, ease: SEA },
+    itemOut: (level) => level === "gentle"
+        ? { pose: { opacity: 0 }, duration: 160, ease: EASE_IN }
+        : { pose: { opacity: 0, x: 18, blur: 3 }, duration: 260, ease: EASE_IN },
+    done: (level, t) => level === "gentle" ? null : {
+        mark: [
+            { transform: "scale(0.55)", boxShadow: `0 0 0 0 ${withAlpha(t.colors.primary, 0.5)}` },
+            { transform: "scale(1.16)", offset: 0.42 },
+            { transform: "none", boxShadow: `0 0 0 12px ${withAlpha(t.colors.primary, 0)}` },
+        ],
+        row: [
+            { boxShadow: `inset 0 0 0 100vmax ${withAlpha(t.colors.primary, dark(t) ? 0.16 : 0.1)}` },
+            { boxShadow: `inset 0 0 0 100vmax ${withAlpha(t.colors.primary, 0)}` },
+        ],
+        duration: 620,
+        ease: SEA,
+    },
+    // 확인 창은 물속으로 가라앉듯 — 조금 작아지며 흐려진다
+    dialogOut: (level) => level === "gentle"
+        ? { pose: { opacity: 0 }, duration: 140, ease: EASE_IN }
+        : { pose: { opacity: 0, scale: 0.95, y: 8, blur: 6 }, duration: 220, ease: EASE_IN },
+};
 
 /* ── 색 도구 ────────────────────────────────────────────────────────── */
 /** 글자색에 투명도를 입힌 것 — 선·옅은 칠에 */

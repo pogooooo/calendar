@@ -35,6 +35,7 @@ import { useCurrentDayKey } from "@/hooks/useCurrentDay";
 import * as OceanS from './ocean/OceanHome.styles';
 import OceanHomeLayout from './ocean/OceanHomeLayout';
 import useAnniversaryFx from "@/components/fx/useAnniversaryFx";
+import { useListMotion, useSwapMotion } from "@/hooks/useMotion";
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
 const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
@@ -116,6 +117,18 @@ export default function HomeView() {
     const focusKey = labelKey(focus);
     // 날짜 키와 같은 시간대(설정)로 읽는다
     const clock = React.useMemo(() => new Intl.DateTimeFormat("en-GB", { timeZone: activeTimeZone(), hour: "2-digit", minute: "2-digit", hourCycle: "h23" }), []);
+
+    /* 보는 날을 옮기면(화살표·←→·T·날짜 고르개·쓸기) 그날 목록과 다가오는 목록이 오는 쪽에서 들어온다 — 다음 날이면 오른쪽에서.
+       빠른 추가 칸은 움직이지 않는다(치던 글·초점이 그대로). 목록에 넣은 줄은 들어오고, 지운 줄은 접히고, 끝낸 줄은 한 번 — 날을 옮긴 때는 빼고 */
+    const todayHeadRef = React.useRef<HTMLDivElement>(null);
+    const todayListRef = React.useRef<HTMLDivElement>(null);
+    const upcomingListRef = React.useRef<HTMLDivElement>(null);
+    useSwapMotion(focusKey, todayHeadRef, { size: "line" });
+    useSwapMotion(focusKey, () => [todayListRef.current, upcomingListRef.current]);
+    useListMotion(todayListRef, { reset: focusKey, exit: "collapse" });
+    useListMotion(upcomingListRef, { reset: focusKey, exit: "collapse" });
+    // 챌린지 줄의 이레 칸을 채우면 그 칸이 끝냄 몸짓을 한 번 (줄들은 갈래의 칸 안에 놓이므로 줄의 부모를 찾는다)
+    useListMotion(() => document.querySelector(`${S.ChallengeRow}`)?.parentElement, { items: `${S.Slot}`, enter: false });
 
     const spansDay = React.useCallback(
         (t2: { startAt?: string | number | Date | null; endAt?: string | number | Date | null }, key: string) => {
@@ -361,7 +374,7 @@ export default function HomeView() {
                         </S.TodayButton>
                     </S.DayNav>),
         today: (<S.ListCol>
-                            <S.SectionHead>
+                            <S.SectionHead ref={todayHeadRef}>
                                 <i className="hd" />
                                 {isToday ? t.home.today : t.calendar.dayLabelShort(month + 1, focus.getDate())}
                                 <span className="hr" />
@@ -388,7 +401,7 @@ export default function HomeView() {
                             </S.QuickForm>
                             {quickError && <S.QuickError role="alert">{quickError}</S.QuickError>}
 
-                            <S.Scroll>
+                            <S.Scroll ref={todayListRef}>
                                 {dayTodos.length === 0 ? (
                                     <S.Empty><EmptyArt kind="todos" />{isToday ? t.home.noTodayTodos : t.home.noDayTodos}</S.Empty>
                                 ) : (
@@ -397,8 +410,8 @@ export default function HomeView() {
                                         // 그날 시작하는 시각 일정만 (하루 종일·전날부터 이어진 것은 비운다)
                                         const at = !todo.isAllDay && todo.startAt && localDateKey(todo.startAt) === focusKey ? clock.format(new Date(todo.startAt)) : null;
                                         return (
-                                            <S.Row key={todo.id} type="button" aria-pressed={done} $done={done} onClick={() => handleToggleTodo(todo)}>
-                                                <S.Mark $on={done} />
+                                            <S.Row key={todo.id} type="button" aria-pressed={done} data-done={done ? "" : undefined} $done={done} onClick={() => handleToggleTodo(todo)}>
+                                                <S.Mark $on={done} data-motion-mark="" />
                                                 <span className="name">{todo.title}</span>
                                                 {at && <em>{at}</em>}
                                             </S.Row>
@@ -414,7 +427,7 @@ export default function HomeView() {
                                 <span className="hr" />
                                 <b>{upcomingTodos.length}</b>
                             </S.SectionHead>
-                            <S.Scroll>
+                            <S.Scroll ref={upcomingListRef}>
                                 {upcomingTodos.length === 0 ? (
                                     <S.Empty>{t.home.noUpcoming}</S.Empty>
                                 ) : (
@@ -490,6 +503,8 @@ export default function HomeView() {
                                             <S.Slot
                                                 key={i}
                                                 type="button"
+                                                data-motion-mark=""
+                                                data-done={s.done ? "" : undefined}
                                                 $on={s.done}
                                                 $today={s.isToday}
                                                 aria-label={`${c.title} ${s.key}`}

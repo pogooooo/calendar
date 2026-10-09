@@ -45,5 +45,12 @@ export const Dial = styled.div`
     .nray { stroke: ${(p) => p.theme.colors.primary}; stroke-width: 7; stroke-linecap: round; }
     .nshadow { stroke: ${withAlpha("#000000", 0.18)}; stroke-width: 9; stroke-linecap: round; }
     .pivot { fill: ${(p) => p.theme.colors.primary}; stroke: ${(p) => p.theme.colors.background}; stroke-width: 4; }
+    /* 바늘 — 축(512, 452)을 중심으로 돈다. 날을 옮기면 놋쇠 바늘처럼 살짝 넘쳤다가 그 날에 선다 */
+    .needle {
+        transform-box: view-box;
+        transform-origin: 512px 452px;
+        transition: transform 0.7s cubic-bezier(0.34, 1.32, 0.5, 1);
+        html[data-theme-motion="gentle"] & { transition-duration: 0.3s; transition-timing-function: ease-out; }
+    }
     .ncap { fill: ${(p) => p.theme.colors.primary}; }
 `;

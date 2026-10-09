@@ -11,7 +11,8 @@ import RulerScroll from "@/components/scroll/RulerScroll";
 import TodoContextMenu from "@/components/calendar/parts/contextMenu/TodoContextMenu";
 import TodoModal from "@/components/modal/todoModal/TodoModal";
 import { useT } from "@/i18n/useT";
-import { wallTime } from "@/lib/dateKey";
+import { labelKey, wallTime } from "@/lib/dateKey";
+import { useListMotion, useSwapMotion } from "@/hooks/useMotion";
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialDayCalendar.styles";
 import * as MapleS from "./maple/MapleDayCalendar.styles";
@@ -83,6 +84,21 @@ const DayCalendarView = React.forwardRef<HTMLDivElement, CelestialDayProps>(
 
         const contentRef = React.useRef<HTMLDivElement>(null);
         const sideRef = React.useRef<HTMLDivElement>(null);
+
+        /* 날을 옮기면(달력 칸·쓸기·주간 띠) 그날 내용이 오는 쪽에서 들어온다 — 다음 날이면 오른쪽에서.
+           요소는 그대로라 적던 메모·임시 작업 칸·접어 둔 칸·시간표 스크롤이 남는다.
+           목록에 든 줄은 들어오고 빠진 줄은 접히며, 끝낸 줄은 한 번 — 날을 옮긴 때는 통째로 갈린 것이라 빼고 */
+        const dayKey = labelKey(selectedDate);
+        const titleRef = React.useRef<HTMLSpanElement>(null);
+        const todoListRef = React.useRef<HTMLDivElement>(null);
+        const taskListRef = React.useRef<HTMLDivElement>(null);
+        const challengeListRef = React.useRef<HTMLDivElement>(null);
+        useSwapMotion(dayKey, titleRef, { size: "line" });
+        useSwapMotion(dayKey, contentRef);
+        useListMotion(todoListRef, { reset: dayKey, exit: "collapse" });
+        useListMotion(taskListRef, { reset: dayKey, exit: "collapse" });
+        useListMotion(challengeListRef, { reset: dayKey });
+
         const mainSplitRef = React.useRef(mainSplit);
         const sideSplitRef = React.useRef(sideSplit);
         mainSplitRef.current = mainSplit;
@@ -135,7 +151,7 @@ const DayCalendarView = React.forwardRef<HTMLDivElement, CelestialDayProps>(
         return (
             <S.CelestialCalendarWrapper as={Component} ref={ref} {...props}>
                 <S.DateHeader>
-                    <span>{formattedDate}</span>
+                    <span ref={titleRef}>{formattedDate}</span>
                     <CategoryFilter
                         categories={categories}
                         selectedCategoryIds={selectedCategoryIds}
@@ -157,7 +173,7 @@ const DayCalendarView = React.forwardRef<HTMLDivElement, CelestialDayProps>(
                         </S.TodoCardHead>
 
                         {dayTodos.length > 0 ? (
-                            <S.TodoList>
+                            <S.TodoList ref={todoListRef}>
                                 {dayTodos.map((todo) => {
                                     const color = categories.find(c => c.id === todo.categoryId)?.color;
                                     // 고른 시간대의 시각 — 예전엔 이 기기 시각이라 시간대가 다르면 홈·시간표와 다른 시각이 섰다
@@ -170,9 +186,10 @@ const DayCalendarView = React.forwardRef<HTMLDivElement, CelestialDayProps>(
                                             key={todo.id}
                                             type="button"
                                             $isDone={!!todo.isDone}
+                                            data-done={todo.isDone ? "" : undefined}
                                             onClick={(e) => openTodoMenu(e, todo)}
                                         >
-                                            <span className="dot" style={color ? { backgroundColor: color } : undefined} />
+                                            <span className="dot" data-motion-mark="" style={color ? { backgroundColor: color } : undefined} />
                                             <span className="title">{todo.title}</span>
                                             <span className="time">{time ?? t.todo.allDay}</span>
                                         </S.TodoRow>
@@ -287,15 +304,15 @@ const DayCalendarView = React.forwardRef<HTMLDivElement, CelestialDayProps>(
 
                             {!fold.challenge && (
                                 dayChallenges.length > 0 ? (
-                                    <S.ChallengeList>
+                                    <S.ChallengeList ref={challengeListRef}>
                                         {dayChallenges.map(item => (
-                                            <S.ChallengeItem key={item.id} $isDone={item.isDone}>
+                                            <S.ChallengeItem key={item.id} $isDone={item.isDone} data-done={item.isDone ? "" : undefined}>
                                                 <input
                                                     type="checkbox"
                                                     checked={item.isDone}
                                                     onChange={() => toggleChallenge(item)}
                                                 />
-                                                <span className="box">
+                                                <span className="box" data-motion-mark="">
                                                     {item.isDone && <Check size={12} strokeWidth={3} />}
                                                 </span>
                                                 <span className="title">{item.title}</span>
@@ -324,10 +341,10 @@ const DayCalendarView = React.forwardRef<HTMLDivElement, CelestialDayProps>(
 
                             {!fold.task && (
                                 <>
-                                    <S.TaskList>
+                                    <S.TaskList ref={taskListRef}>
                                         {tasks.map(task => (
-                                            <S.TaskItem key={task.id} $isDone={task.isDone}>
-                                                <button className="check-btn" onClick={() => toggleDailyTask(task)}>
+                                            <S.TaskItem key={task.id} $isDone={task.isDone} data-done={task.isDone ? "" : undefined}>
+                                                <button className="check-btn" data-motion-mark="" onClick={() => toggleDailyTask(task)}>
                                                     {task.isDone && <Check size={14} strokeWidth={3}/>}
                                                 </button>
                                                 <span className="task-text">{task.title}</span>

@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
-import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 
 import { MonthThemeProps, CalendarTodoType } from "./MonthCalendar";
@@ -26,6 +26,7 @@ import { addDaysToKey } from "@/lib/timezone";
 import useAnniversaryStore from "@/store/useAnniversaryStore";
 import { anniversariesOn } from "@/lib/anniversary";
 import AnniversaryCrown from "@/components/calendar/parts/anniversary/AnniversaryCrown";
+import SwapLayer from "@/components/transition/SwapLayer";
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import CelestialMonthHeader from "./celestial/CelestialMonthHeader";
 import MapleMonthHeader from "./maple/MapleMonthHeader";
@@ -286,12 +287,6 @@ const WeekRow = ({
     );
 };
 
-const slideVariants = {
-    enter: (direction: number) => ({ x: direction > 0 ? 100 : -100, opacity: 0 }),
-    center: { x: 0, opacity: 1 },
-    exit: (direction: number) => ({ x: direction < 0 ? 100 : -100, opacity: 0 }),
-};
-
 type CelestialMonthProps = MonthThemeProps & Omit<React.HTMLAttributes<HTMLDivElement>, 'contextMenu'>;
 
 const MonthCalendarView = React.forwardRef<HTMLDivElement, CelestialMonthProps>(
@@ -311,7 +306,6 @@ const MonthCalendarView = React.forwardRef<HTMLDivElement, CelestialMonthProps>(
         const S = usePickTheme(STYLES);
         const Component = asChild ? Slot : 'div';
         const t = useT();
-        const reducedMotion = useReducedMotion();
         const MonthHeader = usePickTheme(HEADERS);
         const calendarDrag = useDragTarget<{ todo: CalendarTodoType; from: string; edge?: 'start' | 'end' }>('data-calendar-date', (source, target) => {
             if (source.edge) void handleResizeTodo(source.todo, source.edge, source.from, target);
@@ -348,18 +342,12 @@ const MonthCalendarView = React.forwardRef<HTMLDivElement, CelestialMonthProps>(
 
                 <S.SliderWrapper {...swipe}>
                     <S.CalendarWindow data-fx-zone="month">
+                        {/* 달을 넘기면 옛 달은 반대쪽으로 나가고 새 달은 오는 쪽에서 들어온다 — 다음 달이면 오른쪽에서 (갈래의 몸짓, SwapLayer).
+                            바다: 물안개를 걷으며 크게 밀려 들어옴 · Maple: 다이어리 한 장이 책등을 축으로 내려앉음 · Celestial: 예전처럼 옆으로 */}
                         <AnimatePresence initial={false} custom={direction} mode="popLayout">
-                            <motion.div
+                            <SwapLayer
                                 key={currentDate.toISOString()}
-                                custom={direction}
-                                variants={reducedMotion ? { enter: { opacity: 1 }, center: { opacity: 1 }, exit: { opacity: 1 } } : slideVariants}
-                                initial="enter"
-                                animate="center"
-                                exit="exit"
-                                transition={reducedMotion ? { duration: 0 } : {
-                                    x: { type: "spring", stiffness: 300, damping: 30 },
-                                    opacity: { duration: 0.2 }
-                                }}
+                                direction={direction}
                                 style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
                             >
                                 <S.Header>
@@ -397,7 +385,7 @@ const MonthCalendarView = React.forwardRef<HTMLDivElement, CelestialMonthProps>(
                                         />
                                     ))}
                                 </S.GridContainer>
-                            </motion.div>
+                            </SwapLayer>
                         </AnimatePresence>
                     </S.CalendarWindow>
                 </S.SliderWrapper>

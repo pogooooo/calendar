@@ -4,6 +4,7 @@ import { AnimatePresence, useReducedMotion, type MotionProps } from "framer-moti
 import { ThemeProvider, DefaultTheme } from "styled-components";
 import { MOBILE_BREAKPOINT } from "@/styles/breakpoints";
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
+import useThemeMotion from "@/hooks/useThemeMotion";
 import * as CelestialS from "./celestial/CelestialBaseModal.styles";
 import * as MapleS from "./maple/MapleBaseModal.styles";
 import * as OceanS from './ocean/OceanBaseModal.styles';
@@ -15,9 +16,12 @@ type ModalMotion = Pick<MotionProps, "initial" | "animate" | "exit" | "transitio
 /**
  * 갈래가 제 몸짓을 주면 데스크톱 창(desktop)과 바탕 막(overlay)은 그것으로 움직인다. 없으면 아래의 기본 몸짓.
  * 바다는 오른쪽에서 밀려 들어오는 시트라 가운데서 커지는 기본 몸짓이 맞지 않는다 (OceanBaseModal.styles).
+ * Maple 은 종이 한 장을 내려놓듯 (MapleBaseModal.styles).
  */
-const MOTION: ThemeImpls<{ desktop?: ModalMotion; overlay?: ModalMotion } | null> = { celestial: null, maple: null, ocean: OceanS.modalMotion };
+const MOTION: ThemeImpls<{ desktop?: ModalMotion; overlay?: ModalMotion } | null> = { celestial: null, maple: MapleS.modalMotion, ocean: OceanS.modalMotion };
 const FADE: ModalMotion = { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 } };
+/** 움직임 '잔잔하게' — 미끄러지거나 커지지 않고 짧게 옅어졌다 나타나기만 (창·시트 모두) */
+const GENTLE: ModalMotion = { ...FADE, transition: { duration: 0.16 } };
 
 /**
  * 위젯 창은 배경이 비쳐 보이도록 surface를 transparent로, 글자색도 배경에 맞게 덮어쓴다.
@@ -64,6 +68,8 @@ export default function BaseModal({ isOpen, onClose, children, maxWidth = "400px
     const themedMotion = usePickTheme(MOTION);
     const containerRef = React.useRef<HTMLDivElement>(null);
     const reducedMotion = useReducedMotion();
+    // 움직임 설정 — 몸짓의 모양만 고른다(아래 효과들의 의존성에는 넣지 않는다: 초점 효과는 열릴 때만 돈다)
+    const motionLevel = useThemeMotion();
     const closeRef = React.useRef(onClose);
     closeRef.current = onClose;
     /**
@@ -85,8 +91,10 @@ export default function BaseModal({ isOpen, onClose, children, maxWidth = "400px
      * 폰에서는 아래에서 올라오는 시트다. 가운데서 커지는 몸짓은 시트와 안 맞고,
      * 어디서 왔는지도 알려 주지 않는다. 올라오고 내려가게 한다.
      */
-    const sheet = reducedMotion
+    const sheet = reducedMotion || motionLevel === "off"
         ? { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 }, transition: { duration: 0 } }
+        : motionLevel === "gentle"
+        ? GENTLE
         : isMobile
         ? {
             initial: { y: "100%", opacity: 1 },
@@ -100,7 +108,8 @@ export default function BaseModal({ isOpen, onClose, children, maxWidth = "400px
             exit: { scale: 0.95, opacity: 0, y: 15 },
             transition: { type: "spring" as const, damping: 25, stiffness: 300 },
         };
-    const veil = themedMotion?.overlay ?? FADE;
+    // 움직임을 끈 사람에게는 막도 그냥 깔리고 걷힌다
+    const veil = motionLevel === "off" ? { ...FADE, transition: { duration: 0 } } : themedMotion?.overlay ?? FADE;
 
     const keyboardBox = useKeyboardBox(isOpen && isMobile);
 

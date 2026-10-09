@@ -20,6 +20,7 @@ import CelestialProjectLayout from "./celestial/CelestialProjectLayout";
 import MapleProjectLayout from "./maple/MapleProjectLayout";
 import { dependencyIssue } from "@/lib/taskInteractions";
 import { fromLocalInput, todayKey } from "@/lib/localTime";
+import { boxesOf, useSwapMotion } from "@/hooks/useMotion";
 import * as OceanS from './ocean/OceanProjectPage.styles';
 import OceanProjectLayout from './ocean/OceanProjectLayout';
 
@@ -70,6 +71,9 @@ export default function ProjectPage() {
     }, [projects, selectedProjectId]);
 
     const selectedProject = projects.find(p => p.id === selectedProjectId);
+    // 다른 프로젝트를 고르면 보드·타임라인이 그 탭의 차례 쪽(오른쪽 탭이면 오른쪽)에서 들어온다 — 그려지는 판 하나하나를
+    // (바다의 보드는 상자를 벗고 칸 셋이 판이다 — boxesOf). 처음 고를 때는 움직이지 않는다
+    useSwapMotion(selectedProjectId, () => [...boxesOf(boardRef.current), ...boxesOf(timelineRef.current)], { order: projects.map(p => p.id) });
     const tasks = selectedProject?.tasks || [];
     const selectedCategory = categories.find(c => c.id === selectedProject?.categoryId);
     const modalCategory = categories.find(c => c.id === projectModal.data.categoryId);

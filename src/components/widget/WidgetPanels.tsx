@@ -22,6 +22,7 @@ import { weeklyTaskStats } from "@/lib/widgetStats";
 import { nextAnniversary } from "@/lib/anniversary";
 import { isOccurrenceDone, toggleOccurrence, type Occurrence } from "@/lib/todoDone";
 import { challengeExpired, completionTargetFor } from "@/lib/challengeDays";
+import { useSwapMotion } from "@/hooks/useMotion";
 import * as OceanS from './ocean/OceanWidgetPanels.styles';
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
@@ -132,6 +133,14 @@ export function TodayPanel() {
     const day = useDayShift();
     const key = day.key;
 
+    // 날을 옮기면(‹ ›) 날짜 줄 아래 목록만 오는 쪽에서 아주 짧게 한 번 — 위젯은 투명 창이라 길게·끝없이 움직이면 창 전체를 다시 칠해 깜빡인다
+    const padRef = React.useRef<HTMLDivElement>(null);
+    useSwapMotion(key, () => {
+        const kids = Array.from(padRef.current?.children ?? []);
+        const nav = kids.findIndex((el) => el.matches(`${S.DayNav}`));
+        return nav < 0 ? [] : kids.slice(nav + 1);
+    });
+
     // 보는 날부터 이레 뒤까지 — 고른 시간대의 날로 (day.date 는 칸 Date 라 이 기기 0시다. 예전엔 그걸 창·기준으로 써서
     // 시간대가 다르면 그 날 일정이 빠지거나 "다가오는 일정" 이 하루 어긋났다)
     const occurrences = expandTodos(todos, zonedTime(key), zonedTime(addDaysToKey(key, 7)));
@@ -177,7 +186,7 @@ export function TodayPanel() {
     };
 
     return (
-        <S.Pad>
+        <S.Pad ref={padRef}>
             {/* 넣는 동안 잠그지 않는다 — 잠그면 초점이 빠져, 하나 넣을 때마다 입력칸을 다시 눌러야 했다 */}
             <S.QuickRow>
                 <S.QuickInput

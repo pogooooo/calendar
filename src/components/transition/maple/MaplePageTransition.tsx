@@ -3,50 +3,44 @@
 import * as React from "react";
 import * as S from "./MaplePageTransition.styles";
 import useThemeMotion from '@/hooks/useThemeMotion';
+import type { Dir } from "@/styles/motion";
 
 let hasNavigated = false;
 
-/** 잎마다 자리·기울기·지연. 매번 같아야 화면이 바뀔 때마다 다른 자리로 튀지 않는다 */
-const LEAVES = [
-    { sprite: 1, x: 18, dx: 40, r0: -20, r1: 160, delay: 0 },
-    { sprite: 4, x: 36, dx: -30, r0: 30, r1: -120, delay: 0.06 },
-    { sprite: 6, x: 55, dx: 25, r0: -60, r1: 90, delay: 0.12 },
-    { sprite: 2, x: 70, dx: -45, r0: 10, r1: 200, delay: 0.03 },
-    { sprite: 7, x: 84, dx: 20, r0: 45, r1: -80, delay: 0.09 },
-];
+/** 종이가 끝 소식을 못 받아도(숨은 창) 이만큼 뒤에는 걷는다 */
+const SHEET_MS = 1000;
 
-export default function MaplePageTransition({ children }: { children: React.ReactNode }) {
+/**
+ * Maple 의 화면 바뀜 — 다이어리 한 장을 넘긴다. 새 화면 위의 줄 쳐진 종이가 오는 쪽(direction)의 반대편으로 걷혀 나간다 —
+ * 뒤 화면이면 왼쪽으로 넘어가 새 쪽이 오른쪽부터 드러나고, 앞 화면이면 거꾸로. 잎은 효과 무대(FxStage 의 page)가 흩날린다.
+ * 처음 연 화면과 움직임을 끈 사람에게는 움직이지 않는다. '잔잔하게'면 종이 없이 옅게 나타나기만.
+ */
+export default function MaplePageTransition({ children, direction = 1 }: { children: React.ReactNode; direction?: Dir }) {
     const motion = useThemeMotion();
     const animate = hasNavigated && motion !== 'off';
+    const [sheet, setSheet] = React.useState(animate && motion === 'full');
 
     React.useEffect(() => {
         hasNavigated = true;
     }, []);
 
+    React.useEffect(() => {
+        if (!sheet) return;
+        const t = window.setTimeout(() => setSheet(false), SHEET_MS);
+        return () => window.clearTimeout(t);
+    }, [sheet]);
+
     return (
         <S.Stage>
-            {animate && (
-                <S.Overlay aria-hidden="true" data-page-transition-overlay>
-                    <S.Veil />
-                    <S.Rule />
-                    {LEAVES.map((l) => (
-                        <S.Leaf
-                            key={l.sprite}
-                            src={`/themes/maple/leaves/leaf-${l.sprite}.webp`}
-                            alt=""
-                            draggable={false}
-                            style={{
-                                left: `${l.x}%`,
-                                animationDelay: `${l.delay}s`,
-                                ["--dx" as string]: `${l.dx}px`,
-                                ["--r0" as string]: `${l.r0}deg`,
-                                ["--r1" as string]: `${l.r1}deg`,
-                            } as React.CSSProperties}
-                        />
-                    ))}
-                </S.Overlay>
+            <S.Body $gentle={animate && motion === 'gentle'}>{children}</S.Body>
+            {sheet && (
+                <S.Sheet
+                    aria-hidden="true"
+                    data-page-transition-overlay
+                    $dir={direction}
+                    onAnimationEnd={(e) => { if (e.target === e.currentTarget) setSheet(false); }}
+                />
             )}
-            <S.Body $animate={animate}>{children}</S.Body>
         </S.Stage>
     );
 }

@@ -41,14 +41,9 @@ export const SwitchButton = styled.button<{ $on: boolean }>`
     &:active { background-color: ${(props) => props.theme.colors.primary}2E; }
 `;
 
-/* 갈아 끼울 때 어느 쪽에서 왔는지 보여 준다. 월간→일간은 오른쪽에서,
-   일간→월간은 왼쪽에서 들어온다. */
-const paneIn = (from: string) => keyframes`
-    from { opacity: 0; transform: translateX(${from}); }
-    to   { opacity: 1; transform: translateX(0); }
-`;
-
-/* 달력 한 짝이 남은 높이를 다 쓴다. 스크롤은 각 달력이 알아서 한다. */
+/* 달력 한 짝이 남은 높이를 다 쓴다. 스크롤은 각 달력이 알아서 한다.
+   갈아 끼우는 몸짓(월간→일간은 오른쪽에서, 일간→월간은 왼쪽에서)은 calendar/page 가 갈래의 꼴(useSwapMotion)로 그린다 —
+   예전의 CSS 몸짓은 끝난 뒤에도 transform 을 남겨, 안의 fixed 층(거르개의 바탕 막)이 이 판에 갇혔다. $forward 는 차례만 알린다 */
 export const MobilePane = styled.div<{ $forward: boolean }>`
     flex: 1;
     min-height: 0;
@@ -56,11 +51,6 @@ export const MobilePane = styled.div<{ $forward: boolean }>`
     flex-direction: column;
 
     & > * { flex: 1; min-height: 0; }
-
-    @media (prefers-reduced-motion: no-preference) {
-        animation: ${(props) => paneIn(props.$forward ? "26px" : "-26px")}
-                   0.26s cubic-bezier(0.22, 1, 0.36, 1) both;
-    }
 `;
 
 /* 월간 격자는 제 높이(칸 폭의 1.3배 × 6)만 쓰고, 남은 자리는 아래 고른 날 목록(DayPeek)이 쓴다 */

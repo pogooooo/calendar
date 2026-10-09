@@ -9,6 +9,7 @@ import type { ChallengeType } from "@/types";
 import type { ChallengeLayoutProps } from "../ChallengeLayout.types";
 import { streakOf, weekOf } from "./challengeWeek";
 import { useCurrentDayKey } from "@/hooks/useCurrentDay";
+import { useListMotion, useSwapMotion } from "@/hooks/useMotion";
 import * as O from "./OceanChallenge.styles";
 
 /** 진행 고리 — 가는 홈 위로 청록이 찬다. ratio 가 null 이면(목표 없음) 홈만 */
@@ -78,6 +79,19 @@ export default function OceanChallengeLayout({
         const next = at >= 0 ? order[at + d] : undefined;
         if (next) select(next.id);
     }, [order, at, select]);
+
+    /* 무대에서 다른 챌린지로 넘기면(‹ ›·←→·격자의 다른 카드) 두 판이 그 차례 쪽에서 들어온다 — 뒤 카드면 오른쪽에서.
+       판 하나하나를 움직인다(감싼 상자에 투명도·흐림을 걸면 안의 유리가 뒤를 못 본다).
+       자정을 넘겨 이레 줄이 하루 밀리면 줄이 오른쪽에서 한 칸 들어온다. 지운 카드는 제자리에서 흐려지며 빠진다 */
+    const galleryRef = React.useRef<HTMLDivElement>(null);
+    const stageRef = React.useRef<HTMLDivElement>(null);
+    const ongoingRef = React.useRef<HTMLDivElement>(null);
+    const finishedRef = React.useRef<HTMLDivElement>(null);
+    const orderIds = React.useMemo(() => order.map((c) => c.id), [order]);
+    useSwapMotion(selectedId, () => Array.from(stageRef.current?.children ?? []), { order: orderIds });
+    useSwapMotion(todayKey, () => Array.from(galleryRef.current?.querySelectorAll(`${O.Week}`) ?? []), { size: "line" });
+    useListMotion(ongoingRef, { enter: false, exit: "float" });
+    useListMotion(finishedRef, { enter: false, exit: "float" });
 
     /* 펼치면 무대가 보이도록 맨 위로, 닫으면 방금 보던 카드로 돌아간다 */
     const barRef = React.useRef<HTMLElement>(null);
@@ -202,13 +216,13 @@ export default function OceanChallengeLayout({
             {ongoing.length > 0 && (
                 <O.Section>
                     <O.SectionHead>{tr.ongoing}<b>{ongoing.length}</b></O.SectionHead>
-                    <O.Grid>{ongoing.map((c, i) => tile(c, i, false))}</O.Grid>
+                    <O.Grid ref={ongoingRef}>{ongoing.map((c, i) => tile(c, i, false))}</O.Grid>
                 </O.Section>
             )}
             {finished.length > 0 && (
                 <O.Section>
                     <O.SectionHead>{tr.finished}<b>{finished.length}</b></O.SectionHead>
-                    <O.Grid>{finished.map((c, i) => tile(c, ongoing.length + i, true))}</O.Grid>
+                    <O.Grid ref={finishedRef}>{finished.map((c, i) => tile(c, ongoing.length + i, true))}</O.Grid>
                 </O.Section>
             )}
         </>
@@ -221,7 +235,7 @@ export default function OceanChallengeLayout({
         const ratio = target ? Math.min(1, count / target) : null;
         const streak = streakOf(sel, todayKey);
         return (
-            <O.Stage key={sel.id}>
+            <O.Stage key={sel.id} ref={stageRef}>
                 <O.Brief>
                     {cat && <span className="cat"><i style={{ backgroundColor: cat.color }} />{cat.name}</span>}
                     <h2 className="name">{sel.title}</h2>
@@ -269,7 +283,7 @@ export default function OceanChallengeLayout({
 
     /* 자리는 늘 같다(머리줄 · 무대 · 격자 · 창) — 무대를 열고 닫아도 격자는 다시 그려지지 않는다 */
     return (
-        <O.Gallery data-theme-layout="ocean-challenge">
+        <O.Gallery data-theme-layout="ocean-challenge" ref={galleryRef}>
             {bar(selectedChallenge)}
             {selectedChallenge ? stage(selectedChallenge) : null}
             {sections}

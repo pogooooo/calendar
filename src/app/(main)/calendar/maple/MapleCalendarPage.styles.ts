@@ -29,6 +29,14 @@ export const SwitchButton = styled(C.SwitchButton)`
     &:active { background-color: ${(p) => withAlpha(p.theme.colors.accent, 0.3)}; }
 `;
 
+/**
+ * 갈아 끼우는 두 화면 — 몸짓은 갈래의 꼴(종이 한 장을 밀어 넣듯, styles/maple/motion.ts)로 calendar/page 가 그린다.
+ * 뼈대의 CSS 몸짓은 끝난 뒤에도 transform 을 남겨, 안의 fixed 층(거르개의 바탕 막)이 이 판에 갇혔다
+ */
+export const MobilePane = styled(C.MobilePane)`
+    animation: none;
+`;
+
 /** 떠 있는 + : 네모 도장 */
 export const Fab = styled(C.Fab)`
     ${stampButton("primary", { square: true })}

@@ -1,7 +1,9 @@
 "use client";
 
+import * as React from "react";
 import type { MonthArchProps } from "../parts/MonthArch";
 import { labelKey, localDateKey } from "@/lib/dateKey";
+import { useSwapMotion } from "@/hooks/useMotion";
 import * as S from "./OceanMonthArch.styles";
 
 /* 큰 날짜는 장식 글씨라 라틴 이름으로 (달력 머리의 "October" 와 같은 손) */
@@ -17,6 +19,9 @@ const LATIN_DAY = new Intl.DateTimeFormat("en", { weekday: "long" });
 export default function OceanMonthArch({ daysInMonth, focusIdx, monthLoad, marks, focus }: MonthArchProps) {
     // focus 는 칸 Date(고른 시간대의 날) — 오늘도 고른 시간대로 견준다 (기기 시각과 견주면 시간대가 다를 때 'Today' 가 엉뚱한 날에 붙었다)
     const isToday = !!focus && labelKey(focus) === localDateKey(new Date());
+    // 날을 옮기면 큰 날짜가 오는 쪽에서 물안개를 걷으며 들어온다 (다음 날이면 오른쪽에서)
+    const heroRef = React.useRef<HTMLDivElement>(null);
+    useSwapMotion(focus ? labelKey(focus) : null, heroRef, { size: "line" });
     const anniversary = new Set(marks.filter((m) => m.kind === "anv").map((m) => m.day - 1));
     const due = new Set(marks.filter((m) => m.kind === "due").map((m) => m.day - 1));
 
@@ -28,7 +33,7 @@ export default function OceanMonthArch({ daysInMonth, focusIdx, monthLoad, marks
     return (
         <>
             {focus && (
-                <S.Hero aria-hidden="true">
+                <S.Hero aria-hidden="true" ref={heroRef}>
                     <span className="eyebrow">{isToday ? "Today · " : ""}{LATIN_DAY.format(focus)}</span>
                     <span className="date">
                         <em>{LATIN_MONTH.format(focus)}</em>

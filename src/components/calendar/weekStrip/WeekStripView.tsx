@@ -7,6 +7,7 @@ import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialWeekStrip.styles";
 import * as MapleS from "./maple/MapleWeekStrip.styles";
 import { leafShapeOf } from "@/styles/maple/ink";
+import { useSwapMotion } from "@/hooks/useMotion";
 import * as OceanS from './ocean/OceanWeekStrip.styles';
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
@@ -17,6 +18,9 @@ export default function WeekStripView({
     onPrevWeek, onNextWeek, onToday, onSelect, swipe, labels,
 }: WeekStripThemeProps) {
     const S = usePickTheme(STYLES);
+    // 주를 넘기면(‹ ›·쓸기·오늘) 일곱 칸이 오는 쪽에서 들어온다 — 다음 주면 오른쪽에서
+    const daysRef = React.useRef<HTMLDivElement>(null);
+    useSwapMotion(days[0]?.key, daysRef);
     return (
         <S.Strip {...swipe}>
             <S.Head>
@@ -33,7 +37,7 @@ export default function WeekStripView({
                 </button>
             </S.Head>
 
-            <S.Days role="tablist">
+            <S.Days role="tablist" ref={daysRef}>
                 {days.map((d, i) => (
                     <S.Day
                         key={d.key}

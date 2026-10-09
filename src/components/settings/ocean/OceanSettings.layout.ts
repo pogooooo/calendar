@@ -121,8 +121,13 @@ export const PaneNote = styled(C.PaneNote)`
     font-size: 0.84rem;
 `;
 
+/** 판의 탭은 위의 분절 단추(가로) — 판을 갈면 새 판이 옆에서 들어온다 (SettingsView 의 useSwapMotion) */
+export const PANE_AXIS = "x" as const;
+
+/** 판을 갈아 끼우는 몸짓은 갈래의 꼴(물안개를 걷으며 미끄러져 듦)로 SettingsView 가 그린다 — 뼈대의 CSS 몸짓은 끈다 */
 export const PaneBody = styled(C.PaneBody)`
     padding: 20px 32px 40px;
+    animation: none;
     ${MOBILE} { padding: 16px 18px 36px; }
 `;
 

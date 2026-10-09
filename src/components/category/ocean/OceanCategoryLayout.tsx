@@ -1,7 +1,9 @@
 "use client";
 
+import * as React from "react";
 import { Plus, Trash2, Users } from "lucide-react";
 import { useT } from "@/i18n/useT";
+import { useSwapMotion } from "@/hooks/useMotion";
 import type { CategoryLayoutProps } from "../CategoryLayout.types";
 import * as O from "./OceanCategory.styles";
 
@@ -16,6 +18,9 @@ export default function OceanCategoryLayout({
     plate, creator, description, members, todos, empty, dialogs,
 }: CategoryLayoutProps) {
     const t = useT();
+    // 다른 칩을 고르면 판 셋이 칩의 차례 쪽(오른쪽 칩이면 오른쪽)에서 물안개를 걷으며 들어온다 — 판 하나하나를(유리가 뒤를 보게)
+    const bentoRef = React.useRef<HTMLDivElement>(null);
+    useSwapMotion(selectedCategoryId, () => Array.from(bentoRef.current?.children ?? []), { order: categories.map((c) => c.id) });
 
     return (
         <O.Page data-theme-layout="ocean-category">
@@ -50,7 +55,7 @@ export default function OceanCategoryLayout({
             </O.Rail>
 
             {selectedCategory ? (
-                <O.Bento key={selectedCategory.id}>
+                <O.Bento key={selectedCategory.id} ref={bentoRef}>
                     <O.Panel $area="id" $at={0}>
                         {plate}
                         {description}

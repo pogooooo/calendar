@@ -3,7 +3,7 @@
  * 큰 숫자는 Pretendard 굵게, 달 이름은 기울인 Instrument Serif, 꼬리표는 고정폭 대문자. 색은 청록 한 점뿐.
  */
 import styled from "styled-components";
-import { SERIF, ink, label } from "@/styles/ocean/water";
+import { EASE, SERIF, ink, label } from "@/styles/ocean/water";
 import { MOBILE } from "@/styles/breakpoints";
 
 export const Hero = styled.div`
@@ -67,6 +67,8 @@ export const Strip = styled.div`
             margin-left: -1px;
             border-radius: 1px;
             background: ${(p) => ink(p.theme, p.theme.mode === "dark" ? 0.14 : 0.1)};
+            /* 보는 날을 옮기면 청록 눈금이 옛 날에서 잦아들고 새 날에서 솟는다 */
+            transition: top 0.35s ${EASE}, height 0.35s ${EASE}, width 0.35s ${EASE}, margin-left 0.35s ${EASE}, background-color 0.35s ease;
         }
         &.past::before { background: ${(p) => ink(p.theme, 0.25)}; }
         &.now::before {

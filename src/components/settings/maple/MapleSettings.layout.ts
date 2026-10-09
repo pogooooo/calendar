@@ -139,6 +139,11 @@ export const PaneHeader = styled(C.PaneHeader)`
     border-bottom-color: ${(p) => hair(p.theme, 0.3)};
 `;
 
+/** 판을 갈아 끼우는 몸짓은 갈래의 꼴(종이 한 장을 밀어 넣듯)로 SettingsView 가 그린다 — 뼈대의 CSS 몸짓은 끈다 */
+export const PaneBody = styled(C.PaneBody)`
+    animation: none;
+`;
+
 export const Constellation = styled(C.Constellation)`
     border-right-color: ${(p) => hair(p.theme, 0.3)};
 

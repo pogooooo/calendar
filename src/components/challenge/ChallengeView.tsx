@@ -15,6 +15,7 @@ import CelestialChallengeLayout from "./celestial/CelestialChallengeLayout";
 import OceanChallengeLayout from "./ocean/OceanChallengeLayout";
 import type { ChallengeTodayState } from "./ChallengeLayout.types";
 import { challengeExpired, completionKey, slotKey, slotsUntil } from "@/lib/challengeDays";
+import { useListMotion, useSwapMotion } from "@/hooks/useMotion";
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
 const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
@@ -69,6 +70,18 @@ export default function ChallengeView({
         return isChallengeExpired(c);
     });
 
+    /* Celestial·Maple 의 배치(CelestialChallengeLayout — 갈래 폴더라 여기서 ref 를 달 수 없다)의 판을 모양 이름(S.X 의 고유 클래스)으로 찾는다.
+       다른 챌린지를 고르면 스티커 판·자세히가 그 차례 쪽에서 들어오고(목록 아래쪽이면 아래에서), 목록에 든 줄·지운 줄은 한 줄씩.
+       바다는 제 배치(OceanChallengeLayout)가 따로 한다 — 이 이름들이 그 화면엔 없어 여기서는 아무 일도 없다 */
+    useSwapMotion(selectedChallenge?.id, () => Array.from(document.querySelectorAll(`${S.StickerBoardCard} .sticker-content, ${S.DetailArea}`)), {
+        order: [...ongoingChallenges, ...finishedChallenges].map(c => c.id),
+        axis: "y",
+    });
+    useListMotion(() => document.querySelector(`${S.TimelineScrollArea}`), { exit: "collapse", filter: (el) => el.matches(`${S.ChallengeRow}`) });
+    // 오늘 칸을 채우면 그 스티커가 갈래의 끝냄 몸짓을 한 번 한다(바다: 물결 고리 · Maple: 도장 · Celestial: 톡) — 다른 챌린지로 갈면 빼고
+    const stickerGridRef = React.useRef<HTMLDivElement>(null);
+    useListMotion(stickerGridRef, { reset: selectedChallenge?.id, enter: false });
+
     const renderStickerBoard = () => {
         if (!selectedChallenge) return <span className="placeholder">{tr.selectForBoard}</span>;
 
@@ -82,9 +95,9 @@ export default function ChallengeView({
         if (slots.length === 0) return <span className="placeholder">{tr.firstSticker}</span>;
 
         return (
-            <S.StickerGrid>
+            <S.StickerGrid ref={stickerGridRef}>
                 {slots.map((isFilled, idx) => (
-                    <S.StickerSlot key={idx}>
+                    <S.StickerSlot key={idx} data-done={isFilled ? "" : undefined} data-motion-mark="">
                         <DynamicSticker isFilled={isFilled} idx={idx} />
                     </S.StickerSlot>
                 ))}

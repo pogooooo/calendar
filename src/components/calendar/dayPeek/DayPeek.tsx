@@ -34,6 +34,8 @@ export interface DayPeekItem {
 }
 
 export interface DayPeekThemeProps {
+    /** 고른 날의 날짜 키 — 날이 바뀌면 목록이 오는 쪽에서 들어온다 */
+    dayKey: string;
     title: string;
     isToday: boolean;
     items: DayPeekItem[];
@@ -75,6 +77,7 @@ export default function DayPeek({ date, todos, categories, onOpenDay }: DayPeekP
 
     return (
         <View
+            dayKey={key}
             title={title}
             isToday={key === localDateKey(new Date())}
             items={items}

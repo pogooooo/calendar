@@ -258,13 +258,17 @@ const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
                 && currentDate.getMonth() === today.getMonth();
         }, [currentDate]);
 
-        // 고른 날짜가 다른 달로 넘어가면 보여 주는 달도 따라간다.
+        // 고른 날짜가 다른 달로 넘어가면 보여 주는 달도 따라간다 — 넘기는 쪽도 함께(앞 달이면 왼쪽에서 들어온다)
+        const shownMonth = React.useRef(currentDate);
+        shownMonth.current = currentDate;
         React.useEffect(() => {
             if (!followSelectedDate || !selectedDate) return;
-            setCurrentDate(prev =>
-                (prev.getFullYear() === selectedDate.getFullYear() && prev.getMonth() === selectedDate.getMonth())
-                    ? prev
-                    : new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1));
+            const prev = shownMonth.current;
+            const from = prev.getFullYear() * 12 + prev.getMonth();
+            const to = selectedDate.getFullYear() * 12 + selectedDate.getMonth();
+            if (from === to) return;
+            setDirection(to < from ? -1 : 1);
+            setCurrentDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1));
         }, [followSelectedDate, selectedDate]);
 
         const toggleCategory = (categoryId: string) => {

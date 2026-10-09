@@ -11,6 +11,7 @@ import DayPeek from "@/components/calendar/dayPeek/DayPeek";
 import TodoModal from "@/components/modal/todoModal/TodoModal";
 import useIsMobile from "@/hooks/useIsMobile";
 import useSwipe from "@/hooks/useSwipe";
+import { useSwapMotion } from "@/hooks/useMotion";
 import { useT } from "@/i18n/useT";
 import { wallNow } from "@/lib/dateKey";
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
@@ -27,6 +28,9 @@ const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: Ma
 const LAYOUTS = { celestial: CelestialCalendarLayout, maple: MapleCalendarLayout, ocean: OceanCalendarLayout };
 
 const DAY_COLLAPSE_KEY = "cronos-day-collapsed";
+
+/** 폰의 두 화면 차례 — 뒤 화면(주간·일간)으로 가면 오른쪽에서 들어온다 */
+const MOBILE_VIEWS = ["month", "week"] as const;
 
 const MIN_RATIO = 35;
 const MAX_RATIO = 82;
@@ -140,6 +144,11 @@ export default function CalendarPage() {
     const prevDay = React.useCallback(() => stepDay(-1), [stepDay]);
     const daySwipe = useSwipe(nextDay, prevDay);
 
+    // 폰의 월간 ↔ 주간·일간: 갈래의 몸짓으로 갈아 끼운다 — 일간으로 가면 오른쪽에서, 월간으로 오면 왼쪽에서.
+    // 판 하나하나를 움직인다: 감싼 상자에 투명도·흐림을 걸면 안의 유리 판(바다)이 그동안 뒤를 못 본다
+    const paneRef = React.useRef<HTMLDivElement>(null);
+    useSwapMotion(mobileView, () => Array.from(paneRef.current?.children ?? []), { order: MOBILE_VIEWS });
+
     if (isMobile) {
         return (
             <S.MobileWrapper>
@@ -171,7 +180,7 @@ export default function CalendarPage() {
                     />
                 )}
 
-                <S.MobilePane key={mobileView} $forward={mobileView !== "month"} {...(mobileView === "week" ? daySwipe : {})}>
+                <S.MobilePane ref={paneRef} key={mobileView} $forward={mobileView !== "month"} {...(mobileView === "week" ? daySwipe : {})}>
                     {mobileView === "month" ? (
                         <>
                             <S.MonthArea>

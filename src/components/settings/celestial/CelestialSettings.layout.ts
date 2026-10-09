@@ -225,20 +225,11 @@ export const PaneNote = styled.p`
     color: ${(p) => p.theme.colors.textSecondary};
 `;
 
-const paneBodyIn = keyframes`
-    from { opacity: 0; transform: translateY(10px); }
-    to   { opacity: 1; transform: translateY(0); }
-`;
-
 export const PaneBody = styled.div`
     padding: 30px 40px 60px;
     ${MOBILE} { padding: 22px 20px 48px; }
 
-    /* 판을 갈아 끼울 때 내용이 아래에서 올라온다.
-       key 가 판마다 달라야 다시 재생된다 (SettingsView 에서 붙인다). */
-    @media (prefers-reduced-motion: no-preference) {
-        animation: ${paneBodyIn} 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
-    }
+    /* 판을 갈아 끼우는 몸짓은 SettingsView 가 갈래의 꼴(useSwapMotion)로 그린다 — 고른 탭 쪽에서 들어온다 */
 `;
 
 export const Block = styled.section`

@@ -11,6 +11,9 @@ import * as MapleS from "./maple/MapleDialog.styles";
 import * as OceanS from './ocean/OceanDialog.styles';
 import OceanArcanaEmblem from './OceanArcanaEmblem';
 import { ARCANA as OceanARCANA } from './Oceanarcana';
+import useThemeMotion from "@/hooks/useThemeMotion";
+import { startOnNextFrame, useMotionSet } from "@/hooks/useMotion";
+import { exitFrames, optionsOf } from "@/styles/motion";
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
 const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
@@ -26,6 +29,9 @@ export interface DialogRequest {
 
 interface Props extends DialogRequest {
     onResolve: (accepted: boolean) => void;
+    /** 답을 받고 닫히는 중 — 누를 수도 읽힐 수도 없고, 갈래의 몸짓(dialogOut)으로 나간 뒤 onExited */
+    closing?: boolean;
+    onExited?: () => void;
 }
 
 const Pips = () => {
@@ -38,7 +44,7 @@ const Pips = () => {
 };
 
 export default function Dialog({
-    kind, title, message, confirmLabel, cancelLabel, variant, onResolve,
+    kind, title, message, confirmLabel, cancelLabel, variant, onResolve, closing = false, onExited,
 }: Props) {
     const S = usePickTheme(STYLES);
     // 문장과 번호도 갈래마다 다르다 — Celestial 은 타로 아르카나, Maple 은 도감 도판
@@ -47,12 +53,45 @@ export default function Dialog({
     const shape = variant ?? VARIANT_BY_KIND[kind];
     const confirmRef = React.useRef<HTMLButtonElement>(null);
     const veilRef = React.useRef<HTMLDivElement>(null);
+    const motionLevel = useThemeMotion();
+    const motionSet = useMotionSet();
+    const exited = React.useRef(onExited);
+    exited.current = onExited;
 
     React.useEffect(() => {
         confirmRef.current?.focus();
     }, []);
 
+    /* 닫힐 때 — 카드는 갈래의 몸짓으로 나가고(바다: 가라앉으며 흐려짐 · Maple: 집어 들리듯 · Celestial: 옅게 작아짐),
+       막은 색·흐림이 걷힌다(막의 투명도를 움직이면 바다 카드의 유리가 그동안 뒤를 못 본다). 다 나간 뒤 지운다 */
+    React.useLayoutEffect(() => {
+        if (!closing) return;
+        const veil = veilRef.current;
+        const done = () => exited.current?.();
+        if (!veil) { done(); return; }
+        veil.style.pointerEvents = "none";
+        veil.setAttribute("aria-hidden", "true");
+        veil.querySelector("[aria-modal]")?.removeAttribute("aria-modal");
+        if (document.activeElement instanceof HTMLElement && veil.contains(document.activeElement)) document.activeElement.blur();
+        const step = motionLevel === "off" ? null : motionSet.dialogOut(motionLevel);
+        if (!step) { done(); return; }
+        const timing: KeyframeAnimationOptions = { duration: step.duration, easing: "ease-out", fill: "forwards" };
+        const fade = startOnNextFrame(veil.animate([{ backgroundColor: "transparent", backdropFilter: "blur(0px)" }], timing));
+        startOnNextFrame(veil.animate([{ backdropFilter: "blur(0px)" }], { ...timing, pseudoElement: "::before" }));
+        const card = veil.firstElementChild?.animate(exitFrames(step.pose), { ...optionsOf(step), fill: "forwards" });
+        if (card) startOnNextFrame(card);
+        let over = false;
+        const finish = () => { if (!over) { over = true; done(); } };
+        fade.onfinish = finish;
+        const t = window.setTimeout(finish, step.duration + 300);
+        return () => window.clearTimeout(t);
+        // 닫히기 시작할 때 한 번 — 그 뒤 설정이 바뀌어도 다시 하지 않는다
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [closing]);
+
     React.useEffect(() => {
+        // 닫히는 중인 창은 자판을 받지 않는다 — Esc·Tab 은 아래 창의 몫
+        if (closing) return;
         const onKey = (e: KeyboardEvent) => {
             if (e.key === "Escape") {
                 // 위에 열려 있던 모달이 함께 닫히지 않도록 여기서 이벤트를 끊는다
@@ -78,7 +117,7 @@ export default function Dialog({
 
         window.addEventListener("keydown", onKey, true);
         return () => window.removeEventListener("keydown", onKey, true);
-    }, [onResolve]);
+    }, [onResolve, closing]);
 
     const actions = (
         <S.Actions>

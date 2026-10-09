@@ -21,10 +21,15 @@ const LEAF = [[6, 0], [7.4, 3.2], [10.6, 1.8], [9.2, 5], [12, 6.4], [9, 7.6], [9
 const leafPath = (x: number, y: number, s: number) =>
     "M " + LEAF.map(([px, py]) => `${x + (px - 6) * s} ${y + (py - 6) * s}`).join(" L ") + " Z";
 
-/** 놋쇠 해시계 위의 달. 날마다의 일정 수가 테두리 안쪽 눈금 길이, 오늘이 바늘 */
+/** 바늘 길이 — 테두리 안쪽 0.9 */
+const NEEDLE = 0.9 * RX;
+/** 바늘은 위로 세워 그리고 돌린 뒤 세로로 눌러 반원(타원)에 맞춘다 — polar(0.9, deg) 와 같은 끝 */
+const needleTurn = (deg: number, shift = "") => `${shift} scale(1, ${RY / RX}) rotate(${deg}deg)`.trim();
+
+/** 놋쇠 해시계 위의 달. 날마다의 일정 수가 테두리 안쪽 눈금 길이, 오늘이 바늘 — 날을 옮기면 바늘이 그 날로 쓸려 간다 */
 export default function MapleMonthArch({ daysInMonth, focusIdx, monthLoad, marks }: MonthArchProps) {
     const dayDeg = (i: number) => -90 + (i / Math.max(1, daysInMonth - 1)) * 180;
-    const [tipX, tipY] = polar(0.9, dayDeg(focusIdx));
+    const needleDeg = dayDeg(focusIdx);
 
     return (
         <S.Dial aria-hidden="true">
@@ -62,9 +67,13 @@ export default function MapleMonthArch({ daysInMonth, focusIdx, monthLoad, marks
                     );
                 })}
 
-                <line className="nshadow" x1={CX + 3} y1={CY + 4} x2={tipX + 3} y2={tipY + 4} />
-                <line className="nray" x1={CX} y1={CY} x2={tipX} y2={tipY} />
-                <path className="ncap" d={leafPath(tipX, tipY, 2.6)} />
+                <g className="needle" style={{ transform: needleTurn(needleDeg, "translate(3px, 4px)") }}>
+                    <line className="nshadow" x1={CX} y1={CY} x2={CX} y2={CY - NEEDLE} />
+                </g>
+                <g className="needle" style={{ transform: needleTurn(needleDeg) }}>
+                    <line className="nray" x1={CX} y1={CY} x2={CX} y2={CY - NEEDLE} />
+                    <path className="ncap" d={leafPath(CX, CY - NEEDLE, 2.6)} />
+                </g>
                 <circle className="pivot" cx={CX} cy={CY} r="13" />
             </svg>
         </S.Dial>

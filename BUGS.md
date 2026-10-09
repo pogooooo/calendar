@@ -6,6 +6,10 @@
 
 | 날짜 | 증상 | 까닭 | 고친 방법 |
 |---|---|---|---|
+| 2026-10-10 | 날짜를 넘겨도(홈·달력·일간·주간 띠·위젯) 아무 움직임이 없고, 바다는 화면을 옮겨도 거의 그대로 ("애니메이션이 안 됨") | 몸짓이 월간 격자의 미끄러짐 하나뿐이었고, 바다의 화면 바뀜은 8px 떠오름이었다. 기기의 '애니메이션 줄이기'가 켜져 있으면 앱 설정과 상관없이 모두 꺼진다(`useThemeMotion`) | 갈래마다 몸짓 한 벌(`styles/motion.ts` 의 MotionSet — Celestial `celestial/motion.ts`·Maple `maple/motion.ts`·바다 `ocean/water.ts`)과 언제 그릴지 정하는 훅(`useSwapMotion`·`useListMotion`, `hooks/useMotion.ts`). 요소를 다시 만들지 않아(element.animate) 치던 글·초점·스크롤이 남는다 |
+| 2026-10-10 | 바다에서 화면을 옮기면 끝날 즈음 유리 판의 흐림이 한 번 꺼졌다 돌아옴 | 화면 바뀜이 판 전체의 투명도를 움직였다 — 투명도가 걸린 상자 안의 유리(backdrop-filter)는 그동안 뒤를 못 본다 | 새 화면 위의 막(물안개)만 걷히고 판은 건드리지 않는다 (`OceanPageTransition`) |
+| 2026-10-10 | 달을 넘기면 끝나는 순간 달력이 한 장면 비어 보임 | framer 의 motion.div 가 투명도를 WAAPI 로 돌리고 끝난 값을 다음 그림에 적어, 미끄러짐이 먼저 끝나면 한 장면 동안 처음 모습(투명)이 비쳤다 | `element.animate` 로 그리고 끝나면 아무것도 남기지 않는다 (`SwapLayer`) |
+| 2026-10-10 | 폰 달력에서 월간 ↔ 일간을 바꾼 뒤 거르개의 바탕 막 같은 fixed 층이 화면이 아니라 판 안에 갇힘 | 판의 CSS 등장 몸짓(`animation … both`)이 끝난 뒤에도 `transform: translateX(0)` 을 남겼다 — transform 이 있는 상자는 안의 fixed 의 기준이 된다. 설정의 판도 같은 몸짓을 가졌다 | CSS 몸짓을 걷고 `useSwapMotion`(끝나면 남기지 않음)으로 — 세 갈래 모두 (`*CalendarPage.styles` 의 MobilePane·`*Settings.layout` 의 PaneBody) |
 | 2026-10-09 | Ocean 의 할 일·프로젝트·카테고리 창에서 폰 자판이 올라오면(키 작은 화면) 시작·종료 시간·장소 줄이 서로 겹침 (에뮬레이터에서 봄) | 줄에 `min-height: 40px` 을 주면 flex 항목의 기본 "내용보다 작아지지 않음"(min-height: auto)이 풀린다 — 굴러가는 세로 flex 몸통에서 두 줄짜리 칸이 40px 로 눌렸다 | Ocean 줄에 `flex-shrink: 0` (`OceanTodoModal`·`OceanModal`·`OceanCategoryAddModal` 의 FieldRow) |
 | 2026-10-09 | 설정의 시간대가 기기와 다르면(여행 중·서울로 저장된 예전 설치) 달력·일간·할 일 창이 홈·위젯과 다른 날·시각을 보임 | 달력 칸·시간표·고르개가 기기 Date(setHours·getDate·toDateString)로 셌다. 칸에 localDateKey 를 쓰면 하루가 밀리기도 했다 | 칸 Date 에는 고른 시간대의 날·벽시계를 담고(`labelKey`), 일정과는 날 키로, 순간은 `zonedTime`·`wallTime` 으로 바꾼다(`dateKey.ts`·`localTime.ts`). 기기와 같은 시간대면 예전 셈 그대로. `zonedDayStart` 의 서머타임 날 한 시간 어긋남도 |
 | 2026-10-09 | 데스크톱·앱에서 할 일·프로젝트 제목을 치면 글이 끊기거나 지워짐(한글 조합 "ㅎ하할") | ① `BaseModal` 이 이름표(ariaLabel)가 바뀔 때마다 초점을 창으로 옮겼는데, 창들이 치는 제목을 이름표로 넘겼다 ② `TodoModal`·`ChallengeModal` 이 categories·selectedDate 같은 참조가 바뀔 때마다(토큰 갱신·위젯 동기화의 다시 읽기) 칸을 처음부터 채웠다 | 초점 효과는 열릴 때만, 이름표는 따로. 칸은 열릴 때·고치는 대상이 바뀔 때만 채운다 |
@@ -80,3 +84,6 @@
 - **갈래 폴더 밖에서 `theme.family` 로 모양을 가르지 말 것.** 가드: `scripts/check-theme-styles.mjs`
 - **폰의 상태 표시줄·아래 막대 높이는 `SAFE_T`/`SAFE_B` 로.** `env(safe-area-inset-*)` 을 바로 쓰면 안드로이드 앱(웹뷰 140 미만)에서 0 이다.
 - **날짜는 날짜 키로 주고받는다.** `Date` 를 그대로 넘기면 시간대에서 하루가 밀린다.
+- **판·목록에 transform 을 남기는 몸짓(`animation … both`·`fill: forwards`)을 걸지 말 것.** 안의 fixed 단추·막이 화면이 아니라 그 상자에 선다. 몸짓은 `useSwapMotion`·`useListMotion`(끝나면 남기지 않음)으로.
+- **클래스 이름 `ring` 은 Tailwind 의 `.ring`(box-shadow)과 겹친다.** HTML 요소·바깥 svg 에 네모 테가 생긴다(svg 안쪽 요소는 괜찮다).
+- **SVG 좌표를 Math.cos·sin 으로 셀 때는 소수 둘째 자리로 반올림(`f()`).** 서버(Node)와 브라우저의 끝자리가 달라 하이드레이션이 어긋난다.
