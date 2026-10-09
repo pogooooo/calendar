@@ -33,7 +33,7 @@ const GENERIC_OK = {
 export async function POST(request: NextRequest) {
     const ip = getClientIP(request);
 
-    const rl = checkRateLimit(`forgot:${ip}`, FORGOT_LIMIT);
+    const rl = await checkRateLimit(`forgot:${ip}`, FORGOT_LIMIT);
     if (!rl.allowed) {
         return NextResponse.json(
             { message: `요청이 너무 잦습니다. ${rl.retryAfter}초 후에 다시 시도해주세요.` },

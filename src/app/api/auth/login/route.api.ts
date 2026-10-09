@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     const ip = getClientIP(request);
 
     // ── Rate Limit 체크 ──────────────────────────────────────────────────────
-    const rl = checkRateLimit(`login:${ip}`, LOGIN_LIMIT);
+    const rl = await checkRateLimit(`login:${ip}`, LOGIN_LIMIT);
     if (!rl.allowed) {
         return NextResponse.json(
             { message: `너무 많은 로그인 시도입니다. ${rl.retryAfter}초 후에 다시 시도해주세요.` },
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
         }
 
         // 로그인 성공 → IP 차단 카운트 초기화
-        resetRateLimit(`login:${ip}`);
+        await resetRateLimit(`login:${ip}`);
 
         if (!user.settings) {
             // 로그인 단추를 두 번 누르면 둘 다 만들려다 유일 제약으로 500 이 났다 — 이미 있으면 됐다

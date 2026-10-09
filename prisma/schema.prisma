@@ -258,3 +258,15 @@ model ThemeOrder {
 
   @@index([userId, themeId, environment, status])
 }
+
+/// 로그인·가입·비밀번호 확인 같은 시도의 횟수. 워커 인스턴스마다 따로 세던 메모리 대신 여기 둔다 — 모든 인스턴스가 같이 본다
+/// (예전엔 요청이 여러 인스턴스로 흩어져 막아야 할 만큼 세지 못했다). src/lib/rateLimiter.ts
+model RateLimit {
+  key          String    @id
+  count        Int
+  firstAt      DateTime
+  blockedUntil DateTime?
+  expiresAt    DateTime
+
+  @@index([expiresAt])
+}

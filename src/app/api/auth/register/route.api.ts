@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     const ip = getClientIP(request);
 
     // ── Rate Limit 체크 ──────────────────────────────────────────────────────
-    const rl = checkRateLimit(`register:${ip}`, REGISTER_LIMIT);
+    const rl = await checkRateLimit(`register:${ip}`, REGISTER_LIMIT);
     if (!rl.allowed) {
         return NextResponse.json(
             { message: `잠시 후 다시 시도해주세요. (${rl.retryAfter}초 후 가능)` },

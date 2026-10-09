@@ -1,38 +1,11 @@
 /**
- * 서버 메모리 기반 Rate Limiter
- * - 같은 IP에서 짧은 시간 내 과도한 요청 차단
- * - 운영 환경에서는 Redis(Upstash 등)로 교체 권장
+ * 시도 횟수 제한 — 같은 IP(또는 사람)가 짧은 사이에 너무 많이 시도하면 막는다 (로그인·가입·비밀번호 찾기·확인).
+ *
+ * 횟수는 D1(RateLimit 표)에 센다. 예전엔 서버 메모리에 셌는데, Cloudflare 는 요청을 여러 워커 인스턴스로 흩어서
+ * 인스턴스마다 따로 세는 바람에 막아야 할 만큼 쌓이지 않았고, 인스턴스가 바뀌면 걸어 둔 차단도 사라졌다.
+ * D1 에 닿지 못하면(표가 아직 없는 배포 사이 등) 예전처럼 메모리로 센다 — 로그인을 막아 버리지는 않는다.
  */
-
-interface Attempt {
-    count: number;
-    firstAt: number;
-    blockedUntil?: number;
-    /** 창과 차단이 모두 끝나는 때 — 이때까지는 지우면 안 된다 */
-    expiresAt: number;
-}
-
-const store = new Map<string, Attempt>();
-
-/**
- * 끝난 항목만 지운다.
- * 예전에는 첫 시도 뒤 15분이 지나면 무조건 지워서, 한 시간짜리 창(가입·비밀번호 찾기)이 15~20분으로 줄고
- * 걸어 둔 차단(15분·1시간)도 그때 같이 풀렸다.
- */
-let lastSweep = 0;
-function sweep(now: number) {
-    lastSweep = now;
-    store.forEach((v, k) => {
-        if (now >= v.expiresAt) store.delete(k);
-    });
-}
-
-// 5분마다 정리. 워커처럼 요청 사이에 타이머가 안 도는 곳도 있어 쌓이면 요청 때도 치운다(checkRateLimit)
-if (typeof setInterval !== "undefined") {
-    setInterval(() => sweep(Date.now()), 5 * 60 * 1000);
-}
-const SWEEP_AT = 5000;
-const SWEEP_GAP_MS = 10_000;
+import prisma from "@/lib/prisma";
 
 interface RateLimitOptions {
     /** 허용 최대 시도 횟수 */
@@ -50,44 +23,109 @@ interface RateLimitResult {
     remaining: number;
 }
 
-export function checkRateLimit(key: string, options: RateLimitOptions): RateLimitResult {
-    const { maxAttempts, windowMs, blockMs } = options;
+/* ── D1 ─────────────────────────────────────────────────────────────── */
+
+/** 가끔 끝난 줄을 치운다 — 매번 치우면 시도마다 쓰기가 하나 더 는다 */
+const CLEAN_EVERY = 50;
+let sinceClean = 0;
+
+async function checkInDb(key: string, { maxAttempts, windowMs, blockMs }: RateLimitOptions): Promise<RateLimitResult> {
+    const now = Date.now();
+    if (++sinceClean >= CLEAN_EVERY) {
+        sinceClean = 0;
+        await prisma.rateLimit.deleteMany({ where: { expiresAt: { lt: new Date(now) } } });
+    }
+
+    const entry = await prisma.rateLimit.findUnique({ where: { key } });
+    const blockedUntil = entry?.blockedUntil?.getTime();
+
+    // 차단 중
+    if (blockedUntil && now < blockedUntil) {
+        return { allowed: false, retryAfter: Math.ceil((blockedUntil - now) / 1000), remaining: 0 };
+    }
+
+    // 윈도우 초과(또는 차단이 끝남) → 새로 센다
+    if (!entry || now - entry.firstAt.getTime() > windowMs || blockedUntil) {
+        const fresh = { count: 1, firstAt: new Date(now), blockedUntil: null, expiresAt: new Date(now + windowMs) };
+        await prisma.rateLimit.upsert({ where: { key }, create: { key, ...fresh }, update: fresh });
+        return { allowed: true, remaining: maxAttempts - 1 };
+    }
+
+    // 하나 더 — 겹친 요청끼리 같은 수를 읽지 않게 저장소가 더한다
+    const next = await prisma.rateLimit.update({ where: { key }, data: { count: { increment: 1 } } });
+    if (next.count > maxAttempts) {
+        const until = now + blockMs;
+        await prisma.rateLimit.update({
+            where: { key },
+            data: { blockedUntil: new Date(until), expiresAt: new Date(Math.max(entry.expiresAt.getTime(), until)) },
+        });
+        return { allowed: false, retryAfter: Math.ceil(blockMs / 1000), remaining: 0 };
+    }
+    return { allowed: true, remaining: maxAttempts - next.count };
+}
+
+/* ── 메모리 (D1 에 닿지 못할 때) ───────────────────────────────────── */
+
+interface Attempt {
+    count: number;
+    firstAt: number;
+    blockedUntil?: number;
+    /** 창과 차단이 모두 끝나는 때 — 이때까지는 지우면 안 된다 */
+    expiresAt: number;
+}
+
+const store = new Map<string, Attempt>();
+
+/** 끝난 항목만 지운다 (한 시간짜리 창·차단이 중간에 풀리지 않게) */
+let lastSweep = 0;
+function sweep(now: number) {
+    lastSweep = now;
+    store.forEach((v, k) => {
+        if (now >= v.expiresAt) store.delete(k);
+    });
+}
+const SWEEP_AT = 5000;
+const SWEEP_GAP_MS = 10_000;
+
+function checkInMemory(key: string, { maxAttempts, windowMs, blockMs }: RateLimitOptions): RateLimitResult {
     const now = Date.now();
     if (store.size > SWEEP_AT && now - lastSweep > SWEEP_GAP_MS) sweep(now);
     const entry = store.get(key);
 
-    // 차단 중
     if (entry?.blockedUntil && now < entry.blockedUntil) {
-        return {
-            allowed: false,
-            retryAfter: Math.ceil((entry.blockedUntil - now) / 1000),
-            remaining: 0,
-        };
+        return { allowed: false, retryAfter: Math.ceil((entry.blockedUntil - now) / 1000), remaining: 0 };
     }
-
-    // 윈도우 초과(또는 차단이 끝남) → 리셋
     if (!entry || now - entry.firstAt > windowMs || entry.blockedUntil) {
         store.set(key, { count: 1, firstAt: now, expiresAt: now + windowMs });
         return { allowed: true, remaining: maxAttempts - 1 };
     }
-
     const next = entry.count + 1;
-
     if (next > maxAttempts) {
         const blockedUntil = now + blockMs;
         store.set(key, { ...entry, count: next, blockedUntil, expiresAt: Math.max(entry.expiresAt, blockedUntil) });
-        return {
-            allowed: false,
-            retryAfter: Math.ceil(blockMs / 1000),
-            remaining: 0,
-        };
+        return { allowed: false, retryAfter: Math.ceil(blockMs / 1000), remaining: 0 };
     }
-
     store.set(key, { ...entry, count: next });
     return { allowed: true, remaining: maxAttempts - next };
 }
 
+/* ── 바깥에서 쓰는 것 ──────────────────────────────────────────────── */
+
+export async function checkRateLimit(key: string, options: RateLimitOptions): Promise<RateLimitResult> {
+    try {
+        return await checkInDb(key, options);
+    } catch (error) {
+        console.error("[RATE_LIMIT_DB_ERROR]", error);
+        return checkInMemory(key, options);
+    }
+}
+
 /** 성공 시 해당 키의 실패 카운트 초기화 */
-export function resetRateLimit(key: string) {
+export async function resetRateLimit(key: string): Promise<void> {
     store.delete(key);
+    try {
+        await prisma.rateLimit.deleteMany({ where: { key } });
+    } catch (error) {
+        console.error("[RATE_LIMIT_DB_ERROR]", error);
+    }
 }

@@ -11,8 +11,8 @@ import { resetIdentifier } from "@/lib/passwordReset";
  * 현재 비밀번호 확인(비밀번호 바꾸기·탈퇴)의 시도 수 제한.
  * 흘러나간 접근 토큰(1시간)만으로 비밀번호를 끝없이 맞혀 보고 계정을 빼앗지 못하게 — 로그인과 같은 한도
  */
-function passwordGuard(userId: string) {
-    const rl = checkRateLimit(`password-check:${userId}`, { maxAttempts: 10, windowMs: 10 * 60 * 1000, blockMs: 15 * 60 * 1000 });
+async function passwordGuard(userId: string) {
+    const rl = await checkRateLimit(`password-check:${userId}`, { maxAttempts: 10, windowMs: 10 * 60 * 1000, blockMs: 15 * 60 * 1000 });
     if (rl.allowed) return null;
     return NextResponse.json(
         { message: `너무 많이 시도했습니다. ${rl.retryAfter}초 후에 다시 시도해주세요.` },
@@ -73,13 +73,13 @@ export async function PATCH(request: NextRequest) {
             if (!user.password) {
                 return NextResponse.json({ message: "소셜 로그인 계정은 비밀번호를 변경할 수 없습니다." }, { status: 400 });
             }
-            const tooMany = passwordGuard(userId);
+            const tooMany = await passwordGuard(userId);
             if (tooMany) return tooMany;
             const isMatch = await bcrypt.compare(currentPassword, user.password);
             if (!isMatch) {
                 return NextResponse.json({ message: "현재 비밀번호가 올바르지 않습니다." }, { status: 400 });
             }
-            resetRateLimit(`password-check:${userId}`);
+            await resetRateLimit(`password-check:${userId}`);
             const pwCheck = passwordSchema.safeParse(newPassword);
             if (!pwCheck.success) {
                 return NextResponse.json({ message: pwCheck.error.issues[0]?.message ?? "비밀번호 형식이 올바르지 않습니다." }, { status: 400 });
@@ -144,7 +144,7 @@ export async function DELETE(request: NextRequest) {
             if (typeof password !== "string" || !password) {
                 return NextResponse.json({ message: "비밀번호를 입력해주세요." }, { status: 400 });
             }
-            const tooMany = passwordGuard(userId);
+            const tooMany = await passwordGuard(userId);
             if (tooMany) return tooMany;
             const isMatch = await bcrypt.compare(password, user.password);
             if (!isMatch) {

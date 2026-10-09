@@ -18,7 +18,7 @@ export const POST = async (request: Request) => {
         const userId = token ? await verifyWidgetToken(token) : null;
         if (!userId) return NextResponse.json({ message: "앱을 열어 다시 로그인해 주세요." }, { status: 401 });
 
-        const rl = checkRateLimit(`widget-todo:${userId}`, { maxAttempts: 30, windowMs: 60_000, blockMs: 60_000 });
+        const rl = await checkRateLimit(`widget-todo:${userId}`, { maxAttempts: 30, windowMs: 60_000, blockMs: 60_000 });
         if (!rl.allowed) return NextResponse.json({ message: "잠시 뒤에 다시 시도해 주세요." }, { status: 429 });
 
         const live = await prisma.refreshToken.count({ where: { userId, expires: { gt: new Date() } } });

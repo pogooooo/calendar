@@ -24,7 +24,7 @@ const INVALID = { message: "링크가 만료되었거나 이미 사용되었습�
 export async function POST(request: NextRequest) {
     const ip = getClientIP(request);
 
-    const rl = checkRateLimit(`reset:${ip}`, RESET_LIMIT);
+    const rl = await checkRateLimit(`reset:${ip}`, RESET_LIMIT);
     if (!rl.allowed) {
         return NextResponse.json(
             { message: `요청이 너무 잦습니다. ${rl.retryAfter}초 후에 다시 시도해주세요.` },
