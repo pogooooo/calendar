@@ -2,7 +2,7 @@
  * Celestial 의 화면 효과 — 천체 타로. 금 선화의 카드 한 장(겉테·속테·네 귀퉁이 마름모, 위에 아르카나 번호, 가운데 문장,
  * 아래 이름)과 별·별자리·별똥별. 천문 기구(아스트롤라베 눈금·궤도·태양계)는 쓰지 않는다 — 이 테마의 중심은 타로다.
  *   달 넘김: 넘기는 쪽으로 흐르는 별똥 줄기와, 자리 잡으며 반짝이는 별 몇 개
- *   화면 옮김: 새 화면 위쪽에 별자리 하나가 이어졌다 사라진다
+ *   화면 옮김: 효과 없음 — 화면을 옮길 때마다 새 화면 위쪽을 별자리가 가로질러, 뜨는 화면을 가렸다(사용자가 뺐다)
  *   끝냄: 누른 자리에서 네 갈래 별이 터진다 · 넣음: 잔별이 피어오른다
  *   챌린지 칸: 여덟 갈래 별 하나와 둘레의 일곱 잔별(XVII 별 카드의 그림) — 연속 이정표면 XVII · THE STAR 카드가
  *             뒤집히며 놓이고 위에 이어 온 수(로마 숫자), 목표를 다 채우면 XXI · THE WORLD
@@ -539,11 +539,6 @@ const mod: FxModule = {
                 alpha: pop, scale: (k) => 0.4 + pop(k) * 0.8,
             }));
             return group(new Swarm(ctx, dot(ctx), streaks), new Swarm(ctx, star(ctx), settle));
-        },
-
-        page: (ctx) => {
-            const left = contentLeft(ctx);
-            return constellation(ctx, { x: left, y: 70, w: ctx.W - left - 40, h: Math.min(260, ctx.H * 0.3) });
         },
 
         complete: (ctx) => burst(ctx, ctx.x, ctx.y, count(ctx, 10), 270),
