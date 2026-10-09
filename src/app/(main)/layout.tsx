@@ -9,6 +9,7 @@ import UpdateNotice from "@/components/update/UpdateNotice";
 import SaveFailureNotice from "@/components/SaveFailureNotice";
 import AndroidWidgetSync from "@/components/AndroidWidgetSync";
 import AndroidBackButton from "@/components/AndroidBackButton";
+import RouteTitle from "@/components/RouteTitle";
 import QuickNavigation from "@/components/navigation/QuickNavigation";
 import { DialogProvider } from "@/components/dialog/DialogProvider";
 import MobileTabBar, { MOBILE_BREAKPOINT, TAB_BAR_HEIGHT } from "@/components/mobile/MobileTabBar";
@@ -36,6 +37,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 <SaveFailureNotice />
                 <AndroidWidgetSync />
                 <AndroidBackButton />
+                <RouteTitle />
                 <QuickNavigation />
             </AppShell>
         </DialogProvider>
