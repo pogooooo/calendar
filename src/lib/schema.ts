@@ -146,6 +146,8 @@ export const UpdateTodoSchema = z.object({
             return Array.isArray(dates) && dates.every(key => typeof key === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(key) && !Number.isNaN(Date.parse(`${key}T00:00:00Z`)) && new Date(`${key}T00:00:00Z`).toISOString().slice(0, 10) === key);
         } catch { return false; }
     }, '제외 날짜 형식이 올바르지 않습니다.').nullable().optional(),
+    /** 끝냄 기록도 그만큼 옮긴다 — 달력에서 일정(반복이면 시리즈)을 끌어 옮길 때. 예전엔 기록이 옛 날에 남아 끝낸 것이 풀렸다 */
+    shiftCompletionsDays: z.number().int().min(-36_500).max(36_500).optional(),
 });
 
 export type CreateTodoInput = z.infer<typeof CreateTodoSchema>;

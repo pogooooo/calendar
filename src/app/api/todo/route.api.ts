@@ -216,7 +216,7 @@ export const PATCH = async (request: NextRequest) => {
         if (!parsedUpdate.success) {
             return NextResponse.json({ message: parsedUpdate.error.issues[0].message }, { status: 400 });
         }
-        const { id, startAt: rawStartAt, endAt: rawEndAt, repeatEndDate: rawRepeatEnd, ...updateData } = parsedUpdate.data;
+        const { id, startAt: rawStartAt, endAt: rawEndAt, repeatEndDate: rawRepeatEnd, shiftCompletionsDays, ...updateData } = parsedUpdate.data;
 
         const existingTodo = await prisma.todo.findUnique({
             where: { id },
@@ -243,11 +243,24 @@ export const PATCH = async (request: NextRequest) => {
             if (!hasDestPermission) return NextResponse.json({ message: "이동할 카테고리에 대한 권한이 없습니다." }, { status: 403 });
         }
 
-        const updatedTodo = await prisma.todo.update({
+        // 끝냄 기록을 날짜만큼 옮긴다 — 하나씩 고치면 이웃한 날끼리 (todoId, targetDate) 유일 제약에 걸리므로 지우고 다시 쓴다
+        const shift = shiftCompletionsDays ?? 0;
+        const moved = shift
+            ? (await prisma.todoCompletion.findMany({ where: { todoId: id }, select: { targetDate: true } }))
+                .map((c) => ({ todoId: id, targetDate: new Date(c.targetDate.getTime() + shift * 86_400_000) }))
+            : [];
+        const update = prisma.todo.update({
             where: { id },
             data: dataToUpdate,
             include: { completions: true }
         });
+        const updatedTodo = moved.length
+            ? (await prisma.$transaction([
+                prisma.todoCompletion.deleteMany({ where: { todoId: id } }),
+                prisma.todoCompletion.createMany({ data: moved }),
+                update,
+            ]))[2]
+            : await update;
 
         return NextResponse.json(updatedTodo);
 

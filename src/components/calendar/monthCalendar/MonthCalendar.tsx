@@ -406,13 +406,15 @@ const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
                     repeatEndDate: original.repeatEndDate ? shiftZonedDays(original.repeatEndDate, days, activeTimeZone()) : null,
                     excludedDates: original.excludedDates ? JSON.stringify(parseExcludedDates(original.excludedDates).map(key => addDaysToKey(key, days))) : null,
                 };
-                const error = await updateTodo(authFetch, original.id, data);
+                // 끝냄 기록도 같은 만큼 옮긴다 — 첫날이 옮겨질 때(통째로 옮김·앞쪽 늘이기). 예전엔 옛 날에 남아 끝낸 일정·지난 회차의 체크가 풀렸다
+                const shift = !edge || edge === 'start' ? days : 0;
+                const error = await updateTodo(authFetch, original.id, data, { shiftCompletionsDays: shift });
                 setMoveNotice(error || t.interaction.moved);
                 setUndoMove(error ? null : () => async () => {
                     if (moving.current) return;
                     moving.current = true;
                     try {
-                        const error = await updateTodo(authFetch, original.id, originalDates);
+                        const error = await updateTodo(authFetch, original.id, originalDates, { shiftCompletionsDays: -shift });
                         setMoveNotice(error);
                         if (!error) setUndoMove(null);
                     } finally { moving.current = false; }

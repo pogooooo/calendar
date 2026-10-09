@@ -3,6 +3,7 @@ import { coalesce, READ_TTL } from "@/lib/fetchOnce";
 import { reportSaveFailure } from "@/lib/saveError";
 import type { AuthFetch, TodoType, TodoCompletionType } from '@/types';
 import { toUtcAnchorIso, utcDayKey, dayKeyToIso } from '@/lib/dateKey';
+import { addDaysToKey } from '@/lib/timezone';
 import { readError } from '@/lib/readError';
 import { fx } from '@/lib/fx';
 
@@ -16,7 +17,8 @@ interface TodoState {
     fetchTodos: (authFetch: AuthFetch, params?: { start?: string; end?: string; categoryId?: string }) => Promise<void>;
     toggleTodo: (authFetch: AuthFetch, todoId: string, targetDate: string) => Promise<void>;
     addTodo: (authFetch: AuthFetch, data: Partial<TodoType>) => Promise<string | null>;
-    updateTodo: (authFetch: AuthFetch, todoId: string, data: Partial<TodoType>) => Promise<string | null>;
+    /** opts.shiftCompletionsDays — 끝냄 기록도 그만큼 옮긴다(달력에서 끌어 옮길 때) */
+    updateTodo: (authFetch: AuthFetch, todoId: string, data: Partial<TodoType>, opts?: { shiftCompletionsDays?: number }) => Promise<string | null>;
     deleteTodo: (authFetch: AuthFetch, todoId: string) => Promise<string | null>;
     deleteTodoOccurrence: (authFetch: AuthFetch, todoId: string, dateKey: string) => Promise<void>;
 }
@@ -169,23 +171,28 @@ const useTodoStore = create<TodoState>((set, get) => ({
         }
     },
 
-    updateTodo: async (authFetch, todoId, data) => {
+    updateTodo: async (authFetch, todoId, data, opts) => {
         const before = get().todos.find(t => t.id === todoId);
+        const shift = opts?.shiftCompletionsDays ?? 0;
+        // 끝냄 기록도 함께 옮겨 보인다 (서버가 같은 만큼 옮긴다)
+        const shifted = shift && before?.completions
+            ? { completions: before.completions.map(c => ({ ...c, targetDate: dayKeyToIso(addDaysToKey(utcDayKey(c.targetDate), shift)) })) }
+            : {};
         // 실패하면 이 일정의 바꾼 칸만 되돌린다
         const revert = () => {
             if (!before) return;
-            const old = Object.fromEntries(Object.keys(data).map(k => [k, before[k as keyof TodoType]])) as Partial<TodoType>;
+            const old = Object.fromEntries([...Object.keys(data), ...Object.keys(shifted)].map(k => [k, before[k as keyof TodoType]])) as Partial<TodoType>;
             set((state) => ({ todos: state.todos.map(t => t.id === todoId ? { ...t, ...old } : t) }));
         };
         set((state) => ({
-            todos: state.todos.map(t => t.id === todoId ? { ...t, ...data } : t)
+            todos: state.todos.map(t => t.id === todoId ? { ...t, ...data, ...shifted } : t)
         }));
 
         try {
             const res = await authFetch('/api/todo', {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: todoId, ...data }),
+                body: JSON.stringify({ id: todoId, ...data, ...(shift ? { shiftCompletionsDays: shift } : {}) }),
             });
             if (res.ok) return null;
             const body = await res.json().catch(() => null);
