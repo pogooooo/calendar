@@ -86,6 +86,8 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({
             message: "비밀번호가 변경되었습니다. 새 비밀번호로 로그인해주세요.",
+            // 이 기기가 같은 계정으로 로그인돼 있으면 화면이 거기서 로그아웃한다 (링크를 연 사람은 이미 이 계정을 다룰 수 있다)
+            userId: user.id,
         });
     } catch (error) {
         console.error("RESET_PASSWORD_ERROR", error);

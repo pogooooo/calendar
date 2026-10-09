@@ -11,6 +11,7 @@ import { api, clientHeaders } from "@/lib/apiBase";
 import { authFailure } from "@/lib/authFailure";
 import { useRevalidateOnLocale } from "@/hooks/useRevalidateOnLocale";
 import useSettingStore from "@/store/useSettingStore";
+import useAuthStore from "@/store/useAuthStore";
 import type { Translations } from "@/i18n/types";
 import { useT } from "@/i18n/useT";
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
@@ -74,6 +75,11 @@ const ResetPasswordForm = () => {
                 return;
             }
             setDone(true);
+            // 이 기기가 같은 계정으로 로그인돼 있었다면 여기서 로그아웃한다 — 서버는 세션을 다 끊었는데, 남은 접근 토큰 때문에
+            // 로그인 화면 대신 홈으로 돌아갔다가 한 시간 안에 튕겼다
+            const { userId } = await res.json().catch(() => ({} as { userId?: string }));
+            const auth = useAuthStore.getState();
+            if (userId && auth.user?.id === userId) await auth.logout();
             // 비밀번호가 바뀌면 기존 세션이 모두 끊기므로 로그인 화면으로 보낸다.
             setTimeout(() => router.push("/signIn"), 1800);
         } catch {
