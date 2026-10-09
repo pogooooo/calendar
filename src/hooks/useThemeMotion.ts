@@ -13,6 +13,11 @@ const subscribe = (onChange: () => void) => {
 const reducedNow = () => query().matches;
 const reducedOnServer = () => false;
 
+/** 기기의 '동작 줄이기'(Windows 의 애니메이션 효과 끄기·안드로이드의 애니메이션 삭제) — 켜져 있으면 앱의 움직임 설정과 상관없이 모두 멈춘다 */
+export function useOsReducedMotion() {
+    return useSyncExternalStore(subscribe, reducedNow, reducedOnServer);
+}
+
 /**
  * JavaScript animations share the same preference as decorative CSS.
  * OS 의 '동작 줄이기'를 켜고 끄는 것도 곧바로 따른다 — framer 의 useReducedMotion 은 처음 값에 멈춰 있어서,
@@ -20,6 +25,6 @@ const reducedOnServer = () => false;
  */
 export default function useThemeMotion() {
     const motion = useSettingStore(s=>s.motion);
-    const reduced = useSyncExternalStore(subscribe, reducedNow, reducedOnServer);
+    const reduced = useOsReducedMotion();
     return reduced ? 'off' : motion;
 }

@@ -17,6 +17,7 @@ import * as MapleLS from "./maple/MapleSettings.layout";
 import * as OceanS from './ocean/OceanSettings.styles';
 import * as OceanLS from './ocean/OceanSettings.layout';
 import useSettingStore from '@/store/useSettingStore';
+import { useOsReducedMotion } from '@/hooks/useThemeMotion';
 import ThemeShop from '@/components/billing/ThemeShop';
 import useIsMobile from '@/hooks/useIsMobile';
 import { useSwapMotion } from '@/hooks/useMotion';
@@ -68,6 +69,8 @@ export default function SettingsView({
     const [tab, setTab] = React.useState<TabId>("look");
     const motion = useSettingStore(s => s.motion);
     const setMotion = useSettingStore(s => s.setMotion);
+    // 기기에서 동작 줄이기가 켜져 있으면 위의 고른 값과 상관없이 아무것도 움직이지 않는다 — 고른 값만 보이면 고장으로 읽혔다
+    const osReducedMotion = useOsReducedMotion();
 
     React.useEffect(() => {
         FONT_OPTIONS.forEach(ensureFontLoaded);
@@ -231,6 +234,13 @@ export default function SettingsView({
                                             >{(locale === 'ko' ? ['풍성하게', '잔잔하게', '끄기'] : ['Full', 'Gentle', 'Off'])[i]}</L.Seg>)}
                                         </L.SegGroup>
                                     </L.SegRow>
+                                    {osReducedMotion && motion !== 'off' && (
+                                        <L.RowNote role="note" style={{ marginTop: -4, marginBottom: 14 }}>
+                                            {locale === 'ko'
+                                                ? "이 기기에서 '동작 줄이기(애니메이션 효과 끄기)'가 켜져 있어 지금은 움직이지 않아요. 기기의 접근성 설정에서 애니메이션 효과를 켜면 위에서 고른 대로 움직입니다."
+                                                : "Reduced motion is on for this device, so animations are off. Turn animation effects back on in your device's accessibility settings to use the choice above."}
+                                        </L.RowNote>
+                                    )}
 
                                     <L.SegRow>
                                         <L.SegLabel>{t.settings.fontSize}</L.SegLabel>
