@@ -28,12 +28,19 @@ export const TIMEZONE_OPTIONS: TimeZoneOption[] = [
     { value: "Pacific/Auckland", label: "오클랜드 (UTC+12/+13)", labelEn: "Auckland (UTC+12/+13)" },
 ];
 
+/** 시간대 이름마다 한 번만 재 본다 — 날 키(zonedDateKey)를 셀 때마다 서식기를 새로 만들면(한 번에 0.1ms 쯤) 달력 칸마다 쌓인다 */
+const validZones = new Map<string, boolean>();
+
 export function isValidTimeZone(tz: string): boolean {
     if (!tz) return false;
+    const known = validZones.get(tz);
+    if (known !== undefined) return known;
     try {
         new Intl.DateTimeFormat("en-US", { timeZone: tz });
+        validZones.set(tz, true);
         return true;
     } catch {
+        validZones.set(tz, false);
         return false;
     }
 }
@@ -104,4 +111,64 @@ export function addDaysToKey(key: string, days: number): string {
     if (!anchor) return key;
     anchor.setUTCDate(anchor.getUTCDate() + days);
     return anchor.toISOString().slice(0, 10);
+}
+
+/** 어떤 시간대의 벽시계 (월은 1부터) */
+export interface WallTime {
+    year: number;
+    month: number;
+    day: number;
+    hour: number;
+    minute: number;
+    second: number;
+}
+
+const wallCache = new Map<string, Intl.DateTimeFormat>();
+
+function wallFormatter(tz: string): Intl.DateTimeFormat {
+    let f = wallCache.get(tz);
+    if (!f) {
+        const make = (zone: string) => new Intl.DateTimeFormat("en-US", {
+            timeZone: zone, hourCycle: "h23",
+            year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "numeric", second: "numeric",
+        });
+        // 모르는 시간대면 날 키(zonedDateKey)처럼 기본 시간대로 읽는다
+        try { f = make(tz); } catch { f = make(DEFAULT_TIMEZONE); }
+        wallCache.set(tz, f);
+    }
+    return f;
+}
+
+/** 그 순간을 그 시간대의 벽시계로 읽는다. 깨진 값이면 null */
+export function zonedWallTime(input: Date | string | number, tz: string): WallTime | null {
+    const d = input instanceof Date ? input : new Date(input);
+    if (Number.isNaN(d.getTime())) return null;
+    const p: Record<string, number> = {};
+    for (const part of wallFormatter(tz).formatToParts(d)) {
+        if (part.type !== "literal") p[part.type] = Number(part.value);
+    }
+    return { year: p.year, month: p.month, day: p.day, hour: p.hour % 24, minute: p.minute, second: p.second };
+}
+
+/**
+ * 그 시간대에서 key 날 hour:minute 벽시계가 가리키는 실제 순간.
+ * 서머타임으로 건너뛴 시각은 빠진 만큼 뒤로 밀고, 두 번 오는 시각은 앞의 것 — new Date(연, 월, 일, 시, 분) 과 같은 셈이다.
+ * (zonedDayStart 는 그 날 UTC 0시의 시차를 써서, 시드니·오클랜드처럼 동쪽 시간대의 서머타임 바뀌는 날에 한 시간 어긋난다)
+ */
+export function zonedTimeToDate(key: string, hour: number, minute: number, tz: string, second = 0, ms = 0): Date | null {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(key);
+    if (!m) return null;
+    const wall = Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]), hour, minute, second, ms);
+    if (Number.isNaN(wall)) return null;
+    // 그 순간의 시차 (벽시계 − 실제 시각)
+    const offsetAt = (t: number) => {
+        const w = zonedWallTime(t, tz);
+        return w ? Date.UTC(w.year, w.month - 1, w.day, w.hour, w.minute, w.second) - Math.floor(t / 1000) * 1000 : 0;
+    };
+    const before = offsetAt(wall - 86400000);
+    const after = offsetAt(wall + 86400000);
+    if (before === after) return new Date(wall - before);
+    // 하루 사이에 시차가 바뀐다 — 그 벽시계가 실제로 나오는 순간만 고른다
+    const fits = [wall - before, wall - after].filter(t => offsetAt(t) === wall - t);
+    return new Date(fits.length ? Math.min(...fits) : wall - before);
 }

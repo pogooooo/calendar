@@ -8,6 +8,8 @@ import { useWidgetInit } from "@/hooks/useWidgetInit";
 import useTodoStore from "@/store/useTodoStore";
 import useCategoryStore from "@/store/useCategoryStore";
 import MonthCalendar from "@/components/calendar/monthCalendar/MonthCalendar";
+// 고른 날은 칸 Date — 고른 시간대의 지금 (기기의 지금이면 시간대가 다를 때 오늘과 다른 칸이 골라졌다)
+import { wallNow } from "@/lib/dateKey";
 
 export default function MonthlyWidget() {
     const title = useWidgetTitle("monthly");
@@ -26,7 +28,7 @@ export default function MonthlyWidget() {
                 <MonthCalendar
                     todos={todos}
                     categories={categories}
-                    selectedDate={new Date()}
+                    selectedDate={wallNow()}
                 />
             </CalendarWrap>
         </WidgetShell>

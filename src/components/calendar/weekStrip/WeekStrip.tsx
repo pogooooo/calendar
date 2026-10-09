@@ -6,7 +6,7 @@ import useSwipe from "@/hooks/useSwipe";
 import { fx } from "@/lib/fx";
 import { expandTodos } from "@/hooks/useExpandedTodos";
 import { getWeekDates } from "@/utils/DateUtils";
-import { localDateKey, endDateKey } from "@/lib/dateKey";
+import { localDateKey, endDateKey, labelKey, wallNow, zonedTime } from "@/lib/dateKey";
 import useProjectStore from "@/store/useProjectStore";
 import { projectCalendarItems } from "@/lib/projectCalendar";
 import type { TodoType, CategoryType } from "@/types";
@@ -61,16 +61,18 @@ export default function WeekStrip({ selectedDate, onSelect, todos, categories }:
     // 아래 일간 화면은 프로젝트와 그 태스크도 그날의 일정으로 보여준다. 띠의 점도 같은 눈으로 센다.
     const allItems = React.useMemo<TodoType[]>(() => [...todos, ...projectCalendarItems(projects)], [todos, projects]);
     const todayKey = localDateKey(new Date());
-    const selectedKey = localDateKey(selectedDate);
+    // 칸 Date(고른 날·주의 날들)의 날 키는 labelKey — localDateKey 로 읽으면 고른 시간대가 기기보다 서쪽일 때 하루 앞 날이 된다
+    const selectedKey = labelKey(selectedDate);
 
     const days = React.useMemo<WeekStripDay[]>(() => {
-        const first = weekDates[0];
-        const last = weekDates[6];
+        // 창은 실제 순간으로 — 첫날·끝날(고른 시간대)의 0시
+        const first = zonedTime(labelKey(weekDates[0]));
+        const last = zonedTime(labelKey(weekDates[6]));
         const expanded = expandTodos(allItems, first, last);
         const colorOf = (id: string) => categories.find(c => c.id === id)?.color ?? "";
 
         return weekDates.map((date) => {
-            const key = localDateKey(date);
+            const key = labelKey(date);
             const onDay = expanded.filter(td =>
                 td.startAt && td.endAt && localDateKey(td.startAt) <= key && key <= endDateKey(td.startAt, td.endAt));
             // 점 하나가 일정 하나. 셋을 넘으면 +N 으로 줄인다.
@@ -95,7 +97,8 @@ export default function WeekStrip({ selectedDate, onSelect, todos, categories }:
 
     const onPrevWeek = React.useCallback(() => shift(-7), [shift]);
     const onNextWeek = React.useCallback(() => shift(7), [shift]);
-    const onToday = React.useCallback(() => onSelect(new Date()), [onSelect]);
+    // 고른 시간대의 지금 (기기와 같은 시간대면 new Date() 와 같다)
+    const onToday = React.useCallback(() => onSelect(wallNow()), [onSelect]);
     const swipe = useSwipe(onNextWeek, onPrevWeek);
 
     const title = t.calendar.monthTitle(selectedDate.getFullYear(), selectedDate.getMonth() + 1);

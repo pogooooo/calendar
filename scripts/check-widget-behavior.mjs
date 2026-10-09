@@ -18,7 +18,8 @@ function sourceModule(relative) {
         compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2020 },
     }).outputText;
     const localRequire = (id) => {
-        if (id === "@/store/useSettingStore") return { getState: () => ({ timezone }) };
+        // default 로 들여온다(import useSettingStore from) — 예전엔 default 가 없어 늘 기본 시간대(서울)로 셌다
+        if (id === "@/store/useSettingStore") return { default: { getState: () => ({ timezone }) }, getState: () => ({ timezone }) };
         if (id === "@/store/useAuthStore") return { default: { getState: () => ({ user: { id: "local-test" } }) } };
         if (id === "@/lib/saveError") return { reportSaveFailure: () => {} };
         if (id === "react" && filename.endsWith("useSwipe.ts")) {
@@ -106,9 +107,12 @@ assert.equal(endDateKey("2026-10-04T00:00:00+09:00", "2026-10-04T00:00:00+09:00"
 assert.equal(endDateKey("2026-10-03T23:00:00+09:00", "2026-10-04T00:30:00+09:00"), "2026-10-04");
 assert.equal(weeklyTaskStats([{ ...task, startAt: "2026-10-03T23:00:00+09:00", endAt: "2026-10-04T00:00:00+09:00", completions: [] }], "2026-10-04").total, 0, "A Saturday 23:00-24:00 event must not count in the next week");
 const { isBetween } = sourceModule("src/utils/DateUtils.tsx");
+// 이 세 줄은 이 기기 시각으로 적었다 — 고른 시간대를 이 기기의 것으로 두고 본다(isBetween 은 일정을 고른 시간대의 날로 센다)
+timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 assert.equal(isBetween(new Date(2026, 9, 4), new Date(2026, 9, 3, 23), new Date(2026, 9, 4, 0)), false, "The calendar must not draw a 23:00-24:00 event on the next day");
 assert.ok(isBetween(new Date(2026, 9, 3), new Date(2026, 9, 3, 23), new Date(2026, 9, 4, 0)));
 assert.ok(isBetween(new Date(2026, 9, 4), new Date(2026, 9, 3, 23), new Date(2026, 9, 4, 0, 30)));
+timezone = "Asia/Seoul";
 const graph = [{ id: "a", blockedBy: [] }, { id: "b", blockedBy: [{ id: "a" }] }, { id: "c", blockedBy: [{ id: "b" }] }, { id: "d", blockedBy: [] }];
 assert.equal(dependencyIssue(graph, "a", "a"), "self");
 assert.equal(dependencyIssue(graph, "a", "b"), "duplicate");
@@ -123,6 +127,50 @@ timezone = "America/Los_Angeles";
 assert.equal(localDateKey(zonedDayStart("2026-10-02", timezone)), "2026-10-02");
 assert.equal(addDaysToKey("2026-12-31", 1), "2027-01-01");
 assert.equal(addDaysToKey("2026-03-01", -1), "2026-02-28");
+
+// 고른 시간대가 기기와 달라도 달력·일간·고르개·창이 홈과 같은 날·시각을 쓴다 (src/lib/dateKey.ts 의 칸 Date·zonedTime).
+// 기기 시간대와 상관없이 같은 답이어야 한다 — 같으면 예전(이 기기 Date) 셈, 다르면 고른 시간대 셈을 탄다
+const { zonedTimeToDate, zonedWallTime } = sourceModule("src/lib/timezone.ts");
+assert.equal(zonedTimeToDate("2026-03-08", 2, 30, "America/Los_Angeles").toISOString(), "2026-03-08T10:30:00.000Z", "A wall time in the spring gap moves forward like new Date()");
+assert.equal(zonedTimeToDate("2026-11-01", 1, 30, "America/Los_Angeles").toISOString(), "2026-11-01T08:30:00.000Z", "A repeated fall-back wall time takes the earlier instant");
+assert.equal(zonedTimeToDate("2026-10-04", 0, 0, "Australia/Sydney").toISOString(), "2026-10-03T14:00:00.000Z", "Midnight on an eastern DST day keeps that day's own offset");
+assert.equal(zonedTimeToDate("2026-04-05", 2, 30, "Australia/Sydney").toISOString(), "2026-04-04T15:30:00.000Z");
+assert.deepEqual(zonedWallTime("2026-10-12T14:30:00Z", "America/Los_Angeles"), { year: 2026, month: 10, day: 12, hour: 7, minute: 30, second: 0 });
+const dateKeys = sourceModule("src/lib/dateKey.ts");
+const { toLocalInput, fromLocalInput, todayKey } = sourceModule("src/lib/localTime.ts");
+const { expandTodos } = sourceModule("src/hooks/useExpandedTodos.tsx");
+assert.equal(dateKeys.labelKey(new Date(2026, 9, 12, 23, 30)), "2026-10-12", "A calendar cell's day is its own date, not the chosen zone's reading of it");
+assert.equal(dateKeys.labelDate("2026-10-12").getDate(), 12);
+assert.equal(dateKeys.zonedTime("2026-10-12", 7, 30).toISOString(), "2026-10-12T14:30:00.000Z");
+assert.equal(dateKeys.wallTime("2026-10-13T03:00:00Z").hour, 20);
+const wallDate = dateKeys.toWallDate("2026-10-13T03:00:00Z");
+assert.deepEqual([wallDate.getDate(), wallDate.getHours()], [12, 20], "A cell Date carries the chosen zone's wall clock");
+assert.equal(dateKeys.fromWallDate(wallDate).toISOString(), "2026-10-13T03:00:00.000Z");
+assert.equal(toLocalInput("2026-10-12T14:30:00Z"), "2026-10-12T07:30", "Pickers show the chosen zone's wall clock");
+assert.equal(fromLocalInput("2026-10-12T07:30"), "2026-10-12T14:30:00.000Z", "Pickers save the chosen zone's wall clock");
+assert.equal(fromLocalInput("2026-10-12", "23:59"), "2026-10-13T06:59:00.000Z");
+assert.equal(todayKey(new Date("2026-10-12T05:00:00Z")), "2026-10-11");
+// 로스앤젤레스 10/12 저녁 8시 = 서울 10/13 정오 — 칸은 고른 시간대의 날(10/12)에 세운다
+const evening = { id: "evening", title: "저녁", categoryId: "c", repeat: 0, startAt: "2026-10-13T03:00:00Z", endAt: "2026-10-13T04:00:00Z", completions: [] };
+assert.ok(isBetween(dateKeys.labelDate("2026-10-12"), evening.startAt, evening.endAt), "A calendar cell matches the chosen-zone day of an event");
+assert.equal(isBetween(dateKeys.labelDate("2026-10-13"), evening.startAt, evening.endAt), false);
+assert.equal(expandTodos([evening], dateKeys.zonedTime("2026-10-12"), dateKeys.zonedTime("2026-10-12")).length, 1, "The window spans the chosen-zone day, not the device day");
+assert.equal(expandTodos([evening], dateKeys.zonedTime("2026-10-13"), dateKeys.zonedTime("2026-10-13")).length, 0);
+const nineAm = { ...evening, id: "nine", repeat: 1, repeatCount: 4, startAt: "2026-03-06T17:00:00Z", endAt: "2026-03-06T18:00:00Z" };
+assert.deepEqual(expandTodos([nineAm], dateKeys.zonedTime("2026-03-01"), dateKeys.zonedTime("2026-03-31")).map(o => o.startAt),
+    ["2026-03-06T17:00:00.000Z", "2026-03-07T17:00:00.000Z", "2026-03-08T16:00:00.000Z", "2026-03-09T16:00:00.000Z"], "Repeats keep 9 AM in the chosen zone across its DST change");
+assert.deepEqual(expandTodos([{ ...nineAm, repeatCount: null, startAt: "2026-01-05T17:00:00Z", endAt: "2026-01-05T18:00:00Z" }], dateKeys.zonedTime("2026-03-07"), dateKeys.zonedTime("2026-03-09")).map(o => o.startAt),
+    ["2026-03-07T17:00:00.000Z", "2026-03-08T16:00:00.000Z", "2026-03-09T16:00:00.000Z"], "Skipping ahead to the window keeps the wall time");
+const until = { ...evening, id: "until", repeat: 1, repeatEndDate: fromLocalInput("2026-10-14", "00:00") };
+assert.deepEqual(expandTodos([until], dateKeys.zonedTime("2026-10-10"), dateKeys.zonedTime("2026-10-20")).map(o => dateKeys.localDateKey(o.startAt)),
+    ["2026-10-12", "2026-10-13", "2026-10-14"], "A repeat runs through its last chosen-zone day");
+// 기기와 같은 시간대면 예전 셈(이 기기 Date) 그대로다
+timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+assert.ok(dateKeys.sameAsDevice());
+assert.equal(dateKeys.zonedTime("2026-10-12", 9, 30).getTime(), new Date(2026, 9, 12, 9, 30).getTime());
+assert.ok(Math.abs(dateKeys.wallNow().getTime() - Date.now()) < 1000, "With the device's own zone, now is just now");
+assert.equal(fromLocalInput("2026-10-12T09:30"), new Date("2026-10-12T09:30").toISOString());
+timezone = "America/Los_Angeles";
 
 const dailyStore = sourceModule("src/store/useDailyStore.ts").default;
 const date = zonedDayStart("2026-10-02", timezone);

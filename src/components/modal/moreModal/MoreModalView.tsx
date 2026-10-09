@@ -6,7 +6,7 @@ import { X, Check } from 'lucide-react';
 import BaseModal from "@/components/modal/baseModal/BaseModal";
 import { isBetween, isSameDay } from "@/utils/DateUtils";
 import { useT } from "@/i18n/useT";
-import { localDateKey, utcDayKey } from "@/lib/dateKey";
+import { labelKey, utcDayKey } from "@/lib/dateKey";
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialMoreModal.styles";
 import * as MapleS from "./maple/MapleMoreModal.styles";
@@ -32,6 +32,7 @@ export default function MoreModalView({
     if (!date) return null;
 
     const dayTodos = todos.filter(todo => isBetween(date, todo.startAt, todo.endAt));
+    // 챌린지 항목의 startAt 은 칸 Date 그대로다(월간 달력) — 칸끼리 견준다
     const dayChallenges = (challenges ?? []).filter(c =>
         c.startAt ? isSameDay(date, new Date(c.startAt)) : false
     );
@@ -56,8 +57,8 @@ export default function MoreModalView({
                             // 달력이 펼친 회차는 제 완료 여부(isDone — 그 회차 시작일의 기록, 프로젝트는 상태)를 들고 온다. 바와 같은 값을 쓴다.
                             // 칸 날짜로 다시 세면 며칠짜리 일정은 둘째 날부터, 프로젝트 항목은 늘 안 끝난 것으로 보였다
                             const expanded = (todo as { isDone?: boolean }).isDone;
-                            // date 는 캘린더 셀의 로컬 자정이라 toISOString 하면 하루가 밀린다
-                            const dateStr = localDateKey(date);
+                            // date 는 캘린더 칸 Date(이 기기 0시에 고른 시간대의 날을 담은 것) — toISOString·localDateKey 로 읽으면 하루가 밀린다
+                            const dateStr = labelKey(date);
                             const isDone = typeof expanded === "boolean" ? expanded : (todo.completions ?? []).some(c =>
                                 utcDayKey(c.targetDate) === dateStr
                             );

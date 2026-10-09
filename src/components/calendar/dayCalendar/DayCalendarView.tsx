@@ -11,6 +11,7 @@ import RulerScroll from "@/components/scroll/RulerScroll";
 import TodoContextMenu from "@/components/calendar/parts/contextMenu/TodoContextMenu";
 import TodoModal from "@/components/modal/todoModal/TodoModal";
 import { useT } from "@/i18n/useT";
+import { wallTime } from "@/lib/dateKey";
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialDayCalendar.styles";
 import * as MapleS from "./maple/MapleDayCalendar.styles";
@@ -159,10 +160,11 @@ const DayCalendarView = React.forwardRef<HTMLDivElement, CelestialDayProps>(
                             <S.TodoList>
                                 {dayTodos.map((todo) => {
                                     const color = categories.find(c => c.id === todo.categoryId)?.color;
-                                    const start = todo.startAt ? new Date(todo.startAt as string) : null;
+                                    // 고른 시간대의 시각 — 예전엔 이 기기 시각이라 시간대가 다르면 홈·시간표와 다른 시각이 섰다
+                                    const start = todo.startAt ? wallTime(todo.startAt as string) : null;
                                     const time = todo.isAllDay || !start
                                         ? null
-                                        : `${String(start.getHours()).padStart(2, "0")}:${String(start.getMinutes()).padStart(2, "0")}`;
+                                        : `${String(start.hour).padStart(2, "0")}:${String(start.minute).padStart(2, "0")}`;
                                     return (
                                         <S.TodoRow
                                             key={todo.id}

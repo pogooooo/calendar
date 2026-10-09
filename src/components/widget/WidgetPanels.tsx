@@ -15,7 +15,7 @@ import useAnniversaryStore from "@/store/useAnniversaryStore";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useT } from "@/i18n/useT";
 import { useCurrentDayKey } from "@/hooks/useCurrentDay";
-import { localDateKey, utcDayKey, activeTimeZone, endDateKey } from "@/lib/dateKey";
+import { localDateKey, utcDayKey, activeTimeZone, endDateKey, zonedTime } from "@/lib/dateKey";
 import { addDaysToKey, zonedDayStart } from "@/lib/timezone";
 import { expandTodos } from "@/hooks/useExpandedTodos";
 import { weeklyTaskStats } from "@/lib/widgetStats";
@@ -131,14 +131,15 @@ export function TodayPanel() {
 
     const day = useDayShift();
     const key = day.key;
-    const t0 = day.date.getTime();
 
-    const windowEnd = new Date(day.date);
-    windowEnd.setDate(windowEnd.getDate() + 7);
-    const occurrences = expandTodos(todos, day.date, windowEnd);
+    // 보는 날부터 이레 뒤까지 — 고른 시간대의 날로 (day.date 는 칸 Date 라 이 기기 0시다. 예전엔 그걸 창·기준으로 써서
+    // 시간대가 다르면 그 날 일정이 빠지거나 "다가오는 일정" 이 하루 어긋났다)
+    const occurrences = expandTodos(todos, zonedTime(key), zonedTime(addDaysToKey(key, 7)));
     const today = occurrences.filter(t => spansDay(t, key));
+    const nextFrom = addDaysToKey(key, 1);
+    const nextTo = addDaysToKey(key, 7);
     const next = occurrences
-        .filter(t => t.startAt && new Date(t.startAt).getTime() >= t0 + 86400000 && new Date(t.startAt).getTime() < t0 + 86400000 * 8)
+        .filter(t => { if (!t.startAt) return false; const k = localDateKey(t.startAt); return nextFrom <= k && k <= nextTo; })
         .sort((a, b) => new Date(a.startAt!).getTime() - new Date(b.startAt!).getTime());
 
     const hasNext = next.length > 0;
@@ -155,10 +156,8 @@ export function TodayPanel() {
         const cat = categories[0];
         if (!cat) { setError(tr.category.selectOrAdd); return; }
 
-        // 보고 있는 날에 넣는다 (오늘이면 지금부터 한 시간)
-        const start = new Date(day.date);
-        if (day.offset === 0) start.setTime(Date.now());
-        else start.setHours(9, 0, 0, 0);
+        // 보고 있는 날에 넣는다 (오늘이면 지금부터 한 시간, 다른 날이면 고른 시간대의 9시 — 예전엔 이 기기의 9시였다)
+        const start = day.offset === 0 ? new Date() : zonedTime(key, 9, 0);
         const end = new Date(start.getTime() + 3600000);
 
         submitting.current = true;
@@ -221,7 +220,8 @@ export function TodayPanel() {
                     <S.SectionHead className="mt">{tr.home.upcoming}</S.SectionHead>
                     {next.map(t => {
                         const done = doneOn(t);
-                        const d = new Date(t.startAt!);
+                        // 고른 시간대의 날 (예전엔 이 기기의 날이었다)
+                        const k = localDateKey(t.startAt!);
                         return (
                             <S.Row key={t.id}>
                                 <S.Box $done={done} aria-label={t.title} aria-pressed={done} onClick={() => void toggleOccurrence(t, (key) => toggleTodo(authFetch, t.originalTodo?.id ?? t.id, key))}>
@@ -229,7 +229,7 @@ export function TodayPanel() {
                                 </S.Box>
                                 <S.Mark $c={color(t.categoryId)} />
                                 <S.Name $done={done}>{t.title}</S.Name>
-                                <S.Meta>{`${d.getMonth() + 1}/${d.getDate()}`}</S.Meta>
+                                <S.Meta>{`${Number(k.slice(5, 7))}/${Number(k.slice(8, 10))}`}</S.Meta>
                             </S.Row>
                         );
                     })}

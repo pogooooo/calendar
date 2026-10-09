@@ -12,6 +12,7 @@ import TodoModal from "@/components/modal/todoModal/TodoModal";
 import useIsMobile from "@/hooks/useIsMobile";
 import useSwipe from "@/hooks/useSwipe";
 import { useT } from "@/i18n/useT";
+import { wallNow } from "@/lib/dateKey";
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialCalendarPage.styles";
 import CelestialCalendarLayout from "./celestial/CelestialCalendarLayout";
@@ -44,7 +45,9 @@ export default function CalendarPage() {
     const [mobileView, setMobileView] = useState<"month" | "week">("month");
     const [addOpen, setAddOpen] = useState(false);
 
-    const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+    // 고른 날은 칸 Date(이 기기 시각에 고른 시간대의 날을 담은 것)다 — 처음엔 고른 시간대의 지금 (src/lib/dateKey.ts).
+    // 예전엔 이 기기의 지금이라, 시간대가 다르면 일간·목록이 홈의 오늘과 다른 날로 열렸다
+    const [selectedDate, setSelectedDate] = useState<Date>(wallNow);
     const [monthRatio, setMonthRatio] = useState(70);
     const [dayCollapsed, setDayCollapsed] = useState(false);
 

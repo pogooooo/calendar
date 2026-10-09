@@ -1,3 +1,5 @@
+import { labelKey, localDateKey, endDateKey, wallNow } from "@/lib/dateKey";
+
 export const formatDate = (date: Date): string => {
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -5,19 +7,15 @@ export const formatDate = (date: Date): string => {
     return `${y}.${m}.${d}`;
 };
 
+/** 칸 Date 끼리(이 기기 시각의 연·월·일) 견준다 — 일정의 시각과 견줄 때는 날 키로 (localDateKey · isBetween) */
 export const isSameDay = (d1: Date, d2: Date): boolean => {
     return d1.getFullYear() === d2.getFullYear() &&
         d1.getMonth() === d2.getMonth() &&
         d1.getDate() === d2.getDate();
 };
 
-/**
- * 일정이 머무는 마지막 순간 — 끝이 딱 0시면 그날은 걸치지 않는다(끝은 그 순간을 빼고 센다).
- * 예전엔 23:00~0:00(밤 11시에 기본 한 시간)이 다음 날 칸·오늘 목록·위젯에도 섰다. 길이가 0 이면 시작 그 순간.
- * 마지막 "날"을 셀 때만 쓴다 — 끝 시각을 보여 주거나 길이를 잴 때는 원래 끝을 쓴다.
- */
-export const lastInstant = (start: string | number | Date, end: string | number | Date): number =>
-    Math.max(new Date(start).getTime(), new Date(end).getTime() - 1);
+// 일정이 머무는 마지막 순간 — 정의는 src/lib/dateKey.ts (서로 부르던 고리를 끊으려고 그쪽으로 옮겼다)
+export { lastInstant } from "@/lib/dateKey";
 
 export const isBetween = (
     target: Date,
@@ -25,13 +23,14 @@ export const isBetween = (
     endStr?: string | number | Date | null
 ): boolean => {
     if (!startStr || !endStr) return false;
-    const t = new Date(target).setHours(0, 0, 0, 0);
-    const s = new Date(startStr).setHours(0, 0, 0, 0);
-    const e = new Date(lastInstant(startStr, endStr)).setHours(0, 0, 0, 0);
-    return t >= s && t <= e;
+    // 칸(target)의 날이 일정이 걸친 날들(고른 시간대) 안인가 — 홈·위젯과 같은 셈.
+    // 예전엔 이 기기 0시끼리 견줘서, 기기와 고른 시간대가 다르면 일정이 홈과 다른 칸에 섰다
+    const key = labelKey(new Date(target));
+    return localDateKey(startStr) <= key && key <= endDateKey(startStr, endStr);
 };
 
-export const getWeekDates = (baseDate: Date = new Date()): Date[] => {
+/** 그 주(일~토)의 칸 Date 들 — 칸 Date 를 받는다(기본은 고른 시간대의 지금) */
+export const getWeekDates = (baseDate: Date = wallNow()): Date[] => {
     const day = baseDate.getDay();
     const sunday = new Date(baseDate);
     sunday.setDate(baseDate.getDate() - day);

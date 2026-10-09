@@ -11,7 +11,7 @@ import { useTodoLevels } from "@/hooks/useTodoLevels";
 import useTodoStore from "@/store/useTodoStore";
 import { useT } from "@/i18n/useT";
 import { useCurrentDayKey } from "@/hooks/useCurrentDay";
-import { localDateKey } from "@/lib/dateKey";
+import { localDateKey, labelKey, wallNow, zonedTime } from "@/lib/dateKey";
 import { toggleOccurrence } from "@/lib/todoDone";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useDialog } from "@/components/dialog/DialogProvider";
@@ -21,7 +21,6 @@ import { projectCalendarItems } from "@/lib/projectCalendar";
 import { useProjectItemActions } from "@/hooks/useProjectItemActions";
 import useChallengeStore, { ChallengeType } from "@/store/useChallengeStore";
 import { completionKey, slotIndexOn } from "@/lib/challengeDays";
-import { todayKey as labelKey } from "@/lib/localTime";
 
 export interface CalendarTodoType extends ExpandedTodoType {
     isProject?: boolean;
@@ -89,7 +88,8 @@ export interface WeekThemeProps {
 
 const WeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
     ({ asChild = false, todos = [], categories = [], selectedDate, onDateChange, ...props }, ref) => {
-        const [currentDate, setCurrentDate] = React.useState(new Date());
+        // 칸 Date — 고른 시간대의 지금 (예전엔 이 기기의 지금이라 시간대가 다르면 다른 주·다른 오늘이 섰다)
+        const [currentDate, setCurrentDate] = React.useState(wallNow);
         const [direction, setDirection] = React.useState(0);
         /**
          * 끈 카테고리를 기억한다 (켠 것이 아니라). 예전엔 카테고리가 처음 왔을 때 전부 켜 둔 목록을 들고 있어서,
@@ -173,11 +173,12 @@ const WeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
             return items;
         }, [challenges, selectedCategoryIds, showChallenges, weekDates]);
 
-        const expandedTodos = useExpandedTodos(
-            filteredTodos,
-            weekDates[0],
-            weekDates[6]
-        ) as CalendarTodoType[];
+        // 창은 실제 순간으로 — 첫 칸·끝 칸의 날(고른 시간대)의 0시 (칸 Date 는 이 기기 시각이다)
+        const [windowStart, windowEnd] = React.useMemo(
+            () => [zonedTime(labelKey(weekDates[0])), zonedTime(labelKey(weekDates[6]))],
+            [weekDates]
+        );
+        const expandedTodos = useExpandedTodos(filteredTodos, windowStart, windowEnd) as CalendarTodoType[];
 
         const { todoLevels, maxLevel } = useTodoLevels(expandedTodos, weekDates);
 

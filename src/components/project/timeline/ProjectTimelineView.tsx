@@ -7,6 +7,8 @@ import type { ProjectTaskType } from '@/types';
 import useIsMobile from "@/hooks/useIsMobile";
 import useDragTarget from "@/hooks/useDragTarget";
 import { Link2 } from "lucide-react";
+import { activeTimeZone, labelDate, labelKey, localDateKey, zonedTime } from "@/lib/dateKey";
+import { shiftZonedDays } from "@/lib/taskInteractions";
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialTimeline.styles";
 import * as MapleS from "./maple/MapleTimeline.styles";
@@ -17,6 +19,10 @@ const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: Ma
 
 const ROW_HEIGHT = 48;
 const DAY_WIDTH = 48;
+
+/** 그 순간이 놓이는 고른 시간대의 날을 칸 Date(이 기기 0시)의 시각으로 — 칸끼리의 셈은 이 기기 시각 그대로 한다.
+    예전엔 이 기기의 날로 잘라서, 기기와 고른 시간대가 다르면 막대가 달력과 하루 어긋났다 */
+const dayTimeOf = (v: string | number | Date) => labelDate(localDateKey(v)).getTime();
 
 type DragMode = 'move' | 'resize-right';
 
@@ -71,7 +77,7 @@ const ProjectTimelineView = React.forwardRef<HTMLDivElement, ProjectTimelineProp
     const taskElemsRef    = React.useRef<Map<string, HTMLDivElement>>(new Map());
     const [draggingTaskId, setDraggingTaskId] = React.useState<string | null>(null);
 
-    const todayTime = React.useMemo(() => new Date().setHours(0, 0, 0, 0), []);
+    const todayTime = React.useMemo(() => dayTimeOf(new Date()), []);
     const timelineDays = React.useMemo(() => {
         const start = new Date(todayTime);
         start.setDate(start.getDate() - 30);
@@ -96,8 +102,8 @@ const ProjectTimelineView = React.forwardRef<HTMLDivElement, ProjectTimelineProp
 
     // ── 기본 위치 계산 ────────────────────────────────────────────────────────
     const getBaseTaskBounds = React.useCallback((t: ProjectTaskType) => {
-        const startTs = t.startAt ? new Date(t.startAt).setHours(0,0,0,0) : todayTime;
-        const endTs   = t.endAt   ? new Date(t.endAt).setHours(0,0,0,0)   : startTs;
+        const startTs = t.startAt ? dayTimeOf(t.startAt) : todayTime;
+        const endTs   = t.endAt   ? dayTimeOf(t.endAt)   : startTs;
         const left    = Math.floor((startTs - timelineStart) / 86400000) * DAY_WIDTH;
         const width   = Math.max(1, Math.floor((endTs - startTs) / 86400000) + 1) * DAY_WIDTH;
         return { left, width, startTs, endTs };
@@ -183,9 +189,11 @@ const ProjectTimelineView = React.forwardRef<HTMLDivElement, ProjectTimelineProp
                     const daysShifted = Math.round(drag.currentDeltaX / DAY_WIDTH);
                     /* 저장된 시각을 그날 수만큼만 옮긴다 — 예전엔 그날 0시로 잘라 보내서 9시~10시 반 할 일이 0시~0시가 되고,
                        하루 종일 할 일의 끝(23:59)도 0시로 당겨졌다. 날짜가 없던 할 일은 오늘 하루(0시~23:59)에서 시작한다 */
-                    const startAt = task.startAt ?? new Date(startTs).toISOString();
-                    const endAt = task.endAt ?? task.startAt ?? new Date(new Date(startTs).setHours(23, 59, 0, 0)).toISOString();
-                    const shift = (iso: string, days: number) => { const d = new Date(iso); d.setDate(d.getDate() + days); return d.toISOString(); };
+                    // 날짜 없던 할 일의 그날 0시~23:59, 날 수만큼 옮기기 모두 고른 시간대로 (월간 달력의 끌어 옮기기와 같은 셈)
+                    const startKey = labelKey(new Date(startTs));
+                    const startAt = task.startAt ?? zonedTime(startKey).toISOString();
+                    const endAt = task.endAt ?? task.startAt ?? zonedTime(startKey, 23, 59).toISOString();
+                    const shift = (iso: string, days: number) => shiftZonedDays(iso, days, activeTimeZone());
 
                     if (drag.mode === 'move' && daysShifted !== 0) {
                         // 스냅백 방지: 최종 위치를 미리 style.left에 적용 후 transform 제거
@@ -252,7 +260,7 @@ const ProjectTimelineView = React.forwardRef<HTMLDivElement, ProjectTimelineProp
 
     const dayLabel = (v: string | Date | null | undefined) => {
         if (!v) return t.form.noDate;
-        const d = new Date(v);
+        const d = new Date(dayTimeOf(v));
         return t.calendar.dayLabelShort(d.getMonth() + 1, d.getDate());
     };
 

@@ -1,6 +1,13 @@
 import useSettingStore from "@/store/useSettingStore";
-import { zonedDateKey, DEFAULT_TIMEZONE } from "@/lib/timezone";
-import { lastInstant } from "@/utils/DateUtils";
+import { zonedDateKey, DEFAULT_TIMEZONE, zonedTimeToDate, zonedWallTime, type WallTime } from "@/lib/timezone";
+
+/**
+ * 일정이 머무는 마지막 순간 — 끝이 딱 0시면 그날은 걸치지 않는다(끝은 그 순간을 빼고 센다).
+ * 예전엔 23:00~0:00(밤 11시에 기본 한 시간)이 다음 날 칸·오늘 목록·위젯에도 섰다. 길이가 0 이면 시작 그 순간.
+ * 마지막 "날"을 셀 때만 쓴다 — 끝 시각을 보여 주거나 길이를 잴 때는 원래 끝을 쓴다.
+ */
+export const lastInstant = (start: string | number | Date, end: string | number | Date): number =>
+    Math.max(new Date(start).getTime(), new Date(end).getTime() - 1);
 
 /**
  * 날짜 키는 사용자가 설정에서 고른 시간대를 기준으로 만든다.
@@ -47,3 +54,81 @@ export const parseExcludedDates = (raw: string | null | undefined): string[] => 
         return [];
     }
 };
+
+/* ── 고른 시간대의 날·벽시계 ──────────────────────────────────────────────
+   달력 칸·고른 날·시각 고르개는 이 기기 Date 의 연·월·일(·시·분)을 읽는다. 그 Date 에는 고른 시간대의 날·벽시계를 담고
+   ("칸 Date"), 일정(실제 순간)과 견주거나 저장할 때만 아래 함수로 바꾼다. 예전엔 칸을 이 기기 시각 그대로 셈해서,
+   기기와 고른 시간대가 다르면(여행 중, 서울로 저장된 예전 설치) 달력·일간·창이 홈·위젯과 다른 날·시각을 보였다.
+   고른 시간대가 이 기기와 같으면(대부분) 예전 셈을 그대로 쓴다 — 결과가 같고 서머타임 경계까지 예전 그대로다. */
+
+let deviceZone: { tz: string; at: number } | null = null;
+
+/** 이 기기의 시간대 — 재는 데 0.1ms 쯤 들어 잠깐(1초) 붙들되, 여행 중 OS 시간대가 바뀌면 곧 따라간다 */
+export const deviceTimeZone = (): string => {
+    const now = Date.now();
+    if (!deviceZone || now - deviceZone.at > 1000) {
+        let tz = "";
+        try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ""; } catch { /* 모르면 다른 시간대로 본다 */ }
+        deviceZone = { tz, at: now };
+    }
+    return deviceZone.tz;
+};
+
+/** 고른 시간대가 이 기기와 같은가 — 같으면 이 기기 Date 셈이 곧 고른 시간대의 셈이다 */
+export const sameAsDevice = (tz: string = activeTimeZone()): boolean => tz === deviceTimeZone();
+
+const pad2 = (n: number) => String(n).padStart(2, "0");
+
+/**
+ * 칸 Date(달력 칸·고른 날)의 날 키 — 이 기기 시각의 연·월·일이 곧 고른 시간대의 그 날이다.
+ * 칸에 localDateKey 를 쓰면 고른 시간대가 기기보다 서쪽일 때 하루 앞 날이 된다
+ */
+export const labelKey = (date: Date): string =>
+    `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
+
+/** 날 키 → 그 날을 담은 칸 Date (이 기기의 그 날 0시) */
+export const labelDate = (key: string): Date => {
+    const [y, m, d] = key.split("-").map(Number);
+    return new Date(y, m - 1, d);
+};
+
+/** 고른 시간대에서 그 날 hour:minute 의 실제 순간 — 기기와 같은 시간대면 예전처럼 new Date(연, 월, 일, 시, 분) */
+export const zonedTime = (key: string, hour = 0, minute = 0): Date => {
+    const tz = activeTimeZone();
+    if (sameAsDevice(tz)) {
+        const [y, m, d] = key.split("-").map(Number);
+        return new Date(y, m - 1, d, hour, minute);
+    }
+    return zonedTimeToDate(key, hour, minute, tz) ?? new Date(NaN);
+};
+
+/** 그 순간의 고른 시간대 벽시계 (월은 1부터). 깨진 값이면 null */
+export const wallTime = (input: Date | string | number): WallTime | null => {
+    const d = input instanceof Date ? input : new Date(input);
+    if (Number.isNaN(d.getTime())) return null;
+    const tz = activeTimeZone();
+    if (!sameAsDevice(tz)) return zonedWallTime(d, tz);
+    return { year: d.getFullYear(), month: d.getMonth() + 1, day: d.getDate(), hour: d.getHours(), minute: d.getMinutes(), second: d.getSeconds() };
+};
+
+/**
+ * 그 순간의 고른 시간대 벽시계를 담은 칸 Date — 칸·시각 고르개처럼 이 기기 Date 의 연월일·시분을 읽는 곳에 넘길 때.
+ * 기기와 같은 시간대면 그 순간 그대로다
+ */
+export const toWallDate = (input: Date | string | number): Date => {
+    const d = input instanceof Date ? new Date(input.getTime()) : new Date(input);
+    const tz = activeTimeZone();
+    if (Number.isNaN(d.getTime()) || sameAsDevice(tz)) return d;
+    const w = zonedWallTime(d, tz)!;
+    return new Date(w.year, w.month - 1, w.day, w.hour, w.minute, w.second, d.getMilliseconds());
+};
+
+/** toWallDate 의 반대 — 칸 Date 에 담긴 벽시계를 고른 시간대의 실제 순간으로 */
+export const fromWallDate = (wall: Date): Date => {
+    const tz = activeTimeZone();
+    if (Number.isNaN(wall.getTime()) || sameAsDevice(tz)) return new Date(wall.getTime());
+    return zonedTimeToDate(labelKey(wall), wall.getHours(), wall.getMinutes(), tz, wall.getSeconds(), wall.getMilliseconds()) ?? new Date(NaN);
+};
+
+/** '지금' 을 담은 칸 Date — 칸·고른 날에 new Date() 대신 (기기와 같은 시간대면 new Date() 와 같다) */
+export const wallNow = (): Date => toWallDate(Date.now());

@@ -6,7 +6,7 @@ import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 
 import { MonthThemeProps, CalendarTodoType } from "./MonthCalendar";
-import { isSameDay, isBetween, lastInstant } from "@/utils/DateUtils";
+import { isSameDay } from "@/utils/DateUtils";
 import { useTodoLevels } from "@/hooks/useTodoLevels";
 import { CategoryType } from "@/store/useCategoryStore";
 
@@ -21,8 +21,7 @@ import useIsMobile from "@/hooks/useIsMobile";
 import { isWidgetWindow } from "@/hooks/useAuthFetch";
 import useSwipe from "@/hooks/useSwipe";
 import useDragTarget from "@/hooks/useDragTarget";
-import { localDateKey, activeTimeZone } from "@/lib/dateKey";
-import { overlapsCalendarDays } from "@/lib/taskInteractions";
+import { localDateKey, endDateKey, labelKey } from "@/lib/dateKey";
 import { addDaysToKey } from "@/lib/timezone";
 import useAnniversaryStore from "@/store/useAnniversaryStore";
 import { anniversariesOn } from "@/lib/anniversary";
@@ -109,18 +108,28 @@ const WeekRow = ({
         return () => ro.disconnect();
     }, [isMobile, todos]);
 
-    const weekTodos = React.useMemo(() => {
-        return todos.filter((todo: CalendarTodoType) => {
-            if (!todo.startAt || !todo.endAt) return false;
-            return overlapsCalendarDays(todo.startAt, todo.endAt, localDateKey(dates[0]), localDateKey(dates[6]), activeTimeZone());
+    /* 칸은 칸 Date 의 날(labelKey), 일정은 고른 시간대의 날(localDateKey·endDateKey)로 견준다 — 홈·위젯과 같은 셈.
+       예전엔 칸 Date 를 localDateKey 로 읽고 일정은 이 기기 0시로 견줘서, 기기와 고른 시간대가 다르면 칸 이름(data-calendar-date)과
+       일정이 서는 칸이 하루씩 어긋났다 */
+    const cellKeys = React.useMemo(() => dates.map(labelKey), [dates]);
+    const weekSpans = React.useMemo(() => {
+        const from = cellKeys[0], to = cellKeys[6];
+        const spans = new Map<string, { start: string; end: string }>();
+        todos.forEach((todo: CalendarTodoType) => {
+            if (!todo.startAt || !todo.endAt) return;
+            const start = localDateKey(todo.startAt), end = endDateKey(todo.startAt, todo.endAt);
+            if (start <= to && end >= from) spans.set(todo.id, { start, end });
         });
-    }, [todos, dates]);
+        return spans;
+    }, [todos, cellKeys]);
+    const weekTodos = React.useMemo(() => todos.filter((todo: CalendarTodoType) => weekSpans.has(todo.id)), [todos, weekSpans]);
 
     const { todoLevels, maxLevel } = useTodoLevels(weekTodos, dates);
 
     const anniversaries = useAnniversaryStore(s => s.anniversaries);
 
     const dayTiers = React.useMemo(() => dates.map((date) => {
+        // 챌린지 항목의 startAt 은 칸 Date 그대로다(MonthCalendar) — 칸끼리 견준다
         const list = challengeTodos.filter(c => isSameDay(date, new Date(c.startAt as string | number | Date)));
         const total = list.length;
         const done = list.filter(c => c.isDone).length;
@@ -135,10 +144,11 @@ const WeekRow = ({
                 const isToday = date.toDateString() === todayStr;
                 const isCurrentMonth = date.getMonth() === currentMonth;
                 const isSelected = selectedDate ? date.toDateString() === selectedDate.toDateString() : false;
+                const cellKey = cellKeys[idx];
 
                 const dayTodos = weekTodos.filter((todo: CalendarTodoType) => {
-                    if (!todo.startAt || !todo.endAt) return false;
-                    return isBetween(date, todo.startAt, todo.endAt);
+                    const span = weekSpans.get(todo.id);
+                    return !!span && span.start <= cellKey && cellKey <= span.end;
                 });
 
                 // 이 칸이 쓰는 층 수가 들어가면 다 보이고, 넘치면 한 층을 "+N" 자리로 비운다
@@ -156,8 +166,8 @@ const WeekRow = ({
                     <S.DayCell
                         key={idx}
                         ref={idx === 0 ? firstCellRef : undefined}
-                        data-calendar-date={localDateKey(date)}
-                        $dropTarget={dropTarget === localDateKey(date)}
+                        data-calendar-date={cellKey}
+                        $dropTarget={dropTarget === cellKey}
                         $isToday={isToday}
                         $isCurrentMonth={isCurrentMonth}
                         $isSelected={isSelected}
@@ -189,7 +199,7 @@ const WeekRow = ({
                             </S.DayHeaderLeft>
 
                             <S.AddTodoButton
-                                aria-label={`${t.calendar.addTask}: ${localDateKey(date)}`}
+                                aria-label={`${t.calendar.addTask}: ${cellKey}`}
                                 className="add-btn"
                                 onClick={(e) => { e.stopPropagation(); handleCreateTodo(date); }}
                             >
@@ -197,7 +207,7 @@ const WeekRow = ({
                             </S.AddTodoButton>
                         </div>
                         {dayTodos.length > 0 && <S.CompactTaskCount type="button"
-                            aria-label={`${localDateKey(date)} · ${t.calendar.more(dayTodos.length)}`}
+                            aria-label={`${cellKey} · ${t.calendar.more(dayTodos.length)}`}
                             onClick={e => { e.stopPropagation(); setMoreModalDate(date); }}>
                             {dayTodos.length}
                         </S.CompactTaskCount>}
@@ -206,8 +216,9 @@ const WeekRow = ({
                                 const todoAtThisLevel = dayTodos.find((t: CalendarTodoType) => todoLevels[t.id] === levelIndex);
 
                                 if (todoAtThisLevel && todoAtThisLevel.startAt && todoAtThisLevel.endAt) {
-                                    const isStart = isSameDay(date, new Date(todoAtThisLevel.startAt as string | number | Date));
-                                    const isEnd = isSameDay(date, new Date(lastInstant(todoAtThisLevel.startAt, todoAtThisLevel.endAt)));
+                                    const span = weekSpans.get(todoAtThisLevel.id);
+                                    const isStart = span?.start === cellKey;
+                                    const isEnd = span?.end === cellKey;
                                     const color = categories.find((c: CategoryType) => c.id === todoAtThisLevel.categoryId)?.color;
 
                                     const isDone = !!todoAtThisLevel.isDone;
@@ -222,7 +233,7 @@ const WeekRow = ({
                                                        title={movable ? `${todoAtThisLevel.title} · ${t.interaction.calendarDragHint}` : todoAtThisLevel.title}
                                                        $dragging={draggingId === todoAtThisLevel.id}
                                                        $movable={movable}
-                                                       onPointerDown={e => { if (movable) onDragStart(e, todoAtThisLevel, localDateKey(date)); }}
+                                                       onPointerDown={e => { if (movable) onDragStart(e, todoAtThisLevel, cellKey); }}
                                                        $isStart={isStart}
                                                        $isEnd={isEnd}
                                                        $color={color}
@@ -232,7 +243,7 @@ const WeekRow = ({
                                                            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); void handleQuickEdit(todoAtThisLevel); }
                                                            if (movable && e.altKey && ['ArrowLeft', 'ArrowRight'].includes(e.key)) {
                                                                e.preventDefault();
-                                                               const from = localDateKey(date);
+                                                               const from = cellKey;
                                                                void handleMoveTodo(todoAtThisLevel, from, addDaysToKey(from, e.key === 'ArrowLeft' ? -1 : 1));
                                                            }
                                                        }}
@@ -245,12 +256,12 @@ const WeekRow = ({
                                                 key={edge} type="button" $edge={edge}
                                                 aria-label={`${todoAtThisLevel.title} · ${edge === 'start' ? t.form.startDate : t.form.endDate}`}
                                                 title={edge === 'start' ? t.form.startDate : t.form.endDate}
-                                                onPointerDown={e => { e.stopPropagation(); onDragStart(e, todoAtThisLevel, localDateKey(date), edge); }}
+                                                onPointerDown={e => { e.stopPropagation(); onDragStart(e, todoAtThisLevel, cellKey, edge); }}
                                                 onClick={e => { e.stopPropagation(); consumeDragClick(); }}
                                                 onKeyDown={e => {
                                                     e.stopPropagation();
                                                     if (e.altKey && ['ArrowLeft', 'ArrowRight'].includes(e.key)) {
-                                                        e.preventDefault(); const from = localDateKey(date);
+                                                        e.preventDefault(); const from = cellKey;
                                                         void handleResizeTodo(todoAtThisLevel, edge, from, addDaysToKey(from, e.key === 'ArrowLeft' ? -1 : 1));
                                                     }
                                                 }}

@@ -7,7 +7,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Plus } from 'lucide-react';
 
 import { WeekThemeProps } from "./WeekCalendar";
-import { isSameDay, isBetween, lastInstant } from "@/utils/DateUtils";
+import { isSameDay, isBetween } from "@/utils/DateUtils";
+import { labelKey, localDateKey, endDateKey } from "@/lib/dateKey";
 import Arrow from "@/assets/Arrow";
 import CategoryFilter from "@/components/calendar/parts/categoryFilter/CategoryFilter";
 import AnimatedDateText from "@/components/calendar/parts/animatedDateText/AnimatedDateText";
@@ -70,6 +71,7 @@ const WeekCalendarView = React.forwardRef<HTMLDivElement, CelestialWeekProps>(
         // 단계(tier)는 챌린지 완료율로만 계산 (일반 할 일은 합산하지 않음)
         const dayTiers = React.useMemo(() => {
             return weekDates.map(date => {
+                // 챌린지 항목의 startAt 은 칸 Date 그대로다(WeekCalendar) — 칸끼리 견준다
                 const dayChallenges = challengeTodos.filter(c => isSameDay(new Date(c.startAt), date));
                 const total = dayChallenges.length;
                 const done = dayChallenges.filter(c => c.isDone).length;
@@ -161,8 +163,9 @@ const WeekCalendarView = React.forwardRef<HTMLDivElement, CelestialWeekProps>(
                                                         const todoAtThisLevel = regularTodos.find(t => todoLevels[t.id] === levelIndex);
 
                                                         if (todoAtThisLevel && todoAtThisLevel.startAt && todoAtThisLevel.endAt) {
-                                                            const isStart = isSameDay(date, new Date(todoAtThisLevel.startAt as string | number | Date));
-                                                            const isEnd = isSameDay(date, new Date(lastInstant(todoAtThisLevel.startAt, todoAtThisLevel.endAt)));
+                                                            // 칸의 날과 일정의 첫날·끝날(고른 시간대)을 날 키로 견준다 (isBetween 과 같은 셈)
+                                                            const isStart = labelKey(date) === localDateKey(todoAtThisLevel.startAt);
+                                                            const isEnd = labelKey(date) === endDateKey(todoAtThisLevel.startAt, todoAtThisLevel.endAt);
                                                             const color = categories.find(c => c.id === todoAtThisLevel.categoryId)?.color;
 
                                                             const item = todoAtThisLevel as (typeof todoAtThisLevel & { isDone?: boolean; check?: string; status?: string });

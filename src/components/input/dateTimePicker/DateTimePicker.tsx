@@ -5,6 +5,7 @@ import { useT } from "@/i18n/useT";
 import { createPortal } from "react-dom";
 import { CalendarDays, ChevronLeft, ChevronRight, Clock } from "lucide-react";
 import TimeDial from "./TimeDial";
+import { localDateKey, wallNow } from "@/lib/dateKey";
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialDateTimePicker.styles";
 import * as MapleS from "./maple/MapleDateTimePicker.styles";
@@ -32,9 +33,11 @@ const pad = (n: number) => String(n).padStart(2, "0");
 
 const toKey = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 
+/* 값 글자는 고른 시간대의 시각이고(src/lib/localTime.ts), 고르개 안에서는 그 글자를 이 기기 Date 에 담아 칸·시각을 센다.
+   비었을 때의 '지금'·오늘 표시도 고른 시간대로 — 예전엔 이 기기의 지금이라 시간대가 다르면 다른 날·시각이 섰다 */
 function parseValue(value: string, mode: "datetime" | "date") {
-    const d = value ? new Date(mode === "date" ? `${value.slice(0, 10)}T00:00` : value) : new Date();
-    return isNaN(d.getTime()) ? new Date() : d;
+    const d = value ? new Date(mode === "date" ? `${value.slice(0, 10)}T00:00` : value) : wallNow();
+    return isNaN(d.getTime()) ? wallNow() : d;
 }
 
 function emit(date: Date, hour: number, minute: number, mode: "datetime" | "date") {
@@ -162,7 +165,7 @@ export default function DateTimePicker({ value, onChange, mode = "datetime", ran
     };
 
     const pickNow = () => {
-        const now = new Date();
+        const now = wallNow();
         now.setMinutes(Math.round(now.getMinutes() / 5) * 5, 0, 0);
         setView(new Date(now.getFullYear(), now.getMonth(), 1));
         onChange(emit(now, now.getHours(), now.getMinutes(), mode));
@@ -220,7 +223,7 @@ export default function DateTimePicker({ value, onChange, mode = "datetime", ran
     };
 
     const grid = buildGrid(view);
-    const todayKey = toKey(new Date());
+    const todayKey = localDateKey(new Date());
     const selectedKey = toKey(selected);
 
     const label = (short ? "" : `${selected.getFullYear()}. `)

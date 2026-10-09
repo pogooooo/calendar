@@ -10,6 +10,8 @@ import useProjectStore from "@/store/useProjectStore";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useT } from "@/i18n/useT";
 import { useDialog } from "@/components/dialog/DialogProvider";
+import { toLocalInput, fromLocalInput } from "@/lib/localTime";
+import { wallNow, fromWallDate } from "@/lib/dateKey";
 
 export interface TodoModalProps {
     isOpen: boolean;
@@ -66,10 +68,14 @@ export interface TodoModalThemeProps extends TodoModalProps {
     handleDelete: () => Promise<void>;
 }
 
+/** 칸 Date 의 이 기기 시각 연월일·시분 — 칸 Date 에는 고른 시간대의 벽시계가 담겨 있다 (src/lib/dateKey.ts) */
 const getLocalDatetimeString = (date: Date) => {
     const tzOffset = date.getTimezoneOffset() * 60000;
     return new Date(date.getTime() - tzOffset).toISOString().slice(0, 16);
 };
+
+/** 칸의 글자(고른 시간대의 "YYYY-MM-DDTHH:mm")가 가리키는 순간 — 깨졌으면 NaN */
+const instantOf = (value: string) => Date.parse(fromLocalInput(value) ?? "");
 
 export default function TodoModal(props: TodoModalProps) {
     const { isOpen, onClose, todo, categories, selectedDate, initialTitle } = props;
@@ -144,8 +150,9 @@ export default function TodoModal(props: TodoModalProps) {
                 setLocation(todo.location || "");
                 setRepeat(todo.repeat || 0);
 
-                setStartAt(todo.startAt ? getLocalDatetimeString(new Date(todo.startAt)) : "");
-                setEndAt(todo.endAt ? getLocalDatetimeString(new Date(todo.endAt)) : "");
+                // 칸에는 고른 시간대의 시각을 — 예전엔 이 기기 시각이라 시간대가 다르면 달력·홈과 다른 날·시각이 떴다
+                setStartAt(todo.startAt ? toLocalInput(todo.startAt) : "");
+                setEndAt(todo.endAt ? toLocalInput(todo.endAt) : "");
 
                 if (todo.repeatCount) {
                     setRepeatEndType('count');
@@ -153,7 +160,7 @@ export default function TodoModal(props: TodoModalProps) {
                     setRepeatEndDate("");
                 } else if (todo.repeatEndDate) {
                     setRepeatEndType('until');
-                    setRepeatEndDate(getLocalDatetimeString(new Date(todo.repeatEndDate)).slice(0, 10));
+                    setRepeatEndDate(toLocalInput(todo.repeatEndDate).slice(0, 10));
                     setRepeatCount("");
                 } else {
                     setRepeatEndType('never');
@@ -172,10 +179,11 @@ export default function TodoModal(props: TodoModalProps) {
                 setRepeatCount("");
                 setRepeatEndDate("");
 
-                const defaultDate = selectedDate ? new Date(selectedDate) : new Date();
+                // selectedDate 는 칸 Date(이 기기 시각에 고른 시간대의 날·시각을 담은 것), 없으면 고른 시간대의 지금
+                const defaultDate = selectedDate ? new Date(selectedDate) : wallNow();
                 setStartAt(getLocalDatetimeString(defaultDate));
-                const defaultEndDate = new Date(defaultDate.getTime() + 60 * 60 * 1000);
-                setEndAt(getLocalDatetimeString(defaultEndDate));
+                // 끝은 그 순간의 한 시간 뒤 (고른 시간대의 시각으로 적는다)
+                setEndAt(toLocalInput(fromWallDate(defaultDate).getTime() + 60 * 60 * 1000));
             }
         }
     // 열릴 때의 값만 읽는다 — 나머지가 바뀌어도 사용자가 고치던 칸을 덮지 않는다
@@ -215,8 +223,9 @@ export default function TodoModal(props: TodoModalProps) {
             return;
         }
 
-        const start = new Date(startAt);
-        const end = new Date(endAt);
+        // 칸의 글자는 고른 시간대의 시각이다 — 예전엔 이 기기 시각으로 읽어서, 시간대가 다르면 다른 순간으로 저장됐다
+        const start = new Date(instantOf(startAt));
+        const end = new Date(instantOf(endAt));
         // 끝이 시작보다 앞서면 (끝 고르개의 "지금"·시계로 쉽게 생긴다) 달력·시간표 어디에도 서지 않아 고칠 길도 없어졌다.
         // 하루 종일은 날짜만 본다 — 시각은 화면에 없으니
         const inverted = isAllDay ? endAt.slice(0, 10) < startAt.slice(0, 10) : end.getTime() < start.getTime();
@@ -227,15 +236,16 @@ export default function TodoModal(props: TodoModalProps) {
 
         // 프로젝트 할 일로 넣기 — 반복·장소는 없다. 하루 종일이면 그날 0시 ~ 23:59 로 맞춘다 (프로젝트 할 일의 약속)
         if (!todo && projectId) {
-            const dayStart = new Date(start); dayStart.setHours(0, 0, 0, 0);
-            const dayEnd = new Date(end); dayEnd.setHours(23, 59, 0, 0);
+            // 그날 0시·23:59 도 고른 시간대로
+            const dayStart = fromLocalInput(startAt.slice(0, 10), "00:00");
+            const dayEnd = fromLocalInput(endAt.slice(0, 10), "23:59");
             const error = await addProjectTask(authFetch, projectId, {
                 title,
                 description: memo || null,
                 status: "todo",
                 priority: "medium",
-                startAt: (isAllDay ? dayStart : start).toISOString(),
-                endAt: (isAllDay ? dayEnd : end).toISOString(),
+                startAt: isAllDay && dayStart ? dayStart : start.toISOString(),
+                endAt: isAllDay && dayEnd ? dayEnd : end.toISOString(),
                 isAllDay,
             });
             if (error) {
@@ -259,8 +269,8 @@ export default function TodoModal(props: TodoModalProps) {
             location,
             repeat: safeRepeat,
             // "YYYY-MM-DD" 를 new Date 로 읽으면 UTC 0시가 된다 — 서쪽(UTC-) 시간대에서는 그게 전날이라 반복이 하루 일찍 끝나고,
-            // 다시 열면 전날로 보여 저장할 때마다 하루씩 당겨졌다. 이 기기의 그날 0시로 둔다(읽는 쪽도 이 기기의 날로 읽는다)
-            repeatEndDate: safeRepeat > 0 && repeatEndType === 'until' && repeatEndDate ? new Date(`${repeatEndDate.slice(0, 10)}T00:00`).toISOString() : null,
+            // 다시 열면 전날로 보여 저장할 때마다 하루씩 당겨졌다. 고른 시간대의 그날 0시로 둔다(읽는 쪽 expandTodos 도 고른 시간대의 날로 읽는다)
+            repeatEndDate: safeRepeat > 0 && repeatEndType === 'until' && repeatEndDate ? fromLocalInput(repeatEndDate.slice(0, 10), "00:00") : null,
             repeatCount: safeRepeat > 0 && repeatEndType === 'count' && repeatCount ? Number(repeatCount) : null,
         };
 
@@ -298,14 +308,15 @@ export default function TodoModal(props: TodoModalProps) {
 
         // 시작을 옮기면 종료도 같은 길이만큼 따라간다 (새 일정은 1시간짜리라 1시간 뒤).
         // 예전엔 늘 1시간 뒤(종일은 같은 날)로 다시 맞춰서, 며칠짜리 일정의 시작 시각만 고쳐도 끝 날짜가 시작 날로 당겨졌다
+        // 글자는 고른 시간대의 시각 — 순간으로 바꿔 길이를 재고 다시 그 시간대의 글자로 적는다
         if (setter === setStartAt && composed) {
-            const start = new Date(composed);
-            if (!isNaN(start.getTime())) {
-                const length = new Date(endAt).getTime() - new Date(startAt).getTime();
+            const start = instantOf(composed);
+            if (!isNaN(start)) {
+                const length = instantOf(endAt) - instantOf(startAt);
                 const end = Number.isFinite(length) && length >= 0
-                    ? new Date(start.getTime() + length)
-                    : isAllDay ? start : new Date(start.getTime() + 60 * 60 * 1000);
-                setEndAt(getLocalDatetimeString(end));
+                    ? start + length
+                    : isAllDay ? start : start + 60 * 60 * 1000;
+                setEndAt(toLocalInput(end));
             }
         }
     };

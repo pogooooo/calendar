@@ -9,7 +9,7 @@ import { useExpandedTodos, ExpandedTodoType } from "@/hooks/useExpandedTodos";
 import useTodoStore from "@/store/useTodoStore";
 import { useT } from "@/i18n/useT";
 import { useCurrentDayKey } from "@/hooks/useCurrentDay";
-import { localDateKey, activeTimeZone, parseExcludedDates } from "@/lib/dateKey";
+import { localDateKey, activeTimeZone, parseExcludedDates, labelKey, wallNow, zonedTime } from "@/lib/dateKey";
 import { toggleOccurrence } from "@/lib/todoDone";
 import { addDaysToKey } from "@/lib/timezone";
 import { calendarDayDelta, shiftZonedDays, resizeZonedRange } from "@/lib/taskInteractions";
@@ -21,7 +21,6 @@ import { useProjectItemActions } from "@/hooks/useProjectItemActions";
 import useChallengeStore, { ChallengeType } from "@/store/useChallengeStore";
 import { fx, rectOf } from "@/lib/fx";
 import { completionKey, completionTargetFor, slotIndexOn } from "@/lib/challengeDays";
-import { todayKey as labelKey } from "@/lib/localTime";
 
 export interface CalendarTodoType extends ExpandedTodoType {
     isProject?: boolean;
@@ -96,8 +95,9 @@ export interface MonthThemeProps {
 
 const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
     ({ asChild = false, todos = [], categories = [], selectedDate, onDateChange, followSelectedDate = false, ...props }, ref) => {
+        // 칸 Date — 이 기기 시각의 연·월·일이 고른 시간대의 날이다 (src/lib/dateKey.ts 의 labelKey)
         const [currentDate, setCurrentDate] = React.useState(
-            () => (followSelectedDate && selectedDate ? new Date(selectedDate) : new Date()));
+            () => (followSelectedDate && selectedDate ? new Date(selectedDate) : wallNow()));
         const [direction, setDirection] = React.useState(0);
         /**
          * 끈 카테고리를 기억한다 (켠 것이 아니라). 예전엔 카테고리가 처음 왔을 때 전부 켜 둔 목록을 들고 있어서,
@@ -209,11 +209,12 @@ const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
             return items;
         }, [challenges, selectedCategoryIds, showChallenges, flatDates]);
 
-        const expandedTodos = useExpandedTodos(
-            filteredTodos,
-            weeks.length > 0 ? weeks[0][0] : undefined,
-            weeks.length > 0 ? weeks[5][6] : undefined
-        ) as CalendarTodoType[];
+        // 창은 실제 순간으로 — 첫 칸·끝 칸의 날(고른 시간대)의 0시. 칸 Date 를 그대로 넘기면 기기 시각의 0시라 시간대가 다를 때 하루 어긋났다
+        const [windowStart, windowEnd] = React.useMemo(
+            () => weeks.length > 0 ? [zonedTime(labelKey(weeks[0][0])), zonedTime(labelKey(weeks[5][6]))] : [undefined, undefined],
+            [weeks]
+        );
+        const expandedTodos = useExpandedTodos(filteredTodos, windowStart, windowEnd) as CalendarTodoType[];
 
         // 오늘 표시는 자정을 넘기면 따라간다 — 예전엔 처음 그린 날에 묶여, 켜 둔 데스크톱 앱·위젯이 다음 날에도 어제를 오늘로 칠했다
         const todayKey = useCurrentDayKey();
@@ -240,7 +241,8 @@ const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
         };
 
         const handleToday = () => {
-            const today = new Date();
+            // 고른 시간대의 지금 — 예전엔 이 기기의 오늘이라, 시간대가 다르면 하루(달 끝이면 한 달) 어긋났다
+            const today = wallNow();
             const back = today.getFullYear() * 12 + today.getMonth() < currentDate.getFullYear() * 12 + currentDate.getMonth();
             if (today.getFullYear() !== currentDate.getFullYear() || today.getMonth() !== currentDate.getMonth()) flipFx(back ? -1 : 1);
             setDirection(back ? -1 : 1);
@@ -251,7 +253,7 @@ const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
         };
 
         const isOnToday = React.useMemo(() => {
-            const today = new Date();
+            const today = wallNow();
             return currentDate.getFullYear() === today.getFullYear()
                 && currentDate.getMonth() === today.getMonth();
         }, [currentDate]);
@@ -386,7 +388,7 @@ const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
                             if (!error) setUndoMove(null);
                         } finally { moving.current = false; }
                     });
-                    if (!error && selectedDate && localDateKey(selectedDate) === from) onDateChange?.(new Date(`${to}T12:00:00`));
+                    if (!error && selectedDate && labelKey(selectedDate) === from) onDateChange?.(new Date(`${to}T12:00:00`));
                 } finally { moving.current = false; }
                 return;
             }
@@ -419,7 +421,8 @@ const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
                         if (!error) setUndoMove(null);
                     } finally { moving.current = false; }
                 });
-                if (!error && selectedDate && localDateKey(selectedDate) === from) onDateChange?.(new Date(`${to}T12:00:00`));
+                // 고른 날(칸 Date)은 칸의 날 키로 견준다 — localDateKey 로 읽으면 시간대가 다를 때 하루 어긋나 따라가지 않았다
+                if (!error && selectedDate && labelKey(selectedDate) === from) onDateChange?.(new Date(`${to}T12:00:00`));
             } finally { moving.current = false; }
         };
         const handleMoveTodo = (todo: CalendarTodoType, from: string, to: string) => handleChangeDates(todo, from, to);

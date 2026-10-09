@@ -10,13 +10,12 @@ import useAnniversaryStore from "@/store/useAnniversaryStore";
 import useCategoryStore from "@/store/useCategoryStore";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useT } from "@/i18n/useT";
-import { localDateKey, utcDayKey, endDateKey } from "@/lib/dateKey";
+import { localDateKey, utcDayKey, endDateKey, labelKey, labelDate, wallNow, zonedTime } from "@/lib/dateKey";
 import { isOccurrenceDone, toggleOccurrence, type Occurrence } from "@/lib/todoDone";
 import { Plus, SlidersHorizontal } from "lucide-react";
 import Arrow from "@/assets/Arrow";
 import DateTimePicker from "@/components/input/dateTimePicker/DateTimePicker";
 import useSwipe from "@/hooks/useSwipe";
-import { localDateKey as toKey } from "@/lib/dateKey";
 import ChallengeModal, { type ChallengeData } from "@/components/modal/challengeModal/ChallengeModal";
 import TodoModal from "@/components/modal/todoModal/TodoModal";
 import { useDialog } from "@/components/dialog/DialogProvider";
@@ -33,7 +32,6 @@ import { activeTimeZone } from "@/lib/dateKey";
 import { challengeExpired, completionTargetFor } from "@/lib/challengeDays";
 import { anniversaryDayIn, nextAnniversary } from "@/lib/anniversary";
 import { useCurrentDayKey } from "@/hooks/useCurrentDay";
-import { lastInstant } from "@/utils/DateUtils";
 import * as OceanS from './ocean/OceanHome.styles';
 import OceanHomeLayout from './ocean/OceanHomeLayout';
 import useAnniversaryFx from "@/components/fx/useAnniversaryFx";
@@ -102,17 +100,20 @@ export default function HomeView() {
             if (typing || e.isComposing || document.querySelector('[role="dialog"]') || e.metaKey || e.ctrlKey || e.altKey) return;
             if (e.key === "ArrowLeft") { e.preventDefault(); shiftDay(-1); }
             else if (e.key === "ArrowRight") { e.preventDefault(); shiftDay(1); }
-            else if (e.key === "t" || e.key === "T") setFocusTime(new Date().setHours(0, 0, 0, 0));
+            // 고른 시간대의 오늘 — 예전엔 이 기기의 오늘이라 시간대가 다르면 "오늘" 단추와 다른 날로 갔다
+            else if (e.key === "t" || e.key === "T") setFocusTime(realTodayTime);
         };
         window.addEventListener("keydown", onKey);
         return () => window.removeEventListener("keydown", onKey);
-    }, [shiftDay]);
+    }, [shiftDay, realTodayTime]);
 
+    // focus 는 칸 Date(이 기기 0시에 고른 시간대의 날을 담은 것) — 날 키는 labelKey 로 읽는다.
+    // localDateKey 로 읽으면 고른 시간대가 기기보다 서쪽일 때 하루 앞 날의 목록이 섰다
     const year = focus.getFullYear();
     const month = focus.getMonth();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const focusIdx = focus.getDate() - 1;
-    const focusKey = localDateKey(focus);
+    const focusKey = labelKey(focus);
     // 날짜 키와 같은 시간대(설정)로 읽는다
     const clock = React.useMemo(() => new Intl.DateTimeFormat("en-GB", { timeZone: activeTimeZone(), hour: "2-digit", minute: "2-digit", hourCycle: "h23" }), []);
 
@@ -161,12 +162,14 @@ export default function HomeView() {
         projects.forEach(p => {
             (p.tasks ?? []).forEach(task => {
                 if (!task.endAt || task.status === "done") return;
-                const d = new Date(lastInstant(task.startAt ?? task.endAt, task.endAt));
-                if (d.getFullYear() !== year || d.getMonth() !== month) return;
-                const id = `due-${d.getDate()}`;
+                // 마감 날은 고른 시간대의 날로 (예전엔 이 기기의 날이라 시간대가 다르면 눈금이 하루 어긋났다)
+                const due = endDateKey(task.startAt ?? task.endAt, task.endAt);
+                if (due.slice(0, 7) !== `${year}-${pad2(month + 1)}`) return;
+                const day = Number(due.slice(8, 10));
+                const id = `due-${day}`;
                 if (seen.has(id)) return;
                 seen.add(id);
-                out.push({ day: d.getDate(), kind: "due" });
+                out.push({ day, kind: "due" });
             });
         });
 
@@ -188,14 +191,15 @@ export default function HomeView() {
         [homeTodos, focusKey, spansDay]
     );
 
+    // 보는 날 다음 날부터 이레 — 고른 시간대의 날로 (예전엔 이 기기 0시에 24시간씩 더해서 시간대가 다르면 하루 어긋났다)
     const upcomingTodos = React.useMemo(() => {
-        const start = new Date(focusTime + 86400000);
-        const end = new Date(focusTime + 86400000 * 8);
+        const from = addDaysToKey(focusKey, 1);
+        const to = addDaysToKey(focusKey, 7);
         return homeTodos
-            .filter(t2 => t2.startAt && new Date(t2.startAt) >= start && new Date(t2.startAt) < end)
+            .filter(t2 => { if (!t2.startAt) return false; const k = localDateKey(t2.startAt); return from <= k && k <= to; })
             .sort((a, b) => new Date(a.startAt!).getTime() - new Date(b.startAt!).getTime())
             .slice(0, 6);
-    }, [homeTodos, focusTime]);
+    }, [homeTodos, focusKey]);
 
     const activeProjects = React.useMemo(
         () => projects.filter(p => p.status !== "done").slice(0, 4),
@@ -273,7 +277,8 @@ export default function HomeView() {
     // 열 때 한 번 정한다: 열린 동안 값이 바뀌면 할 일 창이 칸을 다시 채워 적던 것이 지워진다
     const [detailDate, setDetailDate] = React.useState<Date | undefined>(undefined);
     const openDetail = () => {
-        const now = new Date();
+        // 칸 Date 에 담는다 — 지금 시각도 고른 시간대의 시각으로
+        const now = wallNow();
         setDetailDate(new Date(focus.getFullYear(), focus.getMonth(), focus.getDate(), now.getHours(), now.getMinutes()));
         setQuickError(null);
         setDetailOpen(true);
@@ -290,9 +295,9 @@ export default function HomeView() {
         setQuickPending(true);
         setQuickError(null);
         // 하루 종일 일정으로 넣는다. 시간을 물으면 한 줄 추가가 아니게 된다. 넣는 날은 지금 보고 있는 날이다.
-        const start = new Date(focusTime);
-        const end = new Date(focusTime);
-        end.setHours(23, 59, 0, 0);
+        // 그 날 0시 ~ 23:59 는 고른 시간대로 (focusTime 은 칸 Date 라 이 기기 0시다)
+        const start = zonedTime(focusKey);
+        const end = zonedTime(focusKey, 23, 59);
         const error = await addTodo(authFetch, {
             title,
             categoryId: quickCategory.id,
@@ -341,7 +346,7 @@ export default function HomeView() {
                             <DateTimePicker
                                 mode="date"
                                 short
-                                value={toKey(focus)}
+                                value={focusKey}
                                 onChange={(v) => {
                                     const m = v.match(/^(\d{4})-(\d{2})-(\d{2})/);
                                     if (m) setFocusTime(new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])).setHours(0, 0, 0, 0));
@@ -421,7 +426,7 @@ export default function HomeView() {
                                             <S.Row key={todo.id} type="button" $done={done} $soft onClick={() => router.push(`/calendar?date=${key}`)}>
                                                 <S.Mark $on={done} />
                                                 <span className="name">{todo.title}</span>
-                                                <em>{t.calendar.days[new Date(todo.startAt!).getDay()]}</em>
+                                                <em>{t.calendar.days[labelDate(key).getDay()]}</em>
                                             </S.Row>
                                         );
                                     })

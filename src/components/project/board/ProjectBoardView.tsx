@@ -6,6 +6,7 @@ import { ProjectBoardProps } from "./ProjectBoard";
 import { ProjectTaskType } from '@/store/useProjectStore';
 import useIsMobile from "@/hooks/useIsMobile";
 import useSwipe from "@/hooks/useSwipe";
+import { localDateKey } from "@/lib/dateKey";
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialProjectBoard.styles";
 import * as MapleS from "./maple/MapleProjectBoard.styles";
@@ -142,7 +143,8 @@ function TaskCard({ task, allTasks, onEdit, onMove, prevStatus, prevLabel, nextS
             </S.CardMain>
             <S.CardMeta>
                 {/* slice(5) 는 한국어 표기에만 맞아 다른 로캘에선 '/2026' 처럼 잘린다 */}
-                <S.CardDate>{task.startAt ? (() => { const d = new Date(task.startAt); return t.calendar.dayLabelShort(d.getMonth() + 1, d.getDate()); })() : t.form.noDate}</S.CardDate>
+                {/* 고른 시간대의 날 — 예전엔 이 기기의 날이라 시간대가 다르면 달력과 하루 어긋났다 */}
+                <S.CardDate>{task.startAt ? (() => { const k = localDateKey(task.startAt); return t.calendar.dayLabelShort(Number(k.slice(5, 7)), Number(k.slice(8, 10))); })() : t.form.noDate}</S.CardDate>
                 <S.CardAssignees>
                     {task.assignees && task.assignees.length > 0
                         ? task.assignees.map(a => a.name).join(', ')
