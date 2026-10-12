@@ -18,6 +18,12 @@ export function useOsReducedMotion() {
     return useSyncExternalStore(subscribe, reducedNow, reducedOnServer);
 }
 
+/** 기기의 동작 줄이기를 따라 멈추는 중인가 — 설정에서 '그래도 움직이기'를 켰으면 따르지 않는다 */
+export function useMotionHeldByOs() {
+    const overOs = useSettingStore(s => s.motionOverOs);
+    return useOsReducedMotion() && !overOs;
+}
+
 /**
  * JavaScript animations share the same preference as decorative CSS.
  * OS 의 '동작 줄이기'를 켜고 끄는 것도 곧바로 따른다 — framer 의 useReducedMotion 은 처음 값에 멈춰 있어서,
@@ -25,6 +31,6 @@ export function useOsReducedMotion() {
  */
 export default function useThemeMotion() {
     const motion = useSettingStore(s=>s.motion);
-    const reduced = useOsReducedMotion();
-    return reduced ? 'off' : motion;
+    const held = useMotionHeldByOs();
+    return held ? 'off' : motion;
 }

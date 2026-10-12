@@ -47,8 +47,8 @@ export const sheen = css`
         pointer-events: none;
     }
 
-    @media (hover: hover) and (prefers-reduced-motion: no-preference) {
-        &::after { transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1); }
-        &:hover:not(:disabled)::after { transform: translateX(130%); }
+    @media (hover: hover) {
+        :where(html:not([data-theme-motion="off"])) &::after { transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1); }
+        :where(html:not([data-theme-motion="off"])) &:hover:not(:disabled)::after { transform: translateX(130%); }
     }
 `;

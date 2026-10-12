@@ -25,12 +25,14 @@ export default function ThemeProviderWrapper({ children }: { children: React.Rea
     const fontSizeKey = useSettingStore((state) => state.fontSize);
     const fontWeightKey = useSettingStore((state) => state.fontWeight);
     const motion = useSettingStore((state) => state.motion);
+    const motionOverOs = useSettingStore((state) => state.motionOverOs);
     const locale = useSettingStore((state) => state.locale);
 
     useEffect(() => {
         const root = document.documentElement;
         const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
-        const syncMotion = () => { root.dataset.themeMotion = preference.matches ? 'off' : motion; };
+        // 기기의 동작 줄이기를 따른다 — 설정에서 '그래도 움직이기'를 켰으면 고른 값 그대로
+        const syncMotion = () => { root.dataset.themeMotion = preference.matches && !motionOverOs ? 'off' : motion; };
         const syncVisibility = () => { root.toggleAttribute('data-page-hidden', document.hidden); };
         syncMotion(); syncVisibility();
         preference.addEventListener('change', syncMotion);
@@ -41,7 +43,7 @@ export default function ThemeProviderWrapper({ children }: { children: React.Rea
             delete root.dataset.themeMotion;
             root.removeAttribute('data-page-hidden');
         };
-    }, [motion]);
+    }, [motion, motionOverOs]);
 
     /**
      * 테마 이름 규칙: 갈래 이름이 밝은 벌, 거기에 '-어두운벌' 을 붙인 것이 어두운 벌이다.

@@ -38,15 +38,8 @@ const GlobalTypography = createGlobalStyle<{ $sizePx: number; $weight: number }>
         outline-offset: 3px;
     }
 
-    @media (prefers-reduced-motion: reduce) {
-        *, *::before, *::after {
-            animation-duration: 0.01ms !important;
-            animation-iteration-count: 1 !important;
-            transition-duration: 0.01ms !important;
-            scroll-behavior: auto !important;
-        }
-    }
-
+    /* 기기의 동작 줄이기는 data-theme-motion 이 담는다 — 따르면 off(첫 그림 스크립트·ThemeProviderWrapper),
+       설정에서 '그래도 움직이기'를 켰으면 고른 값. 그래서 여기서는 그 값만 본다 */
     html[data-theme-motion="off"] *,
     html[data-theme-motion="off"] *::before,
     html[data-theme-motion="off"] *::after {

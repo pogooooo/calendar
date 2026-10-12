@@ -23,7 +23,7 @@ export const Mark = styled.span<{ $kind: DialogKind }>`
     background-color: ${(p) => (p.$kind === "ok" ? p.theme.colors.success : p.theme.colors.primary)};
     animation: ${stamp} 0.4s cubic-bezier(0.2, 0.8, 0.3, 1.1) 0.1s both;
 
-    @media (prefers-reduced-motion: reduce) { animation: none; }
+    :where(html[data-theme-motion="off"]) & { animation: none; }
 `;
 
 export const Seal = styled.img`
@@ -32,5 +32,5 @@ export const Seal = styled.img`
     animation: ${stamp} 0.4s cubic-bezier(0.2, 0.8, 0.3, 1.1) 0.1s both;
     filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.25));
 
-    @media (prefers-reduced-motion: reduce) { animation: none; }
+    :where(html[data-theme-motion="off"]) & { animation: none; }
 `;

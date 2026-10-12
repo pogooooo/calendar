@@ -1,5 +1,10 @@
+"use client";
+import { useEffect, useRef } from 'react';
+import { useTheme } from 'styled-components';
+import useThemeMotion from '@/hooks/useThemeMotion';
 import * as S from './CelestialAtmosphere.styles';
 import { Armillary, MoonDisc, Orbit, Star4, Star8, SunMoon, f } from '@/components/ornament/celestial/CelestialOrnaments';
+import { createSky } from './celestialSky';
 
 type Bead = { top: string; kind: 'orb' | 'star' | 'moon' | 'dash' | 'armillary' | 'dot' | 'loop'; phase?: number };
 
@@ -22,10 +27,26 @@ const RAIL: Bead[] = Array.from({ length: 22 }, (_, i): Bead => {
 
 /**
  * Celestial 의 바탕 — 오른쪽 위 모서리에 걸친 큰 천체 궤도(겹고리·점선 고리·행성·달), 오른쪽 가장자리를 따라 내려오는 세로 금선과
- * 그 위에 꿴 문양, 그리고 반짝이는 점·별. 비스듬한 선(별자리 잇는 선·별똥)은 없다. 글 뒤에 깔리므로 아주 옅다.
+ * 그 위에 꿴 문양, 그리고 가만히 있어도 반짝이며 손에 반응하는 별하늘(celestialSky — 커서를 비추면 숨은 별이 드러나고, 가끔 별이 곧게 떨어지고,
+ * 누르면 고리가 번진다. 큰 궤도·해와 달도 커서를 따라 조금 비킨다). 비스듬한 선(별자리 잇는 선·비스듬한 별똥)은 없다. 글 뒤에 깔리므로 옅다.
  */
 export default function CelestialAtmosphere() {
-    return <S.Sky aria-hidden="true" data-ambient="celestial">
+    const skyRef = useRef<HTMLDivElement>(null);
+    const starsRef = useRef<HTMLCanvasElement>(null);
+    const theme = useTheme();
+    const motion = useThemeMotion();
+    const dark = theme.mode === 'dark';
+    const gold = theme.colors.primary;
+
+    useEffect(() => {
+        const canvas = starsRef.current, host = skyRef.current;
+        if (!canvas || !host) return;
+        const sky = createSky(canvas, { dark, motion, gold, host });
+        return () => sky.dispose();
+    }, [dark, motion, gold]);
+
+    return <S.Sky ref={skyRef} aria-hidden="true" data-ambient="celestial">
+        <canvas className="stars" ref={starsRef} />
         <svg className="orrery" viewBox="0 0 640 640">
             <circle className="hair" cx="320" cy="320" r="314" />
             <circle className="line dash" cx="320" cy="320" r="286" />
@@ -62,9 +83,5 @@ export default function CelestialAtmosphere() {
             </svg>
         ))}
 
-        {Array.from({ length: 30 }, (_, i) => (
-            <i key={i} className={i % 4 === 0 ? 'glint star' : 'glint'}
-               style={{ left: `${(i * 37 + 9) % 100}%`, top: `${(i * 53 + 7) % 100}%`, animationDelay: `-${i % 8}s`, animationDuration: `${5 + (i % 5)}s` }} />
-        ))}
     </S.Sky>;
 }

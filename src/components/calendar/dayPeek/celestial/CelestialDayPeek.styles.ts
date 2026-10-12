@@ -110,7 +110,7 @@ export const Row = styled.button<{ $done: boolean }>`
     color: ${p => (p.$done ? p.theme.colors.textSecondary : p.theme.colors.text)};
     cursor: pointer;
 
-    @media (prefers-reduced-motion: no-preference) {
+    :where(html:not([data-theme-motion="off"])) & {
         animation: ${rowIn} 0.24s ease-out both;
         &:nth-child(2) { animation-delay: 0.03s; }
         &:nth-child(3) { animation-delay: 0.06s; }

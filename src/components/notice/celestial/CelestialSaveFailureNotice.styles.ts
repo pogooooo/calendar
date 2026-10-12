@@ -52,7 +52,7 @@ export const Bar = styled.div`
         &:hover { color: ${(p) => p.theme.colors.text}; }
     }
 
-    @media (prefers-reduced-motion: no-preference) {
+    :where(html:not([data-theme-motion="off"])) & {
         animation: ${slideUp} 0.22s ease-out both;
     }
 
@@ -64,7 +64,7 @@ export const Bar = styled.div`
         transform: none;
         max-width: none;
 
-        @media (prefers-reduced-motion: no-preference) {
+        :where(html:not([data-theme-motion="off"])) & {
             animation: none;
         }
     }

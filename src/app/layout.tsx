@@ -34,13 +34,20 @@ export const metadata: Metadata = {
  * 어두운 테마로 켜면 매번 하얗게 번쩍였다. 저장된 테마의 바탕을 html 에 먼저 칠해 두고, 그린 뒤에는
  * ThemeProviderWrapper 가 지운다(그때부터는 갈래의 Ground 가 칠한다). 위젯 창은 투명해야 하므로 건드리지 않는다.
  * 색은 styles/theme.ts 의 바탕(바다는 OceanGround 의 물빛)과 같게.
+ * 움직임(data-theme-motion)도 함께 — 장식의 CSS 몸짓은 이 값으로 켜고 끈다. 그리기 전에 적어 두어야
+ * 기기의 동작 줄이기를 따르기로 한 사람(설정의 '기기 설정 따르기' — motionOverOs:false)에게 첫 그림부터 멈춰 있다.
+ * 따르기를 고르지 않았으면(기본) 기기 설정과 상관없이 고른 움직임대로 (ThemeProviderWrapper 가 이어받는다).
  */
 const PRE_PAINT = `(function(){try{
 if(location.pathname.indexOf("/widget")===0)return;
-var s=JSON.parse(localStorage.getItem("setting-store")||"null");s=s&&s.state;if(!s||!s.theme)return;
+var d=document.documentElement;
+var s=JSON.parse(localStorage.getItem("setting-store")||"null");s=s&&s.state;
+var r=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
+d.setAttribute("data-theme-motion",r&&s&&s.motionOverOs===false?"off":((s&&s.motion)||"full"));
+if(!s||!s.theme)return;
 var o=(s.themeOptions||{})[s.theme];var k=o&&o!=="light"?s.theme+"-"+o:s.theme;
 var c={"celestial":"#FAF8F2","celestial-dark":"#121725","maple":"#F4EADB","maple-dark":"#1F1612","ocean":"#7ACFC9","ocean-dark":"#0A2226"}[k];
-if(!c)return;var d=document.documentElement;d.style.backgroundColor=c;d.style.colorScheme=/-dark$/.test(k)?"dark":"light";d.setAttribute("data-prepaint","");
+if(!c)return;d.style.backgroundColor=c;d.style.colorScheme=/-dark$/.test(k)?"dark":"light";d.setAttribute("data-prepaint","");
 }catch(e){}})();`;
 
 export default function RootLayout({children,}: Readonly<{ children: React.ReactNode; }>) {

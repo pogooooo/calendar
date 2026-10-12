@@ -31,7 +31,7 @@ const revolve = keyframes`from { offset-distance: 0%; } to { offset-distance: 10
 export const Planet = styled.circle`
     offset-rotate: 0deg;
     animation: ${revolve} 60s linear infinite;
-    @media (prefers-reduced-motion: reduce) { animation: none; }
+    :where(html[data-theme-motion="off"]) & { animation: none; }
 `;
 
 /* ── Panel ───────────────────────────────────────────────────────────────── */

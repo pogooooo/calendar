@@ -97,7 +97,7 @@ export const Sheet = styled.div`
     display: flex;
     align-items: flex-end;
 
-    @media (prefers-reduced-motion: no-preference) {
+    :where(html:not([data-theme-motion="off"])) & {
         animation: ${scrimIn} 0.18s ease-out both;
     }
 `;
@@ -109,7 +109,7 @@ export const SheetBody = styled.div`
     padding: 0 0 calc(${TAB_BAR_HEIGHT}px + ${SAFE_B});
 
     /* 아래에서 올라와야 탭바에서 자란 것으로 읽힌다 */
-    @media (prefers-reduced-motion: no-preference) {
+    :where(html:not([data-theme-motion="off"])) & {
         animation: ${sheetUp} 0.26s cubic-bezier(0.22, 1, 0.36, 1) both;
     }
 `;

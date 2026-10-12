@@ -29,5 +29,5 @@ export const Garden = styled.div`
     html[data-theme-motion="gentle"] & { .fall { display:none; } .paper-light { animation-duration:32s; } }
     @media(max-width:768px) { .leaf-1,.leaf-2,.leaf-4,.paper-light { display:none; } .fall { width:22px; } .pressed { width:130px; } }
     @media(max-width:500px) and (max-height:350px) { display:none; }
-    @media(prefers-reduced-motion:reduce) { .fall { display:none; } .pressed { animation:none; opacity:.08; } .paper-light { display:none; } }
+    html[data-theme-motion="off"] & { .fall { display:none; } .pressed { animation:none; opacity:.08; } .paper-light { display:none; } }
 `;

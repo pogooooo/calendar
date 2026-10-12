@@ -52,7 +52,7 @@ export const Card = styled.div<{ $kind: DialogKind }>`
         animation: ${draw} 0.8s cubic-bezier(0.4, 0, 0.3, 1) 0.16s both;
     }
 
-    @media (prefers-reduced-motion: reduce) {
+    :where(html[data-theme-motion="off"]) & {
         animation: none;
         .stroke { animation: none; }
     }

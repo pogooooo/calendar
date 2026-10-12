@@ -55,7 +55,6 @@ export const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
 /** 움직임을 끈 사람·위젯 창(투명 창이라 끝없는 움직임이 깜빡임이 된다)에서는 멈춘다 */
 export const calm = css`
     html[data-theme-motion="off"] &, [data-widget] & { animation: none !important; }
-    @media (prefers-reduced-motion: reduce) { animation: none !important; }
 `;
 
 /** EASE 와 같은 결 — 움직임의 꼴(MotionSet)이 읽는 네 수 */

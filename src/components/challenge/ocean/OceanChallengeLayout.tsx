@@ -99,7 +99,8 @@ export default function OceanChallengeLayout({
     React.useEffect(() => {
         if (selectedId) {
             lastId.current = selectedId;
-            const still = document.documentElement.matches('[data-theme-motion="off"]') || window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+            // 기기의 동작 줄이기는 data-theme-motion 이 담는다(설정에서 '그래도 움직이기'를 켰으면 움직인다)
+            const still = document.documentElement.matches('[data-theme-motion="off"]');
             barRef.current?.closest("main")?.scrollTo({ top: 0, behavior: still ? "auto" : "smooth" });
             return;
         }

@@ -17,8 +17,9 @@ const SHEET_MS = 1000;
  */
 export default function MaplePageTransition({ children, direction = 1 }: { children: React.ReactNode; direction?: Dir }) {
     const motion = useThemeMotion();
-    const animate = hasNavigated && motion !== 'off';
-    const [sheet, setSheet] = React.useState(animate && motion === 'full');
+    // 이 화면에 들어온 그 순간에 한 번만 정한다 — 그릴 때마다 정하면 움직임 설정을 '잔잔하게'로 바꾸는 순간 화면이 다시 옅게 나타났다
+    const [sheet, setSheet] = React.useState(() => hasNavigated && motion === 'full');
+    const [gentleIn] = React.useState(() => hasNavigated && motion === 'gentle');
 
     React.useEffect(() => {
         hasNavigated = true;
@@ -32,7 +33,7 @@ export default function MaplePageTransition({ children, direction = 1 }: { child
 
     return (
         <S.Stage>
-            <S.Body $gentle={animate && motion === 'gentle'}>{children}</S.Body>
+            <S.Body $gentle={gentleIn}>{children}</S.Body>
             {sheet && (
                 <S.Sheet
                     aria-hidden="true"

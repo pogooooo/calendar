@@ -187,7 +187,7 @@ export const Dial = styled.svg`
     &[data-grab="outer"] .rim:not(.inner) { stroke-opacity: 0.5; }
     &[data-grab="inner"] .rim.inner { stroke-opacity: 0.45; }
 
-    @media (prefers-reduced-motion: reduce) {
+    :where(html[data-theme-motion="off"]) & {
         .hand, .mhand { transition: none; }
     }
 `;

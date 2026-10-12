@@ -6,6 +6,7 @@
  *   - 떨어짐: 진자처럼 흔들리며(끝에서 멈칫, 가운데서 빨리) 내려오고, 몇 장은 공중제비를 돈다. 뒷면은 옅다.
  *   - 깊이: 가까운 잎은 크고 흐리게(밉맵을 흐려 읽는다), 먼 잎은 작고 종이빛으로 바랜다.
  *   - 바람: parallax.read() — 데스크톱은 커서 쪽, 폰은 기운 쪽으로 잎이 밀린다. 누르면 그 둘레의 잎이 회오리친다.
+ *   - 손: 커서가 지나가면 둘레의 잎이 손에 휩쓸리듯 그쪽으로 밀리며 돈다 (데스크톱 '풍성하게').
  *
  * 무겁지 않게: 잎은 화면 넓이에 맞춰 7~16 장, 초당 30장, 창이 숨으면 멈춘다. 해상도는 화면의 0.75(폰 0.6)배 —
  * 물(0.6)보다 조금 높은 것은 칠할 곳이 잎 몇 장뿐이라 값이 싸고, 낮추면 수채 잎 가장자리가 뭉개져서다.
@@ -312,6 +313,23 @@ export function createLeafScene(THREE: T, canvas: HTMLCanvasElement, opts: LeafS
     if (interactive) window.addEventListener("pointerdown", onDown, { passive: true });
     const stopParallax = interactive ? parallax.start() : () => {};
 
+    // 손 — 커서의 자리와 빠르기(px/s). 지나가는 둘레의 잎이 그 빠르기를 조금 받아 함께 쓸려 간다
+    const finePointer = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+    const hand = { x: -9999, y: -9999, vx: 0, vy: 0, at: 0 };
+    const onMove = (e: PointerEvent) => {
+        if (e.pointerType !== "mouse" && e.pointerType !== "pen") return;
+        const now = performance.now();
+        if (hand.at) {
+            const s = Math.max(0.008, (now - hand.at) / 1000);
+            hand.vx += ((e.clientX - hand.x) / s - hand.vx) * 0.35;
+            hand.vy += ((e.clientY - hand.y) / s - hand.vy) * 0.35;
+        }
+        hand.x = e.clientX;
+        hand.y = e.clientY;
+        hand.at = now;
+    };
+    if (interactive && finePointer) window.addEventListener("pointermove", onMove, { passive: true });
+
     /* ── 한 걸음 ────────────────────────────────────────────────────── */
     const m4 = new THREE.Matrix4();
     const q = new THREE.Quaternion();
@@ -348,6 +366,29 @@ export function createLeafScene(THREE: T, canvas: HTMLCanvasElement, opts: LeafS
                 const acc = 520 * f * dt * u;
                 l.gx += (-dy / r * v.sign - dx / r * 0.35) * acc;
                 l.gy += (dx / r * v.sign - dy / r * 0.35) * acc;
+            }
+        }
+
+        // 손이 지나간 자리 — 멈추면 손 기운이 곧 빠진다
+        if (performance.now() - hand.at > 60) {
+            const fade = Math.exp(-dt * 10);
+            hand.vx *= fade;
+            hand.vy *= fade;
+        }
+        const handSpeed = Math.hypot(hand.vx, hand.vy);
+        if (handSpeed > 40) {
+            const HR = 0.17 * Math.max(W, H);
+            const take = Math.min(1, dt * 5);
+            for (const l of leaves) {
+                const { sx, sy, u } = onScreen(l);
+                const dx = sx - hand.x, dy = sy - hand.y;
+                const r = Math.hypot(dx, dy) + 1;
+                const f = Math.exp(-((r / HR) ** 2));
+                if (f < 0.03) continue;
+                // 손의 빠르기를 따라 쓸리고(화면 y 는 아래로, 장면 y 는 위로), 손에서 조금 비켜난다
+                l.gx += (hand.vx * 0.85 * take + (dx / r) * 70 * dt) * f * u;
+                l.gy += (-hand.vy * 0.85 * take - (dy / r) * 70 * dt) * f * u;
+                l.spin += f * Math.min(1, handSpeed / 1400) * dt * 7;
             }
         }
 
@@ -460,6 +501,7 @@ export function createLeafScene(THREE: T, canvas: HTMLCanvasElement, opts: LeafS
             cancelAnimationFrame(raf);
             window.removeEventListener("resize", onResize);
             window.removeEventListener("pointerdown", onDown);
+            window.removeEventListener("pointermove", onMove);
             canvas.removeEventListener("webglcontextrestored", onRestored);
             stopParallax();
             texture?.dispose();

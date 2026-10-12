@@ -39,7 +39,7 @@ export const sweep = keyframes`
 `;
 
 export const motionSafe = (rule: ReturnType<typeof css>) => css`
-    @media (prefers-reduced-motion: no-preference) {
+    :where(html:not([data-theme-motion="off"])) & {
         ${rule}
     }
 `;
@@ -109,7 +109,7 @@ export const Ring = styled.span`
         stroke-dashoffset: 85;
         ${motionSafe(css`animation: ${draw} 0.85s ease-out 0.1s forwards;`)}
 
-        @media (prefers-reduced-motion: reduce) {
+        :where(html[data-theme-motion="off"]) & {
             stroke-dashoffset: 0;
         }
     }

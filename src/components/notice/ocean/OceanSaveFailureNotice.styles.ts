@@ -44,12 +44,12 @@ export const Bar = styled(C.Bar)`
         svg { width: 14px; height: 14px; color: currentColor; }
     }
 
-    @media (prefers-reduced-motion: no-preference) {
+    :where(html:not([data-theme-motion="off"])) & {
         animation: ${toastIn} 0.24s ${EASE} both;
     }
 
     ${MOBILE} {
-        @media (prefers-reduced-motion: no-preference) {
+        :where(html:not([data-theme-motion="off"])) & {
             animation: ${toastInFlat} 0.24s ${EASE} both;
         }
     }

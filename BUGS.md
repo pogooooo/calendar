@@ -6,6 +6,9 @@
 
 | 날짜 | 증상 | 까닭 | 고친 방법 |
 |---|---|---|---|
+| 2026-10-13 | 기기에서 애니메이션을 꺼 둔(Windows 의 애니메이션 효과·안드로이드 개발자 옵션의 애니메이션 끄기 등) 데스크톱·폰 앱에서 바다의 물·Maple 의 잎·Celestial 의 반짝임이 모두 멈춤 ("필터가 안 움직인다") | 기기의 동작 줄이기를 보면 앱 설정과 상관없이 모든 움직임을 껐다 — `useThemeMotion`, 전역 CSS 의 prefers-reduced-motion 리셋, 장식마다의 미디어 쿼리 | 기본은 앱 설정대로 움직인다(`motionOverOs`, 설정의 '기기 설정 따르기'로 되돌린다). CSS 는 미디어 쿼리 대신 `data-theme-motion` 하나만 보고(`:where` 로 감싸 우선순위는 그대로), 첫 그림 스크립트가 미리 적는다 (`layout.tsx`) |
+| 2026-10-13 | WebGL 이 없는 기기에서 바다 바탕이 멈춘 그라데이션 | 물(three.js)이 서지 못하면 바닥 그라데이션만 남겼다 | CSS 물빛(`FlatWater`)이 대신 일렁인다 (`OceanAtmosphere`) |
+| 2026-10-13 | 움직임을 '끄기'에서 켜거나 첫 화면이 다시 그려지면, 화면을 옮기지 않았는데도 Celestial 의 화면 바뀜 문양이 그려짐 (Maple 은 '잔잔하게'로 바꾸면 화면이 다시 옅게 나타남) | 문양을 그릴지를 그릴 때마다 정했다 | 화면에 들어온 순간 한 번만 정한다 (`CelestialPageTransition`·`MaplePageTransition` 의 useState) |
 | 2026-10-10 | 날짜를 넘겨도(홈·달력·일간·주간 띠·위젯) 아무 움직임이 없고, 바다는 화면을 옮겨도 거의 그대로 ("애니메이션이 안 됨") | 몸짓이 월간 격자의 미끄러짐 하나뿐이었고, 바다의 화면 바뀜은 8px 떠오름이었다. 기기의 '애니메이션 줄이기'가 켜져 있으면 앱 설정과 상관없이 모두 꺼진다(`useThemeMotion`) | 갈래마다 몸짓 한 벌(`styles/motion.ts` 의 MotionSet — Celestial `celestial/motion.ts`·Maple `maple/motion.ts`·바다 `ocean/water.ts`)과 언제 그릴지 정하는 훅(`useSwapMotion`·`useListMotion`, `hooks/useMotion.ts`). 요소를 다시 만들지 않아(element.animate) 치던 글·초점·스크롤이 남는다 |
 | 2026-10-10 | 바다에서 화면을 옮기면 끝날 즈음 유리 판의 흐림이 한 번 꺼졌다 돌아옴 | 화면 바뀜이 판 전체의 투명도를 움직였다 — 투명도가 걸린 상자 안의 유리(backdrop-filter)는 그동안 뒤를 못 본다 | 새 화면 위의 막(물안개)만 걷히고 판은 건드리지 않는다 (`OceanPageTransition`) |
 | 2026-10-10 | 달을 넘기면 끝나는 순간 달력이 한 장면 비어 보임 | framer 의 motion.div 가 투명도를 WAAPI 로 돌리고 끝난 값을 다음 그림에 적어, 미끄러짐이 먼저 끝나면 한 장면 동안 처음 모습(투명)이 비쳤다 | `element.animate` 로 그리고 끝나면 아무것도 남기지 않는다 (`SwapLayer`) |
@@ -84,6 +87,7 @@
 - **갈래 폴더 밖에서 `theme.family` 로 모양을 가르지 말 것.** 가드: `scripts/check-theme-styles.mjs`
 - **폰의 상태 표시줄·아래 막대 높이는 `SAFE_T`/`SAFE_B` 로.** `env(safe-area-inset-*)` 을 바로 쓰면 안드로이드 앱(웹뷰 140 미만)에서 0 이다.
 - **날짜는 날짜 키로 주고받는다.** `Date` 를 그대로 넘기면 시간대에서 하루가 밀린다.
+- **기기의 동작 줄이기를 CSS 미디어 쿼리(`prefers-reduced-motion`)로 직접 보지 말 것.** 앱의 움직임 값(`html[data-theme-motion]`)이 그것을 담는다 — 미디어 쿼리로 막으면 설정과 상관없이 멈춘다. 감쌀 때는 `:where(html:not([data-theme-motion="off"])) &` (우선순위가 그대로라 갈래의 덮어쓰기가 깨지지 않는다).
 - **판·목록에 transform 을 남기는 몸짓(`animation … both`·`fill: forwards`)을 걸지 말 것.** 안의 fixed 단추·막이 화면이 아니라 그 상자에 선다. 몸짓은 `useSwapMotion`·`useListMotion`(끝나면 남기지 않음)으로.
 - **클래스 이름 `ring` 은 Tailwind 의 `.ring`(box-shadow)과 겹친다.** HTML 요소·바깥 svg 에 네모 테가 생긴다(svg 안쪽 요소는 괜찮다).
 - **SVG 좌표를 Math.cos·sin 으로 셀 때는 소수 둘째 자리로 반올림(`f()`).** 서버(Node)와 브라우저의 끝자리가 달라 하이드레이션이 어긋난다.

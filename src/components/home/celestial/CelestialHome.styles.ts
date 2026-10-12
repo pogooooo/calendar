@@ -369,7 +369,7 @@ export const Row = styled.button<{ $done: boolean; $soft?: boolean }>`
     gap: 11px;
     padding: ${p => (p.$soft ? "7px 0" : "8px 0")};
 
-    @media (prefers-reduced-motion: no-preference) {
+    :where(html:not([data-theme-motion="off"])) & {
         animation: ${rowIn} 0.28s ease-out both;
 
         &:nth-child(2) { animation-delay: 0.04s; }

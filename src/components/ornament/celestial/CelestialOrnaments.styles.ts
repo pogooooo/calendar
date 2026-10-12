@@ -22,11 +22,10 @@ export const ornamentStrokes = css`
     .fill { fill: currentColor; stroke: none; }
     .orbiter { offset-rotate: 0deg; }
 
-    /* 행성은 천천히 돈다 — 움직임 '풍성하게' 에서만. 끝없이 도는 것이라 위젯 창·움직임 끔에서는 멈춘다 */
-    @media (prefers-reduced-motion: no-preference) {
-        html:not([data-theme-motion="off"]):not([data-theme-motion="gentle"]) & .orbiter {
-            animation: ${revolve} var(--orbit, 60s) linear infinite;
-        }
+    /* 행성은 천천히 돈다 — 움직임 '풍성하게' 에서만. 끝없이 도는 것이라 위젯 창·움직임 끔에서는 멈춘다.
+       기기의 동작 줄이기는 data-theme-motion 이 담는다(따르면 off) — 설정의 '그래도 움직이기'를 켜면 돈다 */
+    html[data-theme-motion="full"] & .orbiter {
+        animation: ${revolve} var(--orbit, 60s) linear infinite;
     }
     /* 위젯 창은 투명 창이라 끝없는 움직임이 창 전체를 다시 칠한다(깜빡임) */
     [data-widget] & .orbiter { animation: none; }

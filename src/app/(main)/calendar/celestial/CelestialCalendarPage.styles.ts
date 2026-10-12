@@ -84,7 +84,7 @@ export const Fab = styled.button`
 
     &:active { transform: scale(0.9); }
 
-    @media (prefers-reduced-motion: no-preference) {
+    :where(html:not([data-theme-motion="off"])) & {
         animation: ${fabIn} 0.34s cubic-bezier(0.2, 1.3, 0.4, 1) 0.1s both;
     }
 `;

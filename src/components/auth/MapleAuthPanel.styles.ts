@@ -69,7 +69,7 @@ export const BrandPanel = styled.div<{ $busy?: boolean }>`
         .leaf { animation-duration: calc(var(--dur) / 4); }
     `}
 
-    @media (prefers-reduced-motion: reduce) {
+    :where(html[data-theme-motion="off"]) & {
         .leaf { display: none; }
     }
 `;

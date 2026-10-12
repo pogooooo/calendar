@@ -233,7 +233,7 @@ export const HeroArt = styled(C.HeroArt)`
 `
 
 export const RevealBox = styled(C.RevealBox)`
-    @media (prefers-reduced-motion: no-preference) {
+    :where(html:not([data-theme-motion="off"])) & {
         transform: ${(p) => (p.$shown ? "none" : "translateY(10px)")};
         transition: opacity 0.5s ease, transform 0.5s ${EASE};
         transition-delay: ${(p) => p.$delay}ms;
@@ -259,7 +259,7 @@ export const SectionTitle = styled(C.SectionTitle)`
 `
 
 export const Char = styled(C.Char)`
-    @media (prefers-reduced-motion: no-preference) {
+    :where(html:not([data-theme-motion="off"])) & {
         transform: ${(p) => (p.$shown ? "none" : "translateY(6px)")};
         filter: none;
         transition: opacity 0.4s ease, transform 0.4s ${EASE};

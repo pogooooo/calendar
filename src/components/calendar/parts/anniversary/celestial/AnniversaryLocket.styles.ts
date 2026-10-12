@@ -39,7 +39,7 @@ export const todayGlow = keyframes`
 `;
 
 export const motionSafe = (rule: ReturnType<typeof css>) => css`
-    @media (prefers-reduced-motion: no-preference) {
+    :where(html:not([data-theme-motion="off"])) & {
         ${rule}
     }
 `;

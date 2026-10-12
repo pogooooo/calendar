@@ -17,6 +17,14 @@ interface SettingState {
     fontWeight: string;
     motion: 'full' | 'gentle' | 'off';
     setMotion: (motion: 'full' | 'gentle' | 'off') => void;
+    /**
+     * 기기의 '동작 줄이기'와 상관없이 고른 움직임대로 — 이 기기에서만(서버로 가지 않는다).
+     * 기본은 켜짐: 데스크톱·폰 앱에서도 처음부터 움직인다(사용자: "기본값으로 앱에서도 애니메이션이 작동했으면").
+     * 기기에서 애니메이션을 꺼 둔 채(Windows 의 애니메이션 효과·안드로이드 개발자 옵션 등) 앱이 통째로 멈춰 고장으로 읽혔다.
+     * 기기의 동작 줄이기를 따르려면 설정의 '기기 설정 따르기'로 끈다
+     */
+    motionOverOs: boolean;
+    setMotionOverOs: (on: boolean) => void;
     isLoading: boolean;
     setTheme: (inputTheme: string) => void;
     setThemeOption: (themeId: string, option: string) => void;
@@ -57,6 +65,8 @@ const useSettingStore = create<SettingState>()(
             fontWeight: 'normal',
             motion: 'full',
             setMotion: (motion) => set({ motion }),
+            motionOverOs: true,
+            setMotionOverOs: (on) => set({ motionOverOs: on }),
             isLoading: false,
 
             setTheme: (inputTheme) => set({ theme: inputTheme }),

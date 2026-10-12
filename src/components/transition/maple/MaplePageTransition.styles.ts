@@ -38,7 +38,7 @@ export const Body = styled.div<{ $gentle: boolean }>`
     height: 100%;
 
     ${(p) => p.$gentle && css`
-        @media (prefers-reduced-motion: no-preference) {
+        :where(html:not([data-theme-motion="off"])) & {
             animation: ${fadeIn} 0.22s ease-out backwards;
         }
     `}
@@ -62,11 +62,11 @@ export const Sheet = styled.span<{ $dir: 1 | -1 }>`
         ${(p) => (p.$dir > 0 ? "16px" : "-16px")} 0 30px -14px ${(p) => withAlpha(p.theme.mode === "dark" ? "#000000" : "#3B2A20", p.theme.mode === "dark" ? 0.6 : 0.34)},
         0 0 0 1px ${(p) => withAlpha(p.theme.colors.text, 0.08)};
 
-    @media (prefers-reduced-motion: no-preference) {
+    :where(html:not([data-theme-motion="off"])) & {
         animation: ${turn} 0.5s ${HAND} both;
         ${MOBILE} { animation-duration: 0.4s; }
     }
-    @media (prefers-reduced-motion: reduce) {
+    :where(html[data-theme-motion="off"]) & {
         display: none;
     }
 `;

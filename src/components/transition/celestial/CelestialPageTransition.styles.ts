@@ -80,7 +80,7 @@ export const Body = styled.div<{ $animate: boolean }>`
     height: 100%;
 
     ${p => p.$animate && css`
-        @media (prefers-reduced-motion: no-preference) {
+        :where(html:not([data-theme-motion="off"])) & {
             animation: ${bodyIn} 0.6s ease-out 0.62s both;
 
             ${MOBILE} { animation: ${bodyIn} 0.24s ease-out 0.2s both; }
@@ -99,7 +99,7 @@ export const Overlay = styled.div`
     overflow: hidden;
     color: ${p => p.theme.colors.primary};
 
-    @media (prefers-reduced-motion: reduce) {
+    :where(html[data-theme-motion="off"]) & {
         display: none;
     }
 `;

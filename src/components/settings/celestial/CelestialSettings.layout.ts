@@ -393,7 +393,7 @@ export const ThemeStage = styled.div`
     margin-bottom: 18px;
     border: 1px solid ${hair(26)};
 
-    @media (prefers-reduced-motion: no-preference) {
+    :where(html:not([data-theme-motion="off"])) & {
         animation: ${stageIn} 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
     }
     ${MOBILE} { grid-template-columns: 1fr; gap: 14px; padding: 12px; }

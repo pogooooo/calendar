@@ -5,7 +5,7 @@
  * 커서 자리(--gx·--gy)를 적어 주면 판이 그 자리에 빛을 모은다. 판이 여럿 겹치면(판 안의 카드) 모두.
  * 내용 뒤(z-index -1)에 깔리고, 화면을 누르는 것은 받지 않는다. 움직임 '끄기'·위젯 창에서는 커서 빛도 없다.
  */
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import useThemeMotion from "@/hooks/useThemeMotion";
 import OceanCaustics from "./OceanCaustics";
 import * as S from "./OceanAtmosphere.styles";
@@ -59,10 +59,12 @@ function useGlassSpotlight(enabled: boolean) {
 
 export default function OceanAtmosphere() {
     const motion = useThemeMotion();
+    // WebGL 이 없는 기기 — 물 대신 CSS 물빛이 일렁인다
+    const [flat, setFlat] = useState(false);
     useGlassSpotlight(motion !== "off");
     return (
         <S.Sea aria-hidden="true" data-ambient="ocean">
-            <OceanCaustics />
+            {flat ? <S.FlatWater /> : <OceanCaustics onFail={() => setFlat(true)} />}
             <S.Grain />
         </S.Sea>
     );

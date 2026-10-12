@@ -69,7 +69,7 @@ export const Menu = styled.div`
     animation: ${drop} 0.16s ease-out both;
     scrollbar-width: thin;
 
-    @media (prefers-reduced-motion: reduce) { animation: none; }
+    :where(html[data-theme-motion="off"]) & { animation: none; }
 `;
 
 export const Item = styled.button<{ $on: boolean }>`

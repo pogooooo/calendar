@@ -85,7 +85,7 @@ export const Row = styled(C.Row)`
     letter-spacing: -0.005em;
     transition: background-color 0.15s ease;
 
-    @media (prefers-reduced-motion: no-preference) {
+    :where(html:not([data-theme-motion="off"])) & {
         animation: ${rowIn} 0.3s ${EASE} both;
         ${calm}
     }

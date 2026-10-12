@@ -69,8 +69,11 @@ export default function SettingsView({
     const [tab, setTab] = React.useState<TabId>("look");
     const motion = useSettingStore(s => s.motion);
     const setMotion = useSettingStore(s => s.setMotion);
-    // 기기에서 동작 줄이기가 켜져 있으면 위의 고른 값과 상관없이 아무것도 움직이지 않는다 — 고른 값만 보이면 고장으로 읽혔다
+    // 기기에서 동작 줄이기가 켜져 있으면 위의 고른 값과 상관없이 아무것도 움직이지 않는다 — 고른 값만 보이면 고장으로 읽혔다.
+    // 그 아래에 알리고, 이 앱만 그래도 움직이게(이 기기에서만) 고를 수 있게 한다
     const osReducedMotion = useOsReducedMotion();
+    const motionOverOs = useSettingStore(s => s.motionOverOs);
+    const setMotionOverOs = useSettingStore(s => s.setMotionOverOs);
 
     React.useEffect(() => {
         FONT_OPTIONS.forEach(ensureFontLoaded);
@@ -235,10 +238,21 @@ export default function SettingsView({
                                         </L.SegGroup>
                                     </L.SegRow>
                                     {osReducedMotion && motion !== 'off' && (
-                                        <L.RowNote role="note" style={{ marginTop: -4, marginBottom: 14 }}>
-                                            {locale === 'ko'
-                                                ? "이 기기에서 '동작 줄이기(애니메이션 효과 끄기)'가 켜져 있어 지금은 움직이지 않아요. 기기의 접근성 설정에서 애니메이션 효과를 켜면 위에서 고른 대로 움직입니다."
-                                                : "Reduced motion is on for this device, so animations are off. Turn animation effects back on in your device's accessibility settings to use the choice above."}
+                                        <L.RowNote role="note" style={{ marginTop: -4, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                                            <span style={{ flex: '1 1 260px' }}>
+                                                {motionOverOs
+                                                    ? (locale === 'ko'
+                                                        ? "이 기기에서 '동작 줄이기(애니메이션 효과 끄기)'가 켜져 있지만, 이 앱은 위에서 고른 대로 움직이고 있어요."
+                                                        : "Reduced motion is on for this device, but this app is following the choice above.")
+                                                    : (locale === 'ko'
+                                                        ? "이 기기에서 '동작 줄이기(애니메이션 효과 끄기)'가 켜져 있어 지금은 움직이지 않아요. 기기 설정을 켜거나, 이 앱만 움직이게 할 수 있어요."
+                                                        : "Reduced motion is on for this device, so animations are off. Turn it off in your device settings, or let only this app move.")}
+                                            </span>
+                                            <S.FormButton type="button" $variant={motionOverOs ? "default" : "primary"} aria-pressed={motionOverOs} onClick={() => setMotionOverOs(!motionOverOs)}>
+                                                {motionOverOs
+                                                    ? (locale === 'ko' ? '기기 설정 따르기' : 'Follow device')
+                                                    : (locale === 'ko' ? '이 앱은 그래도 움직이기' : 'Animate this app anyway')}
+                                            </S.FormButton>
                                         </L.RowNote>
                                     )}
 

@@ -39,7 +39,7 @@ const sheen = keyframes`
 `;
 
 const motionOnly = (rule: ReturnType<typeof css>) => css`
-    @media (prefers-reduced-motion: no-preference) {
+    :where(html:not([data-theme-motion="off"])) & {
         ${rule}
     }
 `;
@@ -304,7 +304,7 @@ export const HeroArt = styled.div`
 export const RevealBox = styled.div<{ $shown: boolean; $delay: number }>`
     height: 100%;
 
-    @media (prefers-reduced-motion: no-preference) {
+    :where(html:not([data-theme-motion="off"])) & {
         opacity: ${p => (p.$shown ? 1 : 0)};
         transform: ${p => (p.$shown ? "none" : "translateY(18px)")};
         transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
@@ -342,7 +342,7 @@ export const SectionTitle = styled.h2`
 export const Char = styled.span<{ $shown: boolean }>`
     display: inline-block;
 
-    @media (prefers-reduced-motion: no-preference) {
+    :where(html:not([data-theme-motion="off"])) & {
         opacity: ${p => (p.$shown ? 1 : 0)};
         transform: ${p => (p.$shown ? "none" : "translateY(10px)")};
         filter: ${p => (p.$shown ? "none" : "blur(4px)")};

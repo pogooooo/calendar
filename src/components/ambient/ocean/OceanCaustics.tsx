@@ -140,8 +140,10 @@ varying vec2 vUv;
 void main() { gl_FragColor = vec4(texture2D(uWater, vUv).rgb, 1.0); }
 `;
 
-export default function OceanCaustics() {
+export default function OceanCaustics({ onFail }: { onFail?: () => void } = {}) {
     const ref = useRef<HTMLCanvasElement>(null);
+    const failRef = useRef(onFail);
+    failRef.current = onFail;
     const theme = useTheme();
     const motion = useThemeMotion();
     const dark = theme.mode === "dark";
@@ -159,6 +161,7 @@ export default function OceanCaustics() {
             try {
                 [THREE, { createBubbles }] = await Promise.all([import("three"), import("./oceanBubbles")]);
             } catch {
+                if (!disposed) failRef.current?.();
                 return;
             }
             if (disposed) return;
@@ -166,7 +169,9 @@ export default function OceanCaustics() {
             try {
                 renderer = new THREE.WebGLRenderer({ canvas, alpha: false, antialias: false, depth: false, stencil: false, powerPreference: "low-power" });
             } catch {
-                return; // WebGL 이 없으면 CSS 물빛(OceanGround 의 그라데이션)만 남는다
+                // WebGL 이 없다 — 바닥 그라데이션 위에 CSS 물빛(FlatWater)이 대신 일렁인다
+                if (!disposed) failRef.current?.();
+                return;
             }
             const mobile = window.matchMedia("(max-width: 768px)").matches;
             // 물은 낮게, 화면(방울)은 CSS 픽셀 그대로 — 아주 큰 창은 화면도 조금 줄인다

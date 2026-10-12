@@ -28,7 +28,7 @@ export const Wrap = styled.div<{ $hovered?: boolean }>`
     .seed { position:absolute; top:260px; left:110px; width:6px; height:10px; background:${p=>p.theme.colors.primary}; border-radius:100% 0 100% 0; animation:${seed} 15s ease-in-out infinite; pointer-events:none; }
     .seed-1 { left:82px; animation-delay:-7s; animation-duration:19s; }
     .seed-2 { left:135px; animation-delay:-13s; animation-duration:23s; }
-    @media(prefers-reduced-motion:reduce) { .seed { display:none; } .branch { animation:none; } }
+    html[data-theme-motion="off"] & { .seed { display:none; } .branch { animation:none; } }
 
     .rule {
         position: absolute;

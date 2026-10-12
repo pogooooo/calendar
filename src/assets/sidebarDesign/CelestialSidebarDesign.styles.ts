@@ -29,10 +29,9 @@ export const AnimatedSvg = styled.svg<{ $hovered?: boolean }>`
     .o4 { --orbit: 46s; }
     .o5 { --orbit: 30s; }
 
-    @media (prefers-reduced-motion: no-preference) {
-        html:not([data-theme-motion="off"]) & .twinkle { animation: ${twinkle} 5.5s ease-in-out infinite; }
-        html:not([data-theme-motion="off"]) & .twinkle:nth-of-type(2n) { animation-duration: 7s; animation-delay: -2s; }
-    }
+    /* 기기의 동작 줄이기는 data-theme-motion 이 담는다 (ThemeProviderWrapper·첫 그림 스크립트) */
+    html:not([data-theme-motion="off"]) & .twinkle { animation: ${twinkle} 5.5s ease-in-out infinite; }
+    html:not([data-theme-motion="off"]) & .twinkle:nth-of-type(2n) { animation-duration: 7s; animation-delay: -2s; }
 
     ${(p) => p.$hovered && css`
         filter: drop-shadow(0 0 3px ${withAlpha(p.theme.colors.primary, 0.75)});

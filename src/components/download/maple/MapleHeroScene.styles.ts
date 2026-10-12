@@ -62,7 +62,7 @@ export const Leaf = styled.img`
     pointer-events: none;
     opacity: 0;
 
-    @media (prefers-reduced-motion: no-preference) {
+    :where(html:not([data-theme-motion="off"])) & {
         animation: ${fall} linear infinite;
     }
 `;

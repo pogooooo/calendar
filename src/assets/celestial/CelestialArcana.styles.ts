@@ -12,7 +12,5 @@ export const Seal = styled.svg`
     .orbits { --orbit: 90s; opacity:.75; }
     .phases { opacity:.75; }
     text { fill:currentColor; stroke:none; font-family:${p=>p.theme.fonts.display}; font-size:8px; letter-spacing:3px; opacity:.6; }
-    @media (prefers-reduced-motion: no-preference) {
-        html:not([data-theme-motion="off"]) & .twinkle { animation:${shimmer} 6s ease-in-out infinite; }
-    }
+    html:not([data-theme-motion="off"]) & .twinkle { animation:${shimmer} 6s ease-in-out infinite; }
 `;
