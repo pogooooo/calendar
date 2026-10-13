@@ -1,5 +1,27 @@
 [
   {
+    "version": "1.3.1",
+    "date": "2026-10-13",
+    "notes": {
+      "ko": [
+        "날짜를 넘기거나 화면을 옮길 때, 목록에 넣고 지우고 끝낼 때 테마마다 다른 움직임이 생겼습니다 — Celestial 은 곧게 미끄러지며 별빛처럼 맑아지고, Maple 은 다이어리 한 장을 넘기듯, Ocean 은 물안개가 걷히듯 들어옵니다.",
+        "Celestial 을 새로 그렸습니다 — 마름모와 사선을 걷고 곧은 금선·달의 위상·별·혼천의로. 바탕에는 가만히 있어도 반짝이는 별하늘이 있고, 커서를 비추면 숨은 별이 드러나며 누른 자리에 고리가 번집니다.",
+        "Maple 의 단풍잎이 커서가 지나가면 손에 쓸리듯 흩날립니다.",
+        "기기에서 애니메이션을 꺼 두어도(Windows 의 애니메이션 효과·안드로이드의 애니메이션 끄기) 앱은 기본으로 움직입니다. 기기 설정을 따르려면 설정 › 모양 › 테마 애니메이션 아래의 '기기 설정 따르기'를 누르세요.",
+        "터치스크린 노트북에서 마우스를 움직여도 바다의 물이 휘지 않던 것, 3D 그래픽을 쓸 수 없는 기기에서 바다 바탕이 멈춰 있던 것을 고쳤습니다. 그런 기기에서는 가벼운 물빛으로 대신 그리고, 설정에서 까닭을 알려 줍니다.",
+        "폰 달력에서 월간·일간을 바꾼 뒤 거르개의 바탕 막이 화면을 덮지 못하던 것, 달을 넘기는 끝에 달력이 한순간 비어 보이던 것을 고쳤습니다."
+      ],
+      "en": [
+        "Changing dates or screens, and adding, removing or finishing items, now animate in each theme’s own way — Celestial glides in straight and clears like starlight, Maple turns like a diary page, and Ocean comes in as the mist lifts.",
+        "Celestial is redrawn — no more diamonds or diagonals, just straight gold lines, moon phases, stars and an armillary sphere. Its background is a softly twinkling starry sky: hidden stars appear where you point, and a ring spreads where you click.",
+        "Maple’s leaves now swirl away as your cursor passes through them.",
+        "The app now animates by default even when animations are turned off on the device (Windows animation effects, Android’s remove animations). To follow the device setting, choose “Follow device” under Settings › Appearance › Theme animation.",
+        "Fixed Ocean’s water not following the mouse on touchscreen laptops, and the Ocean background standing still on devices without 3D graphics — those devices now get a lighter flowing water, and Settings explains why.",
+        "Fixed the filter’s backdrop not covering the screen after switching between month and day on phones, and the calendar flashing blank for a moment at the end of a month change."
+      ]
+    }
+  },
+  {
     "version": "1.3.0",
     "date": "2026-10-09",
     "notes": {
