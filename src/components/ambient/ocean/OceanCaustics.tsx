@@ -280,10 +280,11 @@ export default function OceanCaustics({ onFail }: { onFail?: () => void } = {}) 
 
             // 손 — 커서를 따라 물이 휘고, 누르면 물결 고리와 방울. 폰은 커서 대신 기울기. '잔잔하게'·끄기면 손에 반응하지 않는다
             const interactive = motion === "full";
-            const finePointer = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
             const aim = { x: 0.5, y: 0.5 };
             let lastMove = -10;
             const onMove = (e: PointerEvent) => {
+                // 손가락이 끄는 것은 화면 굴리기다 — 물을 휘는 것은 마우스(펜)만
+                if (e.pointerType !== "mouse" && e.pointerType !== "pen") return;
                 aim.x = e.clientX / window.innerWidth;
                 aim.y = 1 - e.clientY / window.innerHeight;
                 lastMove = performance.now();
@@ -294,8 +295,8 @@ export default function OceanCaustics({ onFail }: { onFail?: () => void } = {}) 
             };
             const stopParallax = interactive ? parallax.start() : () => {};
             if (interactive) {
-                // 손가락이 끄는 것은 화면 굴리기다 — 물을 휘는 것은 마우스만
-                if (finePointer) window.addEventListener("pointermove", onMove, { passive: true });
+                // 마우스는 늘 듣는다 — 터치스크린 노트북처럼 '주 입력이 손가락'으로 잡히는 기기도 마우스를 쓰면 물이 휜다
+                window.addEventListener("pointermove", onMove, { passive: true });
                 window.addEventListener("pointerdown", onDown, { passive: true });
             }
 

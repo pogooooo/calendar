@@ -27,19 +27,26 @@ function attach() {
     if (typeof window === "undefined") return () => {};
     const finePointer = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
 
+    // 마우스(펜)는 늘 듣는다 — 브라우저가 '주 입력이 손가락'으로 보는 기기(터치스크린 노트북)도 마우스를 쓰면 커서를 따른다.
+    // 예전엔 그런 컴퓨터에서 마우스를 움직여도 물이 휘지 않았다. 손가락이 끄는 것(화면 굴리기)은 듣지 않는다
+    let lastMouse = -1e9;
+    const onMove = (e: PointerEvent) => {
+        if (e.pointerType !== "mouse" && e.pointerType !== "pen") return;
+        source = "pointer";
+        lastMouse = performance.now();
+        target.x = clamp((e.clientX / window.innerWidth) * 2 - 1);
+        target.y = clamp((e.clientY / window.innerHeight) * 2 - 1);
+    };
+    const onLeave = () => { if (source === "pointer") { target.x = 0; target.y = 0; } };
+    window.addEventListener("pointermove", onMove, { passive: true });
+    document.documentElement.addEventListener("pointerleave", onLeave);
+    const detachPointer = () => {
+        window.removeEventListener("pointermove", onMove);
+        document.documentElement.removeEventListener("pointerleave", onLeave);
+    };
     if (finePointer) {
         source = "pointer";
-        const onMove = (e: PointerEvent) => {
-            target.x = clamp((e.clientX / window.innerWidth) * 2 - 1);
-            target.y = clamp((e.clientY / window.innerHeight) * 2 - 1);
-        };
-        const onLeave = () => { target.x = 0; target.y = 0; };
-        window.addEventListener("pointermove", onMove, { passive: true });
-        document.documentElement.addEventListener("pointerleave", onLeave);
-        return () => {
-            window.removeEventListener("pointermove", onMove);
-            document.documentElement.removeEventListener("pointerleave", onLeave);
-        };
+        return detachPointer;
     }
 
     // 손가락 기기: 기울기. 처음 값이 기준(0), 기준은 천천히 지금 자세를 따라온다
@@ -54,6 +61,8 @@ function attach() {
     let angle = screenAngle();
     const onTilt = (e: DeviceOrientationEvent) => {
         if (e.beta == null || e.gamma == null) return;
+        // 마우스를 방금 썼으면 마우스가 이긴다 (기울기 감지기가 있는 터치 노트북)
+        if (performance.now() - lastMouse < 3000) return;
         source = "tilt";
         const now = performance.now();
         const a = screenAngle();
@@ -72,7 +81,10 @@ function attach() {
         target.y = clamp(y);
     };
     window.addEventListener("deviceorientation", onTilt);
-    return () => window.removeEventListener("deviceorientation", onTilt);
+    return () => {
+        detachPointer();
+        window.removeEventListener("deviceorientation", onTilt);
+    };
 }
 
 export const parallax = {

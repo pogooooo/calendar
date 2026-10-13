@@ -18,6 +18,9 @@ import * as OceanS from './ocean/OceanSettings.styles';
 import * as OceanLS from './ocean/OceanSettings.layout';
 import useSettingStore from '@/store/useSettingStore';
 import { useOsReducedMotion } from '@/hooks/useThemeMotion';
+import { webglAvailable } from '@/lib/webgl';
+
+const noSubscribe = () => () => {};
 import ThemeShop from '@/components/billing/ThemeShop';
 import useIsMobile from '@/hooks/useIsMobile';
 import { useSwapMotion } from '@/hooks/useMotion';
@@ -74,6 +77,8 @@ export default function SettingsView({
     const osReducedMotion = useOsReducedMotion();
     const motionOverOs = useSettingStore(s => s.motionOverOs);
     const setMotionOverOs = useSettingStore(s => s.setMotionOverOs);
+    // 3D 그래픽(WebGL)이 없는 기기 — 바탕의 물·잎이 가벼운 그림으로 물러난다. 그 까닭을 움직임 아래에 알린다
+    const webgl = React.useSyncExternalStore(noSubscribe, webglAvailable, () => true);
 
     React.useEffect(() => {
         FONT_OPTIONS.forEach(ensureFontLoaded);
@@ -253,6 +258,13 @@ export default function SettingsView({
                                                     ? (locale === 'ko' ? '기기 설정 따르기' : 'Follow device')
                                                     : (locale === 'ko' ? '이 앱은 그래도 움직이기' : 'Animate this app anyway')}
                                             </S.FormButton>
+                                        </L.RowNote>
+                                    )}
+                                    {!webgl && motion !== 'off' && (
+                                        <L.RowNote role="note" style={{ marginTop: -4, marginBottom: 14 }}>
+                                            {locale === 'ko'
+                                                ? "이 기기에서는 3D 그래픽(WebGL)을 쓸 수 없어, 바탕의 물·잎을 가벼운 그림으로 대신 그려요. 브라우저 설정의 '그래픽 가속 사용'을 켜거나 그래픽 드라이버를 업데이트하면 원래대로 보여요."
+                                                : "3D graphics (WebGL) aren't available on this device, so the water and leaves in the background are drawn in a lighter style. Turn on graphics acceleration in your browser settings or update your graphics driver to see them as intended."}
                                         </L.RowNote>
                                     )}
 

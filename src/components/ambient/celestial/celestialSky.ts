@@ -75,7 +75,6 @@ export function createSky(canvas: HTMLCanvasElement, o: SkyOptions) {
     if (!ctx) return { dispose() {} };
 
     const mobile = window.matchMedia("(max-width: 768px)").matches;
-    const fine = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
     const full = o.motion === "full";
     const gentle = o.motion === "gentle";
     const hand = full;
@@ -107,7 +106,8 @@ export function createSky(canvas: HTMLCanvasElement, o: SkyOptions) {
                 spark, a: rand(aMin, aMax) * (0.55 + z * 0.45), tw: rand(0.18, 0.62), ph: rand(0, Math.PI * 2),
             });
         }
-        if (hand && fine) {
+        // 숨은 별 — 폰이 아닌 화면에서 '풍성하게'면 마련한다. 마우스가 움직일 때만 드러난다(터치스크린 노트북도 마우스면)
+        if (hand && !mobile) {
             const m = Math.max(80, Math.min(240, Math.round(area / 6000)));
             for (let i = 0; i < m; i++) {
                 const z = rand(0.3, 0.9);
@@ -145,10 +145,8 @@ export function createSky(canvas: HTMLCanvasElement, o: SkyOptions) {
     };
     const stopParallax = hand ? parallax.start() : () => {};
     if (hand) {
-        if (fine) {
-            window.addEventListener("pointermove", onMove, { passive: true });
-            document.documentElement.addEventListener("pointerleave", onLeave);
-        }
+        window.addEventListener("pointermove", onMove, { passive: true });
+        document.documentElement.addEventListener("pointerleave", onLeave);
         window.addEventListener("pointerdown", onDown, { passive: true });
     }
 
@@ -218,7 +216,7 @@ export function createSky(canvas: HTMLCanvasElement, o: SkyOptions) {
         }
         for (const s of stars) {
             const k = 0.5 + 0.5 * Math.sin(t * s.tw * tws + s.ph);
-            const b = hand && fine ? lens(s, 150) : 0;
+            const b = hand ? lens(s, 150) : 0;
             drawStar(s, s.a * (0.35 + 0.65 * k * k) + b * 0.7, (s.spark ? 0.8 + 0.25 * k : 1) * (1 + b * 0.9));
         }
         // 곧게 떨어지는 별 — 머리는 네 갈래 별, 꼬리는 위로 옅어지는 곧은 금선

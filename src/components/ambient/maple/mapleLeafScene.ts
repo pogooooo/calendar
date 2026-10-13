@@ -314,7 +314,6 @@ export function createLeafScene(THREE: T, canvas: HTMLCanvasElement, opts: LeafS
     const stopParallax = interactive ? parallax.start() : () => {};
 
     // 손 — 커서의 자리와 빠르기(px/s). 지나가는 둘레의 잎이 그 빠르기를 조금 받아 함께 쓸려 간다
-    const finePointer = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
     const hand = { x: -9999, y: -9999, vx: 0, vy: 0, at: 0 };
     const onMove = (e: PointerEvent) => {
         if (e.pointerType !== "mouse" && e.pointerType !== "pen") return;
@@ -328,7 +327,8 @@ export function createLeafScene(THREE: T, canvas: HTMLCanvasElement, opts: LeafS
         hand.y = e.clientY;
         hand.at = now;
     };
-    if (interactive && finePointer) window.addEventListener("pointermove", onMove, { passive: true });
+    // 마우스는 늘 듣는다 — 터치스크린 노트북처럼 '주 입력이 손가락'으로 잡히는 기기도 마우스를 쓰면 잎이 쓸린다
+    if (interactive) window.addEventListener("pointermove", onMove, { passive: true });
 
     /* ── 한 걸음 ────────────────────────────────────────────────────── */
     const m4 = new THREE.Matrix4();

@@ -13,7 +13,7 @@ import * as S from "./OceanAtmosphere.styles";
 /** 커서 아래 유리 판들에 빛 자리를 적는다 (rAF 로 한 번에) */
 function useGlassSpotlight(enabled: boolean) {
     useEffect(() => {
-        if (!enabled || window.matchMedia("(hover: none)").matches) return;
+        if (!enabled) return;
         const glassy = new WeakMap<Element, boolean>();
         const isGlass = (el: Element) => {
             let v = glassy.get(el);
@@ -42,6 +42,8 @@ function useGlassSpotlight(enabled: boolean) {
             lit = next;
         };
         const onMove = (e: PointerEvent) => {
+            // 마우스(펜)만 — 손가락 기기 판정(hover: none) 대신 움직임의 종류로 가린다(터치스크린 노트북도 마우스면 비춘다)
+            if (e.pointerType !== "mouse" && e.pointerType !== "pen") return;
             px = e.clientX; py = e.clientY; target = e.target as Element | null;
             if (!frame) frame = requestAnimationFrame(paint);
         };
