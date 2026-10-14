@@ -59,10 +59,13 @@ export const calm = css`
 
 /** EASE 와 같은 결 — 움직임의 꼴(MotionSet)이 읽는 네 수 */
 const SEA: Ease = [0.22, 1, 0.36, 1];
+/** 판이 밀려가는 결 — 들고 나는 두 판이 같은 결로 움직여야 이음매가 벌어지지 않는다 */
+const SLIDE: Ease = [0.32, 0.72, 0, 1];
 
 /**
- * 바다의 몸짓 (src/styles/motion.ts 의 MotionSet) — 물속에서 떠오르듯, 흐림이 걷히며 오는 쪽에서 미끄러져 들어온다.
- *   날짜·판이 바뀜: 다음이면 오른쪽(아래)에서, 이전이면 왼쪽(위)에서. 화면 한 판(월간)은 크게, 판 안의 내용은 짧게.
+ * 바다의 몸짓 (src/styles/motion.ts 의 MotionSet) — 물결에 밀려가듯 오는 쪽에서 미끄러져 들어온다.
+ *   날짜·판이 바뀜: 다음이면 오른쪽(아래)에서, 이전이면 왼쪽(위)에서. 화면 한 판(월간)은 옛 판이 반대쪽으로 밀려나고 새 판이
+ *   제 폭만큼 밀려 들어온다(흐림·옅어짐 없이 — 사용자: "막대가 페이드인·아웃 말고 슬라이드로"). 판 안의 내용은 짧게 미끄러진다.
  *   목록에 든 줄: 위에서 살짝 내려앉으며 맑아진다 · 빠지는 줄: 옆으로 흘러가며 흐려진다.
  *   끝냄: 체크칸이 톡 부풀며 둘레로 물결 고리가 번지고, 줄에 청록 빛이 한 번 고였다 빠진다.
  * 흐림은 유리(backdrop-filter)를 품지 않은 상자에만 건다 — 흐림·투명도가 걸린 상자 안의 유리는 뒤를 못 본다.
@@ -71,14 +74,15 @@ export const tideMotion: MotionSet = {
     swapIn: (a) => {
         if (a.widget) return widgetSwap(a);
         if (a.level === "gentle") return gentleSwap(a);
-        if (a.size === "line") return { pose: { opacity: 0, [a.axis]: a.dir * 12, blur: 3 }, duration: 360, ease: SEA };
-        if (a.size === "page") return { pose: { opacity: 0, [a.axis]: a.dir * 64, scale: 0.975, blur: 10 }, duration: 560, ease: SEA };
-        return { pose: { opacity: 0, [a.axis]: a.dir * 30, blur: 6 }, duration: 460, ease: SEA };
+        if (a.size === "line") return { pose: { opacity: 0, [a.axis]: a.dir * 18 }, duration: 340, ease: SEA };
+        if (a.size === "page") return { pose: { [a.axis]: a.dir * (a.extent ?? 480) }, duration: 520, ease: SLIDE };
+        return { pose: { opacity: 0.15, [a.axis]: a.dir * 64 }, duration: 420, ease: SEA };
     },
     swapOut: (a) => {
         if (a.widget || a.level === "gentle") return { pose: { opacity: 0 }, duration: 140, ease: EASE_IN };
-        if (a.size === "page") return { pose: { opacity: 0, [a.axis]: -a.dir * 40, scale: 0.985, blur: 8 }, duration: 300, ease: EASE_IN };
-        return { pose: { opacity: 0, [a.axis]: -a.dir * 16, blur: 4 }, duration: 220, ease: EASE_IN };
+        // 옛 판은 새 판과 같은 결·길이로 반대쪽으로 — 두 판이 한 줄로 이어져 밀려간다
+        if (a.size === "page") return { pose: { [a.axis]: -a.dir * (a.extent ?? 480) }, duration: 520, ease: SLIDE };
+        return { pose: { opacity: 0, [a.axis]: -a.dir * 24 }, duration: 200, ease: EASE_IN };
     },
     itemIn: (level) => level === "gentle"
         ? { pose: { opacity: 0 }, duration: 200, ease: SEA }

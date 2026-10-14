@@ -57,6 +57,8 @@ export interface SwapAsk {
     size: SwapSize;
     /** 데스크톱 위젯 창 — 투명 창이라 아주 짧게, 한 번만 */
     widget: boolean;
+    /** 갈리는 상자의 그 축 길이(px) — 판 전체를 제 폭만큼 밀어내는 미끄럼에 쓴다(모르면 없음) */
+    extent?: number;
 }
 
 /** 끝냄 — 줄(row)과 그 안의 표(mark: 체크칸)가 한 번. 키프레임은 WAAPI 그대로 */

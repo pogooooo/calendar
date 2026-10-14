@@ -45,7 +45,8 @@ const SwapLayer = React.forwardRef<HTMLDivElement, SwapLayerProps>(function Swap
         const { level, set, dir, axis, size, skip } = live.current;
         const el = node.current;
         if (skip || level === "off" || !el) return;
-        const step = set.swapIn({ dir: dir < 0 ? -1 : 1, axis, level, size, widget: isWidgetWindow() });
+        const extent = axis === "x" ? el.getBoundingClientRect().width : el.getBoundingClientRect().height;
+        const step = set.swapIn({ dir: dir < 0 ? -1 : 1, axis, level, size, widget: isWidgetWindow(), extent });
         if (!step) return;
         const a = startOnNextFrame(el.animate(enterFrames(step.pose), optionsOf(step)));
         return () => a.cancel();
@@ -55,7 +56,8 @@ const SwapLayer = React.forwardRef<HTMLDivElement, SwapLayerProps>(function Swap
         const el = node.current;
         if (isPresent || !el) return;
         const { level, set, exitDir, axis, size } = live.current;
-        const step = level === "off" ? null : set.swapOut({ dir: exitDir, axis, level, size, widget: isWidgetWindow() });
+        const box = el.getBoundingClientRect();
+        const step = level === "off" ? null : set.swapOut({ dir: exitDir, axis, level, size, widget: isWidgetWindow(), extent: axis === "x" ? box.width : box.height });
         if (!step) { removeRef.current?.(); return; }
         // 나가는 판은 누를 수도 초점이 갈 수도 없게 — 새 판과 겹쳐 있는 동안 옛 칸이 눌리지 않도록
         el.style.pointerEvents = "none";

@@ -9,7 +9,7 @@
  */
 import styled, { css, keyframes } from "styled-components";
 import * as C from "../celestial/CelestialMonthCalendar.styles";
-import { EASE, MONO, R, calm, focusRing, ink, seaButton, surface } from "@/styles/ocean/water";
+import { MONO, R, calm, focusRing, ink, seaButton, surface } from "@/styles/ocean/water";
 import { withAlpha } from "@/styles/color";
 import { MOBILE, NOT_WIDGET } from "@/styles/breakpoints";
 
@@ -23,13 +23,6 @@ const etched = css`
     box-shadow: 0 1px 0 ${(p) => (dark(p) ? "rgba(0, 0, 0, 0.25)" : "rgba(255, 255, 255, 0.7)")};
 `;
 
-/** 칸 안의 글씨·막대가 떠오른다 — 끝 값은 적지 않는다(다른 달 칸은 옅게 남아야 하므로) */
-const tileIn = keyframes`
-    from { opacity: 0; transform: translateY(8px); }
-`;
-/** 칸마다 늦춤 — 줄 r·칸 c 의 대각선 순서 (r + c) */
-const CASCADE = Array.from({ length: 6 }, (_, r) => Array.from({ length: 7 }, (_, c) =>
-    `${C.WeekRowContainer}:nth-child(${r + 1}) > &:nth-child(${c + 1}) { animation-delay: ${(r + c) * 24}ms; }`).join("\n")).join("\n");
 /** 오늘 숫자 둘레의 숨 — 아주 천천히 번졌다 잦아든다 */
 const breathe = keyframes`
     0%, 100% { box-shadow: 0 0 0 0 var(--today-halo), 0 4px 12px -2px var(--today-glow); }
@@ -123,9 +116,8 @@ export const DayCell = styled(C.DayCell)`
     background: transparent;
     opacity: ${(p) => (p.$isCurrentMonth ? 1 : 0.4)};
     box-shadow: none;
-    animation: ${tileIn} 0.5s ${EASE} both;
-    ${CASCADE}
-    ${calm}
+    /* 칸은 제자리에서 나타나지 않는다 — 달을 넘기면 판 전체가 옆으로 밀려 들어온다(tideMotion, SwapLayer).
+       예전의 칸마다 떠오르는 등장은 넘길 때마다 막대가 흐려졌다 차례로 떠올라 미끄럼이 아니라 깜빡임으로 보였다 */
 
     &::before {
         content: "";

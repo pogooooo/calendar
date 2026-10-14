@@ -124,7 +124,10 @@ export function useSwapMotion(key: SwapKey | null | undefined, target: MotionTar
         if (before === key || before == null || key == null) return;
         const { set, level, target, opts } = live.current;
         if (level === "off" || opts.disabled) return;
-        const step = set.swapIn({ dir: dirOf(before, key, opts), axis: opts.axis ?? "x", level, size: opts.size ?? "pane", widget: isWidgetWindow() });
+        const axis = opts.axis ?? "x";
+        const first = targetsOf(target)[0];
+        const box = first?.getBoundingClientRect();
+        const step = set.swapIn({ dir: dirOf(before, key, opts), axis, level, size: opts.size ?? "pane", widget: isWidgetWindow(), extent: box ? (axis === "x" ? box.width : box.height) : undefined });
         // 빠르게 잇달아 넘기면 앞 몸짓을 지우고 새로 — 겹쳐 쌓이지 않게
         running.current.forEach((a) => a.cancel());
         running.current = [];
