@@ -24,7 +24,7 @@ import kotlin.math.min
  *
  * 위젯의 짜임(줄 목록·주간 띠·월간 격자·게이지)은 갈래가 달라도 같다. 다른 것은 글꼴과 장식이다:
  * Celestial 은 Orbit 글꼴에 별·달·금선 두 겹 테, Maple 은 고운바탕에 잎·먹 카드 테·단풍 가지·종이결,
- * Ocean 은 물빛과 빛 그물(OceanStyle). 그래서 짜임은 화가 하나가 그리고, 장식은 이 붓이 그린다.
+ * Ocean 은 물빛과 빛 그물(OceanStyle — 앱의 물과 같은 식). 그래서 짜임은 화가 하나가 그리고, 장식은 이 붓이 그린다.
  * 웹의 "공용 View + 갈래별 styles" 와 같은 나눔. 바탕 무늬는 데스크톱 위젯의 바탕 무늬(WidgetDecor)를 닮게 —
  * 홈 위젯은 멈춘 그림이라 움직임은 없다.
  *
@@ -43,6 +43,9 @@ abstract class WidgetStyle(protected val context: Context, protected val density
      * 화가가 바탕(frame)을 그리기 전에 정한다.
      */
     var busy: Boolean = false
+
+    /** 그리는 위젯의 종류 — 바탕 무늬를 종류마다 조금 달리 그릴 때(같은 종류는 늘 같은 무늬). 화가가 정한다 */
+    var kind: String = ""
 
     protected fun dp(v: Float): Float = v * density
 

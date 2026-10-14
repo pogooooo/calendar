@@ -93,5 +93,6 @@
 - **기기의 동작 줄이기를 CSS 미디어 쿼리(`prefers-reduced-motion`)로 직접 보지 말 것.** 앱의 움직임 값(`html[data-theme-motion]`)이 그것을 담는다 — 미디어 쿼리로 막으면 설정과 상관없이 멈춘다. 감쌀 때는 `:where(html:not([data-theme-motion="off"])) &` (우선순위가 그대로라 갈래의 덮어쓰기가 깨지지 않는다).
 - **판·목록에 transform 을 남기는 몸짓(`animation … both`·`fill: forwards`)을 걸지 말 것.** 안의 fixed 단추·막이 화면이 아니라 그 상자에 선다. 몸짓은 `useSwapMotion`·`useListMotion`(끝나면 남기지 않음)으로.
 - **위젯 판의 바탕 무늬에 표식 꼴(네 갈래 별·초승달·마름모)을 흩지 말 것.** 위젯 화면은 바탕을 지워 체크 칸 안이 비친다 — 칸에 별이 비치면 고른 표시로, 초승달은 글자(C)로 읽힌다. 하늘에는 점만, 별은 테에 꿴다 (`CelestialWidgetDecor`).
+- **물결(빛 그물)을 SVG 난류(feTurbulence)로 흉내 내지 말 것.** 구겨진 비닐처럼 보였다. 물은 앱의 물 셰이더와 같은 식(`caustic()` — 데스크톱 위젯 `widget/ocean/caustic.ts`, 안드로이드 `OceanStyle.kt`)으로 그린다.
 - **클래스 이름 `ring` 은 Tailwind 의 `.ring`(box-shadow)과 겹친다.** HTML 요소·바깥 svg 에 네모 테가 생긴다(svg 안쪽 요소는 괜찮다).
 - **SVG 좌표를 Math.cos·sin 으로 셀 때는 소수 둘째 자리로 반올림(`f()`).** 서버(Node)와 브라우저의 끝자리가 달라 하이드레이션이 어긋난다.

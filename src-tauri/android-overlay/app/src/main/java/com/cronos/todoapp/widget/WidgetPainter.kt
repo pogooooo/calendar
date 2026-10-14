@@ -29,7 +29,7 @@ import kotlin.math.sin
  * 겹쳐 두는데, 그 칸의 위치는 여기의 치수(PAD·HDR_H·ROW_H)와 같아야 한다.
  *
  * 짜임(줄·격자·게이지)은 테마 갈래가 달라도 같다. 갈래마다 다른 것(글꼴·표식·바탕·문장)은
- * 붓(WidgetStyle)이 그린다 — Celestial 은 별·달과 금선 두 겹 테, Maple 은 잎과 먹 카드 테·단풍 가지·종이결, Ocean 은 물방울과 빛 그물.
+ * 붓(WidgetStyle)이 그린다 — Celestial 은 별·달과 금선 두 겹 테, Maple 은 잎과 먹 카드 테·단풍 가지·종이결, Ocean 은 물빛과 빛 그물.
  * 치수는 전부 dp 로 적고 그릴 때 density 를 곱한다.
  */
 class WidgetPainter(
@@ -104,6 +104,7 @@ class WidgetPainter(
         val c = Canvas(bmp)
         // 칸이 판을 채우는 위젯은 바탕의 큰 그림을 줄인다 (붓이 본다)
         style.busy = kind == "month" || kind == "week"
+        style.kind = kind
         frame(c, w.toFloat(), h.toFloat())
         val s = snap ?: run { emptyState(c, w.toFloat(), h.toFloat(), kind); return Painted(bmp) }
         return when (kind) {
@@ -143,7 +144,7 @@ class WidgetPainter(
     private fun drawRight(c: Canvas, s: String, right: Float, y: Float, p: Paint) { c.drawText(s, right - p.measureText(s), y, p) }
     private fun drawCenter(c: Canvas, s: String, cx: Float, y: Float, p: Paint) { c.drawText(s, cx - p.measureText(s) / 2f, y, p) }
 
-    /** 줄 앞·실선 끝의 표식 — 갈래의 붓이 그린다 (Celestial 달 — 찬 점·빈 고리, Maple 잎, Ocean 물방울) */
+    /** 줄 앞·실선 끝의 표식 — 갈래의 붓이 그린다 (Celestial·Ocean 찬 점·빈 고리, Maple 잎) */
     private fun bullet(c: Canvas, cx: Float, cy: Float, rDp: Float, color: Int, filled: Boolean, strokeDp: Float = 1f) =
         style.bullet(c, cx, cy, rDp, color, filled, strokeDp)
 

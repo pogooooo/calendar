@@ -1,10 +1,10 @@
 /**
- * Ocean 오브제의 재료 — 바닷물을 품은 액체 유리, 그리고 진주.
+ * Ocean 오브제의 재료 — 바닷물을 품은 액체 유리.
  *
  * 함께 쓰는 오브제 렌더러에는 진짜 물(바탕 장면)이 없다. 그래서 유리 너머의 바다를 셰이더가 직접 지어낸다:
  * 바탕의 물과 같은 빛 그물(caustic, 세 겹만)이 위는 맑고 아래는 깊은 물빛 위에서 어른거리고, 유리는 그 바다를
  * 법선만큼 휘어 비춘다(빛깔마다 조금씩 달리 — 테에 무지갯빛). 테에는 위는 수면의 빛·아래는 깊은 물이 비치고,
- * 위 왼쪽의 해(밤엔 달)가 또렷한 반짝 하나를 남긴다. 그래서 어느 모양(구슬·물방울·소라·조개)에 입혀도
+ * 위 왼쪽의 해(밤엔 달)가 또렷한 반짝 하나를 남긴다. 그래서 어느 모양(구슬·물방울)에 입혀도
  * 같은 바다를 품은 유리로 보인다.
  *
  * 색은 바다의 것(청록·물빛)으로 정해 두고, 밝은 벌·어두운 벌만 테마에서 받는다(낮 바다 / 달빛 밤바다).
@@ -149,50 +149,6 @@ export function glassMaterial(tone: ObjetTone, look: GlassLook = {}) {
         uniforms.uLight.value.set(p.light);
         uniforms.uSky.value.set(p.sky);
         uniforms.uCaus.value = p.caus;
-    };
-    setTone(tone);
-    return { material, uniforms, setTone };
-}
-
-const PEARL_FRAG = /* glsl */ `
-uniform vec3 uBody;
-uniform vec3 uEdge;
-uniform vec3 uSky;
-varying vec3 vN;
-varying vec3 vV;
-varying vec2 vScreen;
-varying vec2 vUv;
-void main() {
-    vec3 n = normalize(vN);
-    vec3 V = normalize(-vV);
-    float ndv = clamp(dot(n, V), 0.0, 1.0);
-    // 진주의 결 — 가운데는 크림빛, 테로 갈수록 은빛, 그 사이에 옅은 무지개(오리엔트)
-    vec3 col = mix(uEdge, uBody, smoothstep(0.0, 0.9, ndv));
-    vec3 orient = 0.5 + 0.5 * cos(6.2831 * (vec3(0.0, 0.33, 0.67) + ndv * 1.3 + n.y * 0.25));
-    col += (orient - 0.5) * 0.12 * (1.0 - ndv);
-    vec3 L = normalize(vec3(-0.45, 0.7, 0.55));
-    float nh = max(dot(n, normalize(L + V)), 0.0);
-    col += uSky * (pow(nh, 140.0) * 1.2 + pow(nh, 10.0) * 0.1);
-    col *= 0.86 + 0.14 * max(dot(n, L), 0.0);
-    gl_FragColor = vec4(col, 1.0);
-    #include <colorspace_fragment>
-}
-`;
-
-/** 진주 — 크림빛 몸에 은빛 테와 옅은 무지개 결 */
-export function pearlMaterial(tone: ObjetTone) {
-    const uniforms = {
-        uTime: { value: 0 },
-        uWobble: { value: 0 },
-        uBody: { value: new THREE.Color() },
-        uEdge: { value: new THREE.Color() },
-        uSky: { value: new THREE.Color() },
-    };
-    const material = new THREE.ShaderMaterial({ vertexShader: VERT, fragmentShader: PEARL_FRAG, uniforms });
-    const setTone = (t: ObjetTone) => {
-        uniforms.uBody.value.set(t.dark ? "#E9E4DA" : "#FBF6EC");
-        uniforms.uEdge.value.set(t.dark ? "#7E9A9A" : "#B9C6C4");
-        uniforms.uSky.value.set(t.dark ? "#DDF7F2" : "#FFFFFF");
     };
     setTone(tone);
     return { material, uniforms, setTone };

@@ -1,24 +1,26 @@
 "use client";
 /**
- * Ocean 의 빈 자리 그림 — 바다를 품은 액체 유리로 빚은 작은 것 하나가 천천히 움직인다(3D 오브제, objet/ocean).
- * 할 일: 물방울 · 프로젝트: 앵무조개 · 챌린지: 떠오르는 방울 · 기념일: 가리비 위의 진주.
- * 그림이 말을 대신하지 않게 작게. WebGL 이 없으면 예전의 가는 선 조개(옅게)로 물러난다.
+ * Ocean 의 빈 자리 그림 — 그 화면의 내비 아이콘(OceanNavIcon 과 같은 것)을 물빛 한 빛깔로 옅게, 작게.
+ * 예전에는 바다 유리 3D 오브제(물방울·앵무조개·방울·진주)였는데 화면과 따로 놀았다(사용자: "이런건 단색으로 해도 될듯").
+ * 할 일(홈)은 그림 없이 글만 둔다 — 사용자: "모바일 홈 화면의 물방울 지워줘".
  */
-import Objet, { type ObjetName } from "@/components/objet/Objet";
+import { Flag, FolderKanban, Gift, type LucideIcon } from "lucide-react";
 import type { EmptyArtKind } from "../EmptyArt";
 import * as S from "./OceanEmptyArt.styles";
 
-const OBJET: Record<EmptyArtKind, ObjetName> = {
-    todos: "ocean/drop",
-    projects: "ocean/shell",
-    challenges: "ocean/bubbles",
-    anniversaries: "ocean/pearl",
+const ICON: Record<EmptyArtKind, LucideIcon | null> = {
+    todos: null,
+    projects: FolderKanban,
+    challenges: Flag,
+    anniversaries: Gift,
 };
 
 export default function OceanEmptyArt({ kind }: { kind: EmptyArtKind }) {
+    const Icon = ICON[kind];
+    if (!Icon) return null;
     return (
-        <S.Art data-empty-art={kind}>
-            <Objet name={OBJET[kind]} size="100%" fallback={<S.Shell aria-hidden="true" />} />
+        <S.Art data-empty-art={kind} aria-hidden="true">
+            <Icon size="100%" strokeWidth={1.3} />
         </S.Art>
     );
 }
