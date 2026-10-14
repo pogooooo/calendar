@@ -20,7 +20,7 @@ import java.util.Calendar
  * 홈 위젯 — 앱이 그린 그림 한 장(WidgetPainter)을 ImageView 에 얹고, 그 위에 투명한 칸을 겹쳐 누르는 자리를 단다.
  *
  * 재료는 앱(JS)이 `widget-snapshot.json` 에 써 둔다 (src/lib/widgetSnapshot.ts). 홈 위젯은 WebView 를
- * 담을 수 없고 쓸 수 있는 뷰도 몇 가지뿐이라, 앱 화면과 같은 말(Orbit 글꼴·마름모·눈금)을 내려면
+ * 담을 수 없고 쓸 수 있는 뷰도 몇 가지뿐이라, 앱 화면과 같은 말(갈래의 글꼴·별·달·잎·눈금)을 내려면
  * 그림으로 그리는 수밖에 없다.
  *
  * 위젯 한 종류당 하나씩 상속해서 kind 만 바꾼다. 다시 그리는 때:

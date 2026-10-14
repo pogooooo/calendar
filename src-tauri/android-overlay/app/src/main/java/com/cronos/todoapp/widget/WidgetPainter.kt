@@ -29,7 +29,7 @@ import kotlin.math.sin
  * 겹쳐 두는데, 그 칸의 위치는 여기의 치수(PAD·HDR_H·ROW_H)와 같아야 한다.
  *
  * 짜임(줄·격자·게이지)은 테마 갈래가 달라도 같다. 갈래마다 다른 것(글꼴·표식·바탕·문장)은
- * 붓(WidgetStyle)이 그린다 — Celestial 은 마름모와 금빛 실선, Maple 은 잎과 먹 하이라인·종이결.
+ * 붓(WidgetStyle)이 그린다 — Celestial 은 별·달과 금선 두 겹 테, Maple 은 잎과 먹 카드 테·단풍 가지·종이결, Ocean 은 물방울과 빛 그물.
  * 치수는 전부 dp 로 적고 그릴 때 density 를 곱한다.
  */
 class WidgetPainter(
@@ -102,6 +102,8 @@ class WidgetPainter(
         val h = dp(hDp).toInt().coerceAtLeast(1)
         val bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
         val c = Canvas(bmp)
+        // 칸이 판을 채우는 위젯은 바탕의 큰 그림을 줄인다 (붓이 본다)
+        style.busy = kind == "month" || kind == "week"
         frame(c, w.toFloat(), h.toFloat())
         val s = snap ?: run { emptyState(c, w.toFloat(), h.toFloat(), kind); return Painted(bmp) }
         return when (kind) {
@@ -141,18 +143,18 @@ class WidgetPainter(
     private fun drawRight(c: Canvas, s: String, right: Float, y: Float, p: Paint) { c.drawText(s, right - p.measureText(s), y, p) }
     private fun drawCenter(c: Canvas, s: String, cx: Float, y: Float, p: Paint) { c.drawText(s, cx - p.measureText(s) / 2f, y, p) }
 
-    /** 줄 앞·실선 끝의 표식 — 갈래의 붓이 그린다 (Celestial 마름모, Maple 잎) */
-    private fun diamond(c: Canvas, cx: Float, cy: Float, rDp: Float, color: Int, filled: Boolean, strokeDp: Float = 1f) =
+    /** 줄 앞·실선 끝의 표식 — 갈래의 붓이 그린다 (Celestial 달 — 찬 점·빈 고리, Maple 잎, Ocean 물방울) */
+    private fun bullet(c: Canvas, cx: Float, cy: Float, rDp: Float, color: Int, filled: Boolean, strokeDp: Float = 1f) =
         style.bullet(c, cx, cy, rDp, color, filled, strokeDp)
 
-    /** 진행 실선: 바탕선 + 금빛 채움 + 마름모 표식 */
+    /** 진행 실선: 바탕선 + 금빛 채움 + 끝 표식 */
     private fun rail(c: Canvas, x0: Float, x1: Float, y: Float, frac: Float, mark: Boolean = true) {
         c.drawLine(x0, y, x1, y, stroke(pal.line, 1f))
         val f = frac.coerceIn(0f, 1f)
         if (f <= 0f) return
         val xe = x0 + (x1 - x0) * f
         c.drawLine(x0, y, xe, y, stroke(pal.gold, 1.2f))
-        if (mark) diamond(c, xe, y, 3.5f, pal.gold, true)
+        if (mark) bullet(c, xe, y, 3.5f, pal.gold, true)
     }
 
     /** 바탕 — 갈래의 붓이 그린다 */
@@ -235,7 +237,7 @@ class WidgetPainter(
             val t = rows[i]
             val completed = t.doneOn(key)
             val cy = y0 + dp(ROW_H) * i + dp(ROW_H) / 2f
-            diamond(c, dp(PAD_X) + dp(4f), cy, 3.5f, t.color, completed)
+            bullet(c, dp(PAD_X) + dp(4f), cy, 3.5f, t.color, completed)
             val sp = side(if (completed) Palette.withAlpha(pal.muted, 0.7f) else pal.muted)
             val sideText = if (t.allDay) s.label("allDay") else t.timeRange()
             val sideW = sp.measureText(sideText)
@@ -298,7 +300,7 @@ class WidgetPainter(
         c.drawLine(x0, y, x1, y, stroke(pal.line, 1f).apply { pathEffect = DashPathEffect(floatArrayOf(dp(3f), dp(3f)), 0f) })
         val cy = y + dp(14f)
         if (next != null) {
-            diamond(c, x0 + dp(4f), cy, 3.5f, next.color, false)
+            bullet(c, x0 + dp(4f), cy, 3.5f, next.color, false)
             val when_ = untilText(s, next.start)
             val sp = side()
             val sideText = "$when_ · ${Snapshot.hhmm(next.start)}"
@@ -308,7 +310,7 @@ class WidgetPainter(
             val bp = body()
             c.drawText(ellipsize(next.title, bp, x1 - sp.measureText(sideText) - dp(8f) - kx), kx, baseline(bp, cy), bp)
         } else {
-            diamond(c, x0 + dp(4f), cy, 3.5f, pal.muted, false)
+            bullet(c, x0 + dp(4f), cy, 3.5f, pal.muted, false)
             c.drawText(s.label("next"), x0 + dp(16f), baseline(kp, cy), kp)
             val sp = side()
             drawRight(c, s.label("nothingNext"), x1, baseline(sp, cy), sp)
@@ -392,8 +394,8 @@ class WidgetPainter(
         val nr = R - dp(18f)
         val nx = cx + (cos(a) * nr).toFloat(); val ny = cy - (sin(a) * nr).toFloat()
         c.drawLine(cx, cy, nx, ny, stroke(pal.gold, 1.2f))
-        diamond(c, nx, ny, 4f, pal.gold, false, 1.2f)
-        diamond(c, cx, cy, 4f, pal.gold, true)
+        bullet(c, nx, ny, 4f, pal.gold, false, 1.2f)
+        bullet(c, cx, cy, 4f, pal.gold, true)
         val ep = text(8f, pal.muted, style.numeral, 0f, tabular = true)
         c.drawText("1", cx - R - dp(2f), cy + dp(3f), ep)
         drawRight(c, "$days", cx + R + dp(3f), cy + dp(3f), ep)
@@ -452,7 +454,7 @@ class WidgetPainter(
             val dotW = dp(7f) * dots + (if (extra > 0) ep.measureText("+$extra") + dp(2f) else 0f)
             var dx = cx - dotW / 2f + dp(3f)
             val dy = bottom - dp(6f)
-            for (j in 0 until dots) { diamond(c, dx, dy, 2.2f, items[j].color, true); dx += dp(7f) }
+            for (j in 0 until dots) { bullet(c, dx, dy, 2.2f, items[j].color, true); dx += dp(7f) }
             if (extra > 0) c.drawText("+$extra", dx - dp(1f), baseline(ep, dy), ep)
             links += "cronos://day/${dayKeys[i]}"
         }
@@ -519,7 +521,7 @@ class WidgetPainter(
                 var ly = cellTop + numberH + lineH / 2f
                 for (j in 0 until shown) {
                     val td = ordered[j]
-                    diamond(c, left + dp(1.5f), ly, 1.4f, td.color, true)
+                    bullet(c, left + dp(1.5f), ly, 1.4f, td.color, true)
                     val p = if (td.doneOn(key)) tpDone else tp
                     c.drawText(ellipsize(td.title, p, textW), left + dp(5f), baseline(p, ly), p)
                     ly += lineH
@@ -528,7 +530,7 @@ class WidgetPainter(
             } else {
                 val dots = min(items.size, 3)
                 var dx = cx - dp(5f) * (dots - 1) / 2f
-                for (j in 0 until dots) { diamond(c, dx, cy + dp(10f), 1.8f, items[j].color, true); dx += dp(5f) }
+                for (j in 0 until dots) { bullet(c, dx, cy + dp(10f), 1.8f, items[j].color, true); dx += dp(5f) }
             }
             links += "cronos://day/$key"
         }
@@ -555,8 +557,8 @@ class WidgetPainter(
             val cy = h / 2f - dp(6f)
             val bw = bigP.measureText(dText)
             c.drawText(dText, cx - bw / 2f, baseline(bigP, cy), bigP)
-            diamond(c, cx - bw / 2f - dp(10f), cy, 3f, pal.gold, false)
-            diamond(c, cx + bw / 2f + dp(10f), cy, 3f, pal.gold, false)
+            bullet(c, cx - bw / 2f - dp(10f), cy, 3f, pal.gold, false)
+            bullet(c, cx + bw / 2f + dp(10f), cy, 3f, pal.gold, false)
             val np = text(12.5f, pal.ink, sansMedium)
             val nameY = cy + dp(21f)
             val iconW = dp(14f)
@@ -612,7 +614,7 @@ class WidgetPainter(
     private fun icon(c: Canvas, key: String, cx: Float, cy: Float, r: Float, color: Int) {
         val p = stroke(color, 1f)
         when (key) {
-            "ring" -> { c.drawCircle(cx, cy + r * 0.25f, r * 0.75f, p); diamond(c, cx, cy - r * 0.75f, r * 0.3f / density, color, false) }
+            "ring" -> { c.drawCircle(cx, cy + r * 0.25f, r * 0.75f, p); bullet(c, cx, cy - r * 0.75f, r * 0.3f / density, color, false) }
             "cake" -> {
                 c.drawRoundRect(RectF(cx - r * 0.9f, cy - r * 0.1f, cx + r * 0.9f, cy + r * 0.9f), r * 0.2f, r * 0.2f, p)
                 c.drawLine(cx, cy - r * 0.1f, cx, cy - r * 0.6f, p); c.drawCircle(cx, cy - r * 0.85f, r * 0.15f, fill(color))
@@ -665,7 +667,7 @@ class WidgetPainter(
         }
         ring(rOut, 1.5f, dayFrac, 0.25f)
         ring(rOut * 0.74f, 3f, doneFrac, 0.2f)
-        diamond(c, cx, cy, 4f, pal.gold, true)
+        bullet(c, cx, cy, 4f, pal.gold, true)
         val kp = text(9f, pal.goldText, orbit, 0.2f)
         val vp = text(16f, pal.ink, sansMedium, tabular = true)
         val mp = text(10f, pal.muted, tabular = true)
@@ -705,7 +707,7 @@ class WidgetPainter(
         }
         val field = RectF(dp(PAD_X), cy - dp(15f), fieldRight, cy + dp(15f))
         c.drawRoundRect(field, dp(10f), dp(10f), stroke(pal.line, 1f))
-        diamond(c, field.left + dp(12f), cy, 3.5f, pal.gold, false)
+        bullet(c, field.left + dp(12f), cy, 3.5f, pal.gold, false)
         val bp = text(12f, pal.muted)
         c.drawText(ellipsize(s.label("quickAdd"), bp, field.width() - dp(30f)), field.left + dp(22f), baseline(bp, cy), bp)
         return Painted(bmp)

@@ -17,6 +17,7 @@ import type { WidgetKind } from "@/store/useWidgetStore";
 import { mirrorWidgetStateToFile } from "@/lib/widgetStateFile";
 import * as OceanS from './ocean/OceanWidgetShell.styles';
 import WidgetCharm from './WidgetCharm';
+import WidgetDecor from './WidgetDecor';
 
 interface Props {
     kind: WidgetKind;
@@ -440,6 +441,8 @@ export default function WidgetShell({ kind, title, children }: Props) {
 
                 {paper && <S.PaperLayer $url={paper} $opacity={bg.opacity} />}
                 {bg.mode === "glass" && bg.gloss && <S.GlossOverlay />}
+                {/* 갈래의 바탕 무늬 — 앱의 바탕을 닮게(멈춘 그림, 커서가 들어올 때만 한 번). 유리·색 바탕에서는 옅게 */}
+                <WidgetDecor kind={kind} locked={locked} dim={bg.mode !== "theme"} />
 
                 {!locked && (
                     <S.TopBar onMouseDown={startDrag}>

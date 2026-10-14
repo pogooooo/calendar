@@ -12,15 +12,20 @@ import java.io.File
  * 미리보기는 정적 그림이어야 해서(previewImage) 실제 화가가 견본 자료로 그린 걸 파일로 저장하고 adb 로 가져온다.
  *   adb shell am broadcast -n com.cronos.todoapp/.widget.PreviewRenderReceiver -a com.cronos.todoapp.RENDER_PREVIEWS
  * `--ez live true` 를 붙이면 견본 대신 지금 앱의 스냅샷(widget-snapshot.json)으로 그린다 — 테마 갈래를 눈으로 볼 때.
+ * `--es family ocean` 처럼 갈래를 주면 그 갈래의 기본색으로 previews/<갈래>/ 에 그린다 — 세 갈래를 한꺼번에 견줄 때.
  * 디버그 빌드에서만 일한다.
  */
 class PreviewRenderReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val debuggable = (context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
         if (!debuggable) return
-        val dir = File(context.filesDir, "previews").apply { mkdirs() }
-        val snap = (if (intent.getBooleanExtra("live", false)) Snapshot.load(context) else null)
-            ?: Snapshot.parse(context.assets.open("widget-sample.json").bufferedReader().readText())
+        val family = intent.getStringExtra("family")
+        val dir = File(context.filesDir, if (family != null) "previews/$family" else "previews").apply { mkdirs() }
+        val live = if (intent.getBooleanExtra("live", false)) Snapshot.load(context) else null
+        val snap = live ?: Snapshot.parse(context.assets.open("widget-sample.json").bufferedReader().readText())
+        // 견본은 그날(견본의 date) 낮 12:42 에 본 것으로 그린다 — 에뮬레이터 시계가 다른 날이면 목록이 다 비어 그려졌다
+        val now = if (live != null) System.currentTimeMillis()
+            else (Snapshot.parseDayKey(snap.date) ?: System.currentTimeMillis()) + (12 * 60 + 42) * 60_000L
         val sizes = mapOf(
             "today" to (250 to 180), "nownext" to (250 to 110), "challenge" to (250 to 180), "monthgauge" to (250 to 110),
             "week" to (250 to 110), "month" to (250 to 250), "month_tall" to (320 to 440), "anniversary" to (110 to 110), "dayprogress" to (110 to 110),
@@ -28,7 +33,8 @@ class PreviewRenderReceiver : BroadcastReceiver() {
         )
         for ((kind, size) in sizes) {
             for (dark in listOf(false, true)) {
-                val bmp = WidgetPainter(context, Palette.of(snap.theme?.family, dark, snap.theme), WidgetPrefs.DEFAULT_ALPHA, snap).paint(kind.removeSuffix("_tall"), size.first, size.second).bitmap
+                val palette = if (family != null) Palette.of(family, dark, null) else Palette.of(snap.theme?.family, dark, snap.theme)
+                val bmp = WidgetPainter(context, palette, WidgetPrefs.DEFAULT_ALPHA, snap, now = now).paint(kind.removeSuffix("_tall"), size.first, size.second).bitmap
                 File(dir, "widget_preview_${kind}${if (dark) "_dark" else ""}.png").outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
             }
         }

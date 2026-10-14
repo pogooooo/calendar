@@ -421,9 +421,11 @@ for (const n of [3, 5, 7]) await mask(`J10_leaf-chip-${n}.png`, `leaves/chip-${n
 
 /* ── 안드로이드 위젯이 쓰는 것 ────────────────────────────────────────── */
 fs.mkdirSync(ANDROID, { recursive: true });
-for (const n of ["widget-paper-light", "widget-paper-dark", "crest", "bullet-filled", "bullet-outline", "check", "acorn", "today-marker", "spinner", "gauge-dial", "ink-arrow-left", "ink-arrow-right"]) {
+for (const n of ["widget-paper-light", "widget-paper-dark", "crest", "bullet-filled", "bullet-outline", "check", "acorn", "today-marker", "spinner", "gauge-dial", "ink-arrow-left", "ink-arrow-right", "card-frame"]) {
     fs.copyFileSync(path.join(OUT, `${n}.webp`), path.join(ANDROID, `maple_${n.replace(/-/g, "_")}.webp`));
 }
+// 위젯 구석에 옅게 까는 단풍 가지 — 데스크톱 위젯과 같은 그림을 절반 크기로(AAB 는 10MiB 를 넘으면 브라우저로 못 올린다)
+await sharp(path.join(OUT, "hero-branch.webp")).resize({ height: 512 }).webp({ quality: 78 }).toFile(path.join(ANDROID, "maple_widget_branch.webp"));
 
 /* ── 보고 ─────────────────────────────────────────────────────────────── */
 let total = 0;
