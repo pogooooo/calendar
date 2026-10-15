@@ -49,26 +49,23 @@ class OceanStyle(context: Context, density: Float) : CelestialStyle(context, den
     }
 
     /**
-     * 빛 그물 — 1dp 에 한 점씩 셈하고 부드럽게 늘려 깐다(무른 무늬라 티가 안 난다). 무늬 한 주기는 190dp(데스크톱의 CELL 과 같다).
+     * 빛 그물 — 1dp 에 한 점씩 셈하고 부드럽게 늘려 깐다(무른 무늬라 티가 안 난다). 첫 겹의 한 주기는 320dp(데스크톱의 CELL 과 같다).
+     * 앱의 식은 한 주기마다 같은 무늬가 되풀이되어, 작은 판에서는 바둑판처럼 보였다(사용자: "패턴이 반복되는게 너무 잘 보여") —
+     * 크기·각도를 어긋나게 비튼 세 겹을 겹친다(데스크톱의 causticField 와 같다).
      * 위젯 종류마다 다른 한 장(같은 종류는 늘 같은 무늬). 아래(모래 위)로 갈수록 옅게.
      */
     private fun drawCaustics(c: Canvas, rect: RectF, pal: Palette, a: Float) {
         val w = max(1, (rect.width() / density).toInt())
         val h = max(1, (rect.height() / density).toInt())
-        val cell = 190f
+        val cell = 320f
         val t = 4f + ((kind.hashCode() and 0xFFFF) / 65535f) * 30f
-        val ts = t * 0.3f + 23f
-        val t2 = t * 0.22f + 11f
         val rgb = if (pal.dark) 0x80F2DE else 0xFFFFF8
         val px = IntArray(w * h)
         for (y in 0 until h) {
             val v = (h - y) / cell
             for (x in 0 until w) {
                 val u = x / cell
-                val cg = caustic(u, v, ts)
-                val c2 = caustic(u * 1.3f + 0.31f, v * 1.3f + 0.17f, t2)
-                val swell = 0.62f + 0.38f * sin(u * 1.1f + t * 0.05f) * sin(v * 0.9f - t * 0.04f)
-                val al = min(1f, (cg * 0.85f + c2 * 0.4f) * swell * 2f)
+                val al = causticField(u, v, t, 2.3f)
                 px[y * w + x] = ((al * 255).toInt() shl 24) or rgb
             }
         }
@@ -83,6 +80,16 @@ class OceanStyle(context: Context, density: Float) : CelestialStyle(context, den
         })
         c.restore()
         bmp.recycle()
+    }
+
+    /** 한 점의 빛 세기(0..1) — 비튼 세 겹에 너울(swell)을 곱하고 1.4 제곱으로 줄을 가늘게. 데스크톱 causticField 와 같다 */
+    private fun causticField(u: Float, v: Float, t: Float, gain: Float): Float {
+        val ts = t * 0.3f + 23f
+        val a0 = caustic(u, v, ts)
+        val a1 = caustic((u * L1C - v * L1S) * 1.29f + 0.37f, (u * L1S + v * L1C) * 1.29f + 0.61f, ts + 3.7f)
+        val a2 = caustic((u * L2C - v * L2S) * 0.71f + 0.83f, (u * L2S + v * L2C) * 0.71f + 0.19f, t * 0.22f + 11f)
+        val swell = 0.62f + 0.38f * sin(u * 1.1f + t * 0.05f) * sin(v * 0.9f - t * 0.04f)
+        return min(1f, (a0 * 0.55f + a1 * 0.45f + a2 * 0.35f) * swell * gain).pow(1.4f)
     }
 
     /** 앱의 물 셰이더 caustic(uv, t) 와 한 줄씩 같다 — 겹쳐 비틀린 사인 물결의 초점 */
@@ -128,6 +135,14 @@ class OceanStyle(context: Context, density: Float) : CelestialStyle(context, den
     }
 
     private fun argb(a: Float, r: Int, g: Int, b: Int) = Color.argb((a.coerceIn(0f, 1f) * 255).toInt(), r, g, b)
+
+    private companion object {
+        // 둘째(23°)·셋째(-31°) 겹의 돌림 — 데스크톱 caustic.ts 의 L1·L2
+        val L1C = cos(Math.toRadians(23.0)).toFloat()
+        val L1S = sin(Math.toRadians(23.0)).toFloat()
+        val L2C = cos(Math.toRadians(-31.0)).toFloat()
+        val L2S = sin(Math.toRadians(-31.0)).toFloat()
+    }
 
     override fun glyph(c: Canvas, x: Float, cy: Float, sizeDp: Float, color: Int): Float {
         // 잔물결 두 줄 — 물 위의 결

@@ -14,8 +14,8 @@ import { seededRandom } from "../seededRandom";
 import { paintCaustics } from "./caustic";
 import type { WidgetKind } from "@/store/useWidgetStore";
 
-/** 무늬 한 주기의 폭(CSS px) — 앱의 물과 비슷한 결. 위젯 크기와 상관없이 물결 크기가 같다 */
-const CELL = 190;
+/** 첫 겹의 한 주기 폭(CSS px). 위젯 크기와 상관없이 물결 크기가 같다 — 겹을 비틀어 겹쳐 되풀이는 보이지 않는다 */
+const CELL = 320;
 /** 흐를 자리 — 겹을 판보다 이만큼 크게 깐다(스타일의 inset 과 같아야 한다) */
 const BLEED = 14;
 
@@ -38,7 +38,7 @@ export default function OceanWidgetDecor({ kind }: { kind: WidgetKind; locked: b
             const key = `${w}x${h}`;
             if (key === last || box.clientWidth <= 0 || box.clientHeight <= 0) return;
             last = key;
-            paintCaustics(cv, w, h, { t, cell: CELL, gain: 2, rgb: dark ? [128, 242, 222] : [255, 255, 248] });
+            paintCaustics(cv, w, h, { t, cell: CELL, gain: 2.3, rgb: dark ? [128, 242, 222] : [255, 255, 248] });
         };
         draw();
         // 위젯 크기를 바꾸면 다시 그린다 — 늘린 그림은 물결이 퍼져 보인다
