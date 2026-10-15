@@ -6,7 +6,7 @@
  *
  * 2026-10-15 Maple 을 다시 그리며("가을 노트" — 깨끗한 카드와 벡터 단풍잎) 이미지 모델이 그린 먹 그림
  * (도장 틀·찢은 종이·테이프·먹 테·붓 밑줄·아이콘 시트·놋쇠 판·화환·종이결·안드로이드 위젯 그림…)은 모두 걷었다.
- * 남은 것은 수채 단풍잎 넷뿐이다 — 앱 바탕의 단풍 가지(ambient/maple/canopyPaint)·지는 3D 잎(mapleLeafScene)·테마 고르기의 잎 오브제(objet/maple)가
+ * 남은 것은 수채 단풍잎 넷뿐이다 — 앱 바탕의 단풍 가지(ambient/maple/canopyPaint)·바람 장면(windScene)·화면 효과(fx/maple)·테마 고르기의 잎 오브제(objet/maple)가
  * 쓰고, 안드로이드 홈 위젯의 가지용으로 192px 판을 drawable-nodpi 에도 굽는다.
  * 걷은 그림을 굽던 조리법(mask·tile·opaque·sheet …)은 git 기록에 있다(이 파일의 2026-10-15 이전 판).
  *
@@ -164,7 +164,7 @@ async function cutout(file, name, { crop, key, pad = 0.03, specks = 0.01, ...out
 
 /* ── 목록 ─────────────────────────────────────────────────────────────── */
 
-// 수채 단풍잎 넷 — 앱 바탕에 지는 잎의 아틀라스(mapleLeafScene)와 잎 오브제(objet/maple/art.ts)
+// 수채 단풍잎 넷 — 앱 바탕의 바람 장면(windScene)·화면 효과(fx/maple)의 아틀라스와 잎 오브제(objet/maple/art.ts)
 const leafCrop = { left: 0, top: 0, width: 1024, height: 1000 }; // 맨 아래 줄에 모델이 학명 비슷한 글자를 찍었다
 await cutout("B2_leaf-red.png", "leaf-red.webp", { crop: leafCrop, width: 512, height: 512, square: true });
 await cutout("B3_leaf-orange.png", "leaf-orange.webp", { crop: leafCrop, width: 512, height: 512, square: true });

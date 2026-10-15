@@ -4,17 +4,13 @@ const fall = keyframes`0% { transform:translate3d(0,-70px,0); opacity:0; } 12% {
 const flutter = keyframes`0%,100% { transform:translateX(-14px) rotate(-22deg); } 50% { transform:translateX(18px) rotate(24deg); }`;
 const sunlight = keyframes`0%,100% { opacity:.03; transform:translateX(-10%); } 50% { opacity:.08; transform:translateX(10%); }`;
 
-/** 3D 잎 캔버스 — 화면보다 작게 그린 것을 화면에 늘린다 (mapleLeafScene) */
-export const Leaves = styled.canvas`
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-`;
-
-/** .fall 잎 다섯 장은 WebGL 이 없을 때만 그려진다 (예전 모습 그대로) */
+/**
+ * 바탕 장면 한 겹 — 바다처럼 내용 뒤(z-index -1)에 깐다. 예전(0)엔 위치를 가진 카드 밑으로는 숨으면서 글·단추 위로는 지나가
+ * 잎이 머리 줄의 단추(오늘·달 넘김)를 덮었다.
+ * .fall 잎 다섯 장은 WebGL 이 없을 때만 그려진다 (예전 모습 그대로)
+ */
 export const Garden = styled.div`
-    position:fixed; inset:0; pointer-events:none; overflow:hidden; z-index:0; color:${p=>p.theme.colors.primary};
+    position:fixed; inset:0; pointer-events:none; overflow:hidden; z-index:-1; color:${p=>p.theme.colors.primary};
     .fall { position:absolute; top:0; right:3%; width:34px; animation:${fall} 34s linear infinite; opacity:0; }
     .leaf { width:100%; height:auto; fill:currentColor; animation:${flutter} 7s ease-in-out infinite; }
     .vein { fill:none; stroke:${p=>p.theme.colors.background}; stroke-width:.9; }

@@ -40,8 +40,8 @@ export interface FxContext {
     rect: FxRect;
     /** rect 를 부른 쪽(또는 무대가 찾은 항목)이 준 것인가 — 아니면 화면 전체 */
     hasRect: boolean;
-    /** 캔버스 2D 로 그린 그림을 텍스처로 (key 로 한 번만 만든다) */
-    texture(key: string, draw: (g: CanvasRenderingContext2D, size: number) => void, size?: number): THREE_NS.Texture;
+    /** 캔버스 2D 로 그린 그림을 텍스처로 (key 로 한 번만 만든다). premultiplied 면 미리 곱해 올린다 — 빛을 받는 무리(shade)용 */
+    texture(key: string, draw: (g: CanvasRenderingContext2D, size: number) => void, size?: number, premultiplied?: boolean): THREE_NS.Texture;
 }
 
 export type EffectFactory = (ctx: FxContext, e: FxEvent) => Effect | null;
@@ -75,6 +75,8 @@ export interface Particle {
     age?: number;
     delay?: number;
     tint?: [number, number, number];
+    /** 그림판이 grid×grid 칸으로 나뉘어 있으면 몇째 칸인가 (왼쪽 위부터) */
+    cell?: number;
     /** 나이 비율 k(0~1) → 투명도·크기 */
     alpha?: (k: number) => number;
     scale?: (k: number) => number;
@@ -89,13 +91,17 @@ const fadeInOut = (k: number) => Math.min(1, k * 6) * (1 - Math.max(0, (k - 0.6)
 const VERT = /* glsl */ `
 attribute float aAlpha;
 attribute vec3 aTint;
+attribute float aCell;
+uniform float uGrid;
 varying vec2 vUv;
 varying float vAlpha;
 varying vec3 vTint;
+varying vec3 vNormal;
 void main() {
-    vUv = uv;
+    vUv = (uv + vec2(mod(aCell, uGrid), uGrid - 1.0 - floor(aCell / uGrid))) / uGrid;
     vAlpha = aAlpha;
     vTint = aTint;
+    vNormal = normalize(mat3(instanceMatrix) * vec3(0.0, 0.0, 1.0));
     gl_Position = projectionMatrix * modelViewMatrix * instanceMatrix * vec4(position, 1.0);
 }
 `;
@@ -104,38 +110,65 @@ uniform sampler2D uMap;
 varying vec2 vUv;
 varying float vAlpha;
 varying vec3 vTint;
+varying vec3 vNormal;
 void main() {
     vec4 c = texture2D(uMap, vUv);
+#ifdef SHADE
+    // 빛을 받는 판(미리 곱한 그림) — 해(오른쪽 위) 쪽 면은 밝고, 뒷면은 옅고 덜 붉고, 해를 등지면 비쳐 따뜻하게 빛난다
+    if (c.a < 0.004) discard;
+    vec3 col = c.rgb / c.a * vTint;
+    vec3 N = normalize(vNormal);
+    if (!gl_FrontFacing) {
+        N = -N;
+        float l = dot(col, vec3(0.299, 0.587, 0.114));
+        col = mix(col, vec3(l), 0.25) * 1.05 + vec3(0.03, 0.02, 0.0);
+    }
+    float ndl = dot(N, normalize(vec3(0.45, 0.6, 0.66)));
+    col = col * (0.78 + 0.3 * max(ndl, 0.0) - 0.12 * max(-ndl, 0.0)) + col * vec3(1.3, 1.02, 0.66) * max(-ndl, 0.0) * 0.5;
+    float a = c.a * vAlpha;
+    gl_FragColor = vec4(col * a, a);
+#else
     gl_FragColor = vec4(c.rgb * vTint, c.a * vAlpha);
+#endif
 }
 `;
 
-/** 같은 그림을 여럿 띄운다 (InstancedMesh 한 번 그리기). glow 면 빛을 더해(가산) 어두운 바탕에서 번지게 */
+/**
+ * 같은 그림을 여럿 띄운다 (InstancedMesh 한 번 그리기). glow 면 빛을 더해(가산) 어두운 바탕에서 번지게.
+ * shade 면 판이 빛을 받는다 — 앞뒷면을 다 그리고(뒤집혀도 사라지지 않는다) 뒷면은 옅게. 그림은 미리 곱한 것이어야 한다
+ * (texture(…, premultiplied)) — 가장자리가 검게 번지지 않는다. grid 면 그림판이 grid×grid 칸이고 입자마다 cell 로 고른다.
+ */
 export class Swarm implements Effect {
     private mesh: THREE_NS.InstancedMesh;
     private alphaAttr: THREE_NS.InstancedBufferAttribute;
     private tintAttr: THREE_NS.InstancedBufferAttribute;
+    private cellAttr: THREE_NS.InstancedBufferAttribute;
     private m4: THREE_NS.Matrix4;
     private q: THREE_NS.Quaternion;
     private e: THREE_NS.Euler;
     private v: THREE_NS.Vector3;
     private s: THREE_NS.Vector3;
 
-    constructor(private ctx: FxContext, map: THREE_NS.Texture, public particles: Particle[], opts: { glow?: boolean } = {}) {
+    constructor(private ctx: FxContext, map: THREE_NS.Texture, public particles: Particle[], opts: { glow?: boolean; shade?: boolean; grid?: number } = {}) {
         const { THREE } = ctx;
         const n = particles.length;
         const geo = new THREE.PlaneGeometry(1, 1);
         this.alphaAttr = new THREE.InstancedBufferAttribute(new Float32Array(n), 1);
         this.tintAttr = new THREE.InstancedBufferAttribute(new Float32Array(n * 3).fill(1), 3);
+        this.cellAttr = new THREE.InstancedBufferAttribute(new Float32Array(n), 1);
         geo.setAttribute("aAlpha", this.alphaAttr);
         geo.setAttribute("aTint", this.tintAttr);
+        geo.setAttribute("aCell", this.cellAttr);
         const mat = new THREE.ShaderMaterial({
             vertexShader: VERT,
             fragmentShader: FRAG,
-            uniforms: { uMap: { value: map } },
+            uniforms: { uMap: { value: map }, uGrid: { value: opts.grid ?? 1 } },
+            defines: opts.shade ? { SHADE: "" } : {},
             transparent: true,
             depthTest: false,
             depthWrite: false,
+            premultipliedAlpha: !!opts.shade,
+            side: opts.shade ? THREE.DoubleSide : THREE.FrontSide,
             blending: opts.glow ? THREE.AdditiveBlending : THREE.NormalBlending,
         });
         this.mesh = new THREE.InstancedMesh(geo, mat, n);
@@ -149,6 +182,7 @@ export class Swarm implements Effect {
             p.age = p.age ?? 0;
             const c = p.tint ?? [1, 1, 1];
             this.tintAttr.setXYZ(i, c[0], c[1], c[2]);
+            this.cellAttr.setX(i, p.cell ?? 0);
         });
         ctx.scene.add(this.mesh);
         this.update(0);
@@ -382,7 +416,7 @@ export class FxEngine {
 
     get busy() { return this.effects.length > 0; }
 
-    private texture = (key: string, draw: (g: CanvasRenderingContext2D, size: number) => void, size = 128) => {
+    private texture = (key: string, draw: (g: CanvasRenderingContext2D, size: number) => void, size = 128, premultiplied = false) => {
         const hit = this.textures.get(key);
         if (hit) return hit;
         const c = document.createElement("canvas");
@@ -390,6 +424,7 @@ export class FxEngine {
         const g = c.getContext("2d")!;
         draw(g, size);
         const tex = new this.THREE.CanvasTexture(c);
+        tex.premultiplyAlpha = premultiplied;
         tex.needsUpdate = true;
         this.textures.set(key, tex);
         return tex;

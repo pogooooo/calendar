@@ -10,6 +10,10 @@ import { withAlpha } from "@/styles/color";
  * 잡음은 SVG feTurbulence 라 그림 파일이 필요 없다.
  *
  * 데스크톱 위젯 창은 창 바깥이 투명이라 여기서 뺀다. 스크롤 막대도 여기서 Maple 의 것(둥근 막대)으로 바꾼다.
+ *
+ * 종이색과 빛은 html 에만 칠하고 body·앱 껍데기는 비운다(바다와 같은 까닭) — 단풍 장면(MapleAtmosphere)이 내용 뒤
+ * z-index:-1 에 깔리므로, 껍데기가 칠해져 있으면 그 면이 장면을 통째로 덮는다.
+ * 위젯 창은 html:has([data-widget]) 의 투명(globals.css, 더 좁은 규칙)이 이긴다.
  */
 const GRAIN = (r: number, g: number, b: number) =>
     `url("data:image/svg+xml,${encodeURIComponent(
@@ -20,12 +24,16 @@ const GRAIN = (r: number, g: number, b: number) =>
     )}")`;
 
 const MapleGround = createGlobalStyle`
-    [data-app-shell] {
+    html {
+        background-color: ${(p) => p.theme.colors.background} !important;
         background-image: ${(p) => p.theme.mode === "dark"
             ? `radial-gradient(ellipse at 100% 0%, ${p.theme.colors.primary}14, transparent 46%)`
             : `radial-gradient(ellipse at 100% 0%, ${p.theme.colors.accent}26, transparent 50%),
-            radial-gradient(ellipse at 0% 100%, ${p.theme.colors.primary}0F, transparent 46%)`};
+            radial-gradient(ellipse at 0% 100%, ${p.theme.colors.primary}0F, transparent 46%)`} !important;
+        background-attachment: fixed !important;
     }
+    body { background: transparent !important; }
+    [data-app-shell] { background: transparent !important; }
 
     body::after {
         content: "";

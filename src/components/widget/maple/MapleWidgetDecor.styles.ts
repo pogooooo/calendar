@@ -1,18 +1,11 @@
 /**
  * MapleWidgetDecor 의 모양 — 위젯 판 전체에 깔리는 한 겹(z-index 0, 내용 뒤).
- * 가지는 캔버스 한 장(paintTwig)에 그린다. 움직임은 커서가 들어올 때 한 번뿐([data-glint], useHoverOnce) —
- * 가지가 구석을 축으로 바람에 한 번 흔들렸다 제자리로.
+ * 가지는 캔버스 한 장(paintTwig)에 그린다. 커서가 들어올 때의 흔들림도 그 캔버스가 잎마다 다시 그린다(MapleWidgetDecor).
  */
-import styled, { keyframes } from "styled-components";
+import styled from "styled-components";
 import { withAlpha } from "@/styles/color";
 
 const dark = (p: { theme: { mode?: string } }) => p.theme.mode === "dark";
-
-const swayOnce = keyframes`
-    0%, 100% { transform: rotate(0deg); }
-    30%      { transform: rotate(-2.4deg); }
-    62%      { transform: rotate(1.2deg); }
-`;
 
 export const Decor = styled.div`
     position: absolute;
@@ -36,11 +29,7 @@ export const Decor = styled.div`
         width: 100%;
         height: 100%;
         opacity: 0;
-        transform-origin: 100% 100%;
         transition: opacity 0.6s ease;
     }
     .twig[data-ready] { opacity: 1; }
-
-    /* 커서가 들어오면 한 번 — 가지가 바람에 흔들렸다 제자리로 */
-    &[data-glint] .twig { animation: ${swayOnce} 1.8s ease-in-out both; }
 `;

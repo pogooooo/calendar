@@ -78,6 +78,9 @@ function drawnLeaf() {
     return c;
 }
 
+/** 넷 다 받아 다듬어 두었는가 — 효과(fx/maple)가 실루엣으로 만든 그림판을 수채로 바꿔 만들 때를 안다 */
+export const leafArtReady = () => SPRITES.every((s) => cache.has(s));
+
 /** 다듬어 둔 잎 그림(없으면 그린 실루엣) */
 export function leafArt(sprite: LeafSprite): HTMLCanvasElement {
     return cache.get(sprite) ?? cache.get("red") ?? drawnLeaf();
