@@ -6,7 +6,8 @@
  *
  * 2026-10-15 Maple 을 다시 그리며("가을 노트" — 깨끗한 카드와 벡터 단풍잎) 이미지 모델이 그린 먹 그림
  * (도장 틀·찢은 종이·테이프·먹 테·붓 밑줄·아이콘 시트·놋쇠 판·화환·종이결·안드로이드 위젯 그림…)은 모두 걷었다.
- * 남은 것은 수채 단풍잎 넷뿐이다 — 앱 바탕에 지는 3D 잎(ambient/maple/mapleLeafScene)과 테마 고르기의 잎 오브제(objet/maple)가 쓴다.
+ * 남은 것은 수채 단풍잎 넷뿐이다 — 앱 바탕의 단풍 가지(ambient/maple/canopyPaint)·지는 3D 잎(mapleLeafScene)·테마 고르기의 잎 오브제(objet/maple)가
+ * 쓰고, 안드로이드 홈 위젯의 가지용으로 192px 판을 drawable-nodpi 에도 굽는다.
  * 걷은 그림을 굽던 조리법(mask·tile·opaque·sheet …)은 git 기록에 있다(이 파일의 2026-10-15 이전 판).
  *
  * 원본은 이미지 모델이 뽑은 그대로다 (raw/README.md 에 생성 기록). 모델은 투명 배경을 못 만들므로
@@ -19,6 +20,7 @@ import sharp from "sharp";
 const root = process.cwd();
 const RAW = path.resolve(root, process.argv[2] ?? "design/themes/maple/raw");
 const OUT = path.join(root, "public/themes/maple");
+const ANDROID = path.join(root, "src-tauri/android-overlay/app/src/main/res/drawable-nodpi");
 
 fs.mkdirSync(OUT, { recursive: true });
 
@@ -168,6 +170,12 @@ await cutout("B2_leaf-red.png", "leaf-red.webp", { crop: leafCrop, width: 512, h
 await cutout("B3_leaf-orange.png", "leaf-orange.webp", { crop: leafCrop, width: 512, height: 512, square: true });
 await cutout("B4_leaf-yellow.png", "leaf-yellow.webp", { crop: leafCrop, width: 512, height: 512, square: true });
 await cutout("B5_leaf-brown.png", "leaf-brown.webp", { crop: leafCrop, width: 512, height: 512, square: true });
+
+/* ── 안드로이드 홈 위젯의 단풍 가지(MapleStyle.twig)가 쓰는 작은 잎 넷 — 192px (AAB 를 가볍게) ── */
+fs.mkdirSync(ANDROID, { recursive: true });
+for (const n of ["red", "orange", "yellow", "brown"]) {
+    await sharp(path.join(OUT, `leaf-${n}.webp`)).resize(192, 192).webp({ quality: 82, alphaQuality: 90, effort: 6 }).toFile(path.join(ANDROID, `maple_leaf_${n}.webp`));
+}
 
 /* ── 보고 ─────────────────────────────────────────────────────────────── */
 let total = 0;

@@ -4,7 +4,7 @@
  */
 import styled, { keyframes } from "styled-components";
 import { MOBILE } from "@/styles/breakpoints";
-import { crest, hair } from "@/styles/maple/ink";
+import { hair, watercolorLeaf } from "@/styles/maple/ink";
 
 export const fadeUp = keyframes`
     from { opacity: 0; transform: translateY(14px); }
@@ -59,10 +59,9 @@ export const ServiceName = styled.h1`
 
     &::before {
         content: "";
-        ${crest("0.8em")}
+        ${watercolorLeaf("red", "1em")}
         flex: none;
-        color: ${(p) => p.theme.colors.primary};
-        rotate: -12deg;
+        rotate: -14deg;
     }
 `;
 

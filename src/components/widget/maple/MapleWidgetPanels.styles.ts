@@ -11,7 +11,7 @@
 import styled from "styled-components";
 import * as C from "../celestial/CelestialWidgetPanels.styles";
 import { withAlpha } from "@/styles/color";
-import { crest, hair, inkCheckbox, inkFill, leafBullet } from "@/styles/maple/ink";
+import { autumnFill, crest, hair, inkCheckbox, inkFill, leafBullet } from "@/styles/maple/ink";
 
 export * from "../celestial/CelestialWidgetPanels.styles";
 
@@ -173,11 +173,10 @@ export const Bar = styled(C.Bar)`
     && { background-color: ${(p) => hair(p.theme, dark(p) ? 0.14 : 0.09)}; }
 `;
 
+/** 찬 부분 — 호박빛에서 단풍 붉음으로 (그라데이션이라 위젯 화면의 바탕색 지우기에도 남는다) */
 export const Fill = styled(C.Fill)`
     border-radius: inherit;
-    background-image: none;
-
-    && { background-color: ${(p) => p.theme.colors.primary}; }
+    background-image: ${autumnFill};
 `;
 
 /** 나눔 — 점선 대신 옅은 선 */

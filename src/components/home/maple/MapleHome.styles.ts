@@ -9,7 +9,7 @@
 import styled, { css } from "styled-components";
 import * as C from "../celestial/CelestialHome.styles";
 import { withAlpha } from "@/styles/color";
-import { crest, hair, inkCheckbox, leafBullet, stampButton } from "@/styles/maple/ink";
+import { autumnFill, crest, hair, inkCheckbox, leafBullet, stampButton } from "@/styles/maple/ink";
 import { MOBILE } from "@/styles/breakpoints";
 
 export * from "../celestial/CelestialHome.styles";
@@ -330,7 +330,7 @@ export const AnvForm = styled(C.AnvForm)`
     }
 `;
 
-/** 진행 막대 — 둥근 홈에 단풍 붉음이 찬다 */
+/** 진행 막대 — 둥근 홈에 호박빛에서 단풍 붉음으로 물이 든다 */
 export const ProjectRow = styled(C.ProjectRow)`
     ${roundRow}
     gap: 7px 10px;
@@ -349,7 +349,7 @@ export const ProjectRow = styled(C.ProjectRow)`
         top: 0;
         height: 100%;
         border-radius: inherit;
-        background: ${(p) => p.theme.colors.primary};
+        background: ${autumnFill};
     }
 
     em { font-size: 0.75rem; }

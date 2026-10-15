@@ -2,19 +2,24 @@
  * Maple 의 사이드바 — 가을 노트의 목차. 뼈대는 Celestial 과 같으므로 그쪽 것을 통째로 가져오고, 달라지는 것만 덮어쓴다.
  * (여기서 이름을 새로 정의하면 그것이 위의 재수출보다 앞선다 — ES 모듈 규칙)
  *
- * 금빛 실선·별 대신: 붉은 벡터 단풍잎 하나를 단 상표, 카드 한 장의 사람 칸, 옅은 선 하나의 나눔.
+ * 금빛 실선·별 대신: 수채 단풍잎 하나를 단 상표, 카드 한 장의 사람 칸, 옅은 선 하나의 나눔. 바탕은 비워 단풍 장면이 비친다.
  * 2026-10-15 다시 그리며 씨앗 달린 먹선·잎 화환·도장 문장을 걷었다.
  */
 import styled from "styled-components";
 import * as C from "../celestial/CelestialSideBar.styles";
 import { withAlpha } from "@/styles/color";
-import { cardShadow, crest, hair, leafBullet } from "@/styles/maple/ink";
+import { cardShadow, hair, leafBullet, watercolorLeaf } from "@/styles/maple/ink";
 
 export * from "../celestial/CelestialSideBar.styles";
 
 const dark = (p: { theme: { mode: string } }) => p.theme.mode === "dark";
 /** 고른 줄·눌린 칸의 바탕 — 단풍 붉음을 옅게 */
 const tint = (p: { theme: { mode: string; colors: { primary: string } } }) => withAlpha(p.theme.colors.primary, dark(p) ? 0.16 : 0.1);
+
+/** 바탕을 비운다 — 앱 바탕 장면(왼쪽 아래에 진 잎, 화면을 가로질러 지는 잎)이 사이드바 뒤로도 이어진다 */
+export const SideBarWrapper = styled(C.SideBarWrapper)`
+    background-color: transparent;
+`;
 
 /** 상표 칸 아래와 메뉴 줄 사이를 좁힌다 — 단추마다 10px 씩 띄우면 목차가 성글었다 */
 export const ProfileWrapper = styled(C.ProfileWrapper)`
@@ -47,10 +52,9 @@ export const Logo = styled(C.Logo)`
 
     &::before {
         content: "";
-        ${crest("0.95em")}
+        ${watercolorLeaf("red", "1.15em")}
         flex-shrink: 0;
-        color: ${(p) => p.theme.colors.primary};
-        transform: rotate(-12deg);
+        transform: rotate(-14deg);
     }
 `;
 

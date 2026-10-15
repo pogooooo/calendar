@@ -61,6 +61,21 @@ export const inkFill = (color: string) => css`
     background-image: linear-gradient(${color}, ${color});
 `;
 
+/**
+ * 수채 단풍잎 한 장(public/themes/maple/leaf-*.webp) — 상표·오늘 표시처럼 "단풍"이 보여야 하는 자리에.
+ * 색을 입히는 표식(카테고리 잎·글머리표)은 벡터 잎(crest·leafBullet)으로 — 작게 그려도 또렷하고 색을 바꿀 수 있다.
+ */
+export type WatercolorLeaf = "red" | "orange" | "yellow" | "brown";
+export const watercolorLeaf = (leaf: WatercolorLeaf = "red", size = "16px") => css`
+    display: inline-block;
+    width: ${size};
+    height: ${size};
+    background: url("/themes/maple/leaf-${leaf}.webp") center / contain no-repeat;
+`;
+
+/** 가을 그라데이션 — 호박빛에서 단풍 붉음으로. 진행 막대처럼 차오르는 것에 */
+export const autumnFill = (p: Themed) => `linear-gradient(90deg, ${p.theme.colors.accent}, ${p.theme.colors.primary})`;
+
 /** 머리글의 ✦ 자리 — 작은 단풍잎 */
 export const crest = (size = "14px") => css`
     display: inline-block;

@@ -1,10 +1,10 @@
 /**
  * MapleMonthArch 의 모양 — 명조로 크게 쓴 날짜와 그달의 막대 띠.
- * 막대 길이는 --load(0~6)로 온다. 색은 글자색을 옅게, 보는 날만 단풍 붉음, 기념일은 호박빛.
+ * 막대 길이는 --load(0~6)로 온다. 일정이 있는 날은 노랑·호박빛·주황으로 물들고(l1~l3), 보는 날만 단풍 붉음, 기념일은 분홍빛.
  */
 import styled from "styled-components";
 import { withAlpha } from "@/styles/color";
-import { crest, hair } from "@/styles/maple/ink";
+import { hair, watercolorLeaf } from "@/styles/maple/ink";
 import { MOBILE } from "@/styles/breakpoints";
 
 const dark = (p: { theme: { mode: string } }) => p.theme.mode === "dark";
@@ -64,23 +64,25 @@ export const Ribbon = styled.div`
         background-color: ${(p) => hair(p.theme, dark(p) ? 0.16 : 0.12)};
         transition: background-color 0.3s ease, height 0.3s ease;
     }
-    i.busy { background-color: ${(p) => hair(p.theme, dark(p) ? 0.42 : 0.34)}; }
-    i.anv { background-color: ${(p) => p.theme.colors.accent}; }
+    /* 물든 정도 — 노란 잎 · 호박빛 · 주황 */
+    i.l1 { background-color: ${(p) => (dark(p) ? "#C9A15A" : "#EBC47A")}; }
+    i.l2 { background-color: ${(p) => p.theme.colors.accent}; }
+    i.l3 { background-color: ${(p) => (dark(p) ? "#E0874E" : "#D9773A")}; }
+    i.anv { background-color: ${(p) => p.theme.colors.weekend}; }
     i.past { opacity: 0.45; }
     i.now {
         min-height: 12px;
         background-color: ${(p) => p.theme.colors.primary};
         opacity: 1;
     }
-    /* 보는 날 위의 잎 */
+    /* 보는 날 위의 수채 잎 */
     i.now::before {
         content: "";
         position: absolute;
         left: 50%;
-        bottom: calc(100% + 4px);
-        ${crest("13px")}
-        color: ${(p) => p.theme.colors.primary};
-        transform: translateX(-50%) rotate(-12deg);
+        bottom: calc(100% + 3px);
+        ${watercolorLeaf("red", "18px")}
+        transform: translateX(-50%) rotate(-14deg);
     }
     /* 마감이 있는 날 — 막대 밑에 점 */
     i.due::after {

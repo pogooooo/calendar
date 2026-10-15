@@ -68,7 +68,7 @@ const FAMILY_META: Record<ThemeFamily, { label: string; description: string; pre
     celestial: { label: 'Celestial', description: 'Celestial tarot in gold line-work — arcana, stars and Roman numerals' },
     ocean: { label: 'Ocean', description: 'Liquid glass over a sunlit lagoon — light ripples where you touch' },
     // 미리보기 그림(눌린 잎과 회중시계)은 2026-10-15 다시 그리며 걷었다 — 이제 다른 갈래처럼 색으로 그린 축소판
-    maple: { label: 'Maple', description: 'An autumn notebook — warm paper, clean cards and one maple red' },
+    maple: { label: 'Maple', description: 'Autumn maple — a branch of red and gold leaves over warm paper, leaves drifting down' },
 };
 
 const celestial: DefaultTheme = {

@@ -8,7 +8,7 @@
 import styled from "styled-components";
 import * as C from "../celestial/CelestialDownload.styles";
 import { withAlpha } from "@/styles/color";
-import { cardShadow, crest, hair, leafBullet, paperCard, stampButton } from "@/styles/maple/ink";
+import { cardShadow, crest, hair, leafBullet, paperCard, stampButton, watercolorLeaf } from "@/styles/maple/ink";
 
 export * from "../celestial/CelestialDownload.styles";
 
@@ -16,7 +16,12 @@ type P = { theme: { mode: string; colors: { primary: string; text: string } } };
 const dark = (p: P) => p.theme.mode === "dark";
 const line = (p: P) => hair(p.theme, dark(p) ? 0.12 : 0.09);
 
-/** 별 하늘 — Maple 에는 없다(큰 그림의 잎만 진다) */
+/** 바탕을 비운다 — 앱 바탕 장면(오른쪽 위의 단풍 가지·지는 잎, MapleAtmosphere)이 이 화면에도 비치게 */
+export const Page = styled(C.Page)`
+    background-color: transparent;
+`;
+
+/** 별 하늘 — Maple 에는 없다(단풍 가지와 지는 잎은 앱 바탕 장면이 그린다) */
 export const Sky = styled(C.Sky)`
     display: none;
 `;
@@ -31,9 +36,8 @@ export const NavBrand = styled(C.NavBrand)`
 
     &::before {
         content: "";
-        ${crest("0.85em")}
-        color: ${(p) => p.theme.colors.primary};
-        rotate: -12deg;
+        ${watercolorLeaf("red", "1.1em")}
+        rotate: -14deg;
     }
 `;
 

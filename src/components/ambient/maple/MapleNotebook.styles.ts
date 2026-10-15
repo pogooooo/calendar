@@ -5,7 +5,7 @@
  */
 import styled, { css, keyframes } from "styled-components";
 import { withAlpha } from "@/styles/color";
-import { checkStamp, crest, hair } from "@/styles/maple/ink";
+import { checkStamp, crest, hair, watercolorLeaf } from "@/styles/maple/ink";
 
 type P = { theme: { mode: string; colors: { primary: string; text: string; surface: string } } };
 const dark = (p: P) => p.theme.mode === "dark";
@@ -192,10 +192,11 @@ export const Leaf = styled.i`
 
     /* 카드 오른쪽 위 귀퉁이 바깥에 걸친다 — 머리글의 개수 알약을 덮지 않게 */
     &.rest {
-        right: -2.6em;
-        bottom: 17.6em;
-        width: 5.2em;
-        height: 5.2em;
+        right: -2.8em;
+        bottom: 17.2em;
+        ${watercolorLeaf("orange", "6em")}
+        mask: none;
+        -webkit-mask: none;
         rotate: 22deg;
         filter: drop-shadow(0 0.5em 0.6em ${(p) => withAlpha(dark(p) ? "#000000" : "#7A2E1A", dark(p) ? 0.5 : 0.28)});
         :where(html:not([data-theme-motion="off"])) & { animation: ${rise} 0.9s 0.3s cubic-bezier(0.22, 1, 0.36, 1) both; }

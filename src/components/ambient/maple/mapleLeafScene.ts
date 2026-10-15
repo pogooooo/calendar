@@ -8,7 +8,7 @@
  *   - 바람: parallax.read() — 데스크톱은 커서 쪽, 폰은 기운 쪽으로 잎이 밀린다. 누르면 그 둘레의 잎이 회오리친다.
  *   - 손: 커서가 지나가면 둘레의 잎이 손에 휩쓸리듯 그쪽으로 밀리며 돈다 (데스크톱 '풍성하게').
  *
- * 무겁지 않게: 잎은 화면 넓이에 맞춰 7~16 장, 초당 30장, 창이 숨으면 멈춘다. 해상도는 화면의 0.75(폰 0.6)배 —
+ * 무겁지 않게: 잎은 화면 넓이에 맞춰 9~22 장(2026-10-15 단풍 느낌을 살리며 늘렸다), 초당 30장, 창이 숨으면 멈춘다. 해상도는 화면의 0.75(폰 0.6)배 —
  * 물(0.6)보다 조금 높은 것은 칠할 곳이 잎 몇 장뿐이라 값이 싸고, 낮추면 수채 잎 가장자리가 뭉개져서다.
  * 움직임 '잔잔하게'면 적고 느리게(손·기울기 반응 없음), '끄기'면 한 장만 그려 둔다.
  * three 는 부르는 쪽(MapleAtmosphere)이 동적으로 받아 넘겨준다 — 이 파일은 타입만 가져온다.
@@ -175,7 +175,7 @@ export function createLeafScene(THREE: T, canvas: HTMLCanvasElement, opts: LeafS
 
     // 잎 수 — 화면 넓이에 맞춰. '잔잔하게'는 더 적게, '끄기'는 한 장에 몇 장만
     const area = window.innerWidth * window.innerHeight;
-    const full = Math.round(Math.min(16, Math.max(7, area / 80000)));
+    const full = Math.round(Math.min(22, Math.max(9, area / 60000)));
     const count = motion === "off" ? Math.max(4, Math.round(full * 0.45)) : motion === "gentle" ? Math.max(4, Math.round(full * 0.6)) : full;
     const sizeK = mobile ? 0.86 : 1;
 
@@ -221,7 +221,7 @@ export function createLeafScene(THREE: T, canvas: HTMLCanvasElement, opts: LeafS
         const [d0, d1] = BANDS[l.band];
         const d = rand(d0, d1);
         l.z = CAM_Z - d;
-        l.size = rand(0.28, 0.37) * sizeK;
+        l.size = rand(0.33, 0.46) * sizeK;
         l.cell = Math.floor(Math.random() * SPRITES.length);
         const warm = rand(-0.06, 0.06);
         l.tone = [1 + warm, 1 + warm * 0.4 + rand(-0.05, 0.03), 1 - warm * 0.5 + rand(-0.05, 0.03)];
@@ -441,7 +441,7 @@ export function createLeafScene(THREE: T, canvas: HTMLCanvasElement, opts: LeafS
         aTone.needsUpdate = true;
     };
 
-    const targetOpacity = opts.dark ? 0.66 : 0.74;
+    const targetOpacity = opts.dark ? 0.74 : 0.86;
     const render = () => {
         camera.updateMatrixWorld();
         renderer.render(scene, camera);

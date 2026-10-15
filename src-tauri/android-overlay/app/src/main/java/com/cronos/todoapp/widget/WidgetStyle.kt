@@ -5,8 +5,13 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.ColorMatrix
+import android.graphics.ColorMatrixColorFilter
+import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.Path
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffColorFilter
 import android.graphics.RadialGradient
 import android.graphics.RectF
 import android.graphics.Shader
@@ -230,10 +235,10 @@ open class CelestialStyle(context: Context, density: Float) : WidgetStyle(contex
 }
 
 /**
- * Maple — 가을 노트. 데스크톱 위젯(MapleWidgetDecor)과 같은 말: 카드색 판에 옅은 선 테두리, 위에서 비치는 따뜻한 빛
- * (오른쪽 위 호박빛·왼쪽 아래 단풍빛), 가장자리를 따라 진 단풍잎 몇 장(또렷한 벡터 잎 — 단풍 붉음·호박빛·갈잎빛을 옅게),
- * 오른쪽 아래 구석에 크게 걸친 선 잎 한 장(가는 선과 잎맥). 표식도 같은 벡터 잎이다.
- * 2026-10-15 다시 그리며 종이결 타일·먹 카드 테·수채 가지·먹 화살·놋쇠 계기판 그림(res 의 maple_* 그림)을 걷었다 — 그림 파일을 쓰지 않는다.
+ * Maple — 단풍. 데스크톱 위젯(MapleWidgetDecor·paintTwig)과 같은 말: 카드색 판에 옅은 선 테두리, 위에서 비치는 따뜻한 빛
+ * (오른쪽 위 호박빛·왼쪽 아래 단풍빛), 오른쪽 아래 구석에서 비스듬히 올라오는 수채 단풍 가지 한 줄기와 바닥에 진 잎 둘.
+ * 잎은 앱과 같은 수채 단풍 넷(res 의 maple_leaf_*, 192px). 표식(글머리·문장)은 또렷한 벡터 잎이다.
+ * 2026-10-15: 종이결 타일·먹 카드 테·먹 화살·놋쇠 계기판 그림은 걷고, 단풍 느낌은 수채 잎 가지로 (사용자: "단풍 테마가 단풍의 느낌이 없는데").
  */
 class MapleStyle(context: Context, density: Float) : WidgetStyle(context, density) {
     /** 제목은 고운바탕을 굵게(굵은 글꼴 파일은 싣지 않는다 — 안드로이드가 굵기를 지어 낸다), 숫자는 산세리프 굵게 */
@@ -255,8 +260,7 @@ class MapleStyle(context: Context, density: Float) : WidgetStyle(context, densit
         val far = hypot(w, h)
         glow(c, w, 0f, far * 0.6f, Palette.withAlpha(amber(pal), (if (pal.dark) 0.1f else 0.2f) * a))
         glow(c, 0f, h, far * 0.5f, Palette.withAlpha(pal.gold, (if (pal.dark) 0.08f else 0.07f) * a))
-        fallenLeaves(c, w, h, pal, a)
-        cornerLeaf(c, w, h, pal, a)
+        twig(c, w, h, pal, a)
         c.restore()
         c.drawRoundRect(rect, r, r, stroke(pal.line, 1f))
     }
@@ -267,57 +271,105 @@ class MapleStyle(context: Context, density: Float) : WidgetStyle(context, densit
         })
     }
 
+    /** 수채 잎 넷 — 붉음·주황·노랑·갈빛 (없으면 그 잎만 빠진다) */
+    private val leafArt by lazy { listOf("maple_leaf_red", "maple_leaf_orange", "maple_leaf_yellow", "maple_leaf_brown").map { bmp(it) } }
+
+    /** 붉음·주황이 많고 노랑·갈빛이 조금 (데스크톱의 pickImg 와 같다) */
+    private fun pick(v: Float): Int = if (v < 0.36f) 0 else if (v < 0.68f) 1 else if (v < 0.88f) 2 else 3
+
     /**
-     * 진 잎 — 가장자리를 따라(글이 가장 적은 곳). 위젯 종류마다 다른 자리·각도(같은 종류는 늘 같은 무늬).
-     * 칸이 판을 채우는 위젯(busy)에서는 몇 장만, 더 옅게. 자리는 데스크톱의 SLOTS 와 같다.
+     * 오른쪽 아래 구석에서 비스듬히 올라오는 단풍 가지 — 데스크톱의 paintTwig 와 같은 말이지만 더 작게, 구석 바깥으로 더 걸치게, 옅게.
+     * 홈 위젯은 오른쪽 끝에 시각·D-day 같은 글이 빽빽해서 또렷한 가지는 글을 덮었다 — 글 뒤의 물자국처럼 깐다.
+     * 칸이 판을 채우는 위젯(busy)은 더 작고 옅게, 진 잎 없이. 위젯 종류마다 잎의 빛깔·각도가 조금씩 다르다.
      */
-    private fun fallenLeaves(c: Canvas, w: Float, h: Float, pal: Palette, a: Float) {
+    private fun twig(c: Canvas, w: Float, h: Float, pal: Palette, a: Float) {
         var seed = kind.hashCode() xor 0x2c1b3c6d
         fun rnd(): Float { seed = seed * 1103515245 + 12345; return ((seed ushr 8) and 0xFFFF) / 65535f }
-        val base = (min(w, h) / density * 0.065f).coerceIn(13f, 26f)
-        val tones = intArrayOf(
-            Palette.withAlpha(pal.gold, if (pal.dark) 0.34f else 0.26f),
-            Palette.withAlpha(amber(pal), if (pal.dark) 0.32f else 0.36f),
-            Palette.withAlpha(pal.ink, if (pal.dark) 0.16f else 0.13f),
-        )
-        val start = (rnd() * 3).toInt()
-        val fade = if (busy) 0.55f else 1f
-        for ((i, slot) in SLOTS.withIndex()) {
-            val left = slot[0] + rnd() * (slot[1] - slot[0])
-            val top = slot[2] + rnd() * (slot[3] - slot[2])
-            val size = dp(base * slot[4] * (0.8f + rnd() * 0.4f))
-            val turn = rnd() * 360f
-            if (busy && i !in BUSY_SLOTS) continue
-            val color = tones[(start + i) % tones.size]
-            val cx = w * left / 100f + size / 2f
-            val cy = h * top / 100f + size / 2f
-            leaf(c, cx, cy, size, turn, Palette.withAlpha(color, Color.alpha(color) / 255f * fade * a), filled = true)
+        val short = min(w, h)
+        val m = short * (if (busy) 0.42f else 0.66f)
+        val fade = (if (busy) 0.34f else if (pal.dark) 0.5f else 0.44f) * a
+        fun at(x: Float, y: Float) = floatArrayOf(w + x * m, h + y * m)
+        val p = arrayOf(at(0.12f, -0.06f), at(-0.12f, -0.1f), at(-0.28f, -0.22f), at(-0.42f, -0.36f))
+
+        // 가지 — 끝으로 갈수록 가늘게
+        val bark = if (pal.dark) Color.argb((0.95f * 255 * fade).toInt(), 92, 66, 52) else Color.argb((0.9f * 255 * fade).toInt(), 84, 54, 38)
+        val outline = Path()
+        val n = 28
+        val left = ArrayList<FloatArray>(); val right = ArrayList<FloatArray>()
+        for (i in 0..n) {
+            val t = i / n.toFloat()
+            val (pt, ang) = bez(p, t)
+            val half = (0.034f * m + (0.008f * m - 0.034f * m) * Math.pow(t.toDouble(), 0.7).toFloat()) / 2f
+            val nx = -kotlin.math.sin(ang); val ny = kotlin.math.cos(ang)
+            left += floatArrayOf(pt[0] + nx * half, pt[1] + ny * half)
+            right += floatArrayOf(pt[0] - nx * half, pt[1] - ny * half)
+        }
+        outline.moveTo(left[0][0], left[0][1])
+        for (q in left) outline.lineTo(q[0], q[1])
+        for (q in right.asReversed()) outline.lineTo(q[0], q[1])
+        outline.close()
+        // 그림자 한 겹(살짝 비켜 옅게) 뒤 가지
+        c.save(); c.translate(0.012f * m, 0.03f * m)
+        c.drawPath(outline, fill(Palette.withAlpha(if (pal.dark) Color.BLACK else 0xFF502412.toInt(), (if (pal.dark) 0.35f else 0.14f) * fade)))
+        c.restore()
+        c.drawPath(outline, fill(bark))
+
+        // 잎 — 가지를 따라 다섯, 끝에 둘
+        data class L(val img: Int, val x: Float, val y: Float, val dir: Float, val size: Float, val flip: Boolean)
+        val leaves = ArrayList<L>()
+        for (i in 0 until 5) {
+            val t = min(1f, 0.18f + (i / 5f) * 0.78f + rnd() * 0.05f)
+            val (pt, ang) = bez(p, t)
+            val side = if (i % 2 == 0) 1f else -1f
+            var dir = ang + side * (0.8f + rnd() * 0.5f)
+            dir += (-PI.toFloat() / 2f - dir) * 0.15f
+            leaves += L(pick(rnd()), pt[0], pt[1], dir, (0.27f + rnd() * 0.1f) * m * (1f - t * 0.25f), rnd() < 0.5f)
+        }
+        val (end, endAng) = bez(p, 1f)
+        for (j in 0 until 2) leaves += L(pick(rnd()), end[0], end[1], endAng + (j - 0.5f) * 0.7f, (0.24f + rnd() * 0.06f) * m, rnd() < 0.5f)
+        leaves.sortBy { it.x }
+        for (l in leaves) drawLeaf(c, l.img, l.x, l.y, l.dir, l.size, l.flip, fade, pal.dark)
+
+        // 바닥에 진 잎 둘
+        if (!busy) for (i in 0 until 2) {
+            drawLeaf(c, pick(rnd()), w * (0.18f + i * 0.3f + rnd() * 0.12f), h - 0.02f * m - rnd() * 0.03f * m,
+                rnd() * 2f * PI.toFloat(), (0.15f + rnd() * 0.05f) * m, rnd() < 0.5f, fade * (if (pal.dark) 0.7f else 0.8f), pal.dark)
         }
     }
 
-    /** 오른쪽 아래 구석에 크게 걸친 선 잎 — 판의 반쯤만 보인다(데스크톱의 .corner). 칸이 가득한 위젯에서는 작게 */
-    private fun cornerLeaf(c: Canvas, w: Float, h: Float, pal: Palette, a: Float) {
-        val m = min(w, h)
-        val size = m * (if (busy) 0.36f else 0.64f)
-        val right = w + m * (if (busy) 0.08f else 0.12f)
-        val bottom = h + m * (if (busy) 0.09f else 0.14f)
-        val left = right - size
-        val top = bottom - size
-        val k = size / 24f
-        val p = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.STROKE
-            strokeWidth = 0.28f
-            strokeJoin = Paint.Join.ROUND
-            strokeCap = Paint.Cap.ROUND
-            color = Palette.withAlpha(pal.gold, (if (pal.dark) 0.3f else 0.22f) * (if (busy) 0.7f else 1f) * a)
+    /** 3차 베지어 위의 점과 접선 각 */
+    private fun bez(p: Array<FloatArray>, t: Float): Pair<FloatArray, Float> {
+        val u = 1 - t
+        val x = u * u * u * p[0][0] + 3 * u * u * t * p[1][0] + 3 * u * t * t * p[2][0] + t * t * t * p[3][0]
+        val y = u * u * u * p[0][1] + 3 * u * u * t * p[1][1] + 3 * u * t * t * p[2][1] + t * t * t * p[3][1]
+        val dx = 3 * u * u * (p[1][0] - p[0][0]) + 6 * u * t * (p[2][0] - p[1][0]) + 3 * t * t * (p[3][0] - p[2][0])
+        val dy = 3 * u * u * (p[1][1] - p[0][1]) + 6 * u * t * (p[2][1] - p[1][1]) + 3 * t * t * (p[3][1] - p[2][1])
+        return floatArrayOf(x, y) to kotlin.math.atan2(dy, dx)
+    }
+
+    /**
+     * 수채 잎 한 장 — 잎자루 끝(그림의 0.465, 0.97)을 (x, y) 에 붙이고 잎이 dir 쪽으로 뻗게.
+     * 어두운 벌은 조금 어둡게(밤의 단풍). 옅은 그림자 한 겹을 먼저 깐다.
+     */
+    private fun drawLeaf(c: Canvas, img: Int, x: Float, y: Float, dir: Float, size: Float, flip: Boolean, alpha: Float, dark: Boolean) {
+        val b = leafArt.getOrNull(img) ?: return
+        val mtx = Matrix().apply {
+            postScale(size / b.width, size / b.height)
+            postTranslate(-0.465f * size, -0.97f * size)
+            if (flip) postScale(-1f, 1f)
+            postRotate(Math.toDegrees((dir + PI / 2).toDouble()).toFloat())
+            postTranslate(x, y)
         }
-        c.save()
-        c.rotate(-24f, left + size * 0.7f, top + size * 0.8f)
-        c.translate(left, top)
-        c.scale(k, k)
-        c.drawPath(LEAF, p)
-        c.drawPath(VEINS, p)
-        c.restore()
+        val shadow = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG).apply {
+            colorFilter = PorterDuffColorFilter(if (dark) Color.BLACK else 0xFF502412.toInt(), PorterDuff.Mode.SRC_IN)
+            this.alpha = ((if (dark) 0.35f else 0.14f) * alpha * 255).toInt().coerceIn(0, 255)
+        }
+        c.save(); c.translate(size * 0.025f, size * 0.05f); c.drawBitmap(b, mtx, shadow); c.restore()
+        val p = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG).apply {
+            this.alpha = (alpha * 255).toInt().coerceIn(0, 255)
+            if (dark) colorFilter = ColorMatrixColorFilter(ColorMatrix().apply { setScale(0.74f, 0.74f, 0.74f, 1f) })
+        }
+        c.drawBitmap(b, mtx, p)
     }
 
     /** 벡터 단풍잎 하나 — 가운데(cx, cy)·크기(상자 한 변)·돌림. 윤곽 잎의 선 굵기는 strokePx(화면 px) */
@@ -388,27 +440,5 @@ class MapleStyle(context: Context, density: Float) : WidgetStyle(context, densit
             while (i < pts.size) { lineTo(pts[i], pts[i + 1]); i += 2 }
             close()
         }
-
-        /** 선 잎의 잎맥 (데스크톱의 LEAF_LINE 과 같다) */
-        private val VEINS: Path = Path().apply {
-            moveTo(12f, 15f); lineTo(12f, 3.2f)
-            moveTo(12f, 15f); lineTo(20.4f, 10.7f)
-            moveTo(12f, 15f); lineTo(3.6f, 10.7f)
-            moveTo(12f, 15f); lineTo(18.6f, 13.9f)
-            moveTo(12f, 15f); lineTo(5.4f, 13.9f)
-            moveTo(12f, 9.6f); lineTo(14.6f, 7.4f)
-            moveTo(12f, 9.6f); lineTo(9.4f, 7.4f)
-        }
-
-        /** 잎 자리 — [왼쪽 % 처음, 끝, 위쪽 % 처음, 끝, 크기 배] (데스크톱의 SLOTS) */
-        private val SLOTS = arrayOf(
-            floatArrayOf(6f, 16f, 8f, 15f, 1f),
-            floatArrayOf(52f, 68f, 5f, 10f, 0.8f),
-            floatArrayOf(90f, 95f, 26f, 40f, 0.9f),
-            floatArrayOf(4f, 14f, 84f, 92f, 1.1f),
-            floatArrayOf(32f, 46f, 88f, 94f, 0.85f),
-            floatArrayOf(0f, 3f, 48f, 60f, 0.7f),
-        )
-        private val BUSY_SLOTS = setOf(0, 2, 4)
     }
 }

@@ -14,8 +14,8 @@ const MAX_LOAD = 6;
 /**
  * Maple 의 달 — 노트 첫머리에 적은 날짜와 그달의 막대 띠.
  * 위: 작은 꼬리표(오늘·요일)와 명조로 크게 쓴 "10월 15일".
- * 아래: 날마다 둥근 막대 하나 — 그날 일정이 많을수록 길다. 지난날은 옅게, 보는 날은 단풍 붉음에 잎 하나를 얹는다.
- *   기념일은 호박빛 막대, 마감이 있는 날은 막대 밑에 점.
+ * 아래: 날마다 둥근 막대 하나 — 그날 일정이 많을수록 길고 짙게 물든다(노랑 → 호박빛 → 주황). 지난날은 옅게,
+ *   보는 날은 단풍 붉음에 수채 잎 한 장을 얹는다. 기념일은 분홍빛 막대, 마감이 있는 날은 막대 밑에 점.
  * 요약 한 줄(10월 · 남은 n · 끝낸 n)은 HomeView 의 ArchFoot 이 띠 아래에 붙는다. 셋은 MapleHomeLayout 머리의 격자에 바로 선다
  *   (이 칸과 ArchWrap 은 display: contents).
  * 2026-10-15 다시 그리며 놋쇠 해시계 그림(gauge-dial.webp)과 바늘을 걷었다 — 그림 한 장이 화면 위쪽을 다 차지하고 날짜를 읽을 수 없었다.
@@ -35,9 +35,11 @@ export default function MapleMonthArch({ daysInMonth, focusIdx, monthLoad, marks
 
     const anniversary = new Set(marks.filter((m) => m.kind === "anv").map((m) => m.day - 1));
     const due = new Set(marks.filter((m) => m.kind === "due").map((m) => m.day - 1));
+    // 일정이 많을수록 짙게 물든다 — 노란 잎(1~2)·호박빛(3~4)·주황(5~)
+    const tone = (n: number) => (n >= 5 ? "l3" : n >= 3 ? "l2" : n > 0 ? "l1" : "");
     const bar = (i: number) => [
         i < focusIdx ? "past" : i === focusIdx ? "now" : "",
-        anniversary.has(i) ? "anv" : (monthLoad[i] ?? 0) > 0 ? "busy" : "",
+        anniversary.has(i) ? "anv" : tone(monthLoad[i] ?? 0),
         due.has(i) ? "due" : "",
     ].filter(Boolean).join(" ");
 
