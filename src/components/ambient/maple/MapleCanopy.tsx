@@ -4,7 +4,7 @@
  * screen: 앱 바탕(화면 전체, 고정) · panel: 로그인 옆 그림판(판 안).
  * backdrop: 바람 장면(windScene)이 떴다 — 움직이지 않는 뒤판(햇살·먼 잎·가지 나무)만 그리고, 잎은 장면이 그린다.
  */
-import { useEffect, useRef } from "react";
+import { useLayoutEffect, useRef } from "react";
 import { useTheme } from "styled-components";
 import { loadCanopyLeaves, paintCanopy, type CanopyOptions, type LeafImage } from "./canopyPaint";
 import * as S from "./MapleCanopy.styles";
@@ -13,7 +13,8 @@ export default function MapleCanopy({ variant = "screen", backdrop = false }: { 
     const ref = useRef<HTMLCanvasElement>(null);
     const dark = useTheme().mode === "dark";
 
-    useEffect(() => {
+    // 화면에 칠하기 전에 그린다 — 뒤판으로 바뀌는 장면에서 잎이 한 장면 빠지거나 두 번 그려지지 않게 (그림은 이미 받아 둔 것이라 곧바로 온다)
+    useLayoutEffect(() => {
         const canvas = ref.current;
         if (!canvas) return;
         let disposed = false;

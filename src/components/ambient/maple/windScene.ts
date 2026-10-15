@@ -42,11 +42,13 @@ export interface WindOptions {
     paper: string;
     /** screen: 앱 바탕(화면 전체) · panel: 로그인 옆 그림판(판 안) */
     variant: "screen" | "panel";
-    /** 첫 장을 그렸다 — 부르는 쪽이 캔버스 가지를 뒤판(햇살·먼 잎·가지 나무)만 남기게 바꾼다 */
+    /** 첫 장을 그렸다 — 부르는 쪽이 이 캔버스를 보이고(start) 가지 캔버스를 뒤판(햇살·먼 잎·가지 나무)만 남기게 바꾼다 */
     onReady: () => void;
 }
 
 export interface WindScene {
+    /** 보이기 시작한다 — 그 전까지는 첫 장(멈춘 가지 그림과 같은 자세) 그대로 멈춰 있다 */
+    start(): void;
     dispose(): void;
     /** 바깥에서 부는 돌풍. dir: -1 왼쪽으로, 1 오른쪽으로 */
     gust(dir: number, strength?: number): void;
@@ -940,6 +942,11 @@ export async function createWindScene(THREE: T, canvas: HTMLCanvasElement, opts:
     ro.observe(canvas);
 
     const api: WindScene = {
+        start() {
+            if (disposed || raf || motion === "off") return;
+            last = performance.now();
+            raf = requestAnimationFrame(tick);
+        },
         gust(dir: number, strength = 1) {
             if (motion === "off") return;
             pushGust(dir * rand(150, 210) * K * strength * (gentle ? 0.6 : 1), 0.45, rand(0.5, 0.9), 2);
@@ -964,14 +971,11 @@ export async function createWindScene(THREE: T, canvas: HTMLCanvasElement, opts:
         },
     };
 
-    // 첫 장 — 그린 뒤 한 프레임 지나 알린다 (부르는 쪽이 캔버스 가지를 뒤판만 남긴다)
+    // 첫 장 — 그린 뒤 한 프레임 지나 알린다. 움직이기는 부르는 쪽이 보일 때(start)부터 — 그래야 넘겨받는 순간의 자세가
+    // 멈춘 가지 그림과 같다 (먼저 돌고 있으면 그새 흔들린 잎이 넘어가는 장면에서 움찔했다)
     step(1 / 60);
     write();
     renderer.render(scene, camera);
     requestAnimationFrame(() => { if (!disposed) opts.onReady(); });
-    if (motion !== "off") {
-        last = performance.now();
-        raf = requestAnimationFrame(tick);
-    }
     return api;
 }
