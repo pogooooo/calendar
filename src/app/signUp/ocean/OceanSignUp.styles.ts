@@ -15,3 +15,7 @@ export const FormInner = styled(C.FormInner)`${A.shoreInner}`;
 export const FormTitle = styled(C.FormTitle)`${A.shoreTitle}`;
 export const FormSubtitle = styled(C.FormSubtitle)`${A.shoreSubtitle}`;
 export const SwitchLink = styled(C.SwitchLink)`${A.shoreSwitch}`;
+
+/* 만 14세 확인 칸(로그인 유지 칸과 같은 모양)과 안내 한 줄(비밀번호 재설정 화면의 것) — 가입·로그인이 함께 쓴다 */
+export { RememberRow as ConsentRow } from "@/app/signIn/ocean/OceanSignIn.styles";
+export { Notice } from "@/app/resetPassword/ocean/OceanResetPassword.styles";

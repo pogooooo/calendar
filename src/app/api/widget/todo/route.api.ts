@@ -8,15 +8,19 @@ import { checkRateLimit } from "@/lib/rateLimiter";
 /**
  * 홈 위젯에서 앱을 열지 않고 할 일 하나를 넣는다 (안드로이드의 QuickAddActivity 가 부른다).
  *
- * 열쇠는 위젯 전용(/api/widget/token)이라 이 길 말고는 못 쓴다. 그 사용자가 모든 기기에서 로그아웃했으면
- * (살아 있는 리프레시 토큰이 없으면) 열쇠가 아직 안 끝났어도 받지 않는다 — 다시 로그인하라는 뜻의 401.
+ * 열쇠는 위젯 전용(/api/widget/token)이라 이 길 말고는 못 쓴다. 그 사용자가 모든 기기에서 로그아웃했거나
+ * (살아 있는 리프레시 토큰이 없으면) 그 뒤로 비밀번호가 바뀌었으면(판 번호가 다르면) 열쇠가 아직 안 끝났어도 받지 않는다
+ * — 다시 로그인하라는 뜻의 401. 예전엔 비밀번호를 바꿔도 흘러나간 열쇠가 30일 동안 들었다.
  * 카테고리를 안 주거나 못 쓰는 것이면 앱의 빠른 추가처럼 첫 카테고리에 넣는다.
  */
 export const POST = async (request: Request) => {
     try {
         const token = request.headers.get("Authorization")?.split(" ")[1];
-        const userId = token ? await verifyWidgetToken(token) : null;
-        if (!userId) return NextResponse.json({ message: "앱을 열어 다시 로그인해 주세요." }, { status: 401 });
+        const claim = token ? await verifyWidgetToken(token) : null;
+        if (!claim) return NextResponse.json({ message: "앱을 열어 다시 로그인해 주세요." }, { status: 401 });
+        const userId = claim.userId;
+        const owner = await prisma.user.findUnique({ where: { id: userId }, select: { tokenVersion: true } });
+        if (!owner || owner.tokenVersion !== claim.version) return NextResponse.json({ message: "앱을 열어 다시 로그인해 주세요." }, { status: 401 });
 
         const rl = await checkRateLimit(`widget-todo:${userId}`, { maxAttempts: 30, windowMs: 60_000, blockMs: 60_000 });
         if (!rl.allowed) return NextResponse.json({ message: "잠시 뒤에 다시 시도해 주세요." }, { status: 429 });

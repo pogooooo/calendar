@@ -105,7 +105,42 @@ export async function PATCH(request: Request) {
         if (rest.categoryId && !(await checkCategoryPermission(rest.categoryId, userId))) {
             return NextResponse.json({ message: "카테고리를 찾을 수 없거나 권한이 없습니다." }, { status: 403 });
         }
-        const assigneeIds = assignees ? await onlyCategoryMembers(rest.categoryId ?? owned.categoryId, assignees) : null;
+        const moving = !!rest.categoryId && rest.categoryId !== owned.categoryId;
+        // 다른 카테고리로 옮기면 담당자도 그 카테고리 사람으로 걸러야 한다 — 예전엔 옛 카테고리 사람이 남아
+        // 그 이름·이메일·사진이 새 카테고리 사람들에게 보였다(작업 담당자도 아래에서 같이 거른다)
+        const current = !assignees && moving
+            ? (await prisma.project.findUnique({ where: { id }, select: { assignees: { select: { id: true } } } }))?.assignees.map((a) => a.id) ?? []
+            : null;
+        const assigneeIds = assignees
+            ? await onlyCategoryMembers(rest.categoryId ?? owned.categoryId, assignees)
+            : current ? await onlyCategoryMembers(rest.categoryId!, current) : null;
+
+        if (moving) {
+            // 작업: 담당자는 새 카테고리 사람만, 다른 프로젝트 작업과의 선행 연결은 끊는다(그 제목·상태가 넘어가 보이지 않게)
+            const tasks = await prisma.projectTask.findMany({
+                where: { projectId: id },
+                select: {
+                    id: true,
+                    assignees: { select: { id: true } },
+                    blockedBy: { select: { id: true, projectId: true } },
+                    blocking: { select: { id: true, projectId: true } },
+                },
+            });
+            for (const task of tasks) {
+                const keep = await onlyCategoryMembers(rest.categoryId!, task.assignees.map((a) => a.id));
+                const outBy = task.blockedBy.filter((b) => b.projectId !== id).map((b) => ({ id: b.id }));
+                const outOf = task.blocking.filter((b) => b.projectId !== id).map((b) => ({ id: b.id }));
+                if (keep.length === task.assignees.length && !outBy.length && !outOf.length) continue;
+                await prisma.projectTask.update({
+                    where: { id: task.id },
+                    data: {
+                        assignees: { set: keep.map((uid) => ({ id: uid })) },
+                        ...(outBy.length ? { blockedBy: { disconnect: outBy } } : {}),
+                        ...(outOf.length ? { blocking: { disconnect: outOf } } : {}),
+                    },
+                });
+            }
+        }
 
         const updatedProject = await prisma.project.update({
             where: { id },

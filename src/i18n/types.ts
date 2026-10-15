@@ -32,6 +32,10 @@ export interface Translations {
         aboutNote: string;
         currentVersion: string;
         releaseNotes: string;
+        /** 정보 탭의 개인정보처리방침 칸 */
+        privacyTitle: string;
+        privacyDesc: string;
+        privacyOpen: string;
         thisVersion: string;
         accountInfo: string;
         changeName: string;
@@ -297,6 +301,26 @@ export interface Translations {
         serverError: string;
         /** 몇 초 뒤에 다시 — 서버가 Retry-After 를 주지 않으면 null */
         tooManyAttempts: (seconds: number | null) => string;
+        /** 가입 칸의 만 14세 확인 (개인정보보호법 제22조의2) */
+        ageConfirm: string;
+        /** 가입·로그인 아래의 처리방침 안내와 그 링크 글 */
+        policyNotice: string;
+        privacyPolicy: string;
+        /** 가입하고 나서 — 인증 메일을 보냈다 */
+        verifySentTitle: string;
+        verifySent: (email: string) => string;
+        verifyResend: string;
+        verifyResent: string;
+        /** 로그인했는데 아직 인증하지 않은 계정 */
+        emailNotVerified: string;
+        /** /verifyEmail 화면 */
+        verifyTitle: string;
+        verifyWorking: string;
+        verifyDone: string;
+        verifyInvalid: string;
+        /** 처음 구글로 들어올 때 — 만 14세 확인을 받고 이어서 가입 */
+        googleAgeTitle: string;
+        googleAgeContinue: string;
         /** 입력 검사 문구 — src/lib/schema.ts 의 makeAuthSchemas 가 같은 규칙에 입힌다 */
         validation: AuthValidation;
     };
@@ -356,6 +380,17 @@ export interface Translations {
         emailRequired: string;
         alreadyMember: string;
         inviteFailed: string;
+        /** 초대는 받는 사람이 수락해야 참여자가 된다 — 보낸 뒤 알림과 수락 전 줄 */
+        inviteSentTitle: string;
+        inviteSentMessage: string;
+        invitePending: string;
+        inviteCancel: string;
+        /** 받는 쪽 알림(InviteNotice) */
+        inviteInboxTitle: string;
+        inviteInboxMessage: (inviter: string, category: string) => string;
+        inviteInboxHint: string;
+        inviteAccept: string;
+        inviteDecline: string;
         kickFailedTitle: string;
         deleteTitle: string;
         deleteMessage: string;
@@ -675,4 +710,6 @@ export interface AuthValidation {
     nameRequired: string;
     nameMin: string;
     nameMax: (max: number) => string;
+    /** 만 14세 확인을 하지 않았다 */
+    ageRequired: string;
 }

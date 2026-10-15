@@ -22,6 +22,7 @@ import { webglAvailable } from '@/lib/webgl';
 
 const noSubscribe = () => () => {};
 import ThemeShop from '@/components/billing/ThemeShop';
+import PolicyLink from '@/components/auth/PolicyLink';
 import useIsMobile from '@/hooks/useIsMobile';
 import { useSwapMotion } from '@/hooks/useMotion';
 import type { Axis } from '@/styles/motion';
@@ -402,6 +403,17 @@ export default function SettingsView({
                                                 {updateChecking ? t.update.checking : t.update.check}
                                             </S.FormButton>
                                         )}
+                                    </S.InfoRow>
+                                </L.Block>
+
+                                {/* 개인정보처리방침은 쉽게 찾을 수 있어야 한다(개인정보보호법 제30조) — 예전엔 주소를 알아야만 열렸다 */}
+                                <L.Block>
+                                    <L.BlockHead><h2>{t.settings.privacyTitle}</h2></L.BlockHead>
+                                    <S.InfoRow>
+                                        <div>
+                                            <L.RowNote>{t.settings.privacyDesc}</L.RowNote>
+                                        </div>
+                                        <S.FormButton as={PolicyLink}>{t.settings.privacyOpen}</S.FormButton>
                                     </S.InfoRow>
                                 </L.Block>
 

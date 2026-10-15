@@ -1,7 +1,7 @@
 import { NextResponse, NextRequest } from "next/server";
 import bcrypt from "bcryptjs";
 import prisma, { isUniqueViolation } from "@/lib/prisma";
-import { generateAccessToken, generateRefreshToken, refreshCookie, refreshExpiresAt, rememberFrom } from "@/lib/jwt";
+import { generateAccessToken, generateRefreshToken, refreshCookie, refreshExpiresAt, refreshKey, rememberFrom } from "@/lib/jwt";
 import { cookies } from "next/headers";
 import { LoginSchema } from "@/lib/schema";
 import { checkRateLimit, resetRateLimit } from "@/lib/rateLimiter";
@@ -78,6 +78,15 @@ export async function POST(request: NextRequest) {
         // 로그인 성공 → IP 차단 카운트 초기화
         await resetRateLimit(`login:${ip}`);
 
+        // 메일 링크로 주소를 확인하기 전에는 들어갈 수 없다 — 남의 주소로 먼저 가입해 둔 계정을 쓰지 못하게
+        // (src/lib/emailVerification.ts). 비밀번호가 맞은 뒤에만 알려 주므로 가입 여부를 캐는 데는 못 쓴다
+        if (!user.emailVerified) {
+            return NextResponse.json(
+                { code: "EMAIL_NOT_VERIFIED", message: "이메일 인증이 아직입니다. 가입할 때 받은 메일의 링크를 눌러 주세요." },
+                { status: 403 },
+            );
+        }
+
         if (!user.settings) {
             // 로그인 단추를 두 번 누르면 둘 다 만들려다 유일 제약으로 500 이 났다 — 이미 있으면 됐다
             try {
@@ -97,7 +106,8 @@ export async function POST(request: NextRequest) {
         await prisma.refreshToken.create({
             data: {
                 userId: user.id,
-                Token: refreshToken,
+                // 원문이 아니라 해시를 적는다 (src/lib/jwt.ts 의 refreshKey)
+                Token: await refreshKey(refreshToken),
                 expires: expiresAt,
             },
         });

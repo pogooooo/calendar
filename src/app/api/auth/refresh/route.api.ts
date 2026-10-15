@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 import prisma from "@/lib/prisma";
-import { generateAccessToken, generateRefreshToken, verifyRefreshToken, refreshCookie, refreshExpiresAt } from "@/lib/jwt";
+import { generateAccessToken, generateRefreshToken, verifyRefreshToken, refreshCookie, refreshExpiresAt, refreshCandidates, refreshKey } from "@/lib/jwt";
 import {cookies} from "next/headers";
 
 export async function POST(request: NextRequest) {
@@ -18,8 +18,9 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const session = await prisma.refreshToken.findUnique({
-            where: { Token: refreshToken },
+        // DB 에는 해시가 있다. 해시로 바꾸기 전(2026-10-15)에 적힌 원문 줄도 찾는다 — 그 줄은 여기서 회전되며 사라진다
+        const session = await prisma.refreshToken.findFirst({
+            where: { Token: { in: await refreshCandidates(refreshToken) } },
             include: { user: true },
         });
 
@@ -54,7 +55,7 @@ export async function POST(request: NextRequest) {
         const expiresAt = refreshExpiresAt(remember);
 
         await prisma.refreshToken.create({
-            data: { userId: session.userId, Token: newRefreshToken, expires: expiresAt },
+            data: { userId: session.userId, Token: await refreshKey(newRefreshToken), expires: expiresAt },
         });
         // 옛 토큰은 1분만 더 산다(동시에 갱신한 다른 창 몫). 줄이기만 하고 늘리지는 않는다 —
         // 예전엔 쓸 때마다 다시 1분을 줘서, 회전된 토큰도 1분 안에 거듭 쓰면 끝없이 살아 있었다

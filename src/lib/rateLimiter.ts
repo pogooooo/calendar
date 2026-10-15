@@ -4,6 +4,10 @@
  * 횟수는 D1(RateLimit 표)에 센다. 예전엔 서버 메모리에 셌는데, Cloudflare 는 요청을 여러 워커 인스턴스로 흩어서
  * 인스턴스마다 따로 세는 바람에 막아야 할 만큼 쌓이지 않았고, 인스턴스가 바뀌면 걸어 둔 차단도 사라졌다.
  * D1 에 닿지 못하면(표가 아직 없는 배포 사이 등) 예전처럼 메모리로 센다 — 로그인을 막아 버리지는 않는다.
+ *
+ * 열쇠에는 IP 주소·사용자 id 가 들어간다. 그래서 (1) 원문 대신 비밀 키로 비튼 해시만 적고(HMAC — 표가 새도 IP 를 되돌릴 수 없다)
+ * (2) 창·차단이 끝난 줄은 시도마다 치운다. 예전엔 50번에 한 번 치웠는데, 그 횟수를 워커 인스턴스 메모리에 세서
+ * 사람이 적으면 끝내 치우지 않아 며칠 지난 IP 가 남아 있었다(개인정보보호법 제21조 — 필요 없어지면 지체 없이 파기).
  */
 import prisma from "@/lib/prisma";
 
@@ -25,16 +29,26 @@ interface RateLimitResult {
 
 /* ── D1 ─────────────────────────────────────────────────────────────── */
 
-/** 가끔 끝난 줄을 치운다 — 매번 치우면 시도마다 쓰기가 하나 더 는다 */
-const CLEAN_EVERY = 50;
-let sinceClean = 0;
+/**
+ * 표에 적는 열쇠 — "login:1.2.3.4" 대신 "login:9f3c…". 앞의 쓰임새(login·register…)는 그대로 두고 뒤만 HMAC-SHA256.
+ * 같은 원문은 늘 같은 열쇠가 되므로 세기는 그대로 된다. 비밀 키는 토큰 서명과 같은 AUTH_SECRET.
+ */
+async function storageKey(key: string): Promise<string> {
+    const cut = key.indexOf(":");
+    const scope = cut < 0 ? "k" : key.slice(0, cut);
+    const secret = process.env.AUTH_SECRET ?? "rate-limit";
+    const enc = new TextEncoder();
+    const hmac = await crypto.subtle.importKey("raw", enc.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+    const sig = new Uint8Array(await crypto.subtle.sign("HMAC", hmac, enc.encode(key)));
+    let hex = "";
+    for (let i = 0; i < 16; i++) hex += sig[i].toString(16).padStart(2, "0");
+    return `${scope}:${hex}`;
+}
 
 async function checkInDb(key: string, { maxAttempts, windowMs, blockMs }: RateLimitOptions): Promise<RateLimitResult> {
     const now = Date.now();
-    if (++sinceClean >= CLEAN_EVERY) {
-        sinceClean = 0;
-        await prisma.rateLimit.deleteMany({ where: { expiresAt: { lt: new Date(now) } } });
-    }
+    // 끝난 줄은 시도마다 치운다 — 쓰기가 하나 늘지만 시도는 드물고, 끝난 IP 가 남지 않는다
+    await prisma.rateLimit.deleteMany({ where: { expiresAt: { lt: new Date(now) } } });
 
     const entry = await prisma.rateLimit.findUnique({ where: { key } });
     const blockedUntil = entry?.blockedUntil?.getTime();
@@ -111,7 +125,8 @@ function checkInMemory(key: string, { maxAttempts, windowMs, blockMs }: RateLimi
 
 /* ── 바깥에서 쓰는 것 ──────────────────────────────────────────────── */
 
-export async function checkRateLimit(key: string, options: RateLimitOptions): Promise<RateLimitResult> {
+export async function checkRateLimit(rawKey: string, options: RateLimitOptions): Promise<RateLimitResult> {
+    const key = await storageKey(rawKey);
     try {
         return await checkInDb(key, options);
     } catch (error) {
@@ -121,7 +136,8 @@ export async function checkRateLimit(key: string, options: RateLimitOptions): Pr
 }
 
 /** 성공 시 해당 키의 실패 카운트 초기화 */
-export async function resetRateLimit(key: string): Promise<void> {
+export async function resetRateLimit(rawKey: string): Promise<void> {
+    const key = await storageKey(rawKey);
     store.delete(key);
     try {
         await prisma.rateLimit.deleteMany({ where: { key } });

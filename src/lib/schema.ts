@@ -45,7 +45,8 @@ export function makeAuthSchemas(m: AuthValidation) {
     return {
         password,
         name,
-        register: z.object({ email, password, name }),
+        // 만 14세 확인 — 14세 미만은 법정대리인 동의 없이 받지 않는다 (개인정보보호법 제22조의2)
+        register: z.object({ email, password, name, ageConfirmed: z.literal(true, m.ageRequired) }),
         login: z.object({
             email,
             password: z.string().min(1, m.passwordRequired),
@@ -67,6 +68,7 @@ const AUTH_KO = makeAuthSchemas({
     nameRequired: "이름을 입력해주세요.",
     nameMin: "이름은 2자 이상이어야 합니다.",
     nameMax: (max) => `이름은 ${max}자를 넘을 수 없습니다.`,
+    ageRequired: "만 14세 이상만 가입할 수 있습니다.",
 });
 
 export const passwordSchema = AUTH_KO.password;

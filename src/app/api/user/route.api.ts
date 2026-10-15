@@ -2,10 +2,10 @@ import { NextResponse, NextRequest } from "next/server";
 import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
-import { verifyToken } from "@/lib/jwt";
+import { refreshCandidates, verifyToken } from "@/lib/jwt";
 import { NAME_MAX, passwordSchema } from "@/lib/schema";
 import { checkRateLimit, resetRateLimit } from "@/lib/rateLimiter";
-import { resetIdentifier } from "@/lib/passwordReset";
+import { deleteUserData } from "@/lib/deleteUser";
 
 /**
  * 현재 비밀번호 확인(비밀번호 바꾸기·탈퇴)의 시도 수 제한.
@@ -52,7 +52,7 @@ export async function PATCH(request: NextRequest) {
             return NextResponse.json({ message: "사용자를 찾을 수 없습니다." }, { status: 404 });
         }
 
-        const updateData: { name?: string; password?: string } = {};
+        const updateData: { name?: string; password?: string; tokenVersion?: { increment: number } } = {};
 
         // 이름 변경 (글자가 아니면 trim 에서 터져 500 이 났다)
         if (name !== undefined) {
@@ -85,6 +85,8 @@ export async function PATCH(request: NextRequest) {
                 return NextResponse.json({ message: pwCheck.error.issues[0]?.message ?? "비밀번호 형식이 올바르지 않습니다." }, { status: 400 });
             }
             updateData.password = await bcrypt.hash(pwCheck.data, 12);
+            // 그 전에 내준 홈 위젯 열쇠를 끊는다 (src/lib/jwt.ts 의 generateWidgetToken)
+            updateData.tokenVersion = { increment: 1 };
         }
 
         if (Object.keys(updateData).length === 0) {
@@ -108,11 +110,12 @@ export async function PATCH(request: NextRequest) {
         if (updateData.password) {
             const cookieStore = await cookies();
             const current = cookieStore.get("refreshToken")?.value ?? request.headers.get("x-refresh-token") ?? undefined;
+            const keys = current ? await refreshCandidates(current) : [];
             const mine = current
-                ? await prisma.refreshToken.findUnique({ where: { Token: current }, select: { userId: true, expires: true } })
+                ? await prisma.refreshToken.findFirst({ where: { Token: { in: keys } }, select: { userId: true, expires: true } })
                 : null;
             if (current && mine?.userId === userId && mine.expires.getTime() > Date.now() + 2 * 60_000) {
-                await prisma.refreshToken.deleteMany({ where: { userId, NOT: { Token: current } } });
+                await prisma.refreshToken.deleteMany({ where: { userId, NOT: { Token: { in: keys } } } });
             }
         }
 
@@ -152,32 +155,8 @@ export async function DELETE(request: NextRequest) {
             }
         }
 
-        // Category→Todo, User→Anniversary, User→UserSettings 는 cascade 가 걸려 있지 않다.
-        // 이것들을 먼저 지우지 않으면 외래키 제약 때문에 탈퇴가 항상 실패한다.
-        await prisma.$transaction([
-            prisma.user.update({
-                where: { id: userId },
-                data: {
-                    assignedProjects: { set: [] },
-                    assignedTasks:    { set: [] },
-                    participatingCategories: { set: [] },
-                },
-            }),
-            prisma.todoCompletion.deleteMany({
-                where: { todo: { category: { creatorId: userId } } },
-            }),
-            prisma.todo.deleteMany({ where: { category: { creatorId: userId } } }),
-            // Project/Challenge 및 그 하위는 Category 삭제 시 cascade 로 함께 지워진다
-            prisma.category.deleteMany({ where: { creatorId: userId } }),
-            prisma.anniversary.deleteMany({ where: { userId } }),
-            prisma.userSettings.deleteMany({ where: { userId } }),
-            prisma.dailyTask.deleteMany({ where: { userId } }),
-            prisma.dailyMemo.deleteMany({ where: { userId } }),
-            prisma.refreshToken.deleteMany({ where: { userId } }),
-            // 아직 안 쓴 비밀번호 재설정 링크 — 같은 주소로 다시 가입한 새 계정에 쓰이지 않게
-            ...(user.email ? [prisma.verificationToken.deleteMany({ where: { identifier: resetIdentifier(user.email) } })] : []),
-            prisma.user.delete({ where: { id: userId } }),
-        ]);
+        // 적은 것·세션·남은 링크·이 주소로 온 초대까지 모두 (src/lib/deleteUser.ts)
+        await deleteUserData(userId, user.email);
 
         return NextResponse.json({ message: "계정이 삭제되었습니다." });
     } catch (error) {

@@ -63,7 +63,7 @@ export default function CategoryView(props: CategoryThemeProps) {
         handleDescriptionBlur, handleNameKeyDown, handleDelete, categoryTodos,
         handleEditTodo, toggleTodo, deleteTodo, authFetch,
         openInviteModal, closeInviteModal, isInviteModalOpen, inviteEmail,
-        setInviteEmail, handleInviteSubmit, inviteError,
+        setInviteEmail, handleInviteSubmit, inviteError, handleCancelInvite,
         kickTarget, setKickTarget, closeKickModal, handleKickSubmit,
         setIsAddModalOpen
     } = props;
@@ -193,6 +193,28 @@ export default function CategoryView(props: CategoryThemeProps) {
                             </S.Medal>
                         );
                     })}
+
+                    {/* 수락을 기다리는 초대 — 만든 사람에게만 온다(서버가 다른 참여자에게는 빼고 준다). 받는 사람이 수락하면 위의 멤버로 옮겨 간다 */}
+                    {(selectedCategory.invites ?? []).map((invite) => (
+                        <S.Medal key={invite.id} $ghost title={`${t.category.invitePending} — ${invite.email}`}>
+                            <span className="av">
+                                …
+                                {isCreator && (
+                                    <button
+                                        type="button"
+                                        className="kick"
+                                        title={t.category.inviteCancel}
+                                        aria-label={`${t.category.inviteCancel} — ${invite.email}`}
+                                        onClick={() => handleCancelInvite(invite.id)}
+                                    >
+                                        ×
+                                    </button>
+                                )}
+                            </span>
+                            {/* 만든 이 표식(owner-mark)은 쓰지 않는다 — 바다에서는 점으로 그려져 만든 사람처럼 보였다 */}
+                            <span>{invite.email} · {t.category.invitePending}</span>
+                        </S.Medal>
+                    ))}
 
                     {/* 자판으로도 열리게 — 예전엔 div 라 Tab 으로 닿지 않았다 */}
                     <S.Medal $ghost role="button" tabIndex={0} onClick={openInviteModal}

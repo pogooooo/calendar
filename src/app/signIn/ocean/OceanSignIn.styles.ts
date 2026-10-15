@@ -21,3 +21,6 @@ export const FormSubtitle = styled(C.FormSubtitle)`${A.shoreSubtitle}`;
 export const Separator = styled(C.Separator)`${A.shoreSeparator}`;
 export const RememberRow = styled(C.RememberRow)`${A.shoreRemember}`;
 export const SwitchLink = styled(C.SwitchLink)`${A.shoreSwitch}`;
+
+/* 안내 한 줄(비밀번호 재설정 화면의 것) — 인증 메일을 다시 보냈다는 말 */
+export { Notice } from "@/app/resetPassword/ocean/OceanResetPassword.styles";

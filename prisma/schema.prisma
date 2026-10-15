@@ -20,6 +20,8 @@ model User {
   emailVerified DateTime?
   password      String?
   image         String?
+  /// 비밀번호가 바뀌거나(변경·재설정) 구글이 미인증 계정을 넘겨받으면 하나 오른다 — 그 전에 내준 홈 위젯 열쇠를 끊는다 (src/lib/jwt.ts)
+  tokenVersion  Int             @default(0)
   accounts      Account[]
   refreshToken  RefreshToken[]
 
@@ -75,6 +77,8 @@ model Anniversary {
 
 model RefreshToken {
   id           String   @id @default(cuid())
+  /// 토큰 원문이 아니라 SHA-256 해시 — DB 가 새도 그것만으로는 로그인할 수 없다 (src/lib/jwt.ts 의 refreshKey).
+  /// 2026-10-15 이전에 만든 줄은 원문이 남아 있다가 쓰일 때·만료될 때 사라진다
   Token        String   @unique
   userId       String
   expires      DateTime
@@ -100,6 +104,8 @@ model Category {
   creatorName   String
 
   participants  User[] @relation("CategoryParticipants")
+  /// 아직 수락하지 않은 초대 — 이메일로 걸고, 그 주소로 가입·인증한 사람이 수락해야 참여자가 된다
+  invites       CategoryInvite[]
 
   todos Todo[]
   projects Project[]
@@ -241,6 +247,23 @@ model ChallengeCompletion {
 
   // 동일한 챌린지를 같은 날짜에 여러 번 달성할 수 없도록 유니크 제약
   @@unique([challengeId, targetDate])
+}
+
+/// 카테고리 초대 — 받는 사람이 수락하기 전까지는 참여자가 아니다(이름·이메일도 서로 보이지 않는다).
+/// 가입하지 않은 주소에도 똑같이 걸려 가입 여부가 드러나지 않는다. 30일이 지나면 지운다 (src/app/api/category/invite)
+model CategoryInvite {
+  id         String   @id @default(cuid())
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  categoryId String
+  /// 소문자로 다듬은 받는 사람 주소
+  email      String
+  inviterId  String
+  createdAt  DateTime @default(now())
+  expiresAt  DateTime
+
+  @@unique([categoryId, email])
+  @@index([email])
+  @@index([expiresAt])
 }
 
 // Sandbox purchase receipts never grant production access.

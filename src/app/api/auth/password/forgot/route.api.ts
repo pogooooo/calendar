@@ -2,7 +2,7 @@ import { NextResponse, NextRequest } from "next/server";
 import prisma from "@/lib/prisma";
 import { ForgotPasswordSchema } from "@/lib/schema";
 import { checkRateLimit } from "@/lib/rateLimiter";
-import { buildResetMail, sendMail } from "@/lib/mailer";
+import { buildResetMail, redactMailError, sendMail } from "@/lib/mailer";
 import { userIdByEmail } from "@/lib/userEmail";
 import {
     RESET_TOKEN_TTL_MS,
@@ -80,7 +80,8 @@ export async function POST(request: NextRequest) {
             ),
         );
 
-        if (result.error) console.error("FORGOT_PASSWORD_MAIL_ERROR", result.error);
+        // 메일 서버의 답에는 받는 사람 주소가 섞여 나온다 — 가리고 남긴다
+        if (result.error) console.error("FORGOT_PASSWORD_MAIL_ERROR", redactMailError(result.error));
 
         return NextResponse.json(GENERIC_OK);
     } catch (error) {

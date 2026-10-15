@@ -46,6 +46,8 @@ export interface CategoryThemeProps {
     setInviteEmail: (email: string) => void;
     handleInviteSubmit: () => void;
     inviteError: string;
+    /** 수락 전 초대를 거둔다 (만든 사람만) */
+    handleCancelInvite: (inviteId: string) => void;
 
     kickTarget: { id: string, name: string } | null;
     setKickTarget: (target: { id: string, name: string } | null) => void;
@@ -140,12 +142,27 @@ export default function CategoryPage() {
                 return;
             }
 
-            // 목록을 다시 받지 않으면 초대해도 화면에 멤버가 나타나지 않는다 (방금 읽었어도 건너뛰지 않게)
+            // 바로 멤버가 되지 않는다 — 받는 사람이 수락해야 한다. 목록을 다시 받아 '수락 대기' 줄을 보인다
             bustFetchCache("category");
             await fetchCategories(authFetch);
             closeInviteModal();
+            await dialog.done({ title: t.category.inviteSentTitle, message: t.category.inviteSentMessage });
         } catch {
             setInviteError(t.alert.serverError);
+        }
+    };
+
+    const handleCancelInvite = async (inviteId: string) => {
+        try {
+            const res = await authFetch(`/api/category/invite?id=${encodeURIComponent(inviteId)}`, { method: 'DELETE' });
+            if (!res.ok) {
+                await dialog.notify({ title: t.category.inviteFailed, message: await readError(res, t.alert.retryLater) });
+                return;
+            }
+            bustFetchCache("category");
+            await fetchCategories(authFetch);
+        } catch {
+            await dialog.notify({ title: t.category.inviteFailed, message: t.alert.checkConnection });
         }
     };
 
@@ -232,7 +249,7 @@ export default function CategoryPage() {
         handleDescriptionBlur, handleNameKeyDown, handleDelete, categoryTodos,
         handleEditTodo, toggleTodo, deleteTodo, authFetch,
         openInviteModal, closeInviteModal, isInviteModalOpen, inviteEmail,
-        setInviteEmail, handleInviteSubmit, inviteError,
+        setInviteEmail, handleInviteSubmit, inviteError, handleCancelInvite,
         kickTarget, setKickTarget, closeKickModal, handleKickSubmit,
         setIsAddModalOpen
     };

@@ -6,7 +6,7 @@ import styled, { createGlobalStyle } from "styled-components";
 import { isDesktopShell } from "@/lib/platform";
 import TitleBar from "@/components/titleBar/TitleBar";
 
-const DRAG_ROUTES = ["/signIn", "/signUp", "/download", "/forgotPassword", "/resetPassword"];
+const DRAG_ROUTES = ["/signIn", "/signUp", "/download", "/forgotPassword", "/resetPassword", "/verifyEmail", "/privacy"];
 
 /**
  * 로그인·가입·비밀번호 재설정·다운로드 화면은 (main) 레이아웃 밖이라 타이틀바가 없다.

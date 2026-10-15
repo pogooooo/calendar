@@ -17,7 +17,8 @@ import { getRemember, isFreshLaunch } from "@/lib/session";
 import { bustFetchCache } from "@/lib/fetchOnce";
 
 // /privacy 는 구글 플레이가 여는 개인정보처리방침 — 빠져 있어 로그아웃한 사람은 /download 로 튕겼다
-const PUBLIC_ROUTES = ["/signIn", "/signUp", "/download", "/forgotPassword", "/resetPassword", "/privacy"];
+// /verifyEmail 은 가입 인증 메일의 링크 — 로그인 전에 열린다
+const PUBLIC_ROUTES = ["/signIn", "/signUp", "/download", "/forgotPassword", "/resetPassword", "/privacy", "/verifyEmail"];
 const NO_PREFETCH_ROUTES = PUBLIC_ROUTES;
 
 /**
@@ -25,8 +26,9 @@ const NO_PREFETCH_ROUTES = PUBLIC_ROUTES;
  * - /download : 소개·다운로드 랜딩
  * - /resetPassword : 다른 기기에 세션이 남아 있어도 메일 링크는 열려야 한다.
  * - /privacy : 로그인한 채로도 읽을 수 있어야 한다.
+ * - /verifyEmail : 다른 계정으로 로그인한 기기에서 열어도 인증은 끝나야 한다.
  */
-const STAY_WHEN_AUTHED = ["/download", "/resetPassword", "/privacy"];
+const STAY_WHEN_AUTHED = ["/download", "/resetPassword", "/privacy", "/verifyEmail"];
 
 const normalizePath = (pathname: string) =>
     pathname.length > 1 ? pathname.replace(/\/$/, "") : pathname;

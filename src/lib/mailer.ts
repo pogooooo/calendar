@@ -18,7 +18,8 @@
  *
  * 아무것도 설정하지 않으면 "콘솔 모드"로 떨어진다 — 실제로 보내지 않고 서버 로그에
  * 본문을 찍는다. 로컬 개발에서는 이 링크를 그대로 쓰면 된다.
- * 운영에서 비어 있으면 메일이 아예 안 나가므로 반드시 설정할 것.
+ * 운영(production)에서는 콘솔 모드를 쓰지 않는다 — 본문에는 재설정·인증 링크가 들어 있어 로그(Workers Logs)를
+ * 읽을 수 있는 사람이 계정을 가져갈 수 있었다. 설정이 비면 "설정 안 됨" 만 남기고 실패로 돌려준다.
  *
  * 주의: SMTP 릴레이는 workerd 전용이다 (cloudflare:sockets). `next dev` 는 Node 라
  * 동작하지 않으니, 로컬에서 실제 발송을 확인하려면 `npm run preview` 를 쓸 것.
@@ -136,6 +137,10 @@ export async function sendMail(message: MailMessage): Promise<MailResult> {
     const resendKey = process.env.RESEND_API_KEY;
 
     if (!from || (!smtpReady && !brevoKey && !resendKey)) {
+        if (process.env.NODE_ENV === "production") {
+            console.error("MAIL_NOT_CONFIGURED");
+            return { delivered: false, error: "mail not configured" };
+        }
         // 로컬 개발용 폴백. 링크를 그대로 콘솔에서 집어갈 수 있게 text 본문을 찍는다.
         console.info(
             [
@@ -164,6 +169,53 @@ export async function sendMail(message: MailMessage): Promise<MailResult> {
             error: err instanceof Error ? err.message : "unknown mail error",
         };
     }
+}
+
+/** 메일 오류를 로그에 남길 때 — 메일 서버의 답에 받는 사람 주소가 섞여 나오므로 주소를 가린다 */
+export function redactMailError(error: string): string {
+    return error.replace(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g, "<email>").slice(0, 300);
+}
+
+/** 가입 이메일 인증 메일 본문 */
+export function buildVerifyMail(to: string, verifyUrl: string, ttlHours: number): MailMessage {
+    const subject = "CRONOS 이메일 인증";
+
+    const text = [
+        "CRONOS 이메일 인증",
+        "",
+        "아래 주소를 열어 가입을 마치세요.",
+        verifyUrl,
+        "",
+        `이 링크는 ${ttlHours}시간 뒤에 만료되며, 한 번만 사용할 수 있습니다.`,
+        "본인이 가입하지 않았다면 이 메일을 무시하세요. 인증하지 않은 가입은 7일 뒤 지워집니다.",
+    ].join("\n");
+
+    const html = `<!doctype html>
+<html lang="ko">
+<body style="margin:0;padding:24px;background:#f6f6f4;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1c1c1a;">
+  <div style="max-width:480px;margin:0 auto;background:#ffffff;border-radius:12px;padding:32px;">
+    <h1 style="margin:0 0 8px;font-size:20px;font-weight:600;letter-spacing:0.04em;">CRONOS</h1>
+    <p style="margin:0 0 24px;font-size:14px;color:#6b6b66;">이메일 인증</p>
+    <p style="margin:0 0 24px;font-size:14px;line-height:1.6;">
+      아래 버튼을 눌러 가입을 마치세요.
+    </p>
+    <a href="${verifyUrl}"
+       style="display:inline-block;padding:12px 24px;background:#1c1c1a;color:#ffffff;
+              text-decoration:none;border-radius:8px;font-size:14px;">
+      이메일 인증
+    </a>
+    <p style="margin:24px 0 0;font-size:12px;line-height:1.6;color:#6b6b66;">
+      이 링크는 ${ttlHours}시간 뒤에 만료되며, 한 번만 사용할 수 있습니다.<br />
+      본인이 가입하지 않았다면 이 메일을 무시하세요. 인증하지 않은 가입은 7일 뒤 지워집니다.
+    </p>
+    <p style="margin:16px 0 0;font-size:12px;line-height:1.6;color:#9b9b95;word-break:break-all;">
+      버튼이 안 눌리면 이 주소를 붙여넣으세요:<br />${verifyUrl}
+    </p>
+  </div>
+</body>
+</html>`;
+
+    return { to, subject, html, text };
 }
 
 /** 비밀번호 재설정 메일 본문 */

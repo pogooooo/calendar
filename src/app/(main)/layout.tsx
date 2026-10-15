@@ -7,6 +7,7 @@ import TitleBar from "@/components/titleBar/TitleBar";
 import PageTransition from "@/components/transition/PageTransition";
 import UpdateNotice from "@/components/update/UpdateNotice";
 import SaveFailureNotice from "@/components/SaveFailureNotice";
+import InviteNotice from "@/components/category/InviteNotice";
 import AndroidWidgetSync from "@/components/AndroidWidgetSync";
 import AndroidBackButton from "@/components/AndroidBackButton";
 import RouteTitle from "@/components/RouteTitle";
@@ -35,6 +36,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 <MobileTabBar />
                 <UpdateNotice />
                 <SaveFailureNotice />
+                <InviteNotice />
                 <AndroidWidgetSync />
                 <AndroidBackButton />
                 <RouteTitle />

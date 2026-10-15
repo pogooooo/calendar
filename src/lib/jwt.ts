@@ -108,20 +108,42 @@ export async function verifyRefreshToken(token: string) {
 }
 
 /**
+ * DB 의 RefreshToken.Token 에 적는 값 — 토큰 원문이 아니라 SHA-256 해시(16진수).
+ * 개인정보의 안전성 확보조치 기준: 인증정보를 저장할 때는 암호화한다. DB 가 새도 이것만으로는 로그인할 수 없다.
+ */
+export async function refreshKey(token: string): Promise<string> {
+    const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token)));
+    let hex = "";
+    for (const b of digest) hex += b.toString(16).padStart(2, "0");
+    return hex;
+}
+
+/**
+ * 내민 리프레시 토큰을 DB 에서 찾을 때의 후보 — 해시, 그리고 해시로 바꾸기 전(2026-10-15)에 적힌 원문.
+ * 원문 줄은 그대로 두면 30일 안에 모두 만료되거나, 쓰이는 순간 회전되어 해시 줄로 바뀐다(로그아웃되지 않게).
+ */
+export async function refreshCandidates(token: string): Promise<string[]> {
+    return [await refreshKey(token), token];
+}
+
+/**
  * 홈 위젯 전용 열쇠 — 할 일 넣기(/api/widget/todo) 하나만 된다.
  *
  * 위젯은 앱을 열지 않고 서버에 써야 하는데, 앱의 리프레시 토큰은 쓸 때마다 바뀌므로(회전) 위젯이 그걸
  * 쓰면 앱 쪽 토큰이 무효가 돼 로그아웃된다. 그래서 따로 준다. 수명은 리프레시 토큰과 같은 30일이고,
  * 앱이 열릴 때마다 새로 받는다. 쓸 때는 그 사용자가 아직 어딘가에 로그인돼 있는지도 본다(라우트).
  */
-export function generateWidgetToken(userId: string) {
-    return sign({ userId, scope: "widget" }, "30d");
+export function generateWidgetToken(userId: string, version: number) {
+    // v — 사용자의 tokenVersion. 비밀번호가 바뀌면(변경·재설정) 판이 올라 그 전에 내준 열쇠는 더 듣지 않는다
+    return sign({ userId, scope: "widget", v: version }, "30d");
 }
 
-export async function verifyWidgetToken(token: string): Promise<string | null> {
+export async function verifyWidgetToken(token: string): Promise<{ userId: string; version: number } | null> {
     try {
         const { payload } = await jwtVerify(token, getKey(), { algorithms: ["HS256"] });
-        return payload.scope === "widget" && typeof payload.userId === "string" ? payload.userId : null;
+        if (payload.scope !== "widget" || typeof payload.userId !== "string") return null;
+        // 판 번호가 없는 옛 열쇠는 0 판으로 — 비밀번호를 한 번이라도 바꾸면 끊긴다
+        return { userId: payload.userId, version: typeof payload.v === "number" ? payload.v : 0 };
     } catch {
         return null;
     }

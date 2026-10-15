@@ -17,6 +17,13 @@ export function resetIdentifier(email: string): string {
     return `${RESET_IDENTIFIER_PREFIX}${email.toLowerCase()}`;
 }
 
+/** 가입 이메일 인증 토큰의 identifier 앞머리 — 같은 표를 나눠 쓴다 (src/lib/emailVerification.ts) */
+export const VERIFY_IDENTIFIER_PREFIX = "email-verify:";
+
+export function verifyIdentifier(email: string): string {
+    return `${VERIFY_IDENTIFIER_PREFIX}${email.toLowerCase()}`;
+}
+
 function toBase64Url(bytes: Uint8Array): string {
     let binary = "";
     for (const b of bytes) binary += String.fromCharCode(b);

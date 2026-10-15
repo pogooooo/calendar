@@ -1,5 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 import prisma from "@/lib/prisma";
+import { refreshCandidates } from "@/lib/jwt";
 import {cookies} from "next/headers";
 
 export async function POST(request: NextRequest) {
@@ -12,7 +13,7 @@ export async function POST(request: NextRequest) {
 
         if (refreshToken) {
             await prisma.refreshToken.deleteMany({
-                where: { Token: refreshToken },
+                where: { Token: { in: await refreshCandidates(refreshToken) } },
             });
         }
 

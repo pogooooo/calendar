@@ -33,11 +33,13 @@ const normalizeBlockedBy = (raw: unknown): string[] | null => {
         .filter((v): v is string => !!v))];
 };
 
-const assertBlockedByAccessible = async (ids: string[], userId: string) => {
+/**
+ * 선행 작업은 같은 프로젝트 안에서만 — 그 프로젝트를 쓸 수 있으면 그 안의 작업도 쓸 수 있다.
+ * 예전엔 내가 볼 수 있는 아무 작업이나 걸 수 있어서, 다른 카테고리의 작업 제목·상태가 이 카테고리 사람들에게 보였다.
+ */
+const assertBlockedByInProject = async (ids: string[], projectId: string) => {
     if (ids.length === 0) return true;
-    const count = await prisma.projectTask.count({
-        where: { id: { in: ids }, project: { category: categoryAccessWhere(userId) } },
-    });
+    const count = await prisma.projectTask.count({ where: { id: { in: ids }, projectId } });
     return count === new Set(ids).size;
 };
 
@@ -73,7 +75,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ message: "프로젝트를 찾을 수 없거나 권한이 없습니다." }, { status: 403 });
         }
         const blockedBy = normalizeBlockedBy(body.blockedBy) ?? [];
-        if (!(await assertBlockedByAccessible(blockedBy, userId))) {
+        if (!(await assertBlockedByInProject(blockedBy, projectId))) {
             return NextResponse.json({ message: "연결할 수 없는 항목이 포함돼 있습니다." }, { status: 403 });
         }
         const assigneeIds = await onlyCategoryMembers(categoryId, assignees ?? []);
@@ -124,7 +126,8 @@ export async function PATCH(request: Request) {
             return NextResponse.json({ message: "할 일을 찾을 수 없거나 권한이 없습니다." }, { status: 404 });
         }
         const blockedBy = normalizeBlockedBy(body.blockedBy);
-        if (blockedBy && !(await assertBlockedByAccessible(blockedBy, userId))) {
+        const home = blockedBy ? await prisma.projectTask.findUnique({ where: { id }, select: { projectId: true } }) : null;
+        if (blockedBy && (!home || !(await assertBlockedByInProject(blockedBy, home.projectId)))) {
             return NextResponse.json({ message: "연결할 수 없는 항목이 포함돼 있습니다." }, { status: 403 });
         }
         if (blockedBy && !(await validDependencies(id, blockedBy, userId))) {

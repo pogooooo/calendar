@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 import prisma, { isUniqueViolation } from "@/lib/prisma";
-import { generateAccessToken, generateRefreshToken, refreshCookie, refreshExpiresAt, rememberFrom } from "@/lib/jwt";
+import { generateAccessToken, generateRefreshToken, refreshCookie, refreshExpiresAt, refreshKey, rememberFrom } from "@/lib/jwt";
 import {cookies} from "next/headers";
 import { normalizeEmail, userIdByEmail } from "@/lib/userEmail";
 import { readJson, badJson } from "@/lib/readJson";
@@ -93,12 +93,33 @@ export async function POST(request: NextRequest) {
             include: { settings: true }
         }) : null;
 
+        if (user && !user.emailVerified) {
+            // 비밀번호로 가입만 하고 인증하지 않은 계정 — 그 비밀번호는 이 주소의 주인이 정한 것인지 알 수 없다.
+            // 구글이 주소의 주인을 확인해 줬으므로 계정을 넘겨받되, 남이 정했을지 모르는 비밀번호와 그 세션은 지운다.
+            // 예전엔 그대로 이어서, 남의 주소로 먼저 가입해 둔 사람이 주인의 자료를 볼 수 있었다
+            await prisma.refreshToken.deleteMany({ where: { userId: user.id } });
+            user = await prisma.user.update({
+                where: { id: user.id },
+                data: { password: null, emailVerified: new Date(), tokenVersion: { increment: 1 } },
+                include: { settings: true },
+            });
+        }
+
         if (!user) {
+            // 처음 들어오는 구글 계정 — 만 14세 이상인지 먼저 묻는다(개인정보보호법 제22조의2). 화면이 확인을 받아 다시 부른다
+            if ((body as { ageConfirmed?: unknown }).ageConfirmed !== true) {
+                return NextResponse.json(
+                    { code: "AGE_CONFIRM_REQUIRED", message: "처음 가입하시네요. 만 14세 이상인지 확인해 주세요." },
+                    { status: 409 },
+                );
+            }
             user = await prisma.user.create({
                 data: {
                     email: normalizeEmail(email),
                     name,
                     image,
+                    // 구글이 확인한 주소다
+                    emailVerified: new Date(),
                     settings: { create: {} },
                 },
                 include: { settings: true }
@@ -151,7 +172,8 @@ export async function POST(request: NextRequest) {
         await prisma.refreshToken.create({
             data: {
                 userId: user.id,
-                Token: refreshToken,
+                // 원문이 아니라 해시를 적는다 (src/lib/jwt.ts 의 refreshKey)
+                Token: await refreshKey(refreshToken),
                 expires: refreshExpiresAt(remember),
             },
         });

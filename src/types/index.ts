@@ -23,6 +23,8 @@ export interface CategoryType {
     creatorId?: string;
     creatorName?: string;
     participants?: ParticipantType[];
+    /** 수락을 기다리는 초대 — 카테고리를 만든 사람에게만 온다 */
+    invites?: { id: string; email: string; expiresAt: string }[];
 }
 
 export interface TodoCompletionType {

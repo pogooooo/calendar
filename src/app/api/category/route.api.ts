@@ -3,8 +3,20 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { verifyToken } from "@/lib/jwt";
 import { CreateCategorySchema, UpdateCategorySchema } from "@/lib/schema";
-import { userIdByEmail } from "@/lib/userEmail";
+import { normalizeEmail } from "@/lib/userEmail";
 import { readJson, badJson } from "@/lib/readJson";
+import { checkRateLimit } from "@/lib/rateLimiter";
+import { INVITE_TTL_MS, purgeExpiredInvites } from "@/lib/categoryInvite";
+
+/** 수락 전 초대는 카테고리를 만든 사람에게만 보인다 — 다른 참여자에게는 아직 동의하지 않은 사람의 주소다 */
+const inviteSelect = { select: { id: true, email: true, expiresAt: true }, orderBy: { createdAt: "asc" as const } };
+type WithInvites = { creatorId: string; invites?: unknown };
+function hideInvites<T extends WithInvites>(category: T, userId: string): T {
+    if (category.creatorId === userId) return category;
+    const rest = { ...category };
+    delete rest.invites;
+    return rest;
+}
 
 const getUserId = async (request: NextRequest): Promise<string | null> => {
     try {
@@ -26,10 +38,12 @@ export const GET = async (request: NextRequest) => {
         const { searchParams } = new URL(request.url);
         const id = searchParams.get("id");
 
+        await purgeExpiredInvites();
+
         if (id) {
             const category = await prisma.category.findUnique({
                 where: { id },
-                include: { participants: { select: publicUserSelect }, todos: true }
+                include: { participants: { select: publicUserSelect }, todos: true, invites: inviteSelect }
             });
 
             if (!category) return NextResponse.json({ message: "카테고리를 찾을 수 없습니다." }, { status: 404 });
@@ -40,7 +54,7 @@ export const GET = async (request: NextRequest) => {
                 return NextResponse.json({ message: "조회 권한이 없습니다." }, { status: 403 });
             }
 
-            return NextResponse.json(category);
+            return NextResponse.json(hideInvites(category, userId));
         }
 
         const categories = await prisma.category.findMany({
@@ -50,10 +64,12 @@ export const GET = async (request: NextRequest) => {
                     { participants: { some: { id: userId } } }
                 ]
             },
-            include: { participants: { select: publicUserSelect } }
+            include: { participants: { select: publicUserSelect }, invites: inviteSelect }
         });
 
-        return NextResponse.json(categories);
+        // 내가 만든 카테고리가 앞에 — 화면은 맨 앞 카테고리를 빠른 추가의 기본으로 쓴다(남이 만든 것이 기본이 되지 않게)
+        const ordered = [...categories.filter((c) => c.creatorId === userId), ...categories.filter((c) => c.creatorId !== userId)];
+        return NextResponse.json(ordered.map((c) => hideInvites(c, userId)));
     } catch (error) {
         console.error("[CATEGORY_GET_ERROR]", error);
         return NextResponse.json({ message: "서버 오류 발생" }, { status: 500 });
@@ -144,12 +160,23 @@ export const PATCH = async (request: NextRequest) => {
         if (description !== undefined) updateData.description = description;
 
         if (addParticipantEmail && isCreator) {
-            // 대소문자를 가리지 않는다 — "Friend@…" 로 초대해도 "friend@…" 로 가입한 사람을 찾는다
-            const inviteeId = await userIdByEmail(addParticipantEmail);
-            if (!inviteeId) {
-                return NextResponse.json({ message: "해당 이메일의 사용자를 찾을 수 없습니다." }, { status: 404 });
+            // 바로 넣지 않고 초대를 건다 — 받는 사람이 수락해야 참여자가 된다(src/lib/categoryInvite.ts).
+            // 가입한 주소든 아니든 같은 답을 준다(가입 여부를 캐지 못하게). 같은 사람이 짧은 사이에 너무 많이 걸지 못하게 센다
+            const rl = await checkRateLimit(`invite:${userId}`, { maxAttempts: 30, windowMs: 60 * 60 * 1000, blockMs: 60 * 60 * 1000 });
+            if (!rl.allowed) {
+                return NextResponse.json({ message: `초대를 너무 많이 보냈습니다. ${rl.retryAfter}초 후에 다시 시도해주세요.` }, { status: 429 });
             }
-            updateData.participants = { connect: { id: inviteeId } };
+            const email = normalizeEmail(addParticipantEmail);
+            const me = await prisma.user.findUnique({ where: { id: userId }, select: { email: true } });
+            if (me?.email && normalizeEmail(me.email) === email) {
+                return NextResponse.json({ message: "자기 자신은 초대할 수 없습니다." }, { status: 400 });
+            }
+            await purgeExpiredInvites();
+            await prisma.categoryInvite.upsert({
+                where: { categoryId_email: { categoryId: id, email } },
+                create: { categoryId: id, email, inviterId: userId, expiresAt: new Date(Date.now() + INVITE_TTL_MS) },
+                update: { inviterId: userId, expiresAt: new Date(Date.now() + INVITE_TTL_MS) },
+            });
         }
 
         if (removeParticipantId) {
@@ -162,7 +189,7 @@ export const PATCH = async (request: NextRequest) => {
         const update = prisma.category.update({
             where: { id },
             data: updateData,
-            include: { participants: { select: publicUserSelect } }
+            include: { participants: { select: publicUserSelect }, invites: inviteSelect }
         });
 
         // 빠진 사람은 이 카테고리의 프로젝트·작업 담당에서도 뺀다 — 예전엔 나간 뒤에도 담당자로 남아 남은 사람들 화면에 보였다
@@ -181,7 +208,7 @@ export const PATCH = async (request: NextRequest) => {
             ])
             : [await update];
 
-        return NextResponse.json(updatedCategory);
+        return NextResponse.json(hideInvites(updatedCategory, userId));
     } catch (error) {
         console.error("[CATEGORY_PATCH_ERROR]", error);
         return NextResponse.json({ message: "서버 오류 발생" }, { status: 500 });

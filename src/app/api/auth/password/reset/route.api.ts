@@ -75,9 +75,12 @@ export async function POST(request: NextRequest) {
         const claimed = await prisma.verificationToken.deleteMany({ where: { token: record.token } });
         if (claimed.count === 0) return NextResponse.json(INVALID, { status: 400 });
 
+        // 메일의 링크를 열었다 — 주소의 주인이다. 인증 전에 남은 가입이었어도 인증된 것으로 둔다.
+        // 판 번호를 올려 그 전에 내준 홈 위젯 열쇠도 끊는다 (세션은 아래에서 모두 끊는다)
+        const before = await prisma.user.findUnique({ where: { id: user.id }, select: { emailVerified: true } });
         await prisma.user.update({
             where: { id: user.id },
-            data: { password: hashed },
+            data: { password: hashed, tokenVersion: { increment: 1 }, ...(before?.emailVerified ? {} : { emailVerified: new Date() }) },
         });
 
         await prisma.verificationToken.deleteMany({ where: { identifier: record.identifier } });

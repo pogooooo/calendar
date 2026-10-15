@@ -20,11 +20,14 @@ import { API_BASE } from "@/lib/apiBase";
 import { bustFetchCache } from "@/lib/fetchOnce";
 
 const WIDGET_KEY = "cronos-widget-key";
+/** 이번 실행에서 이미 새로 받았다는 표 — 앱을 새로 켤 때마다 한 번은 새로 받는다 */
+const WIDGET_KEY_FRESH = "cronos-widget-key-fresh";
 /** 남은 수명이 이보다 짧으면 새로 받는다 (열쇠는 30일) */
 const RENEW_BEFORE_MS = 7 * 24 * 60 * 60 * 1000;
 
 /**
- * 위젯 전용 열쇠(할 일 넣기만 되는 것)를 받아 둔다. 앱이 열릴 때 한 번, 같은 사용자의 것이 아직 넉넉하면 그대로 쓴다.
+ * 위젯 전용 열쇠(할 일 넣기만 되는 것)를 받아 둔다. 앱을 켤 때마다 한 번 새로 받는다 — 비밀번호가 바뀌면 서버가
+ * 옛 열쇠를 받지 않으므로(판 번호, src/lib/jwt.ts) 켤 때 받아 두어야 위젯이 다시 듣는다. 못 받으면 있던 것을 그대로 쓴다.
  * 로그아웃하면 지운다 — 위젯 재료에서도 빠져, 위젯을 누르면 앱이 열린다.
  */
 function useWidgetKey(): string | null {
@@ -42,10 +45,13 @@ function useWidgetKey(): string | null {
         let cancelled = false;
         try {
             const saved = JSON.parse(localStorage.getItem(WIDGET_KEY) ?? "null") as { userId?: string; token?: string } | null;
-            if (saved?.userId === userId && saved.token && !isTokenExpired(saved.token, RENEW_BEFORE_MS)) {
-                setKey(saved.token);
+            const usable = saved?.userId === userId && saved.token && !isTokenExpired(saved.token, RENEW_BEFORE_MS);
+            if (usable && sessionStorage.getItem(WIDGET_KEY_FRESH) === userId) {
+                setKey(saved!.token!);
                 return;
             }
+            // 이번 실행에서 처음 — 아래에서 새로 받는 동안(또는 못 받으면) 있던 것을 쓴다
+            if (usable) setKey(saved!.token!);
         } catch {}
         (async () => {
             try {
@@ -53,7 +59,10 @@ function useWidgetKey(): string | null {
                 if (!res.ok) return;
                 const { token } = await res.json() as { token?: string };
                 if (cancelled || !token) return;
-                try { localStorage.setItem(WIDGET_KEY, JSON.stringify({ userId, token })); } catch {}
+                try {
+                    localStorage.setItem(WIDGET_KEY, JSON.stringify({ userId, token }));
+                    sessionStorage.setItem(WIDGET_KEY_FRESH, userId);
+                } catch {}
                 setKey(token);
             } catch { /* 다음에 열 때 다시 */ }
         })();

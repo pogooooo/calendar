@@ -92,3 +92,7 @@ export const SwitchLink = styled.p`
     margin-top: 4px;
 `;
 
+
+/* 만 14세 확인 칸(로그인 유지 칸과 같은 모양)과 안내 한 줄(비밀번호 재설정 화면의 것) — 가입·로그인이 함께 쓴다 */
+export { RememberRow as ConsentRow } from "@/app/signIn/celestial/CelestialSignIn.styles";
+export { Notice } from "@/app/resetPassword/celestial/CelestialResetPassword.styles";

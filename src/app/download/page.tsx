@@ -492,6 +492,8 @@ export default function DownloadPage() {
                     {SHOW_REPO_LINK && <a href={REPO} target="_blank" rel="noreferrer">GitHub</a>}
                     <Link href="/signIn">{t.download.signIn}</Link>
                     <Link href="/signUp">{t.download.signUp}</Link>
+                    {/* 개인정보처리방침은 누리집에 늘 걸어 둔다(개인정보보호법 제30조, 시행령 제31조) */}
+                    <Link href="/privacy">{t.auth.privacyPolicy}</Link>
                 </S.FootLinks>
             </S.Foot>
         </S.Page>

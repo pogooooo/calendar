@@ -26,6 +26,7 @@ import InlineError from "@/components/error/inlineError/InlineError";
 import GlobalError from "@/components/error/globalError/GlobalError";
 import PasswordInput from "@/components/input/password/PasswordInput";
 import AuthPanel from "@/components/auth/AuthPanel";
+import PolicyLink from "@/components/auth/PolicyLink";
 import GoogleSignInButton from "@/components/button/googleSignIn/GoogleSignInButton";
 import * as OceanS from './ocean/OceanSignIn.styles';
 
@@ -68,6 +69,12 @@ const SignIn = () => {
 
     const [globalError, setGlobalError] = useState<string>(" ");
     const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+    /** 비밀번호는 맞았는데 아직 메일 인증을 안 한 주소 — 있으면 "인증 메일 다시 보내기" 를 보인다 */
+    const [unverified, setUnverified] = useState<string | null>(null);
+    const [notice, setNotice] = useState<string>("");
+    /** 처음 들어오는 구글 계정 — 만 14세 확인을 받고 같은 열쇠로 다시 부른다 (개인정보보호법 제22조의2) */
+    const [pendingGoogle, setPendingGoogle] = useState<string | null>(null);
+    const [googleAge, setGoogleAge] = useState(false);
 
     // 검사 문구가 화면 언어를 따르게 (규칙은 서버와 같은 src/lib/schema.ts)
     const schema = useMemo(() => makeAuthSchemas(t.auth.validation).login, [t]);
@@ -79,20 +86,31 @@ const SignIn = () => {
     useRevalidateOnLocale(schema, errors, trigger);
     const remember = watch("remember") ?? true;
 
-    const handleGoogleToken = async (accessToken: string) => {
+    const handleGoogleToken = async (accessToken: string, ageConfirmed = false) => {
         setIsGoogleLoading(true);
+        setGlobalError(" ");
         try {
             const res = await fetch(api("/api/auth/google"), {
                 method: "POST",
                 headers: { "Content-Type": "application/json", ...clientHeaders() },
-                body: JSON.stringify({ accessToken, remember }),
+                body: JSON.stringify({ accessToken, remember, ...(ageConfirmed ? { ageConfirmed: true } : {}) }),
             });
+            if (res.status === 409) {
+                const data = await res.clone().json().catch(() => null) as { code?: string } | null;
+                if (data?.code === "AGE_CONFIRM_REQUIRED") {
+                    setPendingGoogle(accessToken);
+                    setGoogleAge(false);
+                    setIsGoogleLoading(false);
+                    return;
+                }
+            }
             if (!res.ok) {
                 setGlobalError(await authFailure(res, { locale, t, fallback: t.auth.googleFailed }));
                 setIsGoogleLoading(false);
                 return;
             }
             const data = await res.json();
+            setPendingGoogle(null);
             setTheme(data.user.theme);
             beginSession({ accessToken: data.accessToken, refreshToken: data.refreshToken, user: data.user, remember });
             router.push("/");
@@ -109,12 +127,22 @@ const SignIn = () => {
 
     const handleEmailLogin = async (formData: LoginFormData) => {
         setGlobalError(" ");
+        setNotice("");
+        setUnverified(null);
         try {
             const res = await fetch(api("/api/auth/login"), {
                 method: "POST",
                 headers: { "Content-Type": "application/json", ...clientHeaders() },
                 body: JSON.stringify(formData),
             });
+            if (res.status === 403) {
+                const data = await res.clone().json().catch(() => null) as { code?: string } | null;
+                if (data?.code === "EMAIL_NOT_VERIFIED") {
+                    setUnverified(formData.email.trim());
+                    setGlobalError(t.auth.emailNotVerified);
+                    return;
+                }
+            }
             if (!res.ok) {
                 setGlobalError(await authFailure(res, { locale, t, byStatus: { 401: t.auth.invalidCredentials }, fallback: t.auth.signInFailed }));
                 return;
@@ -125,6 +153,25 @@ const SignIn = () => {
             router.push("/");
         } catch {
             // 서버에 닿지 못했다 — 'Failed to fetch' 같은 날것 대신
+            setGlobalError(t.auth.networkError);
+        }
+    };
+
+    const handleResendVerify = async () => {
+        if (!unverified) return;
+        try {
+            const res = await fetch(api("/api/auth/verify/resend"), {
+                method: "POST",
+                headers: { "Content-Type": "application/json", ...clientHeaders() },
+                body: JSON.stringify({ email: unverified }),
+            });
+            if (!res.ok) {
+                setGlobalError(await authFailure(res, { locale, t, fallback: t.auth.requestFailed }));
+                return;
+            }
+            setGlobalError(" ");
+            setNotice(t.auth.verifyResent);
+        } catch {
             setGlobalError(t.auth.networkError);
         }
     };
@@ -143,7 +190,26 @@ const SignIn = () => {
                     <S.FormSubtitle>{t.auth.signInSubtitle}</S.FormSubtitle>
 
                     {GOOGLE_CLIENT_ID && (
-                        <GoogleAuthArea label={t.auth.or} onToken={handleGoogleToken} onError={handleGoogleError} />
+                        <GoogleAuthArea label={t.auth.or} onToken={(token) => handleGoogleToken(token)} onError={handleGoogleError} />
+                    )}
+
+                    {pendingGoogle && (
+                        <S.RememberRow>
+                            <small style={{ paddingLeft: 0 }}>{t.auth.googleAgeTitle}</small>
+                            <label>
+                                <input type="checkbox" checked={googleAge} onChange={(e) => setGoogleAge(e.target.checked)} />
+                                <span className="box" aria-hidden />
+                                {t.auth.ageConfirm}
+                            </label>
+                            <small>
+                                {t.auth.policyNotice}{" "}
+                                <PolicyLink>{t.auth.privacyPolicy}</PolicyLink>
+                            </small>
+                            <SecondaryButton type="button" $width={300} $height={40} disabled={!googleAge || isGoogleLoading}
+                                onClick={() => handleGoogleToken(pendingGoogle, true)}>
+                                {t.auth.googleAgeContinue}
+                            </SecondaryButton>
+                        </S.RememberRow>
                     )}
 
                     <form onSubmit={handleSubmit(handleEmailLogin)} style={{ width: "100%" }}>
@@ -171,6 +237,12 @@ const SignIn = () => {
                     </form>
 
                     <GlobalError>{globalError}</GlobalError>
+                    {notice && <S.Notice>{notice}</S.Notice>}
+                    {unverified && !notice && (
+                        <S.SwitchLink>
+                            <TertiaryButton onClick={handleResendVerify}>{t.auth.verifyResend}</TertiaryButton>
+                        </S.SwitchLink>
+                    )}
 
                     <S.SwitchLink>
                         <TertiaryButton asChild>
@@ -181,6 +253,10 @@ const SignIn = () => {
                     <S.SwitchLink>
                         {t.auth.noAccount}{" "}
                         <TertiaryButton asChild><a href="/signUp">{t.auth.signUpLink}</a></TertiaryButton>
+                    </S.SwitchLink>
+
+                    <S.SwitchLink>
+                        <TertiaryButton asChild><PolicyLink>{t.auth.privacyPolicy}</PolicyLink></TertiaryButton>
                     </S.SwitchLink>
                 </S.FormInner>
             </S.FormPanel>

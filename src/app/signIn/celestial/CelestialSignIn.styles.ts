@@ -153,3 +153,6 @@ export const SwitchLink = styled.p`
     margin-top: 4px;
 `;
 
+
+/* 안내 한 줄(비밀번호 재설정 화면의 것) — 인증 메일을 다시 보냈다는 말 */
+export { Notice } from "@/app/resetPassword/celestial/CelestialResetPassword.styles";
