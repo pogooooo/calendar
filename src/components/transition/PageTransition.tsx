@@ -12,7 +12,7 @@ import type { Dir } from "@/styles/motion";
 type TransitionViewType = React.ComponentType<{ children: React.ReactNode; direction?: Dir }>;
 
 /** 화면의 차례 — 탭바·메뉴에 놓인 차례. 뒤 화면으로 가면 새 화면이 오른쪽에서, 앞 화면으로 가면 왼쪽에서 들어온다 */
-const ORDER = ["/", "/calendar", "/project", "/challenge", "/category", "/anniversary", "/settings", "/store", "/download"];
+const ORDER = ["/", "/calendar", "/project", "/challenge", "/category", "/anniversary", "/settings", "/download"];
 const rank = (p: string) => ORDER.findIndex((r) => (r === "/" ? p === "/" : p === r || p.startsWith(`${r}/`)));
 
 export default function PageTransition({ children }: { children: React.ReactNode }) {

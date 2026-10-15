@@ -20,8 +20,7 @@
     "android:overlay": "node scripts/android-overlay.mjs",
     "android:build": "node scripts/android-overlay.mjs && tauri android build --apk --target aarch64",
     "check:widgets": "node scripts/check-widget-kinds.mjs && node scripts/check-widget-behavior.mjs",
-    "check:themes": "node scripts/check-theme-styles.mjs && node scripts/check-maple-position.mjs",
-    "check:billing": "node scripts/check-billing.mjs"
+    "check:themes": "node scripts/check-theme-styles.mjs && node scripts/check-maple-position.mjs"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.10.0",

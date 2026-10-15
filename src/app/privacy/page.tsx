@@ -74,8 +74,7 @@ export default function PrivacyPage() {
 
             <h2>4. 파기 절차와 방법</h2>
             <p>보유 기간이 끝났거나 처리 목적을 이룬 개인정보는 지체 없이 파기합니다. 전자 파일은 되살릴 수 없는 방법으로 지우며,
-                종이로 출력하지 않습니다. 다른 법령에 따라 보존해야 하는 정보는 현재 없습니다 — 유료 결제를 시작하면 전자상거래 관련 법령에
-                따른 거래 기록을 다른 정보와 나누어 보관하고 이 방침에 적겠습니다.</p>
+                종이로 출력하지 않습니다. 다른 법령에 따라 따로 보존해야 하는 정보는 없습니다(유료 결제가 없습니다).</p>
 
             <h2>5. 제3자 제공</h2>
             <p>개인정보를 제3자에게 제공하지 않습니다. 법령에 특별한 규정이 있는 경우만 예외입니다.</p>
@@ -195,8 +194,8 @@ export default function PrivacyPage() {
             </ul>
 
             <h2>4. Deletion</h2>
-            <p>When data is no longer needed it is deleted without delay, by methods that make it unrecoverable. No law currently requires us to keep
-                anything longer; if we start taking payments we will keep the transaction records required by Korean e-commerce law separately and say so here.</p>
+            <p>When data is no longer needed it is deleted without delay, by methods that make it unrecoverable. No law requires us to keep
+                anything longer (there are no paid features).</p>
 
             <h2>5. Sharing</h2>
             <p>We do not provide your data to third parties, except where the law requires it. Sharing a category is your choice: once you

@@ -21,7 +21,6 @@ import { useOsReducedMotion } from '@/hooks/useThemeMotion';
 import { webglAvailable } from '@/lib/webgl';
 
 const noSubscribe = () => () => {};
-import ThemeShop from '@/components/billing/ThemeShop';
 import PolicyLink from '@/components/auth/PolicyLink';
 import useIsMobile from '@/hooks/useIsMobile';
 import { useSwapMotion } from '@/hooks/useMotion';
@@ -228,7 +227,6 @@ export default function SettingsView({
                                         label={t.settings.theme}
                                         variantLabel={locale === 'ko' ? '밝기' : 'Variant'}
                                     />
-                                    <ThemeShop locale={locale} />
                                 </L.Block>
 
                                 <L.Block>
