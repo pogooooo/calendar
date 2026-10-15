@@ -1,81 +1,59 @@
 "use client";
 
-import * as S from "./MapleMonthArch.styles";
+import * as React from "react";
 import type { MonthArchProps } from "../parts/MonthArch";
+import { labelKey, localDateKey } from "@/lib/dateKey";
+import { useSwapMotion } from "@/hooks/useMotion";
+import { useT } from "@/i18n/useT";
+import useSettingStore from "@/store/useSettingStore";
+import * as S from "./MapleMonthArch.styles";
 
-/* 놋쇠판(gauge-dial.webp, 1024×475)에서 잰 반원의 중심과 반지름 — scripts/maple-assets.mjs 가 잘라낸 그대로 */
-const CX = 512;
-const CY = 452;
-const RX = 497;
-const RY = 437;
+/** 막대가 이보다 길어지지 않는다 — 하루 일정이 여섯을 넘으면 다 같은 "꽉 찬 날" */
 const MAX_LOAD = 6;
 
-/** 반원 위의 점. 그림이 완전한 원이 아니라 가로·세로 반지름을 따로 둔다 */
-const polar = (k: number, deg: number): [number, number] => {
-    const a = ((deg - 90) * Math.PI) / 180;
-    return [CX + RX * k * Math.cos(a), CY + RY * k * Math.sin(a)];
-};
+/**
+ * Maple 의 달 — 노트 첫머리에 적은 날짜와 그달의 막대 띠.
+ * 위: 작은 꼬리표(오늘·요일)와 명조로 크게 쓴 "10월 15일".
+ * 아래: 날마다 둥근 막대 하나 — 그날 일정이 많을수록 길다. 지난날은 옅게, 보는 날은 단풍 붉음에 잎 하나를 얹는다.
+ *   기념일은 호박빛 막대, 마감이 있는 날은 막대 밑에 점.
+ * 요약 한 줄(10월 · 남은 n · 끝낸 n)은 HomeView 의 ArchFoot 이 띠 아래에 붙는다. 셋은 MapleHomeLayout 머리의 격자에 바로 선다
+ *   (이 칸과 ArchWrap 은 display: contents).
+ * 2026-10-15 다시 그리며 놋쇠 해시계 그림(gauge-dial.webp)과 바늘을 걷었다 — 그림 한 장이 화면 위쪽을 다 차지하고 날짜를 읽을 수 없었다.
+ */
+export default function MapleMonthArch({ daysInMonth, focusIdx, monthLoad, marks, focus }: MonthArchProps) {
+    const t = useT();
+    const locale = useSettingStore((s) => s.locale) === "en" ? "en" : "ko";
+    const fmt = React.useMemo(() => ({
+        date: new Intl.DateTimeFormat(locale, { month: "long", day: "numeric" }),
+        weekday: new Intl.DateTimeFormat(locale, { weekday: "long" }),
+    }), [locale]);
+    // focus 는 칸 Date(고른 시간대의 날) — 오늘도 고른 시간대로 견준다
+    const isToday = !!focus && labelKey(focus) === localDateKey(new Date());
+    // 날을 옮기면 큰 날짜가 오는 쪽에서 들어온다 (다음 날이면 오른쪽에서)
+    const titleRef = React.useRef<HTMLDivElement>(null);
+    useSwapMotion(focus ? labelKey(focus) : null, titleRef, { size: "line" });
 
-/** 작은 단풍잎 실루엣 (C6 을 12×12 로 단순화한 것) */
-const LEAF = [[6, 0], [7.4, 3.2], [10.6, 1.8], [9.2, 5], [12, 6.4], [9, 7.6], [9.8, 10.6], [7, 9.2], [6, 12], [5, 9.2], [2.2, 10.6], [3, 7.6], [0, 6.4], [2.8, 5], [1.4, 1.8], [4.6, 3.2]];
-const leafPath = (x: number, y: number, s: number) =>
-    "M " + LEAF.map(([px, py]) => `${x + (px - 6) * s} ${y + (py - 6) * s}`).join(" L ") + " Z";
-
-/** 바늘 길이 — 테두리 안쪽 0.9 */
-const NEEDLE = 0.9 * RX;
-/** 바늘은 위로 세워 그리고 돌린 뒤 세로로 눌러 반원(타원)에 맞춘다 — polar(0.9, deg) 와 같은 끝 */
-const needleTurn = (deg: number, shift = "") => `${shift} scale(1, ${RY / RX}) rotate(${deg}deg)`.trim();
-
-/** 놋쇠 해시계 위의 달. 날마다의 일정 수가 테두리 안쪽 눈금 길이, 오늘이 바늘 — 날을 옮기면 바늘이 그 날로 쓸려 간다 */
-export default function MapleMonthArch({ daysInMonth, focusIdx, monthLoad, marks }: MonthArchProps) {
-    const dayDeg = (i: number) => -90 + (i / Math.max(1, daysInMonth - 1)) * 180;
-    const needleDeg = dayDeg(focusIdx);
+    const anniversary = new Set(marks.filter((m) => m.kind === "anv").map((m) => m.day - 1));
+    const due = new Set(marks.filter((m) => m.kind === "due").map((m) => m.day - 1));
+    const bar = (i: number) => [
+        i < focusIdx ? "past" : i === focusIdx ? "now" : "",
+        anniversary.has(i) ? "anv" : (monthLoad[i] ?? 0) > 0 ? "busy" : "",
+        due.has(i) ? "due" : "",
+    ].filter(Boolean).join(" ");
 
     return (
-        <S.Dial aria-hidden="true">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img className="brass" src="/themes/maple/gauge-dial.webp" alt="" draggable={false} />
-            <svg className="ink" viewBox={`0 ${-S.OVERHANG} 1024 ${475 + S.OVERHANG}`}>
-                {monthLoad.map((v, i) => {
-                    const capped = Math.min(v, MAX_LOAD);
-                    if (capped === 0) return null;
-                    const deg = dayDeg(i);
-                    const [x1, y1] = polar(0.96, deg);
-                    const [x2, y2] = polar(0.96 - capped * 0.028, deg);
-                    return <line key={`t${i}`} className="tick" x1={x1} y1={y1} x2={x2} y2={y2} strokeOpacity={0.35 + capped * 0.1} />;
-                })}
-
-                {Array.from({ length: daysInMonth }, (_, i) => {
-                    if (i % 5 !== 0) return null;
-                    const deg = dayDeg(i);
-                    const [x1, y1] = polar(0.985, deg);
-                    const [x2, y2] = polar(1.02, deg);
-                    return <line key={`m${i}`} className="major" x1={x1} y1={y1} x2={x2} y2={y2} />;
-                })}
-
-                {marks.map(mk => {
-                    const deg = dayDeg(mk.day - 1);
-                    const [ix, iy] = polar(1.02, deg);
-                    const [ox, oy] = polar(1.075, deg);
-                    return (
-                        <g key={`${mk.kind}${mk.day}`}>
-                            <line className="mkline" x1={ix} y1={iy} x2={ox} y2={oy} />
-                            {mk.kind === "anv"
-                                ? <path className="mkanv" d={leafPath(ox, oy, 2.2)} />
-                                : <circle className="mkdue" cx={ox} cy={oy} r="9" />}
-                        </g>
-                    );
-                })}
-
-                <g className="needle" style={{ transform: needleTurn(needleDeg, "translate(3px, 4px)") }}>
-                    <line className="nshadow" x1={CX} y1={CY} x2={CX} y2={CY - NEEDLE} />
-                </g>
-                <g className="needle" style={{ transform: needleTurn(needleDeg) }}>
-                    <line className="nray" x1={CX} y1={CY} x2={CX} y2={CY - NEEDLE} />
-                    <path className="ncap" d={leafPath(CX, CY - NEEDLE, 2.6)} />
-                </g>
-                <circle className="pivot" cx={CX} cy={CY} r="13" />
-            </svg>
-        </S.Dial>
+        <S.Head>
+            {focus && (
+                <S.Title ref={titleRef} aria-hidden="true">
+                    <span className="eyebrow">{isToday ? `${t.home.today} · ` : ""}{fmt.weekday.format(focus)}</span>
+                    <span className="date">{fmt.date.format(focus)}</span>
+                </S.Title>
+            )}
+            <S.Ribbon aria-hidden="true">
+                {Array.from({ length: daysInMonth }, (_, i) => (
+                    <i key={i} className={bar(i)} style={{ "--load": Math.min(monthLoad[i] ?? 0, MAX_LOAD) } as React.CSSProperties} />
+                ))}
+            </S.Ribbon>
+        </S.Head>
     );
 }

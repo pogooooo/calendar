@@ -20,8 +20,8 @@ class Palette(
     val goldText: Int,
     val weekend: Int,
 ) {
-    /** 실선·테두리. Celestial 은 금색 55%, Maple 은 먹 35% */
-    val line: Int get() = if (family == "maple") withAlpha(ink, 0.35f) else withAlpha(gold, 0.55f)
+    /** 실선·테두리. Celestial 은 금색 55%, Maple 은 글자색을 옅게(카드의 옅은 선) */
+    val line: Int get() = if (family == "maple") withAlpha(ink, if (dark) 0.16f else 0.12f) else withAlpha(gold, 0.55f)
 
     companion object {
         fun withAlpha(color: Int, a: Float): Int = (color and 0x00FFFFFF) or ((a.coerceIn(0f, 1f) * 255).toInt() shl 24)
@@ -58,28 +58,31 @@ class Palette(
             )
         }
 
-        /** Maple — 앱의 Maple 팔레트와 같은 색. 여기서 gold 는 "강조색" 자리이고 값은 단풍 붉음이다 */
+        /**
+         * Maple — 앱의 Maple 팔레트와 같은 색(2026-10-15 가을 노트). 여기서 gold 는 "강조색" 자리이고 값은 단풍 붉음이다.
+         * 판은 앱의 카드색(surface) — 데스크톱 위젯처럼 종이 위의 카드 한 장으로 보인다.
+         */
         fun maple(dark: Boolean, spec: Snapshot.ThemeSpec?): Palette {
             val c = if (spec != null && (spec.mode == "dark") == dark) spec.colors else emptyMap()
-            val red = c["primary"] ?: (if (dark) 0xFFD8703F.toInt() else 0xFFB5432B.toInt())
+            val red = c["primary"] ?: (if (dark) 0xFFE27B53.toInt() else 0xFFB8452B.toInt())
             return if (dark) Palette(
                 family = "maple",
                 dark = true,
-                bg = c["background"] ?: 0xFF1F1612.toInt(),
-                ink = c["text"] ?: 0xFFEFE3D0.toInt(),
-                muted = c["textSecondary"] ?: 0xFFA08C78.toInt(),
+                bg = c["surface"] ?: c["background"] ?: 0xFF241E1A.toInt(),
+                ink = c["text"] ?: 0xFFF2E9DE.toInt(),
+                muted = c["textSecondary"] ?: 0xFFA99A8D.toInt(),
                 gold = red,
                 goldText = red,
-                weekend = c["weekend"] ?: 0xFFD98A8E.toInt(),
+                weekend = c["weekend"] ?: 0xFFDE8E96.toInt(),
             ) else Palette(
                 family = "maple",
                 dark = false,
-                bg = c["background"] ?: 0xFFF4EADB.toInt(),
-                ink = c["text"] ?: 0xFF3B2A20.toInt(),
-                muted = c["textSecondary"] ?: 0xFF7C6656.toInt(),
+                bg = c["surface"] ?: c["background"] ?: 0xFFFFFCF7.toInt(),
+                ink = c["text"] ?: 0xFF2E241F.toInt(),
+                muted = c["textSecondary"] ?: 0xFF7A6B60.toInt(),
                 gold = red,
                 goldText = red,
-                weekend = c["weekend"] ?: 0xFFA24A5B.toInt(),
+                weekend = c["weekend"] ?: 0xFFB04A5E.toInt(),
             )
         }
 

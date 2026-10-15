@@ -3,27 +3,26 @@ package com.cronos.todoapp.widget
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.graphics.BitmapShader
 import android.graphics.Canvas
-import android.graphics.Matrix
+import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
-import android.graphics.PorterDuff
-import android.graphics.PorterDuffColorFilter
-import android.graphics.Rect
+import android.graphics.RadialGradient
 import android.graphics.RectF
 import android.graphics.Shader
 import android.graphics.Typeface
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
+import kotlin.math.hypot
+import kotlin.math.max
 import kotlin.math.min
 
 /**
  * 위젯 화가(WidgetPainter)가 쓰는 붓 한 벌 — 테마 갈래마다 하나.
  *
  * 위젯의 짜임(줄 목록·주간 띠·월간 격자·게이지)은 갈래가 달라도 같다. 다른 것은 글꼴과 장식이다:
- * Celestial 은 Orbit 글꼴에 별·달·금선 두 겹 테, Maple 은 고운바탕에 잎·먹 카드 테·단풍 가지·종이결,
+ * Celestial 은 Orbit 글꼴에 별·달·금선 두 겹 테, Maple 은 고운바탕에 벡터 잎·선 잎·따뜻한 빛,
  * Ocean 은 물빛과 빛 그물(OceanStyle — 앱의 물과 같은 식). 그래서 짜임은 화가 하나가 그리고, 장식은 이 붓이 그린다.
  * 웹의 "공용 View + 갈래별 styles" 와 같은 나눔. 바탕 무늬는 데스크톱 위젯의 바탕 무늬(WidgetDecor)를 닮게 —
  * 홈 위젯은 멈춘 그림이라 움직임은 없다.
@@ -231,137 +230,185 @@ open class CelestialStyle(context: Context, density: Float) : WidgetStyle(contex
 }
 
 /**
- * Maple — 낡은 종이 위의 먹과 잎. 그림은 res/drawable-nodpi 의 maple_* (scripts/maple-assets.mjs 가 굽는다).
- * 바탕은 데스크톱 위젯(MapleWidgetDecor)과 같은 말: 종이결 위에 먹으로 그린 카드 테(네 귀퉁이에 잎)와
- * 오른쪽 아래 구석에서 들어오는 수채 단풍 가지 한 줄기(옅게).
+ * Maple — 가을 노트. 데스크톱 위젯(MapleWidgetDecor)과 같은 말: 카드색 판에 옅은 선 테두리, 위에서 비치는 따뜻한 빛
+ * (오른쪽 위 호박빛·왼쪽 아래 단풍빛), 가장자리를 따라 진 단풍잎 몇 장(또렷한 벡터 잎 — 단풍 붉음·호박빛·갈잎빛을 옅게),
+ * 오른쪽 아래 구석에 크게 걸친 선 잎 한 장(가는 선과 잎맥). 표식도 같은 벡터 잎이다.
+ * 2026-10-15 다시 그리며 종이결 타일·먹 카드 테·수채 가지·먹 화살·놋쇠 계기판 그림(res 의 maple_* 그림)을 걷었다 — 그림 파일을 쓰지 않는다.
  */
 class MapleStyle(context: Context, density: Float) : WidgetStyle(context, density) {
-    override val display: Typeface = Fonts.gowun(context)
-    override val numeral: Typeface = Fonts.cormorant(context)
-    override val titleSpacing = 0.06f
+    /** 제목은 고운바탕을 굵게(굵은 글꼴 파일은 싣지 않는다 — 안드로이드가 굵기를 지어 낸다), 숫자는 산세리프 굵게 */
+    override val display: Typeface = Typeface.create(Fonts.gowun(context), Typeface.BOLD)
+    override val numeral: Typeface = Typeface.create("sans-serif", Typeface.BOLD)
+    override val titleSpacing = 0.01f
 
-    private val leafFilled by lazy { bmp("maple_bullet_filled") }
-    private val arrowLeft by lazy { bmp("maple_ink_arrow_left") }
-    private val arrowRight by lazy { bmp("maple_ink_arrow_right") }
-    private val leafOutline by lazy { bmp("maple_bullet_outline") }
-    private val crest by lazy { bmp("maple_crest") }
-    private val todayLeaf by lazy { bmp("maple_today_marker") }
-    private val dial by lazy { bmp("maple_gauge_dial") }
-    private val paperLight by lazy { bmp("maple_widget_paper_light") }
-    private val paperDark by lazy { bmp("maple_widget_paper_dark") }
-    private val cardFrame by lazy { bmp("maple_card_frame") }
-    private val branch by lazy { bmp("maple_widget_branch") }
-
-    /** 먹 마스크(검정+알파)에 색을 입혀 그린다 */
-    private fun tinted(c: Canvas, b: Bitmap?, dst: RectF, color: Int) {
-        if (b == null) return
-        val p = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG).apply { colorFilter = PorterDuffColorFilter(color, PorterDuff.Mode.SRC_IN) }
-        c.drawBitmap(b, null, dst, p)
-    }
+    /** 호박빛 — 앱의 accent. 팔레트에는 강조색(단풍 붉음) 하나뿐이라 여기 둔다 */
+    private fun amber(pal: Palette): Int = if (pal.dark) 0xFFE8B567.toInt() else 0xFFE2A54D.toInt()
 
     override fun frame(c: Canvas, w: Float, h: Float, pal: Palette, alphaPct: Int) {
-        // 모서리는 Celestial 과 같이 둔다 — 런처가 위젯을 제 둥근 모서리로 자르므로 더 각지게 그리면 테두리가 잘린다
         val r = dp(WidgetPainter.RADIUS.toFloat())
         val rect = plate(w, h)
         val a = alphaPct / 100f
-        val paper = if (pal.dark) paperDark else paperLight
-        // 종이색을 먼저 깔고 그 위에 결(G1·G2)을 얹는다. 밝은 벌의 크라프트 타일은 앱의 크림보다 짙어 70% 만 섞는다
         c.drawRoundRect(rect, r, r, fill(Palette.withAlpha(pal.bg, a)))
-        if (paper != null) {
-            val shader = BitmapShader(paper, Shader.TileMode.MIRROR, Shader.TileMode.MIRROR)
-            // 종이 타일은 384px 결을 2배로 구운 768px — 화면 밀도에 맞춰 원래 크기로 깐다
-            shader.setLocalMatrix(Matrix().apply { setScale(density / 2f, density / 2f) })
-            val mix = if (pal.dark) 1f else 0.7f
-            c.drawRoundRect(rect, r, r, Paint(Paint.ANTI_ALIAS_FLAG).apply { this.shader = shader; alpha = (alphaPct * 255 / 100 * mix).toInt().coerceIn(0, 255) })
-        }
         c.save()
         c.clipPath(rounded(rect, r))
-        branch?.let { drawBranch(c, it, w, h, pal, a) }
-        val card = cardFrame
-        if (card != null) {
-            // 먹으로 그린 카드 테 — 앱의 카드·데스크톱 위젯과 같은 그림을 9조각으로 늘린다(웹의 border-image 60 stretch)
-            val k = dp(4f)
-            val p = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG).apply {
-                colorFilter = PorterDuffColorFilter(pal.ink, PorterDuff.Mode.SRC_IN)
-                alpha = ((if (pal.dark) 0.32f else 0.5f) * a * 255).toInt()
-            }
-            nineSlice(c, card, RectF(rect.left + k, rect.top + k, rect.right - k, rect.bottom - k), 60, dp(14f), p)
-        }
+        // 따뜻한 빛 두 군데 (데스크톱의 .light)
+        val far = hypot(w, h)
+        glow(c, w, 0f, far * 0.6f, Palette.withAlpha(amber(pal), (if (pal.dark) 0.1f else 0.2f) * a))
+        glow(c, 0f, h, far * 0.5f, Palette.withAlpha(pal.gold, (if (pal.dark) 0.08f else 0.07f) * a))
+        fallenLeaves(c, w, h, pal, a)
+        cornerLeaf(c, w, h, pal, a)
         c.restore()
-        // 먹 하이라인 테두리. 카드 테 그림이 없으면 그 안쪽의 옅은 선으로 — 색인 카드의 이중 괘선
         c.drawRoundRect(rect, r, r, stroke(pal.line, 1f))
-        if (card == null) {
-            val inner = RectF(rect.left + dp(3f), rect.top + dp(3f), rect.right - dp(3f), rect.bottom - dp(3f))
-            c.drawRoundRect(inner, r - dp(3f), r - dp(3f), stroke(Palette.withAlpha(pal.ink, 0.12f), 1f))
+    }
+
+    private fun glow(c: Canvas, x: Float, y: Float, radius: Float, color: Int) {
+        c.drawCircle(x, y, radius, Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            shader = RadialGradient(x, y, radius, color, Palette.withAlpha(color, 0f), Shader.TileMode.CLAMP)
+        })
+    }
+
+    /**
+     * 진 잎 — 가장자리를 따라(글이 가장 적은 곳). 위젯 종류마다 다른 자리·각도(같은 종류는 늘 같은 무늬).
+     * 칸이 판을 채우는 위젯(busy)에서는 몇 장만, 더 옅게. 자리는 데스크톱의 SLOTS 와 같다.
+     */
+    private fun fallenLeaves(c: Canvas, w: Float, h: Float, pal: Palette, a: Float) {
+        var seed = kind.hashCode() xor 0x2c1b3c6d
+        fun rnd(): Float { seed = seed * 1103515245 + 12345; return ((seed ushr 8) and 0xFFFF) / 65535f }
+        val base = (min(w, h) / density * 0.065f).coerceIn(13f, 26f)
+        val tones = intArrayOf(
+            Palette.withAlpha(pal.gold, if (pal.dark) 0.34f else 0.26f),
+            Palette.withAlpha(amber(pal), if (pal.dark) 0.32f else 0.36f),
+            Palette.withAlpha(pal.ink, if (pal.dark) 0.16f else 0.13f),
+        )
+        val start = (rnd() * 3).toInt()
+        val fade = if (busy) 0.55f else 1f
+        for ((i, slot) in SLOTS.withIndex()) {
+            val left = slot[0] + rnd() * (slot[1] - slot[0])
+            val top = slot[2] + rnd() * (slot[3] - slot[2])
+            val size = dp(base * slot[4] * (0.8f + rnd() * 0.4f))
+            val turn = rnd() * 360f
+            if (busy && i !in BUSY_SLOTS) continue
+            val color = tones[(start + i) % tones.size]
+            val cx = w * left / 100f + size / 2f
+            val cy = h * top / 100f + size / 2f
+            leaf(c, cx, cy, size, turn, Palette.withAlpha(color, Color.alpha(color) / 255f * fade * a), filled = true)
         }
     }
 
-    /** 오른쪽 아래 구석에서 비스듬히 들어오는 단풍 가지 — 데스크톱 위젯과 같은 자리·각(-16°). 칸이 가득한 위젯에서는 작고 옅게 */
-    private fun drawBranch(c: Canvas, b: Bitmap, w: Float, h: Float, pal: Palette, a: Float) {
-        val bh = if (busy) min(h * 0.46f, dp(190f)) else h * 0.82f
-        val bw = bh * b.width / b.height
-        val right = w + w * (if (busy) 0.03f else 0.06f)
-        val bottom = h + h * (if (busy) 0.06f else 0.12f)
-        val dst = RectF(right - bw, bottom - bh, right, bottom)
-        val op = if (busy) 0.2f else if (pal.dark) 0.3f else 0.34f
+    /** 오른쪽 아래 구석에 크게 걸친 선 잎 — 판의 반쯤만 보인다(데스크톱의 .corner). 칸이 가득한 위젯에서는 작게 */
+    private fun cornerLeaf(c: Canvas, w: Float, h: Float, pal: Palette, a: Float) {
+        val m = min(w, h)
+        val size = m * (if (busy) 0.36f else 0.64f)
+        val right = w + m * (if (busy) 0.08f else 0.12f)
+        val bottom = h + m * (if (busy) 0.09f else 0.14f)
+        val left = right - size
+        val top = bottom - size
+        val k = size / 24f
+        val p = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            strokeWidth = 0.28f
+            strokeJoin = Paint.Join.ROUND
+            strokeCap = Paint.Cap.ROUND
+            color = Palette.withAlpha(pal.gold, (if (pal.dark) 0.3f else 0.22f) * (if (busy) 0.7f else 1f) * a)
+        }
         c.save()
-        c.rotate(-16f, dst.left + bw * 0.85f, dst.bottom)
-        c.drawBitmap(b, null, dst, Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG).apply { alpha = (op * a * 255).toInt() })
+        c.rotate(-24f, left + size * 0.7f, top + size * 0.8f)
+        c.translate(left, top)
+        c.scale(k, k)
+        c.drawPath(LEAF, p)
+        c.drawPath(VEINS, p)
         c.restore()
     }
 
-    /** 9조각 늘이기 — 귀퉁이는 그대로, 변은 늘리고, 가운데는 비운다 */
-    private fun nineSlice(c: Canvas, b: Bitmap, dst: RectF, slice: Int, border: Float, p: Paint) {
-        val xs = intArrayOf(0, slice, b.width - slice, b.width)
-        val ys = intArrayOf(0, slice, b.height - slice, b.height)
-        val xd = floatArrayOf(dst.left, dst.left + border, dst.right - border, dst.right)
-        val yd = floatArrayOf(dst.top, dst.top + border, dst.bottom - border, dst.bottom)
-        for (i in 0..2) for (j in 0..2) {
-            if (i == 1 && j == 1) continue
-            c.drawBitmap(b, Rect(xs[i], ys[j], xs[i + 1], ys[j + 1]), RectF(xd[i], yd[j], xd[i + 1], yd[j + 1]), p)
+    /** 벡터 단풍잎 하나 — 가운데(cx, cy)·크기(상자 한 변)·돌림. 윤곽 잎의 선 굵기는 strokePx(화면 px) */
+    private fun leaf(c: Canvas, cx: Float, cy: Float, size: Float, turn: Float, color: Int, filled: Boolean, strokePx: Float = 0f) {
+        val k = size / 24f
+        c.save()
+        c.translate(cx, cy)
+        c.rotate(turn)
+        c.scale(k, k)
+        c.translate(-12f, -12f)
+        val p = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            this.color = color
+            strokeJoin = Paint.Join.ROUND
+            if (filled) { style = Paint.Style.FILL_AND_STROKE; strokeWidth = 0.7f }
+            else { style = Paint.Style.STROKE; strokeWidth = max(1.6f, strokePx / k) }
         }
+        c.drawPath(LEAF, p)
+        c.restore()
     }
 
     override fun bullet(c: Canvas, cx: Float, cy: Float, rDp: Float, color: Int, filled: Boolean, strokeDp: Float) {
-        val r = dp(rDp) * 1.35f
-        tinted(c, if (filled) leafFilled else leafOutline, RectF(cx - r, cy - r, cx + r, cy + r), color)
+        leaf(c, cx, cy, dp(rDp) * 2.7f, 0f, color, filled, dp(strokeDp))
     }
 
     override fun glyph(c: Canvas, x: Float, cy: Float, sizeDp: Float, color: Int): Float {
         val s = dp(sizeDp)
-        tinted(c, crest, RectF(x, cy - s / 2f, x + s, cy + s / 2f), color)
+        leaf(c, x + s / 2f, cy, s, -12f, color, filled = true)
         return s
     }
 
     override fun todayMark(c: Canvas, cx: Float, cy: Float, rDp: Float, pal: Palette) {
-        val r = dp(rDp) * 1.5f
-        val p = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG).apply { alpha = if (pal.dark) 170 else 255 }
-        val b = todayLeaf ?: return c.drawCircle(cx, cy, dp(rDp), stroke(pal.gold, 1f))
-        c.drawBitmap(b, null, RectF(cx - r, cy - r, cx + r, cy + r), p)
+        // 단풍 붉음을 옅게 깐 동그라미에 붉은 테 — 숫자는 화가가 붉은 글씨로 얹는다
+        val r = dp(rDp)
+        c.drawCircle(cx, cy, r, fill(Palette.withAlpha(pal.gold, if (pal.dark) 0.22f else 0.13f)))
+        c.drawCircle(cx, cy, r, stroke(pal.gold, 1.3f))
     }
 
     override fun dayArrow(c: Canvas, cx: Float, cy: Float, sizeDp: Float, color: Int, right: Boolean) {
-        // 먹 화살(J8) — 그림은 가로로 길다(384×91). 자리는 꺾쇠와 같은 폭(sizeDp*2)이라 높이는 비율대로 낮다
-        val w = dp(sizeDp) * 2f
-        val h = w * 91f / 384f
-        val left = if (right) cx - w else cx
-        tinted(c, if (right) arrowRight else arrowLeft, RectF(left, cy - h / 2f, left + w, cy + h / 2f), color)
+        // 꺾쇠 하나 — 앱의 Maple 화살(lucide 꺾쇠)과 같은 말
+        val s = dp(sizeDp)
+        val dir = if (right) -1f else 1f
+        val p = stroke(color, 1.6f).apply { strokeCap = Paint.Cap.ROUND; strokeJoin = Paint.Join.ROUND }
+        c.drawPath(Path().apply {
+            moveTo(cx + dir * s * 0.45f, cy - s * 0.5f)
+            lineTo(cx - dir * s * 0.1f, cy)
+            lineTo(cx + dir * s * 0.45f, cy + s * 0.5f)
+        }, p)
     }
 
     override fun gaugeBase(c: Canvas, cx: Float, cy: Float, r: Float, pal: Palette): Int {
-        val b = dial
-        if (b == null) {
-            c.drawArc(RectF(cx - r, cy - r, cx + r, cy + r), 180f, 180f, false, stroke(pal.line, 1f))
-            return pal.ink
-        }
-        // 놋쇠판(1024×475)에서 잰 반원: 중심 (512, 452), 가로 반지름 497, 세로 437 — 화가의 반지름 r 에 맞춘다
-        val k = r / 497f
-        val left = cx - 512f * k
-        val top = cy - 452f * k
-        val dst = RectF(left, top, left + 1024f * k, top + 475f * k)
-        val p = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG).apply { if (pal.dark) alpha = 215 }
-        c.drawBitmap(b, null, dst, p)
+        // 둥근 홈 한 줄 — 눈금·바늘은 화가가 얹는다(글자색 눈금)
+        val track = stroke(Palette.withAlpha(pal.ink, if (pal.dark) 0.14f else 0.08f), 5f).apply { strokeCap = Paint.Cap.ROUND }
+        val k = dp(2.5f)
+        c.drawArc(RectF(cx - r + k, cy - r + k, cx + r - k, cy + r - k), 180f, 180f, false, track)
         return pal.ink
     }
 
+    companion object {
+        /** 웹의 LEAF_PATH(styles/maple/ink.ts, 24 단위)를 그대로 옮긴 단풍잎 — 다섯 갈래, 곧은 마디 */
+        private val LEAF: Path = Path().apply {
+            val pts = floatArrayOf(
+                12f, 1.6f, 13.7f, 5.3f, 16.3f, 4.1f, 15.7f, 8.7f, 19.5f, 7.1f, 18.7f, 9.5f, 22.4f, 10.7f, 19.6f, 12.7f,
+                20.5f, 14.5f, 15.4f, 14.1f, 15.8f, 16.1f, 12.7f, 15f, 12.6f, 22.4f, 11.4f, 22.4f, 11.3f, 15f, 8.2f, 16.1f,
+                8.6f, 14.1f, 3.5f, 14.5f, 4.4f, 12.7f, 1.6f, 10.7f, 5.3f, 9.5f, 4.5f, 7.1f, 8.3f, 8.7f, 7.7f, 4.1f, 10.3f, 5.3f,
+            )
+            moveTo(pts[0], pts[1])
+            var i = 2
+            while (i < pts.size) { lineTo(pts[i], pts[i + 1]); i += 2 }
+            close()
+        }
+
+        /** 선 잎의 잎맥 (데스크톱의 LEAF_LINE 과 같다) */
+        private val VEINS: Path = Path().apply {
+            moveTo(12f, 15f); lineTo(12f, 3.2f)
+            moveTo(12f, 15f); lineTo(20.4f, 10.7f)
+            moveTo(12f, 15f); lineTo(3.6f, 10.7f)
+            moveTo(12f, 15f); lineTo(18.6f, 13.9f)
+            moveTo(12f, 15f); lineTo(5.4f, 13.9f)
+            moveTo(12f, 9.6f); lineTo(14.6f, 7.4f)
+            moveTo(12f, 9.6f); lineTo(9.4f, 7.4f)
+        }
+
+        /** 잎 자리 — [왼쪽 % 처음, 끝, 위쪽 % 처음, 끝, 크기 배] (데스크톱의 SLOTS) */
+        private val SLOTS = arrayOf(
+            floatArrayOf(6f, 16f, 8f, 15f, 1f),
+            floatArrayOf(52f, 68f, 5f, 10f, 0.8f),
+            floatArrayOf(90f, 95f, 26f, 40f, 0.9f),
+            floatArrayOf(4f, 14f, 84f, 92f, 1.1f),
+            floatArrayOf(32f, 46f, 88f, 94f, 0.85f),
+            floatArrayOf(0f, 3f, 48f, 60f, 0.7f),
+        )
+        private val BUSY_SLOTS = setOf(0, 2, 4)
+    }
 }

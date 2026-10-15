@@ -8,6 +8,6 @@ import * as C from "../celestial/CelestialWidgetAuthNotice.styles";
 export * from "../celestial/CelestialWidgetAuthNotice.styles";
 
 export const Center = styled(C.Center)`
-    font-family: ${(p) => p.theme.fonts.display};
-    letter-spacing: 0.04em;
+    font-family: ${(p) => p.theme.fonts.body};
+    letter-spacing: 0;
 `;

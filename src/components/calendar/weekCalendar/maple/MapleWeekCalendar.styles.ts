@@ -1,142 +1,185 @@
 /**
- * Maple 의 주간 달력 — 뼈대는 Celestial 과 같으므로 그쪽 것을 통째로 가져오고, 달라지는 것만 덮어쓴다.
+ * Maple 의 주간 달력(데스크톱 주간 위젯) — 뼈대는 Celestial 과 같으므로 그쪽 것을 통째로 가져오고, 달라지는 것만 덮어쓴다.
  * (여기서 이름을 새로 정의하면 그것이 위의 재수출보다 앞선다 — ES 모듈 규칙)
  *
- * 금빛 실선·구슬·별 대신 먹 하이라인과 잎. 오늘 칸은 빛나는 틀이 아니라 황토 물이 든 종이.
- * 일정 막대는 마스킹테이프, 끝낸 일은 바랜 테이프.
+ * 2026-10-15 다시 그림: 금빛 실선 상자·모서리 사선·빛나는 오늘 틀 대신 옅은 모눈. 요일은 왼쪽에 차분한 글씨,
+ * 오늘은 붉은 글씨와 칸에 옅게 든 붉음. 일정 막대는 월간과 같은 둥근 막대(카테고리 색 면 + 왼쪽 띠).
  */
 import styled, { css } from "styled-components";
 import * as C from "../celestial/CelestialWeekCalendar.styles";
 import { withAlpha } from "@/styles/color";
-import { hair, leafBullet, stampButton, tape } from "@/styles/maple/ink";
+import { hair, leafChip, paperCard } from "@/styles/maple/ink";
 
 export * from "../celestial/CelestialWeekCalendar.styles";
 
+const dark = (p: { theme: { mode: string } }) => p.theme.mode === "dark";
+const line = (p: { theme: { mode: string; colors: { text: string } } }) => hair(p.theme, dark(p) ? 0.1 : 0.08);
+
+/** 2026.10.11 - 10.17 ── 🍁 ⚙ — 날짜는 굵은 본문 글씨 */
 export const DateRangeDisplay = styled(C.DateRangeDisplay)`
-    letter-spacing: 0.06em;
-    font-size: 1rem;
+    gap: 10px;
+    font-family: ${(p) => p.theme.fonts.display};
+    font-size: 0.9375rem;
+    font-weight: 700;
+    letter-spacing: 0;
 
-    & > hr { border-top-color: ${(p) => hair(p.theme, 0.45)}; }
-
-    button { ${stampButton("default")} }
+    & > hr { border-top-color: ${line}; }
 `;
 
-/** 날짜 사이의 선: 구슬·별 없이 먹 하이라인, 끝에 작은 잎 하나 */
+/** 날짜 뒤의 선 — 구슬·별 없이 옅은 선, 끝에 작은 잎 하나 */
 export const DateLine = styled(C.DateLine)`
-    background-color: ${(p) => hair(p.theme, 0.45)};
+    background-color: ${line};
 
     &::before { display: none; }
 
     &::after {
-        ${leafBullet(true, "9px")}
-        clip-path: none;
-        background-color: ${(p) => p.theme.colors.primary};
-        animation: none;
+        ${leafChip(5, "9px")}
         right: -4px;
         margin-top: -4.5px;
+        clip-path: none;
+        animation: none;
+        background-color: ${(p) => withAlpha(p.theme.colors.primary, 0.8)};
     }
 `;
 
 export const ArrowWrapper = styled(C.ArrowWrapper)`
+    transition: opacity 0.15s ease;
     &:hover { filter: none; opacity: 0.7; }
 `;
 
+/** 요일 줄: 상자·모서리 장식 없이 아래로 옅은 선 하나 */
 export const Header = styled(C.Header)`
-    border-color: ${(p) => hair(p.theme, 0.45)};
-    &::after { display: none; }
+    font-family: ${(p) => p.theme.fonts.body};
+    border: none;
+    border-bottom: 1px solid ${line};
+
+    &::before, &::after { content: none; }
 `;
 
+/** 요일은 왼쪽에 차분한 글씨 — 오늘은 붉은 글씨. 해낸 자국(밑선)은 칸 왼쪽 위의 잎(DayCellDecor)이 맡는다 */
 export const DayNameBox = styled(C.DayNameBox)`
-    border-right-color: ${(p) => hair(p.theme, 0.25)};
-
-    /* 표의 머리 — 요일은 왼쪽에 적고, 해낸 자국은 오른쪽 여백에 세로로 선다 */
+    height: 40px;
     justify-content: flex-start;
-    padding-left: 11px;
+    padding-left: 12px;
+    border-right: 1px solid ${line};
+    color: ${(p) => (p.$isToday ? p.theme.colors.primary : p.theme.colors.textSecondary)};
 
-    .day-mark {
-        left: auto;
-        right: 9px;
-        bottom: auto;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 1px;
-        height: 14px;
-    }
+    &:first-child { color: ${(p) => (p.$isToday ? p.theme.colors.primary : p.theme.colors.weekend)}; }
 
-    .day-mark.done { width: 1px; height: 22px; }
-
+    /* "SUN" → "Sun" */
     .day-name {
-        font-family: ${(p) => p.theme.fonts.numeral};
-        font-size: 1.1rem;
-        letter-spacing: 0.12em;
+        font-size: 0.8125rem;
+        font-weight: ${(p) => (p.$isToday ? 700 : 600)};
+        letter-spacing: 0.02em;
+        text-transform: lowercase;
+
+        &::first-letter { text-transform: uppercase; }
     }
 
-    .day-mark { background-color: ${(p) => hair(p.theme, 0.5)}; }
-    .day-mark.done { background-color: ${(p) => p.theme.colors.primary}; box-shadow: none; }
-    .day-mark.done::before, .day-mark.done::after { display: none; }
+    .day-mark { display: none; }
 
-    /* 오늘: 빛나는 틀 대신 요일 이름 위에 붉은 잎 하나 */
+    /* 빛나는 오늘 틀은 없다 — 칸(DaySlot)에 붉음이 옅게 든다 */
     ${(p) => p.$isToday && css`
-        &::before {
-            border: none;
-            box-shadow: none;
-            width: 12px;
-            height: 12px;
-            top: 6px;
-            left: calc(50% - 6px);
-            ${leafBullet(true, "12px")}
-            background-color: ${p.theme.colors.primary};
-            opacity: 0.9;
-        }
-        .day-name { color: ${p.theme.colors.primary}; }
+        &::before { content: none; }
     `}
 `;
 
 export const BarContainer = styled(C.BarContainer)`
-    border-color: ${(p) => hair(p.theme, 0.45)};
+    border: none;
+
+    &::before, &::after { content: none; }
 `;
 
-/** 칸 위의 + : 네모 도장(J2) */
+/** 칸 위의 + — 옅은 둥근 네모 */
 export const AddTodoButton = styled(C.AddTodoButton)`
-    ${stampButton("default", { square: true })}
-    position: absolute;
-    width: 24px;
-    height: 24px;
-    border-radius: 2px;
-    color: ${(p) => p.theme.colors.primary};
+    top: 6px;
+    left: 6px;
+    width: 22px;
+    height: 22px;
+    border: none;
+    border-radius: 7px;
+    background-color: ${(p) => hair(p.theme, 0.06)};
+    color: ${(p) => p.theme.colors.textSecondary};
 
-    &:hover { transform: none; }
+    svg { width: 14px; height: 14px; }
+
+    &:hover {
+        transform: none;
+        background-color: ${(p) => withAlpha(p.theme.colors.primary, 0.12)};
+        color: ${(p) => p.theme.colors.primary};
+    }
 `;
 
 export const DaySlot = styled(C.DaySlot)`
-    border-right-color: ${(p) => hair(p.theme, 0.25)};
-    background-color: ${(p) => (p.$isToday ? withAlpha(p.theme.colors.accent, p.theme.mode === "dark" ? 0.08 : 0.14) : "transparent")};
+    border-left: none;
+    border-right: 1px solid ${line};
+    background-color: ${(p) => (p.$isToday ? withAlpha(p.theme.colors.primary, dark(p) ? 0.1 : 0.05) : "transparent")};
+
+    &:last-child { border-right: none; }
 `;
 
-/** 일정 막대 = 마스킹테이프 */
+/* 막대는 칸 위쪽을 비우고 시작한다 — 그 자리에 챌린지 잎(DayCellDecor)과 마우스를 올리면 뜨는 + 가 앉는다 */
+export const TodoBarList = styled(C.TodoBarList)`
+    gap: 3px;
+    margin-top: 30px;
+`;
+
+/** 일정 막대 — 월간과 같은 말: 카테고리 색을 옅게 깐 둥근 막대, 시작에 3px 색 띠, 글은 글자색 */
 export const TodoBarItem = styled(C.TodoBarItem)`
+    height: 22px;
+    align-items: center;
     border: none;
-    border-radius: 0;
-    background-color: ${(p) => `color-mix(in srgb, ${p.$color ?? p.theme.colors.accent} ${p.theme.mode === "dark" ? "42%" : "34%"}, ${p.theme.colors.background})`};
-    ${tape}
+    margin-left: ${(p) => (p.$isStart ? "6px" : "0")};
+    margin-right: ${(p) => (p.$isEnd ? "6px" : "0")};
+    border-radius: ${(p) => `${p.$isStart ? 5 : 0}px ${p.$isEnd ? 5 : 0}px ${p.$isEnd ? 5 : 0}px ${p.$isStart ? 5 : 0}px`};
+    background-color: ${(p) => `color-mix(in srgb, ${p.$color ?? p.theme.colors.primary} ${dark(p) ? 26 : 19}%, ${p.theme.colors.surface})`};
+    box-shadow: ${(p) => (p.$isStart ? `inset 3px 0 0 ${p.$color ?? p.theme.colors.primary}` : "none")};
+    font-family: ${(p) => p.theme.fonts.body};
+    font-size: 0.75rem;
+    font-weight: 500;
     color: ${(p) => p.theme.colors.text};
 
+    .todo-title { padding: 0 6px 0 9px; }
+
     ${(p) => p.$isDone && css`
-        box-shadow: none;
         clip-path: none;
-        background-color: ${withAlpha(p.theme.colors.text, 0.08)};
-        .todo-title { opacity: 0.6; }
+        background-color: ${hair(p.theme, dark(p) ? 0.07 : 0.05)};
+        box-shadow: ${p.$isStart ? `inset 3px 0 0 ${withAlpha(p.$color ?? p.theme.colors.primary, 0.45)}` : "none"};
+
+        .todo-title {
+            opacity: 1;
+            color: ${p.theme.colors.textSecondary};
+        }
     `}
 `;
 
+export const TodoBarSpacer = styled(C.TodoBarSpacer)`
+    height: 22px;
+`;
+
 export const MoreButton = styled(C.MoreButton)`
-    font-family: ${(p) => p.theme.fonts.numeral};
+    align-self: flex-start;
+    margin: 1px 6px 0;
+    padding: 1px 5px;
+    border-radius: 6px;
+    font-family: ${(p) => p.theme.fonts.body};
+    font-size: 0.75rem;
+    text-align: left;
+
+    &:hover {
+        text-shadow: none;
+        color: ${(p) => p.theme.colors.primary};
+        background-color: ${(p) => withAlpha(p.theme.colors.primary, 0.08)};
+    }
 `;
 
 export const ModalContainer = styled(C.ModalContainer)`
-    border-color: ${(p) => hair(p.theme, 0.5)};
+    ${paperCard()}
+    border-radius: 14px;
 `;
 
 export const ModalHeader = styled(C.ModalHeader)`
-    border-color: ${(p) => hair(p.theme, 0.45)};
+    border-bottom-color: ${line};
+    background-color: transparent;
+    font-weight: 700;
 `;

@@ -60,7 +60,7 @@ export default function ThemeProviderWrapper({ children }: { children: React.Rea
 
     const fontOption = getFontOption(fontKey);
 
-    // "기본" 은 갈래가 정한 본문 글꼴이다 — Celestial·Maple 은 Inter, 바다는 Pretendard
+    // "기본" 은 갈래가 정한 본문 글꼴이다 — 지금은 세 갈래 모두 Pretendard
     const bodyFamily = fontOption.key === "default" ? baseTheme.fonts.body : fontOption.family;
     const theme = useMemo(() => ({
         ...baseTheme,

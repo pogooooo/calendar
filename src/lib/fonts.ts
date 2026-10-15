@@ -105,7 +105,9 @@ export const THEME_FONTS: Record<string, FontOption[]> = {
             cssUrl: "https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500&display=swap",
         },
     ],
+    // 본문은 Pretendard(2026-10-15 — 명조 본문은 작은 글이 흐렸다), 제목은 고운바탕, 큰 날짜 숫자는 Cormorant
     maple: [
+        PRETENDARD,
         FONT_OPTIONS.find(f => f.key === "gowun-batang")!,
         {
             key: "cormorant",

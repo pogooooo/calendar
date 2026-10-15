@@ -2,7 +2,6 @@ import styled, { keyframes } from 'styled-components';
 
 const fall = keyframes`0% { transform:translate3d(0,-70px,0); opacity:0; } 12% { opacity:.16; } 85% { opacity:.12; } 100% { transform:translate3d(-55px,105vh,0); opacity:0; }`;
 const flutter = keyframes`0%,100% { transform:translateX(-14px) rotate(-22deg); } 50% { transform:translateX(18px) rotate(24deg); }`;
-const sway = keyframes`0%,100% { transform:rotate(-2deg); opacity:.08; } 50% { transform:rotate(2deg); opacity:.13; }`;
 const sunlight = keyframes`0%,100% { opacity:.03; transform:translateX(-10%); } 50% { opacity:.08; transform:translateX(10%); }`;
 
 /** 3D 잎 캔버스 — 화면보다 작게 그린 것을 화면에 늘린다 (mapleLeafScene) */
@@ -24,10 +23,9 @@ export const Garden = styled.div`
     .leaf-3 { right:7%; width:30px; animation-duration:48s; animation-delay:-35s; }
     .leaf-4 { left:7%; right:auto; width:19px; animation-duration:52s; animation-delay:-9s; }
     .leaf-1 .leaf,.leaf-3 .leaf { animation-direction:reverse; animation-duration:9s; }
-    .pressed { position:absolute; right:-20px; bottom:35px; width:200px; stroke:currentColor; stroke-width:.7; transform-origin:bottom right; opacity:.08; animation:${sway} 13s ease-in-out infinite; }
     .paper-light { position:absolute; inset:0; opacity:.03; background:linear-gradient(120deg,transparent 55%,currentColor 75%,transparent 90%); animation:${sunlight} 19s ease-in-out infinite; }
     html[data-theme-motion="gentle"] & { .fall { display:none; } .paper-light { animation-duration:32s; } }
-    @media(max-width:768px) { .leaf-1,.leaf-2,.leaf-4,.paper-light { display:none; } .fall { width:22px; } .pressed { width:130px; } }
+    @media(max-width:768px) { .leaf-1,.leaf-2,.leaf-4,.paper-light { display:none; } .fall { width:22px; } }
     @media(max-width:500px) and (max-height:350px) { display:none; }
-    html[data-theme-motion="off"] & { .fall { display:none; } .pressed { animation:none; opacity:.08; } .paper-light { display:none; } }
+    html[data-theme-motion="off"] & { .fall { display:none; } .paper-light { display:none; } }
 `;

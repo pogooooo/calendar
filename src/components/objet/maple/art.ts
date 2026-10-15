@@ -83,7 +83,7 @@ export function leafArt(sprite: LeafSprite): HTMLCanvasElement {
     return cache.get(sprite) ?? cache.get("red") ?? drawnLeaf();
 }
 
-/** 오늘의 잎 — 표본(specimenScene)과 같이 날마다 바뀐다 */
+/** 오늘의 잎 — 날마다 바뀐다 */
 export function todaySprite(d = new Date()): LeafSprite {
     const day = Math.floor((Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) - Date.UTC(d.getFullYear(), 0, 0)) / 86_400_000);
     return SPRITES[day % SPRITES.length];

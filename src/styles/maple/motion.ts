@@ -1,16 +1,17 @@
 /**
- * Maple 의 몸짓 (src/styles/motion.ts 의 MotionSet) — 종이와 먹.
+ * Maple 의 몸짓 (src/styles/motion.ts 의 MotionSet) — 노트의 종이.
  *   화면 한 판(월간)을 넘김: 다이어리 한 장 — 새 쪽이 넘어오는 반대편 가장자리(책등)를 축으로 들렸다가 내려앉는다.
  *   판 안의 내용이 바뀜: 종이 한 장을 밀어 넣듯 오는 쪽으로 살짝 기울었다가 바로 선다.
  *   목록에 든 줄: 쪽지를 끼워 넣듯 왼쪽에서 비스듬히 · 빠지는 줄: 오른쪽으로 빼낸다.
- *   끝냄: 체크칸에 도장이 쾅 — 크게 기울어 내려와 찍히고, 줄이 한 번 눌린다.
+ *   끝냄: 둥근 체크 칸이 톡 — 작게 오므렸다 한 번 부풀고, 줄이 한 번 눌린다.
+ *   (2026-10-15 다시 그리며 도장이 크게 기울어 찍히던 몸짓과 대화상자가 기울며 치워지던 몸짓을 걷었다 — 둥근 칸·카드와 따로 놀았다)
  * 바다(흐림·물결)·Celestial(옅게 미끄러짐)과 재료부터 다르게.
  */
 import { EASE_IN, gentleSwap, widgetSwap, type Ease, type MotionSet } from "@/styles/motion";
 
 /** 손으로 넘기는 결 — 처음엔 빠르고 끝이 부드럽다 */
 const HAND: Ease = [0.25, 0.8, 0.3, 1];
-/** 도장 — 내려와서 한 번 눌렸다 선다 */
+/** 톡 — 오므렸다 부풀어 선다 */
 const PRESS: Ease = [0.3, 0.7, 0.4, 1];
 
 export const paperMotion: MotionSet = {
@@ -42,8 +43,8 @@ export const paperMotion: MotionSet = {
         : { pose: { opacity: 0, x: 18, rotate: 1.4, ox: 1, oy: 0.5 }, duration: 240, ease: EASE_IN },
     done: (level) => level === "gentle" ? null : {
         mark: [
-            { transform: "scale(1.75) rotate(-14deg)", opacity: 0 },
-            { transform: "scale(0.88) rotate(3deg)", opacity: 1, offset: 0.55 },
+            { transform: "scale(0.6)", opacity: 0.4 },
+            { transform: "scale(1.14)", opacity: 1, offset: 0.55 },
             { transform: "none", opacity: 1 },
         ],
         row: [
@@ -54,8 +55,8 @@ export const paperMotion: MotionSet = {
         duration: 440,
         ease: PRESS,
     },
-    // 확인 쪽지는 집어 들어 치우듯 — 위로 들리며 살짝 기운다
+    // 확인 카드는 살짝 들리며 옅어진다
     dialogOut: (level) => level === "gentle"
         ? { pose: { opacity: 0 }, duration: 140, ease: EASE_IN }
-        : { pose: { opacity: 0, y: -12, rotate: 1.6, ox: 0.5, oy: 0 }, duration: 220, ease: EASE_IN },
+        : { pose: { opacity: 0, y: -8, scale: 0.98, ox: 0.5, oy: 0 }, duration: 200, ease: EASE_IN },
 };

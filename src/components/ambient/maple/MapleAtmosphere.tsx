@@ -1,6 +1,7 @@
 "use client";
 /**
- * Maple 의 바탕 장면 — 종이 위로 물든 잎이 3D 로 뒤집히며 진다(mapleLeafScene, three.js), 구석의 눌린 가지와 지나가는 햇살 한 겹.
+ * Maple 의 바탕 장면 — 종이 위로 물든 잎이 3D 로 뒤집히며 진다(mapleLeafScene, three.js), 그리고 지나가는 햇살 한 겹.
+ * (구석의 눌린 가지 선화는 2026-10-15 걷었다 — 늘 흔들리는 선이 카드 옆에서 얼룩처럼 보였다)
  * 내용 뒤에 깔리고 누르는 것은 받지 않는다(누름은 window 에서 듣고 잎만 흩날린다). 위젯 창에서는 ThemeAtmosphere 가 아예 건너뛴다.
  * WebGL 이나 잎 그림이 없으면 예전의 납작한 SVG 잎 다섯 장(CSS 로 떨어진다)으로 물러난다.
  */
@@ -42,7 +43,6 @@ export default function MapleAtmosphere() {
                 <svg className="leaf" viewBox="0 0 48 54"><path d={LEAF} /><path className="vein" d="M24 17v36m0-24-12-7m12 13 13-9" /></svg>
             </span>)
             : <S.Leaves ref={ref} />}
-        <svg className="pressed" viewBox="0 0 100 100" fill="none"><path d="M10 95Q45 52 64 12M35 60l-13-25M46 44l28 5M55 28l-7-20" /><path d="M22 35Q-1 23 6 11q22-1 16 24ZM74 49q25-12 20-25-26-2-20 25ZM48 8q-21 5-15 18 17 1 15-18Z" /></svg>
         <div className="paper-light" />
     </S.Garden>;
 }

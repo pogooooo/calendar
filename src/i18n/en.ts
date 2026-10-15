@@ -664,7 +664,7 @@ const en: Translations = {
     download: {
         openWeb: 'Open on the web',
         tagline: 'Your plans and goals, drawn as one constellation',
-        taglineMaple: 'Your plans and goals, pressed like a field guide',
+        taglineMaple: 'Your plans and goals, kept in one autumn notebook',
         taglineOcean: 'Your plans and goals, clear as still water',
         lead: 'A to-do app that keeps calendar, projects and challenges in one place. Use it in the browser, or install the app for desktop widgets.',
         downloadFor: (os: string) => `Download for ${os}`,

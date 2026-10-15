@@ -28,6 +28,23 @@ const STALE = [
     "java/com/cronos/todoapp/widget/WidgetSnapshot.kt",
     // 2026-09-17: 화가를 갈래 공용 WidgetPainter 로 바꾸며 이름을 바꿨다
     "java/com/cronos/todoapp/widget/CelestialPainter.kt",
+    // 2026-10-15: Maple 을 다시 그리며 위젯의 그림 파일(종이결·먹 테·가지·화살·놋쇠판·잎 표식)과 Cormorant 글꼴을 걷었다
+    "res/drawable-nodpi/maple_acorn.webp",
+    "res/drawable-nodpi/maple_bullet_filled.webp",
+    "res/drawable-nodpi/maple_bullet_outline.webp",
+    "res/drawable-nodpi/maple_card_frame.webp",
+    "res/drawable-nodpi/maple_check.webp",
+    "res/drawable-nodpi/maple_crest.webp",
+    "res/drawable-nodpi/maple_gauge_dial.webp",
+    "res/drawable-nodpi/maple_ink_arrow_left.webp",
+    "res/drawable-nodpi/maple_ink_arrow_right.webp",
+    "res/drawable-nodpi/maple_spinner.webp",
+    "res/drawable-nodpi/maple_today_marker.webp",
+    "res/drawable-nodpi/maple_widget_branch.webp",
+    "res/drawable-nodpi/maple_widget_paper_dark.webp",
+    "res/drawable-nodpi/maple_widget_paper_light.webp",
+    "assets/fonts/CormorantGaramond.ttf",
+    "assets/fonts/CormorantGaramond-OFL.txt",
 ];
 for (const rel of STALE) {
     const p = join(gen, "app", "src", "main", rel);

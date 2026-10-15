@@ -49,10 +49,14 @@ const OCEAN_FONTS = {
     numeral: PRETENDARD,
     body: PRETENDARD,
 };
+/**
+ * Maple: 제목은 고운바탕(한글 명조), 큰 숫자는 Cormorant Garamond, 본문은 Pretendard — 본문까지 명조면 작은 글이 흐렸고,
+ * 예전의 'Inter' 는 받지도 않아 OS 글꼴로 떨어졌다.
+ */
 const MAPLE_FONTS = {
     display: "'Gowun Batang', 'Nanum Myeongjo', 'Noto Serif KR', serif",
     numeral: "'Cormorant Garamond', 'Times New Roman', serif",
-    body: "'Inter', sans-serif",
+    body: PRETENDARD,
 };
 
 const CELESTIAL: ThemeFamily = 'celestial';
@@ -63,11 +67,8 @@ const OCEAN: ThemeFamily = 'ocean';
 const FAMILY_META: Record<ThemeFamily, { label: string; description: string; preview?: Record<string, string> }> = {
     celestial: { label: 'Celestial', description: 'Celestial tarot in gold line-work — arcana, stars and Roman numerals' },
     ocean: { label: 'Ocean', description: 'Liquid glass over a sunlit lagoon — light ripples where you touch' },
-    maple: {
-        label: 'Maple',
-        description: 'Pressed maple leaves on aged paper',
-        preview: { light: '/themes/maple/preview-light.webp', dark: '/themes/maple/preview-dark.webp' },
-    },
+    // 미리보기 그림(눌린 잎과 회중시계)은 2026-10-15 다시 그리며 걷었다 — 이제 다른 갈래처럼 색으로 그린 축소판
+    maple: { label: 'Maple', description: 'An autumn notebook — warm paper, clean cards and one maple red' },
 };
 
 const celestial: DefaultTheme = {
@@ -112,7 +113,8 @@ const celestialDark: DefaultTheme = {
     preview: { cell: '#1E1E1E', event: '#4A3D1C' },
 };
 
-/* ── Maple — 1950년대 식물도감에 끼워 둔 단풍잎 ── */
+/* ── Maple — 가을 노트: 따뜻한 종이 바탕에 깨끗한 카드, 단풍 붉음 하나 (2026-10-15 다시 그림 — 사용자: "maple 이 안 예쁘다")
+ *    예전의 도장 틀·찢은 종이·마스킹테이프·먹 테·놋쇠 판 같은 그림 조각은 걷었다(src/styles/maple/ink.ts). ── */
 
 const maple: DefaultTheme = {
     name: 'maple',
@@ -121,20 +123,19 @@ const maple: DefaultTheme = {
     ...commonStyles,
     fonts: MAPLE_FONTS,
     colors: {
-        background: '#F4EADB',   // 크림 종이
-        primary: '#B5432B',      // 단풍 붉음
-        accent: '#E4B26A',       // 황토
-        surface: '#ECDFC9',
-        text: '#3B2A20',         // 먹
-        textSecondary: '#7C6656',
-        border: '#C8702A',       // 탄 주황
-        success: '#6E8B5B',      // 바랜 세이지
-        error: '#9E3B2E',
-        weekend: '#A24A5B',      // 오디빛
+        background: '#F6F1EA',   // 따뜻한 종이
+        primary: '#B8452B',      // 단풍 붉음
+        accent: '#E2A54D',       // 호박빛
+        surface: '#FFFCF7',      // 카드
+        text: '#2E241F',         // 짙은 밤색
+        textSecondary: '#7A6B60',
+        border: '#D8CABB',       // 옅은 갈색 선
+        success: '#5F8A5A',
+        error: '#A93F2E',
+        weekend: '#B04A5E',
     },
-    preview: { cell: '#EFE3CF', event: '#E4B26A' },
-    paper: '/themes/maple/widget-paper-light.webp',
-    line: '#7C6656',
+    preview: { cell: '#F1EAE0', event: '#E8B76A' },
+    line: '#7A6B60',
 };
 
 const mapleDark: DefaultTheme = {
@@ -144,20 +145,19 @@ const mapleDark: DefaultTheme = {
     ...commonStyles,
     fonts: MAPLE_FONTS,
     colors: {
-        background: '#1F1612',   // 호두나무
-        primary: '#D8703F',      // 잉걸 주황
-        accent: '#E8B45C',
-        surface: '#2A1E18',
-        text: '#EFE3D0',
-        textSecondary: '#A08C78',
-        border: '#D8703F',
-        success: '#8FA57A',
-        error: '#C9584A',
-        weekend: '#D98A8E',
+        background: '#1A1512',   // 밤의 호두나무
+        primary: '#E27B53',      // 잉걸 주황
+        accent: '#E8B567',
+        surface: '#241E1A',
+        text: '#F2E9DE',
+        textSecondary: '#A99A8D',
+        border: '#4A3E35',
+        success: '#8FAE7E',
+        error: '#D96A5C',
+        weekend: '#DE8E96',
     },
-    preview: { cell: '#2A1E18', event: '#5A3A22' },
-    paper: '/themes/maple/widget-paper-dark.webp',
-    line: '#A08C78',
+    preview: { cell: '#241E1A', event: '#5C4027' },
+    line: '#A99A8D',
 };
 
 /**

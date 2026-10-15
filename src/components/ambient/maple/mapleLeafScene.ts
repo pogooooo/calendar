@@ -19,7 +19,7 @@ import { parallax } from "@/lib/parallax";
 type T = typeof THREE_NS;
 type Motion = "full" | "gentle" | "off";
 
-/** 아틀라스 2×2 — 순서가 칸 번호(0~3). 표본(specimenScene)도 같은 그림을 쓴다 */
+/** 아틀라스 2×2 — 순서가 칸 번호(0~3). 테마 고르기의 잎 오브제(objet/maple)도 같은 그림을 쓴다 */
 export const SPRITES = ["leaf-red", "leaf-orange", "leaf-yellow", "leaf-brown"];
 
 const FOV = 30;

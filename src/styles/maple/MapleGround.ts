@@ -1,14 +1,15 @@
 import { createGlobalStyle } from "styled-components";
+import { withAlpha } from "@/styles/color";
 
 /**
- * Maple 의 종이결.
+ * Maple 의 종이 바탕.
  *
- * 화면 위에 얇은 잡음(종이 섬유)과 가장자리 그늘(오래된 종이의 비네트)을 한 겹 얹는다.
- * 패널·모달·사이드바가 저마다 바탕색을 칠하므로 body 배경으로는 종이가 안 보인다 —
- * 그래서 맨 위에 고정된 한 장으로 얹고, 손가락·마우스는 그대로 통과시킨다.
- * 잡음은 SVG feTurbulence 라 그림 파일이 필요 없고 어느 크기에서도 결이 같다.
+ * 따뜻한 종이색 위에 아주 옅은 빛 두 군데(오른쪽 위 호박빛, 왼쪽 아래 단풍빛)와 고운 종이 섬유를 한 겹 얹는다.
+ * 2026-10-15 다시 그리며 비네트(가장자리 그늘)를 걷고 섬유를 반쯤으로 줄였다 — 화면이 바래고 흐려 보였다.
+ * 섬유는 맨 위에 고정된 한 장(손가락·마우스는 통과)이라 패널·카드가 저마다 바탕을 칠해도 같은 결이 보인다.
+ * 잡음은 SVG feTurbulence 라 그림 파일이 필요 없다.
  *
- * 데스크톱 위젯 창은 창 바깥이 투명이라 여기서 빼고, WidgetShell 이 제 종이(G1·G2)를 깐다.
+ * 데스크톱 위젯 창은 창 바깥이 투명이라 여기서 뺀다. 스크롤 막대도 여기서 Maple 의 것(둥근 막대)으로 바꾼다.
  */
 const GRAIN = (r: number, g: number, b: number) =>
     `url("data:image/svg+xml,${encodeURIComponent(
@@ -20,9 +21,10 @@ const GRAIN = (r: number, g: number, b: number) =>
 
 const MapleGround = createGlobalStyle`
     [data-app-shell] {
-        background-image: ${(p) => p.theme.mode === "dark" ? "none" : `
-            radial-gradient(ellipse at 100% 0%, ${p.theme.colors.accent}1C, transparent 50%),
-            radial-gradient(ellipse at 0% 100%, ${p.theme.colors.primary}0C, transparent 48%)`};
+        background-image: ${(p) => p.theme.mode === "dark"
+            ? `radial-gradient(ellipse at 100% 0%, ${p.theme.colors.primary}14, transparent 46%)`
+            : `radial-gradient(ellipse at 100% 0%, ${p.theme.colors.accent}26, transparent 50%),
+            radial-gradient(ellipse at 0% 100%, ${p.theme.colors.primary}0F, transparent 46%)`};
     }
 
     body::after {
@@ -31,16 +33,30 @@ const MapleGround = createGlobalStyle`
         inset: 0;
         pointer-events: none;
         z-index: 2147483647;
-        background-image:
-            ${(p) => p.theme.mode === "dark"
-                ? "radial-gradient(ellipse at 50% 40%, transparent 50%, rgba(0, 0, 0, 0.32) 100%)"
-                : "radial-gradient(ellipse at 50% 40%, transparent 55%, rgba(59, 42, 32, 0.10) 100%)"},
-            ${(p) => p.theme.mode === "dark" ? GRAIN(0.95, 0.85, 0.7) : GRAIN(0.28, 0.18, 0.12)};
-        opacity: ${(p) => p.theme.mode === "dark" ? 0.16 : 0.22};
+        background-image: ${(p) => p.theme.mode === "dark" ? GRAIN(0.95, 0.85, 0.7) : GRAIN(0.3, 0.2, 0.14)};
+        opacity: ${(p) => p.theme.mode === "dark" ? 0.08 : 0.1};
     }
 
     html:has([data-widget]) body::after {
         display: none;
+    }
+
+    /* 스크롤 막대 — 눈금자(GlobalScrollbar) 대신 둥근 막대 하나. 트랙은 비운다 */
+    @media (hover: hover) {
+        html *::-webkit-scrollbar-track {
+            background-image: none;
+            border: none;
+        }
+        html *::-webkit-scrollbar-thumb {
+            border: 3px solid transparent;
+            border-radius: 999px;
+            background-clip: padding-box;
+            background-color: ${(p) => withAlpha(p.theme.colors.text, p.theme.mode === "dark" ? 0.24 : 0.2)};
+        }
+        html *::-webkit-scrollbar-thumb:hover {
+            box-shadow: none;
+            background-color: ${(p) => withAlpha(p.theme.colors.text, 0.36)};
+        }
     }
 `;
 

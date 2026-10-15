@@ -159,9 +159,8 @@ export default function WidgetShell({ kind, title, children }: Props) {
         };
     }, [kind]);
     const surfaceColor = theme?.colors?.surface;
-    // 테마가 종이결(Maple)을 가지면 "테마 바탕"은 색이 아니라 그 종이를 깐다 — 투명도는 종이 겹에 준다
-    const paper = bg.mode === "theme" ? theme?.paper : undefined;
-    const bgStyle = paper ? buildBackground({ ...bg, mode: "glass" }, surfaceColor) : buildBackground(bg, surfaceColor);
+    // "테마 바탕"은 그 테마의 카드색(surface). 예전의 Maple 은 종이결 그림을 깔았다(2026-10-15 걷었다)
+    const bgStyle = buildBackground(bg, surfaceColor);
 
     const bgRef = useRef(bg);
     const surfaceColorRef = useRef(surfaceColor);
@@ -439,7 +438,6 @@ export default function WidgetShell({ kind, title, children }: Props) {
                     </S.FakeGlassLayer>
                 )}
 
-                {paper && <S.PaperLayer $url={paper} $opacity={bg.opacity} />}
                 {bg.mode === "glass" && bg.gloss && <S.GlossOverlay />}
                 {/* 갈래의 바탕 무늬 — 앱의 바탕을 닮게(멈춘 그림, 커서가 들어올 때만 한 번). 유리·색 바탕에서는 옅게 */}
                 <WidgetDecor kind={kind} locked={locked} dim={bg.mode !== "theme"} />

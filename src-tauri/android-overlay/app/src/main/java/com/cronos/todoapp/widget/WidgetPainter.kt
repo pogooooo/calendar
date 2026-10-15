@@ -780,5 +780,4 @@ object Fonts {
     }
     fun orbit(context: Context): Typeface = load(context, "Orbit-Regular.ttf", Typeface.SANS_SERIF)
     fun gowun(context: Context): Typeface = load(context, "GowunBatang-Regular.ttf", Typeface.SERIF)
-    fun cormorant(context: Context): Typeface = load(context, "CormorantGaramond.ttf", Typeface.SERIF)
 }

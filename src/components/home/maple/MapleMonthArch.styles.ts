@@ -1,56 +1,99 @@
 /**
- * MapleMonthArch 의 모양 — 놋쇠 해시계(E3) 위에 먹으로 눈금·바늘을 얹는다.
+ * MapleMonthArch 의 모양 — 명조로 크게 쓴 날짜와 그달의 막대 띠.
+ * 막대 길이는 --load(0~6)로 온다. 색은 글자색을 옅게, 보는 날만 단풍 붉음, 기념일은 호박빛.
  */
 import styled from "styled-components";
 import { withAlpha } from "@/styles/color";
+import { crest, hair } from "@/styles/maple/ink";
+import { MOBILE } from "@/styles/breakpoints";
 
-/** 그림(1024×475) 위로 표식이 삐져나갈 자리를 60 만큼 더 둔다 */
-export const OVERHANG = 60;
+const dark = (p: { theme: { mode: string } }) => p.theme.mode === "dark";
 
-export const Dial = styled.div`
-    position: relative;
-    width: min(100%, 520px);
-    margin: 0 auto;
-    aspect-ratio: 1024 / ${475 + OVERHANG};
+/** 칸을 풀어 날짜(title)·띠(ribbon)가 MapleHomeLayout 머리의 격자 자리에 선다 */
+export const Head = styled.div`
+    display: contents;
+`;
 
-    @media (max-width: 768px) {
-        width: min(100%, 400px);
+export const Title = styled.div`
+    grid-area: title;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+    margin-bottom: 20px;
+
+    .eyebrow {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: ${(p) => p.theme.colors.primary};
     }
 
-    .brass {
+    .date {
+        font-family: ${(p) => p.theme.fonts.display};
+        font-size: 2.25rem;
+        font-weight: 700;
+        line-height: 1.15;
+        color: ${(p) => p.theme.colors.text};
+        white-space: nowrap;
+    }
+
+    ${MOBILE} {
+        margin-bottom: 16px;
+        .date { font-size: 1.75rem; }
+    }
+`;
+
+/** 날마다 막대 하나. 위로 보는 날의 잎이, 아래로 마감 점이 나올 자리를 띄운다 */
+export const Ribbon = styled.div`
+    grid-area: ribbon;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 3px;
+    height: 48px;
+    padding: 0 1px;
+    margin-bottom: 8px;
+
+    i {
+        position: relative;
+        flex: 1 1 0;
+        min-width: 0;
+        max-width: 16px;
+        height: calc(5px + var(--load, 0) * 4px);
+        border-radius: 3px;
+        background-color: ${(p) => hair(p.theme, dark(p) ? 0.16 : 0.12)};
+        transition: background-color 0.3s ease, height 0.3s ease;
+    }
+    i.busy { background-color: ${(p) => hair(p.theme, dark(p) ? 0.42 : 0.34)}; }
+    i.anv { background-color: ${(p) => p.theme.colors.accent}; }
+    i.past { opacity: 0.45; }
+    i.now {
+        min-height: 12px;
+        background-color: ${(p) => p.theme.colors.primary};
+        opacity: 1;
+    }
+    /* 보는 날 위의 잎 */
+    i.now::before {
+        content: "";
         position: absolute;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        width: 100%;
-        height: auto;
-        pointer-events: none;
-        filter: ${(p) => p.theme.mode === "dark" ? "brightness(0.82) saturate(0.9)" : "none"};
+        left: 50%;
+        bottom: calc(100% + 4px);
+        ${crest("13px")}
+        color: ${(p) => p.theme.colors.primary};
+        transform: translateX(-50%) rotate(-12deg);
     }
-
-    .ink {
+    /* 마감이 있는 날 — 막대 밑에 점 */
+    i.due::after {
+        content: "";
         position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        overflow: visible;
+        left: 50%;
+        top: calc(100% + 4px);
+        width: 4px;
+        height: 4px;
+        margin-left: -2px;
+        border-radius: 50%;
+        background-color: ${(p) => withAlpha(p.theme.colors.text, 0.55)};
     }
 
-    /* 눈금·바늘은 먹, 오늘은 단풍 붉음 */
-    .tick { stroke: ${(p) => p.theme.colors.text}; stroke-width: 5; stroke-linecap: round; }
-    .major { stroke: ${(p) => withAlpha(p.theme.colors.text, 0.55)}; stroke-width: 3; }
-    .mkline { stroke: ${(p) => withAlpha(p.theme.colors.text, 0.5)}; stroke-width: 3; }
-    .mkanv { fill: ${(p) => p.theme.colors.primary}; }
-    .mkdue { fill: ${(p) => p.theme.colors.background}; stroke: ${(p) => p.theme.colors.text}; stroke-width: 4; }
-    .nray { stroke: ${(p) => p.theme.colors.primary}; stroke-width: 7; stroke-linecap: round; }
-    .nshadow { stroke: ${withAlpha("#000000", 0.18)}; stroke-width: 9; stroke-linecap: round; }
-    .pivot { fill: ${(p) => p.theme.colors.primary}; stroke: ${(p) => p.theme.colors.background}; stroke-width: 4; }
-    /* 바늘 — 축(512, 452)을 중심으로 돈다. 날을 옮기면 놋쇠 바늘처럼 살짝 넘쳤다가 그 날에 선다 */
-    .needle {
-        transform-box: view-box;
-        transform-origin: 512px 452px;
-        transition: transform 0.7s cubic-bezier(0.34, 1.32, 0.5, 1);
-        html[data-theme-motion="gentle"] & { transition-duration: 0.3s; transition-timing-function: ease-out; }
-    }
-    .ncap { fill: ${(p) => p.theme.colors.primary}; }
+    ${MOBILE} { gap: 2px; height: 42px; }
 `;

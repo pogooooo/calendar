@@ -1,35 +1,9 @@
 /**
- * Maple 의 드롭다운 — 먹선 칸과 종이 쪽지 — 뼈대는 Celestial 과 같으므로 그쪽 것을 통째로 가져오고, 달라지는 것만 덮어쓴다.
+ * Maple 의 드롭다운 — 뼈대는 Celestial 과 같으므로 그쪽 것을 통째로 가져온다.
  * (여기서 이름을 새로 정의하면 그것이 위의 재수출보다 앞선다 — ES 모듈 규칙)
+ *
+ * 드롭다운은 이제 고르기(Select)를 감싸 폭만 정한다(DropdownView 는 Sized 만 쓴다). 여는 칸·차림표의 모양은
+ * MapleSelect.styles 가 맡는다 — 둥근 칸, 12px 카드 차림표, 올리면 옅게 물드는 줄, 고른 줄은 옅은 붉음과 체크.
+ * 예전 드롭다운의 칸·목록(DropdownHeader·List·Item)은 뼈대의 것을 그대로 둔다(쓰는 화면이 없다).
  */
-import styled from "styled-components";
-import * as C from "../celestial/CelestialDropdown.styles";
-import { withAlpha } from "@/styles/color";
-import { hair, inkInput, paperCard } from "@/styles/maple/ink";
-
 export * from "../celestial/CelestialDropdown.styles";
-
-export const DropdownHeader = styled(C.DropdownHeader)`
-    ${inkInput}
-    border-radius: 2px;
-
-    &:hover {
-        border-color: ${(p) => (p.$disabled ? hair(p.theme, 0.45) : hair(p.theme, 0.8))};
-        background-color: ${(p) => withAlpha(p.theme.colors.background, p.theme.mode === "dark" ? 0.4 : 0.6)};
-    }
-`;
-
-export const DropdownList = styled(C.DropdownList)`
-    ${paperCard("3px")}
-    /* 조각이 거는 relative 뒤에 다시 적는다 — 이 창은 떠 있어야 한다 */
-    position: absolute;
-    border-radius: 2px;
-    border-color: ${(p) => hair(p.theme, 0.5)};
-`;
-
-export const DropdownItem = styled(C.DropdownItem)`
-    background-color: ${(p) => (p.$selected ? withAlpha(p.theme.colors.accent, 0.22) : "transparent")};
-    border-left-color: ${(p) => (p.$selected ? p.theme.colors.primary : "transparent")};
-
-    &:hover { background-color: ${(p) => withAlpha(p.theme.colors.accent, 0.18)}; }
-`;

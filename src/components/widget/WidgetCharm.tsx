@@ -7,8 +7,8 @@ import OceanWidgetCharm from './ocean/OceanWidgetCharm';
 const VIEWS = { celestial: CelestialWidgetCharm, maple: MapleWidgetCharm, ocean: OceanWidgetCharm };
 
 /**
- * 위젯의 장식 — 갈래마다 다르다. Maple 만 손잡이 줄 가운데에 오늘의 단풍잎(3D 오브제, 멈춘 한 장, 잠그면 없음).
- * Celestial·Ocean 은 따로 두지 않는다 — 바탕 무늬(WidgetDecor)가 맡는다. Ocean 의 유리 물방울은 걷었다.
+ * 위젯의 장식 — 지금은 세 갈래 모두 따로 두지 않는다. 갈래의 느낌은 바탕 무늬(WidgetDecor)가 맡는다.
+ * (Ocean 의 유리 물방울, Maple 의 3D 수채 잎은 걷었다.) 갈래가 다시 무언가를 얹고 싶을 때를 위해 자리만 남겨 둔다.
  */
 export default function WidgetCharm({ locked = false }: { locked?: boolean }) {
     const View = usePickTheme(VIEWS);

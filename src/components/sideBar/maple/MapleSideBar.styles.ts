@@ -1,131 +1,171 @@
 /**
- * Maple 의 사이드바 — 도감의 색인 면. 뼈대는 Celestial 과 같으므로 그쪽 것을 통째로 가져오고, 달라지는 것만 덮어쓴다.
+ * Maple 의 사이드바 — 가을 노트의 목차. 뼈대는 Celestial 과 같으므로 그쪽 것을 통째로 가져오고, 달라지는 것만 덮어쓴다.
  * (여기서 이름을 새로 정의하면 그것이 위의 재수출보다 앞선다 — ES 모듈 규칙)
  *
- * 금빛 실선·별 대신: 먹 글씨 표제, 씨앗 셋이 달린 짧은 먹선, 표본 이름표 같은 사람 칸, 종이 쪽지 같은 메뉴.
+ * 금빛 실선·별 대신: 붉은 벡터 단풍잎 하나를 단 상표, 카드 한 장의 사람 칸, 옅은 선 하나의 나눔.
+ * 2026-10-15 다시 그리며 씨앗 달린 먹선·잎 화환·도장 문장을 걷었다.
  */
 import styled from "styled-components";
 import * as C from "../celestial/CelestialSideBar.styles";
 import { withAlpha } from "@/styles/color";
-import { crest, hair, leafBullet, paperCard, shortRule, wreathFrame } from "@/styles/maple/ink";
+import { cardShadow, crest, hair, leafBullet } from "@/styles/maple/ink";
 
 export * from "../celestial/CelestialSideBar.styles";
 
-/** 표제: 먹 글씨 CRONOS, 옆에 씨앗 셋 달린 짧은 먹선 */
-export const LogoRow = styled(C.LogoRow)`
-    gap: 12px;
+const dark = (p: { theme: { mode: string } }) => p.theme.mode === "dark";
+/** 고른 줄·눌린 칸의 바탕 — 단풍 붉음을 옅게 */
+const tint = (p: { theme: { mode: string; colors: { primary: string } } }) => withAlpha(p.theme.colors.primary, dark(p) ? 0.16 : 0.1);
 
-    & > hr {
-        border: none;
-        height: 22px;
-        ${shortRule("22px")}
-        mask-position: left center;
-        -webkit-mask-position: left center;
-        background-color: ${(p) => p.theme.colors.text};
-        opacity: 0.7;
-    }
+/** 상표 칸 아래와 메뉴 줄 사이를 좁힌다 — 단추마다 10px 씩 띄우면 목차가 성글었다 */
+export const ProfileWrapper = styled(C.ProfileWrapper)`
+    margin-bottom: 0;
+
+    & > button { margin-top: 2px; }
+`;
+
+export const MenuWrapper = styled(C.MenuWrapper)`
+    & > * { margin-top: 2px; }
+`;
+
+/** 상표: 붉은 단풍잎 하나와 CRONOS. 옆으로 긋던 선은 뺀다 */
+export const LogoRow = styled(C.LogoRow)`
+    gap: 10px;
+    margin-top: 28px;
+    padding-left: 6px;
+
+    & > hr { display: none; }
 `;
 
 export const Logo = styled(C.Logo)`
+    display: flex;
+    align-items: center;
+    gap: 9px;
     color: ${(p) => p.theme.colors.text};
-    letter-spacing: 0.2em;
+    font-size: clamp(0.9rem, 11cqw, 1.3rem);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+
+    &::before {
+        content: "";
+        ${crest("0.95em")}
+        flex-shrink: 0;
+        color: ${(p) => p.theme.colors.primary};
+        transform: rotate(-12deg);
+    }
 `;
 
-/** 사람 칸: 표본 이름표 — 종이 한 장에 먹 하이라인 */
+/** 사람 칸: 카드 한 장 — 얼굴·이름·펼침 꺾쇠 */
 export const UserClickable = styled(C.UserClickable)`
-    ${paperCard("2px")}
-    padding: 7px 9px;
-    border-color: ${(p) => (p.$open ? p.theme.colors.primary : hair(p.theme, 0.35))};
+    gap: 0;
+    padding: 8px 10px;
+    border-radius: 12px;
+    background-color: ${(p) => p.theme.colors.surface};
+    border: 1px solid ${(p) => (p.$open ? withAlpha(p.theme.colors.primary, 0.55) : hair(p.theme, dark(p) ? 0.1 : 0.08))};
+    box-shadow: ${cardShadow};
+    transition: border-color 0.2s ease;
 
-    &:hover { border-color: ${(p) => hair(p.theme, 0.7)}; }
-    &:focus-visible { border-color: ${(p) => p.theme.colors.primary}; }
+    &:hover { border-color: ${(p) => (p.$open ? withAlpha(p.theme.colors.primary, 0.55) : hair(p.theme, 0.18))}; }
+    &:focus-visible {
+        border-color: ${(p) => p.theme.colors.primary};
+        box-shadow: 0 0 0 3px ${(p) => withAlpha(p.theme.colors.primary, 0.18)};
+    }
 
-    /* 기본 얼굴 그림은 먹으로 */
+    /* 기본 얼굴 그림 */
     & > svg { color: ${(p) => p.theme.colors.textSecondary}; }
 `;
 
 export const ProfileImage = styled(C.ProfileImage)`
-    border: 1px solid ${(p) => hair(p.theme, 0.4)};
+    border: 1px solid ${(p) => hair(p.theme, 0.12)};
 `;
 
 export const UserName = styled(C.UserName)`
-    font-family: ${(p) => p.theme.fonts.display};
+    font-size: 0.875rem;
+    font-weight: 600;
 `;
 
-/** 펼친 쪽지 */
+/** 펼친 계정 창 — 카드 한 장, 조금 더 떠 있게 */
 export const ProfilePopup = styled(C.ProfilePopup)`
-    ${paperCard("4px")}
-    /* 조각이 거는 relative 뒤에 다시 적는다 — 이 창은 떠 있어야 한다 */
-    position: absolute;
-    border-color: ${(p) => hair(p.theme, 0.5)};
-    box-shadow: 0 10px 24px ${(p) => withAlpha("#000000", p.theme.mode === "dark" ? 0.5 : 0.16)};
+    background-color: ${(p) => p.theme.colors.surface};
+    border: 1px solid ${(p) => hair(p.theme, dark(p) ? 0.12 : 0.1)};
+    border-radius: 14px;
+    padding: 4px 0 6px;
+    box-shadow: ${(p) => (dark(p)
+        ? "0 2px 6px rgba(0, 0, 0, 0.4), 0 18px 40px -12px rgba(0, 0, 0, 0.6)"
+        : "0 2px 6px rgba(86, 54, 32, 0.06), 0 18px 40px -12px rgba(86, 54, 32, 0.22)")};
 
-    &::after { display: none; }
+    &::before, &::after { display: none; }
 `;
 
-/** 얼굴 둘레에 잎 화환(J7) */
-export const SigilFrame = styled(C.SigilFrame)`
-    margin: 4px;
-
-    &::before {
-        ${wreathFrame("-9px")}
-        background-color: ${(p) => hair(p.theme, 0.85)};
-    }
-`;
-
+/** 얼굴(그림이 없으면 이름의 첫 글자) — 둥글게, 단풍 붉음을 옅게 깐 바탕 */
 export const Sigil = styled(C.Sigil)`
     border-radius: 50%;
     border: none;
+    background-color: ${tint};
     color: ${(p) => p.theme.colors.primary};
-    font-family: ${(p) => p.theme.fonts.display};
+    font-weight: 700;
 `;
 
 export const SigilImage = styled(C.SigilImage)`
     border-radius: 50%;
-    border: none;
+    border: 1px solid ${(p) => hair(p.theme, 0.12)};
 `;
 
+export const PopupName = styled(C.PopupName)`
+    letter-spacing: 0;
+`;
+
+export const PopupEmail = styled(C.PopupEmail)`
+    font-size: 0.8rem;
+`;
+
+/** 이름 아래 나눔: 옅은 선 사이에 작은 잎 하나 */
 export const RuleLine = styled(C.RuleLine)`
-    background-color: ${(p) => hair(p.theme, 0.3)};
+    background-color: ${(p) => hair(p.theme, dark(p) ? 0.14 : 0.1)};
 `;
 
-/** 쪽지 가운데의 별 → 잎 */
 export const RuleStar = styled(C.RuleStar)`
     clip-path: none;
     ${leafBullet(true, "9px")}
-    color: ${(p) => p.theme.colors.primary};
+    color: ${(p) => withAlpha(p.theme.colors.primary, 0.8)};
 `;
 
 export const SectionLabel = styled(C.SectionLabel)`
-    letter-spacing: 0.1em;
+    font-family: inherit;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0;
+    padding: 4px 16px 4px;
 `;
 
 export const PopupDivider = styled(C.PopupDivider)`
-    border-top-color: ${(p) => hair(p.theme, 0.3)};
+    margin: 4px 12px;
+    border-top: 1px solid ${(p) => hair(p.theme, dark(p) ? 0.12 : 0.08)};
 `;
 
-/** 쪽지의 줄: 누르면 황토 물이 든다. 별·밑줄 없음 */
+/** 계정 창의 줄 — 둥근 줄에 옅은 바탕이 깔린다. 별·밑줄 없음 */
 export const PopupItem = styled(C.PopupItem)`
+    width: calc(100% - 12px);
+    margin: 0 6px;
+    padding: 9px 10px;
+    gap: 10px;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    letter-spacing: 0;
     background-image: none;
+    transition: background-color 0.15s ease;
 
     &::before, &::after { display: none; }
 
-    &:hover {
-        background-color: ${(p) => withAlpha(p.$danger ? p.theme.colors.error : p.theme.colors.accent, p.$danger ? 0.12 : 0.2)};
+    &:hover, &:focus-visible {
+        background-color: ${(p) => (p.$danger ? withAlpha(p.theme.colors.error, dark(p) ? 0.16 : 0.08) : hair(p.theme, dark(p) ? 0.08 : 0.05))};
     }
 `;
 
-/** 메뉴 위의 나눔선: 먹 하이라인에 잎 문장 하나 */
+/** 메뉴 위의 나눔선 — 옅은 선 하나 */
 export const Divider = styled(C.Divider)`
-    background: linear-gradient(to right, transparent, ${(p) => hair(p.theme, 0.4)}, transparent);
+    margin: 14px 6px 8px;
+    background: ${(p) => hair(p.theme, dark(p) ? 0.12 : 0.09)};
 
-    i {
-        width: 13px;
-        height: 13px;
-        border: none;
-        transform: translate(-50%, -50%);
-        ${crest("13px")}
-        background-color: ${(p) => p.theme.colors.primary};
-        box-shadow: 0 0 0 4px ${(p) => p.theme.colors.background};
-    }
+    i { display: none; }
 `;
+

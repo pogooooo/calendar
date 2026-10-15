@@ -47,16 +47,6 @@ export const FakeGlassLayer = styled.div<{ $opacity: number }>`
     }
 `;
 
-/** 테마의 종이결(theme.paper). 바탕 투명도 슬라이더가 이 겹의 투명도다 */
-export const PaperLayer = styled.div<{ $url: string; $opacity: number }>`
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    pointer-events: none;
-    background: url('${p => p.$url}') center / 384px auto repeat;
-    opacity: ${p => p.$opacity};
-`;
-
 export const GlossOverlay = styled.div`
     position: absolute;
     inset: 0;

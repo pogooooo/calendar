@@ -4,23 +4,29 @@
  */
 import styled from "styled-components";
 import * as C from "../celestial/CelestialProjectPage.styles";
-import { hair, shortRule } from "@/styles/maple/ink";
+import { hair } from "@/styles/maple/ink";
+import { withAlpha } from "@/styles/color";
 
 export * from "../celestial/CelestialProjectPage.styles";
 
-/** 판 사이의 손잡이: 금빛 알약 → 씨앗 셋 달린 짧은 먹선 */
+/** 두 카드 사이의 손잡이 — 옅은 알약 하나(올리면 붉게). 예전의 잎 달린 먹선은 걷었다 */
 export const Resizer = styled(C.Resizer)`
+    height: 16px;
+    margin: 2px 0;
+
     &::after {
-        width: 74px;
-        height: 12px;
-        border-radius: 0;
-        ${shortRule("12px")}
-        background-color: ${(p) => hair(p.theme, 0.55)};
+        width: 44px;
+        height: 4px;
+        border-radius: 999px;
+        background-color: ${(p) => hair(p.theme, p.theme.mode === "dark" ? 0.18 : 0.14)};
     }
 
-    &:hover::after, &:active::after { background-color: ${(p) => p.theme.colors.primary}; }
+    &:hover::after, &:active::after { background-color: ${(p) => withAlpha(p.theme.colors.primary, 0.65)}; }
 `;
 
+/** 프로젝트가 하나도 없을 때 — 작은 그림 아래 한 줄 */
 export const Empty = styled(C.Empty)`
-    font-family: ${(p) => p.theme.fonts.display};
+    font-family: ${(p) => p.theme.fonts.body};
+    font-size: 14px;
+    line-height: 1.6;
 `;

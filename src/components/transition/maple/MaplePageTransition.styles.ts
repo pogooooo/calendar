@@ -52,14 +52,14 @@ export const Sheet = styled.span<{ $dir: 1 | -1 }>`
     z-index: 60;
     pointer-events: none;
     opacity: 0;
-    border-radius: 2px;
+    border-radius: 14px;
     transform-origin: ${(p) => (p.$dir > 0 ? "100% 100%" : "0% 100%")};
     background-color: ${(p) => p.theme.colors.background};
     background-image:
         linear-gradient(to right, transparent 46px, ${(p) => withAlpha(p.theme.colors.primary, 0.22)} 46px, ${(p) => withAlpha(p.theme.colors.primary, 0.22)} 47px, transparent 47px),
         repeating-linear-gradient(to bottom, transparent 0 31px, ${(p) => withAlpha(p.theme.colors.text, p.theme.mode === "dark" ? 0.07 : 0.06)} 31px 32px);
     box-shadow:
-        ${(p) => (p.$dir > 0 ? "16px" : "-16px")} 0 30px -14px ${(p) => withAlpha(p.theme.mode === "dark" ? "#000000" : "#3B2A20", p.theme.mode === "dark" ? 0.6 : 0.34)},
+        ${(p) => (p.$dir > 0 ? "16px" : "-16px")} 0 30px -14px ${(p) => withAlpha(p.theme.mode === "dark" ? "#000000" : p.theme.colors.text, p.theme.mode === "dark" ? 0.6 : 0.3)},
         0 0 0 1px ${(p) => withAlpha(p.theme.colors.text, 0.08)};
 
     :where(html:not([data-theme-motion="off"])) & {
