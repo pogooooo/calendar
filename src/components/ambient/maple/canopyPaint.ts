@@ -321,12 +321,36 @@ export function paintCanopy(canvas: HTMLCanvasElement, imgs: LeafImage[], o: Can
 }
 
 /**
- * 위젯 한 장의 단풍 가지 — 오른쪽 아래 구석에서 비스듬히 올라오는 작은 가지와 바닥에 진 잎 둘.
- * 위젯은 머리 줄(오른쪽 위에 단추)이 있어 구석 아래에 둔다. 칸이 판을 채우는 위젯(busy)은 작고 옅게, 진 잎 없이.
- * 위젯 종류(seed)마다 잎의 빛깔·각도가 조금씩 다르다.
- * sway: 커서가 들어온 뒤 지난 초 — 잎마다 제 빠르기로 흔들렸다 잦아든다(없으면 멈춘 그림).
+ * 위젯 한 장의 단풍 그늘 — 위젯 위로 단풍나무가 드리워 있다고 치고, 그 잎을 지나온 햇빛이 종이에 떨어진 모습.
+ * 또렷한 잎은 그리지 않는다 (2026-10-16 "위젯의 단풍이 내용을 가린다" — 구석의 수채 가지가 기념일·마감·달력 날짜를 덮었다).
+ * 흐린 단풍잎 꼴의 물든 빛(붉은·주황 잎을 지나온 빛)과 옅은 그늘만 깔아, 글은 늘 평평한 종이 위에서 읽힌다 —
+ * 바다 위젯의 물빛 그물과 같은 몫. 잎 꼴은 흐려도 다섯 갈래가 보일 만큼만 흐린다.
+ * 해와 나무는 오른쪽 위(앱 바탕의 가지와 같은 쪽) — 빛과 그늘이 그쪽에 짙고 왼쪽 아래로 옅어진다.
+ * 어두운 벌에서는 그늘이 보이지 않으므로 물든 빛만, 조금 밝게. 칸이 판을 채우는 위젯(busy)은 더 옅게.
+ * 위젯 종류(seed)마다 잎의 자리·빛깔이 다르다. 잎 하나하나는 흐린 판을 미리 구워 두고(spriteCache) 옮겨 그리기만 한다 —
+ * 흔들리는 2초 동안 장마다 흐림 필터를 다시 돌리지 않게.
+ * sway: 커서가 들어온 뒤 지난 초 — 위의 가지가 흔들린 듯 그늘이 잎마다 조금씩 늦게 일렁였다 잦아든다(없으면 멈춘 그림).
  */
-export function paintTwig(canvas: HTMLCanvasElement, imgs: LeafImage[], o: { width: number; height: number; dpr: number; dark: boolean; busy: boolean; seed: string; sway?: number }) {
+const spriteCache = new Map<string, HTMLCanvasElement>();
+
+function leafSprite(imgs: LeafImage[], img: number, size: number, blur: number, filter: string) {
+    const key = `${img}|${Math.round(size)}|${Math.round(blur * 2)}|${filter}`;
+    const hit = spriteCache.get(key);
+    if (hit) return hit;
+    const pad = Math.ceil(blur * 2.5);
+    const c = document.createElement("canvas");
+    c.width = c.height = Math.ceil(size + pad * 2);
+    const g = c.getContext("2d");
+    if (g) {
+        g.filter = `${filter} blur(${blur.toFixed(1)}px)`;
+        g.drawImage(imgs[img], pad, pad, size, size);
+    }
+    if (spriteCache.size > 160) spriteCache.clear();
+    spriteCache.set(key, c);
+    return c;
+}
+
+export function paintDapple(canvas: HTMLCanvasElement, imgs: LeafImage[], o: { width: number; height: number; dpr: number; dark: boolean; busy: boolean; seed: string; sway?: number }) {
     const W = Math.max(1, Math.round(o.width));
     const H = Math.max(1, Math.round(o.height));
     if (canvas.width !== Math.round(W * o.dpr) || canvas.height !== Math.round(H * o.dpr)) {
@@ -337,65 +361,68 @@ export function paintTwig(canvas: HTMLCanvasElement, imgs: LeafImage[], o: { wid
     if (!g) return;
     g.setTransform(o.dpr, 0, 0, o.dpr, 0, 0);
     g.clearRect(0, 0, W, H);
-    const r = seededRandom(`maple-twig:${o.seed}`);
-    // 가지 크기 — 칸이 가득한 위젯은 구석에 작게, 작은 위젯(짧은 변 260 미만)은 한 단 작게
-    const short = Math.min(W, H);
-    const m = short * (o.busy ? 0.4 : short < 260 ? 0.82 : 1);
+    const r = seededRandom(`maple-dapple:${o.seed}`);
     const dark = o.dark;
-    const at = (x: number, y: number): Pt => [W + x * m, H + y * m];
-    // 흔들림 — 바람이 구석(뿌리)에서 끝으로 번지듯 잎마다 조금씩 늦게, 0.9초쯤에 잦아든다
+    const short = Math.min(W, H), long = Math.max(W, H);
+    const k = o.busy ? 0.6 : 1;
+    // 흔들림 — 바람이 나무(오른쪽 위)에서 번지듯 먼 잎일수록 조금 늦게
     const sway = (i: number, lag: number) => {
         if (o.sway === undefined) return 0;
         const t = Math.max(0, o.sway - lag);
-        return 0.3 * Math.exp(-t * 2.4) * Math.sin(t * (9 + (i % 3) * 1.7) + i * 0.9) * Math.min(1, t * 8);
+        return Math.exp(-t * 2.2) * Math.sin(t * (7 + (i % 4) * 1.3) + i * 1.7) * Math.min(1, t * 6);
     };
 
-    const twig: Pt[] = [at(0.06, -0.1), at(-0.2, -0.14), at(-0.38, -0.3), at(-0.52, -0.46)];
-    g.save();
-    g.globalAlpha = o.busy ? 0.5 : 1;
-    g.shadowColor = dark ? "rgba(0, 0, 0, 0.45)" : "rgba(80, 36, 18, 0.2)";
-    g.shadowBlur = 0.04 * m;
-    g.shadowOffsetX = -0.012 * m;
-    g.shadowOffsetY = 0.03 * m;
-    branch(g, twig, 0.034 * m, 0.008 * m, dark ? "rgba(92, 66, 52, 0.95)" : "rgba(84, 54, 38, 0.9)");
-    const leaves: (CanopyLeaf & { lag: number })[] = [];
-    const n = 5;
-    for (let i = 0; i < n; i++) {
-        const t = 0.18 + (i / n) * 0.78 + r() * 0.05;
-        const { at: p, angle } = bez(twig, Math.min(1, t));
-        const side = i % 2 === 0 ? 1 : -1;
-        let dir = angle + side * (0.8 + r() * 0.5);
-        dir = dir + (-Math.PI / 2 - dir) * 0.15; // 위로 조금 선다
-        leaves.push({
-            img: pickImg(r), at: p, dir,
-            size: (0.27 + r() * 0.1) * m * (1 - t * 0.25),
-            hue: -10 + r() * 16, sat: 0.95 + r() * 0.2, light: dark ? 0.72 + r() * 0.1 : 0.95 + r() * 0.1,
-            blur: 0, alpha: 1, flip: r() < 0.5, lag: t * 0.12,
-        });
-    }
-    const end = bez(twig, 1);
-    for (let j = 0; j < 2; j++) {
-        leaves.push({
-            img: pickImg(r), at: end.at, dir: end.angle + (j - 0.5) * 0.7,
-            size: (0.24 + r() * 0.06) * m, hue: -8 + r() * 14, sat: 1, light: dark ? 0.74 : 1,
-            blur: 0, alpha: 1, flip: r() < 0.5, lag: 0.14,
-        });
-    }
-    leaves.sort((a, b) => a.at[0] - b.at[0]).forEach((l, i) => drawLeaf(g, imgs, l, sway(i, l.lag)));
-
-    // 바닥에 진 잎 둘 — 흔들릴 때 살짝 들썩
-    if (!o.busy) {
-        for (let i = 0; i < 2; i++) {
-            const l: CanopyLeaf = {
+    // 잎 자리 — 어긋난 격자로 판을 고르게 덮되, 오른쪽 위(해·나무)에 가까울수록 짙게
+    const cell = Math.max(64, Math.min(150, short * 0.46));
+    const cols = Math.ceil(W / cell) + 1, rows = Math.ceil(H / cell) + 1;
+    type Spot = { x: number; y: number; near: number; size: number; rot: number; img: number; shade: boolean; hue: number; sat: number; light: number; flip: boolean };
+    const spots: Spot[] = [];
+    for (let gy = 0; gy < rows; gy++) {
+        for (let gx = 0; gx < cols; gx++) {
+            const x = (gx - 0.2 + r() * 0.85) * cell;
+            const y = (gy - 0.2 + r() * 0.85) * cell;
+            const d = Math.hypot((W - x) / long, (y / long) * 1.2);
+            spots.push({
+                x, y,
+                near: Math.max(0, 1 - d),
+                size: cell * (0.95 + r() * 0.55),
+                rot: r() * Math.PI * 2,
                 img: pickImg(r),
-                at: [W * (0.18 + i * 0.3 + r() * 0.12), H - 0.02 * m - r() * 0.03 * m],
-                dir: r() * Math.PI * 2,
-                size: (0.15 + r() * 0.05) * m,
-                hue: -12 + r() * 20, sat: 0.9, light: dark ? 0.62 : 0.94,
-                blur: 0, alpha: dark ? 0.7 : 0.8, flip: r() < 0.5,
-            };
-            drawLeaf(g, imgs, l, sway(i + 7, 0.25) * 0.35);
+                shade: r() < 0.42,
+                hue: -14 + r() * 22, sat: 1 + r() * 0.2, light: 0.95 + r() * 0.15,
+                flip: r() < 0.5,
+            });
         }
     }
-    g.restore();
+
+    const draw = (s: Spot, i: number, sprite: HTMLCanvasElement, alpha: number) => {
+        const lag = (1 - s.near) * 0.3;
+        const w = sway(i, lag);
+        g.save();
+        g.globalAlpha = alpha;
+        g.translate(s.x + w * s.size * 0.07, s.y + w * s.size * 0.03);
+        g.rotate(s.rot + w * 0.16);
+        if (s.flip) g.scale(-1, 1);
+        const sz = sprite.width / o.dpr;
+        g.drawImage(sprite, -sz / 2, -sz / 2, sz, sz);
+        g.restore();
+    };
+
+    // 그늘 — 잎이 해를 가린 자리 (밝은 종이에서만). 그늘이 더 흐리다
+    if (!dark) {
+        spots.forEach((s, i) => {
+            if (!s.shade) return;
+            const blur = s.size * 0.075;
+            const sprite = leafSprite(imgs, s.img, s.size * o.dpr, blur * o.dpr, "hue-rotate(-10deg) saturate(1.15) brightness(0.5)");
+            draw(s, i, sprite, (0.022 + 0.06 * s.near) * k);
+        });
+    }
+    // 물든 빛 — 붉은·주황 잎을 지나온 햇빛
+    spots.forEach((s, i) => {
+        if (s.shade && !dark) return;
+        const blur = s.size * 0.05;
+        const filter = `hue-rotate(${s.hue.toFixed(0)}deg) saturate(${s.sat.toFixed(2)}) brightness(${(dark ? s.light * 1.15 : s.light).toFixed(2)})`;
+        const sprite = leafSprite(imgs, s.img, s.size * o.dpr, blur * o.dpr, filter);
+        draw(s, i, sprite, (dark ? 0.045 + 0.11 * s.near : 0.06 + 0.17 * s.near) * k);
+    });
 }

@@ -9,7 +9,7 @@
 import styled from "styled-components";
 import * as C from "../celestial/CelestialWidgetShell.styles";
 import { withAlpha } from "@/styles/color";
-import { hair, inkChip, inkFill, leafBullet, stampButton } from "@/styles/maple/ink";
+import { hair, inkChip, stampButton, watercolorLeaf } from "@/styles/maple/ink";
 
 export * from "../celestial/CelestialWidgetShell.styles";
 
@@ -35,17 +35,25 @@ export const TopBar = styled(C.TopBar)`
     opacity: 0.55;
 `;
 
-/** 손잡이 — 작은 단풍잎(평소엔 옅은 글자색, 올리면 단풍 붉음) */
+/**
+ * 손잡이 — 수채 단풍잎 하나. 위젯의 단풍 표식이다(판 위에는 또렷한 잎을 두지 않으므로 — MapleWidgetDecor).
+ * 올리면 바람에 살짝 돌며 커진다. 위젯 화면은 바탕색을 지우지만 그림(background-image)은 남는다
+ */
 export const Gem = styled(C.Gem)`
-    ${leafBullet(true, "12px")}
-    ${(p) => inkFill(p.$active ? p.theme.colors.primary : hair(p.theme, dark(p) ? 0.45 : 0.35))}
+    ${watercolorLeaf("red", "16px")}
+    border: none;
+    transform: none;
+    box-shadow: none;
     opacity: 1;
-    rotate: -12deg;
+    rotate: -16deg;
+    transition: rotate 0.35s ease, scale 0.2s ease;
 
     &:hover {
         border: none;
         box-shadow: none;
-        ${(p) => inkFill(p.$danger ? p.theme.colors.error : p.theme.colors.primary)}
+        background: url("/themes/maple/leaf-red.webp") center / contain no-repeat;
+        rotate: 8deg;
+        scale: 1.12;
     }
 `;
 

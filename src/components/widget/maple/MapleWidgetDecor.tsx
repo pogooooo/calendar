@@ -1,19 +1,20 @@
 "use client";
 /**
- * Maple 위젯의 바탕 무늬 — 앱의 단풍 장면을 닮게: 오른쪽 아래 구석에서 비스듬히 올라오는 수채 단풍 가지 한 줄기와
- * 바닥에 진 잎 둘(paintTwig — 앱 바탕의 단풍 가지와 같은 수채 잎 넷), 위쪽에서 비치는 따뜻한 빛 한 겹.
- * (사용자: "다른 위젯에서도 테마의 느낌이 잘 보이게 — 오션처럼 물결이 보인다던가" · "단풍 테마가 단풍의 느낌이 없는데")
- * 멈춘 그림이다 — 위젯은 투명 창이라 끝없이 움직이면 깜빡인다(BUGS 1.2.0). 커서가 위젯에 들어올 때만 2초쯤, 잎이 저마다의
- * 빠르기로 바람에 흔들렸다 잦아든다(가지 뿌리 쪽 잎부터 차례로 — 캔버스를 잎마다 다시 그린다). 움직임 '끄기'면 흔들리지 않는다.
- * 칸이 판을 채우는 위젯(달력·주간, busy)에서는 가지를 작고 옅게, 진 잎 없이 — 날짜 숫자 뒤에 잎이 겹치면 읽기 어렵다.
+ * Maple 위젯의 바탕 무늬 — 단풍 그늘: 위젯 위로 단풍나무가 드리워 있다고 치고, 그 잎을 지나온 햇빛이 종이에 떨어진 모습
+ * (paintDapple — 흐린 단풍잎 꼴의 물든 빛과 옅은 그늘, 해와 나무는 오른쪽 위), 위쪽에서 비치는 따뜻한 빛 한 겹.
+ * 또렷한 잎은 판 위에 두지 않는다 — 글은 늘 평평한 종이 위에서 읽힌다. 단풍의 표식은 머리 줄의 손잡이(수채 단풍잎 하나)가 맡는다.
+ * (사용자: "다른 위젯에서도 테마의 느낌이 잘 보이게 — 오션처럼 물결이 보인다던가" · "위젯의 단풍이 내용을 가리는데 다른 디자인으로")
+ * 멈춘 그림이다 — 위젯은 투명 창이라 끝없이 움직이면 깜빡인다(BUGS 1.2.0). 커서가 위젯에 들어올 때만 2초쯤, 위의 가지가
+ * 흔들린 듯 그늘이 잎마다 조금씩 늦게 일렁였다 잦아든다(캔버스를 다시 그린다). 움직임 '끄기'면 일렁이지 않는다.
+ * 칸이 판을 채우는 위젯(달력·주간, busy)에서는 더 옅게.
  * 2026-10-15: 수채 잎 그림·먹 카드 테·수채 가지 그림 → 벡터 잎 → 다시 수채 잎 가지(코드로 엮은 것)로.
- * 2026-10-16: 가지 통째로 한 번 기울던 흔들림(CSS)을 잎마다의 흔들림으로.
+ * 2026-10-16: 오른쪽 아래의 수채 가지가 기념일·마감·달력 날짜를 덮어 단풍 그늘로 바꿨다.
  */
 import { useEffect, useRef } from "react";
 import { useTheme } from "styled-components";
 import * as S from "./MapleWidgetDecor.styles";
 import useThemeMotion from "@/hooks/useThemeMotion";
-import { loadCanopyLeaves, paintTwig, type LeafImage } from "@/components/ambient/maple/canopyPaint";
+import { loadCanopyLeaves, paintDapple, type LeafImage } from "@/components/ambient/maple/canopyPaint";
 import type { WidgetKind } from "@/store/useWidgetStore";
 
 /** 흔들림이 잦아드는 데 걸리는 시간(초) */
@@ -36,7 +37,7 @@ export default function MapleWidgetDecor({ kind, busy }: { kind: WidgetKind; loc
             if (!imgs || disposed) return;
             const box = canvas.getBoundingClientRect();
             if (box.width < 2 || box.height < 2) return;
-            paintTwig(canvas, imgs, { width: box.width, height: box.height, dpr: Math.min(2, window.devicePixelRatio || 1), dark, busy, seed: kind, sway });
+            paintDapple(canvas, imgs, { width: box.width, height: box.height, dpr: Math.min(2, window.devicePixelRatio || 1), dark, busy, seed: kind, sway });
             canvas.dataset.ready = "";
         };
         loadCanopyLeaves().then((l) => { imgs = l; draw(); }).catch(() => {});

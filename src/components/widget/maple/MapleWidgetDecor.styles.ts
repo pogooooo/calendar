@@ -1,6 +1,6 @@
 /**
  * MapleWidgetDecor 의 모양 — 위젯 판 전체에 깔리는 한 겹(z-index 0, 내용 뒤).
- * 가지는 캔버스 한 장(paintTwig)에 그린다. 커서가 들어올 때의 흔들림도 그 캔버스가 잎마다 다시 그린다(MapleWidgetDecor).
+ * 단풍 그늘은 캔버스 한 장(paintDapple)에 그린다. 커서가 들어올 때의 일렁임도 그 캔버스가 다시 그린다(MapleWidgetDecor).
  */
 import styled from "styled-components";
 import { withAlpha } from "@/styles/color";
