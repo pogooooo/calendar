@@ -23,7 +23,7 @@ import kotlin.math.hypot
 import kotlin.math.max
 import kotlin.math.min
 
-/**
+    /**
  * 위젯 화가(WidgetPainter)가 쓰는 붓 한 벌 — 테마 갈래마다 하나.
  *
  * 위젯의 짜임(줄 목록·주간 띠·월간 격자·게이지)은 갈래가 달라도 같다. 다른 것은 글꼴과 장식이다:
@@ -79,6 +79,18 @@ abstract class WidgetStyle(protected val context: Context, protected val density
     /** 날짜 넘김 화살. cx 는 화살 끝(바깥쪽), right 면 오른쪽을 가리킨다 */
     abstract fun dayArrow(c: Canvas, cx: Float, cy: Float, sizeDp: Float, color: Int, right: Boolean)
 
+
+    /**
+     * 기념일까지의 고리 — frac 은 지난 기념일에서 지금까지 온 만큼(0..1, 1 이면 오늘). 고리 안쪽은 비워 둔다(화가가 D-day 를 얹는다).
+     * 갈래마다 꼴이 다르다: Celestial 은 열두 달 눈금의 궤도와 지금 자리의 초승달, Maple 은 단풍잎 화환(지나온 만큼 물든다),
+     * Ocean 은 물 고리와 방울. 기본은 옅은 원 위의 진한 호.
+     */
+    open fun countdownRing(c: Canvas, cx: Float, cy: Float, r: Float, frac: Float, pal: Palette) {
+        c.drawCircle(cx, cy, r, stroke(Palette.withAlpha(pal.gold, 0.22f), 2f))
+        if (frac > 0f) c.drawArc(RectF(cx - r, cy - r, cx + r, cy + r), -90f, 360f * frac.coerceAtMost(1f), false,
+            stroke(pal.gold, 2f).apply { strokeCap = Paint.Cap.ROUND })
+    }
+
     companion object {
         fun of(context: Context, family: String, density: Float): WidgetStyle =
             when (family) {
@@ -89,7 +101,7 @@ abstract class WidgetStyle(protected val context: Context, protected val density
     }
 }
 
-/**
+    /**
  * 별·달의 꼴 — Celestial 의 말(직선·달·별·혼천의만, 마름모·사선 없음). 웹의 CelestialOrnaments 와 같은 곡선이다.
  */
 object Sky {
@@ -127,7 +139,7 @@ object Sky {
     }
 }
 
-/**
+    /**
  * Celestial — 금선 두 겹 테 안의 별하늘. 데스크톱 위젯(CelestialWidgetDecor)과 같은 말:
  * 옅은 별(작은 점), 겉테·속테, 속테 양옆 가운데의 네 갈래 별, 위 테에 꿴 달의 위상 줄.
  * 표식은 마름모 대신 달 — 끝낸 것은 찬 점(보름), 안 끝낸 것은 빈 고리(삭). 사선은 쓰지 않는다.
@@ -192,6 +204,28 @@ open class CelestialStyle(context: Context, density: Float) : WidgetStyle(contex
         c.drawPath(Sky.star4(cx + stripW / 2f + sg + sr, cy, sr), star)
     }
 
+    override fun countdownRing(c: Canvas, cx: Float, cy: Float, r: Float, frac: Float, pal: Palette) {
+        // 궤도 — 옅은 금선 원에 열두 달 눈금, 지나온 만큼 진한 호, 맨 위(지난 기념일)에 네 갈래 별, 지금 자리에 초승달
+        c.drawCircle(cx, cy, r, stroke(Palette.withAlpha(pal.gold, if (pal.dark) 0.3f else 0.34f), 1f))
+        val tick = stroke(Palette.withAlpha(pal.gold, 0.55f), 0.9f)
+        for (i in 1 until 12) {
+            val a = -PI / 2 + 2 * PI * i / 12
+            val ca = cos(a).toFloat(); val sa = kotlin.math.sin(a).toFloat()
+            c.drawLine(cx + ca * (r - dp(2.2f)), cy + sa * (r - dp(2.2f)), cx + ca * (r + dp(2.2f)), cy + sa * (r + dp(2.2f)), tick)
+        }
+        val f = frac.coerceIn(0f, 1f)
+        if (f > 0f) c.drawArc(RectF(cx - r, cy - r, cx + r, cy + r), -90f, 360f * f, false, stroke(pal.gold, 1.6f))
+        c.drawPath(Sky.star4(cx, cy - r, dp(3.4f)), fill(pal.gold))
+        if (f in 0.02f..0.98f) {
+            val a = -PI / 2 + 2 * PI * f
+            val mx = cx + cos(a).toFloat() * r; val my = cy + kotlin.math.sin(a).toFloat() * r
+            val mr = dp(3.6f)
+            c.drawCircle(mx, my, mr + dp(1.2f), fill(pal.bg))
+            c.drawCircle(mx, my, mr, stroke(pal.gold, 0.9f))
+            Sky.lit(mx, my, mr, 0.32f)?.let { c.drawPath(it, fill(pal.gold)) }
+        }
+    }
+
     override fun bullet(c: Canvas, cx: Float, cy: Float, rDp: Float, color: Int, filled: Boolean, strokeDp: Float) {
         // 찬 점(보름) — 끝낸 것, 빈 고리(삭) — 안 끝낸 것. 웹의 dotMark·ringMark 와 같은 말
         val r = dp(rDp) * 0.8f
@@ -234,7 +268,7 @@ open class CelestialStyle(context: Context, density: Float) : WidgetStyle(contex
     }
 }
 
-/**
+    /**
  * Maple — 단풍. 데스크톱 위젯(MapleWidgetDecor·paintDapple)과 같은 말: 카드색 판에 옅은 선 테두리, 위에서 비치는 따뜻한 빛
  * (오른쪽 위 호박빛·왼쪽 아래 단풍빛), 그 위로 단풍 그늘(단풍잎을 지나온 물든 빛과 옅은 그늘 — 또렷한 잎은 글 위에 두지 않는다).
  * 잎은 앱과 같은 수채 단풍 넷(res 의 maple_leaf_*, 192px)을 흐려 쓴다. 표식(글머리·문장)은 또렷한 벡터 잎이다.
@@ -401,6 +435,38 @@ class MapleStyle(context: Context, density: Float) : WidgetStyle(context, densit
             0f, 0f, 0f, 1f, 0f,
         ))
     }
+
+    /**
+     * 단풍잎 화환 — 고리를 따라 작은 벡터 잎이 엇갈려 엮이고, 지난 기념일에서 지금까지 온 만큼(맨 위에서 시계 방향) 물든다:
+     * 호박빛에서 단풍 붉음으로 짙어지고, 아직 오지 않은 자리는 옅은 윤곽. 지금 자리의 잎은 조금 크게. 오늘이면 다 물든다.
+     */
+    override fun countdownRing(c: Canvas, cx: Float, cy: Float, r: Float, frac: Float, pal: Palette) {
+        val n = (2.0 * PI * r / dp(8.6f)).toInt().coerceIn(14, 28)
+        val size = (2.0 * PI * r / n).toFloat() * 1.12f
+        val f = frac.coerceIn(0f, 1f)
+        val lit = (f * n).toInt().coerceAtMost(n)
+        val faint = Palette.withAlpha(pal.ink, if (pal.dark) 0.24f else 0.18f)
+        for (i in 0 until n) {
+            val t = (i + 0.5f) / n
+            val a = -PI / 2 + 2 * PI * t
+            val x = cx + cos(a).toFloat() * r
+            val y = cy + kotlin.math.sin(a).toFloat() * r
+            val on = i < lit || f >= 1f
+            val now = i == lit && f < 1f
+            // 잎은 고리의 접선을 따라 누우며 안팎으로 엇갈린다 — 엮은 화환처럼
+            val turn = Math.toDegrees(a).toFloat() + 90f + (if (i % 2 == 0) -32f else 32f)
+            val color = if (on) mix(amber(pal), pal.gold, (i / (n - 1f)).coerceIn(0f, 1f)) else faint
+            leaf(c, x, y, if (now) size * 1.25f else size, turn, if (now) pal.gold else color, filled = on || now, strokePx = dp(0.8f))
+        }
+    }
+
+    /** 두 빛깔 사이 (0 이면 a, 1 이면 b) */
+    private fun mix(a: Int, b: Int, t: Float): Int = Color.argb(
+        (Color.alpha(a) + (Color.alpha(b) - Color.alpha(a)) * t).toInt(),
+        (Color.red(a) + (Color.red(b) - Color.red(a)) * t).toInt(),
+        (Color.green(a) + (Color.green(b) - Color.green(a)) * t).toInt(),
+        (Color.blue(a) + (Color.blue(b) - Color.blue(a)) * t).toInt(),
+    )
 
     /** 벡터 단풍잎 하나 — 가운데(cx, cy)·크기(상자 한 변)·돌림. 윤곽 잎의 선 굵기는 strokePx(화면 px) */
     private fun leaf(c: Canvas, cx: Float, cy: Float, size: Float, turn: Float, color: Int, filled: Boolean, strokePx: Float = 0f) {

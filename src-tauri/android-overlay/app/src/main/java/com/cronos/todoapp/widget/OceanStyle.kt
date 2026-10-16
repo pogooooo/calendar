@@ -12,6 +12,7 @@ import android.graphics.PorterDuffXfermode
 import android.graphics.RectF
 import android.graphics.Shader
 import android.graphics.Typeface
+import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.hypot
@@ -20,7 +21,7 @@ import kotlin.math.min
 import kotlin.math.pow
 import kotlin.math.sin
 
-/**
+    /**
  * Ocean — 얕은 물 속을 유리 너머로 보는 듯. 데스크톱 위젯(OceanWidgetDecor)과 같은 말: 물빛(위는 청록, 아래로 얕아져 모래빛),
  * 물바닥에 어른거리는 빛 그물, 위에서 비스듬히 내려오는 햇살. 홈 위젯은 멈춘 그림이다 — 끝없이 도는 그림은 배터리를 먹는다.
  * 빛 그물은 앱의 물 셰이더(OceanCaustics)와 같은 식으로 한 장을 그린다(데스크톱의 caustic.ts 와 같다).
@@ -157,6 +158,20 @@ class OceanStyle(context: Context, density: Float) : CelestialStyle(context, den
             }, p)
         }
         return s
+    }
+
+    override fun countdownRing(c: Canvas, cx: Float, cy: Float, r: Float, frac: Float, pal: Palette) {
+        // 물 고리 — 옅은 물빛 고리에 지나온 만큼 차오른 물(둥근 끝), 지금 자리에 빛이 맺힌 방울 하나
+        val ring = RectF(cx - r, cy - r, cx + r, cy + r)
+        c.drawCircle(cx, cy, r, stroke(Palette.withAlpha(pal.gold, if (pal.dark) 0.2f else 0.18f), 3.2f))
+        val f = frac.coerceIn(0f, 1f)
+        if (f > 0f) c.drawArc(ring, -90f, 360f * f, false, stroke(Palette.withAlpha(pal.gold, 0.85f), 3.2f).apply { strokeCap = Paint.Cap.ROUND })
+        val a = -PI / 2 + 2 * PI * f
+        val bx = cx + cos(a).toFloat() * r; val by = cy + sin(a).toFloat() * r
+        val br = dp(4.4f)
+        c.drawCircle(bx, by, br, fill(Palette.withAlpha(if (pal.dark) 0xFF0E2A2E.toInt() else Color.WHITE, 0.92f)))
+        c.drawCircle(bx, by, br, stroke(pal.gold, 1.1f))
+        c.drawCircle(bx - br * 0.35f, by - br * 0.35f, br * 0.28f, fill(Palette.withAlpha(Color.WHITE, 0.9f)))
     }
 
     override fun todayMark(c: Canvas, cx: Float, cy: Float, rDp: Float, pal: Palette) {

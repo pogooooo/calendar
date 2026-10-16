@@ -539,6 +539,12 @@ class WidgetPainter(
     }
 
     // ── VII. 기념일 ───────────────────────────────────────────────
+    /**
+     * 기념일 — 다가오는 기념일 하나를 고리로: 지난 기념일에서 지금까지 온 만큼 고리가 차오른다(꼴은 갈래의 붓 —
+     * Maple 단풍잎 화환·Celestial 궤도와 달·Ocean 물 고리). 고리 안에는 기념일 아이콘과 D-day, 고리 아래에 이름과 날짜.
+     * 넓은 위젯은 고리 오른쪽에 이름·날짜, 그 아래 다음 기념일 둘(모자라면 최근 지난 것).
+     * 2026-10-16 다시 짰다 — 예전엔 큰 "D-12" 양옆에 표식, 이름 앞에 작은 아이콘을 늘어놓아 어수선했다(사용자: "모바일 기념일 위젯을 좀 예쁘게").
+     */
     private fun anniversary(c: Canvas, s: Snapshot, w: Float, h: Float, bmp: Bitmap): Painted {
         val upcoming = s.anniversaries.sortedBy { it.daysUntilNext(now) }
         val wide = w >= dp(200f)
@@ -550,65 +556,86 @@ class WidgetPainter(
         }
         val first = upcoming[0]
         val dLeft = first.daysUntilNext(now)
-        val dText = if (dLeft == 0) s.label("dToday") else s.fmt("dday", "n" to dLeft)
+        val since = first.daysSinceLast(now)
+        val frac = if (dLeft == 0) 1f else since.toFloat() / (since + dLeft).coerceAtLeast(1)
+        val padX = dp(PAD_X)
+        val nameP = text(13f, pal.ink, orbit, style.titleSpacing * 0.4f)
+        val dateP = text(9.5f, pal.muted, tabular = true)
+        val dateText = s.formatDate(first.nextDate(now))
+
         if (!wide) {
-            header(c, w, s.label("anniversary"), s.formatDate(first.nextDate(now), "shortDate", "M·d"), divider = false)
+            // 아래 글 두 줄의 자리를 빼고 남는 곳에 고리
+            val textBlock = dp(32f)
+            val room = min(w - 2 * padX, h - dp(PAD_T) - dp(PAD_B) - textBlock)
+            val r = (room / 2f - dp(5f)).coerceAtLeast(dp(15f))
             val cx = w / 2f
-            val bigP = text(26f, pal.goldText, style.numeral, 0.08f)
-            val cy = h / 2f - dp(6f)
-            val bw = bigP.measureText(dText)
-            c.drawText(dText, cx - bw / 2f, baseline(bigP, cy), bigP)
-            bullet(c, cx - bw / 2f - dp(10f), cy, 3f, pal.gold, false)
-            bullet(c, cx + bw / 2f + dp(10f), cy, 3f, pal.gold, false)
-            val np = text(12.5f, pal.ink, sansMedium)
-            val nameY = cy + dp(21f)
-            val iconW = dp(14f)
-            val name = ellipsize(first.title, np, w - dp(2 * PAD_X) - iconW)
-            val nw = np.measureText(name) + iconW
-            icon(c, first.icon, cx - nw / 2f + dp(5f), nameY - dp(4f), dp(5.5f), pal.goldText)
-            c.drawText(name, cx - nw / 2f + iconW, baseline(np, nameY), np)
-            val dp2 = text(9f, pal.muted, orbit, 0.16f)
-            drawCenter(c, s.formatDate(first.nextDate(now)), cx, baseline(dp2, nameY + dp(14f)), dp2)
-            rail(c, dp(PAD_X), w - dp(PAD_X), h - dp(PAD_B) - dp(2f), 1f - dLeft / 365f)
+            val cy = dp(PAD_T) + dp(5f) + r
+            style.countdownRing(c, cx, cy, r, frac, pal)
+            ringCenter(c, s, first, dLeft, cx, cy, r)
+            val nameY = cy + r + dp(15f)
+            drawCenter(c, ellipsize(first.title, nameP, w - 2 * padX), cx, baseline(nameP, nameY), nameP)
+            drawCenter(c, ellipsize(dateText, dateP, w - 2 * padX), cx, baseline(dateP, nameY + dp(14f)), dateP)
             return Painted(bmp)
         }
-        val y0 = header(c, w, s.label("anniversary"), s.label("upcoming") + " ", "${upcoming.size}")
-        val colW = (w - dp(2 * PAD_X)) * 0.45f
-        val x0 = dp(PAD_X)
-        val bigP = text(24f, pal.goldText, style.numeral, 0.08f)
-        val cy = y0 + (h - dp(PAD_B) - y0) / 2f
-        c.drawText(ellipsize(dText, bigP, colW), x0, baseline(bigP, cy - dp(12f)), bigP)
-        val np = text(12.5f, pal.ink, sansMedium)
-        icon(c, first.icon, x0 + dp(5f), cy + dp(7f), dp(5.5f), pal.goldText)
-        c.drawText(ellipsize(first.title, np, colW - dp(14f)), x0 + dp(14f), baseline(np, cy + dp(9f)), np)
-        val dp2 = text(9f, pal.muted, orbit, 0.14f)
-        c.drawText(ellipsize(s.formatDate(first.nextDate(now)), dp2, colW), x0, baseline(dp2, cy + dp(23f)), dp2)
-        // 세로 실선
-        val vx = x0 + colW + dp(10f)
-        c.drawLine(vx, y0 + dp(4f), vx, h - dp(PAD_B) - dp(4f), stroke(pal.line, 1f))
-        // 오른쪽 목록: 다가오는 것 다음 둘, 모자라면 최근 지난 것으로
+
+        val r = ((h - dp(PAD_T) - dp(PAD_B)) / 2f - dp(5f)).coerceIn(dp(18f), w * 0.2f)
+        val cx = padX + r + dp(5f)
+        val cy = h / 2f
+        style.countdownRing(c, cx, cy, r, frac, pal)
+        ringCenter(c, s, first, dLeft, cx, cy, r)
+        val tx = cx + r + dp(18f)
+        val tw = w - padX - tx
+        val nameBig = text(15f, pal.ink, orbit, style.titleSpacing * 0.4f)
+        val top = dp(PAD_T) + dp(6f)
+        c.drawText(ellipsize(first.title, nameBig, tw), tx, baseline(nameBig, top + dp(8f)), nameBig)
+        c.drawText(ellipsize(dateText, dateP, tw), tx, baseline(dateP, top + dp(25f)), dateP)
+        val ruleY = top + dp(36f)
+        c.drawLine(tx, ruleY, w - padX, ruleY, stroke(pal.line, 1f))
+        // 다음 기념일 — 다가오는 것 다음 둘, 모자라면 최근 지난 것으로
         val rest = ArrayList<Pair<Snapshot.Anniversary, Int>>()
         for (a in upcoming.drop(1)) rest += a to a.daysUntilNext(now)
-        if (rest.size < 3) for (a in s.anniversaries.sortedBy { it.daysSinceLast(now) }) {
+        if (rest.size < 2) for (a in s.anniversaries.sortedBy { it.daysSinceLast(now) }) {
             if (a === first || rest.any { it.first === a }) continue
             if (a.daysSinceLast(now) in 1..60) rest += a to -a.daysSinceLast(now)
-            if (rest.size >= 3) break
+            if (rest.size >= 2) break
         }
-        val listX = vx + dp(10f)
-        val rows = min(rest.size, floor(((h - dp(PAD_B) - y0) / dp(22f)).toDouble()).toInt())
-        val listTop = cy - rows * dp(22f) / 2f
+        val rowH = dp(20f)
+        val rows = min(rest.size, floor(((h - dp(PAD_B) - ruleY - dp(4f)) / rowH).toDouble()).toInt()).coerceIn(0, 2)
         for (i in 0 until rows) {
             val (a, d) = rest[i]
-            val rcy = listTop + dp(22f) * i + dp(11f)
-            val ddP = text(10f, if (d < 0) pal.muted else pal.goldText, orbit, 0.12f, tabular = true)
-            val ddText = if (d < 0) s.fmt("dPast", "n" to -d) else if (d == 0) s.label("dToday") else s.fmt("dday", "n" to d)
-            c.drawText(ddText, listX, baseline(ddP, rcy), ddP)
-            val ix = listX + dp(36f)
-            icon(c, a.icon, ix + dp(5f), rcy - dp(0.5f), dp(5f), if (d < 0) pal.muted else pal.goldText)
-            val bp = text(12f, if (d < 0) pal.muted else pal.ink)
-            c.drawText(ellipsize(a.title, bp, w - dp(PAD_X) - ix - dp(14f)), ix + dp(14f), baseline(bp, rcy), bp)
+            val rcy = ruleY + dp(4f) + rowH * i + rowH / 2f
+            val past = d < 0
+            val ddP = text(10.5f, if (past) pal.muted else pal.goldText, style.numeral, 0.04f, tabular = true)
+            val ddText = if (past) s.fmt("dPast", "n" to -d) else if (d == 0) s.label("dToday") else s.fmt("dday", "n" to d)
+            c.drawText(ddText, tx, baseline(ddP, rcy), ddP)
+            val nx = tx + dp(44f)
+            val bp = text(12f, if (past) pal.muted else pal.ink)
+            c.drawText(ellipsize(a.title, bp, w - padX - nx), nx, baseline(bp, rcy), bp)
         }
         return Painted(bmp)
+    }
+
+    /** 고리 안 — 기념일 아이콘(위)과 D-day. "D-" 는 작게, 날 수는 크게. 오늘이면 그날의 말 한 마디 */
+    private fun ringCenter(c: Canvas, s: Snapshot, a: Snapshot.Anniversary, dLeft: Int, cx: Float, cy: Float, r: Float) {
+        icon(c, a.icon, cx, cy - r * 0.42f, r * 0.15f, pal.goldText)
+        val inner = r * 1.5f
+        if (dLeft == 0) {
+            val tp = text(1f, pal.goldText, style.numeral, 0.04f).apply { textSize = r * 0.42f }
+            val label = s.label("dToday")
+            while (tp.measureText(label) > inner && tp.textSize > dp(8f)) tp.textSize *= 0.92f
+            drawCenter(c, label, cx, baseline(tp, cy + r * 0.12f), tp)
+            return
+        }
+        val big = text(1f, pal.goldText, style.numeral, 0.02f, tabular = true).apply { textSize = r * 0.66f }
+        val small = text(1f, pal.goldText, style.numeral, 0.02f).apply { textSize = r * 0.32f }
+        val num = "$dLeft"
+        // 세 자리 이상이면 고리 안에 들어가게 줄인다
+        while (small.measureText("D-") + big.measureText(num) > inner && big.textSize > dp(9f)) { big.textSize *= 0.92f; small.textSize *= 0.92f }
+        val total = small.measureText("D-") + big.measureText(num)
+        val x0 = cx - total / 2f
+        val base = baseline(big, cy + r * 0.14f)
+        c.drawText("D-", x0, base, small)
+        c.drawText(num, x0 + small.measureText("D-"), base, big)
     }
 
     /** 기념일 아이콘 (AnniversaryIcons 의 키). 선 하나로 작게 */
