@@ -1,15 +1,16 @@
 /**
  * 바다의 월간 — 칸마다 상자를 두지 않는다. 유리 한 장 위에 숫자가 떠 있고, 주와 주 사이에만 가는 빛줄(깎아 낸 듯한 두 겹 선)이 지난다.
  * (Celestial: 금빛 실선이 가로세로로 칸을 가두는 격자, Maple: 종이 원장)
- *   - 고른 날·올린 날은 칸 안쪽에 둥근 빛 판이 고이고, 오늘은 숫자가 빛을 머금은 청록 동그라미가 되어 천천히 숨 쉰다
- *   - 일정 막대는 옅게 물든 면에 앞쪽 색 띠, 여러 날이면 칸을 건너 끊김 없이 이어진다
+ *   - 고른 날·올린 날은 칸 안쪽에 둥근 빛 판이 고인다. 오늘 칸에는 하루가 흐른 만큼 물이 차 있고(OceanMonthDecor 의 물때),
+ *     숫자는 알약 없이 깊은 물빛 글씨
+ *   - 일정 막대는 물방울 캡슐 — 옅게 물든 면, 시작에 방울 하나, 여러 날이면 칸을 건너 끊김 없이 이어진다
  *   - "+N" 은 날짜 줄 오른쪽의 작은 글씨 하나 (상자 없음)
- *   - 달을 넘기면 칸들이 왼쪽 위에서 오른쪽 아래로 물결처럼 차례로 떠오른다
+ *   - 달을 넘기면 판이 밀려가고, 물마루가 지나는 쪽부터 칸이 차례로 살짝 출렁인다
  * 레퍼런스: 유리 위에 숫자만 띄운 글래스 달력들, Apple 달력의 가로줄만 있는 월간, Notion Calendar 의 옅은 면 막대.
  */
 import styled, { css, keyframes } from "styled-components";
 import * as C from "../celestial/CelestialMonthCalendar.styles";
-import { MONO, R, calm, focusRing, ink, seaButton, surface } from "@/styles/ocean/water";
+import { MONO, R, focusRing, ink, seaButton, surface } from "@/styles/ocean/water";
 import { withAlpha } from "@/styles/color";
 import { MOBILE, NOT_WIDGET } from "@/styles/breakpoints";
 
@@ -41,12 +42,6 @@ const touch = keyframes`
 const shimmer = keyframes`
     from { background-position: 130% 0; }
     to   { background-position: -30% 0; }
-`;
-
-/** 오늘 숫자 둘레의 숨 — 아주 천천히 번졌다 잦아든다 */
-const breathe = keyframes`
-    0%, 100% { box-shadow: 0 0 0 0 var(--today-halo), 0 4px 12px -2px var(--today-glow); }
-    50%      { box-shadow: 0 0 0 5px transparent, 0 4px 16px 0 var(--today-glow); }
 `;
 
 export const CelestialCalendarWrapper = styled(C.CelestialCalendarWrapper)`
@@ -159,9 +154,7 @@ export const DayCell = styled(C.DayCell)`
                     background: ${dark(p) ? "rgba(160, 240, 230, 0.08)" : "rgba(255, 255, 255, 0.62)"};
                     box-shadow: inset 0 0 0 1.5px ${withAlpha(p.theme.colors.primary, 0.7)}, 0 6px 18px -10px ${withAlpha(p.theme.colors.primary, 0.6)};
                 `
-                : p.$isToday
-                    ? css`background: radial-gradient(140px circle at 20px 16px, ${withAlpha(p.theme.colors.primary, dark(p) ? 0.18 : 0.12)}, transparent 70%);`
-                    : css``)}
+                : css``)}
     }
     /* 마우스가 칸에 들면 물 위를 스친 듯 고리 하나가 번진다 — 마우스가 있는 기기만, 움직임을 끄면 없다 */
     &::after {
@@ -198,23 +191,20 @@ export const DayCell = styled(C.DayCell)`
             font-variant-numeric: tabular-nums;
             line-height: 20px;
             color: ${(p) => p.theme.colors.text};
+            /* 오늘은 알약 없이 깊은 물빛 글씨 — 오늘 칸에는 물이 차 있다(OceanMonthDecor 의 물때).
+               바탕(Celestial)의 금빛 알약을 이어받지 않게 모양을 모두 걷는다 */
             ${(p) => p.$isToday && css`
-                --today-halo: ${withAlpha(p.theme.colors.primary, 0.35)};
-                --today-glow: ${withAlpha(p.theme.colors.primary, p.theme.mode === "dark" ? 0.5 : 0.6)};
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                min-width: 24px;
-                height: 24px;
-                margin: -2px 0 -2px -4px;
-                padding: 0 6px;
-                border-radius: 12px;
-                color: ${p.theme.mode === "dark" ? "#06110F" : "#FFFFFF"};
-                background-color: ${p.theme.colors.primary};
-                background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0) 65%);
-                box-shadow: 0 4px 12px -2px var(--today-glow);
-                animation: ${breathe} 3.6s ease-in-out infinite;
-                ${calm}
+                display: inline;
+                min-width: 0;
+                height: auto;
+                margin: 0;
+                padding: 0;
+                border-radius: 0;
+                background: none;
+                box-shadow: none;
+                text-shadow: none;
+                color: ${p.theme.colors.primary};
+                font-weight: 800;
             `}
         }
     }

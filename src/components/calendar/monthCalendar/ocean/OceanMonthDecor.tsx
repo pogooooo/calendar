@@ -1,71 +1,46 @@
 "use client";
 /**
  * 바다 월간의 장면과 칸 표시 — 물웅덩이.
- *   - 판: 오늘이 든 달이면 오늘 칸의 세로줄로 햇살 한 줄기가 내려와 오늘 칸에 닿는다(그 아래로는 옅어진다).
- *     햇살 속에는 앱의 물과 같은 빛 그물(caustic.ts)이 일렁이고, 작은 티끌이 천천히 떠내려간다. 칸 뒤에 깔린다
+ *   - 오늘: 칸에 물이 차 있다 — 하루가 흐른 만큼(고른 시간대의 벽시계) 물때가 오르고, 물낯은 두 겹 물결로 천천히 흐른다.
+ *     숫자는 알약 없이 깊은 물빛 글씨(OceanMonthCalendar.styles). 글 뒤에 깔린다
+ *     (2026-10-17 — 사용자: "오션 테마에서 오늘을 표시하는 방식이 별론데 다른걸로" — 알약·햇살 기둥·물결 고리·물방울을 걷었다)
  *   - 장면: 달을 넘기면 물마루 빛 한 줄이 오는 쪽에서 격자를 건너가고, 칸들이 그 물결을 따라 차례로 살짝 출렁인다
  *     (칸의 내용은 숨기지 않는다 — 출렁임은 OceanMonthCalendar.styles 의 DayCell)
- *   - 오늘: 숫자 둘레로 물결이 천천히 번지고, 작은 물방울이 숫자 옆에서 피어올라 사라진다
  *   - 고른 날: 칸 가운데서 물결 한 번이 퍼진다(고른 순간)
- * 끝없이 움직이는 것(빛 그물의 일렁임·티끌·오늘의 물결·물방울)은 움직임 '풍성하게'에서만, 위젯 창에서는 멈춘 그림이다.
+ * 물결이 흐르는 것은 움직임 '풍성하게'에서만, 위젯 창에서는 멈춘 그림이다.
  */
 import * as React from "react";
-import { useTheme } from "styled-components";
-import { paintCaustics } from "@/components/widget/ocean/caustic";
-import type { CellMarksProps, MonthBoardProps, MonthStageProps } from "../MonthDecor.types";
+import { wallNow } from "@/lib/dateKey";
+import type { CellMarksProps, MonthStageProps } from "../MonthDecor.types";
 import * as S from "./OceanMonthDecor.styles";
 
-/** 햇살 속 빛 그물 한 장의 크기(CSS px) — 햇살 칸을 덮도록 늘려 깐다(background-size: cover) */
-const NET_W = 260;
-const NET_H = 520;
-/** 밝기마다 한 번 그려 두고 판이 바뀌어도 다시 쓴다 — 그리는 데 십여 ms */
-const nets = new Map<string, Promise<string>>();
-function causticNet(dark: boolean): Promise<string> {
-    const key = dark ? "dark" : "light";
-    let net = nets.get(key);
-    if (!net) {
-        net = new Promise<string>((resolve) => {
-            const cv = document.createElement("canvas");
-            paintCaustics(cv, NET_W, NET_H, { t: 17.3, cell: 230, gain: dark ? 2.4 : 3, rgb: dark ? [150, 245, 228] : [255, 232, 160] });
-            cv.toBlob((b) => resolve(b ? URL.createObjectURL(b) : ""), "image/png");
-        });
-        nets.set(key, net);
-    }
-    return net;
-}
+/** 물때 — 0시에는 바닥 가까이, 자정 앞에는 칸의 4분의 3 쯤(숫자 줄은 남긴다) */
+const LOW = 0.14;
+const HIGH = 0.76;
+const tideNow = () => {
+    const w = wallNow();
+    return LOW + (HIGH - LOW) * ((w.getHours() * 60 + w.getMinutes()) / 1440);
+};
 
-export function Board({ weeks, todayStr }: MonthBoardProps) {
-    const dark = useTheme().mode === "dark";
-    const at = React.useMemo(() => {
-        for (let row = 0; row < weeks.length; row++) {
-            const col = weeks[row].findIndex((d) => d.toDateString() === todayStr);
-            if (col >= 0) return { row, col };
-        }
-        return null;
-    }, [weeks, todayStr]);
-    const [net, setNet] = React.useState<string | null>(null);
+/** 오늘 칸의 물 — 몇 분마다 물때를 다시 잰다 */
+function Tide() {
+    const [tide, setTide] = React.useState<number | null>(null);
     React.useEffect(() => {
-        if (!at) return;
-        let alive = true;
-        // 판이 미끄러져 들어오는 동안은 피해서 그린다
-        const id = window.setTimeout(() => { void causticNet(dark).then((url) => { if (alive && url) setNet(url); }); }, 160);
-        return () => { alive = false; window.clearTimeout(id); };
-    }, [at, dark]);
-
-    if (!at) return null;
-    const vars = { "--col": at.col, "--row": at.row, "--rows": weeks.length, ...(net ? { "--net": `url(${net})` } : {}) } as React.CSSProperties;
+        // 서버 그림과 어긋나지 않게 처음 값도 그린 뒤에 잰다
+        setTide(tideNow());
+        const id = window.setInterval(() => setTide(tideNow()), 5 * 60_000);
+        return () => window.clearInterval(id);
+    }, []);
+    if (tide == null) return null;
     return (
-        <S.Beam aria-hidden="true" style={vars}>
-            <i className="shaft" />
-            {net && <><i className="net" /><i className="net late" /></>}
-            <b className="mote" />
-            <b className="mote m2" />
-            <b className="mote m3" />
-            <b className="mote m4" />
-            <b className="mote m5" />
-        </S.Beam>
+        <S.Tide aria-hidden="true" style={{ "--tide": tide.toFixed(3) } as React.CSSProperties}>
+            <i className="back" />
+            <i className="front" />
+        </S.Tide>
     );
 }
+
+export const Board = () => null;
 
 export function Stage({ month, direction }: MonthStageProps) {
     const key = month.getFullYear() * 12 + month.getMonth();
@@ -77,15 +52,7 @@ export function Stage({ month, direction }: MonthStageProps) {
 
 export function Marks({ isToday, isSelected }: CellMarksProps) {
     return <>
-        {isToday && (
-            <S.Today aria-hidden="true">
-                <i className="ripple" />
-                <i className="ripple late" />
-                <b className="bubble" />
-                <b className="bubble b2" />
-                <b className="bubble b3" />
-            </S.Today>
-        )}
+        {isToday && <Tide />}
         {isSelected && <S.Splash aria-hidden="true" />}
     </>;
 }
