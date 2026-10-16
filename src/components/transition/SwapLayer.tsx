@@ -46,10 +46,18 @@ const SwapLayer = React.forwardRef<HTMLDivElement, SwapLayerProps>(function Swap
         const el = node.current;
         if (skip || level === "off" || !el) return;
         const extent = axis === "x" ? el.getBoundingClientRect().width : el.getBoundingClientRect().height;
+        // 넘겨서 들어온 판이라는 표시 — 판 안의 장식이 이것을 보고 차례로 움직인다(월간의 괘선 별·물마루 따위)
+        el.setAttribute("data-entering", "");
+        el.setAttribute("data-dir", dir < 0 ? "prev" : "next");
         const step = set.swapIn({ dir: dir < 0 ? -1 : 1, axis, level, size, widget: isWidgetWindow(), extent });
         if (!step) return;
+        if (step.above) el.style.zIndex = "2";
+        // 움직이는 동안만의 표시 — 넘어오는 장을 종이로 칠하는 것처럼 그동안만 필요한 모양이 이것을 본다(끝나면 걷는다)
+        el.setAttribute("data-swapping", "");
         const a = startOnNextFrame(el.animate(enterFrames(step.pose), optionsOf(step)));
-        return () => a.cancel();
+        const settle = () => el.removeAttribute("data-swapping");
+        a.onfinish = settle;
+        return () => { a.onfinish = null; a.cancel(); settle(); };
     }, []);
 
     React.useLayoutEffect(() => {
@@ -61,8 +69,12 @@ const SwapLayer = React.forwardRef<HTMLDivElement, SwapLayerProps>(function Swap
         if (!step) { removeRef.current?.(); return; }
         // 나가는 판은 누를 수도 초점이 갈 수도 없게 — 새 판과 겹쳐 있는 동안 옛 칸이 눌리지 않도록
         el.style.pointerEvents = "none";
+        if (step.above) el.style.zIndex = "2";
         el.setAttribute("aria-hidden", "true");
         el.setAttribute("inert", "");
+        // 나가는 판이라는 표시 — 넘어가는 장을 종이로 칠하고 그늘을 드리우는 것 따위가 이것을 본다
+        el.setAttribute("data-leaving", "");
+        el.setAttribute("data-dir", exitDir < 0 ? "prev" : "next");
         const a = startOnNextFrame(el.animate(exitFrames(step.pose), { ...optionsOf(step), fill: "forwards" }));
         let done = false;
         const finish = () => { if (!done) { done = true; removeRef.current?.(); } };
@@ -77,6 +89,7 @@ const SwapLayer = React.forwardRef<HTMLDivElement, SwapLayerProps>(function Swap
                 el.style.pointerEvents = "";
                 el.removeAttribute("aria-hidden");
                 el.removeAttribute("inert");
+                el.removeAttribute("data-leaving");
             }
         };
     }, [isPresent]);

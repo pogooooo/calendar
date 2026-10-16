@@ -40,6 +40,8 @@ export interface Pose {
     /** 돌거나 커지는 중심 (0~1) */
     ox?: number;
     oy?: number;
+    /** 보이는 자리 (clip-path — 예: "inset(0 0 0 100%)") — 금선이 지나가며 갈아 보이는 판(Celestial 월간) */
+    clip?: string;
 }
 
 /** 한 번의 몸짓 — 들어올 때는 pose → 제자리, 나갈 때는 제자리 → pose */
@@ -48,6 +50,8 @@ export interface Step {
     duration: number;
     ease: Ease;
     delay?: number;
+    /** 이 판이 갈리는 동안 다른 판 위에 그려진다 — 넘어가는 다이어리 장처럼 옛 판이 새 판을 덮고 나가야 할 때 */
+    above?: boolean;
 }
 
 export interface SwapAsk {
@@ -110,6 +114,7 @@ export function enterFrames(p: Pose, rest = 1): Keyframe[] {
     const from: Keyframe = { transform: transformOf(p), opacity: p.opacity ?? rest };
     const to: Keyframe = { transform: "none", opacity: rest };
     if (p.blur) { from.filter = `blur(${p.blur}px)`; to.filter = "blur(0px)"; }
+    if (p.clip) { from.clipPath = p.clip; to.clipPath = "inset(0 0 0 0)"; }
     const origin = originOf(p);
     if (origin) { from.transformOrigin = origin; to.transformOrigin = origin; }
     return [from, to];

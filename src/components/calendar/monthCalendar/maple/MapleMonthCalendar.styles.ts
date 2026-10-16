@@ -10,7 +10,7 @@
  *   - 요일 줄은 차분한 글씨 한 줄 — 예전의 수채 띠는 불길처럼 보였다
  * 예전의 먹 화살·말린 잎(today-marker)·마스킹테이프 같은 그림 파일은 걷었다.
  */
-import styled, { css } from "styled-components";
+import styled, { css, keyframes } from "styled-components";
 import * as C from "../celestial/CelestialMonthCalendar.styles";
 import { MOBILE, NOT_WIDGET } from "@/styles/breakpoints";
 import { withAlpha } from "@/styles/color";
@@ -20,6 +20,16 @@ export * from "../celestial/CelestialMonthCalendar.styles";
 
 type P = { theme: { mode: "light" | "dark"; colors: { primary: string; surface: string } } };
 const dark = (p: { theme: { mode: string } }) => p.theme.mode === "dark";
+/**
+ * 찢은 테이프의 끝 — 시작 칸은 왼쪽 가장자리, 끝 칸은 오른쪽 가장자리를 들쭉날쭉하게 오린다(clip-path).
+ * 여러 날이면 중간 칸은 반듯하게 이어진다.
+ */
+const torn = (start: boolean, end: boolean) => {
+    const left = start ? ["2px 0", "0 22%", "3px 42%", "0.5px 62%", "2.5px 82%", "0.5px 100%"] : ["0 0", "0 100%"];
+    const right = end ? ["calc(100% - 1px) 100%", "calc(100% - 3px) 78%", "100% 58%", "calc(100% - 2.5px) 38%", "calc(100% - 0.5px) 18%", "calc(100% - 2px) 0"] : ["100% 100%", "100% 0"];
+    return `polygon(${[...left, ...right].join(", ")})`;
+};
+
 /** 채운 붉음 위의 글자색 (ink.ts 의 단추와 같은 값) */
 const onPrimary = (p: { theme: { mode: string } }) => (dark(p) ? "#1A1512" : "#FFFFFF");
 /** 카테고리 색을 카드에 옅게 섞은 면 — 불투명이라 여러 날 막대가 고른 칸(물든 칸)을 지나도 한 빛깔로 이어진다 */
@@ -83,10 +93,49 @@ export const TodayButton = styled(C.TodayButton)`
     }
 `;
 
-/** 달력 판 = 카드 한 장. 달을 넘기는 몸짓(책장 넘김)은 이 카드 안에서 일어난다 */
+/** 넘어가는 장의 그늘 — 들리며 빛을 등지는 만큼 짙어진다 */
+const turnShade = keyframes`
+    from { opacity: 0; }
+    to   { opacity: 1; }
+`;
+/** 넘어오는 장이 내려앉으며 밝아진다 */
+const landShade = keyframes`
+    from { opacity: 1; }
+    to   { opacity: 0; }
+`;
+
+/**
+ * 달력 판 = 카드 한 장. 달을 넘기는 몸짓(책장 넘김, paperMotion)은 이 카드 안에서 일어난다.
+ * 넘기는 장(SwapLayer)은 그동안 카드와 같은 종이로 칠한다 — 투명하면 밑의 새 장 글씨가 비쳐 두 달이 겹쳐 보였다.
+ * 들리는 장은 밑의 장에 그림자를 드리우고, 책등에서 멀어질수록(오른쪽) 그늘이 진다.
+ */
 export const CalendarWindow = styled(C.CalendarWindow)`
     ${paperCard()}
     overflow: hidden;
+
+    ${NOT_WIDGET} & {
+        & > [data-leaving][data-dir="next"],
+        & > [data-swapping][data-dir="prev"] {
+            background-color: ${(p) => p.theme.colors.surface};
+            border-radius: 13px;
+            backface-visibility: hidden;
+            box-shadow: 6px 0 22px -8px ${(p) => (dark(p) ? "rgba(0, 0, 0, 0.7)" : "rgba(86, 54, 32, 0.32)")};
+        }
+        & > [data-leaving][data-dir="next"]::after,
+        & > [data-swapping][data-dir="prev"]::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            z-index: 20;
+            border-radius: inherit;
+            pointer-events: none;
+            background: linear-gradient(90deg,
+                ${(p) => (dark(p) ? "rgba(0, 0, 0, 0.05)" : "rgba(86, 54, 32, 0.02)")},
+                ${(p) => (dark(p) ? "rgba(0, 0, 0, 0.42)" : "rgba(86, 54, 32, 0.2)")});
+        }
+        & > [data-leaving][data-dir="next"]::after { animation: ${turnShade} 0.64s cubic-bezier(0.55, 0.05, 0.35, 1) both; }
+        & > [data-swapping][data-dir="prev"]::after { animation: ${landShade} 0.62s cubic-bezier(0.25, 0.8, 0.3, 1) both; }
+    }
 
     /* 위젯은 껍데기가 이미 카드다 — 카드 안의 카드는 두지 않는다 */
     [data-widget] & {
@@ -155,6 +204,13 @@ export const WeekRowContainer = styled(C.WeekRowContainer)`
  */
 export const DayCell = styled(C.DayCell)`
     border-right: 1px solid ${(p) => hair(p.theme, dark(p) ? 0.1 : 0.08)};
+    /* 줄 공책 — 아주 옅은 가로줄 (위젯·폰은 칸이 작아 빼고) */
+    @media (min-width: 769px) {
+        ${NOT_WIDGET} & {
+            background-image: repeating-linear-gradient(to bottom, transparent 0 21px, ${(p) => hair(p.theme, dark(p) ? 0.05 : 0.045)} 21px 22px);
+            background-position: 0 9px;
+        }
+    }
     opacity: ${(p) => (p.$isCurrentMonth ? 1 : 0.42)};
     background-color: ${(p) => (p.$isSelected ? withAlpha(p.theme.colors.primary, dark(p) ? 0.13 : 0.065) : "transparent")};
     box-shadow: ${(p) => (p.$dropTarget ? `inset 0 0 0 2px ${p.theme.colors.primary}` : "none")};
@@ -230,11 +286,6 @@ export const DayCell = styled(C.DayCell)`
     }
 `;
 
-/** 오늘 원반(별 시계·말린 잎)은 없다 — 숫자 자체가 붉은 알약이 된다 */
-export const TodayDisc = styled(C.TodayDisc)`
-    display: none;
-`;
-
 /** 칸 위의 + — 날짜가 오른쪽에 있으니 왼쪽 위에, 옅은 둥근 네모로 */
 export const AddTodoButton = styled(C.AddTodoButton)`
     top: 6px;
@@ -258,7 +309,8 @@ export const AddTodoButton = styled(C.AddTodoButton)`
 `;
 
 /**
- * 일정 막대 — 카테고리 색을 옅게 깐 둥근 막대, 시작 칸 앞에 3px 색 띠, 글은 글자색. 찢은 결·테이프 없음.
+ * 일정 막대 — 찢어 붙인 종이테이프: 카테고리 색을 옅게 물들인 반투명 띠, 윗가장자리의 윤과 가는 섬유 결, 시작·끝은 손으로 찢은 듯
+ * 들쭉날쭉(torn). 여러 날이면 칸을 건너 한 장으로 이어진다. 글은 글자색. (2026-10-16 — 둥근 막대는 다른 갈래와 같아 보였다)
  * 폰에서는 막대 대신 카테고리 색 단풍잎을 가로로 늘어놓는다 (끝낸 일은 옅게).
  */
 export const TodoBarItem = styled(C.TodoBarItem)`
@@ -266,23 +318,26 @@ export const TodoBarItem = styled(C.TodoBarItem)`
     font-family: ${(p) => p.theme.fonts.body};
     font-size: 0.75rem;
     font-weight: 500;
-    background-color: ${(p) => tint(p, p.$color, 19, 26)};
-    border-radius: ${(p) => `${p.$isStart ? 5 : 0}px ${p.$isEnd ? 5 : 0}px ${p.$isEnd ? 5 : 0}px ${p.$isStart ? 5 : 0}px`};
+    background-color: ${(p) => tint(p, p.$color, 26, 34)};
+    background-image:
+        linear-gradient(180deg, ${(p) => (dark(p) ? "rgba(255, 255, 255, 0.06)" : "rgba(255, 255, 255, 0.4)")}, rgba(255, 255, 255, 0) 55%),
+        repeating-linear-gradient(90deg, rgba(255, 255, 255, 0) 0 5px, ${(p) => (dark(p) ? "rgba(255, 255, 255, 0.035)" : "rgba(255, 255, 255, 0.22)")} 5px 6px);
+    border-radius: 0;
+    clip-path: ${(p) => torn(p.$isStart, p.$isEnd)};
     margin-left: ${(p) => (p.$isStart ? "5px" : "0")};
     margin-right: ${(p) => (p.$isEnd ? "5px" : "0")};
-    box-shadow: ${(p) => (p.$isStart ? `inset 3px 0 0 ${p.$color ?? p.theme.colors.primary}` : "none")};
+    box-shadow: none;
 
     .todo-title {
-        padding: 0 6px 0 8px;
+        padding: 0 6px 0 ${(p) => (p.$isStart ? 9 : 6)}px;
         color: ${(p) => p.theme.colors.text};
     }
 
-    &:hover { background-color: ${(p) => tint(p, p.$color, 30, 38)}; }
+    &:hover { background-color: ${(p) => tint(p, p.$color, 36, 44)}; }
 
     ${(p) => p.$isDone && css`
         opacity: 0.75;
         background-color: ${hair(p.theme, dark(p) ? 0.07 : 0.05)};
-        box-shadow: ${p.$isStart ? `inset 3px 0 0 ${withAlpha(p.$color ?? p.theme.colors.primary, 0.45)}` : "none"};
 
         .todo-title {
             text-decoration: line-through;
@@ -297,6 +352,8 @@ export const TodoBarItem = styled(C.TodoBarItem)`
             margin: 0;
             padding: 0;
             border-radius: 0;
+            clip-path: none;
+            background-image: none;
             box-shadow: none;
             background-color: ${(p) => p.$color ?? p.theme.colors.primary};
             opacity: ${(p) => (p.$isDone ? 0.35 : 1)};

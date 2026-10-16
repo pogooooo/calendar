@@ -23,6 +23,26 @@ const etched = css`
     box-shadow: 0 1px 0 ${(p) => (dark(p) ? "rgba(0, 0, 0, 0.25)" : "rgba(255, 255, 255, 0.7)")};
 `;
 
+/** 달을 넘기면 물마루가 지나가는 쪽부터 칸이 차례로 살짝 들렸다 가라앉는다 — 내용은 그대로 보인다(투명도는 건드리지 않는다) */
+const bob = keyframes`
+    0%   { transform: none; }
+    35%  { transform: translateY(-5px); }
+    70%  { transform: translateY(1.5px); }
+    100% { transform: none; }
+`;
+
+/** 칸에 마우스가 들면 물 위를 스친 듯 고리 하나가 번진다 */
+const touch = keyframes`
+    0%   { transform: scale(0.25); opacity: 0.9; }
+    100% { transform: scale(2.3); opacity: 0; }
+`;
+
+/** 막대에 마우스가 오면 물빛이 한 번 흘러간다 */
+const shimmer = keyframes`
+    from { background-position: 130% 0; }
+    to   { background-position: -30% 0; }
+`;
+
 /** 오늘 숫자 둘레의 숨 — 아주 천천히 번졌다 잦아든다 */
 const breathe = keyframes`
     0%, 100% { box-shadow: 0 0 0 0 var(--today-halo), 0 4px 12px -2px var(--today-glow); }
@@ -117,7 +137,12 @@ export const DayCell = styled(C.DayCell)`
     opacity: ${(p) => (p.$isCurrentMonth ? 1 : 0.4)};
     box-shadow: none;
     /* 칸은 제자리에서 나타나지 않는다 — 달을 넘기면 판 전체가 옆으로 밀려 들어온다(tideMotion, SwapLayer).
-       예전의 칸마다 떠오르는 등장은 넘길 때마다 막대가 흐려졌다 차례로 떠올라 미끄럼이 아니라 깜빡임으로 보였다 */
+       예전의 칸마다 떠오르는 등장은 넘길 때마다 막대가 흐려졌다 차례로 떠올라 미끄럼이 아니라 깜빡임으로 보였다 —
+       이제는 물마루(OceanMonthDecor 의 Stage)가 지나가는 쪽부터 칸이 차례로 살짝 출렁이기만 한다(투명도는 그대로) */
+    :where(html:not([data-theme-motion="off"])) [data-entering] & { animation: ${bob} 0.8s cubic-bezier(0.3, 0.6, 0.3, 1) both; }
+    :where(html:not([data-theme-motion="off"])) [data-entering][data-dir="next"] & { animation-delay: calc((6 - var(--col, 0)) * 55ms + 160ms); }
+    :where(html:not([data-theme-motion="off"])) [data-entering][data-dir="prev"] & { animation-delay: calc(var(--col, 0) * 55ms + 160ms); }
+    [data-widget] & { animation: none; }
 
     &::before {
         content: "";
@@ -138,6 +163,26 @@ export const DayCell = styled(C.DayCell)`
                     ? css`background: radial-gradient(140px circle at 20px 16px, ${withAlpha(p.theme.colors.primary, dark(p) ? 0.18 : 0.12)}, transparent 70%);`
                     : css``)}
     }
+    /* 마우스가 칸에 들면 물 위를 스친 듯 고리 하나가 번진다 — 마우스가 있는 기기만, 움직임을 끄면 없다 */
+    &::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 56px;
+        height: 56px;
+        margin: -28px 0 0 -28px;
+        z-index: 0;
+        border-radius: 50%;
+        border: 1px solid ${(p) => withAlpha(p.theme.colors.primary, dark(p) ? 0.5 : 0.36)};
+        opacity: 0;
+        pointer-events: none;
+    }
+    @media (hover: hover) {
+        :where(html:not([data-theme-motion="off"])) &:hover::after { animation: ${touch} 1.1s cubic-bezier(0.2, 0.6, 0.35, 1) both; }
+    }
+    [data-widget] &::after { display: none; }
+
     &:hover { box-shadow: none; }
     &:hover::before {
         background: ${(p) => (p.$isSelected ? undefined : dark(p) ? "rgba(255, 255, 255, 0.06)" : "rgba(255, 255, 255, 0.5)")};
@@ -179,11 +224,6 @@ export const DayCell = styled(C.DayCell)`
     }
 `;
 
-/** 오늘 원반(별 시계)은 바다에 없다 — 숫자 자체가 청록 동그라미가 된다 */
-export const TodayDisc = styled(C.TodayDisc)`
-    display: none;
-`;
-
 export const AddTodoButton = styled(C.AddTodoButton)`
     top: 7px;
     right: 7px;
@@ -213,14 +253,44 @@ export const TodoBarItem = styled(C.TodoBarItem)`
     height: 18px;
     font-size: 0.7rem;
     font-weight: 500;
-    background-color: ${(p) => withAlpha(p.$color ?? p.theme.colors.primary, p.$isDone ? 0.08 : dark(p) ? 0.22 : 0.14)};
+    /* 물방울 캡슐 — 물든 면 위에 윗가장자리의 윤, 아래 가장자리의 깊이. 끝은 둥글게(여러 날이면 시작·끝만) */
+    background-color: ${(p) => withAlpha(p.$color ?? p.theme.colors.primary, p.$isDone ? 0.08 : dark(p) ? 0.24 : 0.16)};
+    background-image: linear-gradient(180deg, ${(p) => (dark(p) ? "rgba(255, 255, 255, 0.1)" : "rgba(255, 255, 255, 0.5)")} 0%, rgba(255, 255, 255, 0) 58%);
     color: ${(p) => p.theme.colors.text};
-    border-radius: ${(p) => `${p.$isStart ? 5 : 0}px ${p.$isEnd ? 5 : 0}px ${p.$isEnd ? 5 : 0}px ${p.$isStart ? 5 : 0}px`};
+    border-radius: ${(p) => `${p.$isStart ? 9 : 0}px ${p.$isEnd ? 9 : 0}px ${p.$isEnd ? 9 : 0}px ${p.$isStart ? 9 : 0}px`};
     margin-left: ${(p) => (p.$isStart ? "6px" : "0")};
     margin-right: ${(p) => (p.$isEnd ? "6px" : "0")};
-    box-shadow: ${(p) => (p.$isStart ? `inset 2.5px 0 0 ${p.$color ?? p.theme.colors.primary}` : "none")};
-    &:hover { background-color: ${(p) => withAlpha(p.$color ?? p.theme.colors.primary, dark(p) ? 0.3 : 0.22)}; }
-    .todo-title { padding-left: 7px; ${(p) => p.$isDone && css`text-decoration: line-through; opacity: 0.55;`} }
+    box-shadow: inset 0 -1px 0 ${(p) => withAlpha(p.$color ?? p.theme.colors.primary, dark(p) ? 0.3 : 0.22)};
+    overflow: hidden;
+    &:hover { background-color: ${(p) => withAlpha(p.$color ?? p.theme.colors.primary, dark(p) ? 0.32 : 0.24)}; }
+    .todo-title { padding-left: ${(p) => (p.$isStart ? 15 : 7)}px; ${(p) => p.$isDone && css`text-decoration: line-through; opacity: 0.55;`} }
+
+    /* 시작 칸 앞의 물방울 — 카테고리 색에 빛 한 점 */
+    ${(p) => p.$isStart && css`
+        &::before {
+            content: "";
+            position: absolute;
+            left: 4px;
+            top: 50%;
+            width: 7px;
+            height: 7px;
+            margin-top: -3.5px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.95) 0 22%, ${p.$color ?? p.theme.colors.primary} 62%);
+            pointer-events: none;
+        }
+    `}
+    /* 마우스가 오면 물빛이 한 번 흘러간다 */
+    &::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        background: linear-gradient(100deg, transparent 35%, ${(p) => (dark(p) ? "rgba(190, 255, 245, 0.22)" : "rgba(255, 255, 255, 0.75)")} 50%, transparent 65%) 130% 0 / 260% 100% no-repeat;
+        opacity: 0;
+    }
+    :where(html:not([data-theme-motion="off"])) &:hover::after { opacity: 1; animation: ${shimmer} 0.9s ease-out both; }
 
     ${MOBILE} {
         ${NOT_WIDGET} & {
@@ -231,7 +301,11 @@ export const TodoBarItem = styled(C.TodoBarItem)`
             border-radius: 50%;
             transform: none;
             box-shadow: none;
-            background: ${(p) => (p.$isDone ? withAlpha(p.$color ?? p.theme.colors.primary, 0.35) : p.$color ?? p.theme.colors.primary)};
+            /* 물방울 — 빛 한 점이 맺힌 작은 방울 */
+            width: 7px;
+            height: 7px;
+            background: ${(p) => `radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.9) 0 20%, ${p.$isDone ? withAlpha(p.$color ?? p.theme.colors.primary, 0.35) : p.$color ?? p.theme.colors.primary} 62%)`};
+            &::before, &::after { display: none; }
         }
     }
 `;

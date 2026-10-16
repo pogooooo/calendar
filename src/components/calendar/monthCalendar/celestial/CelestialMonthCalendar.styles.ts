@@ -365,57 +365,6 @@ export const DayCell = styled.div<{ $isToday: boolean; $isCurrentMonth: boolean;
     }
 `;
 
-/**
- * 오늘 표시 — 셀 한가운데 눈금 원반.
- * 모든 내용 뒤(z-index 0)에 깔려 날짜·할 일 바를 가리지 않고,
- * 모서리를 비워 챌린지 단계 장식과 자리가 겹치지 않는다.
- */
-export const TodayDisc = styled.svg`
-    opacity: 0.55;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 60px;
-    height: 60px;
-    margin: -30px 0 0 -30px;
-
-    /* 칸보다 큰 원반은 옆 칸까지 넘어가 오늘이 어디인지 되레 흐려진다. */
-    ${MOBILE} {
-        width: 38px;
-        height: 38px;
-        margin: -19px 0 0 -19px;
-    }
-    z-index: 0;
-    pointer-events: none;
-    overflow: visible;
-    fill: none;
-
-    .ring {
-        stroke: ${(props) => props.theme.colors.primary};
-        stroke-width: 1;
-        opacity: 0.38;
-        vector-effect: non-scaling-stroke;
-    }
-
-    .ring.dash {
-        stroke-dasharray: 2 3;
-        opacity: 0.24;
-    }
-
-    .tick {
-        stroke: ${(props) => props.theme.colors.primary};
-        stroke-width: 1;
-        opacity: 0.45;
-        vector-effect: non-scaling-stroke;
-    }
-
-    .core {
-        fill: ${(props) => props.theme.colors.primary};
-        stroke: none;
-        opacity: 0.8;
-    }
-`;
-
 export const DayHeaderLeft = styled.div`
     display: flex;
     align-items: center;
@@ -612,9 +561,24 @@ export const TodoBarItem = styled.div<{ $isStart: boolean; $isEnd: boolean; $col
         }
     }
 
-    /* Celestial: 폰의 일정 표식은 마름모 대신 동그라미(끝낸 것은 찬 달) */
-    ${celestialOnly(css`
-        ${MOBILE} { ${NOT_WIDGET} & { width: 7px; height: 7px; border-radius: 50%; transform: none; } }
+    /* Celestial: 막대의 시작은 색 띠 대신 그 색의 네 갈래 별 — 일정이 별에서 시작해 이어지는 별줄기.
+       폰의 일정 표식은 마름모 대신 동그라미(끝낸 것은 찬 달) */
+    ${celestialOnly(css<{ $isStart: boolean; $color?: string }>`
+        ${(p) => p.$isStart && css`
+            box-shadow: none;
+            &::before {
+                content: "";
+                position: absolute;
+                left: 4px;
+                top: 50%;
+                margin-top: -4.5px;
+                ${star4Mark("9px")}
+                background-color: ${p.$color ?? p.theme.colors.primary};
+                pointer-events: none;
+            }
+            .todo-title { padding-left: 16px; }
+        `}
+        ${MOBILE} { ${NOT_WIDGET} & { width: 7px; height: 7px; border-radius: 50%; transform: none; &::before { display: none; } } }
     `)}
 `;
 

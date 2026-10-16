@@ -34,15 +34,24 @@ import * as CelestialS from "./celestial/CelestialMonthCalendar.styles";
 import * as MapleS from "./maple/MapleMonthCalendar.styles";
 import OceanMonthHeader from './ocean/OceanMonthHeader';
 import * as OceanS from './ocean/OceanMonthCalendar.styles';
+import type { MonthDecor } from "./MonthDecor.types";
+import * as CelestialDecor from "./celestial/CelestialMonthDecor";
+import * as MapleDecor from "./maple/MapleMonthDecor";
+import * as OceanDecor from "./ocean/OceanMonthDecor";
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
 const HEADERS = { celestial: CelestialMonthHeader, maple: MapleMonthHeader, ocean: OceanMonthHeader };
 
 const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
 
+/** 갈래의 장면·칸 표시 (MonthDecor.types.ts) — 바다의 물마루·물방울, Maple 의 말린 잎·연필 동그라미, Celestial 의 괘선 별·그날의 달 */
+const DECOR: ThemeImpls<MonthDecor> = { celestial: CelestialDecor, maple: MapleDecor, ocean: OceanDecor };
+
 
 interface WeekRowProps {
     dates: Date[];
+    /** 몇째 주 (0부터) — 칸의 차례(--cell)를 셈한다 */
+    row: number;
     todos: CalendarTodoType[];
     challengeTodos: CalendarTodoType[];
     categories: CategoryType[];
@@ -72,12 +81,13 @@ const FALLBACK_BAR_PITCH = 22;
 const FALLBACK_MORE_HEIGHT = 16;
 
 const WeekRow = ({
-                     dates, todos, challengeTodos, categories, todayStr, currentMonth,
+                     dates, row, todos, challengeTodos, categories, todayStr, currentMonth,
                      handleCreateTodo, handleContextMenu,
                      selectedDate, onCellClick, setMoreModalDate, handleQuickEdit, handleMoveTodo, handleResizeTodo,
                      onDragStart, consumeDragClick, draggingId, dropTarget
                  }: WeekRowProps) => {
     const S = usePickTheme(STYLES);
+    const Decor = usePickTheme(DECOR);
     const t = useT();
     // 위젯 창은 폭이 좁아도 바를 그대로 두므로(styles 의 NOT_WIDGET) 층 수도 데스크톱 것을 쓴다
     const isMobile = useIsMobile() && !isWidgetWindow();
@@ -172,19 +182,11 @@ const WeekRow = ({
                         $isToday={isToday}
                         $isCurrentMonth={isCurrentMonth}
                         $isSelected={isSelected}
+                        style={{ "--cell": row * 7 + idx, "--col": idx } as React.CSSProperties}
                         onClick={() => onCellClick?.(date)}
                     >
-                        {isToday && (
-                            <S.TodayDisc viewBox="0 0 60 60" aria-hidden="true">
-                                <circle className="ring" cx="30" cy="30" r="26" />
-                                <circle className="ring dash" cx="30" cy="30" r="19" />
-                                <line className="tick" x1="30" y1="1.5" x2="30" y2="6" />
-                                <line className="tick" x1="58.5" y1="30" x2="54" y2="30" />
-                                <line className="tick" x1="30" y1="58.5" x2="30" y2="54" />
-                                <line className="tick" x1="1.5" y1="30" x2="6" y2="30" />
-                                <circle className="core" cx="30" cy="30" r="1.6" />
-                            </S.TodayDisc>
-                        )}
+                        <Decor.Marks date={date} cellKey={cellKey} isToday={isToday} isSelected={isSelected}
+                                     isCurrentMonth={isCurrentMonth} col={idx} row={row} />
 
                         <DayCellDecor tier={tier} connectLeft={connectLeft} connectRight={connectRight} />
 
@@ -307,6 +309,7 @@ const MonthCalendarView = React.forwardRef<HTMLDivElement, CelestialMonthProps>(
         const Component = asChild ? Slot : 'div';
         const t = useT();
         const MonthHeader = usePickTheme(HEADERS);
+        const Decor = usePickTheme(DECOR);
         const calendarDrag = useDragTarget<{ todo: CalendarTodoType; from: string; edge?: 'start' | 'end' }>('data-calendar-date', (source, target) => {
             if (source.edge) void handleResizeTodo(source.todo, source.edge, source.from, target);
             else void handleMoveTodo(source.todo, source.from, target);
@@ -343,13 +346,18 @@ const MonthCalendarView = React.forwardRef<HTMLDivElement, CelestialMonthProps>(
                 <S.SliderWrapper {...swipe}>
                     <S.CalendarWindow data-fx-zone="month">
                         {/* 달을 넘기면 옛 달은 반대쪽으로 나가고 새 달은 오는 쪽에서 들어온다 — 다음 달이면 오른쪽에서 (갈래의 몸짓, SwapLayer).
-                            바다: 물안개를 걷으며 크게 밀려 들어옴 · Maple: 다이어리 한 장이 책등을 축으로 내려앉음 · Celestial: 예전처럼 옆으로 */}
+                            바다: 두 판이 한 줄로 밀려가고 물마루 빛이 건넌다 · Maple: 종이 한 장이 책등을 축으로 넘어간다 ·
+                            Celestial: 눈금 새긴 자오선이 판을 건너며 그 자리부터 새 달로 갈린다 (장면은 Decor.Stage) */}
                         <AnimatePresence initial={false} custom={direction} mode="popLayout">
                             <SwapLayer
                                 key={currentDate.toISOString()}
                                 direction={direction}
-                                style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+                                // isolation — 판 안의 층(날짜 줄 z 2, + 단추 z 10 따위)이 판 밖과 다투지 않게 판마다 가둔다.
+                                // 안 그러면 넘어가는 옛 장(z 2) 위로 밑에 깔린 새 장의 날짜 숫자가 비쳐 올라왔다(Maple 책장 넘김)
+                                style={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative', isolation: 'isolate' }}
                             >
+                                {/* 판에 붙은 장면 — 판과 함께 들어오고 나간다. 먼저 그려 칸 뒤에 깔린다 */}
+                                <Decor.Board weeks={weeks} todayStr={todayStr} />
                                 <S.Header>
                                     {t.calendar.days.map((d) => (
                                         <S.DayNameBox key={d}>
@@ -362,6 +370,7 @@ const MonthCalendarView = React.forwardRef<HTMLDivElement, CelestialMonthProps>(
                                     {weeks.map((weekDates, idx) => (
                                         <WeekRow
                                             key={idx}
+                                            row={idx}
                                             dates={weekDates}
                                             todos={expandedTodos}
                                             challengeTodos={challengeTodos}
@@ -387,6 +396,7 @@ const MonthCalendarView = React.forwardRef<HTMLDivElement, CelestialMonthProps>(
                                 </S.GridContainer>
                             </SwapLayer>
                         </AnimatePresence>
+                        <Decor.Stage month={currentDate} direction={direction} />
                     </S.CalendarWindow>
                 </S.SliderWrapper>
 
