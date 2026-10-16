@@ -14,11 +14,11 @@ import styled, { css, keyframes } from "styled-components";
 import * as C from "../celestial/CelestialMonthCalendar.styles";
 import { MOBILE, NOT_WIDGET } from "@/styles/breakpoints";
 import { withAlpha } from "@/styles/color";
-import { hair, leafChip, paperCard, stampButton } from "@/styles/maple/ink";
+import { hair, leafChip, paperCard, stampButton, vintage } from "@/styles/maple/ink";
 
 export * from "../celestial/CelestialMonthCalendar.styles";
 
-type P = { theme: { mode: "light" | "dark"; colors: { primary: string; surface: string } } };
+type P = { theme: { mode: "light" | "dark"; variant?: string; colors: { primary: string; surface: string } } };
 const dark = (p: { theme: { mode: string } }) => p.theme.mode === "dark";
 /**
  * 찢은 테이프의 끝 — 시작 칸은 왼쪽 가장자리, 끝 칸은 오른쪽 가장자리를 들쭉날쭉하게 오린다(clip-path).
@@ -32,9 +32,14 @@ const torn = (start: boolean, end: boolean) => {
 
 /** 채운 붉음 위의 글자색 (ink.ts 의 단추와 같은 값) */
 const onPrimary = (p: { theme: { mode: string } }) => (dark(p) ? "#1A1512" : "#FFFFFF");
-/** 카테고리 색을 카드에 옅게 섞은 면 — 불투명이라 여러 날 막대가 고른 칸(물든 칸)을 지나도 한 빛깔로 이어진다 */
-const tint = (p: P, color: string | undefined, light: number, night: number) =>
-    `color-mix(in srgb, ${color ?? p.theme.colors.primary} ${dark(p) ? night : light}%, ${p.theme.colors.surface})`;
+/**
+ * 카테고리 색을 카드에 옅게 섞은 면 — 불투명이라 여러 날 막대가 고른 칸(물든 칸)을 지나도 한 빛깔로 이어진다.
+ * 빈티지 벌은 테이프도 누렇게 바랜다(잿빛 카테고리가 바랜 종이 위에서 차갑게 떴다)
+ */
+const tint = (p: P, color: string | undefined, light: number, night: number) => {
+    const mixed = `color-mix(in srgb, ${color ?? p.theme.colors.primary} ${dark(p) ? night : light}%, ${p.theme.colors.surface})`;
+    return vintage(p) ? `color-mix(in srgb, ${mixed} 86%, #A67C45)` : mixed;
+};
 
 /** 달 이름과 ‹ › — 이름은 화면 제목(명조), 화살은 lucide 꺾쇠를 그대로 쓰는 작은 네모 단추 */
 export const DateRangeDisplay = styled(C.DateRangeDisplay)`

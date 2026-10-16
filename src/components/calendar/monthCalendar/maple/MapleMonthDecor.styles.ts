@@ -6,6 +6,7 @@
 import styled, { keyframes } from "styled-components";
 import { withAlpha } from "@/styles/color";
 import { MOBILE, NOT_WIDGET } from "@/styles/breakpoints";
+import { AGED_TONE, vintage } from "@/styles/vintage";
 
 const sway = keyframes`
     0%, 100% { rotate: 58deg; }
@@ -30,7 +31,8 @@ export const PressedLeaf = styled.span`
     background: url("/themes/maple/leaf-red.webp") center / contain no-repeat;
     rotate: 58deg;
     opacity: ${(p) => (p.theme.mode === "dark" ? 0.82 : 0.95)};
-    filter: drop-shadow(-1px 2px 2px ${(p) => (p.theme.mode === "dark" ? "rgba(0, 0, 0, 0.45)" : "rgba(80, 36, 18, 0.22)")});
+    /* 빈티지 벌은 빛바랜 사진처럼(그림자 앞에 톤을 누른다) */
+    filter: ${(p) => (vintage(p) ? `${AGED_TONE} ` : "")}drop-shadow(-1px 2px 2px ${(p) => (p.theme.mode === "dark" ? "rgba(0, 0, 0, 0.45)" : "rgba(80, 36, 18, 0.22)")});
 
     &[data-leaf="orange"] { background-image: url("/themes/maple/leaf-orange.webp"); }
     &[data-leaf="yellow"] { background-image: url("/themes/maple/leaf-yellow.webp"); }

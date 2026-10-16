@@ -13,6 +13,7 @@ import java.io.File
  *   adb shell am broadcast -n com.cronos.todoapp/.widget.PreviewRenderReceiver -a com.cronos.todoapp.RENDER_PREVIEWS
  * `--ez live true` 를 붙이면 견본 대신 지금 앱의 스냅샷(widget-snapshot.json)으로 그린다 — 테마 갈래를 눈으로 볼 때.
  * `--es family ocean` 처럼 갈래를 주면 그 갈래의 기본색으로 previews/<갈래>/ 에 그린다 — 세 갈래를 한꺼번에 견줄 때.
+ * `--es family maple_vintage` 처럼 갈래 뒤에 _벌을 붙이면 밝은 그림을 그 벌의 색(앱 theme.ts 의 maple-vintage 와 같은 값)으로 그린다.
  * 디버그 빌드에서만 일한다.
  */
 class PreviewRenderReceiver : BroadcastReceiver() {
@@ -20,6 +21,12 @@ class PreviewRenderReceiver : BroadcastReceiver() {
         val debuggable = (context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
         if (!debuggable) return
         val family = intent.getStringExtra("family")
+        // "maple_vintage" → 갈래 maple, 벌 vintage
+        val fam = family?.substringBefore("_")
+        val vintage = if (family?.substringAfter("_", "") == "vintage") Snapshot.ThemeSpec("maple", "light", mapOf(
+            "background" to 0xFFE7DABF.toInt(), "surface" to 0xFFF2E8D3.toInt(), "primary" to 0xFF96452A.toInt(), "accent" to 0xFFBB9150.toInt(),
+            "text" to 0xFF38291E.toInt(), "textSecondary" to 0xFF76624C.toInt(), "weekend" to 0xFF9A4A3B.toInt(),
+        ), "vintage") else null
         val dir = File(context.filesDir, if (family != null) "previews/$family" else "previews").apply { mkdirs() }
         val live = if (intent.getBooleanExtra("live", false)) Snapshot.load(context) else null
         val snap = live ?: Snapshot.parse(context.assets.open("widget-sample.json").bufferedReader().readText())
@@ -34,7 +41,7 @@ class PreviewRenderReceiver : BroadcastReceiver() {
         )
         for ((kind, size) in sizes) {
             for (dark in listOf(false, true)) {
-                val palette = if (family != null) Palette.of(family, dark, null) else Palette.of(snap.theme?.family, dark, snap.theme)
+                val palette = if (fam != null) Palette.of(fam, dark, if (dark) null else vintage) else Palette.of(snap.theme?.family, dark, snap.theme)
                 val bmp = WidgetPainter(context, palette, WidgetPrefs.DEFAULT_ALPHA, snap, now = now).paint(kind.substringBefore("_"), size.first, size.second).bitmap
                 File(dir, "widget_preview_${kind}${if (dark) "_dark" else ""}.png").outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
             }

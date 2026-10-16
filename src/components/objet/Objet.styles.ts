@@ -3,6 +3,7 @@
  * 누름은 무대(stage)가 오브제마다 켜고 끈다(받지 않는 오브제는 뒤로 통과).
  */
 import styled from "styled-components";
+import { agedArt } from "@/styles/vintage";
 
 export const Canvas = styled.canvas`
     display: block;
@@ -11,4 +12,6 @@ export const Canvas = styled.canvas`
     user-select: none;
     -webkit-user-select: none;
     -webkit-tap-highlight-color: transparent;
+    /* 빈티지 벌(theme.variant)은 빛바랜 사진처럼 */
+    ${agedArt}
 `;

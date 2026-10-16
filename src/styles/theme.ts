@@ -161,7 +161,35 @@ const mapleDark: DefaultTheme = {
 };
 
 /**
- * 이름 규칙: 갈래 이름이 밝은 벌, 거기에 '-dark' 를 붙인 것이 어두운 벌이다.
+ * Maple 빈티지 — 오래 둔 가을 노트: 누렇게 바랜 종이(가장자리 그늘·얼룩·굵은 섬유, MapleGround), 세피아 먹,
+ * 바랜 벽돌빛 단풍과 묵은 호박빛. 단풍 그림은 모두 빛바랜 사진처럼 톤을 눌러 그린다(ink.ts 의 agedArt).
+ * 짜임은 Maple 그대로 — 재료만 바뀐다 (2026-10-17 — 사용자: "낙엽에 빈티지 테마도 추가해줘")
+ */
+const mapleVintage: DefaultTheme = {
+    name: 'maple-vintage',
+    family: MAPLE,
+    mode: 'light',
+    variant: 'vintage',
+    ...commonStyles,
+    fonts: MAPLE_FONTS,
+    colors: {
+        background: '#E7DABF',   // 바랜 종이
+        primary: '#96452A',      // 바랜 벽돌빛 단풍
+        accent: '#BB9150',       // 묵은 호박빛
+        surface: '#F2E8D3',      // 누런 카드
+        text: '#38291E',         // 세피아 먹
+        textSecondary: '#76624C',
+        border: '#CBB894',
+        success: '#69774A',      // 올리브
+        error: '#983A2A',
+        weekend: '#9A4A3B',
+    },
+    preview: { cell: '#E4D6B9', event: '#C39C60', today: '#96452A' },
+    line: '#76624C',
+};
+
+/**
+ * 이름 규칙: 갈래 이름이 밝은 벌, 거기에 '-벌 이름'(dark·vintage)을 붙인 것이 다른 벌이다.
  * ThemeProviderWrapper 가 이 규칙으로 찾는다.
  */
 export const themes: Record<string, DefaultTheme> = {
@@ -169,6 +197,7 @@ export const themes: Record<string, DefaultTheme> = {
     'celestial-dark': celestialDark,
     maple,
     'maple-dark': mapleDark,
+    'maple-vintage': mapleVintage,
     /* 맑은 물 아래 흰 모래 — 옅은 바다 안개빛 바탕에 물빛이 어른거리고, 판은 무채색 반투명 유리. 색은 깊은 청록 하나만 */
     ocean: {
         name: 'ocean', family: OCEAN, mode: 'light', ...commonStyles,
@@ -231,20 +260,28 @@ const groundOf = (t: DefaultTheme): ThemeGround => ({
     accent: t.preview.today ?? t.colors.primary,
 });
 
+/** 벌 이름 — 갈래 이름 그대로면 'light', 아니면 '갈래-' 뒤의 이름(dark·vintage) */
+const optionOf = (t: DefaultTheme) => (t.name === t.family ? 'light' : t.name.slice(t.family.length + 1));
+/** 벌의 차례 — 밝게가 앞(설정 화면의 기본 선택), 그다음 어둡게, 결이 다른 벌은 뒤에 */
+const OPTION_ORDER = ['light', 'dark', 'vintage'];
+const rankOf = (option: string) => {
+    const i = OPTION_ORDER.indexOf(option);
+    return i < 0 ? OPTION_ORDER.length : i;
+};
+
 export function listThemes(): ThemeChoice[] {
     return THEME_FAMILIES.map((family) => {
         const variants = Object.values(themes).filter((t) => t.family === family);
-        // 밝은 벌을 앞에 둔다 — 설정 화면의 기본 선택이 된다.
-        const ordered = [...variants].sort((a, b) => (a.mode === 'light' ? -1 : 1) - (b.mode === 'light' ? -1 : 1));
+        const ordered = [...variants].sort((a, b) => rankOf(optionOf(a)) - rankOf(optionOf(b)));
 
         const grounds: Record<string, ThemeGround> = {};
-        ordered.forEach((t) => { grounds[t.mode] = groundOf(t); });
+        ordered.forEach((t) => { grounds[optionOf(t)] = groundOf(t); });
 
         return {
             id: family,
             label: FAMILY_META[family].label,
             description: FAMILY_META[family].description,
-            options: ordered.map((t) => t.mode),
+            options: ordered.map(optionOf),
             grounds,
             preview: FAMILY_META[family].preview,
         };

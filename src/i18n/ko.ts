@@ -29,6 +29,7 @@ const ko: Translations = {
         themeOptions: '테마 설정',
         lightMode: '라이트',
         darkMode: '다크',
+        vintageMode: '빈티지',
         widgets: '위젯',
         fontSizes: { sm: '작게', md: '기본', lg: '크게', xl: '아주 크게' },
         fontWeights: { light: '가늘게', normal: '기본', bold: '굵게' },

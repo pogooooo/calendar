@@ -4,6 +4,7 @@
  */
 import styled from "styled-components";
 import { withAlpha } from "@/styles/color";
+import { agedArt } from "@/styles/vintage";
 
 const dark = (p: { theme: { mode?: string } }) => p.theme.mode === "dark";
 
@@ -30,6 +31,7 @@ export const Decor = styled.div`
         height: 100%;
         opacity: 0;
         transition: opacity 0.6s ease;
+        ${agedArt}
     }
     .twig[data-ready] { opacity: 1; }
 `;
@@ -42,4 +44,5 @@ export const Fall = styled.canvas`
     height: 100%;
     z-index: 40;
     pointer-events: none;
+    ${agedArt}
 `;

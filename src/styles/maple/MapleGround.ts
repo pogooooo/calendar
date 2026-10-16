@@ -1,4 +1,4 @@
-import { createGlobalStyle } from "styled-components";
+import { createGlobalStyle, css } from "styled-components";
 import { withAlpha } from "@/styles/color";
 
 /**
@@ -23,13 +23,43 @@ const GRAIN = (r: number, g: number, b: number) =>
         `<rect width='100%' height='100%' filter='url(#g)'/></svg>`,
     )}")`;
 
+/**
+ * 빈티지 벌의 종이 얼룩 — 아주 낮은 주파수의 잡음을 밤빛으로 물들여 종이가 고르지 않게 바랜 결(군데군데 짙고 옅음)
+ */
+const MOTTLE = `url("data:image/svg+xml,${encodeURIComponent(
+    `<svg xmlns='http://www.w3.org/2000/svg' width='900' height='900'>` +
+    `<filter id='m'><feTurbulence type='fractalNoise' baseFrequency='0.0045' numOctaves='3' seed='7' stitchTiles='stitch'/>` +
+    `<feColorMatrix values='0 0 0 0 0.47 0 0 0 0 0.32 0 0 0 0 0.15 0 0 1.1 0 -0.56'/></filter>` +
+    `<rect width='100%' height='100%' filter='url(#m)'/></svg>`,
+)}")`;
+
+/**
+ * 빈티지 벌의 바탕 — 오래 둔 종이: 가장자리로 갈수록 짙게 바랜 그늘, 군데군데 갈색 얼룩(여우 얼룩), 고르지 않은 바램.
+ * 맨 위의 섬유(body::after)도 조금 굵게. 카드는 cardShadow 가 안쪽 테를 바랜다(ink.ts).
+ */
+const vintageGround = (p: { theme: { colors: { accent: string; primary: string } } }) => [
+    "radial-gradient(ellipse 75% 70% at 50% 46%, transparent 58%, rgba(112, 74, 32, 0.2) 100%)",
+    "radial-gradient(circle at 7% 12%, rgba(140, 92, 42, 0.13), rgba(140, 92, 42, 0.05) 2.2%, transparent 5%)",
+    "radial-gradient(circle at 93% 86%, rgba(140, 92, 42, 0.12), rgba(140, 92, 42, 0.04) 2%, transparent 4.5%)",
+    "radial-gradient(circle at 84% 7%, rgba(140, 92, 42, 0.09), transparent 3%)",
+    "radial-gradient(circle at 3% 72%, rgba(140, 92, 42, 0.08), transparent 3.4%)",
+    `${MOTTLE} 0 0 / 900px 900px`,
+    `radial-gradient(ellipse at 100% 0%, ${withAlpha(p.theme.colors.accent, 0.16)}, transparent 50%)`,
+].join(", ");
+
 const MapleGround = createGlobalStyle`
     html {
-        background-color: ${(p) => p.theme.colors.background} !important;
-        background-image: ${(p) => p.theme.mode === "dark"
-            ? `radial-gradient(ellipse at 100% 0%, ${p.theme.colors.primary}14, transparent 46%)`
-            : `radial-gradient(ellipse at 100% 0%, ${p.theme.colors.accent}26, transparent 50%),
-            radial-gradient(ellipse at 0% 100%, ${p.theme.colors.primary}0F, transparent 46%)`} !important;
+        ${(p) => (p.theme.variant === "vintage"
+            ? css`
+                background: ${vintageGround(p)}, ${p.theme.colors.background} !important;
+            `
+            : css`
+                background-color: ${p.theme.colors.background} !important;
+                background-image: ${p.theme.mode === "dark"
+                    ? `radial-gradient(ellipse at 100% 0%, ${p.theme.colors.primary}14, transparent 46%)`
+                    : `radial-gradient(ellipse at 100% 0%, ${p.theme.colors.accent}26, transparent 50%),
+                    radial-gradient(ellipse at 0% 100%, ${p.theme.colors.primary}0F, transparent 46%)`} !important;
+            `)}
         background-attachment: fixed !important;
     }
     body { background: transparent !important; }
@@ -41,8 +71,8 @@ const MapleGround = createGlobalStyle`
         inset: 0;
         pointer-events: none;
         z-index: 2147483647;
-        background-image: ${(p) => p.theme.mode === "dark" ? GRAIN(0.95, 0.85, 0.7) : GRAIN(0.3, 0.2, 0.14)};
-        opacity: ${(p) => p.theme.mode === "dark" ? 0.08 : 0.1};
+        background-image: ${(p) => p.theme.mode === "dark" ? GRAIN(0.95, 0.85, 0.7) : p.theme.variant === "vintage" ? GRAIN(0.36, 0.24, 0.12) : GRAIN(0.3, 0.2, 0.14)};
+        opacity: ${(p) => p.theme.mode === "dark" ? 0.08 : p.theme.variant === "vintage" ? 0.16 : 0.1};
     }
 
     html:has([data-widget]) body::after {

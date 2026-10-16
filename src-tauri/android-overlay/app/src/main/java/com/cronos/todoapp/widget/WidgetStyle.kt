@@ -282,7 +282,23 @@ class MapleStyle(context: Context, density: Float) : WidgetStyle(context, densit
     override val titleSpacing = 0.01f
 
     /** 호박빛 — 앱의 accent. 팔레트에는 강조색(단풍 붉음) 하나뿐이라 여기 둔다 */
-    private fun amber(pal: Palette): Int = if (pal.dark) 0xFFE8B567.toInt() else 0xFFE2A54D.toInt()
+    private fun amber(pal: Palette): Int = if (pal.dark) 0xFFE8B567.toInt() else if (pal.vintage) 0xFFBB9150.toInt() else 0xFFE2A54D.toInt()
+
+    /**
+     * 빈티지 벌의 바랜 톤 — 앱의 AGED_TONE(styles/vintage.ts: sepia 0.5 · saturate 0.74)과 같은 행렬.
+     * 잎 그림의 색 행렬 뒤에 이어 곱한다(postConcat — 먼저 물들이고 그다음 바랜다)
+     */
+    private val aged: ColorMatrix by lazy {
+        val k = 0.5f
+        ColorMatrix(floatArrayOf(
+            0.393f + 0.607f * (1 - k), 0.769f - 0.769f * (1 - k), 0.189f - 0.189f * (1 - k), 0f, 0f,
+            0.349f - 0.349f * (1 - k), 0.686f + 0.314f * (1 - k), 0.168f - 0.168f * (1 - k), 0f, 0f,
+            0.272f - 0.272f * (1 - k), 0.534f - 0.534f * (1 - k), 0.131f + 0.869f * (1 - k), 0f, 0f,
+            0f, 0f, 0f, 1f, 0f,
+        )).apply { postConcat(ColorMatrix().apply { setSaturation(0.74f) }) }
+    }
+    private fun leafTone(m: ColorMatrix, pal: Palette): ColorMatrixColorFilter =
+        ColorMatrixColorFilter(if (pal.vintage) ColorMatrix(m).apply { postConcat(aged) } else m)
 
     override fun frame(c: Canvas, w: Float, h: Float, pal: Palette, alphaPct: Int) {
         val r = dp(WidgetPainter.RADIUS.toFloat())
@@ -337,13 +353,13 @@ class MapleStyle(context: Context, density: Float) : WidgetStyle(context, densit
         }
         // 그늘 — 잎이 해를 가린 자리 (밝은 종이에서만)
         if (!pal.dark) {
-            val shade = ColorMatrixColorFilter(tone(-10f, 1.15f, 0.5f))
+            val shade = leafTone(tone(-10f, 1.15f, 0.5f), pal)
             for (s in spots) if (s.shade) drawSoft(c, s.img, s.x, s.y, s.size, s.rot, s.flip, shade, (0.022f + 0.06f * s.near) * k)
         }
         // 물든 빛 — 붉은·주황 잎을 지나온 햇빛
         for (s in spots) {
             if (s.shade && !pal.dark) continue
-            val f = ColorMatrixColorFilter(tone(s.hue, s.sat, if (pal.dark) s.light * 1.15f else s.light))
+            val f = leafTone(tone(s.hue, s.sat, if (pal.dark) s.light * 1.15f else s.light), pal)
             drawSoft(c, s.img, s.x, s.y, s.size, s.rot, s.flip, f, (if (pal.dark) 0.045f + 0.11f * s.near else 0.06f + 0.17f * s.near) * k)
         }
     }

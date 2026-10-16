@@ -1,4 +1,5 @@
 import styled from "styled-components";
+import { agedArt } from "@/styles/vintage";
 
 /**
  * 맨 위(창·대화상자보다 위)에 깔리되 누르는 것은 아래로 그대로 지나간다.
@@ -16,4 +17,7 @@ export const Canvas = styled.canvas`
     &[data-on] {
         visibility: visible;
     }
+
+    /* 빈티지 벌(theme.variant)은 효과도 빛바랜 사진처럼 */
+    ${agedArt}
 `;

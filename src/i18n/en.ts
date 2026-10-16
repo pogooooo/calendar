@@ -29,6 +29,7 @@ const en: Translations = {
         themeOptions: 'Theme Options',
         lightMode: 'Light',
         darkMode: 'Dark',
+        vintageMode: 'Vintage',
         widgets: 'Widgets',
         fontSizes: { sm: 'Small', md: 'Default', lg: 'Large', xl: 'Extra large' },
         fontWeights: { light: 'Light', normal: 'Default', bold: 'Bold' },

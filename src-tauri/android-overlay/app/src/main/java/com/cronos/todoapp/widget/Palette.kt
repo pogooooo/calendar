@@ -19,6 +19,8 @@ class Palette(
     /** 작은 글씨용 금색 — 밝은 바탕에서는 조금 어둡게 눌러야 읽힌다 */
     val goldText: Int,
     val weekend: Int,
+    /** 빈티지 벌(앱의 maple-vintage) — 색은 스냅샷이 주고, 붓은 잎 그림을 빛바랜 사진처럼 누른다 */
+    val vintage: Boolean = false,
 ) {
     /** 실선·테두리. Celestial 은 금색 55%, Maple 은 글자색을 옅게(카드의 옅은 선) */
     val line: Int get() = if (family == "maple") withAlpha(ink, if (dark) 0.16f else 0.12f) else withAlpha(gold, 0.55f)
@@ -83,6 +85,8 @@ class Palette(
                 gold = red,
                 goldText = red,
                 weekend = c["weekend"] ?: 0xFFB04A5E.toInt(),
+                // 색을 스냅샷에서 받은 밝은 벌일 때만 — 위젯 설정이 어두운 벌을 강제하면 보통 Maple 다크
+                vintage = c.isNotEmpty() && spec?.variant == "vintage",
             )
         }
 

@@ -46,7 +46,7 @@ var r=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
 d.setAttribute("data-theme-motion",r&&s&&s.motionOverOs===false?"off":((s&&s.motion)||"full"));
 if(!s||!s.theme)return;
 var o=(s.themeOptions||{})[s.theme];var k=o&&o!=="light"?s.theme+"-"+o:s.theme;
-var c={"celestial":"#FAF8F2","celestial-dark":"#121725","maple":"#F4EADB","maple-dark":"#1F1612","ocean":"#7ACFC9","ocean-dark":"#0A2226"}[k];
+var c={"celestial":"#FAF8F2","celestial-dark":"#121725","maple":"#F4EADB","maple-dark":"#1F1612","maple-vintage":"#E7DABF","ocean":"#7ACFC9","ocean-dark":"#0A2226"}[k];
 if(!c)return;d.style.backgroundColor=c;d.style.colorScheme=/-dark$/.test(k)?"dark":"light";d.setAttribute("data-prepaint","");
 }catch(e){}})();`;
 

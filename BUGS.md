@@ -96,6 +96,7 @@
 
 ## 되풀이되는 함정
 
+- **테마의 벌을 밝기(`theme.mode`)로 가르지 말 것 — 밝은 벌이 둘일 수 있다(Maple 의 라이트·빈티지).** 벌 이름은 테마 이름 규칙 '갈래-벌'(maple-vintage)에서 읽고(`listThemes` 의 optionOf), 결이 다른 벌의 모양은 `theme.variant` 로 가른다(`styles/vintage.ts` 의 agedArt — 그림 칸·캔버스에만, 글이 든 상자에는 걸지 않는다). 안드로이드 위젯은 스냅샷의 `theme.variant` 를 받는다.
 - **갈리는 판(`SwapLayer`)은 `isolation: isolate` 로 가둔다.** 안 그러면 판 안의 층(날짜 줄 z 2·+ 단추 z 10)이 판 밖과 다툰다 — Maple 책장 넘김에서 위에서 넘어가는 옛 장(z 2) 위로 밑에 깔린 새 장의 날짜 숫자가 비쳐 올라왔다. 가둔 판 안의 `mix-blend-mode` 는 판 밖(유리·바탕)과 섞이지 않는다는 것도 함께 기억할 것.
 - **Maple 조각(`paperCard`·`stampButton`…)은 `position: relative` 를 건다.** 떠 있어야 하는 것(팝오버·메뉴)은 조각 **뒤에** 자리 지정을 다시 적을 것. 가드: `scripts/check-maple-position.mjs`
 - **위젯 화면은 바탕색을 통째로 지운다.** 마스크에 색을 입힐 때는 `inkFill`(그라데이션)로. 주간·월간은 아예 그 규칙을 뺐다.

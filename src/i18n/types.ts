@@ -24,6 +24,8 @@ export interface Translations {
         themeOptions: string;
         lightMode: string;
         darkMode: string;
+        /** 밝기 말고 결이 다른 벌 — Maple 의 빛바랜 노트 */
+        vintageMode: string;
         widgets: string;
         fontSizes: { sm: string; md: string; lg: string; xl: string };
         fontWeights: { light: string; normal: string; bold: string };

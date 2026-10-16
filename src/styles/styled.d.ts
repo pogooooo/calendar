@@ -19,6 +19,12 @@ declare module 'styled-components' {
          */
         mode: 'light' | 'dark';
 
+        /**
+         * 밝기 말고 결이 다른 벌 — 같은 갈래·같은 밝기 안에서 재료가 바뀐다(Maple 의 빛바랜 '빈티지').
+         * 이름은 '갈래-벌'(maple-vintage)이고 설정의 벌 고르기에 밝게·어둡게와 나란히 선다. 없으면 보통 벌.
+         */
+        variant?: 'vintage';
+
         colors: {
             background: string;
             primary: string;

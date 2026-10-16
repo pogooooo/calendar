@@ -131,6 +131,7 @@ export default function SettingsView({
     const optionLabels: Record<string, string> = {
         light: t.settings.lightMode,
         dark: t.settings.darkMode,
+        vintage: t.settings.vintageMode,
     };
 
     return (

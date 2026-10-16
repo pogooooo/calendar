@@ -11,9 +11,13 @@
  */
 import { css } from "styled-components";
 import { withAlpha } from "@/styles/color";
+import { AGED_TONE, agedArt, vintage } from "@/styles/vintage";
 
 /** 선 — 붉은 primary 가 아니라 글자색(text)을 옅게 */
 export const hair = (theme: { colors: { text: string } }, alpha = 0.3) => withAlpha(theme.colors.text, alpha);
+
+/* ── 빈티지 벌 (theme.ts 의 maple-vintage) — 짜임은 그대로, 재료만 오래 둔 종이로 (styles/vintage.ts) ── */
+export { vintage, AGED_TONE, agedArt };
 
 /* ── 벡터 그림 (마스크로 쓴다 — 색은 background 로 입힌다) ───────────────────── */
 
@@ -71,6 +75,7 @@ export const watercolorLeaf = (leaf: WatercolorLeaf = "red", size = "16px") => c
     width: ${size};
     height: ${size};
     background: url("/themes/maple/leaf-${leaf}.webp") center / contain no-repeat;
+    ${agedArt}
 `;
 
 /** 가을 그라데이션 — 호박빛에서 단풍 붉음으로. 진행 막대처럼 차오르는 것에 */
@@ -131,16 +136,21 @@ export const cardFrame = (color: string, width = "22px") => {
 /* ── 조작부 — 단추·입력칸·탭·칩. 화면마다 따로 그리면 손이 달라지므로 여기서 한 번 정한다 ──
    종이 위의 깨끗한 단추: 기본은 흰 카드 같은 단추(옅은 선), 주된 단추는 단풍 붉음으로 채움, 위험은 붉은 글씨. */
 
-type Themed = { theme: { mode: "light" | "dark"; colors: { text: string; primary: string; accent: string; background: string; surface: string; error: string; textSecondary: string } } };
+type Themed = { theme: { mode: "light" | "dark"; variant?: string; colors: { text: string; primary: string; accent: string; background: string; surface: string; error: string; textSecondary: string } } };
 type Fonted = Themed & { theme: { fonts: { display: string } } };
 
 const dark = (p: Themed) => p.theme.mode === "dark";
 /** 채운 붉음 위의 글자색 */
 const onPrimary = (p: Themed) => (dark(p) ? "#1A1512" : "#FFFFFF");
-/** 카드의 그림자 — 종이에서 살짝 떠 있게 */
+/**
+ * 카드의 그림자 — 종이에서 살짝 떠 있게.
+ * 빈티지 벌은 카드 가장자리가 안쪽으로 누렇게 바랜다(오래 둔 종이의 테) — 카드마다 따로 칠하지 않아도 이 한 줄로.
+ */
 export const cardShadow = (p: Themed) => (dark(p)
     ? "0 1px 2px rgba(0, 0, 0, 0.35), 0 10px 28px -14px rgba(0, 0, 0, 0.55)"
-    : "0 1px 2px rgba(86, 54, 32, 0.05), 0 10px 28px -14px rgba(86, 54, 32, 0.18)");
+    : vintage(p)
+        ? "inset 0 0 28px rgba(126, 86, 38, 0.11), inset 0 0 3px rgba(126, 86, 38, 0.1), 0 1px 2px rgba(86, 54, 32, 0.08), 0 10px 26px -14px rgba(86, 54, 32, 0.26)"
+        : "0 1px 2px rgba(86, 54, 32, 0.05), 0 10px 28px -14px rgba(86, 54, 32, 0.18)");
 
 /** 카드 한 장 — 판·카드의 바탕. 종이보다 밝은 카드에 옅은 선, 둥근 모서리, 부드러운 그림자 */
 export const paperCard = (inset = "3px") => {
