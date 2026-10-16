@@ -426,3 +426,72 @@ export function paintDapple(canvas: HTMLCanvasElement, imgs: LeafImage[], o: { w
         draw(s, i, sprite, (dark ? 0.045 + 0.11 * s.near : 0.06 + 0.17 * s.near) * k);
     });
 }
+
+/**
+ * 위젯에 잎 몇 장이 한 번 진다 — 커서가 위젯에 들어올 때(데스크톱 위젯, MapleWidgetDecor). 나무가 있는 오른쪽 위에서 떨어져
+ * 진자처럼 오가며(가운데서 빠르고 끝에서 멈칫) 왼쪽 아래로 흘러 나가고, 긴 축으로 뒤집히며 폭이 줄었다 는다(옆에서 본 3D 흉내).
+ * 다 떨어지면 캔버스를 비우고 멈춘다 — 위젯은 투명 창이라 끝없이 움직이면 깜빡인다(BUGS 1.2.0). 내용 위를 지나가지만 3초쯤뿐이다.
+ * 돌려주는 함수를 부르면 곧바로 멈춘다(onDone 은 부르지 않는다).
+ */
+export function playLeafFall(canvas: HTMLCanvasElement, imgs: LeafImage[], o: { width: number; height: number; dpr: number; dark: boolean; gentle: boolean; onDone: () => void }) {
+    const W = Math.max(1, Math.round(o.width));
+    const H = Math.max(1, Math.round(o.height));
+    canvas.width = Math.round(W * o.dpr);
+    canvas.height = Math.round(H * o.dpr);
+    const g = canvas.getContext("2d");
+    if (!g) { o.onDone(); return () => {}; }
+    const rand = (a: number, b: number) => a + Math.random() * (b - a);
+    const short = Math.min(W, H);
+    const n = o.gentle ? 2 : Math.max(3, Math.min(5, Math.round((W * H) / 40000) + 2));
+    const dur = o.gentle ? 4.4 : 3.4;
+    const leaves = Array.from({ length: n }, (_, i) => {
+        const size = Math.max(15, Math.min(28, short * 0.11)) * rand(0.8, 1.25);
+        return {
+            img: pickImg(Math.random), size,
+            x0: W * rand(0.42, 1.02), y0: -size * rand(0.8, 1.4),
+            drift: -W * rand(0.12, 0.34),
+            amp: size * rand(0.7, 1.5), w: rand(2.2, 3.4), ph: rand(0, Math.PI * 2),
+            rot0: rand(-0.6, 0.6), spin: rand(-0.9, 0.9), roll: rand(1.4, 2.6),
+            delay: i * rand(0.16, 0.34),
+            flip: Math.random() < 0.5,
+        };
+    });
+    let raf = 0;
+    let stopped = false;
+    const start = performance.now();
+    const frame = (now: number) => {
+        if (stopped) return;
+        const t = (now - start) / 1000;
+        g.setTransform(o.dpr, 0, 0, o.dpr, 0, 0);
+        g.clearRect(0, 0, W, H);
+        g.filter = o.dark ? "brightness(0.82)" : "none";
+        g.shadowColor = o.dark ? "rgba(0, 0, 0, 0.4)" : "rgba(80, 36, 18, 0.2)";
+        g.shadowBlur = 4;
+        g.shadowOffsetX = -2;
+        g.shadowOffsetY = 5;
+        let alive = false;
+        for (const l of leaves) {
+            const tt = t - l.delay;
+            if (tt < 0) { alive = true; continue; }
+            const k = tt / dur;
+            if (k >= 1) continue;
+            alive = true;
+            const ph = l.w * tt + l.ph;
+            // 가운데서 빨리 내려오고 끝에서 멈칫 — 오감에 맞춰 떨어지는 빠르기가 출렁인다
+            const x = l.x0 + l.drift * k + l.amp * Math.sin(ph);
+            const y = l.y0 + (H + l.size * 2.6) * k - l.size * 0.3 * Math.cos(2 * ph);
+            const roll = Math.cos(l.roll * tt + l.ph);
+            g.save();
+            g.globalAlpha = Math.min(1, k / 0.08) * Math.min(1, (1 - k) / 0.18) * 0.96;
+            g.translate(x, y);
+            g.rotate(l.rot0 + l.spin * tt + 0.45 * Math.sin(ph));
+            g.scale((l.flip ? -1 : 1) * Math.max(0.12, Math.abs(roll)), 0.9 + 0.1 * Math.sin(ph * 1.3));
+            g.drawImage(imgs[l.img], -l.size / 2, -l.size / 2, l.size, l.size);
+            g.restore();
+        }
+        if (alive) raf = requestAnimationFrame(frame);
+        else { g.clearRect(0, 0, W, H); stopped = true; o.onDone(); }
+    };
+    raf = requestAnimationFrame(frame);
+    return () => { stopped = true; cancelAnimationFrame(raf); };
+}

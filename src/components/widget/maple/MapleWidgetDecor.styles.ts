@@ -33,3 +33,13 @@ export const Decor = styled.div`
     }
     .twig[data-ready] { opacity: 1; }
 `;
+
+/** 낙엽이 지는 동안만 뜨는 캔버스 — 위젯 창 전체, 내용 위(누르는 것은 받지 않는다) */
+export const Fall = styled.canvas`
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 40;
+    pointer-events: none;
+`;
