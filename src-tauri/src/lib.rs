@@ -382,9 +382,15 @@ fn exe_from_run_value(value: &str) -> String {
 /// 걸어 두었다). 그걸 등록하면 컴퓨터를 켤 때마다 검은 터미널 창이 같이 뜬다.
 /// 게다가 경로가 target/debug 라서 프로젝트를 옮기거나 지우면 부팅 때마다
 /// 실패만 남는다. 그래서 개발 빌드는 아예 등록하지 않는다.
+///
+/// `tauri dev --release` 로 구운 것도 개발 빌드다 — 화면을 dev 서버(localhost:3000)에서
+/// 받아 오므로(custom-protocol 꺼짐, `tauri::is_dev()`) dev 서버 없이는 빈 창이다.
+/// 예전에는 debug_assertions 만 봐서 이것을 등록했고, 켤 때의 바로잡기(repair_autostart_entry)가
+/// 설치본의 자동 실행 항목을 target/release 로 덮어썼다. 그러면 부팅 때 dev 빌드가 떠서
+/// 빈 창으로 남고, 설치본을 눌러도 single-instance 가 그 빈 창만 앞으로 불러 "실행이 안 됐다"(2026-10-23).
 #[cfg(desktop)]
 fn autostart_registrable() -> bool {
-    !cfg!(debug_assertions)
+    !cfg!(debug_assertions) && !tauri::is_dev()
 }
 
 /// 이미 등록돼 있는 자동 실행 항목이 엉뚱한 곳을 가리키면 바로잡는다.
@@ -472,11 +478,10 @@ fn set_autostart(app: tauri::AppHandle, enabled: bool) -> bool {
         return ok;
     }
 
-    // 개발 빌드를 등록하면 부팅 때마다 터미널 창이 뜬다. 켜 주지 않는다.
+    // 개발 빌드는 등록하지 않는다(부팅 때 터미널 창·빈 창). 등록된 항목도 건드리지 않는다 —
+    // 같은 이름(CRONOS)의 항목은 설치본의 것이라, 여기서 지우면 dev 빌드를 한 번 띄운 것만으로
+    // 설치본의 자동 실행이 사라졌다(켤 때 DesktopWidgetRestore 가 set_autostart(true) 를 부른다).
     if !autostart_registrable() {
-        let _ = autolaunch.disable();
-        #[cfg(target_os = "windows")]
-        unsafe { win32::delete_reg_value(RUN_KEY, RUN_VALUE); }
         return false;
     }
 
