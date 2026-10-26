@@ -6,13 +6,23 @@
  */
 import styled, { css } from "styled-components";
 import * as C from "../celestial/CelestialDayCalendar.styles";
-import { MONO, R, bubbleCheck, hairline, ink, label, pearl, surface, tideInput } from "@/styles/ocean/water";
+import { MONO, R, bubbleCheck, hairline, ink, label, pearl, tideInput } from "@/styles/ocean/water";
 import { withAlpha } from "@/styles/color";
+import { surfDate } from '@/styles/ocean/calendarMarks';
 
 export * from "../celestial/CelestialDayCalendar.styles";
 
 const DESKTOP = "@media (min-width: 769px)";
 const dark = (p: { theme: { mode: string } }) => p.theme.mode === "dark";
+
+export const DateStamp = styled(C.DateStamp)`
+    ${surfDate}
+    --surf-width:50px; --surf-height:44px;
+    color:${(p) => p.theme.colors.primary};
+    font-family:${(p) => p.theme.fonts.body}; font-size:1.2rem; font-weight:650;
+    small { display:none; }
+    && { width:var(--surf-width); height:var(--surf-height); background:none; border:0; border-radius:0; }
+`;
 
 export const CelestialCalendarWrapper = styled(C.CelestialCalendarWrapper)`
     font-family: ${(p) => p.theme.fonts.body};
@@ -20,6 +30,7 @@ export const CelestialCalendarWrapper = styled(C.CelestialCalendarWrapper)`
 
 /** 날짜 머리 — 굵은 날짜 한 줄, 실선 없음 */
 export const DateHeader = styled(C.DateHeader)`
+    && { padding-bottom: 8px; border-bottom: 1px solid ${(p) => hairline(p.theme)}; font-size: 1rem; }
     font-family: ${(p) => p.theme.fonts.body};
     font-size: 0.95rem;
     font-weight: 700;
@@ -60,13 +71,15 @@ export const ResizeHandle = styled(C.ResizeHandle)`
     ${DESKTOP} { display: none; }
 `;
 
-const card = `
+const card = css`
+    background: transparent;
+    border: 1px solid ${(p) => hairline(p.theme)};
     border-radius: ${R.md};
+    box-shadow: none;
     overflow: hidden;
 `;
 
 export const TodoCard = styled(C.TodoCard)`
-    ${surface("card")}
     ${card}
     ${column}
     ${columnDivider}
@@ -91,6 +104,8 @@ export const TodoCardHead = styled(C.TodoCardHead)`
 `;
 
 export const TodoRow = styled(C.TodoRow)`
+    && .title { opacity: 1; color: ${(p) => p.$isDone ? p.theme.colors.textSecondary : p.theme.colors.text}; }
+    && .time { color: ${(p) => p.theme.colors.textSecondary}; font-size: 0.72rem; }
     border-radius: 8px;
     border: none;
     min-height: 38px;
@@ -104,7 +119,6 @@ export const TodoRow = styled(C.TodoRow)`
 
 export const TimelineSection = styled(C.TimelineSection)`
     border: none;
-    ${surface("card")}
     ${card}
     ${column}
     ${columnDivider}
@@ -118,6 +132,7 @@ export const TimelineSection = styled(C.TimelineSection)`
 `;
 
 export const SectionToggle = styled(C.SectionToggle)`
+    && { background:${(p) => withAlpha(p.theme.colors.primary, .045)}; border-radius:10px 10px 0 0; }
     border-bottom: 1px solid ${(p) => hairline(p.theme)};
     font-family: ${(p) => p.theme.fonts.body};
     font-size: 0.82rem;
@@ -129,6 +144,9 @@ export const SectionToggle = styled(C.SectionToggle)`
 
 /** 시간표 한 줄 — 시각은 고정폭, 칸은 머리카락 선, 막대는 청록 면 */
 export const TimeRow = styled(C.TimeRow)`
+    && { min-height: 40px; border-bottom-color: ${(p) => hairline(p.theme)}; }
+    && .time-label { font-size: 0.72rem; }
+    && .time-slots .slot-bar-container { background: ${(p) => withAlpha(p.theme.colors.primary, dark(p) ? 0.06 : 0.04)}; }
     .time-label { font-family: ${MONO}; font-size: 0.66rem; font-weight: 500; letter-spacing: 0; color: ${(p) => p.theme.colors.textSecondary}; }
     .time-slots .slot-bar-container {
         border-radius: 8px;
@@ -142,6 +160,8 @@ export const TimeRow = styled(C.TimeRow)`
 `;
 
 export const SlotTodoItem = styled(C.SlotTodoItem)`
+    && { background: ${(p) => `color-mix(in srgb, ${p.theme.colors.primary} ${p.$isDone ? 10 : dark(p) ? 28 : 18}%, ${p.theme.colors.surface})`}; box-shadow: ${(p) => p.$isContinuingPrev ? "none" : `inset 3px 0 0 ${p.theme.colors.primary}`}; }
+    && .todo-text { color: ${(p) => p.$isDone ? p.theme.colors.textSecondary : p.theme.colors.text}; font-size: 0.73rem; left: 8px; }
     background: ${(p) => (p.$isDone ? withAlpha(p.theme.colors.primary, 0.35) : p.theme.colors.primary)};
     border-radius: ${(p) => `${p.$isContinuingPrev ? 0 : 6}px ${p.$isContinuingNext ? 0 : 6}px ${p.$isContinuingNext ? 0 : 6}px ${p.$isContinuingPrev ? 0 : 6}px`};
     .todo-text { color: ${(p) => (dark(p) ? "#06110F" : "#FFFFFF")}; font-weight: 600; }
@@ -177,7 +197,6 @@ const cardHeader = `
 
 export const ChallengeCard = styled(C.ChallengeCard)`
     border: none;
-    ${surface("card")}
     ${card}
     ${cardHeader}
     ${column}
@@ -187,7 +206,6 @@ export const ChallengeCard = styled(C.ChallengeCard)`
 
 export const TaskCard = styled(C.TaskCard)`
     border: none;
-    ${surface("card")}
     ${card}
     ${cardHeader}
     ${column}
@@ -197,7 +215,6 @@ export const TaskCard = styled(C.TaskCard)`
 
 export const MemoCard = styled(C.MemoCard)`
     border: none;
-    ${surface("card")}
     ${card}
     ${cardHeader}
     ${column}
@@ -212,7 +229,7 @@ export const ChallengeItem = styled(C.ChallengeItem)`
     border-color: transparent;
     &:hover { background-color: ${(p) => ink(p.theme, dark(p) ? 0.07 : 0.045)}; }
     .box { ${(p) => bubbleCheck(p.$isDone, "17px")} box-shadow: none; }
-    .title { font-size: 0.84rem; }
+    .title { font-size: 0.84rem; opacity: 1; color: ${(p) => p.$isDone ? p.theme.colors.textSecondary : p.theme.colors.text}; }
 `;
 
 export const TaskItem = styled(C.TaskItem)`

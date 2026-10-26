@@ -1,52 +1,41 @@
-/**
- * 바다의 월간 머리 — 크게 기울인 세리프 달 이름과 작은 날짜 넘기개. 달이 바뀌면 달 이름이 살짝 떠오르며 바뀐다.
- * (Celestial: 금빛 실선 위 날짜와 아르카나, Maple: 책갈피 색인)
- */
-import styled from "styled-components";
-import { EASE, SERIF, calm, rise } from "@/styles/ocean/water";
+import styled, { keyframes } from 'styled-components';
+import { EASE, SERIF, calm, rise } from '@/styles/ocean/water';
 
+const drift = keyframes`from { translate:-8% 0; opacity:.45; } to { translate:8% -4%; opacity:.8; }`;
 export const Header = styled.header`
-    position: relative;
-    align-self: stretch;
-    width: 100%;
-    box-sizing: border-box;
-    display: flex;
-    align-items: baseline;
-    gap: 16px;
-    padding: 2px 2px 14px;
-    @media (max-width: 768px) { align-items: center; gap: 8px; padding-bottom: 10px; }
+    position:relative; isolation:isolate; overflow:hidden; align-self:stretch;
+    display:grid; grid-template-columns:minmax(0,1fr) auto auto; align-items:end; gap:12px 18px;
+    width:100%; box-sizing:border-box; padding:8px 6px 18px; margin-bottom:8px; min-height:88px;
+    border-bottom:1px solid ${p => p.theme.colors.primary}30;
+    &::before {
+        content:""; position:absolute; inset:-60% -10% -50% 30%; z-index:-1; pointer-events:none;
+        background:linear-gradient(118deg,transparent 22%,${p => p.theme.colors.primary}0B 32%,transparent 43%,${p => p.theme.mode==='dark' ? '#99E1D719' : '#F4FCF54A'} 56%,transparent 70%);
+        filter:blur(12px); transform:rotate(-8deg);
+        :where(html[data-theme-motion="full"]) & { animation:${drift} 8s ease-in-out infinite alternate; }
+        :where(html[data-theme-motion="gentle"]) & { animation:${drift} 16s ease-in-out infinite alternate; }
+    }
+    @media(max-width:1000px) { grid-template-columns:minmax(0,1fr) auto; gap:10px 8px; }
+    @media(max-width:768px) { padding:3px 4px 12px; min-height:0; }
+    [data-widget] & { display:flex; align-items:center; min-height:0; gap:8px; padding:0 4px 4px; &::before { display:none; } }
 `;
-
 export const Title = styled.div`
-    flex: none;
-    font-family: ${SERIF};
-    font-style: italic;
-    font-size: 2.6rem;
-    font-weight: 400;
-    line-height: 1;
-    letter-spacing: -0.02em;
-    color: ${(p) => p.theme.colors.text};
-    animation: ${rise} 0.5s ${EASE} both;
+    display:flex; flex-direction:column; gap:9px; grid-column:1; min-width:0;
+    font-family:${SERIF}; font-style:italic; font-size:2.6rem; line-height:1.1; letter-spacing:-.02em;
+    color:${p => p.theme.colors.text};
+    .eyebrow { font-family:${p => p.theme.fonts.body}; font-style:normal; font-size:.57rem; line-height:1.5; letter-spacing:.19em; font-weight:600; color:${p => p.theme.colors.textSecondary}; }
+    .month i { font-style:normal; font-size:.8rem; font-family:${p => p.theme.fonts.body}; color:${p => p.theme.colors.textSecondary}; letter-spacing:0; }
+    :where(html:not([data-theme-motion="off"])) & .month { animation:${rise} .5s ${EASE} backwards; }
     ${calm}
-
-    @media (max-width: 1100px) { font-size: 2.1rem; }
-    @media (max-width: 768px) { display: none; }
+    @media(max-width:768px) { font-size:2rem; gap:5px; .eyebrow { font-size:.53rem; } }
+    [data-widget] & { display:none; }
 `;
-
-/** ‹ 10월 › · 오늘 — 가로로 한 줄 */
 export const Nav = styled.div`
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    min-width: 0;
-    & > * { flex: none; }
-    font-size: 0.95rem;
+    grid-column:2; grid-row:1; display:flex; align-items:center; gap:4px; min-width:0; font-size:.95rem;
+    & > * { flex:none; }
+    @media(max-width:1000px) { grid-column:1; grid-row:2; }
+    [data-widget] & { flex:1; }
 `;
-
 export const Filters = styled.div`
-    min-width: 0;
-    flex: 1;
-    display: flex;
-    justify-content: flex-end;
-    align-self: center;
+    grid-column:3; grid-row:1; display:flex; align-items:center; justify-content:flex-end; align-self:center;
+    @media(max-width:1000px) { grid-column:2; grid-row:1 / 3; }
 `;

@@ -3,7 +3,7 @@
  *
  * 금빛을 납작한 한 색(#D4AF37)으로 칠하면 노란 물감으로 읽혔다 — 금속은 밝은 결과 그늘이 섞여야 금속으로 읽힌다.
  * 그래서 "채운 금"은 모두 이 금박을 쓴다: 주 단추·오늘 표시·떠 있는 + 단추 같은 것. 선(테두리·괘선)은 그대로 한 색.
- * 금박 위 글씨는 흰색이 아니라 짙은 먹(giltInk) — 흰 글씨는 금 위에서 대비가 2:1 남짓이라 흐렸다.
+ * 차분한 종이 바탕과 금박의 밝기는 따로 조절한다. 금박 위에는 낮과 밤 모두 짙은 먹을 쓴다.
  */
 import { css } from "styled-components";
 import type { DefaultTheme } from "styled-components";
@@ -11,7 +11,7 @@ import type { DefaultTheme } from "styled-components";
 const dark = (t: DefaultTheme) => t.mode === "dark";
 
 /** 금박 위의 글씨·아이콘 색 */
-export const giltInk = (t: DefaultTheme) => (dark(t) ? "#1B1608" : "#3B2E0C");
+export const giltInk = (t: DefaultTheme) => (dark(t) ? "#1B1608" : "#352A10");
 
 /** 금박 면 — 밝은 결·그늘이 가로로 엇갈리는 금속 + 위는 빛, 아래는 그늘이 맺힌 가장자리.
  *  결은 곧게(위→아래) — Celestial 은 비스듬한 선을 쓰지 않는다 */
@@ -19,8 +19,8 @@ export const gilt = css`
     background-color: ${(p) => p.theme.colors.primary};
     background-image: ${(p) => dark(p.theme)
         ? "linear-gradient(180deg, #F7E7B6 0%, #D9BD78 34%, #B39652 58%, #EBD497 82%, #CDB06C 100%)"
-        : "linear-gradient(180deg, #F3DD8E 0%, #D4AF37 34%, #B08A24 58%, #E8C96A 82%, #C9A23A 100%)"};
-    box-shadow: inset 0 1px 0 rgba(255, 248, 220, ${(p) => (dark(p.theme) ? 0.55 : 0.7)}), inset 0 -1px 0 rgba(110, 80, 10, 0.3);
+        : "linear-gradient(180deg, #E8CD78 0%, #D4AF37 38%, #B78B23 64%, #DFC16A 100%)"};
+    box-shadow: inset 0 1px 0 rgba(255, 248, 220, ${(p) => (dark(p.theme) ? 0.55 : 0.15)}), inset 0 -1px 0 rgba(110, 80, 10, 0.18);
     color: ${(p) => giltInk(p.theme)};
 `;
 
@@ -29,7 +29,7 @@ export const giltSmall = css`
     background-color: ${(p) => p.theme.colors.primary};
     background-image: ${(p) => dark(p.theme)
         ? "linear-gradient(180deg, #F3E1A8 0%, #D9BD78 55%, #BFA060 100%)"
-        : "linear-gradient(180deg, #EFD584 0%, #D4AF37 55%, #B38C25 100%)"};
+        : "linear-gradient(180deg, #E6CB76 0%, #D4AF37 55%, #BE982F 100%)"};
     color: ${(p) => giltInk(p.theme)};
 `;
 

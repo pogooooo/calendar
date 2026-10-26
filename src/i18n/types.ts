@@ -683,6 +683,9 @@ export interface Translations {
         macNote: string;
         linuxNote: string;
         androidNote: string;
+        googlePlay: string;
+        googlePlayNote: string;
+        googlePlayAction: string;
         errPlatform: string;
         errUnreleased: string;
         errUpstream: string;

@@ -1,5 +1,6 @@
 "use client";
 
+import GemMonthArch from '../gem/GemMonthArch';
 import { usePickTheme } from "@/styles/themed";
 import CelestialMonthArch from "../celestial/CelestialMonthArch";
 import MapleMonthArch from "../maple/MapleMonthArch";
@@ -20,6 +21,6 @@ export interface MonthArchProps {
 
 /** 갈래마다 제 그림 — Celestial 은 금빛 눈금 반원, Maple 은 놋쇠 해시계 */
 export default function MonthArch(props: MonthArchProps) {
-    const View = usePickTheme({ celestial: CelestialMonthArch, maple: MapleMonthArch, ocean: OceanMonthArch });
+    const View = usePickTheme({ celestial: CelestialMonthArch, maple: MapleMonthArch, ocean: OceanMonthArch , gem: GemMonthArch });
     return <View {...props} />;
 }

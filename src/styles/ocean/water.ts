@@ -114,7 +114,7 @@ export const tideMotion: MotionSet = {
 export const ink = (t: DefaultTheme, a: number) => withAlpha(t.colors.text, a);
 /** 머리카락 선 색. strong 은 조작부 테두리처럼 조금 더 보여야 할 때 */
 export const hairline = (t: DefaultTheme, strong = false) =>
-    dark(t) ? `rgba(255, 255, 255, ${strong ? 0.12 : 0.07})` : `rgba(18, 33, 32, ${strong ? 0.13 : 0.075})`;
+    dark(t) ? `rgba(255, 255, 255, ${strong ? 0.12 : 0.07})` : `rgba(24, 51, 47, ${strong ? 0.24 : 0.15})`;
 
 /** 키보드로 왔을 때만 보이는 고리 */
 export const focusRing = css`
@@ -140,7 +140,7 @@ export const label = css`
  * 판 바깥에 있을 때는 -999px 라 보이지 않는다.
  */
 const spotlight = (t: DefaultTheme, strength = 1) =>
-    `radial-gradient(560px circle at var(--gx, -999px) var(--gy, -999px), ${dark(t) ? `rgba(120, 240, 225, ${0.13 * strength})` : `rgba(255, 255, 255, ${0.42 * strength})`}, transparent 55%)`;
+    `radial-gradient(560px circle at var(--gx, -999px) var(--gy, -999px), ${dark(t) ? `rgba(120, 240, 225, ${0.13 * strength})` : `rgba(233, 244, 235, ${0.14 * strength})`}, transparent 55%)`;
 
 /**
  * 판 — 물 위에 뜬 액체 유리. 뒤의 물빛이 짙게(채도를 올려) 비치고, 왼쪽 위 가장자리에 빛이 맺히며(정반사),
@@ -180,6 +180,14 @@ export const surface = (kind: "panel" | "card" | "float" = "panel") => css`
                 0 24px 56px -28px ${d ? "rgba(0, 0, 0, 0.75)" : "rgba(6, 60, 66, 0.5)"};
         `;
     }}
+    ${(p) => !dark(p.theme) && css`
+        background-color: ${kind === "float" ? "rgba(232, 243, 242, 0.98)" : "rgba(230, 243, 242, 0.88)"};
+        background-image: ${spotlight(p.theme, 0.7)};
+        border-color: rgba(30, 105, 120, 0.18);
+        box-shadow: inset 0 1px 0 rgba(247, 253, 250, 0.5), 0 16px 40px -28px rgba(15, 73, 90, 0.4);
+        backdrop-filter: ${kind === "card" ? "none" : "blur(28px) saturate(110%)"};
+        -webkit-backdrop-filter: ${kind === "card" ? "none" : "blur(28px) saturate(110%)"};
+    `}
 `;
 /** 예전 이름들 */
 export const seaGlass = surface;

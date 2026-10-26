@@ -18,7 +18,7 @@ import { MOBILE } from "@/styles/breakpoints";
 /** 물안개가 잠깐 머물렀다가 걷힌다 — 처음부터 옅어지면 흐린 순간이 보이지 않는다 */
 const clear = keyframes`
     0%   { opacity: 1; }
-    30%  { opacity: 0.94; }
+    20%  { opacity: 0.7; }
     100% { opacity: 0; }
 `;
 
@@ -59,7 +59,7 @@ export const Veil = styled.span<{ $dir: 1 | -1; $gentle: boolean }>`
     overflow: hidden;
     pointer-events: none;
     opacity: 0;
-    background-color: ${(p) => (p.theme.mode === "dark" ? "rgba(6, 26, 30, 0.42)" : "rgba(236, 247, 245, 0.42)")};
+    background-color: ${(p) => (p.theme.mode === "dark" ? "rgba(6, 26, 30, 0.28)" : "rgba(220, 241, 241, 0.24)")};
     -webkit-mask-image: ${feather};
     -webkit-mask-composite: source-in;
     mask-image: ${feather};
@@ -69,9 +69,9 @@ export const Veil = styled.span<{ $dir: 1 | -1; $gentle: boolean }>`
         ? css`animation: ${fade} 0.24s ease-out both;`
         : css`
             --drift: ${p.$dir * -14}%;
-            backdrop-filter: blur(16px) saturate(140%);
-            -webkit-backdrop-filter: blur(16px) saturate(140%);
-            animation: ${clear} 0.55s ease-in-out both, ${drift} 0.55s ${EASE} both;
+            backdrop-filter: blur(8px) saturate(120%);
+            -webkit-backdrop-filter: blur(8px) saturate(120%);
+            animation: ${clear} .46s ease-in-out both, ${drift} .46s ${EASE} both;
             ${MOBILE} {
                 backdrop-filter: blur(10px) saturate(130%);
                 -webkit-backdrop-filter: blur(10px) saturate(130%);

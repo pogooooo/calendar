@@ -19,7 +19,15 @@ export const MobileWrapper = styled.div`
     gap: 10px;
 `;
 
-export const ViewSwitch = styled.div`
+export const ViewSwitch = styled.div<{ $active?: number }>`
+    position:relative; isolation:isolate; padding:3px;
+    border-radius:10px;
+    &::before {
+        content:""; position:absolute; z-index:-1;
+        inset:3px auto 3px 3px; width:calc((100% - 6px) / 2); border-radius:7px;
+        background:#202B40; translate:${p => (p.$active ?? 0) * 100}% 0;
+        :where(html:not([data-theme-motion="off"])) & { transition:translate .32s cubic-bezier(.22, 1, .36, 1); }
+    }
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     border: 1px solid ${(props) => props.theme.colors.primary}66;
@@ -27,6 +35,7 @@ export const ViewSwitch = styled.div`
 `;
 
 export const SwitchButton = styled.button<{ $on: boolean }>`
+    ${celestialOnly(css<{ $on:boolean }>`&& { background:transparent; border:0; color:${p => p.$on ? '#E1C773' : p.theme.colors.textSecondary}; font-family:${p => p.theme.fonts.body}; font-size:.82rem; letter-spacing:0; }`)}
     padding: 12px 0;
     background: ${(props) => (props.$on ? `${props.theme.colors.primary}1F` : "transparent")};
     border: none;

@@ -13,7 +13,7 @@ let hasNavigated = false;
  * 2026-10-16 까지는 줄 쳐진 종이 한 장이 걷혀 나갔다 — 화면을 통째로 덮는 불투명한 판이 무겁고 바탕 장면을 가렸다.
  * 처음 연 화면과 움직임을 끈 사람에게는 움직이지 않는다. '잔잔하게'면 더 짧게(효과 무대도 바람을 쉰다).
  */
-export default function MaplePageTransition({ children }: { children: React.ReactNode; direction?: Dir }) {
+export default function MaplePageTransition({ children, direction = 1 }: { children: React.ReactNode; direction?: Dir }) {
     const motion = useThemeMotion();
     // 이 화면에 들어온 그 순간에 한 번만 정한다 — 그릴 때마다 정하면 움직임 설정을 바꾸는 순간 화면이 다시 나타났다
     const [enter] = React.useState<"full" | "gentle" | null>(() => (hasNavigated && motion !== "off" ? motion : null));
@@ -24,6 +24,7 @@ export default function MaplePageTransition({ children }: { children: React.Reac
 
     return (
         <S.Stage>
+            {enter && <S.PageEdge aria-hidden="true" $dir={direction} $gentle={enter === 'gentle'} />}
             <S.Body $enter={enter}>{children}</S.Body>
         </S.Stage>
     );

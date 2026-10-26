@@ -7,6 +7,7 @@ import ThemeProviderWrapper from "@/components/ThemeProviderWrapper";
 import StoreInitializer from "@/components/StoreInitializer";
 import DesktopWidgetRestore from "@/components/DesktopWidgetRestore";
 import DesktopDragRegion from "@/components/DesktopDragRegion";
+import { DEVELOPMENT_THEMES_ENABLED } from '@/styles/themeAvailability';
 
 const orbit = Orbit({
     subsets: ["latin"],
@@ -46,7 +47,12 @@ var r=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
 d.setAttribute("data-theme-motion",r&&s&&s.motionOverOs===false?"off":((s&&s.motion)||"full"));
 if(!s||!s.theme)return;
 var o=(s.themeOptions||{})[s.theme];var k=o&&o!=="light"?s.theme+"-"+o:s.theme;
-var c={"celestial":"#FAF8F2","celestial-dark":"#121725","maple":"#F4EADB","maple-dark":"#1F1612","maple-vintage":"#E7DABF","ocean":"#7ACFC9","ocean-dark":"#0A2226"}[k];
+if(!${DEVELOPMENT_THEMES_ENABLED}&&(k==="gem"||k.indexOf("gem-")===0))k=k==="gem-dark"?"celestial-dark":"celestial";
+var c={"celestial":"#EAE6DC","celestial-dark":"#121725","maple":"#EAE0D0","maple-dark":"#1A1512","maple-vintage":"#E7DABF","ocean":"#8DBCB0","ocean-dark":"#0A2226","gem":"#EAE2E5","gem-dark":"#1C1526"}[k];
+if(k==="gem"||k==="gem-dark"){
+var g=typeof s.gemColor==="string"?s.gemColor.trim():"";if(!/^#[0-9a-f]{6}$/i.test(g))g="#9268C4";
+var b=k==="gem-dark"?[16,13,22]:[240,235,231];var a=k==="gem-dark"?.09:.065;
+c="#"+b.map(function(v,i){return Math.round(v+(parseInt(g.slice(1+i*2,3+i*2),16)-v)*a).toString(16).padStart(2,"0");}).join("");}
 if(!c)return;d.style.backgroundColor=c;d.style.colorScheme=/-dark$/.test(k)?"dark":"light";d.setAttribute("data-prepaint","");
 }catch(e){}})();`;
 
@@ -59,17 +65,18 @@ export default function RootLayout({children,}: Readonly<{ children: React.React
             <script dangerouslySetInnerHTML={{ __html: PRE_PAINT }} />
         </head>
         <body className={`relative notranslate ${orbit.variable}`}>
-            <ThemeProviderWrapper>
-                <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!}>
-                    <StyledComponentsRegistry>
+            {/* 테마의 전역 CSS와 배경 장식도 서버에서 수집해야 첫 화면의 클래스와 스타일이 일치한다. */}
+            <StyledComponentsRegistry>
+                <ThemeProviderWrapper>
+                    <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!}>
                         <StoreInitializer>
                             <DesktopWidgetRestore />
                             <DesktopDragRegion />
                             {children}
                         </StoreInitializer>
-                    </StyledComponentsRegistry>
-                </GoogleOAuthProvider>
-            </ThemeProviderWrapper>
+                    </GoogleOAuthProvider>
+                </ThemeProviderWrapper>
+            </StyledComponentsRegistry>
         </body>
         </html>
     );

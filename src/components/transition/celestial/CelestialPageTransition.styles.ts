@@ -11,10 +11,9 @@ import { star4Mark } from "@/styles/celestial/ornaments";
 export const C = 200;
 
 /**
- * 문양이 그려졌다 지워지는 시간. 넓은 화면에서는 1.45초가 근사하지만, 폰에서는 탭을 자주 오가므로
- * 매번 기다리는 느낌이 된다. CSS 변수로 두고 폰에서만 짧게 줄인다.
+ * 본문은 바로 나타나고 모서리의 천문도만 짧게 그려진다. 화면을 덮거나 조작을 지연시키지 않는다.
  */
-export const DURATION = "var(--cronos-transition, 1.45s)";
+export const DURATION = "var(--cronos-transition, .68s)";
 
 export const MOBILE_DURATION = "0.55s";
 
@@ -81,9 +80,9 @@ export const Body = styled.div<{ $animate: boolean }>`
 
     ${p => p.$animate && css`
         :where(html:not([data-theme-motion="off"])) & {
-            animation: ${bodyIn} 0.6s ease-out 0.62s both;
+            animation: ${bodyIn} .36s ease-out backwards;
 
-            ${MOBILE} { animation: ${bodyIn} 0.24s ease-out 0.2s both; }
+            ${MOBILE} { animation: ${bodyIn} .24s ease-out backwards; }
         }
     `}
 `;
@@ -107,7 +106,7 @@ export const Overlay = styled.div`
 export const Veil = styled.span`
     position: absolute;
     inset: 0;
-    background-color: ${p => p.theme.colors.background};
+    background-color: transparent;
     animation: ${veilCycle} ${DURATION} ease-in-out both;
 `;
 
@@ -148,9 +147,10 @@ export const Corners = styled.div`
 `;
 
 export const Sigil = styled.svg`
-    position: relative;
-    width: min(58vh, 400px);
-    height: min(58vh, 400px);
+    position:absolute;
+    top:12px; right:18px;
+    width:88px;
+    height:88px;
     overflow: visible;
     animation: ${sigilCycle} ${DURATION} cubic-bezier(0.33, 0, 0.2, 1) both;
 

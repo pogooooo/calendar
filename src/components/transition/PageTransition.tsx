@@ -1,5 +1,6 @@
 "use client";
 
+import GemPageTransition from './gem/GemPageTransition';
 import * as React from "react";
 import { usePathname } from "next/navigation";
 import { usePickTheme } from "@/styles/themed";
@@ -17,7 +18,7 @@ const rank = (p: string) => ORDER.findIndex((r) => (r === "/" ? p === "/" : p ==
 
 export default function PageTransition({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
-    const TransitionView = usePickTheme<TransitionViewType>({ celestial: CelestialPageTransition, maple: MaplePageTransition, ocean: OceanPageTransition });
+    const TransitionView = usePickTheme<TransitionViewType>({ celestial: CelestialPageTransition, maple: MaplePageTransition, ocean: OceanPageTransition , gem: GemPageTransition });
 
     // 화면이 바뀐 그 그림에서 차례를 정한다 (렌더 중에 앞 값을 맞추는 React 의 방식 — 새 화면이 옛 차례로 한 번 그려지지 않는다)
     const [nav, setNav] = React.useState<{ path: string; dir: Dir }>({ path: pathname, dir: 1 });

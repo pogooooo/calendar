@@ -1,6 +1,7 @@
 import styled, {css, keyframes} from "styled-components";
 import { motion } from "framer-motion";
 import { celestialOnly, dotMark, star4Mark } from "@/styles/celestial/ornaments";
+import { todayNumeral } from '@/styles/celestial/calendarDetails';
 
 const beadRun = keyframes`
     0% { left: 0; opacity: 0; }
@@ -170,6 +171,13 @@ export const Header = styled.div`
 `;
 
 export const DayNameBox = styled.div<{ $isToday?: boolean; $tier?: number }>`
+    ${celestialOnly(css<{ $isToday?:boolean }>`
+        && { border-right-color:${p => p.theme.colors.primary}40; }
+        ${p => p.$isToday && css`
+            &&::before { display:none; }
+            && .day-name { ${todayNumeral} }
+        `}
+    `)}
     display: flex;
     justify-content: center;
     align-items: center;

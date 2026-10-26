@@ -1,5 +1,6 @@
 "use client";
 
+import * as GemS from "./gem/GemDayCalendar.styles";
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { Plus, Trash2, Check, ChevronDown } from "lucide-react";
@@ -19,7 +20,7 @@ import * as MapleS from "./maple/MapleDayCalendar.styles";
 import * as OceanS from './ocean/OceanDayCalendar.styles';
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
 
 // contextMenu 는 div 의 HTML 속성 이름과 겹친다. 우리 뜻(열린 메뉴 상태)을 쓴다.
 type CelestialDayProps = DayThemeProps & Omit<React.HTMLAttributes<HTMLDivElement>, "contextMenu">;
@@ -90,11 +91,18 @@ const DayCalendarView = React.forwardRef<HTMLDivElement, CelestialDayProps>(
            목록에 든 줄은 들어오고 빠진 줄은 접히며, 끝낸 줄은 한 번 — 날을 옮긴 때는 통째로 갈린 것이라 빼고 */
         const dayKey = labelKey(selectedDate);
         const titleRef = React.useRef<HTMLSpanElement>(null);
+        const stampRef = React.useRef<HTMLDivElement>(null);
         const todoListRef = React.useRef<HTMLDivElement>(null);
         const taskListRef = React.useRef<HTMLDivElement>(null);
         const challengeListRef = React.useRef<HTMLDivElement>(null);
         useSwapMotion(dayKey, titleRef, { size: "line" });
+        useSwapMotion(dayKey, stampRef, { size: 'line', axis: 'y' });
         useSwapMotion(dayKey, contentRef);
+        // 펼친 내용만 갈래의 몸짓으로 드러낸다. 입력 요소를 다시 만들지 않아 메모와 초점이 유지된다.
+        useSwapMotion(String(fold.timeline), () => contentRef.current?.querySelector('[data-calendar-panel="timeline"] > :not(button)'), { axis:'y', size:'line' });
+        useSwapMotion(String(fold.challenge), () => contentRef.current?.querySelector('[data-calendar-panel="challenge"] > :not(button)'), { axis:'y', size:'line' });
+        useSwapMotion(String(fold.task), () => contentRef.current?.querySelector('[data-calendar-panel="task"] > :not(button)'), { axis:'y', size:'line' });
+        useSwapMotion(String(fold.memo), () => contentRef.current?.querySelector('[data-calendar-panel="memo"] > :not(button)'), { axis:'y', size:'line' });
         useListMotion(todoListRef, { reset: dayKey, exit: "collapse" });
         useListMotion(taskListRef, { reset: dayKey, exit: "collapse" });
         useListMotion(challengeListRef, { reset: dayKey });
@@ -151,6 +159,7 @@ const DayCalendarView = React.forwardRef<HTMLDivElement, CelestialDayProps>(
         return (
             <S.CelestialCalendarWrapper as={Component} ref={ref} {...props}>
                 <S.DateHeader>
+                    <S.DateStamp ref={stampRef} aria-hidden="true">{selectedDate.getDate()}<small>{selectedDate.toLocaleDateString('en-US', { weekday: 'short' })}</small></S.DateStamp>
                     <span ref={titleRef}>{formattedDate}</span>
                     <CategoryFilter
                         categories={categories}
@@ -201,7 +210,7 @@ const DayCalendarView = React.forwardRef<HTMLDivElement, CelestialDayProps>(
                         )}
                     </S.TodoCard>
 
-                    <S.TimelineSection
+                    <S.TimelineSection data-calendar-panel="timeline"
                         $collapsed={fold.timeline}
                         style={fold.timeline ? { flex: '0 0 auto' } : { flex: mainSplit }}
                     >
@@ -288,7 +297,7 @@ const DayCalendarView = React.forwardRef<HTMLDivElement, CelestialDayProps>(
                         style={fold.timeline ? { flex: 1 } : { flex: 1 - mainSplit }}
                     >
                         {/* 오늘의 챌린지 — 여기서 바로 완료 처리 */}
-                        <S.ChallengeCard $collapsed={fold.challenge}>
+                        <S.ChallengeCard data-calendar-panel="challenge" $collapsed={fold.challenge}>
                             <S.SectionToggle
                                 type="button"
                                 $collapsed={fold.challenge}
@@ -325,7 +334,7 @@ const DayCalendarView = React.forwardRef<HTMLDivElement, CelestialDayProps>(
                             )}
                         </S.ChallengeCard>
 
-                        <S.TaskCard
+                        <S.TaskCard data-calendar-panel="task"
                             $collapsed={fold.task}
                             style={fold.task ? { flex: '0 0 auto' } : (fold.memo ? { flex: 1 } : { flex: sideSplit })}
                         >
@@ -377,7 +386,7 @@ const DayCalendarView = React.forwardRef<HTMLDivElement, CelestialDayProps>(
                             </S.ResizeHandle>
                         )}
 
-                        <S.MemoCard
+                        <S.MemoCard data-calendar-panel="memo"
                             $collapsed={fold.memo}
                             style={fold.memo ? { flex: '0 0 auto' } : (fold.task ? { flex: 1 } : { flex: 1 - sideSplit })}
                         >

@@ -66,6 +66,8 @@ export const Head = styled.button<{ $today: boolean }>`
 
     .open {
         display: inline-flex;
+        white-space:nowrap;
+        flex-shrink:0;
         align-items: center;
         gap: 2px;
         font-size: 0.64rem;

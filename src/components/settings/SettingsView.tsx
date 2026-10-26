@@ -1,5 +1,7 @@
 "use client";
 
+import * as GemS from "./gem/GemSettings.styles";
+import * as GemLS from "./gem/GemSettings.layout";
 import * as React from "react";
 import LocaleSelect from "@/components/LocaleSelect";
 import TimezoneSelect from "@/components/TimezoneSelect";
@@ -28,8 +30,8 @@ import type { Axis } from '@/styles/motion';
 import { Armillary, MoonDisc, Orbit, Star4, Star8, SunMoon } from '@/components/ornament/celestial/CelestialOrnaments';
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
-const LAYOUTS: ThemeImpls<typeof CelestialLS> = { celestial: CelestialLS, maple: MapleLS, ocean: OceanLS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
+const LAYOUTS: ThemeImpls<typeof CelestialLS> = { celestial: CelestialLS, maple: MapleLS, ocean: OceanLS , gem: GemLS };
 
 /**
  * 설정은 판(pane) 넷으로 나뉜다. 예전에는 여덟 조각이 세로로 이어져 있어

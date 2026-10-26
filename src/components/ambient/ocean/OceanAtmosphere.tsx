@@ -6,6 +6,7 @@
  * 내용 뒤(z-index -1)에 깔리고, 화면을 누르는 것은 받지 않는다. 움직임 '끄기'·위젯 창에서는 커서 빛도 없다.
  */
 import { useEffect, useState } from "react";
+import { usePathname } from 'next/navigation';
 import useThemeMotion from "@/hooks/useThemeMotion";
 import OceanCaustics from "./OceanCaustics";
 import * as S from "./OceanAtmosphere.styles";
@@ -61,12 +62,13 @@ function useGlassSpotlight(enabled: boolean) {
 
 export default function OceanAtmosphere() {
     const motion = useThemeMotion();
+    const pathname = usePathname();
     // WebGL 이 없는 기기 — 물 대신 CSS 물빛이 일렁인다
     const [flat, setFlat] = useState(false);
     useGlassSpotlight(motion !== "off");
     return (
         <S.Sea aria-hidden="true" data-ambient="ocean">
-            {flat ? <S.FlatWater /> : <OceanCaustics onFail={() => setFlat(true)} />}
+            {flat ? <S.FlatWater /> : <OceanCaustics objects={!pathname?.startsWith('/calendar')} onFail={() => setFlat(true)} />}
             <S.Grain />
         </S.Sea>
     );

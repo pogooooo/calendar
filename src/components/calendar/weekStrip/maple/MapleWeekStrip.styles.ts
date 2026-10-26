@@ -2,20 +2,19 @@
  * Maple 의 주간 띠(폰) — 뼈대는 Celestial 과 같으므로 그쪽 것을 통째로 가져오고, 달라지는 것만 덮어쓴다.
  * (여기서 이름을 새로 정의하면 그것이 위의 재수출보다 앞선다 — ES 모듈 규칙)
  *
- * 2026-10-15 다시 그림: 카드 한 장 위에 일곱 날. 고른 날은 단풍 붉음으로 채운 동그라미(흰 숫자),
- * 오늘은 붉음이 옅게 든 동그라미에 붉은 숫자, 일정은 카테고리 색 단풍잎 점. 예전의 말린 잎 그림은 걷었다.
+ * 페이지의 종이 바탕 위에 일곱 날. 오늘 숫자에 붉은 밑선을 긋고, 선택한 칸은 아래 괘선으로 구분한다.
+ * 노트의 왼쪽 여백선과 일정 색 표식은 그대로 유지한다.
  */
 import styled, { css } from "styled-components";
 import * as C from "../celestial/CelestialWeekStrip.styles";
 import { withAlpha } from "@/styles/color";
-import { hair, leafChip, paperCard, stampButton } from "@/styles/maple/ink";
+import { hair, stampButton } from "@/styles/maple/ink";
 
 export * from "../celestial/CelestialWeekStrip.styles";
 
-const dark = (p: { theme: { mode: string } }) => p.theme.mode === "dark";
-
 export const Strip = styled(C.Strip)`
-    ${paperCard()}
+    && { position:relative; background:transparent; border:0; border-bottom:1px solid ${p => hair(p.theme,.18)}; border-radius:0; padding:10px 10px 14px 20px; box-shadow:none; }
+    &::before { content:""; position:absolute; left:11px; top:12px; bottom:12px; width:1px; background:${p => p.theme.colors.primary}35; pointer-events:none; }
     padding: 6px 8px 8px;
 `;
 
@@ -55,6 +54,8 @@ export const Days = styled(C.Days)`
 `;
 
 export const Day = styled(C.Day)`
+    && { min-height:78px; border-radius:3px; background-color:${(p) => p.$selected ? withAlpha(p.theme.colors.primary, .08) : 'transparent'}; box-shadow:${(p) => p.$selected ? `inset 0 -3px 0 ${p.theme.colors.primary}` : 'none'}; }
+    && .num { font-family:${p => p.theme.fonts.body}; font-size:1rem; font-variant-numeric:tabular-nums; border-radius:0; }
     gap: 4px;
     min-height: 64px;
     padding: 6px 0;
@@ -83,6 +84,8 @@ export const Day = styled(C.Day)`
         height: 32px;
         line-height: 32px;
         border: none;
+        background: transparent;
+        box-shadow: none;
         font-family: ${(p) => p.theme.fonts.body};
         font-size: 0.9375rem;
         font-weight: 600;
@@ -90,15 +93,16 @@ export const Day = styled(C.Day)`
 
         ${(p) => p.$today && css`
             color: ${p.theme.colors.primary};
-            background-color: ${withAlpha(p.theme.colors.primary, dark(p) ? 0.18 : 0.12)};
             font-weight: 700;
+            text-decoration: underline;
+            text-decoration-thickness: 1.5px;
+            text-underline-offset: 6px;
+            text-decoration-skip-ink: none;
         `}
 
         ${(p) => p.$selected && css`
-            color: ${dark(p) ? "#1A1512" : "#FFFFFF"};
-            background-color: ${p.theme.colors.primary};
+            color: ${p.theme.colors.primary};
             font-weight: 700;
-            box-shadow: 0 2px 6px -2px ${withAlpha(p.theme.colors.primary, 0.7)};
         `}
     }
 
@@ -107,7 +111,7 @@ export const Day = styled(C.Day)`
         gap: 2px;
         min-height: 9px;
 
-        i { ${leafChip(5, "9px")} }
+        i { width:11px; height:3px; border-radius:1px; mask:none; -webkit-mask:none; transform:none; }
 
         em {
             font-size: 0.66rem;

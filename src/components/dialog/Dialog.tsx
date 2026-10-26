@@ -1,5 +1,8 @@
 "use client";
 
+import { GemEmblem } from '@/assets/gem/GemAssets';
+import { GEM_DIALOGS } from '@/assets/gem/GemAssets';
+import * as GemS from "./gem/GemDialog.styles";
 import * as React from "react";
 import { createPortal } from "react-dom";
 import ArcanaEmblem from "./ArcanaEmblem";
@@ -16,7 +19,7 @@ import { startOnNextFrame, useMotionSet } from "@/hooks/useMotion";
 import { exitFrames, optionsOf } from "@/styles/motion";
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
 
 export interface DialogRequest {
     kind: DialogKind;
@@ -48,8 +51,8 @@ export default function Dialog({
 }: Props) {
     const S = usePickTheme(STYLES);
     // 문장과 번호도 갈래마다 다르다 — Celestial 은 타로 아르카나, Maple 은 도감 도판
-    const Emblem = usePickTheme({ celestial: ArcanaEmblem, maple: MapleEmblem, ocean: OceanArcanaEmblem });
-    const arcanum = usePickTheme({ celestial: ARCANA, maple: PLATES, ocean: OceanARCANA })[kind];
+    const Emblem = usePickTheme({ celestial: ArcanaEmblem, maple: MapleEmblem, ocean: OceanArcanaEmblem , gem: GemEmblem });
+    const arcanum = usePickTheme({ celestial: ARCANA, maple: PLATES, ocean: OceanARCANA , gem: GEM_DIALOGS })[kind];
     const shape = variant ?? VARIANT_BY_KIND[kind];
     const confirmRef = React.useRef<HTMLButtonElement>(null);
     const veilRef = React.useRef<HTMLDivElement>(null);

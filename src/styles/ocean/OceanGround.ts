@@ -18,10 +18,10 @@ const OceanGround = createGlobalStyle`
         initial-value: 0;
     }
     html {
-        background-color: ${(p) => (p.theme.mode === "dark" ? "#0A2226" : "#7ACFC9")} !important;
+        background-color: ${(p) => (p.theme.mode === "dark" ? "#0A2226" : "#8DBCB0")} !important;
         background-image: ${(p) => (p.theme.mode === "dark"
             ? "linear-gradient(180deg, #072024 0%, #0A2A2F 45%, #0E1F21 100%)"
-            : "linear-gradient(180deg, #3BA6A8 0%, #7ACFC9 38%, #D1EBE3 76%, #EFE8D6 100%)")} !important;
+            : "linear-gradient(180deg, #3B8589 0%, #6BAFA8 38%, #BDD6C7 76%, #DBD9C4 100%)")} !important;
         background-attachment: fixed !important;
     }
     body { background: transparent !important; }

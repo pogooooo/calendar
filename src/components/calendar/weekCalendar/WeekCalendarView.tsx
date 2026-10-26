@@ -1,5 +1,6 @@
 "use client";
 
+import * as GemS from "./gem/GemWeekCalendar.styles";
 import * as React from "react";
 import { useTheme } from "styled-components";
 import { Slot } from "@radix-ui/react-slot";
@@ -28,7 +29,7 @@ import * as MapleS from "./maple/MapleWeekCalendar.styles";
 import * as OceanS from './ocean/OceanWeekCalendar.styles';
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
 
 const slideVariants = {
     enter: (direction: number) => ({ x: direction > 0 ? 18 : -18, opacity: 0 }),

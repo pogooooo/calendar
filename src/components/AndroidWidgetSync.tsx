@@ -136,7 +136,7 @@ export default function AndroidWidgetSync() {
                 const snapshot = buildWidgetSnapshot({
                     todos, categories, challenges, anniversaries, projects,
                     memo: todayMemo.current, t, locale,
-                    theme: { family: theme.family, mode: theme.mode, variant: theme.variant, colors: theme.colors },
+                    theme: { family: theme.family, mode: theme.mode, variant: theme.variant, gemColor: theme.gemColor, colors: theme.colors },
                     quickAdd: widgetKey && API_BASE ? { api: API_BASE, token: widgetKey } : null,
                 });
                 const { invoke } = await import("@tauri-apps/api/core");

@@ -1,5 +1,6 @@
 "use client";
 
+import * as GemS from "./gem/GemChallenge.styles";
 import * as React from "react";
 
 import CategoryFilter from "@/components/calendar/parts/categoryFilter/CategoryFilter";
@@ -18,10 +19,10 @@ import { challengeExpired, completionKey, slotKey, slotsUntil } from "@/lib/chal
 import { useListMotion, useSwapMotion } from "@/hooks/useMotion";
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
 
 /** 갈래마다 제 배치 — Maple 은 Celestial 의 배치(목록 | 판 둘)에 제 모양을 입히고, 바다는 카드 갤러리와 펼친 무대 */
-const LAYOUTS = { celestial: CelestialChallengeLayout, maple: CelestialChallengeLayout, ocean: OceanChallengeLayout };
+const LAYOUTS = { celestial: CelestialChallengeLayout, maple: CelestialChallengeLayout, ocean: OceanChallengeLayout , gem: CelestialChallengeLayout };
 
 interface CelestialChallengeProps {
     categories: CategoryType[];

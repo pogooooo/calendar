@@ -5,11 +5,12 @@
  * 2026-10-15 다시 그림: 금빛 실선 상자·먹 하이라인·마스킹테이프 대신 종이 위의 깨끗한 카드들(할 일·시간표·챌린지·임시 작업·메모).
  * 카드 제목은 명조로 또렷하게, 접는 꺾쇠는 오른쪽 끝에. 시간표는 옅은 선 위에 붉은 막대가 눕는다.
  */
-import styled from "styled-components";
+import styled, { css } from "styled-components";
 import * as C from "../celestial/CelestialDayCalendar.styles";
+import { leafDate } from '@/styles/maple/calendarMarks';
 import { MOBILE } from "@/styles/breakpoints";
 import { withAlpha } from "@/styles/color";
-import { crest, hair, inkCheckbox, inkInput, leafChip, paperCard, stampButton } from "@/styles/maple/ink";
+import { crest, hair, inkCheckbox, inkInput, leafChip, stampButton } from "@/styles/maple/ink";
 
 export * from "../celestial/CelestialDayCalendar.styles";
 
@@ -17,8 +18,27 @@ const dark = (p: { theme: { mode: string } }) => p.theme.mode === "dark";
 /** 카드 사이의 틈 — 끌어 나누는 손잡이의 키도 같다 */
 const GAP = "12px";
 
+/** 노트의 종이는 페이지 바탕이 맡는다. 내용은 괘선과 여백으로만 나눈다. */
+const notebookPanel = css`
+    position: relative;
+    background: transparent;
+    border: 1px solid ${(p) => hair(p.theme, 0.16)};
+    border-radius: 4px;
+    box-shadow: none;
+`;
+
+export const DateStamp = styled(C.DateStamp)`
+    ${leafDate}
+    flex-direction:column;
+    width:64px; height:70px; background:none; border:0; border-right:1px solid ${(p) => hair(p.theme, .2)};
+    border-radius:0; color:${p => p.theme.colors.primary}; font-family:${p => p.theme.fonts.display}; font-size:2.2rem; font-weight:450;
+    small { margin-top:1px; font-size:.55rem; }
+    ${MOBILE} { width:54px; height:58px; font-size:2.2rem; }
+`;
+
 /** 날짜 머리 — 화면 제목(명조). 거르개는 오른쪽 끝으로, 예전의 실선은 걷는다 */
 export const DateHeader = styled(C.DateHeader)`
+    && { border-bottom:1px solid ${p => hair(p.theme,.2)}; padding-bottom:12px; font-size:1.02rem; }
     min-height: 40px;
     margin-bottom: 14px;
     gap: 8px;
@@ -35,7 +55,7 @@ export const DateHeader = styled(C.DateHeader)`
 
     & > hr { display: none; }
 
-    /* 폰에서는 바로 위 주간 띠가 날짜를 말한다 — 거르개만 오른쪽에 */
+    /* The full date remains visible on narrow screens. */
     ${MOBILE} {
         min-height: 0;
         margin-bottom: 8px;
@@ -105,7 +125,8 @@ export const SectionToggle = styled(C.SectionToggle)`
 /* ── 카드들 ─────────────────────────────────────────────── */
 
 export const TodoCard = styled(C.TodoCard)`
-    ${paperCard()}
+    ${notebookPanel}
+    border-top: 2px solid ${(p) => withAlpha(p.theme.colors.primary, 0.65)};
     overflow: hidden;
     margin-bottom: ${GAP};
 `;
@@ -179,7 +200,7 @@ export const TodoRow = styled(C.TodoRow)`
 
 /** 시간표 카드 */
 export const TimelineSection = styled(C.TimelineSection)`
-    ${paperCard()}
+    ${notebookPanel}
     overflow: hidden;
 
     /* 폰에는 끌어 나누는 손잡이가 없다 — 그 자리만큼 틈을 둔다 */
@@ -191,6 +212,9 @@ export const TimelineSection = styled(C.TimelineSection)`
  * 마우스가 올라간 줄에만 10분 칸의 점선이 옅게 비친다(뼈대의 --slot-rule).
  */
 export const TimeRow = styled(C.TimeRow)`
+    && { min-height: 40px; }
+    && .time-label { width: 56px; border-right: 1px solid ${(p) => withAlpha(p.theme.colors.primary, 0.22)}; font-family: ${(p) => p.theme.fonts.numeral}; font-size: 0.95rem; }
+    && .time-slots { padding-left: 8px; }
     min-height: 38px;
     border-bottom: 1px solid ${(p) => hair(p.theme, dark(p) ? 0.08 : 0.07)};
 
@@ -238,14 +262,14 @@ export const SlotTodoItem = styled(C.SlotTodoItem)`
 
 /** 아래 묶음 — 챌린지·임시 작업·메모. 접혀도 카드끼리 붙지 않게 늘 틈을 둔다 */
 export const ChallengeCard = styled(C.ChallengeCard)`
-    ${paperCard()}
+    ${notebookPanel}
     overflow: hidden;
     margin-bottom: ${GAP};
 `;
 
 /* 폰: 뼈대는 이 카드를 200px 로 못 박아, 할 일이 없으면 빈 종이만 컸다 — 내용만큼 자라고 길면 안에서 굴린다 */
 export const TaskCard = styled(C.TaskCard)`
-    ${paperCard()}
+    ${notebookPanel}
     overflow: hidden;
 
     ${MOBILE} {
@@ -255,7 +279,14 @@ export const TaskCard = styled(C.TaskCard)`
 `;
 
 export const MemoCard = styled(C.MemoCard)`
-    ${paperCard()}
+    && textarea {
+        background-image: repeating-linear-gradient(to bottom, transparent 0 27px, ${(p) => hair(p.theme, 0.1)} 27px 28px);
+        background-position: 0 3px;
+        line-height: 28px;
+        padding-top: 3px;
+        color: ${(p) => p.theme.colors.text};
+    }
+    ${notebookPanel}
     overflow: hidden;
 
     textarea {

@@ -282,6 +282,10 @@ function rising(ctx: FxContext, x: number, y: number, n: number, size: number, d
 
 const mod: FxModule = {
     effects: {
+        'calendar-pick': (ctx) => {
+            const r=ctx.rect;
+            return leaves(ctx,Array.from({length:count(ctx,2)},()=>flutter(ctx,{x:r.x+r.w/2+rand(-8,8),y:r.y+r.h*.5,vx:rand(-25,25),vy:-35,size:rand(17,23),life:.8})));
+        },
         "month-flip": (ctx, e) => {
             const dir = e.direction ?? 1;
             const r = ctx.rect;

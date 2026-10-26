@@ -1,8 +1,11 @@
 "use client"
 
+import GemGround from '@/styles/gem/GemGround';
 import { useEffect, useMemo } from 'react';
 import { ThemeProvider } from 'styled-components';
 import { themes } from '@/styles/theme';
+import { availableThemeName } from '@/styles/themeAvailability';
+import { applyGemColor } from '@/styles/gem/palette';
 import GlobalScrollbar from '@/styles/GlobalScrollbar';
 import GlobalTypography, { getFontSize, getFontWeight } from '@/styles/GlobalTypography';
 import useSettingStore from "@/store/useSettingStore";
@@ -14,13 +17,15 @@ import OceanGround from '@/styles/ocean/OceanGround';
 import ThemeAtmosphere from './ambient/ThemeAtmosphere';
 import FxStage from './fx/FxStage';
 import { MotionConfig } from 'framer-motion';
+import InterfaceMotion from './transition/InterfaceMotion';
 
 /** 갈래가 화면 전체에 얹는 한 겹 (종이결 같은 것). 없는 갈래는 아무것도 안 얹는다. */
-const GROUNDS: Partial<Record<ThemeFamily, React.ComponentType>> = { maple: MapleGround, celestial: CelestialGround, ocean: OceanGround };
+const GROUNDS: Partial<Record<ThemeFamily, React.ComponentType>> = { maple: MapleGround, celestial: CelestialGround, ocean: OceanGround , gem: GemGround };
 
 export default function ThemeProviderWrapper({ children }: { children: React.ReactNode }) {
     const themeName = useSettingStore((state) => state.theme);
     const themeOptions = useSettingStore((state) => state.themeOptions);
+    const gemColor = useSettingStore((state) => state.gemColor);
     const fontKey = useSettingStore((state) => state.font);
     const fontSizeKey = useSettingStore((state) => state.fontSize);
     const fontWeightKey = useSettingStore((state) => state.fontWeight);
@@ -54,8 +59,8 @@ export default function ThemeProviderWrapper({ children }: { children: React.Rea
     const effectiveKey = option && option !== 'light'
         ? `${themeName}-${option}`
         : themeName;
-    const baseTheme = themes[effectiveKey as keyof typeof themes]
-        ?? themes[themeName as keyof typeof themes]
+    const baseTheme = themes[availableThemeName(effectiveKey) as keyof typeof themes]
+        ?? themes[availableThemeName(themeName) as keyof typeof themes]
         ?? themes.celestial;
 
     const fontOption = getFontOption(fontKey);
@@ -63,9 +68,9 @@ export default function ThemeProviderWrapper({ children }: { children: React.Rea
     // "기본" 은 갈래가 정한 본문 글꼴이다 — 지금은 세 갈래 모두 Pretendard
     const bodyFamily = fontOption.key === "default" ? baseTheme.fonts.body : fontOption.family;
     const theme = useMemo(() => ({
-        ...baseTheme,
+        ...applyGemColor(baseTheme, gemColor),
         fonts: { ...baseTheme.fonts, body: bodyFamily },
-    }), [baseTheme, bodyFamily]);
+    }), [baseTheme, bodyFamily, gemColor]);
 
     useEffect(() => {
         ensureFontLoaded(fontOption);
@@ -112,6 +117,7 @@ export default function ThemeProviderWrapper({ children }: { children: React.Rea
                 $weight={getFontWeight(fontWeightKey).weight}
             />
             <ThemeAtmosphere />
+            <InterfaceMotion />
             {children}
             <FxStage />
             </MotionConfig>

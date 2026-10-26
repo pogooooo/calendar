@@ -1,6 +1,8 @@
 "use client";
 
+import * as GemS from "./gem/GemWeekStrip.styles";
 import * as React from "react";
+import { fx, rectOf } from '@/lib/fx';
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { WeekStripThemeProps } from "./WeekStrip";
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
@@ -11,7 +13,7 @@ import { useSwapMotion } from "@/hooks/useMotion";
 import * as OceanS from './ocean/OceanWeekStrip.styles';
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
 
 export default function WeekStripView({
     days, dayNames, title, isTodayShown,
@@ -44,13 +46,14 @@ export default function WeekStripView({
                         type="button"
                         role="tab"
                         aria-selected={d.isSelected}
+                        aria-current={d.isToday ? 'date' : undefined}
                         aria-label={`${d.date.getMonth() + 1}/${d.date.getDate()} ${dayNames[i]}`}
                         $selected={d.isSelected}
                         $today={d.isToday}
                         $weekend={d.isWeekend}
-                        onClick={() => onSelect(d.date)}
+                        onClick={(event) => { fx.emit('calendar-pick',{rect:rectOf(event.currentTarget)}); onSelect(d.date); }}
                     >
-                        <span className="name">{dayNames[i]}</span>
+                        <span className="name">{d.isToday ? labels.today : dayNames[i]}</span>
                         <span className="num">{d.date.getDate()}</span>
                         <span className="dots" aria-hidden>
                             {d.dots.map((c, j) => <i key={j} style={{ background: c }} data-leaf={leafShapeOf(c)} />)}

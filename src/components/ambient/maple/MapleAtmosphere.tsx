@@ -16,6 +16,8 @@ const AUTH = ["/signIn", "/signUp", "/forgotPassword", "/resetPassword", "/verif
 
 export default function MapleAtmosphere() {
     const pathname = usePathname() ?? "";
+    // A quiet paper surface belongs behind the notebook calendar.
+    if (pathname.startsWith('/calendar')) return null;
     if (AUTH.some((p) => pathname.startsWith(p))) return null;
     return <S.Garden aria-hidden="true" data-ambient="maple">
         <MapleWind

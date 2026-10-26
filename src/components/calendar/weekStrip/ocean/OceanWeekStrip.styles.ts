@@ -1,16 +1,12 @@
-/**
- * 바다의 폰 주간 띠 — 바탕색 띠에 테두리 상자(Celestial), 종이 쪽지·눌러 말린 잎(Maple) 대신
- * **반투명 판 하나에 12px 모서리 날짜 칸 일곱**. 요일은 작은 고정폭 대문자, 숫자는 굵은 고정폭 숫자,
- * 고른 날은 청록으로 꽉 찬 칸에 흰 글씨, 오늘은 청록 숫자에 작은 청록 점. 일정은 카테고리 색 점(마름모 대신).
- */
+/** 바탕의 물빛을 이어 쓰는 주간 띠. 오늘은 숫자 밑선, 고른 날은 칸 아래의 얇은 강조선. */
 import styled, { css, keyframes } from "styled-components";
 import * as C from "../celestial/CelestialWeekStrip.styles";
-import { EASE, R, calm, focusRing, ink, label, surface, surfaceIn } from "@/styles/ocean/water";
+import { EASE, calm, focusRing, hairline, ink, surfaceIn } from "@/styles/ocean/water";
+import { withAlpha } from "@/styles/color";
 
 export * from "../celestial/CelestialWeekStrip.styles";
 
 const dark = (p: { theme: { mode: string } }) => p.theme.mode === "dark";
-const onTeal = (p: { theme: { mode: string } }) => (dark(p) ? "#06110F" : "#FFFFFF");
 
 /** 주가 바뀔 때 머리 글씨가 살짝 올라오며 나타난다 (한 번만) */
 const titleIn = keyframes`
@@ -19,8 +15,11 @@ const titleIn = keyframes`
 `;
 
 export const Strip = styled(C.Strip)`
-    ${surface("panel")}
-    border-radius: 16px;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid ${(p) => hairline(p.theme)};
+    border-radius: 0;
+    box-shadow: none;
     padding: 6px 6px 8px;
     margin-bottom: 10px;
     animation: ${surfaceIn} 0.4s ${EASE} both;
@@ -64,7 +63,7 @@ export const Head = styled(C.Head)`
         font-weight: 600;
         letter-spacing: 0;
         color: ${(p) => p.theme.colors.text};
-        background: ${(p) => (dark(p) ? "rgba(255, 255, 255, 0.05)" : "rgba(255, 255, 255, 0.85)")};
+        background: transparent;
     }
 `;
 
@@ -72,77 +71,17 @@ export const Days = styled(C.Days)`
     gap: 4px;
 `;
 
-/** 날 하나 — 12px 모서리 칸. 고르면 청록 칸, 오늘은 청록 숫자와 점 */
+/** 칸 크기는 모든 상태에서 같다. 오늘과 선택한 날이 다르면 두 표시가 함께 남는다. */
 export const Day = styled(C.Day)`
-    position: relative;
-    gap: 4px;
-    min-height: 62px;
-    padding: 8px 0 7px;
-    border: none;
-    border-radius: ${R.md};
-    /* 고른 칸은 글자색을 흰빛으로 — 색 없는 일정 점(currentColor)도 따라 하얘진다 */
-    color: ${(p) => (p.$selected ? onTeal(p) : p.$weekend ? p.theme.colors.weekend : p.theme.colors.text)};
-    background: ${(p) => (p.$selected ? p.theme.colors.primary : "transparent")};
-    transition: background-color 0.15s ease, color 0.15s ease;
-
-    .name {
-        ${label}
-        font-size: 0.58rem;
-        letter-spacing: 0.06em;
-        color: ${(p) => (p.$selected ? onTeal(p) : p.theme.colors.textSecondary)};
-        opacity: ${(p) => (p.$selected ? 0.8 : 1)};
-    }
-
-    .num {
-        width: auto;
-        height: 22px;
-        line-height: 22px;
-        border: none;
-        border-radius: 0;
-        font-family: ${(p) => p.theme.fonts.numeral};
-        font-size: 1.05rem;
-        font-weight: ${(p) => (p.$today || p.$selected ? 700 : 500)};
-        font-variant-numeric: tabular-nums;
-        letter-spacing: -0.01em;
-        color: inherit;
-        ${(p) => p.$today && !p.$selected && css`color: ${p.theme.colors.primary};`}
-    }
-
-    /* 일정 점 — 마름모 대신 동그라미. 청록 칸 위에서는 흰 점 (색은 아래 일간이 보여 준다 — 인라인 색을 이겨야 해서 !important) */
-    .dots {
-        gap: 3px;
-        min-height: 6px;
-        i {
-            width: 5px;
-            height: 5px;
-            transform: none;
-            border-radius: 50%;
-            ${(p) => p.$selected && css`background: ${onTeal(p)} !important; opacity: 0.85;`}
-        }
-        em {
-            font-family: ${(p) => p.theme.fonts.numeral};
-            font-size: 0.58rem;
-            font-weight: 600;
-            font-variant-numeric: tabular-nums;
-            color: ${(p) => (p.$selected ? onTeal(p) : p.theme.colors.textSecondary)};
-        }
-    }
-
-    /* 오늘 — 칸 위쪽 가운데의 작은 청록 점 */
-    ${(p) => p.$today && css`
-        &::after {
-            content: "";
-            position: absolute;
-            top: 3px;
-            left: 50%;
-            width: 4px;
-            height: 4px;
-            margin-left: -2px;
-            border-radius: 50%;
-            background: ${p.$selected ? onTeal(p) : p.theme.colors.primary};
-        }
-    `}
-
-    &:active { background: ${(p) => (p.$selected ? p.theme.colors.primary : ink(p.theme, dark(p) ? 0.1 : 0.06))}; transform: scale(0.97); }
+    && { position:relative; min-height:82px; gap:5px; padding:8px 0 7px; border:0; border-radius:0; background:${p => p.$selected ? withAlpha(p.theme.colors.primary, .06) : 'transparent'}; box-shadow:${p => p.$selected ? `inset 0 -2px 0 ${p.theme.colors.primary}` : 'none'}; color:${p => p.$weekend ? p.theme.colors.weekend : p.theme.colors.text}; }
+    && .name { font-family:${p => p.theme.fonts.body}; font-size:.67rem; letter-spacing:0; opacity:1; color:${p => p.$selected || p.$today ? p.theme.colors.primary : p.theme.colors.textSecondary}; }
+    && .num { position:relative; width:36px; height:32px; line-height:24px; border:0; border-radius:0; font-family:${p => p.theme.fonts.numeral}; font-size:1.1rem; font-weight:${p => p.$selected || p.$today ? 750 : 550}; color:${p => p.$selected || p.$today ? p.theme.colors.primary : 'inherit'}; }
+    ${p => p.$today && css`&& .num { color:${p.theme.colors.primary}; font-weight:800; text-decoration:underline; text-decoration-thickness:1.5px; text-underline-offset:6px; text-decoration-skip-ink:none; }`}
+    &&::before { display:none; }
+    &&::after { display:none; }
+    && .dots { gap:3px; min-height:6px; margin-top:2px; }
+    && .dots i { width:5px; height:5px; border-radius:50%; transform:none; }
+    && .dots em { font-size:.65rem; color:${p => p.theme.colors.textSecondary}; }
+    &&:active { background:transparent; }
     ${focusRing}
 `;

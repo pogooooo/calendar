@@ -1,5 +1,6 @@
 "use client";
 
+import * as GemS from "./notice/gem/GemSaveFailureNotice.styles";
 import * as React from "react";
 import { AlertTriangle, X } from "lucide-react";
 import { subscribeSaveFailure, type SaveScope } from "@/lib/saveError";
@@ -11,7 +12,7 @@ import * as MapleS from "./notice/maple/MapleSaveFailureNotice.styles";
 import * as OceanS from './notice/ocean/OceanSaveFailureNotice.styles';
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
 
 /**
  * 저장이 실패해 화면이 되돌아갔을 때 뜨는 알림.

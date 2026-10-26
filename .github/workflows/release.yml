@@ -1,9 +1,8 @@
 name: release
 
 on:
-  push:
-    tags:
-      - "v*"
+  # Current releases are signed and published locally. Restore tag-triggered
+  # publishing only after the CI signing key matches the installed updater key.
   workflow_dispatch:
 
 jobs:

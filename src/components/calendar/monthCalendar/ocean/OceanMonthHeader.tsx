@@ -10,7 +10,7 @@ const LATIN_MONTH = new Intl.DateTimeFormat('en', { month: 'long' });
  */
 export default function OceanMonthHeader(p: MonthHeaderProps) {
     return <S.Header data-theme-layout="ocean-month-header">
-        {p.month && <S.Title aria-hidden="true" key={p.month.getMonth()}>{LATIN_MONTH.format(p.month)}</S.Title>}
+        {p.month && <S.Title aria-hidden="true"><span className="eyebrow">MAKE ROOM FOR YOUR DAY</span><span className="month" key={p.month.getMonth()}>{LATIN_MONTH.format(p.month)}<i> / {String(p.month.getMonth() + 1).padStart(2, '0')}</i></span></S.Title>}
         <S.Nav>{p.navigation}</S.Nav>
         <S.Filters>{p.filters}</S.Filters>
     </S.Header>;

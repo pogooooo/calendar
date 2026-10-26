@@ -8,12 +8,12 @@
 import styled from "styled-components";
 import * as C from "../celestial/CelestialDayPeek.styles";
 import { MOBILE } from "@/styles/breakpoints";
-import { LEAF_FILLED, hair, leafBullet, paperCard } from "@/styles/maple/ink";
+import { hair } from "@/styles/maple/ink";
 
 export * from "../celestial/CelestialDayPeek.styles";
 
 export const Wrap = styled(C.Wrap)`
-    ${paperCard()}
+    && { background:transparent; border:0; border-top:1px solid ${p => hair(p.theme,.18)}; border-radius:0; box-shadow:none; }
     margin-top: 12px;
     padding: 0 14px;
     overflow: hidden;
@@ -30,8 +30,7 @@ export const Head = styled(C.Head)`
 
     /* 오늘이면 채운 잎, 아니면 윤곽 잎 */
     .hd {
-        ${(p) => leafBullet(p.$today, "13px")}
-        background-color: ${(p) => p.theme.colors.primary};
+        display:none;
     }
 
     .hr { display: none; }
@@ -77,14 +76,13 @@ export const Row = styled(C.Row)`
 
     /* 색은 JSX 가 인라인 border-color(끝낸 것은 background 도)로 준다 — 굵은 테두리가 잎 모양에 잘려 잎을 칠한다 */
     .mark {
-        width: 11px;
-        height: 11px;
+        width: 3px;
+        height: 13px;
         box-sizing: border-box;
-        border: 5.5px solid ${(p) => p.theme.colors.primary};
+        border: 1.5px solid ${(p) => p.theme.colors.primary};
         background: transparent;
         transform: none;
-        mask: ${LEAF_FILLED} center / contain no-repeat;
-        -webkit-mask: ${LEAF_FILLED} center / contain no-repeat;
+        mask:none; -webkit-mask:none;
         opacity: ${(p) => (p.$done ? 0.4 : 1)};
     }
 

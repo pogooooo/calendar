@@ -1,5 +1,6 @@
 "use client";
 
+import * as GemS from "./gem/GemChallengeModal.styles";
 import * as React from "react";
 import { ChallengeThemeProps } from "./ChallengeModal";
 import { X, Check, Plus } from "lucide-react";
@@ -14,7 +15,7 @@ import * as MapleS from "./maple/MapleChallengeModal.styles";
 import * as OceanS from './ocean/OceanChallengeModal.styles';
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
 
 export default function ChallengeModalView({
                                                     isOpen, onClose, initialData, categories,

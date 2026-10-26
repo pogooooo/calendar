@@ -16,6 +16,7 @@ import { useDialog } from "@/components/dialog/DialogProvider";
 import SettingsView from "./SettingsView";
 import type { Translations } from "@/i18n/types";
 import { listThemes, type ThemeChoice } from "@/styles/theme";
+import { availableThemeName } from '@/styles/themeAvailability';
 import { fx } from "@/lib/fx";
 import { makeAuthSchemas } from "@/lib/schema";
 import { authFailure } from "@/lib/authFailure";
@@ -167,8 +168,12 @@ export default function SettingsPage() {
     const logout = useAuthStore((s) => s.logout);
     const authFetch = useAuthFetch();
 
-    const { theme: currentTheme, updateTheme } = useSettingStore();
-    const themeOptions = useSettingStore((s) => s.themeOptions);
+    const { theme: savedTheme, updateTheme } = useSettingStore();
+    const currentTheme = availableThemeName(savedTheme);
+    const savedThemeOptions = useSettingStore((s) => s.themeOptions);
+    const themeOptions = currentTheme === savedTheme ? savedThemeOptions : {
+        ...savedThemeOptions, [currentTheme]: savedThemeOptions[savedTheme] ?? 'light',
+    };
     const setThemeOption = useSettingStore((s) => s.setThemeOption);
     const autostart = useSettingStore((s) => s.autostart);
     const setAutostart = useSettingStore((s) => s.setAutostart);
@@ -190,7 +195,10 @@ export default function SettingsPage() {
     );
 
     const handleThemeChange = (themeId: string) => { fx.emit("theme"); return updateTheme(authFetch, themeId); };
-    const handleThemeOptionChange = (themeId: string, opt: string) => setThemeOption(themeId, opt);
+    const handleThemeOptionChange = (themeId: string, opt: string) => {
+        setThemeOption(themeId, opt);
+        if (savedTheme !== currentTheme) void updateTheme(authFetch, themeId);
+    };
 
     const runWidget = async (action: "open" | "close", kind: string) => {
         const error = await invokeWidget(action, kind as WidgetKind);

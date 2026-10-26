@@ -191,6 +191,10 @@ function shafts(ctx: FxContext, n: number, delay = 0) {
 
 const mod: FxModule = {
     effects: {
+        'calendar-pick': (ctx) => {
+            const r=ctx.rect, x=r.x+r.w/2, y=r.y+r.h/2;
+            return group(rings(ctx,x,y,1,Math.min(70,r.w*.8),{life:.75,alpha:.28}),motes(ctx,x,y,count(ctx,5),{up:true,spread:65}));
+        },
         "month-flip": (ctx, e) => {
             const dir = e.direction ?? 1;
             const r = ctx.rect;
@@ -200,7 +204,7 @@ const mod: FxModule = {
             const sweepP: Particle = {
                 x: from, y: r.y + r.h / 2, vx: (to - from) / dur, vy: 0, size: r.h * 1.1, sx: 0.32, rz: dir * 0.12,
                 life: dur, tint: ctx.dark ? [0.6, 0.9, 0.86] : [1, 1, 1],
-                alpha: (k) => (ctx.dark ? 0.22 : 0.55) * Math.sin(k * Math.PI),
+                alpha: (k) => (ctx.dark ? 0.2 : 0.28) * Math.sin(k * Math.PI),
             };
             const specks = Array.from({ length: count(ctx, 10) }, (): Particle => ({
                 x: r.x + rand(0.1, 0.9) * r.w, y: r.y + rand(0.1, 0.9) * r.h, vx: -dir * rand(20, 60), vy: rand(-20, -5),

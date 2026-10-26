@@ -1,5 +1,6 @@
 "use client";
 
+import * as GemS from "./gem/GemSideBar.styles";
 import { useState, useRef, useEffect } from "react";
 import { AnimatePresence, useReducedMotion } from "framer-motion";
 import DefaultProfile from "@/assets/icons/DefaultProfile";
@@ -17,7 +18,7 @@ import * as MapleS from "./maple/MapleSideBar.styles";
 import * as OceanS from './ocean/OceanSideBar.styles';
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
 
 const Profile = () => {
     const S = usePickTheme(STYLES);

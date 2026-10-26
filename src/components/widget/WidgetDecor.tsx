@@ -1,11 +1,12 @@
 "use client";
+import { GemWidgetDecor } from '@/assets/gem/GemAssets';
 import { usePickTheme } from "@/styles/themed";
 import type { WidgetKind } from "@/store/useWidgetStore";
 import CelestialWidgetDecor from "./celestial/CelestialWidgetDecor";
 import MapleWidgetDecor from "./maple/MapleWidgetDecor";
 import OceanWidgetDecor from "./ocean/OceanWidgetDecor";
 
-const VIEWS = { celestial: CelestialWidgetDecor, maple: MapleWidgetDecor, ocean: OceanWidgetDecor };
+const VIEWS = { celestial: CelestialWidgetDecor, maple: MapleWidgetDecor, ocean: OceanWidgetDecor , gem: GemWidgetDecor };
 
 /**
  * 위젯 판의 바탕 무늬 — 갈래마다 앱의 바탕을 닮게(사용자: "위젯도 테마랑 같은 느낌이면, 너무 평범해").

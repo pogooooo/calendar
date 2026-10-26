@@ -12,14 +12,23 @@
  * 서명(.sig)은 tauri-action 이 이미 자산으로 올려 두었으므로 그 내용을 그대로 담는다.
  */
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
+import { githubEnv } from "./github.mjs";
 
 const tag = process.argv[2];
 if (!tag) { console.error("usage: build-updater-json.mjs <tag>"); process.exit(1); }
 const repo = process.env.GITHUB_REPOSITORY ?? "pogooooo/calendar";
 const version = tag.replace(/^v/, "");
+const outputAt = process.argv.indexOf("--output");
+const outputFile = outputAt < 0 ? null : process.argv[outputAt + 1];
+if (outputAt >= 0 && (!outputFile || outputFile.startsWith("--"))) {
+    console.error("--output 뒤에 출력 파일 경로가 필요합니다.");
+    process.exit(1);
+}
+const emit = text => outputFile ? writeFileSync(outputFile, text, "utf8") : process.stdout.write(text);
 
-const gh = (args) => execFileSync("gh", args, { encoding: "utf8" });
+let ghEnvironment;
+const gh = (args) => execFileSync("gh", args, { encoding: "utf8", env: ghEnvironment ??= githubEnv() });
 
 // 패치 노트: src/lib/release-notes.json 의 해당 판. 앱의 설정 > 정보 탭과 같은 글이다.
 const NOTES = JSON.parse(readFileSync(new URL("../src/lib/release-notes.json", import.meta.url), "utf8"));
@@ -34,7 +43,7 @@ if (process.argv.includes("--release-body")) {
     const body = note
         ? [`## v${note.version} · ${note.date}`, "", ...note.notes.ko.map((l) => `- ${l}`), "", "---", "", ...note.notes.en.map((l) => `- ${l}`)].join("\n")
         : "아래에서 운영체제에 맞는 설치 파일을 내려받으세요. 이미 설치한 앱은 실행 시 자동으로 업데이트를 확인합니다.";
-    process.stdout.write(body + "\n");
+    emit(body + "\n");
     process.exit(0);
 }
 const release = JSON.parse(gh(["api", `repos/${repo}/releases/tags/${tag}`]));
@@ -70,7 +79,7 @@ if (!platforms["windows-x86_64"]) {
 }
 if (missing.length) console.error(`참고: 빠진 플랫폼 ${missing.join(", ")}`);
 
-process.stdout.write(JSON.stringify({
+emit(JSON.stringify({
     version,
     notes: notesText || (release.body ?? ""),
     ...(notesEn ? { notes_en: notesEn } : {}),

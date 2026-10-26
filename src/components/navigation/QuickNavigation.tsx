@@ -1,5 +1,6 @@
 "use client";
 
+import * as GemS from "./gem/GemQuickNavigation.styles";
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Search, X, ArrowUpRight } from "lucide-react";
@@ -11,7 +12,7 @@ import * as CelestialS from "./celestial/CelestialQuickNavigation.styles";
 import * as MapleS from "./maple/MapleQuickNavigation.styles";
 import * as OceanS from './ocean/OceanQuickNavigation.styles';
 
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
 /** 창이 들어와 자리 잡을 즈음 갈래가 그 둘레에 작게 반짝인다 */
 const paletteFx = () => setTimeout(() => fx.emit("palette", { rect: rectOf(document.querySelector('[role="dialog"]')) }), 260);
 export const OPEN_QUICK_NAVIGATION = "cronos:quick-navigation";

@@ -510,10 +510,6 @@ fn any_widget_open(app: &tauri::AppHandle) -> bool {
     WIDGET_KINDS.iter().any(|k| app.get_webview_window(&format!("widget-{k}")).is_some())
 }
 
-/// tauri.conf.json 의 identifier 와 같아야 한다 — 설정 폴더 이름이 이것이다.
-#[cfg(desktop)]
-const APP_IDENTIFIER: &str = "com.cronos.todoapp";
-
 /// "앱을 한 번 더 켰다" 는 쪽지가 놓이는 자리.
 ///
 /// single-instance 플러그인은 두 번째 인스턴스를 곧바로 끝내면서 첫 인스턴스에 창 메시지를 보낸다.
@@ -523,7 +519,7 @@ const APP_IDENTIFIER: &str = "com.cronos.todoapp";
 /// 그러면 아이콘을 눌러도 아무 일도 안 일어난다 — "위젯만 떠 있고 앱이 안 켜진다" 가 이것이다.
 /// 그래서 메시지와 별개로 파일에도 남긴다. 파일은 권한이 달라도 같은 사용자 폴더라 읽고 쓸 수 있다.
 #[cfg(desktop)]
-fn launch_request_path() -> Option<std::path::PathBuf> {
+fn launch_request_path(identifier: &str) -> Option<std::path::PathBuf> {
     #[cfg(target_os = "windows")]
     let base = std::env::var_os("APPDATA").map(std::path::PathBuf::from);
     #[cfg(target_os = "macos")]
@@ -532,7 +528,7 @@ fn launch_request_path() -> Option<std::path::PathBuf> {
     let base = std::env::var_os("XDG_CONFIG_HOME")
         .map(std::path::PathBuf::from)
         .or_else(|| std::env::var_os("HOME").map(|h| std::path::PathBuf::from(h).join(".config")));
-    Some(base?.join(APP_IDENTIFIER).join("launch-request.json"))
+    Some(base?.join(identifier).join("launch-request.json"))
 }
 
 #[cfg(desktop)]
@@ -545,8 +541,8 @@ fn now_ms() -> u128 {
 
 /// 켤 때마다 쪽지를 남긴다 (첫 인스턴스든 두 번째든). 첫 인스턴스는 제 pid 를 보고 제 것을 건너뛴다.
 #[cfg(desktop)]
-fn write_launch_request() {
-    let Some(path) = launch_request_path() else { return };
+fn write_launch_request(identifier: &str) {
+    let Some(path) = launch_request_path(identifier) else { return };
     if let Some(dir) = path.parent() {
         let _ = std::fs::create_dir_all(dir);
     }
@@ -565,8 +561,8 @@ fn write_launch_request() {
 
 /// 쪽지 읽기 — (pid, 시각(ms), 자동 실행인가)
 #[cfg(desktop)]
-fn read_launch_request() -> Option<(u32, u128, bool)> {
-    let text = std::fs::read_to_string(launch_request_path()?).ok()?;
+fn read_launch_request(identifier: &str) -> Option<(u32, u128, bool)> {
+    let text = std::fs::read_to_string(launch_request_path(identifier)?).ok()?;
     let v: serde_json::Value = serde_json::from_str(&text).ok()?;
     Some((
         v.get("pid")?.as_u64()? as u32,
@@ -940,11 +936,23 @@ fn launch_id() -> String {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let bottom_widgets = BottomWidgets(Arc::new(Mutex::new(HashSet::new())));
+    let mut context = tauri::generate_context!();
+    // 설치본이 실행 중이어도 개발 창을 별도로 연다. --release로 실행한 dev도 구분한다.
+    // single-instance의 잠금, WebView 프로필, 위젯 저장 위치가 모두 identifier를 따른다.
+    #[cfg(desktop)]
+    if tauri::is_dev() {
+        let config = context.config_mut();
+        config.identifier = format!("{}.dev", config.identifier);
+        config.product_name = Some("CRONOS Dev".into());
+        for window in &mut config.app.windows {
+            window.title = format!("{} (Dev)", window.title);
+        }
+    }
 
     // 켜진 순간에 쪽지부터 남긴다. 두 번째 인스턴스는 곧 아래 플러그인이 끝내 버리므로
     // 그 전에 적어 둬야 첫 인스턴스가 "누가 또 켰다" 를 안다 (launch_request_path 의 설명)
     #[cfg(desktop)]
-    write_launch_request();
+    write_launch_request(&context.config().identifier);
 
     let builder = tauri::Builder::default();
 
@@ -1013,11 +1021,12 @@ pub fn run() {
                 let app_handle = app.handle().clone();
                 let me = std::process::id();
                 let started = now_ms();
+                let identifier = app.config().identifier.clone();
                 tauri::async_runtime::spawn(async move {
                     let mut last = started;
                     loop {
                         tokio::time::sleep(tokio::time::Duration::from_millis(700)).await;
-                        let Some((pid, ts, autostart)) = read_launch_request() else { continue };
+                        let Some((pid, ts, autostart)) = read_launch_request(&identifier) else { continue };
                         // 내가 켜면서 남긴 쪽지, 오래된 쪽지, 부팅 자동 실행은 창을 띄우지 않는다
                         if pid == me || ts <= last || autostart { continue; }
                         last = ts;
@@ -1074,6 +1083,6 @@ pub fn run() {
             let _ = app;
             Ok(())
         })
-        .run(tauri::generate_context!())
+        .run(context)
         .unwrap();
 }

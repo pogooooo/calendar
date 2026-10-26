@@ -49,6 +49,7 @@ export const ArrowWrapper = styled(C.ArrowWrapper)`
 
 /** 요일 줄: 상자·모서리 장식 없이 아래로 옅은 선 하나 */
 export const Header = styled(C.Header)`
+    && { border-top: 2px solid ${(p) => withAlpha(p.theme.colors.primary, 0.55)}; border-radius:0; background:transparent; }
     font-family: ${(p) => p.theme.fonts.body};
     border: none;
     border-bottom: 1px solid ${line};
@@ -58,6 +59,8 @@ export const Header = styled(C.Header)`
 
 /** 요일은 왼쪽에 차분한 글씨 — 오늘은 붉은 글씨. 해낸 자국(밑선)은 칸 왼쪽 위의 잎(DayCellDecor)이 맡는다 */
 export const DayNameBox = styled(C.DayNameBox)`
+    && { font-family: ${(p) => p.theme.fonts.display}; background: ${(p) => hair(p.theme, 0.035)}; border-right-color: ${(p) => hair(p.theme, 0.13)}; }
+    && .day-name { font-size: 0.85rem; letter-spacing: 0; }
     height: 40px;
     justify-content: flex-start;
     padding-left: 12px;
@@ -111,6 +114,12 @@ export const AddTodoButton = styled(C.AddTodoButton)`
 `;
 
 export const DaySlot = styled(C.DaySlot)`
+    && {
+        border-right-color: ${(p) => hair(p.theme, dark(p) ? 0.14 : 0.12)};
+        background-color: ${(p) => p.$isToday ? withAlpha(p.theme.colors.primary, 0.06) : 'transparent'};
+        background-image: repeating-linear-gradient(to bottom, transparent 0 27px, ${(p) => hair(p.theme, 0.06)} 27px 28px);
+        background-position: 0 2px;
+    }
     border-left: none;
     border-right: 1px solid ${line};
     background-color: ${(p) => (p.$isToday ? withAlpha(p.theme.colors.primary, dark(p) ? 0.1 : 0.05) : "transparent")};
@@ -126,6 +135,7 @@ export const TodoBarList = styled(C.TodoBarList)`
 
 /** 일정 막대 — 월간과 같은 말: 카테고리 색을 옅게 깐 둥근 막대, 시작에 3px 색 띠, 글은 글자색 */
 export const TodoBarItem = styled(C.TodoBarItem)`
+    && { font-size: 0.76rem; font-weight: 550; }
     height: 22px;
     align-items: center;
     border: none;

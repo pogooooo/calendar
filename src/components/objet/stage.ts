@@ -483,6 +483,7 @@ class Stage {
         ctx.clearRect(0, 0, s.canvas.width, s.canvas.height);
         // WebGL 은 왼쪽 아래가 원점 — 2D 좌표로는 버퍼 맨 아래 rh 줄이다
         ctx.drawImage(r.domElement, 0, this.bufH - rh, rw, rh, 0, 0, s.canvas.width, s.canvas.height);
+        s.canvas.dataset.objetReady = 'true';
     }
 }
 

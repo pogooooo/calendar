@@ -1,8 +1,7 @@
 /**
  * 바다의 월간 — 칸마다 상자를 두지 않는다. 유리 한 장 위에 숫자가 떠 있고, 주와 주 사이에만 가는 빛줄(깎아 낸 듯한 두 겹 선)이 지난다.
  * (Celestial: 금빛 실선이 가로세로로 칸을 가두는 격자, Maple: 종이 원장)
- *   - 고른 날·올린 날은 칸 안쪽에 둥근 빛 판이 고인다. 오늘 칸에는 하루가 흐른 만큼 물이 차 있고(OceanMonthDecor 의 물때),
- *     숫자는 알약 없이 깊은 물빛 글씨
+ *   - 오늘은 숫자 옆에서 말려 올라오는 파도와 포말, 고른 날은 얇은 해안선으로 구분한다. 칸을 물이나 도형으로 채우지 않는다.
  *   - 일정 막대는 물방울 캡슐 — 옅게 물든 면, 시작에 방울 하나, 여러 날이면 칸을 건너 끊김 없이 이어진다
  *   - "+N" 은 날짜 줄 오른쪽의 작은 글씨 하나 (상자 없음)
  *   - 달을 넘기면 판이 밀려가고, 물마루가 지나는 쪽부터 칸이 차례로 살짝 출렁인다
@@ -10,6 +9,7 @@
  */
 import styled, { css, keyframes } from "styled-components";
 import * as C from "../celestial/CelestialMonthCalendar.styles";
+import { surfDate } from '@/styles/ocean/calendarMarks';
 import { MONO, R, focusRing, ink, seaButton, surface } from "@/styles/ocean/water";
 import { withAlpha } from "@/styles/color";
 import { MOBILE, NOT_WIDGET } from "@/styles/breakpoints";
@@ -32,12 +32,6 @@ const bob = keyframes`
     100% { transform: none; }
 `;
 
-/** 칸에 마우스가 들면 물 위를 스친 듯 고리 하나가 번진다 */
-const touch = keyframes`
-    0%   { transform: scale(0.25); opacity: 0.9; }
-    100% { transform: scale(2.3); opacity: 0; }
-`;
-
 /** 막대에 마우스가 오면 물빛이 한 번 흘러간다 */
 const shimmer = keyframes`
     from { background-position: 130% 0; }
@@ -56,6 +50,7 @@ export const DateRangeDisplay = styled(C.DateRangeDisplay)`
     letter-spacing: -0.01em;
     color: ${(p) => p.theme.colors.text};
     gap: 2px;
+    margin-bottom:0;
     .nav-btn {
         width: 30px;
         height: 30px;
@@ -81,6 +76,7 @@ export const TodayButton = styled(C.TodayButton)`
 
 /** 요일 머리 — 상자 없이 작은 고정폭 대문자, 아래로 빛줄 하나 */
 export const Header = styled(C.Header)`
+    && { border-radius:0; background:transparent; padding:2px 0; }
     border: none;
     ${etched}
     margin-bottom: 0;
@@ -89,6 +85,9 @@ export const Header = styled(C.Header)`
 `;
 
 export const DayNameBox = styled(C.DayNameBox)`
+    && { height: 32px; }
+    && .day-name { font-family: ${(p) => p.theme.fonts.body}; font-size: 0.73rem; font-weight: 650; letter-spacing: 0.04em; }
+    ${MOBILE} { && { height: 28px; } && .day-name { font-size: 0.65rem; } }
     border: none !important;
     height: 30px;
     justify-content: flex-start;
@@ -108,7 +107,7 @@ export const DayNameBox = styled(C.DayNameBox)`
 export const GridContainer = styled(C.GridContainer)`
     border: none;
     gap: 0;
-    grid-template-rows: repeat(6, minmax(52px, 1fr));
+    grid-template-rows: repeat(6, minmax(32px, 1fr));
 `;
 
 /** 주 한 줄 — 칸 사이에는 아무것도 없고, 줄 아래로 빛줄 하나 */
@@ -122,18 +121,30 @@ export const WeekRowContainer = styled(C.WeekRowContainer)`
 `;
 
 /**
- * 칸 하나 — 상자 없음. 올리거나 고르면 칸 안쪽(사방 3px 안)에 둥근 빛 판이 고인다(::before).
- * 오늘 칸은 숫자 둘레로 청록 빛이 옅게 번진다.
+ * 물빛 위의 날짜. 오늘은 숫자 밑의 빛줄, 선택은 칸 아래의 수평선으로 구분한다.
  */
 export const DayCell = styled(C.DayCell)`
+    && .day-header { height:36px; flex:0 0 36px; padding:5px 9px; }
+    ${MOBILE} { && .day-header { height:28px; flex-basis:28px; padding:2px 4px; } }
+    && { opacity: ${(p) => p.$isCurrentMonth ? 1 : 0.68}; border-right:1px solid ${(p) => withAlpha(p.theme.colors.primary, .08)}; border-bottom:0; }
+    && .day-header .day-number { font-family:${(p) => p.theme.fonts.body}; font-size:.88rem; font-weight:${p => p.$isToday || p.$isSelected ? 700 : 500}; font-variant-numeric:tabular-nums; }
+    ${(p) => p.$isToday && css`
+        && .day-header .day-number {
+            ${surfDate}
+            color:${p.theme.colors.text}; font-size:.95rem; font-weight:800; line-height:22px;
+            &::after {
+                content:""; display:block; position:absolute; left:1px; right:1px; bottom:0; height:2px;
+                background:linear-gradient(90deg,${p.theme.colors.primary},${p.theme.colors.accent});
+                box-shadow:0 2px 5px ${withAlpha(p.theme.colors.primary,.18)};
+            }
+        }
+    `}
+    ${MOBILE} { && .day-header .day-number { font-size:${p => p.$isToday ? '.86rem' : '.78rem'}; line-height:20px; } }
     border-right: none;
     border-radius: 0;
     background: transparent;
-    opacity: ${(p) => (p.$isCurrentMonth ? 1 : 0.4)};
     box-shadow: none;
-    /* 칸은 제자리에서 나타나지 않는다 — 달을 넘기면 판 전체가 옆으로 밀려 들어온다(tideMotion, SwapLayer).
-       예전의 칸마다 떠오르는 등장은 넘길 때마다 막대가 흐려졌다 차례로 떠올라 미끄럼이 아니라 깜빡임으로 보였다 —
-       이제는 물마루(OceanMonthDecor 의 Stage)가 지나가는 쪽부터 칸이 차례로 살짝 출렁이기만 한다(투명도는 그대로) */
+    /* 날짜 전환은 기존 물결 움직임을 유지한다. */
     :where(html:not([data-theme-motion="off"])) [data-entering] & { animation: ${bob} 0.8s cubic-bezier(0.3, 0.6, 0.3, 1) both; }
     :where(html:not([data-theme-motion="off"])) [data-entering][data-dir="next"] & { animation-delay: calc((6 - var(--col, 0)) * 55ms + 160ms); }
     :where(html:not([data-theme-motion="off"])) [data-entering][data-dir="prev"] & { animation-delay: calc(var(--col, 0) * 55ms + 160ms); }
@@ -142,44 +153,25 @@ export const DayCell = styled(C.DayCell)`
     &::before {
         content: "";
         position: absolute;
-        inset: 3px;
+        inset: 0;
         z-index: 0;
-        border-radius: 10px;
+        border-radius: 0;
         pointer-events: none;
         transition: background-color 0.2s ease, box-shadow 0.2s ease;
         ${(p) => (p.$dropTarget
-            ? css`box-shadow: inset 0 0 0 2px ${p.theme.colors.primary}; background: ${withAlpha(p.theme.colors.primary, 0.08)};`
+            ? css`box-shadow: inset 0 0 0 2px ${p.theme.colors.primary}; background: ${withAlpha(p.theme.colors.primary, 0.12)};`
             : p.$isSelected
                 ? css`
-                    background: ${dark(p) ? "rgba(160, 240, 230, 0.08)" : "rgba(255, 255, 255, 0.62)"};
-                    box-shadow: inset 0 0 0 1.5px ${withAlpha(p.theme.colors.primary, 0.7)}, 0 6px 18px -10px ${withAlpha(p.theme.colors.primary, 0.6)};
+                    background: linear-gradient(180deg,transparent,${withAlpha(p.theme.colors.primary, .075)});
+                    box-shadow: inset 0 -2px 0 ${withAlpha(p.theme.colors.primary, .65)};
                 `
                 : css``)}
     }
-    /* 마우스가 칸에 들면 물 위를 스친 듯 고리 하나가 번진다 — 마우스가 있는 기기만, 움직임을 끄면 없다 */
-    &::after {
-        content: "";
-        position: absolute;
-        left: 50%;
-        top: 50%;
-        width: 56px;
-        height: 56px;
-        margin: -28px 0 0 -28px;
-        z-index: 0;
-        border-radius: 50%;
-        border: 1px solid ${(p) => withAlpha(p.theme.colors.primary, dark(p) ? 0.5 : 0.36)};
-        opacity: 0;
-        pointer-events: none;
-    }
-    @media (hover: hover) {
-        :where(html:not([data-theme-motion="off"])) &:hover::after { animation: ${touch} 1.1s cubic-bezier(0.2, 0.6, 0.35, 1) both; }
-    }
-    [data-widget] &::after { display: none; }
+    &::after { display:none; }
 
     &:hover { box-shadow: none; }
     &:hover::before {
-        background: ${(p) => (p.$isSelected ? undefined : dark(p) ? "rgba(255, 255, 255, 0.06)" : "rgba(255, 255, 255, 0.5)")};
-        ${(p) => !p.$isSelected && css`box-shadow: inset 0 1px 0 ${dark(p) ? "rgba(180, 250, 240, 0.08)" : "#FFFFFF"}, 0 4px 14px -8px ${dark(p) ? "rgba(0, 0, 0, 0.6)" : "rgba(6, 60, 66, 0.35)"};`}
+        ${(p) => !p.$isSelected && !p.$dropTarget && css`background: ${withAlpha(p.theme.colors.primary, .045)};`}
     }
 
     .day-header {
@@ -191,25 +183,9 @@ export const DayCell = styled(C.DayCell)`
             font-variant-numeric: tabular-nums;
             line-height: 20px;
             color: ${(p) => p.theme.colors.text};
-            /* 오늘은 알약 없이 깊은 물빛 글씨 — 오늘 칸에는 물이 차 있다(OceanMonthDecor 의 물때).
-               바탕(Celestial)의 금빛 알약을 이어받지 않게 모양을 모두 걷는다 */
-            ${(p) => p.$isToday && css`
-                display: inline;
-                min-width: 0;
-                height: auto;
-                margin: 0;
-                padding: 0;
-                border-radius: 0;
-                background: none;
-                box-shadow: none;
-                text-shadow: none;
-                color: ${p.theme.colors.primary};
-                font-weight: 800;
-            `}
         }
     }
     ${MOBILE} {
-        &::before { inset: 2px; border-radius: 8px; }
         .day-header { padding: 4px 4px 0; .day-number { font-size: 0.74rem; line-height: 18px; } }
     }
 `;
@@ -222,15 +198,15 @@ export const AddTodoButton = styled(C.AddTodoButton)`
     border-radius: 6px;
     border: none;
     color: ${(p) => p.theme.colors.textSecondary};
-    background: ${(p) => (dark(p) ? "rgba(255, 255, 255, 0.08)" : "rgba(255, 255, 255, 0.7)")};
-    &:hover { transform: none; color: ${(p) => p.theme.colors.primary}; background: ${(p) => (dark(p) ? "rgba(255, 255, 255, 0.14)" : "#FFFFFF")}; }
+    background: ${(p) => withAlpha(p.theme.colors.primary,.06)};
+    &:hover { transform: none; color: ${(p) => p.theme.colors.primary}; background: ${(p) => withAlpha(p.theme.colors.primary,.12)}; }
 `;
 
 export const TodoBarList = styled(C.TodoBarList)`
     margin-top: 3px;
     margin-bottom: 4px;
     gap: 2px;
-    /* "+N" 글씨가 이 목록 위(날짜 줄)로 떠 있으므로 목록이 그것을 오려 내지 않게 — 칸(DayCell)이 대신 오린다 */
+    /* 표시 개수는 기존 높이 측정을 따른다. */
     ${NOT_WIDGET} & { @media (min-width: 769px) { overflow: visible; } }
 `;
 
@@ -239,34 +215,39 @@ export const TodoBarList = styled(C.TodoBarList)`
  * 폰에서는 마름모(Celestial) 대신 작은 동그라미 점으로 늘어놓는다.
  */
 export const TodoBarItem = styled(C.TodoBarItem)`
+    @media (min-width: 769px) {
+        && { height: 20px; font-size: 0.75rem; color: ${(p) => p.theme.colors.text}; background-color: ${(p) => `color-mix(in srgb, ${p.$color ?? p.theme.colors.primary} ${dark(p) ? 24 : 16}%, ${p.theme.colors.background})`}; }
+        && .todo-title { font-weight: 550; }
+    }
+    &&::after { background-image: linear-gradient(100deg, transparent 35%, ${(p) => dark(p) ? "rgba(190,255,245,0.18)" : "rgba(225,241,230,0.24)"} 50%, transparent 65%); }
     border: none;
     height: 18px;
     font-size: 0.7rem;
     font-weight: 500;
     /* 물방울 캡슐 — 물든 면 위에 윗가장자리의 윤, 아래 가장자리의 깊이. 끝은 둥글게(여러 날이면 시작·끝만) */
     background-color: ${(p) => withAlpha(p.$color ?? p.theme.colors.primary, p.$isDone ? 0.08 : dark(p) ? 0.24 : 0.16)};
-    background-image: linear-gradient(180deg, ${(p) => (dark(p) ? "rgba(255, 255, 255, 0.1)" : "rgba(255, 255, 255, 0.5)")} 0%, rgba(255, 255, 255, 0) 58%);
+    background-image: linear-gradient(180deg, ${(p) => (dark(p) ? "rgba(255, 255, 255, 0.06)" : "rgba(255, 255, 255, 0.16)")} 0%, rgba(255, 255, 255, 0) 58%);
     color: ${(p) => p.theme.colors.text};
-    border-radius: ${(p) => `${p.$isStart ? 9 : 0}px ${p.$isEnd ? 9 : 0}px ${p.$isEnd ? 9 : 0}px ${p.$isStart ? 9 : 0}px`};
+    border-radius: ${(p) => `${p.$isStart ? 4 : 0}px ${p.$isEnd ? 4 : 0}px ${p.$isEnd ? 4 : 0}px ${p.$isStart ? 4 : 0}px`};
     margin-left: ${(p) => (p.$isStart ? "6px" : "0")};
     margin-right: ${(p) => (p.$isEnd ? "6px" : "0")};
     box-shadow: inset 0 -1px 0 ${(p) => withAlpha(p.$color ?? p.theme.colors.primary, dark(p) ? 0.3 : 0.22)};
     overflow: hidden;
     &:hover { background-color: ${(p) => withAlpha(p.$color ?? p.theme.colors.primary, dark(p) ? 0.32 : 0.24)}; }
-    .todo-title { padding-left: ${(p) => (p.$isStart ? 15 : 7)}px; ${(p) => p.$isDone && css`text-decoration: line-through; opacity: 0.55;`} }
+    .todo-title { padding-left: ${(p) => (p.$isStart ? 11 : 7)}px; ${(p) => p.$isDone && css`text-decoration: line-through; opacity:1;`} }
 
-    /* 시작 칸 앞의 물방울 — 카테고리 색에 빛 한 점 */
+    /* 시작 칸의 가는 색 표식 — 물빛은 막대의 윤으로만 표현한다. */
     ${(p) => p.$isStart && css`
         &::before {
             content: "";
             position: absolute;
             left: 4px;
             top: 50%;
-            width: 7px;
-            height: 7px;
-            margin-top: -3.5px;
-            border-radius: 50%;
-            background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.95) 0 22%, ${p.$color ?? p.theme.colors.primary} 62%);
+            width: 2px;
+            height: 10px;
+            margin-top: -5px;
+            border-radius: 1px;
+            background: ${p.$color ?? p.theme.colors.primary};
             pointer-events: none;
         }
     `}
@@ -301,9 +282,7 @@ export const TodoBarItem = styled(C.TodoBarItem)`
 `;
 
 /**
- * "+N" — 막대 한 층을 차지하지 않고 날짜 줄 오른쪽에 뜬 작은 글씨.
- * 칸에 들어갈 층 수는 이 단추의 키를 빼고 셈한다(MonthCalendarView 의 fit) — 키를 0 으로 두어 그 몫을 막대에 돌려준다.
- * 위젯·폰은 칸이 좁아 날짜 줄에 둘 자리가 없으니 원래대로 아래에 둔다.
+ * "+N" occupies its own measured row below events so it cannot cover an anniversary caption.
  */
 export const MoreButton = styled(C.MoreButton)`
     align-self: flex-start;
@@ -319,19 +298,18 @@ export const MoreButton = styled(C.MoreButton)`
 
     ${NOT_WIDGET} & {
         @media (min-width: 769px) {
-            position: absolute;
-            top: -22px;
-            right: 30px;
-            height: 0;
-            min-height: 0;
-            padding: 0;
-            margin: 0;
+            position:static;
+            align-self:flex-end;
+            height:18px;
+            min-height:18px;
+            padding:0 4px;
+            margin:0;
             background: none;
             overflow: visible;
             .full { display: none; }
             .short {
                 display: inline-block;
-                transform: translateY(-1px);
+                transform:none;
                 padding: 0 4px;
                 border-radius: 5px;
                 line-height: 17px;

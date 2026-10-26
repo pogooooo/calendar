@@ -1,5 +1,6 @@
 "use client";
 
+import * as GemS from "./gem/GemSignIn.styles";
 import { useGoogleLogin } from "@react-oauth/google";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -33,7 +34,7 @@ import * as OceanS from './ocean/OceanSignIn.styles';
 type LoginFormData = LoginInput;
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
 
 
 

@@ -13,6 +13,7 @@
  * 데스크톱 위젯 창(투명 창)은 날짜 넘김만 아주 짧게, 목록의 몸짓은 없다 — 창 전체를 다시 칠해 깜빡인다(1.2.0).
  * 끝난 몸짓은 아무것도 남기지 않는다: transform 이 남으면 안의 fixed 단추가 화면이 아니라 그 상자에 선다(BUGS.md).
  */
+import { gemMotion } from '@/styles/gem/motion';
 import * as React from "react";
 import { useTheme } from "styled-components";
 import useThemeMotion from "@/hooks/useThemeMotion";
@@ -27,7 +28,7 @@ import { paperMotion } from "@/styles/maple/motion";
 import { starMotion } from "@/styles/celestial/motion";
 
 /** 갈래마다 제 몸짓 — Celestial 은 별빛(곧게 미끄러지며 맑아짐), Maple 은 종이, 바다는 물. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const SETS = { celestial: starMotion, maple: paperMotion, ocean: tideMotion };
+const SETS = { celestial: starMotion, maple: paperMotion, ocean: tideMotion , gem: gemMotion };
 
 export function useMotionSet(): MotionSet {
     return usePickTheme(SETS);
@@ -117,6 +118,9 @@ export function useSwapMotion(key: SwapKey | null | undefined, target: MotionTar
     live.current = { set, level, target, opts };
     const prev = React.useRef(key);
     const running = React.useRef<Animation[]>([]);
+
+    React.useEffect(() => () => { running.current.forEach(a => a.cancel()); }, []);
+    React.useEffect(() => { if (level === 'off') running.current.forEach(a => a.cancel()); }, [level]);
 
     useIsoLayoutEffect(() => {
         const before = prev.current;

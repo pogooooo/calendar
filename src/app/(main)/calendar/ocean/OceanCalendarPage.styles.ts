@@ -6,7 +6,7 @@
  */
 import styled from "styled-components";
 import * as C from "../celestial/CelestialCalendarPage.styles";
-import { EASE, MONO, R, calm, focusRing, ink, seaButton, surface, surfaceIn } from "@/styles/ocean/water";
+import { EASE, MONO, calm, focusRing, ink, seaButton, surfaceIn } from "@/styles/ocean/water";
 
 export * from "../celestial/CelestialCalendarPage.styles";
 
@@ -21,6 +21,8 @@ export const PageWrapper = styled(C.PageWrapper)`
         min-height: calc(100vh - 64px - var(--app-top-clearance, 0px) - var(--app-dock-clearance, 0px));
     }
     @media (max-width: 768px) { padding: 0; min-height: 0; }
+    /* 낮은 데스크톱 창은 월간 여섯 줄을 압축하지 않고 화면 전체를 스크롤한다. */
+    @media (min-width:769px) and (max-height:820px) { height:auto; min-height:100%; }
 `;
 
 export const CalendarContainer = styled(C.CalendarContainer)`
@@ -34,13 +36,16 @@ export const MonthSection = styled(C.MonthSection)`
     flex: 1 1 0 !important;
     height: auto;
     min-height: 0;
-    ${surface("panel")}
-    border-radius: ${R.lg};
+    background:transparent;
+    border:0;
+    border-radius:0;
+    box-shadow:none;
     padding: 18px 18px 12px;
     animation: ${surfaceIn} 0.5s ${EASE} both;
     ${calm}
 
     @media (max-width: 1250px) { height: auto; }
+    @media (min-width:769px) and (max-height:820px) { flex:0 0 560px !important; height:560px; }
 `;
 
 /** 아래: 그날 — 띠. 화면 높이의 4분의 1 남짓만 (월간 칸에 막대가 두 층은 들어가야 한다, 900px 화면에서 210px) */
@@ -50,8 +55,10 @@ export const DaySection = styled(C.DaySection)`
     height: auto;
     min-height: ${(p) => (p.$collapsed ? "46px" : "200px")};
     border: none;
-    ${surface("panel")}
-    border-radius: ${R.lg};
+    background:transparent;
+    border-top:1px solid ${p => p.theme.colors.primary}33;
+    border-radius:0;
+    box-shadow:none;
     padding: 0;
     margin: 0;
     overflow: visible;
@@ -64,6 +71,7 @@ export const DaySection = styled(C.DaySection)`
         padding-top: 0;
         margin-top: 0;
     }
+    @media (min-width:769px) and (max-height:820px) { flex:${p => p.$collapsed ? '0 0 46px' : '0 0 220px'} !important; }
 `;
 
 /** 띠의 상자에 딱 맞춰 자른다 — 띠의 높이가 flex 로만 정해져 100% 가 안 풀리는 때가 있어 절대 자리로 */
@@ -123,6 +131,7 @@ export const Resizer = styled(C.Resizer)`
 
 /** 전환 단추 — 네모 칸 둘(Celestial) 대신 홈 안에서 미끄러지는 흰 판 (분절 단추) */
 export const ViewSwitch = styled(C.ViewSwitch)`
+    &::before { background:${p => p.theme.mode === 'dark' ? '#24494D' : '#E8F4F1'}; border-radius:9px; box-shadow:0 2px 8px #193F4814; }
     border: none;
     padding: 3px;
     gap: 2px;
@@ -133,6 +142,7 @@ export const ViewSwitch = styled(C.ViewSwitch)`
 `;
 
 export const SwitchButton = styled(C.SwitchButton)`
+    && { background:transparent; box-shadow:none; }
     border: none;
     border-radius: 9px;
     font-family: ${(p) => p.theme.fonts.body};
@@ -170,9 +180,11 @@ export const Fab = styled(C.Fab)`
 /** 폰의 월간 — 물 위에 바로 놓지 않고 유리 판 한 장 위에 (숫자가 물빛에 묻히지 않게) */
 export const MonthArea = styled(C.MonthArea)`
     @media (max-width: 768px) {
-        ${surface("panel")}
+        background:transparent;
+        border:0;
+        box-shadow:none;
         margin: 0 8px;
         padding: 8px 6px 6px;
-        border-radius: 20px;
+        border-radius:0;
     }
 `;

@@ -14,7 +14,7 @@ const emblemIn = keyframes`
 `;
 
 /* 날렵한 4각 별 (사이드바 bigstar 곡선) */
-export const SLENDER_STAR_48 =
+export const SLENDER_STAR_48: string =
     "M24 6C24 24 24 24 32 24C24 24 24 24 24 42C24 24 24 24 16 24C24 24 24 24 24 6Z";
 
 const starChip = css`

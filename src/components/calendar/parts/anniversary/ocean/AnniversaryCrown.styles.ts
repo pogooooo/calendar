@@ -41,8 +41,9 @@ export const Ring = styled(C.Ring)`
     &::after {
         content: "";
         flex: none;
-        width: 5px;
-        height: 5px;
+        width: 4px;
+        height: 4px;
+        align-self:center;
         border-radius: 50%;
         background: ${(p) => p.theme.colors.weekend};
     }

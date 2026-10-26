@@ -1,5 +1,6 @@
 'use client';
 
+import * as GemS from "./gem/GemProjectPage.styles";
 import React, { useEffect, useState, useRef } from 'react';
 import useProjectStore, { ProjectType, ProjectTaskType } from '@/store/useProjectStore';
 import useCategoryStore from '@/store/useCategoryStore';
@@ -25,9 +26,9 @@ import * as OceanS from './ocean/OceanProjectPage.styles';
 import OceanProjectLayout from './ocean/OceanProjectLayout';
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
 
-const LAYOUTS = { celestial: CelestialProjectLayout, maple: MapleProjectLayout, ocean: OceanProjectLayout };
+const LAYOUTS = { celestial: CelestialProjectLayout, maple: MapleProjectLayout, ocean: OceanProjectLayout , gem: CelestialProjectLayout };
 
 export default function ProjectPage() {
     const S = usePickTheme(STYLES);

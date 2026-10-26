@@ -1,6 +1,10 @@
 package com.cronos.todoapp.widget
 
 import android.graphics.Color
+import kotlin.math.max
+import kotlin.math.min
+import kotlin.math.pow
+import kotlin.math.roundToInt
 
 /**
  * 위젯이 쓰는 색 한 벌. 앱 테마(스냅샷의 theme)와 위젯 설정(벌 강제)으로 정한다.
@@ -21,6 +25,8 @@ class Palette(
     val weekend: Int,
     /** 빈티지 벌(앱의 maple-vintage) — 색은 스냅샷이 주고, 붓은 잎 그림을 빛바랜 사진처럼 누른다 */
     val vintage: Boolean = false,
+    val gemColor: Int = gold,
+    val metal: Int = gold,
 ) {
     /** 실선·테두리. Celestial 은 금색 55%, Maple 은 글자색을 옅게(카드의 옅은 선) */
     val line: Int get() = if (family == "maple") withAlpha(ink, if (dark) 0.16f else 0.12f) else withAlpha(gold, 0.55f)
@@ -95,6 +101,7 @@ class Palette(
             when (family) {
                 "maple" -> maple(dark, spec)
                 "ocean" -> ocean(dark, spec)
+                "gem" -> gem(dark, spec)
                 else -> celestial(dark, spec)
             }
 
@@ -108,6 +115,49 @@ class Palette(
                 muted = c["textSecondary"] ?: if (dark) 0xFF96C0CA.toInt() else 0xFF52717E.toInt(),
                 gold = accent, goldText = accent,
                 weekend = c["weekend"] ?: if (dark) 0xFFEF9D88.toInt() else 0xFFBD6767.toInt(),
+            )
+        }
+
+        /** Gem keeps the chosen stone hue even when the home widget forces another brightness. */
+        fun gem(dark: Boolean, spec: Snapshot.ThemeSpec?): Palette {
+            val c = if (spec != null && (spec.mode == "dark") == dark) spec.colors else emptyMap()
+            val stone = spec?.gemColor ?: 0xFF9268C4.toInt()
+            fun mix(from: Int, to: Int, amount: Float) = Color.rgb(
+                (Color.red(from) + (Color.red(to) - Color.red(from)) * amount).roundToInt(),
+                (Color.green(from) + (Color.green(to) - Color.green(from)) * amount).roundToInt(),
+                (Color.blue(from) + (Color.blue(to) - Color.blue(from)) * amount).roundToInt(),
+            )
+            fun luminance(color: Int): Double {
+                fun linear(channel: Int): Double {
+                    val v = channel / 255.0
+                    return if (v <= 0.04045) v / 12.92 else ((v + 0.055) / 1.055).pow(2.4)
+                }
+                return linear(Color.red(color)) * 0.2126 + linear(Color.green(color)) * 0.7152 + linear(Color.blue(color)) * 0.0722
+            }
+            val bg = mix(if (dark) 0xFF100D16.toInt() else 0xFFF0EBE7.toInt(), stone, if (dark) .09f else .065f)
+            val surface = mix(if (dark) 0xFF211B29.toInt() else 0xFFF5F0EA.toInt(), stone, if (dark) .12f else .045f)
+            fun readable(color: Int): Int {
+                val pole = if (dark) Color.WHITE else 0xFF17111E.toInt()
+                for (step in 0..100) {
+                    val candidate = mix(color, pole, step / 100f)
+                    val ink = luminance(candidate)
+                    if (listOf(bg, surface).all { background ->
+                        val paper = luminance(background)
+                        (max(ink, paper) + .05) / (min(ink, paper) + .05) >= 4.5
+                    }) return candidate
+                }
+                return pole
+            }
+            val primary = c["primary"] ?: readable(stone)
+            return Palette(
+                family = "gem", dark = dark,
+                bg = c["background"] ?: bg,
+                ink = c["text"] ?: mix(if (dark) 0xFFF6F0EB.toInt() else 0xFF241B2D.toInt(), stone, .04f),
+                muted = c["textSecondary"] ?: readable(if (dark) 0xFFBCAFC8.toInt() else 0xFF75677C.toInt()),
+                gold = primary, goldText = primary,
+                weekend = c["weekend"] ?: readable(if (dark) 0xFFEC9CB7.toInt() else 0xFFA13D5D.toInt()),
+                gemColor = stone,
+                metal = c["accent"] ?: if (dark) 0xFFDCC197.toInt() else 0xFF95713E.toInt(),
             )
         }
 

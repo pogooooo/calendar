@@ -1,5 +1,7 @@
 "use client";
 
+import GemHomeLayout from './gem/GemHomeLayout';
+import * as GemS from "./gem/GemHome.styles";
 import * as React from "react";
 import { useRouter } from "next/navigation";
 
@@ -38,9 +40,9 @@ import useAnniversaryFx from "@/components/fx/useAnniversaryFx";
 import { useListMotion, useSwapMotion } from "@/hooks/useMotion";
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
 
-const LAYOUTS = { celestial: CelestialHomeLayout, maple: MapleHomeLayout, ocean: OceanHomeLayout };
+const LAYOUTS = { celestial: CelestialHomeLayout, maple: MapleHomeLayout, ocean: OceanHomeLayout , gem: GemHomeLayout };
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
 

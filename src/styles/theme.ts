@@ -1,6 +1,8 @@
 import { DefaultTheme } from "styled-components";
 import { THEME_FAMILIES, type ThemeFamily } from "./themed";
+import { isThemeAvailable } from './themeAvailability';
 import { causticNet } from "./ocean/shoreArt";
+import { applyGemColor, DEFAULT_GEM_COLOR } from './gem/palette';
 
 const commonStyles = {
     fontSizes: {
@@ -59,6 +61,12 @@ const MAPLE_FONTS = {
     body: PRETENDARD,
 };
 
+const GEM_FONTS = {
+    display: "'Cormorant Garamond', 'Gowun Batang', 'Noto Serif KR', serif",
+    numeral: "'Cormorant Garamond', 'Times New Roman', serif",
+    body: PRETENDARD,
+};
+
 const CELESTIAL: ThemeFamily = 'celestial';
 const MAPLE: ThemeFamily = 'maple';
 const OCEAN: ThemeFamily = 'ocean';
@@ -69,6 +77,7 @@ const FAMILY_META: Record<ThemeFamily, { label: string; description: string; pre
     ocean: { label: 'Ocean', description: 'Liquid glass over a sunlit lagoon — light ripples where you touch' },
     // 미리보기 그림(눌린 잎과 회중시계)은 2026-10-15 다시 그리며 걷었다 — 이제 다른 갈래처럼 색으로 그린 축소판
     maple: { label: 'Maple', description: 'Autumn maple — a branch of red and gold leaves over warm paper, leaves drifting down' },
+    gem: { label: 'Gem', description: 'Faceted gemstones, champagne gold and flowing mineral light — in your own color' },
 };
 
 const celestial: DefaultTheme = {
@@ -78,18 +87,18 @@ const celestial: DefaultTheme = {
     ...commonStyles,
     fonts: CELESTIAL_FONTS,
     colors: {
-        background: '#FAF8F2',
+        background: '#EAE6DC',
         primary: '#D4AF37',
-        accent: '#FAE7B5',
-        surface: '#FFFDF7',
+        accent: '#D9C68E',
+        surface: '#F2EEE4',
         text: '#292D3B',
-        textSecondary: '#626577',
-        border: '#D4AF37',
+        textSecondary: '#565A69',
+        border: '#B9AE92',
         success: '#4E8A6D',
         error: '#A13D4B',
-        weekend: '#C4696E',
+        weekend: '#A04E56',
     },
-    preview: { cell: '#F2F2F2', event: '#FAE7B5' },
+    preview: { cell: '#F2EEE4', event: '#D9C68E' },
 };
 
 const celestialDark: DefaultTheme = {
@@ -123,18 +132,18 @@ const maple: DefaultTheme = {
     ...commonStyles,
     fonts: MAPLE_FONTS,
     colors: {
-        background: '#F6F1EA',   // 따뜻한 종이
-        primary: '#B8452B',      // 단풍 붉음
+        background: '#EAE0D0',   // 따뜻한 종이
+        primary: '#A83F28',      // 단풍 붉음
         accent: '#E2A54D',       // 호박빛
-        surface: '#FFFCF7',      // 카드
+        surface: '#F3EBD9',      // 카드
         text: '#2E241F',         // 짙은 밤색
-        textSecondary: '#7A6B60',
-        border: '#D8CABB',       // 옅은 갈색 선
+        textSecondary: '#68594E',
+        border: '#C8B8A5',       // 옅은 갈색 선
         success: '#5F8A5A',
         error: '#A93F2E',
         weekend: '#B04A5E',
     },
-    preview: { cell: '#F1EAE0', event: '#E8B76A' },
+    preview: { cell: '#F3EBD9', event: '#D6AE70' },
     line: '#7A6B60',
 };
 
@@ -188,6 +197,22 @@ const mapleVintage: DefaultTheme = {
     line: '#76624C',
 };
 
+const gem: DefaultTheme = applyGemColor({
+    name: 'gem', family: 'gem', mode: 'light', ...commonStyles,
+    fonts: GEM_FONTS,
+    colors: {
+        background: '#EEE8E5', primary: '#7951A9', accent: '#95713E', surface: '#F1EAE8',
+        text: '#281E33', textSecondary: '#716178', border: '#BFB1C7',
+        success: '#416E59', error: '#A13D5D', weekend: '#A13D5D',
+    },
+    preview: { cell: '#EBE3EB', event: '#C7B5DD' },
+}, DEFAULT_GEM_COLOR);
+
+const gemDark: DefaultTheme = applyGemColor({
+    ...gem, name: 'gem-dark', mode: 'dark',
+    colors: { ...gem.colors, success: '#91C2A7', error: '#EC9CB7', weekend: '#EC9CB7' },
+}, DEFAULT_GEM_COLOR);
+
 /**
  * 이름 규칙: 갈래 이름이 밝은 벌, 거기에 '-벌 이름'(dark·vintage)을 붙인 것이 다른 벌이다.
  * ThemeProviderWrapper 가 이 규칙으로 찾는다.
@@ -198,15 +223,17 @@ export const themes: Record<string, DefaultTheme> = {
     maple,
     'maple-dark': mapleDark,
     'maple-vintage': mapleVintage,
+    gem,
+    'gem-dark': gemDark,
     /* 맑은 물 아래 흰 모래 — 옅은 바다 안개빛 바탕에 물빛이 어른거리고, 판은 무채색 반투명 유리. 색은 깊은 청록 하나만 */
     ocean: {
         name: 'ocean', family: OCEAN, mode: 'light', ...commonStyles,
         fonts: OCEAN_FONTS,
-        colors: { background:'#EEF1EE', primary:'#0F6B6B', accent:'#4FA8A0', surface:'#FFFFFF', text:'#122120', textSecondary:'#5F6D6B', border:'#DCE3E0', success:'#2E8A6C', error:'#C2503D', weekend:'#C0604C' },
+          colors: { background:'#D6E7E4', primary:'#146E82', accent:'#62A7AE', surface:'#E6F1EE', text:'#193F48', textSecondary:'#456973', border:'#A6C5C7', success:'#287253', error:'#A84434', weekend:'#A14D3D' },
         preview: {
-            cell: 'rgba(255,255,255,0.62)', event: '#8FD3CD', today: '#0F6B6B',
-            bg: `${causticNet({ size: 160, freq: 0.03, seed: 11, alpha: 0.85 })} 0 0 / 160px 160px, linear-gradient(180deg, #3BA6A8, #7ACFC9 45%, #D1EBE3)`,
-            rail: 'rgba(255, 255, 255, 0.55)',
+            cell: '#E8F0EA', event: '#88B8A8', today: '#0F6262',
+            bg: `${causticNet({ size: 160, freq: 0.03, seed: 11, alpha: 0.28 })} 0 0 / 160px 160px, linear-gradient(180deg, #3B8589, #6BAFA8 45%, #BDD6C7)`,
+            rail: 'rgba(224, 236, 228, 0.88)',
         }, line:'#DCE3E0',
     },
     /* 밤바다에서 헤엄 — 먹빛 물 위에 달빛 물결, 판은 짙은 반투명 유리, 색은 맑은 물빛 하나 */
@@ -250,7 +277,7 @@ export interface ThemeChoice {
     preview?: Record<string, string>;
 }
 
-const groundOf = (t: DefaultTheme): ThemeGround => ({
+export const groundOf = (t: DefaultTheme): ThemeGround => ({
     bg: t.preview.bg ?? t.colors.background,
     rail: t.preview.rail ?? t.colors.surface,
     ink: t.colors.text,
@@ -270,7 +297,7 @@ const rankOf = (option: string) => {
 };
 
 export function listThemes(): ThemeChoice[] {
-    return THEME_FAMILIES.map((family) => {
+    return THEME_FAMILIES.filter(isThemeAvailable).map((family) => {
         const variants = Object.values(themes).filter((t) => t.family === family);
         const ordered = [...variants].sort((a, b) => rankOf(optionOf(a)) - rankOf(optionOf(b)));
 

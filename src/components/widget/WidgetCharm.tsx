@@ -1,10 +1,11 @@
 "use client";
+import { GemWidgetCharm } from '@/assets/gem/GemAssets';
 import { usePickTheme } from '@/styles/themed';
 import CelestialWidgetCharm from './celestial/CelestialWidgetCharm';
 import MapleWidgetCharm from './maple/MapleWidgetCharm';
 import OceanWidgetCharm from './ocean/OceanWidgetCharm';
 
-const VIEWS = { celestial: CelestialWidgetCharm, maple: MapleWidgetCharm, ocean: OceanWidgetCharm };
+const VIEWS = { celestial: CelestialWidgetCharm, maple: MapleWidgetCharm, ocean: OceanWidgetCharm , gem: GemWidgetCharm };
 
 /**
  * 위젯의 장식 — 지금은 세 갈래 모두 따로 두지 않는다. 갈래의 느낌은 바탕 무늬(WidgetDecor)가 맡는다.

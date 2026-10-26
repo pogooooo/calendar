@@ -1,5 +1,6 @@
 "use client";
 
+import * as GemS from "./gem/GemWidgetAuthNotice.styles";
 import WidgetShell from "@/components/widget/WidgetShell";
 import type { WidgetKind } from "@/store/useWidgetStore";
 import { useT } from "@/i18n/useT";
@@ -10,7 +11,7 @@ import * as MapleS from "./maple/MapleWidgetAuthNotice.styles";
 import * as OceanS from './ocean/OceanWidgetAuthNotice.styles';
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
 
 /**
  * 인증 전/실패 상태에서도 셸(제목줄·닫기 버튼)을 그린다.

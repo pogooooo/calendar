@@ -1,10 +1,11 @@
 "use client";
 
+import * as GemS from "./gem/GemDownload.styles";
 import * as React from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { Globe, MonitorDown, ArrowRight, ArrowDown } from "lucide-react";
+import { Globe, MonitorDown, ArrowRight, ArrowDown, Smartphone, ExternalLink } from "lucide-react";
 import CronosOrbit from "@/assets/download/CronosOrbit";
 import CursorTrail from "@/components/download/CursorTrail";
 import useAuthStore from "@/store/useAuthStore";
@@ -22,6 +23,7 @@ const HeroScene = dynamic(() => import("@/components/download/HeroScene"), {
 });
 
 const REPO = "https://github.com/pogooooo/calendar";
+const GOOGLE_PLAY_URL = "https://play.google.com/store/apps/details?id=com.cronos.todoapp";
 /**
  * 저장소가 밖에서 안 보이는 동안(계정 플래그)에는 GitHub 줄을 감춘다 — 누르면 404 만 나온다.
  * 다시 보이게 되면 이 값만 true 로 바꾸면 된다. 내려받기 자체는 /api/download 가 서버에서 받아 오므로 무관하다.
@@ -72,7 +74,7 @@ function mb(size: number | null | undefined) {
 }
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
 
 function useReveal<T extends HTMLElement>() {
     const ref = React.useRef<T>(null);
@@ -418,6 +420,11 @@ export default function DownloadPage() {
                             {t.download.useOnWeb}
                             <ArrowRight size={14} className="arrow" />
                         </S.GhostCta>
+                        <S.GhostCta as="a" href={GOOGLE_PLAY_URL} target="_blank" rel="noopener noreferrer">
+                            <Smartphone size={16} />
+                            {t.download.googlePlay}
+                            <ExternalLink size={14} />
+                        </S.GhostCta>
                     </S.CtaRow>
 
                     {dlError && <S.DownloadNotice role="alert">{dlError}</S.DownloadNotice>}
@@ -452,6 +459,12 @@ export default function DownloadPage() {
                 <RevealTitle>{t.download.platformsTitle}</RevealTitle>
                 <Reveal delay={80}>
                     <S.PlatformList>
+                        <S.PlatformRow as="a" href={GOOGLE_PLAY_URL} target="_blank" rel="noopener noreferrer" $mine={mine === "android"} data-store-link="">
+                            <S.RowName>Android · Google Play</S.RowName>
+                            <S.RowNote>{t.download.googlePlayNote}</S.RowNote>
+                            <S.RowMeta>{t.download.googlePlayAction}</S.RowMeta>
+                            <S.RowAction><ExternalLink size={15} /></S.RowAction>
+                        </S.PlatformRow>
                         {PLATFORMS.map(p => {
                             const info = infos[p.key];
                             const ready = info?.available;

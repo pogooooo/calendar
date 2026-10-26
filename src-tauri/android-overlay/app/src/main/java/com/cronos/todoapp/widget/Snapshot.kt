@@ -85,7 +85,7 @@ class Snapshot private constructor(
     }
 
     /** 앱 테마 — 갈래·밝기·색, 그리고 결이 다른 벌(variant: "vintage" 면 Maple 의 빛바랜 노트, 없으면 "") */
-    class ThemeSpec(val family: String, val mode: String, val colors: Map<String, Int>, val variant: String = "")
+    class ThemeSpec(val family: String, val mode: String, val colors: Map<String, Int>, val variant: String = "", val gemColor: Int? = null)
 
     fun label(name: String, fallback: String = name): String = labels.optString(name, fallback)
 
@@ -135,7 +135,7 @@ class Snapshot private constructor(
                 t.optJSONObject("colors")?.let { c ->
                     for (key in c.keys()) parseColor(c.optString(key))?.let { colors[key] = it }
                 }
-                ThemeSpec(t.optString("family", "celestial"), t.optString("mode", "light"), colors, t.optString("variant", ""))
+                ThemeSpec(t.optString("family", "celestial"), t.optString("mode", "light"), colors, t.optString("variant", ""), parseColor(t.optString("gemColor", "")))
             }
 
             val todos = root.optJSONArray("todos").map { o ->

@@ -14,7 +14,7 @@ import { EASE_IN, gentleSwap, widgetSwap, type Ease, type MotionSet } from "@/st
 
 /** 별빛의 결 — 빨리 와서 오래 가라앉는다 */
 const GLIDE: Ease = [0.16, 1, 0.3, 1];
-/** 자오선이 판을 건너는 결 — 기계처럼 고르게 떠나 고르게 멈춘다(CelestialMonthDecor.styles 의 Meridian 과 같은 값) */
+/** 천문기구의 움직임처럼 일정한 속도로 달력 장면을 전환한다. */
 export const SWEEP: Ease = [0.45, 0.05, 0.35, 1];
 export const SWEEP_MS = 720;
 /** 금선이 판의 k/7 자리(왼쪽에서)를 지나는 때(ms) — SWEEP 결을 풀어 셈한 값. 괘선의 별이 이 차례로 반짝인다 */

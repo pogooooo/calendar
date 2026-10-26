@@ -1,5 +1,6 @@
 "use client";
 
+import * as GemS from "./gem/GemAnniversary.styles";
 import * as React from "react";
 import { Plus } from "lucide-react";
 import useAnniversaryStore, { AnniversaryType } from "@/store/useAnniversaryStore";
@@ -21,10 +22,10 @@ import { useCurrentDayKey } from "@/hooks/useCurrentDay";
 import { useListMotion } from "@/hooks/useMotion";
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
 
 /** 갈래마다 제 배치 — Maple 은 Celestial 의 배치(서식 | 카드 격자)에 제 모양을 입히고, 바다는 가장 가까운 날의 큰 숫자와 물때 줄 */
-const LAYOUTS = { celestial: CelestialAnniversaryLayout, maple: CelestialAnniversaryLayout, ocean: OceanAnniversaryLayout };
+const LAYOUTS = { celestial: CelestialAnniversaryLayout, maple: CelestialAnniversaryLayout, ocean: OceanAnniversaryLayout , gem: CelestialAnniversaryLayout };
 
 // 윤년이 아닌 해도 있으므로 2월은 29일까지 허용한다
 const DAYS_IN_MONTH = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];

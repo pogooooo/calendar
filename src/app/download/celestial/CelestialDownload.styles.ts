@@ -227,6 +227,8 @@ export const CtaRow = styled.div`
 `;
 
 const ctaBase = css`
+    text-decoration: none;
+    &:focus-visible { outline: 2px solid ${p => p.theme.colors.primary}; outline-offset: 3px; }
     position: relative;
     display: inline-flex;
     align-items: center;
@@ -546,6 +548,18 @@ export const PlatformList = styled.div`
 `;
 
 export const PlatformRow = styled.button<{ $mine: boolean }>`
+    text-decoration: none;
+    &:focus-visible { outline: 2px solid ${p => p.theme.colors.primary}; outline-offset: 3px; }
+    @media (max-width: 620px) {
+        &[data-store-link] {
+            grid-template-columns: minmax(0, 1fr) 32px;
+            gap: 8px;
+            & > :nth-child(1) { grid-row: 1; grid-column: 1; white-space: normal; min-width: 0; letter-spacing: 0; }
+            & > :nth-child(2) { grid-row: 2; grid-column: 1 / -1; display: block; line-height: 1.6; }
+            & > :nth-child(3) { grid-row: 3; grid-column: 1; text-align: left; }
+            & > :nth-child(4) { grid-row: 1; grid-column: 2; }
+        }
+    }
     display: grid;
     grid-template-columns: auto 1fr auto 40px;
     align-items: center;

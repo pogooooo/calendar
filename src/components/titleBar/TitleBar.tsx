@@ -1,5 +1,7 @@
 "use client";
 
+import { GemTitleMark } from '@/assets/gem/GemAssets';
+import * as GemS from "./gem/GemTitleBar.styles";
 import { useEffect, useState, type ReactElement } from "react";
 import { isDesktopShell } from "@/lib/platform";
 import { useT } from "@/i18n/useT";
@@ -12,10 +14,10 @@ import MapleTitleMark from "./maple/MapleTitleMark";
 import OceanTitleMark from "./ocean/OceanTitleMark";
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
 /** 이름 앞의 작은 표(3D 오브제) — Maple 오늘의 단풍잎 · Ocean 유리 물방울. Celestial 은 글자만(3D 혼천의는 선화 테마와 따로 놀아 걷었다) */
 const NoMark = () => null;
-const MARKS: ThemeImpls<() => ReactElement | null> = { celestial: NoMark, maple: MapleTitleMark, ocean: OceanTitleMark };
+const MARKS: ThemeImpls<() => ReactElement | null> = { celestial: NoMark, maple: MapleTitleMark, ocean: OceanTitleMark , gem: GemTitleMark };
 
 export default function TitleBar() {
     const S = usePickTheme(STYLES);

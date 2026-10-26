@@ -7,6 +7,7 @@
  * 자리(x·y·rect)를 안 주면 무대가 방금 누른 자리(지우기는 방금 누른 항목의 상자)를 쓴다.
  */
 export type FxKind =
+    | "calendar-pick" // 날짜 선택 — 고른 칸에 짧은 테마 효과
     | "month-flip"   // 월간 달력을 넘김 (direction: 1 다음 달, -1 지난달)
     | "page"         // 화면을 옮김
     | "complete"     // 할 일·그날 작업·프로젝트 할 일을 끝냄

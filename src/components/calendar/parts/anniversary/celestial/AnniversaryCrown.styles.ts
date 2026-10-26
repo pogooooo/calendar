@@ -6,6 +6,7 @@
  */
 import styled, { css, keyframes } from "styled-components";
 import { MOBILE, NOT_WIDGET } from "@/styles/breakpoints";
+import { celestialOnly } from '@/styles/celestial/ornaments';
 
 export const ROW = 14; // 이름 한 줄 높이 (스크롤 스냅 단위)
 
@@ -75,6 +76,12 @@ export const Root = styled.span<{ $multi: boolean; $today: boolean; $flip: boole
 `;
 
 export const Ring = styled.span`
+    ${celestialOnly(css`
+        && svg { stroke-linecap:round; stroke-linejoin:round; }
+        && .ring { stroke-dasharray:none; stroke-dashoffset:0; animation:none; }
+        && .jewel { fill:currentColor; stroke:none; opacity:1; transform:none; animation:none; }
+        && .bead { display:none; }
+    `)}
     position: relative;
     display: grid;
     place-items: center;

@@ -1,5 +1,6 @@
 "use client";
 
+import * as GemS from "./gem/GemModal.styles";
 import * as React from "react";
 import { useT } from "@/i18n/useT";
 import BaseModal from "@/components/modal/baseModal/BaseModal";
@@ -17,7 +18,7 @@ import { dependencyIssue } from "@/lib/taskInteractions";
 import * as OceanS from './ocean/OceanModal.styles';
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
 
 const HOUR = 60 * 60 * 1000;
 

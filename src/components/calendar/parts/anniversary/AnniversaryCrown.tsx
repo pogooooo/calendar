@@ -1,14 +1,16 @@
 "use client";
 
+import * as GemS from "./gem/AnniversaryCrown.styles";
 import * as React from "react";
 import type { AnniversaryType } from "@/store/useAnniversaryStore";
+import { star4Path } from '@/components/ornament/celestial/CelestialOrnaments';
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/AnniversaryCrown.styles";
 import * as MapleS from "./maple/AnniversaryCrown.styles";
 import * as OceanS from './ocean/AnniversaryCrown.styles';
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
 
 interface Props {
     items: AnniversaryType[];
@@ -52,6 +54,7 @@ export default function AnniversaryCrown({ items, children, today = false, flip 
 
     return (
         <S.Root
+            data-anniversary-crown=""
             $multi={multi}
             $today={today}
             $flip={flip}
@@ -64,9 +67,9 @@ export default function AnniversaryCrown({ items, children, today = false, flip 
                     {multi && <circle className="ring2" cx="17" cy="17" r="16" />}
                     <path
                         className="jewel"
-                        d="M17 0.8C17 8 17 8 19.6 8C17 8 17 8 17 15.2C17 8 17 8 14.4 8C17 8 17 8 17 0.8Z"
+                        d={star4Path(17,3.5,3)}
                     />
-                    {today && <circle className="S.sweep" cx="17" cy="17" r="13.5" />}
+                    {today && <circle className="sweep" cx="17" cy="17" r="13.5" />}
                     <circle className="bead" r="1.5" />
                 </svg>
                 {children != null && <b className="dn">{children}</b>}

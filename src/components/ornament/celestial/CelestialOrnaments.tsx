@@ -72,9 +72,13 @@ export const MoonDisc = ({ cx, cy, r, phase, ring = true }: { cx: number; cy: nu
 
 /** 초승달 (C 꼴, 열린 쪽이 오른쪽) — 바깥 호와 안쪽 호 */
 export const crescentPath = (cx: number, cy: number, r: number) => {
-    const t = r * 0.62;
-    return `M${f(cx + r * 0.42)} ${f(cy - r * 0.9)}A${r} ${r} 0 1 0 ${f(cx + r * 0.42)} ${f(cy + r * 0.9)}`
-        + `A${t} ${t} 0 1 1 ${f(cx + r * 0.42)} ${f(cy - r * 0.9)}Z`;
+    const inner = r * .86, offset = r * .46;
+    // Both arcs meet at the actual intersection of their circles. An undersized
+    // inner radius made SVG enlarge the old arc, deforming the crescent.
+    const x = (r*r - inner*inner + offset*offset) / (2*offset);
+    const y = Math.sqrt(Math.max(0,r*r - x*x));
+    const top = `${f(cx+x)} ${f(cy-y)}`, bottom = `${f(cx+x)} ${f(cy+y)}`;
+    return `M${top}A${f(r)} ${f(r)} 0 1 0 ${bottom}A${f(inner)} ${f(inner)} 0 ${x>offset?1:0} 1 ${top}Z`;
 };
 
 /* ── 해와 달 문장 (가운데 초승달, 둘레에 빛살, 점선 테) ───────────────────── */

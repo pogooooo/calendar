@@ -15,11 +15,14 @@ export * from "../celestial/CelestialCalendarPage.styles";
 
 /** 폰의 월간 ↔ 주간·일간: 밑줄 탭 둘, 아래로 옅은 선 하나 */
 export const ViewSwitch = styled(C.ViewSwitch)`
+    border-radius:0;
+    &::before { inset:auto auto 0 0; width:50%; height:3px; border-radius:0; background:${p => p.theme.colors.primary}; }
     border: none;
     border-bottom: 1px solid ${(p) => hair(p.theme, 0.1)};
 `;
 
 export const SwitchButton = styled(C.SwitchButton)`
+    &&::after { display:none; }
     ${(p) => paperTab(p.$on)}
     padding: 11px 0 10px;
     border-right: none;

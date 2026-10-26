@@ -1,14 +1,16 @@
 "use client";
 
+import * as GemS from "./gem/AnimatedDateText.styles";
 import * as React from "react";
-import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import useThemeMotion from '@/hooks/useThemeMotion';
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/AnimatedDateText.styles";
 import * as MapleS from "./maple/AnimatedDateText.styles";
 import * as OceanS from './ocean/AnimatedDateText.styles';
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
 
 interface AnimatedDateTextProps {
     text: string;
@@ -18,7 +20,8 @@ interface AnimatedDateTextProps {
 // 글자별 AnimatePresence 대신 텍스트 전체를 하나의 motion 단위로 처리
 export default function AnimatedDateText({ text, direction }: AnimatedDateTextProps) {
     const S = usePickTheme(STYLES);
-    const reducedMotion = useReducedMotion();
+    const level = useThemeMotion();
+    const reducedMotion = level !== 'full';
     return (
         <S.DateTextContainer>
             <AnimatePresence mode="popLayout" initial={false} custom={direction}>
@@ -28,7 +31,7 @@ export default function AnimatedDateText({ text, direction }: AnimatedDateTextPr
                     initial={{ y: reducedMotion ? 0 : direction > 0 ? 16 : -16, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     exit={{ y: reducedMotion ? 0 : direction > 0 ? -16 : 16, opacity: 0 }}
-                    transition={{ duration: reducedMotion ? 0 : 0.2, ease: "easeInOut" }}
+                    transition={{ duration: level === 'off' ? 0 : reducedMotion ? .14 : .26, ease: [0.22, 1, 0.36, 1] }}
                     style={{ display: 'inline-block', whiteSpace: 'pre' }}
                 >
                     {text}

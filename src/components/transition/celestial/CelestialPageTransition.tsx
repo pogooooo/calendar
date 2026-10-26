@@ -33,14 +33,21 @@ export default function CelestialPageTransition({ children, direction = 1 }: { c
     // 이 화면에 들어온 그 순간에 한 번만 정한다 — 그릴 때마다 정하면, 첫 화면이 다시 그려지거나 움직임 설정을 바꿀 때(끄기 → 켜기)
     // 화면을 옮기지 않았는데도 문양이 다시 그려졌다
     const [animate] = React.useState(() => hasNavigated && motion !== 'off');
+    const [overlay, setOverlay] = React.useState(animate && motion === 'full');
 
     React.useEffect(() => {
         hasNavigated = true;
     }, []);
 
+    React.useEffect(() => {
+        if (!overlay) return;
+        const timer = window.setTimeout(() => setOverlay(false), 1000);
+        return () => window.clearTimeout(timer);
+    }, [overlay]);
+
     return (
         <S.Stage>
-            {animate && (
+            {overlay && motion === 'full' && (
                 <S.Overlay aria-hidden="true" data-page-transition-overlay style={{ "--turn": `${direction < 0 ? -24 : 24}deg` } as React.CSSProperties}>
                     <S.Veil />
 

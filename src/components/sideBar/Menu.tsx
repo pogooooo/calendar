@@ -1,3 +1,4 @@
+import * as GemS from "./gem/GemSideBar.styles";
 import { useEffect, useState } from "react";
 import SidebarMenuButton from "@/components/button/sidebarMenu/SidebarMenuButton";
 import { useRouter, usePathname } from "next/navigation";
@@ -12,7 +13,7 @@ import * as MapleS from "./maple/MapleSideBar.styles";
 import * as OceanS from './ocean/OceanSideBar.styles';
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
 
 const ROMAN = ["I", "II", "III", "IV", "V", "VI"];
 

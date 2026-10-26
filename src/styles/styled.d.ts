@@ -25,6 +25,9 @@ declare module 'styled-components' {
          */
         variant?: 'vintage';
 
+        /** Exact user-selected sRGB stone color; readable interface colors are derived separately. */
+        gemColor?: string;
+
         colors: {
             background: string;
             primary: string;

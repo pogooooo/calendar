@@ -5,6 +5,7 @@
  */
 import styled, { css, keyframes } from "styled-components";
 import { celestialOnly } from "@/styles/celestial/ornaments";
+import { astralSurface, todayNumeral } from '@/styles/celestial/calendarDetails';
 
 const slideIn = keyframes`
     from { opacity: 0; transform: translateY(-3px); }
@@ -12,6 +13,7 @@ const slideIn = keyframes`
 `;
 
 export const Strip = styled.section`
+    ${celestialOnly(css`&& { ${astralSurface} border:1px solid ${p => p.theme.colors.primary}60; border-radius:2px; padding:8px; }`)}
     flex: 0 0 auto;
     padding: 6px 8px 8px;
     border-bottom: 1px solid ${p => p.theme.colors.primary}55;
@@ -70,6 +72,16 @@ export const Days = styled.div`
 `;
 
 export const Day = styled.button<{ $selected: boolean; $today: boolean; $weekend: boolean }>`
+    ${celestialOnly(css<{ $today:boolean; $selected:boolean }>`
+        && { border-radius:2px; min-height:66px; border-color:${p => p.$selected ? `${p.theme.colors.primary}90` : 'transparent'}; }
+        && .num { width:32px; height:28px; border:0; border-radius:0; color:${p => p.theme.colors.text}; font-family:${p => p.theme.fonts.body}; }
+        ${p => p.$today && css`
+            && .num { ${todayNumeral} width:32px; height:28px; padding-right:0; justify-content:center; }
+            && .num::before { right:0; top:1px; }
+            && .num::after { left:7px; right:7px; }
+        `}
+        &&:focus-visible { outline:2px solid ${p => p.theme.colors.primary}; outline-offset:1px; }
+    `)}
     display: flex;
     flex-direction: column;
     align-items: center;

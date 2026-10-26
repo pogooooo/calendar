@@ -1,5 +1,6 @@
 "use client";
 
+import * as GemS from "./gem/SecondaryButton.styles";
 import React from 'react';
 import { Slot } from "@radix-ui/react-slot";
 import type { ButtonProps } from "./celestial/SecondaryButton.styles";
@@ -9,7 +10,7 @@ import * as MapleS from "./maple/SecondaryButton.styles";
 import * as OceanS from './ocean/SecondaryButton.styles';
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
 
 export type { ButtonProps } from "./celestial/SecondaryButton.styles";
 

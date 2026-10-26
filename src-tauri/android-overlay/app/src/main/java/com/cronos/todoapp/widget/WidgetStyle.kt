@@ -96,6 +96,7 @@ abstract class WidgetStyle(protected val context: Context, protected val density
             when (family) {
                 "maple" -> MapleStyle(context, density)
                 "ocean" -> OceanStyle(context, density)
+                "gem" -> GemStyle(context, density)
                 else -> CelestialStyle(context, density)
             }
     }

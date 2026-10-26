@@ -15,6 +15,8 @@
 
 # next.js
 /.next/
+/.next-dev/
+/.codex-remote-attachments/
 /out/
 /out-desktop/
 /.open-next/
@@ -64,6 +66,9 @@ next-env.d.ts
 # 로컬에서 구운 APK (릴리스는 GitHub Actions 가 만든다)
 *.apk
 *.apk.idsig
+*.aab
+*.keystore
+*.jks
 
 # productivity 플러그인이 만드는 대시보드 (프로젝트 코드가 아니다)
 dashboard.html

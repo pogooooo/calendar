@@ -81,10 +81,10 @@ void main() {
     // 물빛 — 위가 깊고 아래가 얕으며, 깊은 곳·얕은 곳이 천천히 옮겨 다닌다
     float drift = 0.5 + 0.5 * sin(P.x * 1.3 + t * 0.03) * sin(P.y * 1.7 - t * 0.025 + 1.2);
     float depth = mix(drift, 1.0 - st.y, 0.55);
-    vec3 deep    = mix(vec3(0.15, 0.60, 0.63), vec3(0.025, 0.12, 0.14), uDark);
-    vec3 mid     = mix(vec3(0.46, 0.80, 0.78), vec3(0.04, 0.19, 0.21), uDark);
-    vec3 shallow = mix(vec3(0.82, 0.92, 0.89), vec3(0.06, 0.15, 0.16), uDark);
-    vec3 sand    = mix(vec3(0.94, 0.91, 0.84), vec3(0.06, 0.10, 0.11), uDark);
+    vec3 deep    = mix(vec3(0.23, 0.52, 0.54), vec3(0.025, 0.12, 0.14), uDark);
+    vec3 mid     = mix(vec3(0.42, 0.69, 0.66), vec3(0.04, 0.19, 0.21), uDark);
+    vec3 shallow = mix(vec3(0.74, 0.84, 0.78), vec3(0.06, 0.15, 0.16), uDark);
+    vec3 sand    = mix(vec3(0.86, 0.85, 0.77), vec3(0.06, 0.10, 0.11), uDark);
     vec3 water = mix(shallow, mid, smoothstep(0.2, 0.62, depth));
     water = mix(water, deep, smoothstep(0.62, 1.0, depth));
     water = mix(sand, water, smoothstep(0.0, 0.42, st.y + 0.1 * drift));
@@ -102,8 +102,10 @@ void main() {
     float swell = 0.62 + 0.38 * sin(uv.x * 1.1 + t * 0.05) * sin(uv.y * 0.9 - t * 0.04);
     vec3 lightCol = mix(vec3(1.0, 1.0, 0.97), vec3(0.5, 0.95, 0.87), uDark);
     vec3 caus = (vec3(cr, cg, cb) * 0.85 + c2 * 0.4) * swell;
+    // 낮의 초점이 흰색으로 타지 않도록 빛 에너지를 부드럽게 제한한다.
+    caus = mix(caus / (1.0 + caus), caus, uDark);
     // 깊은 물일수록 빛 그물이 또렷하다 (모래 위는 옅게)
-    float lightAmt = mix(0.62, 0.3, uDark) * mix(0.55, 1.0, smoothstep(0.1, 0.7, depth));
+    float lightAmt = mix(0.24, 0.3, uDark) * mix(0.55, 1.0, smoothstep(0.1, 0.7, depth));
     vec3 col = water + caus * lightCol * lightAmt;
 
     // 햇살 기둥 — 위에서 비스듬히 내려오는 옅은 빛줄기 (밤에는 거의 없다). 기울이면 해 자리도 조금 옮겨 간다
@@ -111,16 +113,16 @@ void main() {
     float ang = atan(rp.x, -rp.y);
     float rays = pow(0.5 + 0.5 * sin(ang * 24.0 + t * 0.11), 6.0) * 0.6 + pow(0.5 + 0.5 * sin(ang * 11.0 - t * 0.07 + 1.7), 8.0) * 0.4;
     rays *= smoothstep(0.05, 1.0, st.y) * (1.0 - uDark * 0.8);
-    col += rays * 0.08 * lightCol;
+    col += rays * mix(0.04, 0.08, uDark) * lightCol;
 
     // 햇빛 반짝임 — 빛 그물이 가장 밝은 자리에서 반짝 (칸으로 나눠 반짝이면 네모난 조각이 보여서, 매끈한 물결로)
     float peak = smoothstep(0.8, 1.0, cg) * uHQ;
     float tw = 0.5 + 0.5 * sin(t * 5.0 + uv.x * 37.0 + uv.y * 53.0);
-    col += peak * tw * tw * mix(0.4, 0.22, uDark) * lightCol;
+    col += peak * tw * tw * mix(0.08, 0.22, uDark) * lightCol;
 
     // 커서 둘레는 물이 조금 더 밝고, 누른 물결 고리는 빛난다
-    col += exp(-dist * 4.5) * 0.07 * uMouseOn * lightCol;
-    col += ringGlow * 0.16 * lightCol;
+    col += exp(-dist * 4.5) * mix(0.03, 0.07, uDark) * uMouseOn * lightCol;
+    col += ringGlow * mix(0.06, 0.16, uDark) * lightCol;
 
     // 알파 칸에는 이 자리의 빛 그물 세기를 적어 둔다 — 방울이 읽어 반짝인다 (화면에 깔 때는 버린다)
     gl_FragColor = vec4(col, clamp((cg * 0.8 + c2 * 0.4) * swell * 1.3, 0.0, 1.0));
@@ -140,7 +142,7 @@ varying vec2 vUv;
 void main() { gl_FragColor = vec4(texture2D(uWater, vUv).rgb, 1.0); }
 `;
 
-export default function OceanCaustics({ onFail }: { onFail?: () => void } = {}) {
+export default function OceanCaustics({ onFail, objects = true }: { onFail?: () => void; objects?: boolean } = {}) {
     const ref = useRef<HTMLCanvasElement>(null);
     const failRef = useRef(onFail);
     failRef.current = onFail;
@@ -206,6 +208,9 @@ export default function OceanCaustics({ onFail }: { onFail?: () => void } = {}) 
             blit.frustumCulled = false;
             viewScene.add(blit);
             const bubbles = createBubbles(THREE, { mobile, motion, dark, water: target.texture });
+            // The calendar is an effects-only water surface, without floating glass objects.
+            bubbles.mesh.visible = objects;
+            bubbles.heroMesh.visible = objects;
             viewScene.add(bubbles.mesh, bubbles.heroMesh);
 
             const draw = () => {
@@ -355,7 +360,7 @@ export default function OceanCaustics({ onFail }: { onFail?: () => void } = {}) 
         })();
 
         return () => { disposed = true; cleanup(); };
-    }, [dark, motion]);
+    }, [dark, motion, objects]);
 
     return <S.Caustics ref={ref} aria-hidden="true" />;
 }

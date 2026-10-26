@@ -43,6 +43,7 @@ const { buildWidgetSnapshot } = sourceModule("src/lib/widgetSnapshot.ts");
 const t = sourceModule("src/i18n/ko.ts").default;
 const { themes } = sourceModule("src/styles/theme.ts");
 const { inkOnFill } = sourceModule("src/styles/color.ts");
+assert.equal(inkOnFill('#D4AF37'), '#111111');
 assert.equal(inkOnFill(themes.celestial.colors.primary), '#111111');
 assert.equal(inkOnFill(themes['celestial-dark'].colors.primary), '#111111');
 assert.equal(inkOnFill(themes.maple.colors.primary), '#FFFFFF');

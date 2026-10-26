@@ -64,6 +64,8 @@ export interface SnapshotTheme {
     mode: "light" | "dark";
     /** 결이 다른 벌 — "vintage" 면 안드로이드 위젯의 Maple 붓이 잎 그림을 빛바랜 톤으로 그린다 */
     variant?: "vintage";
+    /** Exact gem color survives a widget-specific light/dark override. */
+    gemColor?: string;
     colors: {
         background: string; surface: string; primary: string; accent: string;
         text: string; textSecondary: string; weekend: string;
@@ -106,7 +108,7 @@ export interface SnapshotInput {
     memo: string;
     t: Translations;
     locale: string;
-    theme: { family?: string; mode?: string; variant?: string; colors: SnapshotTheme["colors"] };
+    theme: { family?: string; mode?: string; variant?: string; gemColor?: string; colors: SnapshotTheme["colors"] };
     /** 위젯 전용 열쇠와 서버 주소. 없으면(로그아웃·웹) 위젯은 누르면 앱을 연다 */
     quickAdd?: { api: string; token: string } | null;
     now?: Date;
@@ -179,6 +181,7 @@ export function buildWidgetSnapshot(input: SnapshotInput): WidgetSnapshot {
             family: theme.family ?? "celestial",
             mode: theme.mode === "dark" ? "dark" : "light",
             ...(theme.variant === "vintage" ? { variant: "vintage" as const } : {}),
+            ...(theme.gemColor && /^#[\da-f]{6}$/i.test(theme.gemColor) ? { gemColor: theme.gemColor.toUpperCase() } : {}),
             colors: theme.colors,
         },
         todos: snapTodos,

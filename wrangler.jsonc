@@ -1,6 +1,7 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "cronos",
+  "account_id": "b39c857d1473af13bda46e5b9b74fcb9",
   "main": ".open-next/worker.js",
   "compatibility_date": "2026-07-31",
   "compatibility_flags": ["nodejs_compat"],

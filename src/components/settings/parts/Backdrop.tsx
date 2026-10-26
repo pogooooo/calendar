@@ -10,6 +10,6 @@ const NoBackdrop = () => null;
 
 /** 설정 화면 바탕의 옅은 그림. Celestial 은 별 필드, Ocean 은 물빛, Maple 은 없음 */
 export default function Backdrop() {
-    const View = usePickTheme<ComponentType>({ celestial: StarField, maple: NoBackdrop, ocean: OceanStarField });
+    const View = usePickTheme<ComponentType>({ celestial: StarField, maple: NoBackdrop, ocean: OceanStarField , gem: NoBackdrop });
     return <View />;
 }

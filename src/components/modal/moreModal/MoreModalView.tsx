@@ -1,5 +1,6 @@
 "use client";
 
+import * as GemS from "./gem/GemMoreModal.styles";
 import * as React from "react";
 import { MoreModalProps } from "./MoreModal";
 import { X, Check } from 'lucide-react';
@@ -13,7 +14,7 @@ import * as MapleS from "./maple/MapleMoreModal.styles";
 import * as OceanS from './ocean/OceanMoreModal.styles';
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
 
 export default function MoreModalView({
                                                isOpen,

@@ -1,5 +1,5 @@
 import styled, { css } from "styled-components";
-import { giltSmall } from "@/styles/celestial/almanac";
+import { astralSurface, todayNumeral } from '@/styles/celestial/calendarDetails';
 import { celestialOnly, star4Mark } from "@/styles/celestial/ornaments";
 import { NOT_WIDGET, MOBILE, TOUCH, SAFE_T, SAFE_B } from "@/styles/breakpoints";
 import { motion } from "framer-motion";
@@ -144,6 +144,10 @@ export const SliderWrapper = styled.div`
 `;
 
 export const CalendarWindow = styled.div`
+    ${celestialOnly(css`
+        && { ${astralSurface} box-sizing:border-box; border:1px solid ${p => p.theme.colors.primary}88; border-radius:2px; }
+        [data-widget] && { border:0; border-radius:0; background:transparent; }
+    `)}
     width: 100%;
     min-width: 0;
     overflow: hidden;
@@ -160,6 +164,10 @@ export const CalendarWindow = styled.div`
 `;
 
 export const Header = styled.div`
+    ${celestialOnly(css`
+        && { border:0; border-bottom:1px solid ${p => p.theme.colors.primary}80; background:transparent; }
+        &&::after { display:none; }
+    `)}
     font-family: ${(props) => props.theme.fonts.display};
     display: grid;
     grid-template-columns: repeat(7, 1fr);
@@ -192,6 +200,12 @@ export const Header = styled.div`
 `;
 
 export const DayNameBox = styled.div<{ $isToday?: boolean }>`
+    ${celestialOnly(css`
+        && { height:38px; justify-content:flex-start; padding-left:10px; border-right-color:${p => p.theme.colors.primary}20; }
+        && .day-name { font-family:${p => p.theme.fonts.body}; font-size:.68rem; font-weight:600; letter-spacing:.1em; color:${p => p.theme.colors.textSecondary}; }
+        &&:first-child .day-name { color:${p => p.theme.colors.weekend}; }
+        ${MOBILE} { && { height:30px; justify-content:center; padding-left:0; } && .day-name { font-size:.61rem; letter-spacing:.02em; } }
+    `)}
     display: flex;
     justify-content: center;
     align-items: center;
@@ -222,6 +236,11 @@ export const DayNameBox = styled.div<{ $isToday?: boolean }>`
 `;
 
 export const GridContainer = styled.div`
+    ${celestialOnly(css`
+        && { border:0; grid-template-rows:repeat(6,minmax(56px,1fr)); }
+        ${MOBILE} { && { grid-template-rows:repeat(6,minmax(0,1fr)); } }
+        [data-widget] && { grid-template-rows:repeat(6,minmax(0,1fr)); }
+    `)}
     display: grid;
     grid-template-rows: repeat(6, minmax(80px, 1fr));
     min-height: 0;
@@ -251,13 +270,14 @@ export const GridContainer = styled.div`
         height: calc((100vw - 24px) / 7 * 1.3 * 6);
         /* 키 작은 폰(640)에서는 격자가 화면을 다 먹어 아래 고른 날 목록이 머리줄 하나만 남았다.
            격자 밖(탭바·전환 단추·달 머리·요일 줄)과 목록 두 줄 몫 320px 은 남긴다. */
-        max-height: min(62dvh, calc(100dvh - 320px - ${SAFE_T} - ${SAFE_B}));
+        max-height: min(62dvh, max(144px, calc(100dvh - 400px - ${SAFE_T} - ${SAFE_B})));
         flex: none;
         }
     }
 `;
 
 export const WeekRowContainer = styled.div`
+    ${celestialOnly(css`&& { border-bottom-color:${p => p.theme.colors.primary}2C; }`)}
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     flex: 1;
@@ -280,10 +300,29 @@ export const WeekRowContainer = styled.div`
 `;
 
 export const DayCell = styled.div<{ $isToday: boolean; $isCurrentMonth: boolean; $isSelected: boolean; $dropTarget?: boolean }>`
+    ${celestialOnly(css<{ $isToday:boolean; $isSelected:boolean; $isCurrentMonth:boolean; $dropTarget?:boolean }>`
+        && { border-right-color:${p => p.theme.colors.primary}24; opacity:${p => p.$isCurrentMonth ? 1 : .62}; }
+        && .day-header { padding:3px 9px; height:36px; flex:0 0 36px; }
+        && .day-header .day-number { font-family:${p => p.theme.fonts.body}; font-size:.88rem; font-variant-numeric:tabular-nums; }
+        &&:first-child .day-header .day-number { color:${p => p.theme.colors.weekend}; }
+        ${p => p.$isSelected && !p.$dropTarget && css`&&, &&:hover { background-color:${p.theme.colors.primary}0B; box-shadow:inset 0 -2px 0 ${p.theme.colors.primary}; }`}
+        ${p => p.$isToday && css`&& .day-header .day-number { ${todayNumeral} }`}
+        && [data-anniversary-crown] .day-number::before { display:none; }
+        ${MOBILE} { && .day-header { padding:3px 4px; height:32px; flex-basis:32px; } && .day-header .day-number { font-size:.77rem; } }
+        [data-widget] && .day-header { padding:3px 4px 0; min-height:26px; }
+        @media(max-height:420px) {
+            [data-widget] && .day-header { min-height:18px; height:20px; flex-basis:20px; padding:1px 3px 0; }
+            [data-widget] && .day-header .day-number { height:18px; line-height:16px; font-size:.66rem; padding-bottom:1px; }
+            [data-widget] && .day-header .day-number::before { width:5px; height:5px; top:1px; }
+            [data-widget] && .day-header .day-number::after { bottom:0; height:1px; }
+        }
+    `)}
+    .today-label { display:none; }
     ${(p) => p.$dropTarget && css`box-shadow: inset 0 0 0 2px ${p.theme.colors.primary}; background-image: linear-gradient(${p.theme.colors.primary}22, ${p.theme.colors.primary}22);`}
     display: flex;
     flex-direction: column;
     min-width: 0;
+    min-height: 0;
     position: relative;
     border-right: 1px solid ${(props) => props.theme.colors.primary}40;
     opacity: ${(props) => props.$isCurrentMonth ? 1 : 0.4};
@@ -329,25 +368,14 @@ export const DayCell = styled.div<{ $isToday: boolean; $isCurrentMonth: boolean;
             display: block;
             font-family: ${(props) => props.theme.fonts.display};
             font-weight: ${(props) => (props.$isToday || props.$isSelected) ? 'bold' : 'normal'};
-            color: ${(props) => props.$isToday ? props.theme.colors.background : props.theme.colors.text};
-            ${(props) => props.$isToday && css`
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                min-width: 24px;
-                height: 24px;
-                margin: -3px 0 -3px -3px;
-                padding: 0 6px;
-                border-radius: 12px;
-                ${giltSmall}
-                box-shadow: inset 0 1px 0 rgba(255, 248, 220, 0.7), 0 0 0 3px ${props.theme.colors.primary}26, 0 0 14px ${props.theme.colors.primary}55;
-            `}
+            color: ${(props) => props.theme.colors.text};
         }
     }
 
     &:hover .add-btn {
         opacity: 1;
     }
+    &:focus-within .add-btn { opacity:1; }
 
     /* 48px 짜리 칸이다. 숫자와 여백을 줄여 마름모가 들어갈 자리를 만든다. */
     ${MOBILE} {
@@ -366,6 +394,7 @@ export const DayCell = styled.div<{ $isToday: boolean; $isCurrentMonth: boolean;
 `;
 
 export const DayHeaderLeft = styled.div`
+    height:100%;
     display: flex;
     align-items: center;
     gap: 4px;
@@ -413,7 +442,7 @@ export const AddTodoButton = styled.button`
 `;
 
 export const TodoBarList = styled.div`
-
+    ${celestialOnly(css`@media(min-width:769px) { && { margin-top:3px; margin-bottom:3px; } }`)}
     position: relative;
     z-index: 1;
     display: flex;
@@ -483,6 +512,7 @@ export const CompactTaskCount = styled.button`
 `;
 
 export const TodoBarSpacer = styled.div`
+    flex-shrink:0;
     height: 20px;
     width: 100%;
 
@@ -492,6 +522,7 @@ export const TodoBarSpacer = styled.div`
 `;
 
 export const TodoBarItem = styled.div<{ $isStart: boolean; $isEnd: boolean; $color?: string; $isDone?: boolean; $dragging?: boolean; $movable?: boolean }>`
+    flex-shrink:0;
     position: relative;
     opacity: ${(p) => p.$dragging ? 0.5 : 1};
     touch-action: ${(p) => p.$movable ? 'none' : 'auto'};
@@ -534,7 +565,7 @@ export const TodoBarItem = styled.div<{ $isStart: boolean; $isEnd: boolean; $col
     }
 
     ${(props) => props.$isDone && css`
-        opacity: 0.4;
+        opacity: 0.76;
         background-color: transparent;
 
         .todo-title {
@@ -564,6 +595,7 @@ export const TodoBarItem = styled.div<{ $isStart: boolean; $isEnd: boolean; $col
     /* Celestial: 막대의 시작은 색 띠 대신 그 색의 네 갈래 별 — 일정이 별에서 시작해 이어지는 별줄기.
        폰의 일정 표식은 마름모 대신 동그라미(끝낸 것은 찬 달) */
     ${celestialOnly(css<{ $isStart: boolean; $color?: string }>`
+        @media(min-width:769px) { && { font-size:.73rem; font-weight:550; } }
         ${(p) => p.$isStart && css`
             box-shadow: none;
             &::before {
@@ -593,16 +625,19 @@ export const RangeHandle = styled.button<{ $edge: 'start' | 'end' }>`
 `;
 
 export const MoreButton = styled.button.attrs({ type: 'button' })`
+    flex-shrink:0;
     border: none;
     background: transparent;
     font-family: inherit;
+    height: 18px;
     min-height: 18px;
+    box-sizing: border-box;
     font-size: 0.75rem;
     color: ${(props) => props.theme.colors.textSecondary};
     font-weight: 500;
     text-align: center;
-    padding: 2px 0;
-    margin: 2px 4px 0 4px;
+    padding: 0;
+    margin: 0 4px;
     cursor: pointer;
     border-radius: 4px;
     transition: all 0.2s ease;

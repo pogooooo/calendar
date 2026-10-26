@@ -1,5 +1,6 @@
 "use client";
 
+import * as GemS from "./gem/GemForgotPassword.styles";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -26,7 +27,7 @@ import * as OceanS from './ocean/OceanForgotPassword.styles';
 type ForgotFormData = ForgotPasswordInput;
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
 
 
 const ForgotPassword = () => {

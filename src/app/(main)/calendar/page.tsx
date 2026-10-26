@@ -1,5 +1,7 @@
 "use client";
 
+import GemCalendarLayout from './gem/GemCalendarLayout';
+import * as GemS from "./gem/GemCalendarPage.styles";
 import React, { useState } from "react";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import useCategoryStore from "@/store/useCategoryStore";
@@ -23,9 +25,9 @@ import * as OceanS from './ocean/OceanCalendarPage.styles';
 import OceanCalendarLayout from './ocean/OceanCalendarLayout';
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
 
-const LAYOUTS = { celestial: CelestialCalendarLayout, maple: MapleCalendarLayout, ocean: OceanCalendarLayout };
+const LAYOUTS = { celestial: CelestialCalendarLayout, maple: MapleCalendarLayout, ocean: OceanCalendarLayout , gem: GemCalendarLayout };
 
 const DAY_COLLAPSE_KEY = "cronos-day-collapsed";
 
@@ -152,7 +154,7 @@ export default function CalendarPage() {
     if (isMobile) {
         return (
             <S.MobileWrapper>
-                <S.ViewSwitch role="tablist">
+                <S.ViewSwitch role="tablist" $active={mobileView === 'month' ? 0 : 1}>
                     {([
                         ["month", t.calendar.monthView],
                         ["week", t.calendar.weekDayView],

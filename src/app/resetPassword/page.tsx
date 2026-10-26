@@ -1,5 +1,6 @@
 "use client";
 
+import * as GemS from "./gem/GemResetPassword.styles";
 import { Suspense, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { z } from "zod";
@@ -30,7 +31,7 @@ import * as OceanS from './ocean/OceanResetPassword.styles';
 // 서버로는 token + password 만 보내고, 확인란은 화면에서만 검증한다.
 // 문구가 언어를 따라야 해서 화면 안에서 만든다.
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
 
 const makeResetFormSchema = (a: Translations["auth"]) =>
     z.object({

@@ -26,7 +26,7 @@ export const Ring = styled(C.Ring)`
     box-sizing: border-box;
     border: 1px solid ${(p) => withAlpha(p.theme.colors.primary, 0.5)};
     border-radius: 50%;
-    background-color: ${(p) => withAlpha(p.theme.colors.primary, p.theme.mode === "dark" ? 0.16 : 0.08)};
+    background-color:transparent;
 
     /* 고리·별·구슬 그림은 걷는다 — 테두리가 고리다 */
     svg { display: none; }

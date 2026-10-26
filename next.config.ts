@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { PHASE_DEVELOPMENT_SERVER } from "next/constants";
 import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 import { readFileSync } from "node:fs";
 
@@ -60,4 +61,10 @@ if (!isDesktop) {
     initOpenNextCloudflareForDev();
 }
 
-export default nextConfig;
+// export 빌드는 distDir가 out-desktop이어도 중간 산출물은 .next에 쓴다.
+// 개발 서버의 Turbopack이 그 안에 동시에 쓰면 배포 빌드의 webpack 파일과 섞인다.
+export default function config(phase: string): NextConfig {
+    return phase === PHASE_DEVELOPMENT_SERVER
+        ? { ...nextConfig, distDir: ".next-dev" }
+        : nextConfig;
+}

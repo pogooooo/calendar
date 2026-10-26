@@ -1,7 +1,7 @@
 /**
  * 바다의 주간 달력(위젯) — 금빛 상자 일곱 칸·모서리 사선·반짝이는 별(Celestial), 먹 표·테이프(Maple) 대신
- * **틈을 두고 놓인 납작한 유리 칸 일곱**(월간과 같은 말). 요일은 작은 고정폭 대문자, 오늘은 요일이 청록 꼬리표가 되고
- * 그 칸에 청록 테두리. 일정 막대는 옅게 물든 면에 앞쪽 색 띠, 날짜 사이 선은 머리카락 선 하나.
+ * 페이지 물빛 위에 얇은 구분선으로 나뉜 일곱 날. 오늘은 요일의 청록 밑선과 칸 아래의 강조선으로 구분한다.
+ * 일정 막대는 옅게 물든 면에 앞쪽 색 띠, 날짜 사이 선은 머리카락 선 하나.
  * 위젯 창이라 끝없는 움직임은 하나도 없다 — Celestial 의 반짝이는 별 티끌(CalendarAmbience)도 감춘다.
  */
 import styled, { css } from "styled-components";
@@ -13,7 +13,6 @@ export * from "../celestial/CelestialWeekCalendar.styles";
 
 const GAP = 4;
 const dark = (p: { theme: { mode: string } }) => p.theme.mode === "dark";
-const onTeal = (p: { theme: { mode: string } }) => (dark(p) ? "#06110F" : "#FFFFFF");
 
 export const CelestialCalendarWrapper = styled(C.CelestialCalendarWrapper)`
     font-family: ${(p) => p.theme.fonts.body};
@@ -77,6 +76,8 @@ export const Header = styled(C.Header)`
 
 /** 요일 — 작은 고정폭 대문자. 일요일은 산호, 오늘은 청록 꼬리표 */
 export const DayNameBox = styled(C.DayNameBox)`
+    && { height:40px; background:transparent; border-bottom:1px solid ${(p) => hairline(p.theme)}; border-radius:0; }
+    && .day-name { font-family: ${(p) => p.theme.fonts.body}; font-size: 0.73rem; letter-spacing: 0.03em; font-weight: 650; }
     height: 26px;
     border-right: none;
 
@@ -106,13 +107,8 @@ export const DayNameBox = styled(C.DayNameBox)`
 
     ${(p) => p.$isToday && css`
         &::before { display: none; }
-        .day-name {
-            padding: 4px 7px;
-            border-radius: 6px;
-            color: ${onTeal(p)};
-            background: ${p.theme.colors.primary};
-        }
-        &:first-child .day-name { color: ${onTeal(p)}; }
+        && .day-name { color:${p.theme.colors.primary}; font-weight:750; text-decoration:underline; text-decoration-thickness:1.5px; text-underline-offset:6px; text-decoration-skip-ink:none; }
+        &&:first-child .day-name { color:${p.theme.colors.primary}; }
     `}
 `;
 
@@ -122,8 +118,10 @@ export const BarContainer = styled(C.BarContainer)`
     &::before, &::after { display: none; }
 `;
 
-/** 날 한 칸 — 납작한 유리 조각. 오늘은 청록 테두리 */
+/** 날 한 칸 — 바탕은 투명하게 이어지고 오늘만 아래에 청록 선을 남긴다. */
 export const DaySlot = styled(C.DaySlot)`
+    && { border-radius:0; background-color:transparent; border:0; border-right:1px solid ${(p) => hairline(p.theme)}; box-shadow:${(p) => p.$isToday ? `inset 0 -2px 0 ${withAlpha(p.theme.colors.primary, .65)}` : 'none'}; }
+    &&:hover { background-color: ${(p) => withAlpha(p.theme.colors.primary, dark(p) ? 0.1 : 0.07)}; }
     border: none;
     border-radius: 10px;
     background-color: ${(p) => (dark(p) ? "rgba(255, 255, 255, 0.035)" : "rgba(255, 255, 255, 0.46)")};
@@ -161,6 +159,7 @@ export const TodoBarList = styled(C.TodoBarList)`
 
 /** 일정 막대 — 옅게 물든 면에 앞쪽 색 띠. 여러 날이면 칸 사이 틈을 건너 잇는다 */
 export const TodoBarItem = styled(C.TodoBarItem)`
+    && { font-size: 0.74rem; font-weight: 550; background-color: ${(p) => `color-mix(in srgb, ${p.$color ?? p.theme.colors.primary} ${dark(p) ? 24 : 15}%, ${p.theme.colors.surface})`}; }
     border: none;
     height: 20px;
     align-items: center;
@@ -179,7 +178,7 @@ export const TodoBarItem = styled(C.TodoBarItem)`
 
     .todo-title { padding-left: 7px; }
     ${(p) => p.$isDone && css`
-        .todo-title { text-decoration: line-through; opacity: 0.55; }
+        .todo-title { text-decoration: line-through; opacity: 1; color:${p.theme.colors.textSecondary}; }
     `}
 `;
 

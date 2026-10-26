@@ -1,5 +1,6 @@
 ﻿"use client";
 
+import * as GemS from "./gem/GemWidgetShell.styles";
 import React, { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { ThemeProvider, useTheme } from "styled-components";
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
@@ -18,6 +19,7 @@ import { mirrorWidgetStateToFile } from "@/lib/widgetStateFile";
 import * as OceanS from './ocean/OceanWidgetShell.styles';
 import WidgetCharm from './WidgetCharm';
 import WidgetDecor from './WidgetDecor';
+import { gemWidgetColors } from '@/styles/gem/palette';
 
 interface Props {
     kind: WidgetKind;
@@ -101,10 +103,14 @@ function buildBackground(bg: WidgetBgSettings, surfaceColor: string): React.CSSP
 }
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
+const CONTRAST_PALETTES: ThemeImpls<typeof gemWidgetColors | null> = {
+    celestial: null, maple: null, ocean: null, gem: gemWidgetColors,
+};
 
 export default function WidgetShell({ kind, title, children }: Props) {
     const S = usePickTheme(STYLES);
+    const contrastPalette = usePickTheme(CONTRAST_PALETTES);
     const theme = useTheme();
     const t = useT();
     const bg = useWidgetStore((s) => s[kind].bg);
@@ -115,6 +121,9 @@ export default function WidgetShell({ kind, title, children }: Props) {
     const [wallpaper, setWallpaper] = useState({ url: "", mw: 1920, mh: 1080 });
     // 벽지를 읽어 정한 글자색. 아직 못 읽었으면 null 이고, 그때는 아래 baseline 을 쓴다.
     const [dynamicTextColor, setDynamicTextColor] = useState<{ text: string; textSecondary: string } | null>(null);
+    const [sampledLuminance, setSampledLuminance] = useState<number | null>(null);
+    const sampledLuminanceRef = useRef<number | null>(null);
+    const hasContrastPaletteRef = useRef(!!contrastPalette);
 
     const monitorRef = useRef<HTMLDivElement>(null);
     const contentRef = useRef<HTMLDivElement>(null);
@@ -168,7 +177,11 @@ export default function WidgetShell({ kind, title, children }: Props) {
     useEffect(() => {
         bgRef.current = bg;
         surfaceColorRef.current = surfaceColor;
+        sampledLuminanceRef.current = null;
+        setSampledLuminance(null);
     }, [bg, surfaceColor]);
+
+    useEffect(() => { hasContrastPaletteRef.current = !!contrastPalette; }, [contrastPalette]);
 
     /**
      * 벽지를 아직 못 읽었을 때(브라우저·첫 프레임·벽지 읽기 실패) 쓰는 글자색.
@@ -188,17 +201,21 @@ export default function WidgetShell({ kind, title, children }: Props) {
     }, [bg.mode, bg.customColor, surfaceColor]);
 
     const widgetTheme = useMemo(() => {
+        const contrastColors = bg.autoTextColor && contrastPalette
+            ? contrastPalette(theme, bg.mode === 'custom' ? bg.customColor : surfaceColor, sampledLuminance)
+            : {};
         return {
             ...theme,
             colors: {
                 ...theme?.colors,
-                surface: "transparent",
                 ...(bg.autoTextColor ? (dynamicTextColor ?? baselineTextColor) : {}),
+                ...contrastColors,
+                surface: "transparent",
             },
             // 모달처럼 불투명해야 하는 요소가 되돌려 쓸 원본 색상
             baseColors: theme?.colors,
         };
-    }, [theme, bg.autoTextColor, dynamicTextColor, baselineTextColor]);
+    }, [theme, contrastPalette, bg.autoTextColor, bg.mode, bg.customColor, surfaceColor, sampledLuminance, dynamicTextColor, baselineTextColor]);
 
     const handleModeChange = useCallback((mode: BgMode) => {
         updateBg(kind, { mode });
@@ -369,6 +386,16 @@ export default function WidgetShell({ kind, title, children }: Props) {
 
                             const newColor = effLum > 0.179 ? "#1a1a1a" : "#ffffff";
 
+                            // Gem's colored controls follow the sampled wallpaper, too. Quantizing
+                            // avoids sub-pixel color noise while a stationary widget stays idle.
+                            if (hasContrastPaletteRef.current) {
+                                const measured = Math.round(effLum * 1000) / 1000;
+                                if (sampledLuminanceRef.current !== measured) {
+                                    sampledLuminanceRef.current = measured;
+                                    setSampledLuminance(measured);
+                                }
+                            }
+
                             if (textColorRef.current !== newColor) {
                                 textColorRef.current = newColor;
                                 setDynamicTextColor(
@@ -475,6 +502,7 @@ export default function WidgetShell({ kind, title, children }: Props) {
                 )}
 
                 {!locked && showSettings && (
+                    <ThemeProvider theme={contrastPalette ? theme : widgetTheme}>
                     <S.SettingsPanel data-settings-open onClick={(e) => e.stopPropagation()}>
                         <S.PanelLabel>{t.widgetShell.background}</S.PanelLabel>
                         <S.ModeRow>
@@ -550,6 +578,7 @@ export default function WidgetShell({ kind, title, children }: Props) {
                             {t.widgetShell.done}
                         </S.PanelDone>
                     </S.SettingsPanel>
+                    </ThemeProvider>
                 )}
 
                 <S.Content ref={contentRef} $kind={kind} $locked={locked}>

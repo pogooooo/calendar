@@ -1,12 +1,13 @@
 "use client";
 
+import GemAtmosphere from './gem/GemAtmosphere';
 import { usePathname } from 'next/navigation';
 import { usePickTheme } from '@/styles/themed';
 import CelestialAtmosphere from './celestial/CelestialAtmosphere';
 import MapleAtmosphere from './maple/MapleAtmosphere';
 import OceanAtmosphere from './ocean/OceanAtmosphere';
 
-const VIEWS = { celestial: CelestialAtmosphere, maple: MapleAtmosphere, ocean: OceanAtmosphere };
+const VIEWS = { celestial: CelestialAtmosphere, maple: MapleAtmosphere, ocean: OceanAtmosphere , gem: GemAtmosphere };
 
 /**
  * Decorative only: every theme controls its own shapes, density and movement.

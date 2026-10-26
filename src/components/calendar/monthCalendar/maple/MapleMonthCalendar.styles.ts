@@ -12,9 +12,9 @@
  */
 import styled, { css, keyframes } from "styled-components";
 import * as C from "../celestial/CelestialMonthCalendar.styles";
-import { MOBILE, NOT_WIDGET } from "@/styles/breakpoints";
+import { MOBILE, NOT_WIDGET, SAFE_T, SAFE_B } from "@/styles/breakpoints";
 import { withAlpha } from "@/styles/color";
-import { hair, leafChip, paperCard, stampButton, vintage } from "@/styles/maple/ink";
+import { hair, stampButton, vintage } from "@/styles/maple/ink";
 
 export * from "../celestial/CelestialMonthCalendar.styles";
 
@@ -24,14 +24,7 @@ const dark = (p: { theme: { mode: string } }) => p.theme.mode === "dark";
  * 찢은 테이프의 끝 — 시작 칸은 왼쪽 가장자리, 끝 칸은 오른쪽 가장자리를 들쭉날쭉하게 오린다(clip-path).
  * 여러 날이면 중간 칸은 반듯하게 이어진다.
  */
-const torn = (start: boolean, end: boolean) => {
-    const left = start ? ["2px 0", "0 22%", "3px 42%", "0.5px 62%", "2.5px 82%", "0.5px 100%"] : ["0 0", "0 100%"];
-    const right = end ? ["calc(100% - 1px) 100%", "calc(100% - 3px) 78%", "100% 58%", "calc(100% - 2.5px) 38%", "calc(100% - 0.5px) 18%", "calc(100% - 2px) 0"] : ["100% 100%", "100% 0"];
-    return `polygon(${[...left, ...right].join(", ")})`;
-};
 
-/** 채운 붉음 위의 글자색 (ink.ts 의 단추와 같은 값) */
-const onPrimary = (p: { theme: { mode: string } }) => (dark(p) ? "#1A1512" : "#FFFFFF");
 /**
  * 카테고리 색을 카드에 옅게 섞은 면 — 불투명이라 여러 날 막대가 고른 칸(물든 칸)을 지나도 한 빛깔로 이어진다.
  * 빈티지 벌은 테이프도 누렇게 바랜다(잿빛 카테고리가 바랜 종이 위에서 차갑게 떴다)
@@ -115,14 +108,19 @@ const landShade = keyframes`
  * 들리는 장은 밑의 장에 그림자를 드리우고, 책등에서 멀어질수록(오른쪽) 그늘이 진다.
  */
 export const CalendarWindow = styled(C.CalendarWindow)`
-    ${paperCard()}
+    && { border:0; border-radius:0; background:transparent; box-shadow:none; }
     overflow: hidden;
+
+    ${NOT_WIDGET} & {
+        padding:0 12px 25px 26px; box-sizing:border-box;
+        &::before { content:""; position:absolute; left:15px; top:0; bottom:20px; width:1px; background:${p => p.theme.colors.primary}40; box-shadow:3px 0 0 ${p => p.theme.colors.primary}0D; pointer-events:none; }
+    }
 
     ${NOT_WIDGET} & {
         & > [data-leaving][data-dir="next"],
         & > [data-swapping][data-dir="prev"] {
-            background-color: ${(p) => p.theme.colors.surface};
-            border-radius: 13px;
+            background-color: ${(p) => p.theme.colors.background};
+            border-radius: 0;
             backface-visibility: hidden;
             box-shadow: 6px 0 22px -8px ${(p) => (dark(p) ? "rgba(0, 0, 0, 0.7)" : "rgba(86, 54, 32, 0.32)")};
         }
@@ -158,6 +156,7 @@ export const SliderWrapper = styled(C.SliderWrapper)`
 
 /** 요일 줄: 상자·수채 띠 없이 차분한 글씨 한 줄, 아래로 옅은 선 하나 */
 export const Header = styled(C.Header)`
+    && { background:transparent; border-bottom-color:${p => hair(p.theme,.24)}; }
     font-family: ${(p) => p.theme.fonts.body};
     border: none;
     border-bottom: 1px solid ${(p) => hair(p.theme, dark(p) ? 0.12 : 0.1)};
@@ -196,24 +195,36 @@ export const DayNameBox = styled(C.DayNameBox)`
 
 export const GridContainer = styled(C.GridContainer)`
     border: none;
+    grid-template-rows:repeat(6,minmax(0,1fr));
+    ${NOT_WIDGET} && { counter-reset:planner-week; overflow:visible; }
+    ${MOBILE} { ${NOT_WIDGET} && { max-height:min(57dvh,max(132px,calc(100dvh - 470px - ${SAFE_T} - ${SAFE_B}))); } }
 `;
 
 /** 주 사이의 옅은 선 — 노트의 모눈 */
 export const WeekRowContainer = styled(C.WeekRowContainer)`
-    border-bottom: 1px solid ${(p) => hair(p.theme, dark(p) ? 0.1 : 0.08)};
+    ${NOT_WIDGET} & {
+        position:relative; counter-increment:planner-week; overflow:visible;
+        &::before { content:counter(planner-week,decimal-leading-zero); position:absolute; left:-20px; top:10px; font-family:${p => p.theme.fonts.body}; font-size:.56rem; font-variant-numeric:tabular-nums; color:${p => hair(p.theme,.65)}; pointer-events:none; }
+    }
+    border-bottom: 1px solid ${(p) => hair(p.theme, dark(p) ? 0.18 : 0.15)};
 `;
 
 /**
  * 칸 — 옅은 모눈 한 칸. 날짜는 오른쪽 위 구석(Celestial·Ocean 은 왼쪽 위).
- * 고른 날은 칸에 붉음이 옅게 들고 숫자가 붉어진다. 오늘은 숫자가 붉은 알약이 된다.
+ * 고른 날은 옅은 잉크와 책갈피 선, 오늘은 날짜 아래의 붉은 밑줄로 구분한다.
  */
 export const DayCell = styled(C.DayCell)`
+    && { border-right-color:${(p) => hair(p.theme, .1)}; opacity:${(p) => p.$isCurrentMonth ? 1 : 0.5}; }
+    && .day-header { padding:5px 9px; height:36px; flex:0 0 36px; }
+    && .day-header .day-number { font-family:${p => p.theme.fonts.body}; font-variant-numeric:tabular-nums; font-size:.87rem; font-weight:${p => p.$isToday || p.$isSelected ? 700 : 500}; }
+    ${(p) => p.$isSelected && css`&& { background-color:${withAlpha(p.theme.colors.primary,.045)}; box-shadow:inset 2px 0 0 ${p.theme.colors.primary}90; }`}
+    ${(p) => p.$dropTarget && css`&& { box-shadow: inset 0 0 0 2px ${p.theme.colors.primary}; }`}
+    ${MOBILE} { && .day-header { height:28px; flex-basis:28px; padding:2px 4px; } && .day-header .day-number { font-size:.8rem; } }
     border-right: 1px solid ${(p) => hair(p.theme, dark(p) ? 0.1 : 0.08)};
     /* 줄 공책 — 아주 옅은 가로줄 (위젯·폰은 칸이 작아 빼고) */
     @media (min-width: 769px) {
         ${NOT_WIDGET} & {
-            background-image: repeating-linear-gradient(to bottom, transparent 0 21px, ${(p) => hair(p.theme, dark(p) ? 0.05 : 0.045)} 21px 22px);
-            background-position: 0 9px;
+            background-image:repeating-linear-gradient(to bottom,transparent 0 27px,${p => hair(p.theme,.06)} 27px 28px);
         }
     }
     opacity: ${(p) => (p.$isCurrentMonth ? 1 : 0.42)};
@@ -227,14 +238,13 @@ export const DayCell = styled(C.DayCell)`
     }
 
     /*
-     * 날짜 줄은 24px — 오늘 알약(24px)과 기념일 고리가 그 안에 꼭 들어간다. 머리 줄(.day-header)과 그 안 칸이 넘침을 자르므로
-     * 음수 여백으로 밖에 걸치면 알약 끝이 잘렸다. 숫자의 오른쪽 끝은 칸 끝에서 10px — 요일 글씨와 한 줄에 선다.
+     * 숫자의 오른쪽 끝은 요일 글씨와 같은 줄에 선다. 오늘도 폭과 정렬을 바꾸지 않는다.
      */
     .day-header {
         padding: 4px ${(p) => (p.$isToday ? 4 : 8)}px 2px 8px;
 
         /* 날짜는 오른쪽 구석에 */
-        & > div:first-child { justify-content: flex-end; }
+        & > div { justify-content: flex-end; }
 
         .day-number {
             padding: 0 2px;
@@ -253,21 +263,29 @@ export const DayCell = styled(C.DayCell)`
         &:first-child .day-header .day-number { color: ${p.theme.colors.weekend}; }
     `}
 
-    /* 오늘: 단풍 붉음 알약에 흰 숫자 (금빛 알약·빛무리 대신) */
+    /* 노트의 날짜에 그은 밑줄. 배경을 채우거나 숫자의 정렬을 바꾸지 않는다. */
     ${(p) => p.$isToday && css`
-        .day-header .day-number {
+        && .day-header .day-number {
+            position: relative;
             display: inline-flex;
             align-items: center;
-            justify-content: center;
-            min-width: 24px;
+            justify-content: flex-end;
+            width: auto;
+            min-width: 0;
             height: 24px;
             margin: 0;
-            padding: 0 6px;
-            border-radius: 12px;
-            background: ${p.theme.colors.primary};
-            color: ${onPrimary(p)};
-            font-weight: 700;
+            padding: 0 2px;
+            border: 0;
+            border-radius: 0;
+            background: none;
+            color: ${p.theme.colors.primary};
+            font-weight: 750;
             box-shadow: none;
+            &::before { display:none; }
+            &::after {
+                content:""; display:block; position:absolute; left:2px; right:2px; bottom:0;
+                height:2px; background:${p.theme.colors.primary}; opacity:.85;
+            }
         }
     `}
 
@@ -280,14 +298,7 @@ export const DayCell = styled(C.DayCell)`
             .day-number { font-size: 0.75rem; line-height: 20px; }
         }
 
-        ${(p) => p.$isToday && css`
-            .day-header .day-number {
-                min-width: 20px;
-                height: 20px;
-                padding: 0 5px;
-                border-radius: 10px;
-            }
-        `}
+        ${(p) => p.$isToday && css`&& .day-header .day-number { height:22px; }`}
     }
 `;
 
@@ -319,19 +330,20 @@ export const AddTodoButton = styled(C.AddTodoButton)`
  * 폰에서는 막대 대신 카테고리 색 단풍잎을 가로로 늘어놓는다 (끝낸 일은 옅게).
  */
 export const TodoBarItem = styled(C.TodoBarItem)`
+    @media (min-width: 769px) {
+        && { font-weight: 550; }
+    }
     height: 20px;
     font-family: ${(p) => p.theme.fonts.body};
     font-size: 0.75rem;
     font-weight: 500;
     background-color: ${(p) => tint(p, p.$color, 26, 34)};
-    background-image:
-        linear-gradient(180deg, ${(p) => (dark(p) ? "rgba(255, 255, 255, 0.06)" : "rgba(255, 255, 255, 0.4)")}, rgba(255, 255, 255, 0) 55%),
-        repeating-linear-gradient(90deg, rgba(255, 255, 255, 0) 0 5px, ${(p) => (dark(p) ? "rgba(255, 255, 255, 0.035)" : "rgba(255, 255, 255, 0.22)")} 5px 6px);
-    border-radius: 0;
-    clip-path: ${(p) => torn(p.$isStart, p.$isEnd)};
+    background-image:none;
+    border-radius: ${(p) => `${p.$isStart ? 1 : 0}px ${p.$isEnd ? 1 : 0}px ${p.$isEnd ? 1 : 0}px ${p.$isStart ? 1 : 0}px`};
+    clip-path:none;
     margin-left: ${(p) => (p.$isStart ? "5px" : "0")};
     margin-right: ${(p) => (p.$isEnd ? "5px" : "0")};
-    box-shadow: none;
+    box-shadow: ${(p) => p.$isStart ? `inset 2px 0 0 ${p.$color ?? p.theme.colors.primary}` : "none"};
 
     .todo-title {
         padding: 0 6px 0 ${(p) => (p.$isStart ? 9 : 6)}px;
@@ -352,7 +364,7 @@ export const TodoBarItem = styled(C.TodoBarItem)`
 
     ${MOBILE} {
         ${NOT_WIDGET} & {
-            ${leafChip(5, "10px")}
+            width:11px; height:3px; flex-shrink:0; border:0; mask:none; -webkit-mask:none; transform:none;
             min-width: 0;
             margin: 0;
             padding: 0;

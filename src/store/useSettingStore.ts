@@ -5,10 +5,14 @@ import { create } from "zustand/react";
 import type { AuthFetch } from '@/types';
 import type { Locale } from '@/i18n/types';
 import { DEFAULT_TIMEZONE, detectTimeZone, isValidTimeZone } from '@/lib/timezone';
+import { DEFAULT_GEM_COLOR, normalizeGemColor } from '@/styles/gem/palette';
 
 interface SettingState {
     theme: string;
     themeOptions: Record<string, string>;
+    /** Gem RGB, saved on this device like the selected theme variant. */
+    gemColor: string;
+    setGemColor: (color: string) => void;
     locale: Locale;
     timezone: string;
     autostart: boolean;
@@ -55,6 +59,8 @@ const useSettingStore = create<SettingState>()(
         (set, get) => ({
             theme: 'celestial',
             themeOptions: {},
+            gemColor: DEFAULT_GEM_COLOR,
+            setGemColor: (color) => set({ gemColor: normalizeGemColor(color) }),
             locale: 'ko' as Locale,
             // 처음 켜는 기기는 그 기기의 시간대로 시작한다 (저장된 값이 있으면 그것이 이긴다).
             // 예전엔 늘 서울이라, 다른 시간대의 사람은 홈의 '오늘'이 하루 어긋났다 — 로스앤젤레스면 아침 8시부터 내일이 오늘로 떴다
@@ -135,7 +141,13 @@ const useSettingStore = create<SettingState>()(
                 }
             }
         }),
-        { name: "setting-store" }
+        {
+            name: "setting-store",
+            merge: (persisted, current) => {
+                const saved = persisted && typeof persisted === 'object' ? persisted as Partial<SettingState> : {};
+                return { ...current, ...saved, gemColor: normalizeGemColor(saved.gemColor) };
+            },
+        }
     )
 );
 

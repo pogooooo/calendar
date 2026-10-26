@@ -1,5 +1,6 @@
 "use client";
 
+import * as GemS from "../resetPassword/gem/GemResetPassword.styles";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
@@ -16,7 +17,7 @@ import TertiaryButton from "@/components/button/tertiary/TeritaryButton";
 import AuthPanel from "@/components/auth/AuthPanel";
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
 
 type Phase = "working" | "done" | "invalid";
 

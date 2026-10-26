@@ -1,6 +1,7 @@
 import styled, { css } from "styled-components";
-import { MOBILE } from "@/styles/breakpoints";
+import { MOBILE, TOUCH } from "@/styles/breakpoints";
 import { celestialOnly, star4Mark } from "@/styles/celestial/ornaments";
+import { astralSurface } from '@/styles/celestial/calendarDetails';
 
 export const CelestialCalendarWrapper = styled.div`
     display: flex;
@@ -25,6 +26,10 @@ export const CelestialCalendarWrapper = styled.div`
 `;
 
 export const DateHeader = styled.div`
+    ${celestialOnly(css`
+        && { min-height:42px; font-size:.88rem; letter-spacing:.02em; margin-bottom:14px; }
+        && > hr { border-top-color:${p => p.theme.colors.primary}55; }
+    `)}
     font-family: ${(props) => props.theme.fonts.display};
     font-size: 1rem;
     font-weight: 500;
@@ -40,7 +45,7 @@ export const DateHeader = styled.div`
     ${MOBILE} {
         gap: 10px;
         margin-bottom: 10px;
-        & > span { display: none; }
+        & > span { display:block; flex:1; min-width:0; font-size:.8rem; letter-spacing:0; }
     }
 
     & > hr {
@@ -54,6 +59,9 @@ export const DateHeader = styled.div`
         white-space: nowrap;
     }
 `;
+
+/** The original Celestial header uses the complete date; other themes supply their own stamp. */
+export const DateStamp = styled.div`display:none;`;
 
 export const ContentLayout = styled.div`
     display: flex;
@@ -144,6 +152,7 @@ export const SectionToggle = styled.button<{ $collapsed: boolean }>`
 `;
 
 export const TimelineSection = styled.div<{ $collapsed?: boolean }>`
+    ${celestialOnly(css`&& { ${astralSurface} border-color:${p => p.theme.colors.primary}55; border-radius:2px; }`)}
     flex: 1.5;
     min-height: ${(props) => (props.$collapsed ? '0' : '180px')};
     display: flex;
@@ -223,6 +232,9 @@ export const TimeRow = styled.div`
 `;
 
 export const SlotTodoItem = styled.div<{ $isContinuingPrev: boolean; $isContinuingNext: boolean; $isDone?: boolean }>`
+    ${celestialOnly(css`
+        && .todo-text { font-size: 0.74rem; font-weight: 600; line-height: 1.3; }
+    `)}
     flex: 1;
     min-height: 0;
     min-width: 0;
@@ -264,6 +276,7 @@ export const SideSection = styled.div`
 `;
 
 const BaseCard = styled.div`
+    ${celestialOnly(css`&& { ${astralSurface} border-color:${p => p.theme.colors.primary}55; border-radius:2px; }`)}
     border: 1px solid ${(props) => props.theme.colors.primary}73;
     background-color: transparent;
     display: flex;
@@ -306,6 +319,9 @@ export const ChallengeList = styled.div`
 `;
 
 export const ChallengeItem = styled.label<{ $isDone: boolean }>`
+    ${celestialOnly(css<{ $isDone: boolean }>`
+        && .title { opacity: 1; color: ${p => p.$isDone ? p.theme.colors.textSecondary : p.theme.colors.text}; }
+    `)}
     display: flex;
     align-items: center;
     gap: 10px;
@@ -425,6 +441,10 @@ export const TodoList = styled.div`
 `;
 
 export const TodoRow = styled.button<{ $isDone: boolean }>`
+    ${celestialOnly(css<{ $isDone: boolean }>`
+        && .title { opacity: 1; color: ${p => p.$isDone ? p.theme.colors.textSecondary : p.theme.colors.text}; }
+        && .time { font-size: 0.74rem; letter-spacing: 0; }
+    `)}
     display: flex;
     align-items: center;
     gap: 10px;
@@ -536,13 +556,26 @@ export const TaskItem = styled.div<{ $isDone: boolean }>`
         cursor: pointer;
         opacity: 0;
         padding: 4px;
+        min-width: 28px;
+        min-height: 28px;
         display: flex;
         align-items: center;
+        justify-content: center;
         transition: all 0.2s;
 
         &:hover {
             color: #ff5252;
         }
+    }
+
+    &:focus-within .delete-btn { opacity: 1; }
+    .check-btn:focus-visible, .delete-btn:focus-visible {
+        outline: 2px solid ${(props) => props.theme.colors.primary};
+        outline-offset: 3px;
+    }
+
+    ${TOUCH} {
+        .delete-btn { opacity: 1; min-width: 32px; min-height: 32px; }
     }
 `;
 

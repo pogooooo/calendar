@@ -28,6 +28,12 @@ const LOADERS = {
     celestial: () => import("./celestial/celestialFx").then((m) => m.default),
     maple: () => import("./maple/mapleFx").then((m) => m.default),
     ocean: () => import("./ocean/oceanFx").then((m) => m.default),
+    gem: () => import("./gem/gemFx").then((m) => m.default),
+};
+
+const CALENDAR_LOADERS = {
+    ...LOADERS,
+    maple: () => import('./maple/mapleNotebookFx').then(m => m.default),
 };
 
 /** 마지막 효과 뒤 이만큼 조용하면 GPU 자원을 돌려준다 */
@@ -81,7 +87,9 @@ interface Touch { x: number; y: number; at: number; item?: FxRect }
 export default function FxStage() {
     const pathname = usePathname();
     const motion = useThemeMotion();
-    const load = usePickTheme(LOADERS);
+    const baseLoad = usePickTheme(LOADERS);
+    const calendarLoad = usePickTheme(CALENDAR_LOADERS);
+    const load = pathname?.startsWith('/calendar') ? calendarLoad : baseLoad;
     const inWidget = !!pathname?.startsWith("/widget");
 
     const canvasRef = useRef<HTMLCanvasElement>(null);

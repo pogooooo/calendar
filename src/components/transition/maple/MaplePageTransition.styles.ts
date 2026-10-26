@@ -11,6 +11,22 @@ const fadeIn = keyframes`
     to   { opacity: 1; }
 `;
 
+const drawEdge = keyframes`
+    0% { opacity:0; scale:1 .1; }
+    25% { opacity:.7; }
+    100% { opacity:0; scale:1 1; }
+`;
+
+export const PageEdge = styled.span<{ $dir:1 | -1; $gentle:boolean }>`
+    position:absolute; z-index:10; pointer-events:none;
+    top:12px; bottom:12px; width:2px;
+    ${(p) => p.$dir > 0 ? 'left:4px' : 'right:4px'};
+    background:${(p) => p.theme.colors.primary}; opacity:0;
+    transform-origin:top;
+    :where(html[data-theme-motion="full"]) & { animation:${drawEdge} .48s ease-out; }
+    ${(p) => p.$gentle && css`display:none;`}
+`;
+
 export const Stage = styled.div`
     position: relative;
     height: 100%;
