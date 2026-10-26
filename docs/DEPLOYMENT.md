@@ -112,6 +112,18 @@ Play용 서명 AAB는 `src-tauri/gen/android/app/build/outputs/bundle/arm64Relea
 
 ## 준비 작업 검증 결과
 
+### 2026-10-26 실제 배포
+
+- 최종 공개 버전: `1.3.3`, 소스 태그 `v1.3.3` / 커밋 `e0e0066`. 보석 테마는 개발 모드에만 표시하며 배포판 설정에서는 숨긴다.
+- 웹 Worker 버전: `c6258a4e-4a6c-4a0b-a81e-61ea43cb4409`. 직전 복구 대상은 `d6217c75-fb47-47a4-97ba-fd1ec90094c3`이다.
+- Windows EXE·MSI·업데이트 서명·`latest.json`과 기존 APK 인증서로 서명한 Android APK를 [v1.3.3 릴리스](https://github.com/pogooooo/calendar/releases/tag/v1.3.3)에 게시했다. Worker의 실제 다운로드 파일 해시가 로컬 서명 파일과 일치하며 `/api/update`도 1.3.3을 반환한다.
+- Google Play 기존 비공개 테스트 Alpha에 `1.3.3` / `1003003` AAB를 업로드하고 심사 요청을 전송했다. 제출 시 콘솔은 검토 중으로 표시하며 Google의 사전 검사를 진행했다. 테스터에게 제공 완료된 상태와 구분한다. 관리형 게시는 기존처럼 꺼져 있다.
+- `0005_privacy_hardening.sql`의 1~3절만 적용해 계정·일정·프로젝트 데이터를 보존했다. RateLimit 삭제 구문은 실행하지 않았다.
+- macOS·Linux 신규 빌드는 게시하지 않았으며 다운로드는 기존 1.0.1을 유지한다.
+- 위젯·테마·RGB·타입·빌드 검사, 로컬 Worker의 페이지/인증 API/서버 CSS, Windows 서명, Android 인증서 연속성·16 KB ELF/ZIP 정렬을 확인했다.
+
+### 2026-10-24 배포 준비 기록
+
 2026-10-24에 원격 인증과 웹·Windows·Android 다운로드 및 업데이터 응답을 확인했다. 위젯·테마 검사, 변경 파일 ESLint, Next 화면 빌드와 타입 검사가 통과했다. Windows EXE·MSI 및 두 업데이트 서명을 생성했고, 서명의 키 ID가 앱 설정의 공개키와 일치했다. Android ARM64 AAB는 Gradle `BUILD SUCCESSFUL`, JAR 서명 검증은 `jar verified`를 반환했다. 빌드 설정은 1.3.1, versionCode 1003001이다. 실제 기기 설치와 Play 업로드 검증은 다음 배포 과정에서 수행한다.
 
 이 준비 작업에서는 Cloudflare 배포, Git push/태그/릴리스 게시, Play 업로드·심사 제출을 하지 않았다. 빌드 테스트 산출물은 현재 공개된 버전과 번호가 같으므로 그대로 공개 파일에 덮어쓰지 않고, 실제 배포 요청 때 새 버전으로 다시 빌드한다.

@@ -46,7 +46,12 @@ if (process.argv.includes("--release-body")) {
     emit(body + "\n");
     process.exit(0);
 }
-const release = JSON.parse(gh(["api", `repos/${repo}/releases/tags/${tag}`]));
+// The tag endpoint can hide drafts. Resolve the authenticated release ID
+// first so latest.json can be verified before the release is made public.
+const releaseId = gh(["release", "view", tag, "--repo", repo, "--json", "databaseId", "--jq", ".databaseId"]).trim();
+if (!/^\d+$/.test(releaseId)) throw new Error("릴리스 ID를 확인하지 못했습니다.");
+const release = JSON.parse(gh(["api", `repos/${repo}/releases/${releaseId}`]));
+if (release.tag_name !== tag) throw new Error("릴리스 태그가 요청한 버전과 다릅니다.");
 const assets = release.assets.map(a => a.name);
 const url = (name) => `https://github.com/${repo}/releases/download/${tag}/${name}`;
 
