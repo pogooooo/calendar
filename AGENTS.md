@@ -15,3 +15,13 @@ GitHub CLI는 `npm run github -- ...` 또는 scripts/github.mjs의 githubEnv를 
 GitHub Actions 워크플로 파일이 있다고 성공을 가정하지 않는다. 2026-10-24 확인 시 실행 기록이 없고 최신 데스크톱 릴리스는 Windows만 제공했다. 현재 확인된 로컬 서명 빌드는 `npm run release:desktop`, Play용 AAB는 `npm run android:bundle`, 직접 내려받기용 APK는 `npm run android:release-apk`다. macOS·Linux 동시 배포는 현재 빌드 수단이 확인된 경우에만 수행하고 결과를 따로 보고한다.
 
 DB 스키마가 바뀌면 기존 데이터를 보존하는 마이그레이션과 하위 호환성을 먼저 검토한다. 일반 배포에 DB 초기화나 시드 작업을 포함하지 않는다. 배포 후 웹 응답·다운로드·업데이터의 버전과 플랫폼·Play 트랙 상태를 확인하고 대상별 성공/실패/심사 중 상태를 보고한다.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+## This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->
