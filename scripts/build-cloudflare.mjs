@@ -20,4 +20,12 @@ const result = spawnSync("npx", ["opennextjs-cloudflare", "build"], {
     },
 });
 
+// Next's standalone trace may copy local environment files. The Worker uses
+// Cloudflare bindings; keep those local files out of the deployment artifact.
+if (result.status === 0) {
+    for (const file of [".env", ".env.production"]) {
+        rmSync(`.open-next/server-functions/default/${file}`, { force: true });
+    }
+}
+
 process.exit(result.status ?? 1);

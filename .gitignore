@@ -81,6 +81,7 @@ dashboard.html
 
 # 안드로이드 업로드 열쇠 — 비밀번호가 들어 있다. 예시는 keystore.properties.example 참고
 /src-tauri/keystore.properties
+/src-tauri/apk-keystore.properties
 
 # 데스크톱 자동 업데이트 서명 키 — 비밀번호가 들어 있다
 /src-tauri/updater.properties

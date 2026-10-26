@@ -190,7 +190,7 @@ const SIGN_CLOSE = "// cronos-signing:end";
 const signBlock = `    ${SIGN_OPEN}
     signingConfigs {
         create("release") {
-            val ksFile = rootProject.file("../../keystore.properties")
+            val ksFile = rootProject.file(providers.gradleProperty("cronosKeystoreProperties").orElse("../../keystore.properties").get())
             if (ksFile.exists()) {
                 val ks = Properties().apply { ksFile.inputStream().use { load(it) } }
                 storeFile = file(ks.getProperty("storeFile"))
@@ -216,12 +216,15 @@ if (!gradle.includes(USE_SIGN)) {
         `        getByName("release") {
             isMinifyEnabled = true`,
         `        getByName("release") {
-            if (rootProject.file("../../keystore.properties").exists()) {
+            if (signingConfigs.getByName("release").storeFile?.exists() == true) {
                 ${USE_SIGN}
             }
             isMinifyEnabled = true`,
     );
 }
 
+// Update generated projects that already contain the old release signing hook.
+gradle = gradle.replace('if (rootProject.file("../../keystore.properties").exists()) {', 'if (signingConfigs.getByName("release").storeFile?.exists() == true) {');
+
 writeFileSync(gradlePath, gradle, "utf8");
-console.log("[android-overlay] 서명 설정 깁기 완료 (keystore.properties 가 있을 때만 서명)");
+console.log("[android-overlay] 선택한 로컬 키를 사용하는 서명 설정 반영 완료");

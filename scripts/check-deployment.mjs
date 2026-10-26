@@ -17,7 +17,7 @@ function report(ok, message) {
 }
 report([tauri.version, cargo, cargoLock, lock.version, lock.packages[""].version].every(version => version === pkg.version), `버전 일치: package/lock/Tauri/Cargo/Cargo.lock (${pkg.version})`);
 report(json("src/lib/release-notes.json").some(note => note.version === pkg.version), "현재 버전 패치 노트 존재");
-for (const mode of ["desktop", "android-bundle"]) {
+for (const mode of ["desktop", "android-bundle", "android-apk"]) {
     const result = spawnSync(process.execPath, [join(root, "scripts/native-release.mjs"), mode, "--check"], { cwd: root, stdio: "inherit" });
     report(result.status === 0, `${mode} 로컬 배포 준비`);
 }

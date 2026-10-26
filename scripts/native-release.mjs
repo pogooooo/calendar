@@ -84,13 +84,17 @@ try {
         console.log("[release] 데스크톱 업데이트 서명 설정 확인 완료");
         if (!check) run([cli, "build"], env);
     } else {
-        const props = properties(join(root, "src-tauri", "keystore.properties"));
+        // The existing web APK and Play upload channel have different keys.
+        // Preserve each channel's certificate so installed apps can update.
+        const signingFile = join(root, "src-tauri", mode === "android-apk" ? "apk-keystore.properties" : "keystore.properties");
+        const props = properties(signingFile);
+        env.ORG_GRADLE_PROJECT_cronosKeystoreProperties = signingFile;
         if (!["storeFile", "storePassword", "keyAlias", "keyPassword"].every(key => props[key])) {
-            throw new Error("keystore.properties의 서명 설정을 모두 채우세요.");
+            throw new Error("선택한 Android 서명 설정을 모두 채우세요.");
         }
         const gen = join(root, "src-tauri", "gen", "android");
         const keystore = resolve(gen, "app", props.storeFile);
-        if (!existsSync(keystore)) throw new Error("Android 업로드 키 파일을 찾을 수 없습니다.");
+        if (!existsSync(keystore)) throw new Error("대상 Android 서명 키 파일을 찾을 수 없습니다.");
         if (!existsSync(gen)) throw new Error("먼저 npm run tauri -- android init을 실행하세요.");
         const tools = join(homedir(), "tools");
         const jdk = existsSync(tools) ? readdirSync(tools).filter(name => /^jdk-17[.-]/.test(name)).sort().at(-1) : undefined;
@@ -106,7 +110,7 @@ try {
         // Windows의 기존 키는 보통 Path다. 복사한 객체에서는 대소문자가 구분된다.
         const pathKey = Object.keys(env).find(key => key.toLowerCase() === "path") ?? "PATH";
         env[pathKey] = `${join(env.JAVA_HOME, "bin")}${delimiter}${env[pathKey] ?? ""}`;
-        console.log("[release] Android 업로드 서명 키·JDK·SDK·NDK 확인 완료");
+        console.log("[release] 대상 Android 서명 키·JDK·SDK·NDK 확인 완료");
         if (!check) {
             run([join(root, "scripts", "android-overlay.mjs")], env);
             await androidBuild(cli, gen, env);

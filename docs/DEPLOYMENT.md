@@ -34,6 +34,8 @@ git fetch origin --tags
 
 로컬 비밀 파일은 `src-tauri/updater.properties`의 `privateKey`·`password`, `src-tauri/keystore.properties`의 `storeFile`·`storePassword`·`keyAlias`·`keyPassword`다. 모두 Git에서 제외되어 있다. 기존 업로드 키와 업데이터 키를 계속 사용한다. 개인키가 바뀌면 기존 앱의 업데이트가 끊길 수 있다.
 
+직접 다운로드 APK의 기존 인증서는 Play 업로드 키와 다르다. APK는 별도의 `src-tauri/apk-keystore.properties`에서 기존 APK 키를 읽고, AAB는 `keystore.properties`의 Play 업로드 키를 읽는다. 두 파일 모두 Git에 넣지 않는다. 2026-10-26 기존 공개 APK의 인증서 SHA-256은 `3b99f0f40c1e6fd5b1903c4814828ffa3ace95a554ee565beceeed8e2e5c4544`로 확인했으며, 새 APK를 게시하기 전에 같은지 검사한다.
+
 Android 빌드 스크립트는 환경변수 `JAVA_HOME`, `ANDROID_HOME`/`ANDROID_SDK_ROOT`, `NDK_HOME`을 우선 사용한다. 없으면 이 컴퓨터의 `~/tools/jdk-17*`, `~/tools/android-sdk`, 그 아래 NDK를 찾는다. `src-tauri/gen/android`가 없는 새 환경에서는 먼저 `npm run tauri -- android init`을 실행한다. 네이티브 수정 원본은 추적되는 `src-tauri/android-overlay`이며 빌드 전에 자동 복사한다.
 
 Windows 일반 권한에서 Tauri의 심볼릭 링크 생성만 실패하면, 스크립트는 방금 컴파일한 ARM64 라이브러리를 `jniLibs`로 복사하고 Gradle로 서명 패키징한다. 이 단계에서는 이미 끝난 Rust 빌드를 중복 실행하지 않는다. 시스템 개발자 모드나 관리자 권한을 바꾸지 않는다. 별도 Android 설정 파일이나 bundle.resources를 추가한 경우에는 복사 경로도 해당 설정을 반영하도록 수정해야 하며, 현재 스크립트는 반영 없이 진행하지 않는다.
@@ -52,6 +54,8 @@ Android의 Rust 라이브러리는 `src-tauri/build.rs`에서 Android 대상에�
 6. 네이티브 빌드를 완료하고 실제 산출물·서명·버전을 검사한 뒤 해당 소스를 커밋한다. 개발 서버는 `.next-dev`로 분리되어 있다. 웹 빌드와 네이티브 빌드는 `.next`를 공유하므로 동시에 실행하지 않는다. 기존 개발 서버가 이전 설정으로 `.next`에 쓰고 있다면 새 설정으로 재시작한 후 빌드한다.
 
 ## 웹 업데이트
+
+배포 빌드는 Next.js 16.4.3과 OpenNext Cloudflare 1.20.13을 사용한다. 기존 설정과 어댑터의 호환성을 위해 웹·네이티브 프런트엔드 모두 `next build --webpack`으로 빌드한다. 지원 종료된 Next.js를 허용하는 옵션으로 배포 검사를 건너뛰지 않는다. 배포 전에 로컬 `wrangler dev`에서 페이지 응답·인증 API·`check:ssr-styles`를 확인한다.
 
 ```powershell
 npm run deploy

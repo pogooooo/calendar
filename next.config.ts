@@ -51,9 +51,6 @@ const nextConfig: NextConfig = {
     compiler: {
         styledComponents: true,
     },
-    eslint: {
-        ignoreDuringBuilds: true,
-    },
     ...(isDesktop ? desktopConfig : webConfig),
 };
 
