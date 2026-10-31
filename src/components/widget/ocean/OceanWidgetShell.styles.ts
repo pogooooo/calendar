@@ -20,6 +20,15 @@ export const Shell = styled(C.Shell)`
     border: 1px solid ${(p) => hairline(p.theme, true)};
     border-radius: ${R.lg};
 `;
+export const BackgroundSurface = styled(Shell)`
+    ${C.backdropLayer}
+    &[data-ornate=true]::after {
+        content:'';position:absolute;inset:0;pointer-events:none;
+        background:${p=>dark(p)
+            ? 'linear-gradient(180deg, rgba(10,48,54,.85), rgba(10,48,54,.55) 55%, rgba(15,38,40,.5))'
+            : 'linear-gradient(180deg, rgba(38,153,161,.42), rgba(117,204,199,.3) 55%, rgba(240,232,214,.55))'};
+    }
+`;
 
 /** 유리 모드의 광택 — 그라데이션 대신 아주 옅은 흰 막 한 겹 */
 export const GlossOverlay = styled(C.GlossOverlay)`

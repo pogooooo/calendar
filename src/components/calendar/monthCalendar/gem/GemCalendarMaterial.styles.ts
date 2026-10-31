@@ -23,9 +23,12 @@ export const gemstoneNumeral = css`
 `;
 
 export const mineralSurface = css`
-    background:linear-gradient(135deg,${p => p.theme.mode === 'dark' ? '#FFFFFF04' : '#FFFFFF24'},transparent 44%,${p => p.theme.gemColor ?? p.theme.colors.primary}06);
-    border:1px solid ${p => p.theme.colors.border};
-    box-shadow:inset 0 1px 0 ${p => p.theme.mode === 'dark' ? '#FFF08' : '#FFF6'},0 5px 18px -14px ${p => p.theme.colors.primary}28;
+    background:
+        conic-gradient(from 210deg at 100% 0%,transparent 0deg 13deg,${p => p.theme.colors.accent}0C 15deg,transparent 22deg),
+        linear-gradient(117deg,transparent 8%,${p => p.theme.mode === 'dark' ? '#FFFFFF07' : '#FFFFFF45'} 25%,transparent 35% 70%,${p => p.theme.gemColor ?? p.theme.colors.primary}0C 90%),
+        linear-gradient(135deg,${p => p.theme.mode === 'dark' ? '#FFFFFF04' : '#FFFFFF24'},transparent 44%,${p => p.theme.gemColor ?? p.theme.colors.primary}08);
+    border:1px solid ${p => p.theme.colors.accent}66;
+    box-shadow:inset 0 1px 0 ${p => p.theme.mode === 'dark' ? '#FFF3' : '#FFFB'},inset 0 0 0 3px ${p => p.theme.colors.accent}08,0 8px 24px -18px ${p => p.theme.colors.primary}50;
 `;
 
 export const gemControl = css`

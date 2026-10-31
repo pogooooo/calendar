@@ -22,12 +22,6 @@ export const Decor = styled.div`
 
     span { position: absolute; inset: 0; }
 
-    /* 물빛 — 위는 청록, 아래로 갈수록 얕아져 모래빛. 앱의 물(deep·mid·shallow·sand)을 유리 너머로 보듯 옅게 */
-    .tint {
-        background: ${(p) => (dark(p)
-            ? "linear-gradient(180deg, rgba(10, 48, 54, 0.85), rgba(10, 48, 54, 0.55) 55%, rgba(15, 38, 40, 0.5))"
-            : "linear-gradient(180deg, rgba(38, 153, 161, 0.42), rgba(117, 204, 199, 0.3) 55%, rgba(240, 232, 214, 0.55))")};
-    }
     /* 빛 그물 — 흐를 자리를 두려고 판보다 14px 씩 크게 깐다(OceanWidgetDecor 의 BLEED). 모래 위(아래)는 옅게 */
     .caustics {
         position: absolute;

@@ -3,7 +3,9 @@ import { withAlpha } from '@/styles/color';
 
 /** Shared metal and mineral finishes. Layout and interaction semantics stay with each view. */
 export const gemPanel = css`
-    background: linear-gradient(135deg, ${({theme}) => withAlpha(theme.baseColors?.surface ?? theme.colors.surface, .95)}, ${({theme}) => withAlpha(theme.colors.background, .91)});
+    background:
+        linear-gradient(115deg, transparent 14%, ${({theme}) => theme.mode === 'dark' ? '#FFFFFF0B' : '#FFFFFF66'} 26%, transparent 38%),
+        linear-gradient(135deg, ${({theme}) => withAlpha(theme.baseColors?.surface ?? theme.colors.surface, .95)}, ${({theme}) => withAlpha(theme.colors.background, .91)});
     border: 1px solid ${({theme}) => theme.colors.accent}52;
     border-radius: 3px 16px 3px 16px;
     box-shadow: inset 0 1px 0 ${({theme}) => theme.mode === 'dark' ? '#FFFFFF0B' : '#FFFFFF9C'},
@@ -25,7 +27,8 @@ export const gemControl = css`
     ${gemFocus}
     &:hover:not(:disabled) {
         border-color: ${({theme}) => theme.colors.accent};
-        box-shadow: inset 0 1px 0 ${({theme}) => theme.colors.accent}35, 0 3px 12px ${({theme}) => theme.colors.primary}12;
+        background-image: linear-gradient(115deg, transparent 12%, ${({theme}) => theme.mode === 'dark' ? '#FFFFFF18' : '#FFFFFF80'} 35%, transparent 62%);
+        box-shadow: inset 0 1px 0 ${({theme}) => theme.colors.accent}70, 0 3px 16px ${({theme}) => theme.colors.primary}22;
     }
     &:active:not(:disabled) { transform: translateY(1px); }
     html[data-theme-motion='off'] &, html[data-theme-motion='gentle'] & {

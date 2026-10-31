@@ -285,6 +285,7 @@ export const StickerBoardCard = styled(BaseCard).attrs<{ $flex: number }>(props 
         flex: none !important;
         min-height: 0;
         .sticker-content { min-height: 120px; }
+        .sticker-content:has(> .placeholder) { min-height:64px; padding:16px; }
     }
 `;
 
@@ -317,7 +318,11 @@ export const TaskCard = styled(BaseCard).attrs<{ $flex: number }>(props => ({
     ${MOBILE} {
         flex: none !important;
         min-height: 0;
-        .placeholder { padding: 24px 0; }
+        .placeholder {
+            display:flex; align-items:center; gap:12px; margin:0; padding:16px 0;
+            & > * { flex:0 0 56px; width:56px; height:56px; margin:0; }
+            svg { max-width:56px; max-height:56px; }
+        }
     }
 `;
 

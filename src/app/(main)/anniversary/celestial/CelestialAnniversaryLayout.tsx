@@ -54,7 +54,7 @@ export default function CelestialAnniversaryLayout({ S, items, onDelete, onSubmi
                         return (
                             <S.Card key={a.id} $today={isToday} data-fx-anchor={isToday ? "anniversary-today" : undefined}>
                                 <S.Corners><i /><i /><i /><i /></S.Corners>
-                                <S.CardDelete type="button" onClick={() => onDelete(a)}>
+                                <S.CardDelete type="button" onClick={() => onDelete(a)} aria-label={`${t.menu.delete}: ${a.title}`}>
                                     <Trash2 size={13} />
                                 </S.CardDelete>
                                 <S.CardNumeral>{ROMAN[idx] ?? String(idx + 1)}</S.CardNumeral>

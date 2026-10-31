@@ -9,6 +9,7 @@ import { useDialog } from "@/components/dialog/DialogProvider";
 import { useT } from "@/i18n/useT";
 import type { UserType } from "@/types";
 import { isForwardMove, isTaskWaiting } from "@/lib/taskInteractions";
+import useDraftClose from '@/hooks/useDraftClose';
 
 /** 어떤 할 일을 열지. taskId 가 없으면 그 프로젝트에 새로 만든다 */
 export interface TaskEditTarget {
@@ -43,6 +44,7 @@ export default function ProjectTaskEditor({ target, onClose }: { target: TaskEdi
     const [pending, setPending] = React.useState(false);
     const [error, setError] = React.useState<string | null>(null);
     const pendingRef = React.useRef(false);
+    const baseline=React.useRef('');
 
     const project = target ? projects.find((p) => p.id === target.projectId) : undefined;
     const tasks = project?.tasks ?? [];
@@ -55,18 +57,20 @@ export default function ProjectTaskEditor({ target, onClose }: { target: TaskEdi
         const task = target.taskId
             ? useProjectStore.getState().projects.find((p) => p.id === target.projectId)?.tasks?.find((x) => x.id === target.taskId)
             : undefined;
-        setDataState(task
+        const initial = task
             ? {
                 id: task.id, title: task.title, description: task.description ?? "", status: task.status,
                 priority: task.priority || "medium", startAt: task.startAt ?? null, endAt: task.endAt ?? null,
                 isAllDay: task.isAllDay ?? true, blockedBy: task.blockedBy ?? [], assignees: task.assignees ?? [],
             }
-            : { ...EMPTY, ...target.defaults });
+            : { ...EMPTY, ...target.defaults };
+        baseline.current=JSON.stringify(initial);
+        setDataState(initial);
     }, [target]);
 
     const setData = (d: Partial<ProjectTaskType>) => setDataState((prev) => ({ ...prev, ...d }));
 
-    const close = () => { if (!pendingRef.current) onClose(); };
+    const close = useDraftClose(onClose,()=>JSON.stringify(data)!==baseline.current,pending);
 
     const run = async (job: () => Promise<string | null>) => {
         pendingRef.current = true;

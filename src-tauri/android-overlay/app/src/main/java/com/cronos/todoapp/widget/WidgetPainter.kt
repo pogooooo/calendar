@@ -45,6 +45,7 @@ class WidgetPainter(
      * 시각이 중요한 위젯(지금·다음, 하루 진행)은 늘 0 이다.
      */
     private val steps: Int = 0,
+    private val presentationStyle: String = "simple",
 ) {
     class Painted(
         val bitmap: Bitmap,
@@ -60,7 +61,8 @@ class WidgetPainter(
 
     // 그림의 해상도. 너무 크면 런처에 넘길 때 무겁다 — 2x 면 충분히 또렷하다
     private val density: Float = min(context.resources.displayMetrics.density, 2.0f)
-    private val style: WidgetStyle = WidgetStyle.of(context, pal.family, density)
+    private val style: WidgetStyle = if (presentationStyle == "ornate") WidgetStyle.of(context, pal.family, density)
+        else SimpleStyle(context, density, pal.family)
     /** 제목·머리글 글꼴 — 갈래의 것 */
     private val orbit: Typeface = style.display
     private val sans: Typeface = Typeface.SANS_SERIF
@@ -129,7 +131,7 @@ class WidgetPainter(
             textSize = dp(sizeDp); this.color = color; typeface = tf; letterSpacing = spacingEm
             if (tabular) fontFeatureSettings = "tnum"
         }
-    private fun title() = text(11f, pal.goldText, orbit, style.titleSpacing)
+    private fun title() = text(11.5f, if (presentationStyle == "ornate") pal.goldText else pal.ink, orbit, style.titleSpacing)
     private fun sub() = text(10f, pal.muted, orbit, style.titleSpacing * 0.7f, tabular = true)
     private fun kicker() = text(9.5f, pal.goldText, orbit, style.titleSpacing * 1.2f)
     private fun body(color: Int = pal.ink) = text(12.5f, color)
@@ -159,7 +161,8 @@ class WidgetPainter(
     }
 
     /** 바탕 — 갈래의 붓이 그린다 */
-    private fun frame(c: Canvas, w: Float, h: Float) = style.frame(c, w, h, pal, alphaPct)
+    private fun frame(c: Canvas, w: Float, h: Float) = style.frame(c, w, h, pal,
+        if (presentationStyle == "simple") max(94, alphaPct) else alphaPct)
 
     /**
      * 머리글 양 끝의 날짜 넘김 화살. 누르는 자리는 그림이 아니라 겹칸(ov_prev·ov_next)이고,

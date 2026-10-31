@@ -42,6 +42,18 @@ function sourceModule(relative) {
 const { buildWidgetSnapshot } = sourceModule("src/lib/widgetSnapshot.ts");
 const t = sourceModule("src/i18n/ko.ts").default;
 const { themes } = sourceModule("src/styles/theme.ts");
+const { reconcileCategorySelection } = sourceModule('src/lib/categorySelection.ts');
+const { allDayToggleEnd } = sourceModule('src/lib/todoFormRange.ts');
+const lateDefault={start:'2026-10-31T23:30',end:'2026-11-01T00:30'};
+const sameDay=allDayToggleEnd(lateDefault.start,lateDefault.end,lateDefault,true,false);
+assert.equal(sameDay,'2026-10-31T00:30','An untouched late-night all-day default stays on one date');
+assert.equal(allDayToggleEnd(lateDefault.start,sameDay,lateDefault,false,false),lateDefault.end,'Turning all-day off restores the valid overnight timed range');
+assert.equal(allDayToggleEnd(lateDefault.start,'2026-11-03T00:30',lateDefault,true,false),'2026-11-03T00:30','Explicit multi-day choices are preserved');
+assert.equal(allDayToggleEnd(lateDefault.start,lateDefault.end,lateDefault,true,true),lateDefault.end,'Existing events are preserved');
+assert.deepEqual(reconcileCategorySelection([],null,['a','b']),['a','b'],'First load shows all categories');
+assert.deepEqual(reconcileCategorySelection([],['a','b'],['a','b']),[],'Hiding every category survives a data refresh');
+assert.deepEqual(reconcileCategorySelection(['b'],['a','b'],['a','b','c']),['b','c'],'New categories do not turn hidden existing categories on');
+assert.deepEqual(reconcileCategorySelection(['b','c'],['a','b','c'],['a','c']),['c'],'Removed categories are pruned');
 const { inkOnFill } = sourceModule("src/styles/color.ts");
 assert.equal(inkOnFill('#D4AF37'), '#111111');
 assert.equal(inkOnFill(themes.celestial.colors.primary), '#111111');

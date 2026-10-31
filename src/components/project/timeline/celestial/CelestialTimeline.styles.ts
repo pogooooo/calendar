@@ -1,4 +1,5 @@
 import styled from "styled-components";
+import { MOBILE } from '@/styles/breakpoints';
 import { SectionWrapper, SectionTitle } from "@/components/project/celestial/section";
 export { SectionWrapper, SectionTitle };
 
@@ -7,11 +8,13 @@ export const LinkHint = styled.div`
     font-size: 0.68rem;
     color: ${(p) => p.theme.colors.textSecondary};
     min-height: 22px;
+    ${MOBILE} { font-size:.75rem; line-height:1.5; }
 `;
 export const MobileTaskRow = styled.div`display: flex; align-items: center; gap: 6px;`;
 export const MobileConnector = styled.button`
     flex-shrink: 0;
     width: 40px; height: 40px;
+    ${MOBILE} { width:44px; height:44px; }
     display: inline-flex; align-items: center; justify-content: center;
     background: transparent; border: 1px solid ${(p) => p.theme.colors.primary}55;
     color: ${(p) => p.theme.colors.primary}; cursor: pointer;
@@ -32,6 +35,7 @@ export const AgendaList = styled.div`
     min-height: 0;
     overflow-y: auto;
     padding: 6px 10px 10px;
+    ${MOBILE} { flex:none; overflow:visible; }
 `;
 
 export const AgendaEmpty = styled.div`
@@ -47,7 +51,7 @@ export const AgendaRow = styled.button<{ $status?: string }>`
     display: flex;
     align-items: center;
     gap: 12px;
-    min-height: 46px;
+    min-height: 56px;
     padding: 8px 6px;
     text-align: left;
     background: none;
@@ -91,6 +95,7 @@ export const AgendaTitle = styled.span<{ $done: boolean }>`
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    ${MOBILE} { white-space:normal; overflow-wrap:anywhere; line-height:1.45; font-size:.92rem; }
 `;
 
 export const TimelineLayout = styled.div`

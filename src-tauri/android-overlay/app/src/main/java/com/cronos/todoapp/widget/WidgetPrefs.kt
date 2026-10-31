@@ -16,6 +16,9 @@ object WidgetPrefs {
 
     fun alpha(context: Context, id: Int): Int = prefs(context).getInt("alpha_$id", DEFAULT_ALPHA).coerceIn(20, 100)
     fun mode(context: Context, id: Int): String = prefs(context).getString("mode_$id", "app") ?: "app"
+    /** Independent of app motion and theme brightness; missing preferences migrate to the readable default. */
+    fun style(context: Context, id: Int): String = normalizeStyle(prefs(context).getString("style_$id", "simple"))
+    fun normalizeStyle(value: String?): String = if (value == "ornate") "ornate" else "simple"
 
     /**
      * 옮겨 둔 날수. 옮긴 날(base)이 오늘이 아니면 0 — 어제 "내일" 을 보다가 둔 위젯이
@@ -43,13 +46,14 @@ object WidgetPrefs {
         return (now + java.util.TimeZone.getDefault().getOffset(now)) / 86_400_000L
     }
 
-    fun save(context: Context, id: Int, alpha: Int, mode: String) {
-        prefs(context).edit().putInt("alpha_$id", alpha.coerceIn(20, 100)).putString("mode_$id", mode).apply()
+    fun save(context: Context, id: Int, alpha: Int, mode: String, style: String = "simple") {
+        prefs(context).edit().putInt("alpha_$id", alpha.coerceIn(20, 100)).putString("mode_$id", mode)
+            .putString("style_$id", normalizeStyle(style)).apply()
     }
 
     fun remove(context: Context, ids: IntArray) {
         val e = prefs(context).edit()
-        ids.forEach { e.remove("alpha_$it").remove("mode_$it").remove("offset_$it").remove("offbase_$it") }
+        ids.forEach { e.remove("alpha_$it").remove("mode_$it").remove("style_$it").remove("offset_$it").remove("offbase_$it") }
         e.apply()
     }
 }

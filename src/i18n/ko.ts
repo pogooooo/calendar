@@ -2,6 +2,8 @@ import type { Translations } from './types';
 
 const ko: Translations = {
     interaction: {
+        discardTitle: '작성 내용을 버리고 닫을까요?', discardClose: '버리고 닫기', keepWriting: '계속 작성',
+        autoSaveHint: '입력 후 다른 곳을 누르면 자동 저장됩니다.', unsaved: '아직 저장하지 않은 변경사항이 있습니다.', saved: '저장했습니다.',
         invalidDates: '마감일은 시작일보다 빠를 수 없습니다.',
         linkHintMobile: '연결점을 누른 뒤 후속 작업을 선택하세요.',
         linkSelectedMobile: title => `${title} 다음 작업을 선택하세요. 연결점을 다시 누르면 취소`,
@@ -19,7 +21,7 @@ const ko: Translations = {
         title: '설정',
         appearance: '모양',
         account: '계정',
-        appearanceNote: '테마와 글꼴은 계정에 저장되어 웹과 데스크톱 앱 모두에 같이 적용됩니다.',
+        appearanceNote: '테마 선택은 계정에 저장됩니다. 밝기·글꼴·글자 크기·애니메이션은 이 기기에 저장됩니다.',
         systemNote: '앱이 기기와 맞물리는 방식입니다. 시간대는 날짜가 바뀌는 기준이라 반복과 완료 표시에 함께 영향을 줍니다.',
         fontSize: '글자 크기',
         fontWeight: '글자 두께',
@@ -205,6 +207,7 @@ const ko: Translations = {
         timezoneAutoHint: '이 기기의 시간대로 맞춥니다',
     },
     widgetShell: {
+        appearance: '위젯 꾸미기',
         background: '배경',
         theme: '테마',
         glass: '글래스',
@@ -222,7 +225,7 @@ const ko: Translations = {
         timeline: '타임라인',
         temporaryTask: '임시 작업',
         dailyMemo: '일일 메모',
-        addTask: '할 일 추가',
+        addTask: '일정 추가',
         memoPlaceholder: '메모나 일기를 남겨보세요.',
         noChallengeToday: '이 날 예정된 챌린지가 없습니다.',
         monthView: '월간',
@@ -683,9 +686,9 @@ const ko: Translations = {
         macNote: 'macOS 11 이상 · Apple Silicon / Intel',
         linuxNote: 'x86_64',
         androidNote: 'Android 7 이상 · arm64 · APK 직접 설치',
-        googlePlay: 'Google Play에서 보기',
-        googlePlayNote: '현재 비공개 테스트 참여 계정으로 설치할 수 있습니다.',
-        googlePlayAction: '스토어 열기',
+        googlePlay: 'Android 비공개 테스트 신청',
+        googlePlayNote: '비공개 테스트 · Google 그룹 가입 후 테스트에 참여해 설치하세요.',
+        googlePlayAction: '참여 방법 보기',
         errPlatform: '지원하지 않는 운영체제입니다.',
         errUnreleased: '이 운영체제용 설치 파일이 아직 없습니다.',
         errUpstream: '설치 파일을 가져오지 못했습니다. 잠시 후 다시 시도해주세요.',

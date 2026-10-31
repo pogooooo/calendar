@@ -26,7 +26,7 @@ export const Title = styled.div`
     .month i { font-style:normal; font-size:.8rem; font-family:${p => p.theme.fonts.body}; color:${p => p.theme.colors.textSecondary}; letter-spacing:0; }
     :where(html:not([data-theme-motion="off"])) & .month { animation:${rise} .5s ${EASE} backwards; }
     ${calm}
-    @media(max-width:768px) { font-size:2rem; gap:5px; .eyebrow { font-size:.53rem; } }
+    @media(max-width:768px) { font-size:1.5rem; gap:0; .eyebrow { display:none; } }
     [data-widget] & { display:none; }
 `;
 export const Nav = styled.div`

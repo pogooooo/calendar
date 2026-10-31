@@ -59,6 +59,7 @@ export interface DayThemeProps {
     setLocalMemo: (text: string) => void;
     handleMemoBlur: () => void;
     memoError: string | null;
+    memoSaveStatus: 'idle' | 'dirty' | 'saving' | 'saved';
     /** 이 날의 메모를 받아 왔는가 — 받기 전에는 칸을 읽기 전용으로 둔다(치던 글이 도착한 메모에 덮이거나 저장되지 않는다) */
     memoReady: boolean;
 
@@ -113,6 +114,8 @@ const DayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
         const [newTaskText, setNewTaskText] = React.useState("");
         const [localMemo, setLocalMemo] = React.useState("");
         const [memoError, setMemoError] = React.useState<string | null>(null);
+        const [memoSaveStatus,setMemoSaveStatus]=React.useState<DayThemeProps['memoSaveStatus']>('idle');
+        const memoWrite=React.useRef(0);
 
         /**
          * 일간 스토어는 한 날짜만 든다. 토큰이 갱신될 때마다(한 시간쯤) StoreInitializer 가 '오늘'을 다시 읽어서,
@@ -150,6 +153,7 @@ const DayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
         memoErrorRef.current = memoError;
         const editMemo = React.useCallback((text: string) => {
             memoDirty.current = true;
+            setMemoSaveStatus('dirty');
             setLocalMemo(text);
         }, []);
 
@@ -160,6 +164,8 @@ const DayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
             const prev = shownDay.current;
             shownDay.current = { key: dayKey, date: dayAt };
             if (prev.key === dayKey) return;
+            memoWrite.current+=1;
+            setMemoSaveStatus('idle');
             const base = memoBase.current;
             if (base && base.key === prev.key && (memoDirty.current || memoErrorRef.current)) {
                 void updateDailyMemo(authFetch, prev.date, localMemoRef.current);
@@ -254,10 +260,14 @@ const DayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
             if (!fresh || !base || base.key !== dayKey) return;
             // 저장이 실패했으면 같은 글이라도 다시 보낸다. 실패해도 스토어는 이 글을 들고 있어서
             // 예전엔 '바뀐 것 없음' 으로 보고 넘어갔다 — "다시 시도" 단추가 아무 일도 하지 않았다
-            if (localMemo === base.memo && !memoError) { memoDirty.current = false; return; }
+            if (localMemo === base.memo && !memoError) { memoDirty.current = false; setMemoSaveStatus('saved'); return; }
+            const write=++memoWrite.current, savedText=localMemo, savedDay=dayKey;
+            setMemoSaveStatus('saving');
             memoDirty.current = false;
             const error = await updateDailyMemo(authFetch, dayAt, localMemo);
+            if(write!==memoWrite.current || shownDay.current.key!==savedDay) return;
             setMemoError(error);
+            setMemoSaveStatus(error || localMemoRef.current!==savedText ? 'dirty' : 'saved');
         };
 
         // 시간표의 칸(10분)은 고른 시간대의 벽시계 — 예전엔 이 기기 시각이라 시간대가 다르면 일정이 엉뚱한 시각 칸에 섰다
@@ -409,6 +419,7 @@ const DayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
             setLocalMemo: editMemo,
             handleMemoBlur,
             memoError,
+            memoSaveStatus,
             memoReady: fresh,
             categories,
             selectedCategoryIds,

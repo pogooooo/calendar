@@ -23,15 +23,15 @@ function catalogueNavigation(node: ReactNode): ReactNode {
 }
 
 export default function GemMonthHeader({ navigation, filters }: MonthHeaderProps) {
-    return <S.Header data-theme-layout="gem-month-header">
-        <S.Emblem aria-hidden="true" viewBox="0 0 48 48">
+    return <S.Header data-calendar-header data-theme-layout="gem-month-header">
+        <S.Emblem data-calendar-decoration aria-hidden="true" viewBox="0 0 48 48">
             <path className="setting" d="M24 3 40 12 45 24 40 36 24 45 8 36 3 24 8 12Z" />
             <path className="stone" d="M24 8 36 15 40 24 36 33 24 40 12 33 8 24 12 15Z" />
             <path className="facets" d="m24 8-7 10-9 6 9 6 7 10 7-10 9-6-9-6Zm-7 10h14v12H17Zm7-10v10m0 12v10M8 24h9m14 0h9" />
             <path className="claws" d="m9 12 5 5m25-5-5 5M9 36l5-5m25 5-5-5" />
         </S.Emblem>
-        <S.Navigation>{catalogueNavigation(navigation)}</S.Navigation>
-        <S.Separator aria-hidden="true" />
+        <S.Navigation data-calendar-navigation>{catalogueNavigation(navigation)}</S.Navigation>
+        <S.Separator data-calendar-decoration aria-hidden="true" />
         <S.Filters>{filters}</S.Filters>
     </S.Header>;
 }

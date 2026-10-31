@@ -21,6 +21,8 @@ import { useTheme } from "styled-components";
 import { fx, type FxEvent, type FxKind, type FxRect } from "@/lib/fx";
 import { usePickTheme } from "@/styles/themed";
 import useThemeMotion from "@/hooks/useThemeMotion";
+import useMobilePresentation from '@/hooks/useMobilePresentation';
+import { isWidgetWindow } from '@/hooks/useAuthFetch';
 import type { FxEngine, FxModule } from "./engine";
 import * as S from "./FxStage.styles";
 
@@ -90,7 +92,8 @@ export default function FxStage() {
     const baseLoad = usePickTheme(LOADERS);
     const calendarLoad = usePickTheme(CALENDAR_LOADERS);
     const load = pathname?.startsWith('/calendar') ? calendarLoad : baseLoad;
-    const inWidget = !!pathname?.startsWith("/widget");
+    const mobileApp = useMobilePresentation();
+    const inWidget = isWidgetWindow() || mobileApp;
 
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const engineRef = useRef<FxEngine | null>(null);
@@ -264,7 +267,7 @@ export default function FxStage() {
     }, []);
 
     useEffect(() => {
-        if (inWidget) return;
+        if (inWidget || mobileApp) return;
         return fx.on((raw) => {
             if (motionRef.current === "off" || document.hidden) return;
             // 테마를 바꾸면 새 갈래의 모듈이 들어온 뒤에 인사한다
@@ -283,7 +286,7 @@ export default function FxStage() {
             void play(e);
         });
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [inWidget]);
+    }, [inWidget, mobileApp]);
 
     // 화면을 옮김 (처음 뜰 때는 빼고). 로그인 직후의 옮김은 효과 대신 인사를 한다
     const firstPath = useRef(true);

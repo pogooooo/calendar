@@ -6,6 +6,8 @@ import { usePickTheme } from '@/styles/themed';
 import CelestialAtmosphere from './celestial/CelestialAtmosphere';
 import MapleAtmosphere from './maple/MapleAtmosphere';
 import OceanAtmosphere from './ocean/OceanAtmosphere';
+import useMobilePresentation from '@/hooks/useMobilePresentation';
+import usePresentation from '@/hooks/usePresentation';
 
 const VIEWS = { celestial: CelestialAtmosphere, maple: MapleAtmosphere, ocean: OceanAtmosphere , gem: GemAtmosphere };
 
@@ -18,6 +20,8 @@ const VIEWS = { celestial: CelestialAtmosphere, maple: MapleAtmosphere, ocean: O
 export default function ThemeAtmosphere() {
     const View = usePickTheme(VIEWS);
     const pathname = usePathname();
-    if (pathname?.startsWith('/widget')) return null;
+    const mobile = useMobilePresentation();
+    const presentation = usePresentation();
+    if (mobile || presentation === 'desktop-widget' || pathname?.startsWith('/widget')) return null;
     return <View />;
 }

@@ -9,7 +9,7 @@ export const Bookmark = styled.header`
     position:relative; background:transparent;
     &::before { content:""; position:absolute; left:15px; top:16px; bottom:0; width:1px; background:${p => p.theme.colors.primary}40; box-shadow:3px 0 0 ${p => p.theme.colors.primary}0D; }
     border:0; border-radius:0; box-shadow:none;
-    @media(max-width:768px) { padding:14px 12px 12px 26px; gap:9px; }
+    @media(max-width:768px) { padding:4px 4px 6px 16px; gap:4px; &::before { left:6px; top:4px; } }
     [data-widget] & { display:flex; padding:0 6px; border:0; background:transparent; box-shadow:none; &::before { display:none; } }
 `;
 export const MonthIndex = styled.div`
@@ -18,6 +18,7 @@ export const MonthIndex = styled.div`
     color:${p => p.theme.colors.primary}; font-family:${p => p.theme.fonts.body};
     font-size:.61rem; font-weight:650; letter-spacing:.18em;
     span { color:${p => p.theme.colors.textSecondary}; font-size:.6rem; letter-spacing:.08em; font-variant-numeric:tabular-nums; font-weight:450; }
+    @media(max-width:768px) { padding-bottom:5px; font-size:.58rem; }
     [data-widget] & { display:none; }
 `;
 
@@ -26,6 +27,7 @@ export const MonthTrack = styled.div`
     font-family:${p => p.theme.fonts.body}; font-size:.61rem; letter-spacing:.04em; font-variant-numeric:tabular-nums;
     span { padding:0 0 6px; text-align:center; color:${p => p.theme.colors.textSecondary}; border-bottom:1px solid ${p => hair(p.theme,.12)}; }
     .active { color:${p => p.theme.colors.primary}; font-weight:750; border-bottom:2px solid ${p => p.theme.colors.primary}; }
+    @media(max-width:768px) { display:none; }
     [data-widget] & { display:none; }
 `;
 export const FolioNavigation = styled(DateRangeDisplay)`

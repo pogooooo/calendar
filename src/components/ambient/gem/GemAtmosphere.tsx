@@ -5,6 +5,7 @@ import { useTheme } from 'styled-components';
 import useThemeMotion from '@/hooks/useThemeMotion';
 import { FacetedGem } from '@/components/ornament/gem/GemOrnaments';
 import { createMineral } from './mineral';
+import { createScintillation } from './scintillation';
 import type { GemSceneController } from './gemScene';
 import * as S from './GemAtmosphere.styles';
 
@@ -14,19 +15,26 @@ export default function GemAtmosphere() {
     const motion = useThemeMotion();
     const mineralRef = useRef<HTMLCanvasElement>(null);
     const jewelRef = useRef<HTMLCanvasElement>(null);
+    const glintsRef = useRef<HTMLCanvasElement>(null);
     const [flat, setFlat] = useState(false);
     const sceneRef = useRef<GemSceneController | null>(null);
     const color = theme.gemColor ?? theme.colors.primary;
     const gold = theme.colors.accent;
     const dark = theme.mode === 'dark';
     const presentation = useRef({ color, gold, dark, motion });
-    presentation.current = { color, gold, dark, motion };
+    useEffect(() => { presentation.current = { color, gold, dark, motion }; }, [color, gold, dark, motion]);
 
     useEffect(() => {
         const canvas = mineralRef.current;
         if (!canvas) return;
         return createMineral(canvas, { color, gold, dark });
     }, [color, gold, dark]);
+
+    useEffect(() => {
+        const canvas = glintsRef.current;
+        if (!canvas) return;
+        return createScintillation(canvas, { color, gold, dark, motion });
+    }, [color, gold, dark, motion]);
 
     useEffect(() => {
         const canvas = jewelRef.current;
@@ -46,6 +54,8 @@ export default function GemAtmosphere() {
     return <S.Atelier aria-hidden="true" data-ambient="gem">
         <canvas className="mineral" ref={mineralRef} />
         <span className="light" />
+        <span className="prism" />
+        <canvas className="scintillation" ref={glintsRef} />
         <div className="jewel">
             {flat ? <svg className="fallback" viewBox="0 0 100 140"><FacetedGem cx={50} cy={70} r={36} /></svg> : <canvas ref={jewelRef} />}
         </div>

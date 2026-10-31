@@ -14,6 +14,7 @@ import TodoModal from "@/components/modal/todoModal/TodoModal";
 import { useT } from "@/i18n/useT";
 import { labelKey, wallTime } from "@/lib/dateKey";
 import { useListMotion, useSwapMotion } from "@/hooks/useMotion";
+import useMobilePresentation from '@/hooks/useMobilePresentation';
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialDayCalendar.styles";
 import * as MapleS from "./maple/MapleDayCalendar.styles";
@@ -40,7 +41,7 @@ const DayCalendarView = React.forwardRef<HTMLDivElement, CelestialDayProps>(
          dayChallenges, toggleChallenge,
          tasks, newTaskText, setNewTaskText, handleAddTask,
          toggleDailyTask, deleteDailyTask,
-         localMemo, setLocalMemo, handleMemoBlur, memoError, memoReady,
+         localMemo, setLocalMemo, handleMemoBlur, memoError, memoReady, memoSaveStatus,
          categories, selectedCategoryIds, toggleCategory,
          showProjects, onToggleProjects,
          dayTodos, selectedDate, isModalOpen, modalTodo, setIsModalOpen,
@@ -51,6 +52,8 @@ const DayCalendarView = React.forwardRef<HTMLDivElement, CelestialDayProps>(
         const S = usePickTheme(STYLES);
         const Component = asChild ? Slot : 'div';
         const t = useT();
+        const mobileApp = useMobilePresentation();
+        const foldKey = mobileApp ? 'cronos-mobile-day-folded' : STORAGE_FOLD;
 
         const [mainSplit, setMainSplit] = React.useState(() => {
             try {
@@ -72,14 +75,20 @@ const DayCalendarView = React.forwardRef<HTMLDivElement, CelestialDayProps>(
                 return raw ? { ...DEFAULT_FOLD, ...JSON.parse(raw) } : DEFAULT_FOLD;
             } catch { return DEFAULT_FOLD; }
         });
+        React.useEffect(()=>{
+            try {
+                const saved=localStorage.getItem(foldKey);
+                setFold(saved?{...DEFAULT_FOLD,...JSON.parse(saved)}:mobileApp?{timeline:true,challenge:false,task:true,memo:true}:DEFAULT_FOLD);
+            } catch { setFold(mobileApp?{timeline:true,challenge:false,task:true,memo:true}:DEFAULT_FOLD); }
+        },[foldKey,mobileApp]);
 
         const toggleFold = React.useCallback((key: SectionKey) => {
             setFold(prev => {
                 const next = { ...prev, [key]: !prev[key] };
-                try { localStorage.setItem(STORAGE_FOLD, JSON.stringify(next)); } catch {}
+                try { localStorage.setItem(foldKey, JSON.stringify(next)); } catch {}
                 return next;
             });
-        }, []);
+        }, [foldKey]);
 
         const doneChallenges = dayChallenges.filter(c => c.isDone).length;
 
@@ -157,8 +166,8 @@ const DayCalendarView = React.forwardRef<HTMLDivElement, CelestialDayProps>(
         }, []);
 
         return (
-            <S.CelestialCalendarWrapper as={Component} ref={ref} {...props}>
-                <S.DateHeader>
+            <S.CelestialCalendarWrapper data-day-calendar as={Component} ref={ref} {...props}>
+                <S.DateHeader data-day-date-heading>
                     <S.DateStamp ref={stampRef} aria-hidden="true">{selectedDate.getDate()}<small>{selectedDate.toLocaleDateString('en-US', { weekday: 'short' })}</small></S.DateStamp>
                     <span ref={titleRef}>{formattedDate}</span>
                     <CategoryFilter
@@ -171,10 +180,10 @@ const DayCalendarView = React.forwardRef<HTMLDivElement, CelestialDayProps>(
                     <hr />
                 </S.DateHeader>
 
-                <S.ContentLayout ref={contentRef}>
+                <S.ContentLayout data-day-content ref={contentRef}>
                     {/* 그날의 일정 목록 — 폰에서는 달력 칸이 좁아 일정이 점으로만 찍히니 고치고 지우는 유일한 길이고,
                         데스크톱에서는 달력에서 날짜를 누르면 그날 할 일을 시간표 위에서 한눈에 본다. */}
-                    <S.TodoCard>
+                    <S.TodoCard data-day-todo-card>
                         <S.TodoCardHead>
                             <i />
                             <span>{t.home.tasks}</span>
@@ -182,7 +191,7 @@ const DayCalendarView = React.forwardRef<HTMLDivElement, CelestialDayProps>(
                         </S.TodoCardHead>
 
                         {dayTodos.length > 0 ? (
-                            <S.TodoList ref={todoListRef}>
+                            <S.TodoList data-day-todo-list ref={todoListRef}>
                                 {dayTodos.map((todo) => {
                                     const color = categories.find(c => c.id === todo.categoryId)?.color;
                                     // 고른 시간대의 시각 — 예전엔 이 기기 시각이라 시간대가 다르면 홈·시간표와 다른 시각이 섰다
@@ -192,6 +201,7 @@ const DayCalendarView = React.forwardRef<HTMLDivElement, CelestialDayProps>(
                                         : `${String(start.hour).padStart(2, "0")}:${String(start.minute).padStart(2, "0")}`;
                                     return (
                                         <S.TodoRow
+                                            data-day-todo-row
                                             key={todo.id}
                                             type="button"
                                             $isDone={!!todo.isDone}
@@ -353,11 +363,11 @@ const DayCalendarView = React.forwardRef<HTMLDivElement, CelestialDayProps>(
                                     <S.TaskList ref={taskListRef}>
                                         {tasks.map(task => (
                                             <S.TaskItem key={task.id} $isDone={task.isDone} data-done={task.isDone ? "" : undefined}>
-                                                <button className="check-btn" data-motion-mark="" onClick={() => toggleDailyTask(task)}>
+                                                <button type="button" className="check-btn" data-motion-mark="" aria-label={`${task.isDone?t.interaction.undo:t.menu.done}: ${task.title}`} aria-pressed={task.isDone} onClick={() => toggleDailyTask(task)}>
                                                     {task.isDone && <Check size={14} strokeWidth={3}/>}
                                                 </button>
                                                 <span className="task-text">{task.title}</span>
-                                                <button className="delete-btn" onClick={() => deleteDailyTask(task)}>
+                                                <button type="button" className="delete-btn" aria-label={`${t.menu.delete}: ${task.title}`} onClick={() => deleteDailyTask(task)}>
                                                     <Trash2 size={14}/>
                                                 </button>
                                             </S.TaskItem>
@@ -369,12 +379,13 @@ const DayCalendarView = React.forwardRef<HTMLDivElement, CelestialDayProps>(
                                             value={newTaskText}
                                             onChange={(e) => setNewTaskText(e.target.value)}
                                             placeholder={t.calendar.addTask}
+                                            aria-label={t.calendar.temporaryTask}
                                             // 한글 조합을 끝내는 Enter 로 폼이 넘어가면(사파리·맥) 마지막 글자가 칸에 남거나 두 번 들어간다 — 홈의 빠른 추가와 같게
                                             onKeyDown={(e) => {
                                                 if (e.key === "Enter" && (e.nativeEvent.isComposing || e.keyCode === 229)) e.preventDefault();
                                             }}
                                         />
-                                        <button type="submit"><Plus size={18} /></button>
+                                        <button type="submit" aria-label={t.calendar.addTask} disabled={!newTaskText.trim() || !memoReady}><Plus size={18} /></button>
                                     </S.TaskForm>
                                 </>
                             )}
@@ -403,12 +414,14 @@ const DayCalendarView = React.forwardRef<HTMLDivElement, CelestialDayProps>(
                             {!fold.memo && (
                                 <>
                                     <textarea
+                                        aria-label={t.calendar.dailyMemo}
                                         value={localMemo}
                                         readOnly={!memoReady}
                                         onChange={(e) => setLocalMemo(e.target.value)}
                                         onBlur={handleMemoBlur}
                                         placeholder={t.calendar.memoPlaceholder}
                                     />
+                                    {!memoError && <div data-memo-status role="status" style={{fontSize:'.78rem',lineHeight:1.5,padding:'6px 10px',color:'inherit'}}>{memoSaveStatus==='saving'?t.account.saving:memoSaveStatus==='saved'?t.interaction.saved:memoSaveStatus==='dirty'?t.interaction.unsaved:t.interaction.autoSaveHint}</div>}
                                     {memoError && (
                                         <S.MemoError role="alert">
                                             {memoError}

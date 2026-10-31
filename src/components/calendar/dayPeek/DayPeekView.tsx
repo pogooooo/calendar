@@ -23,8 +23,8 @@ export default function DayPeekView({ dayKey, title, isToday, items, onOpenDay, 
     useSwapMotion(dayKey, listRef);
     useListMotion(listRef, { reset: dayKey, exit: "collapse" });
     return (
-        <S.Wrap>
-            <S.Head type="button" onClick={onOpenDay} $today={isToday}>
+        <S.Wrap data-day-peek>
+            <S.Head data-day-peek-head type="button" onClick={onOpenDay} $today={isToday}>
                 <i className="hd" />
                 <span className="title" ref={titleRef}>{title}</span>
                 <span className="hr" />
@@ -32,12 +32,12 @@ export default function DayPeekView({ dayKey, title, isToday, items, onOpenDay, 
                 <span className="open">{labels.openDay} <ChevronRight size={13} /></span>
             </S.Head>
 
-            <S.List ref={listRef}>
+            <S.List data-day-peek-list ref={listRef}>
                 {items.length === 0 ? (
                     <S.Empty>{labels.empty}</S.Empty>
                 ) : (
                     items.map(item => (
-                        <S.Row key={item.id} type="button" $done={item.done} data-done={item.done ? "" : undefined} onClick={onOpenDay}>
+                        <S.Row data-day-peek-row key={item.id} type="button" $done={item.done} data-done={item.done ? "" : undefined} onClick={onOpenDay}>
                             <i className="mark" data-motion-mark="" style={{ borderColor: item.color || undefined, background: item.done ? (item.color || undefined) : undefined }} />
                             <span className="name">{item.title}</span>
                             <em>{item.time ?? labels.allDay}</em>

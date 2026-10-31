@@ -12,8 +12,9 @@ import { useCurrentDayKey } from "@/hooks/useCurrentDay";
 import { challengeExpired, completionKey, completionTargetFor, slotIndexOn } from "@/lib/challengeDays";
 import { useDialog } from "@/components/dialog/DialogProvider";
 import { useT } from "@/i18n/useT";
+import { reconcileCategorySelection } from '@/lib/categorySelection';
 
-export default function ChallengePage() {
+export default function ChallengePage() {
     const authFetch = useAuthFetch();
     const dialog = useDialog();
     const t = useT();
@@ -22,7 +23,7 @@ export default function ChallengePage() {
 
     const [selectedCategoryIds, setSelectedCategoryIds] = React.useState<string[]>([]);
     const [selectedChallengeId, setSelectedChallengeId] = React.useState<string | null>(null);
-    const selectedChallenge = challenges.find(c => c.id === selectedChallengeId) ?? null;
+    const selectedChallenge = challenges.find(c => c.id === selectedChallengeId && selectedCategoryIds.includes(c.categoryId)) ?? null;
 
     const [isModalOpen, setIsModalOpen] = React.useState(false);
     const [modalMode, setModalMode] = React.useState<'create' | 'edit'>('create');
@@ -37,11 +38,13 @@ export default function ChallengePage() {
         }
     }, [authFetch, fetchChallenges, fetchCategories]);
 
+    const knownCategories = React.useRef<string[] | null>(null);
     React.useEffect(() => {
-        if (categories.length > 0 && selectedCategoryIds.length === 0) {
-            setSelectedCategoryIds(categories.map(c => c.id));
-        }
-    }, [categories, selectedCategoryIds]);
+        if (!categories.length && knownCategories.current===null) return;
+        const ids=categories.map(c=>c.id), previous=knownCategories.current;
+        knownCategories.current=ids;
+        setSelectedCategoryIds(selected=>reconcileCategorySelection(selected,previous,ids));
+    }, [categories]);
 
     const toggleCategory = (toggledId: string) => {
         setSelectedCategoryIds(prev =>
@@ -73,6 +76,7 @@ export default function ChallengePage() {
 
     const handleSaveChallenge = async (data: ChallengeData): Promise<void> => {
         let error: string | null;
+        const before = new Set(challenges.map(c=>c.id));
         if (modalMode === 'edit' && selectedChallenge) {
             error = await updateChallenge(authFetch, selectedChallenge.id, data);
         } else {
@@ -82,6 +86,13 @@ export default function ChallengePage() {
         }
         // 실패했는데 모달을 닫으면 사용자는 저장된 줄 안다
         if (error) { await dialog.notify({ title: t.alert.saveFailed, message: error }); return; }
+        if(modalMode==='create') {
+            const created=useChallengeStore.getState().challenges.find(c=>!before.has(c.id));
+            if(created) {
+                setSelectedChallengeId(created.id);
+                setSelectedCategoryIds(ids=>ids.includes(created.categoryId)?ids:[...ids,created.categoryId]);
+            }
+        }
         setIsModalOpen(false);
     };
 

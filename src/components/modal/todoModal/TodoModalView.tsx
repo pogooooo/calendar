@@ -13,6 +13,9 @@ import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialTodoModal.styles";
 import * as MapleS from "./maple/MapleTodoModal.styles";
 import * as OceanS from './ocean/OceanTodoModal.styles';
+import useMobilePresentation from '@/hooks/useMobilePresentation';
+import useSettingStore from '@/store/useSettingStore';
+import { MobileFormDetails } from './MobileFormDetails.styles';
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
 const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
@@ -23,21 +26,36 @@ export default function TodoModalView({
     startAt, setStartAt, endAt, setEndAt, isAllDay, setIsAllDay, location, setLocation,
     repeat, setRepeat, repeatEndType, setRepeatEndType, repeatEndDate, setRepeatEndDate, repeatCount, setRepeatCount,
     repeatEndOptions, projectId, setProjectId, projectOptions,
-    handleDateChange, handleSubmit, handleDelete
+    handleDateChange, handleSubmit, handleDelete, isSaving, submitError
 }: TodoModalThemeProps) {
     const S = usePickTheme(STYLES);
     const t = useT();
+    const mobile = useMobilePresentation();
+    const english = useSettingStore(s=>s.locale)==='en';
+    const projectField = !todo && projectOptions.length > 0 ? (
+        <S.FieldRow>
+            <label><FolderKanban size={16} /> {t.project.inProject}</label>
+            <div style={{ flex: 1, minWidth: 0, maxWidth:mobile?undefined:'220px' }}>
+                <Select value={projectId} onChange={setProjectId}
+                    options={[{ value: "", label: t.project.noProject }, ...projectOptions]}
+                    ariaLabel={t.project.inProject} />
+            </div>
+        </S.FieldRow>
+    ) : null;
 
     return (
-        <BaseModal isOpen={isOpen} onClose={onClose} maxWidth="420px" ariaLabel={t.todo.newTodo}>
-            <S.FormWrapper onSubmit={handleSubmit}>
+        <BaseModal isOpen={isOpen} onClose={onClose} maxWidth="420px" ariaLabel={todo ? t.todo.update : t.todo.newTodo}>
+            <S.FormWrapper onSubmit={handleSubmit} aria-busy={isSaving} data-todo-form data-mobile-todo={mobile || undefined}>
+                <MobileFormDetails />
                 <S.Header>
                     <input
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                         placeholder={todo?.title || t.todo.newTodo}
-                        aria-label={t.todo.newTodo}
+                        aria-label={todo ? t.todo.update : t.todo.newTodo}
+                        data-autofocus
                         required
+                        readOnly={isSaving}
                         className="title-input"
                     />
                     <button type="button" className="close-btn" onClick={onClose} aria-label={t.widgetShell.close}>
@@ -45,7 +63,7 @@ export default function TodoModalView({
                     </button>
                 </S.Header>
 
-                <S.ScrollBody>
+                <S.ScrollBody inert={isSaving || undefined}>
                     <div style={{ marginBottom: '8px', padding: '0 8px' }}>
                         <Select
                             value={categoryId}
@@ -56,20 +74,7 @@ export default function TodoModalView({
                         />
                     </div>
 
-                    {/* 새로 만들 때만: 그 카테고리의 프로젝트에 할 일로 넣기 */}
-                    {!todo && projectOptions.length > 0 && (
-                        <S.FieldRow>
-                            <label><FolderKanban size={16} /> {t.project.inProject}</label>
-                            <div style={{ flex: 1, minWidth: 0, maxWidth: '220px' }}>
-                                <Select
-                                    value={projectId}
-                                    onChange={setProjectId}
-                                    options={[{ value: "", label: t.project.noProject }, ...projectOptions]}
-                                    ariaLabel={t.project.inProject}
-                                />
-                            </div>
-                        </S.FieldRow>
-                    )}
+                    {!mobile && projectField}
 
                     <S.FieldRow>
                         <label><Clock size={16} /> {t.todo.allDay}</label>
@@ -82,6 +87,7 @@ export default function TodoModalView({
                     <S.FieldRow>
                         <label>{t.todo.startTime}</label>
                         <DateTimePicker
+                            ariaLabel={t.todo.startTime}
                             mode={isAllDay ? "date" : "datetime"}
                             value={isAllDay ? startAt.slice(0, 10) : startAt}
                             onChange={(v) => handleDateChange(setStartAt, startAt, v)}
@@ -98,6 +104,7 @@ export default function TodoModalView({
                     <S.FieldRow>
                         <label>{t.todo.endTime}</label>
                         <DateTimePicker
+                            ariaLabel={t.todo.endTime}
                             mode={isAllDay ? "date" : "datetime"}
                             value={isAllDay ? endAt.slice(0, 10) : endAt}
                             onChange={(v) => handleDateChange(setEndAt, endAt, v)}
@@ -111,6 +118,9 @@ export default function TodoModalView({
                         />
                     </S.FieldRow>
 
+                    <details className="todo-extra" open={mobile ? undefined : true}>
+                    <summary hidden={!mobile}>{english ? 'More options' : '상세 설정'}<span>{english ? 'Project · location · repeat · notes' : '프로젝트 · 장소 · 반복 · 메모'}</span></summary>
+                    {mobile && projectField}
                     {projectId ? (
                         <S.FieldRow>
                             <label style={{ minWidth: 0, fontSize: '0.8rem' }}>{t.project.projectTaskHint}</label>
@@ -190,16 +200,18 @@ export default function TodoModalView({
                             placeholder={t.todo.notesPlaceholder}
                         />
                     </S.MemoRow>
+                    </details>
                 </S.ScrollBody>
 
-                <S.Footer>
+                <S.Footer className="todo-footer">
+                    <div className="todo-save-state" role={submitError ? 'alert' : 'status'}>{submitError || (isSaving ? t.account.saving : '')}</div>
                     {todo && (
                         <SecondaryButton type="button" onClick={handleDelete} $width="70px" $height="36px" $variant="danger">
                             {t.todo.delete}
                         </SecondaryButton>
                     )}
-                    <SecondaryButton type="submit" $width="90px" $height="36px" $variant="primary">
-                        {todo ? t.todo.update : t.todo.save}
+                    <SecondaryButton type="submit" disabled={isSaving} $width="110px" $height="44px" $variant="primary">
+                        {isSaving ? t.account.saving : todo ? t.todo.update : t.todo.save}
                     </SecondaryButton>
                 </S.Footer>
             </S.FormWrapper>

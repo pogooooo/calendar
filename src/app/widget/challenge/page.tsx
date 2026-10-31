@@ -26,5 +26,4 @@ export default function ChallengeWidget() {
 
 const Wrap = styled.div`
     height: 100%;
-    & * { background-color: transparent; }
 `;

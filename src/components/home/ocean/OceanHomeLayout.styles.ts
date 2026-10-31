@@ -39,9 +39,11 @@ export const Day = styled.section`
     padding: 24px 24px 10px;
     ${surface("panel")}
     border-radius: ${R.lg};
+    border-top:2px solid ${(p)=>p.theme.colors.primary}55;
+    min-height:420px;
     ${rise(0)}
 
-    ${MOBILE} { padding: 18px 16px 6px; }
+    ${MOBILE} { padding:18px 16px 6px;min-height:0; }
 `;
 
 /** 날 옮기기 — 눈금 띠 아래 */
@@ -69,7 +71,7 @@ export const Cards = styled.div`
     min-width: 0;
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-content: start;
+    align-content: stretch;
     gap: ${GAP}px;
 
     ${MOBILE} { grid-template-columns: minmax(0, 1fr); gap: 12px; }

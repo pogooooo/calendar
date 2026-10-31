@@ -531,29 +531,10 @@ const contentLeft = (ctx: FxContext) => (ctx.W > 900 ? Math.min(300, ctx.W * 0.2
 
 const mod: FxModule = {
     effects: {
-        'calendar-pick': (ctx) => burst(ctx,ctx.rect.x+ctx.rect.w/2,ctx.rect.y+ctx.rect.h/2,count(ctx,3),65,.35),
-        "month-flip": (ctx, e) => {
-            const dir = e.direction ?? 1;
-            const r = ctx.rect;
-            const streaks = Array.from({ length: count(ctx, 7) }, (): Particle => {
-                const speed = rand(800, 1400);
-                return {
-                    x: dir > 0 ? r.x + r.w + rand(0, 60) : r.x - rand(0, 60),
-                    y: r.y + rand(0.04, 0.96) * r.h,
-                    vx: -dir * speed, vy: rand(-24, 24), drag: 0.9,
-                    size: rand(3, 6), sx: rand(3, 5), sy: 0.35,
-                    life: rand(0.5, 0.85), delay: rand(0, 0.2), tint: pick(gold(ctx)),
-                    alpha: (k) => Math.min(1, k * 6) * (1 - k) * .5,
-                };
-            });
-            const settle = Array.from({ length: count(ctx, 6) }, (): Particle => ({
-                x: r.x + rand(0.08, 0.92) * r.w, y: r.y + rand(0.1, 0.9) * r.h, vx: 0, vy: 0,
-                size: rand(14, 24), rz: 0, vrz: 0,
-                life: rand(0.7, 1.0), delay: rand(0.22, 0.45), tint: pick(gold(ctx)),
-                alpha: pop, scale: (k) => 0.4 + pop(k) * 0.8,
-            }));
-            return group(new Swarm(ctx, dot(ctx), streaks), new Swarm(ctx, star(ctx), settle));
-        },
+        'calendar-pick': (ctx) => ctx.gentle
+            ? burst(ctx,ctx.rect.x+ctx.rect.w/2,ctx.rect.y+ctx.rect.h/2,count(ctx,2),35,.22)
+            : frame(ctx,{x:ctx.rect.x+2,y:ctx.rect.y+2,w:Math.max(4,ctx.rect.w-4),h:Math.max(4,ctx.rect.h-4)},.48,0,.6),
+        "month-flip": () => null,
 
         complete: (ctx) => burst(ctx, ctx.x, ctx.y, count(ctx, 10), 270),
 

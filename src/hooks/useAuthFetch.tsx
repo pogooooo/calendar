@@ -19,7 +19,9 @@ const LOCK_KEY = "cronos-refresh-lock";
 const LOCK_TTL = 10000;
 
 export function isWidgetWindow() {
-    return typeof window !== "undefined" && window.location.pathname.startsWith("/widget");
+    if(typeof window==='undefined')return false;
+    return window.location.pathname.startsWith('/widget') || (process.env.NODE_ENV==='development'
+        && window.location.pathname.startsWith('/dev/design') && new URLSearchParams(window.location.search).get('platform')==='desktop-widget');
 }
 
 /** JWT 만료 여부. 만료된 토큰으로 요청을 쏘면 창 수만큼 401 이 쏟아진다. */
@@ -125,7 +127,10 @@ export async function refreshSession(): Promise<RefreshResult> {
     return refreshInFlight;
 }
 
+export const AuthFetchScope = React.createContext<import('@/types').AuthFetch | null>(null);
+
 export const useAuthFetch = () => {
+    const scopedFetch = React.useContext(AuthFetchScope);
     const clearSession = useAuthStore((s) => s.clearSession);
     const router = useRouter();
 
@@ -198,5 +203,5 @@ export const useAuthFetch = () => {
         return response;
     }, [clearSession, router]);
 
-    return authFetch;
+    return scopedFetch ?? authFetch;
 };

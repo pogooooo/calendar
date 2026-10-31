@@ -108,6 +108,15 @@ const extras = `
             android:launchMode="singleTask"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboard|keyboardHidden|uiMode"
             android:windowSoftInputMode="stateAlwaysVisible|adjustResize" />
+        <!-- 일정 목록·추가·수정·완료·삭제를 런처 위에서 처리하는 전용 창 -->
+        <activity
+            android:name=".widget.WidgetEditActivity"
+            android:exported="false"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:taskAffinity=""
+            android:excludeFromRecents="true"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboard|keyboardHidden|uiMode"
+            android:windowSoftInputMode="stateAlwaysHidden|adjustResize" />
         <!-- 개발용: 위젯 미리보기 그림 만들기 (디버그 빌드에서만 일한다) -->
         <receiver
             android:name=".widget.PreviewRenderReceiver"

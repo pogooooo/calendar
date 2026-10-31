@@ -75,7 +75,10 @@ export const OpenPages = styled.div`
         ${paperCard()}
         min-width: 0;
         min-height: 260px;
-        padding: 18px 20px 12px;
+        padding: 22px 24px 16px 34px;
+        border-radius:3px 10px 10px 3px;
+        background-image:linear-gradient(90deg,transparent 23px,${(p)=>p.theme.colors.primary}22 23px,${(p)=>p.theme.colors.primary}22 24px,transparent 24px);
+        box-shadow:0 2px 3px #0000000a,0 12px 30px -20px #00000055;
     }
     & > :nth-child(1) { ${enter(0)} }
     & > :nth-child(2) { ${enter(1)} }
@@ -92,7 +95,8 @@ export const FieldNotes = styled.aside`
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 16px;
-    padding-bottom: 24px;
+    padding: 8px 0 24px;
+    border-top:1px solid ${(p)=>p.theme.colors.border}88;
 
     section {
         ${paperCard()}

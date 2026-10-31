@@ -6,9 +6,9 @@ import { MOBILE } from "@/styles/breakpoints";
  *
  * 예전에는 보드 파일과 타임라인 파일에 똑같은 것이 각각 있었다. 생김새가 같으니
  * 한쪽만 고치면 조용히 어긋난다 — 폰 대응 때 실제로 같은 수정을 두 번 했다.
- * 다른 점은 폰에서의 높이뿐이라 그것만 밖에서 받는다.
+ * 폰에서는 내용 높이로 펼쳐 바깥 페이지 하나가 스크롤을 맡는다.
  */
-export const SectionWrapper = styled.div<{ $mobileHeight?: string }>`
+export const SectionWrapper = styled.div`
     display: flex;
     flex-direction: column;
     min-height: 150px;
@@ -19,7 +19,9 @@ export const SectionWrapper = styled.div<{ $mobileHeight?: string }>`
     /* 비율은 인라인 style 로 들어오므로 !important 로만 덮인다. */
     ${MOBILE} {
         flex: none !important;
-        height: ${(props) => props.$mobileHeight ?? "360px"};
+        height: auto;
+        min-height: 0;
+        overflow: visible;
     }
 `;
 

@@ -149,7 +149,7 @@ for (const mode of ['development', 'production']) {
     assert.equal(policy.availableThemeName('ocean-dark'), 'ocean-dark');
 }
 const prepaintTemplate = fs.readFileSync('src/app/layout.tsx', 'utf8').match(/const PRE_PAINT = `([\s\S]*?)`;/)?.[1];
-const prepaint = prepaintTemplate?.replace('${DEVELOPMENT_THEMES_ENABLED}', 'true');
+const prepaint = prepaintTemplate?.replaceAll('${DEVELOPMENT_THEMES_ENABLED}', 'true');
 assert.ok(prepaint, 'Pre-paint background script is present.');
 for (const mode of ['light', 'dark']) for (const color of ['#000000', '#FFFFFF', '#57AFC5', DEFAULT_GEM_COLOR]) {
     const root = { style: {}, setAttribute() {} };
@@ -162,7 +162,7 @@ for (const mode of ['light', 'dark']) for (const color of ['#000000', '#FFFFFF',
 
 for (const mode of ['light', 'dark']) {
     const root = { style: {}, setAttribute() {} };
-    vm.runInNewContext(prepaintTemplate.replace('${DEVELOPMENT_THEMES_ENABLED}', 'false'), {
+    vm.runInNewContext(prepaintTemplate.replaceAll('${DEVELOPMENT_THEMES_ENABLED}', 'false'), {
         location: { pathname: '/' }, document: { documentElement: root }, window: {},
         localStorage: { getItem: () => JSON.stringify({ state: { theme: 'gem', themeOptions: { gem: mode } } }) },
     });

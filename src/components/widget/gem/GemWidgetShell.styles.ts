@@ -7,6 +7,7 @@ export * from '../celestial/CelestialWidgetShell.styles';
 export const Shell = styled(Base.Shell)`
     ${gemPanel}
 `;
+export const BackgroundSurface = styled(Shell)`${Base.backdropLayer}`;
 
 export const Control = styled(Base.Control)`
     ${gemControl}

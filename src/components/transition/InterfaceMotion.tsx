@@ -8,13 +8,14 @@ import { usePickTheme } from '@/styles/themed';
 import { press as celestial } from '@/styles/celestial/interactions';
 import { press as maple } from '@/styles/maple/interactions';
 import { press as ocean } from '@/styles/ocean/interactions';
+import { isWidgetWindow } from '@/hooks/useAuthFetch';
 
 /** Event delegation covers navigation, date arrows, tabs, menus and dialog buttons without wrappers. */
 export default function InterfaceMotion() {
     const level = useThemeMotion();
     const profile = usePickTheme({ celestial, maple, ocean , gem: gem });
-    const pathname = usePathname();
-    const widget = pathname.startsWith('/widget');
+    usePathname();
+    const widget = isWidgetWindow();
 
     useEffect(() => {
         if (level === 'off' || widget) return;

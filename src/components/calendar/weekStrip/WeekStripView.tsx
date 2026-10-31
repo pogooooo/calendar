@@ -24,7 +24,7 @@ export default function WeekStripView({
     const daysRef = React.useRef<HTMLDivElement>(null);
     useSwapMotion(days[0]?.key, daysRef);
     return (
-        <S.Strip {...swipe}>
+        <S.Strip data-week-strip {...swipe}>
             <S.Head>
                 <button type="button" onClick={onPrevWeek} aria-label={labels.prevWeek}>
                     <ChevronLeft size={16} />
@@ -39,13 +39,21 @@ export default function WeekStripView({
                 </button>
             </S.Head>
 
-            <S.Days role="tablist" ref={daysRef}>
+            <S.Days role="tablist" ref={daysRef} onKeyDown={(event)=>{
+                if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key)) return;
+                event.preventDefault();event.stopPropagation();
+                const selected=Math.max(0,days.findIndex(d=>d.isSelected));
+                const index=event.key==='Home'?0:event.key==='End'?days.length-1:(selected+(event.key==='ArrowRight'?1:-1)+days.length)%days.length;
+                onSelect(days[index].date);
+                daysRef.current?.querySelectorAll<HTMLButtonElement>('[role="tab"]')[index]?.focus();
+            }}>
                 {days.map((d, i) => (
                     <S.Day
                         key={d.key}
                         type="button"
                         role="tab"
                         aria-selected={d.isSelected}
+                        tabIndex={d.isSelected?0:-1}
                         aria-current={d.isToday ? 'date' : undefined}
                         aria-label={`${d.date.getMonth() + 1}/${d.date.getDate()} ${dayNames[i]}`}
                         $selected={d.isSelected}

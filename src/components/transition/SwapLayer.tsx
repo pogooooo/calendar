@@ -47,10 +47,10 @@ const SwapLayer = React.forwardRef<HTMLDivElement, SwapLayerProps>(function Swap
         if (skip || level === "off" || !el) return;
         const extent = axis === "x" ? el.getBoundingClientRect().width : el.getBoundingClientRect().height;
         // 넘겨서 들어온 판이라는 표시 — 판 안의 장식이 이것을 보고 차례로 움직인다(월간의 괘선 별·물마루 따위)
-        el.setAttribute("data-entering", "");
-        el.setAttribute("data-dir", dir < 0 ? "prev" : "next");
         const step = set.swapIn({ dir: dir < 0 ? -1 : 1, axis, level, size, widget: isWidgetWindow(), extent });
         if (!step) return;
+        el.setAttribute("data-entering", "");
+        el.setAttribute("data-dir", dir < 0 ? "prev" : "next");
         if (step.above) el.style.zIndex = "2";
         // 움직이는 동안만의 표시 — 넘어오는 장을 종이로 칠하는 것처럼 그동안만 필요한 모양이 이것을 본다(끝나면 걷는다)
         el.setAttribute("data-swapping", "");

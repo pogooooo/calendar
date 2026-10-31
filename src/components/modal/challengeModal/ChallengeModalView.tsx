@@ -28,12 +28,12 @@ export default function ChallengeModalView({
     const t = useT();
 
     return (
-        <BaseModal isOpen={isOpen} onClose={onClose} maxWidth="450px">
+        <BaseModal isOpen={isOpen} onClose={onClose} maxWidth="450px" ariaLabel={isEditing ? t.challenge.editTitle : t.challenge.createTitle}>
             <S.ModalHeader>
                 {isEditing ? t.challenge.editTitle : t.challenge.createTitle}
             </S.ModalHeader>
             <S.ModalBody>
-                <S.FormArea onSubmit={handleSubmit}>
+                <S.FormArea onSubmit={handleSubmit} aria-busy={isSubmitting}>
                     <div className="form-group">
                         <label>{t.challenge.category}</label>
                         <Select
@@ -46,24 +46,24 @@ export default function ChallengeModalView({
                     </div>
                     <div className="form-group">
                         <label>{t.challenge.nameLabel}</label>
-                        <input value={title} onChange={e => setTitle(e.target.value)}
+                        <input data-autofocus aria-label={t.challenge.nameLabel} value={title} onChange={e => setTitle(e.target.value)}
                                placeholder={t.challenge.namePlaceholder} required />
                     </div>
                     <div className="form-group">
                         <label>{t.challenge.descLabel}</label>
-                        <input value={description} onChange={e => setDescription(e.target.value)}
+                        <input aria-label={t.challenge.descLabel} value={description} onChange={e => setDescription(e.target.value)}
                                placeholder={t.challenge.descPlaceholder} />
                     </div>
                     <div className="form-group-row">
                         <div className="form-group">
                             <label>{t.challenge.intervalLabel}</label>
                             {/* 비우면 0 이 아니라 빈칸으로 — 예전엔 지우는 순간 "0" 이 박혀 "05" 처럼 쳐졌다 (빈칸은 required 가 막는다) */}
-                            <input type="number" min="1" inputMode="numeric" value={interval || ""}
+                            <input type="number" min="1" inputMode="numeric" aria-label={t.challenge.intervalLabel} value={interval || ""}
                                    onChange={e => setInterval(Number(e.target.value))} required />
                         </div>
                         <div className="form-group">
                             <label>{t.challenge.targetLabel}</label>
-                            <input type="number" min="1" max={TARGET_MAX} inputMode="numeric" value={targetCount}
+                            <input type="number" min="1" max={TARGET_MAX} inputMode="numeric" aria-label={t.challenge.targetLabel} value={targetCount}
                                    onChange={e => setTargetCount(e.target.value)}
                                    placeholder={t.challenge.targetPlaceholder} />
                         </div>

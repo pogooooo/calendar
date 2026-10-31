@@ -82,13 +82,23 @@ abstract class CronosWidgetProvider : AppWidgetProvider() {
         // 옮겨 볼 수 있는 것은 한 때를 보여 주는 위젯만 — "지금·다음" 처럼 시각이 중요한 것은 늘 지금이다.
         // 한 칸의 크기는 화가가 종류에 맞춰 잡는다 (오늘=하루, 주간=한 주, 월간=한 달)
         val steps = if (kind in SHIFT_KINDS) WidgetPrefs.offset(context, id) else 0
-        val painted = WidgetPainter(context, palette, alpha, snap, steps = steps).paint(kind, wDp, hDp)
+        val painted = WidgetPainter(context, palette, alpha, snap, steps = steps,
+            presentationStyle = WidgetPrefs.style(context, id)).paint(kind, wDp, hDp)
 
         val views = RemoteViews(context.packageName, R.layout.widget_canvas)
         views.setImageViewBitmap(R.id.widget_image, painted.bitmap)
         views.setContentDescription(R.id.widget_image, context.getString(labelRes()))
-        // 빠른 추가는 앱을 열지 않고 작은 입력 창을 띄운다 (QuickAddActivity). 그 창이 못 쓰는 때(로그아웃)는 창이 앱을 연다
-        views.setOnClickPendingIntent(R.id.widget_root, if (kind == "quickadd") quickAdd(context, id) else link(context, id, 0, rootLink(snap)))
+        // 일정 위젯은 앱 홈 대신 런처 위의 목록·편집창을 연다.
+        val selected = Calendar.getInstance(WidgetDataClient(context).timeZone).apply {
+            add(when (kind) { "month", "monthgauge" -> Calendar.MONTH; "week" -> Calendar.WEEK_OF_YEAR; else -> Calendar.DAY_OF_MONTH }, steps)
+        }
+        val date = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).apply { timeZone = selected.timeZone }.format(selected.time)
+        val root = when (kind) {
+            "quickadd" -> "cronos://todo/new?date=$date"
+            "today", "nownext", "dayprogress", "monthgauge", "week", "month" -> "cronos://day/$date"
+            else -> rootLink(snap)
+        }
+        views.setOnClickPendingIntent(R.id.widget_root, link(context, id, 0, root))
 
         // 날짜 넘김 — 왼쪽은 뒤로, 오른쪽은 앞으로. 옮긴 채로 두어도 날이 바뀌면 오늘로 돌아온다 (WidgetPrefs.offset)
         val canShift = kind in SHIFT_KINDS
@@ -154,16 +164,6 @@ abstract class CronosWidgetProvider : AppWidgetProvider() {
         return (if (w > 0) w else defaultSizeDp.first).coerceIn(40, 800) to (if (h > 0) h else defaultSizeDp.second).coerceIn(40, 800)
     }
 
-    /** 빠른 추가 입력 창. requestCode 는 링크 자리(widgetId*64+slot)의 빈 칸 60 */
-    private fun quickAdd(context: Context, widgetId: Int): PendingIntent {
-        val intent = Intent(context, QuickAddActivity::class.java)
-            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-        return PendingIntent.getActivity(
-            context, widgetId * 64 + 60, intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
-    }
-
     /** 날짜 넘김 단추 하나. requestCode 는 링크 자리(widgetId*64+slot)의 위쪽을 쓴다 */
     private fun shift(context: Context, widgetId: Int, delta: Int): PendingIntent {
         val intent = Intent(context, javaClass).setAction(ACTION_SHIFT)
@@ -176,10 +176,22 @@ abstract class CronosWidgetProvider : AppWidgetProvider() {
     }
 
     /**
-     * `cronos://…` 를 MainActivity 로. 앱(AndroidWidgetSync)이 그 링크를 받아 화면을 옮긴다.
+     * Todo/date links open the native editor over the launcher; other features retain their app routes.
      * requestCode 와 data 가 다르면 서로 다른 PendingIntent 다 — 줄마다 다른 곳으로 가야 하니까.
      */
     private fun link(context: Context, widgetId: Int, slot: Int, uri: String): PendingIntent {
+        val target = Uri.parse(uri)
+        if (target.host == "todo" || target.host == "day") {
+            val entry = target.lastPathSegment.orEmpty()
+            val intent = Intent(context, WidgetEditActivity::class.java).apply {
+                data = Uri.parse("cronos-widget://edit/$widgetId/$slot")
+                putExtra("mode", if (target.host == "day") "day" else if (entry == "new") "new" else "todo")
+                putExtra("day", if (target.host == "day") entry else target.getQueryParameter("date"))
+                if (target.host == "todo" && entry != "new") putExtra("id", entry)
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            }
+            return PendingIntent.getActivity(context, widgetId * 64 + slot, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        }
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(uri), context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK
         }

@@ -56,6 +56,7 @@ export default function ProjectModalView({
                 <S.Header>
                     <S.TitleInput
                         aria-label={f.projectName}
+                        data-autofocus
                         disabled={pending}
                         value={data.title || ''}
                         onChange={(e) => setData({ ...data, title: e.target.value })}

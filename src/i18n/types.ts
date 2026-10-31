@@ -9,6 +9,8 @@ export interface Translations {
         linkSelected: (title: string) => string; linkCreated: string; linkInvalid: string; linkDuplicate: string;
         searchDependencies: string; noMatches: string;
         quickFind: string; quickFindPlaceholder: string;
+        autoSaveHint: string; unsaved: string; saved: string;
+        discardTitle: string; discardClose: string; keepWriting: string;
     };
     settings: {
         title: string;
@@ -195,6 +197,7 @@ export interface Translations {
         timezoneAutoHint: string;
     };
     widgetShell: {
+        appearance: string;
         background: string;
         theme: string;
         glass: string;

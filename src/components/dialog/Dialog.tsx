@@ -41,7 +41,7 @@ const Pips = () => {
     const S = usePickTheme(STYLES);
     return (
         <>
-            <S.Pip /><S.Pip /><S.Pip /><S.Pip />
+            <S.Pip data-dialog-decoration/><S.Pip data-dialog-decoration/><S.Pip data-dialog-decoration/><S.Pip data-dialog-decoration/>
         </>
     );
 };
@@ -55,6 +55,8 @@ export default function Dialog({
     const arcanum = usePickTheme({ celestial: ARCANA, maple: PLATES, ocean: OceanARCANA , gem: GEM_DIALOGS })[kind];
     const shape = variant ?? VARIANT_BY_KIND[kind];
     const confirmRef = React.useRef<HTMLButtonElement>(null);
+    const cancelRef = React.useRef<HTMLButtonElement>(null);
+    const previousFocus = React.useRef<HTMLElement | null>(null);
     const veilRef = React.useRef<HTMLDivElement>(null);
     const motionLevel = useThemeMotion();
     const motionSet = useMotionSet();
@@ -62,7 +64,10 @@ export default function Dialog({
     exited.current = onExited;
 
     React.useEffect(() => {
-        confirmRef.current?.focus();
+        previousFocus.current=document.activeElement instanceof HTMLElement ? document.activeElement : null;
+        (kind==='danger' && cancelRef.current ? cancelRef.current : confirmRef.current)?.focus();
+        // One dialog instance keeps its initial focus while its title or exit state changes.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     /* 닫힐 때 — 카드는 갈래의 몸짓으로 나가고(바다: 가라앉으며 흐려짐 · Maple: 집어 들리듯 · Celestial: 옅게 작아짐),
@@ -75,7 +80,10 @@ export default function Dialog({
         veil.style.pointerEvents = "none";
         veil.setAttribute("aria-hidden", "true");
         veil.querySelector("[aria-modal]")?.removeAttribute("aria-modal");
-        if (document.activeElement instanceof HTMLElement && veil.contains(document.activeElement)) document.activeElement.blur();
+        if (document.activeElement instanceof HTMLElement && veil.contains(document.activeElement)) {
+            if(previousFocus.current?.isConnected) previousFocus.current.focus({preventScroll:true});
+            else document.activeElement.blur();
+        }
         const step = motionLevel === "off" ? null : motionSet.dialogOut(motionLevel);
         if (!step) { done(); return; }
         const timing: KeyframeAnimationOptions = { duration: step.duration, easing: "ease-out", fill: "forwards" };
@@ -125,7 +133,7 @@ export default function Dialog({
     const actions = (
         <S.Actions>
             {cancelLabel && (
-                <S.ActionButton type="button" $tone="plain" onClick={() => onResolve(false)}>
+                <S.ActionButton ref={cancelRef} type="button" $tone="plain" onClick={() => onResolve(false)}>
                     {cancelLabel}
                 </S.ActionButton>
             )}

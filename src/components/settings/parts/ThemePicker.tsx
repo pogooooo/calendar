@@ -131,6 +131,7 @@ export default function ThemePicker({ L, themes: choices, currentTheme, themeOpt
                     const off = () => setLit((v) => (v === th.id ? null : v));
                     return (
                         <L.FamilyTile
+                            data-theme-tile
                             key={th.id}
                             type="button"
                             role="radio"
@@ -144,11 +145,11 @@ export default function ThemePicker({ L, themes: choices, currentTheme, themeOpt
                             onBlur={off}
                         >
                             <ThemeThumb L={L} theme={th} option={option} height={84} />
-                            <L.FamilyFoot>
+                            <L.FamilyFoot data-theme-foot>
                                 <L.Star $on={on} $small />
-                                <L.FamilyName>{th.label}</L.FamilyName>
+                                <L.FamilyName data-theme-name>{th.label}</L.FamilyName>
                                 {th.options.length > 1 && (
-                                    <L.VariantDots aria-hidden="true">
+                                    <L.VariantDots data-theme-variants aria-hidden="true">
                                         {th.options.map((o) => <i key={o} className={o === option ? "on" : undefined} />)}
                                     </L.VariantDots>
                                 )}
@@ -162,8 +163,8 @@ export default function ThemePicker({ L, themes: choices, currentTheme, themeOpt
             </L.ThemeGallery>
             </P.GalleryFit>
 
-            <L.ThemeStage key={current.id}>
-                <L.StageThumb>
+            <L.ThemeStage data-theme-stage key={current.id}>
+                <L.StageThumb data-theme-stage-thumb>
                     <ThemeThumb L={L} theme={current} option={currentOption} height={168} />
                 </L.StageThumb>
                 <L.StageInfo>
@@ -173,7 +174,7 @@ export default function ThemePicker({ L, themes: choices, currentTheme, themeOpt
                             <FamilyObjet id={current.id} size="100%" active large />
                         </P.StageObjet>
                     </P.StageHead>
-                    <L.StageDesc>{current.description}</L.StageDesc>
+                    <L.StageDesc data-theme-description>{current.description}</L.StageDesc>
                     {current.options.length > 1 && (
                         <L.SegGroup role="radiogroup" aria-label={variantLabel}>
                             {current.options.map((o) => (

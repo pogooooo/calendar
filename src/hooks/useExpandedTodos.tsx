@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { TodoType } from '@/types';
-import { localDateKey, utcDayKey, parseExcludedDates, activeTimeZone, sameAsDevice, zonedTime } from '@/lib/dateKey';
-import { addDaysToKey, zonedTimeToDate, zonedWallTime, type WallTime } from '@/lib/timezone';
+import { utcDayKey, parseExcludedDates, activeTimeZone, sameAsDevice } from '@/lib/dateKey';
+import { addDaysToKey, zonedDateKey, zonedTimeToDate, zonedWallTime, type WallTime } from '@/lib/timezone';
 import { isOccurrenceDone } from '@/lib/todoDone';
 
 export interface ExpandedTodoType extends TodoType {
@@ -19,7 +19,8 @@ export interface ExpandedTodoType extends TodoType {
 export function expandTodos(
     todos: TodoType[],
     windowStart: Date | undefined,
-    windowEnd: Date | undefined
+    windowEnd: Date | undefined,
+    timeZone?: string,
 ): ExpandedTodoType[] {
         const expanded: ExpandedTodoType[] = [];
 
@@ -31,11 +32,13 @@ export function expandTodos(
         endLimit.setHours(23, 59, 59, 999);
         // 기기와 다른 시간대를 골랐으면 창도 고른 시간대의 날로 — 예전엔 이 기기의 날로 잘라서 그 날 일정이 빠지거나 하루 밀렸다.
         // 같은 시간대면 위의 예전 셈 그대로다
-        const tz = activeTimeZone();
+        const tz = timeZone ?? activeTimeZone();
+        const dateKey = (value: Date | string | number) => zonedDateKey(value, tz);
+        const atDay = (key: string) => zonedTimeToDate(key, 0, 0, tz)!;
         const device = sameAsDevice(tz);
         if (!device) {
-            startLimit.setTime(zonedTime(localDateKey(windowStart)).getTime());
-            endLimit.setTime(zonedTime(addDaysToKey(localDateKey(windowEnd), 1)).getTime() - 1);
+            startLimit.setTime(atDay(dateKey(windowStart)).getTime());
+            endLimit.setTime(atDay(addDaysToKey(dateKey(windowEnd), 1)).getTime() - 1);
         }
 
         todos.forEach(todo => {
@@ -54,7 +57,7 @@ export function expandTodos(
                 if (end.getTime() < startLimit.getTime() || start.getTime() > endLimit.getTime()) return;
 
                 // 여러 날 일정은 한 번 끝낸다 — 첫날 기록, 예전에 가운데 날에 적힌 기록도 센다 (src/lib/todoDone.ts)
-                const isDone = isOccurrenceDone(todo);
+                const isDone = isOccurrenceDone(todo, tz);
 
                 expanded.push({
                     ...todo,
@@ -85,8 +88,8 @@ export function expandTodos(
             /* 회차를 날 수만큼 민다. 기기와 같은 시간대면 예전처럼 이 기기 Date 의 setDate(그 벽시계를 지킨다),
                다르면 첫 회차의 고른 시간대 벽시계를 그 날에 다시 맞춘다 — 기기의 서머타임을 따라 9시 회차가 8시·10시로 밀리지 않게 */
             const first = device || Number.isNaN(currentStart.getTime() + currentEnd.getTime()) ? null : {
-                startKey: localDateKey(currentStart), start: zonedWallTime(currentStart, tz)!, startMs: currentStart.getMilliseconds(),
-                endKey: localDateKey(currentEnd), end: zonedWallTime(currentEnd, tz)!, endMs: currentEnd.getMilliseconds(),
+                startKey: dateKey(currentStart), start: zonedWallTime(currentStart, tz)!, startMs: currentStart.getMilliseconds(),
+                endKey: dateKey(currentEnd), end: zonedWallTime(currentEnd, tz)!, endMs: currentEnd.getMilliseconds(),
             };
             let shiftedDays = 0;
             const advance = (days: number) => {
@@ -111,7 +114,7 @@ export function expandTodos(
             const repeatUntil = todo.repeatEndDate ? new Date(todo.repeatEndDate) : null;
             if (repeatUntil) {
                 repeatUntil.setHours(23, 59, 59, 999);
-                if (!device) repeatUntil.setTime(zonedTime(addDaysToKey(localDateKey(todo.repeatEndDate!), 1)).getTime() - 1);
+                if (!device) repeatUntil.setTime(atDay(addDaysToKey(dateKey(todo.repeatEndDate!), 1)).getTime() - 1);
             }
 
             let globalInstanceCount = 0;
@@ -132,8 +135,8 @@ export function expandTodos(
 
                 if (repeatUntil && currentStart.getTime() > repeatUntil.getTime()) break;
 
-                if (currentEnd.getTime() >= startLimit.getTime() && !excluded.includes(localDateKey(currentStart))) {
-                    const dateStr = localDateKey(currentStart);
+                if (currentEnd.getTime() >= startLimit.getTime() && !excluded.includes(dateKey(currentStart))) {
+                    const dateStr = dateKey(currentStart);
                     const isDone = todo.completions?.some(c =>
                         utcDayKey(c.targetDate) === dateStr
                     );

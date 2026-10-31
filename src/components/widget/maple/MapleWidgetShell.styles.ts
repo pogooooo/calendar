@@ -21,6 +21,7 @@ export const Shell = styled(C.Shell)`
     border: 1px solid ${(p) => hair(p.theme, dark(p) ? 0.16 : 0.12)};
     border-radius: 16px;
 `;
+export const BackgroundSurface = styled(Shell)`${C.backdropLayer}`;
 
 /** 유리 모드의 광택 — 아주 옅은 흰 막 한 겹 */
 export const GlossOverlay = styled(C.GlossOverlay)`

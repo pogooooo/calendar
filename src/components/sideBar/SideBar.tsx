@@ -27,7 +27,7 @@ const Sidebar = () => {
     const [isContourHovered, setIsContourHovered] = useState(false);
 
     return(
-        <S.SideBarWrapper ref={sidebarRef} $width={width} $isResizing={isResizing}>
+        <S.SideBarWrapper data-desktop-sidebar ref={sidebarRef} $width={width} $isResizing={isResizing}>
             <S.Content>
                 <Profile />
                 <Menu />

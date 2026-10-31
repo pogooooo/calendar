@@ -30,12 +30,17 @@ export const Shell = styled.div<{ $locked?: boolean }>`
     contain: layout paint;
 `;
 
-export const FakeGlassLayer = styled.div<{ $opacity: number }>`
+export const backdropLayer = css`
+    position:absolute;inset:0;width:auto;height:auto;z-index:0;pointer-events:none;
+`;
+export const BackgroundSurface = styled(Shell)`${backdropLayer}`;
+
+export const FakeGlassLayer = styled.div<{ $blur: number }>`
     position: absolute;
     top: -${GLASS_MARGIN}px; left: -${GLASS_MARGIN}px;
     right: -${GLASS_MARGIN}px; bottom: -${GLASS_MARGIN}px;
     z-index: -1;
-    filter: blur(${p => Math.round(p.$opacity * 40)}px) saturate(140%);
+    filter: blur(${p => p.$blur}px) saturate(140%);
     will-change: filter;
     pointer-events: none;
 

@@ -1,24 +1,18 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import {normalizeWidgetAppearance,type WidgetAppearance} from '@/lib/widgetAppearance';
 
-export type BgMode = "theme" | "glass" | "custom";
+import { normalizeWidgetBackground, type WidgetBgSettings } from '@/lib/widgetBackground';
+export type { BgMode, WidgetBgSettings } from '@/lib/widgetBackground';
 export type WidgetPriority = "top" | "normal" | "bottom";
-
-export interface WidgetBgSettings {
-    mode: BgMode;
-    opacity: number;       // 0–1
-    customColor: string;   // hex, mode=custom일 때
-    autoTextColor: boolean; // 배경 밝기에 따라 글자색 자동 조정
-    gloss?: boolean;
-    liquid?: boolean;
-}
 
 export interface WidgetSettings {
     bg: WidgetBgSettings;
     priority: WidgetPriority;
+    appearance?: WidgetAppearance;
 }
 
-const defaultBg: WidgetBgSettings = { mode: "theme", opacity: 0.92, customColor: "#1a160e", autoTextColor: true };
+const defaultBg: WidgetBgSettings = { mode: "theme", opacity: 0.92, glassBlur: 36.8, customColor: "#1a160e", autoTextColor: true };
 
 // 목록은 lib/widgetKinds.ts 한 곳에서만 정한다.
 export type { WidgetKind } from "@/lib/widgetKinds";
@@ -28,6 +22,7 @@ type WidgetStore = Record<WidgetKind, WidgetSettings> & {
     update: (kind: WidgetKind, patch: Partial<WidgetSettings>) => void;
     updateBg: (kind: WidgetKind, patch: Partial<WidgetBgSettings>) => void;
     updatePriority: (kind: WidgetKind, priority: WidgetPriority) => void;
+    updateAppearance: (kind: WidgetKind, patch: Partial<WidgetAppearance>) => void;
 };
 
 const useWidgetStore = create<WidgetStore>()(
@@ -52,12 +47,13 @@ const useWidgetStore = create<WidgetStore>()(
                 set((s) => ({
                     [kind]: {
                         ...s[kind],
-                        bg: { ...s[kind].bg, ...patch },
+                        bg: normalizeWidgetBackground({ ...normalizeWidgetBackground(s[kind].bg), ...patch }),
                     },
                 })),
 
             updatePriority: (kind, priority) =>
                 set((s) => ({ [kind]: { ...s[kind], priority } })),
+            updateAppearance: (kind,patch) => set(s=>({[kind]:{...s[kind],appearance:normalizeWidgetAppearance({...normalizeWidgetAppearance(s[kind].appearance),...patch})}})),
         }),
         { name: "cronos-widget-settings" }
     )

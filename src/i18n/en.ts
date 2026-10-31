@@ -2,6 +2,8 @@ import type { Translations } from './types';
 
 const en: Translations = {
     interaction: {
+        discardTitle: 'Discard unsaved changes?', discardClose: 'Discard and close', keepWriting: 'Keep writing',
+        autoSaveHint: 'Changes save automatically when you leave this field.', unsaved: 'You have unsaved changes.', saved: 'Saved.',
         invalidDates: 'The end date cannot be before the start date.',
         linkHintMobile: 'Tap a connector, then choose the next task.',
         linkSelectedMobile: title => `Choose the task after ${title}. Tap its connector again to cancel`,
@@ -19,7 +21,7 @@ const en: Translations = {
         title: 'Settings',
         appearance: 'Appearance',
         account: 'Account',
-        appearanceNote: 'Theme and typeface are saved to your account and apply on the web and in the desktop app alike.',
+        appearanceNote: 'Your theme choice is saved to your account. Brightness, fonts, text size and animation are saved on this device.',
         systemNote: 'How the app meets your machine. The time zone decides when a day turns over, so repeats and completions follow it.',
         fontSize: 'Text size',
         fontWeight: 'Text weight',
@@ -204,6 +206,7 @@ const en: Translations = {
         timezoneAutoHint: "Match this device's time zone",
     },
     widgetShell: {
+        appearance: 'Widget appearance',
         background: 'Background',
         theme: 'Theme',
         glass: 'Glass',
@@ -221,7 +224,7 @@ const en: Translations = {
         timeline: 'Timeline',
         temporaryTask: 'Temporary Task',
         dailyMemo: 'Daily Memo',
-        addTask: 'Add task',
+        addTask: 'Add event',
         memoPlaceholder: 'Write a memo or diary entry.',
         noChallengeToday: 'No challenges scheduled for this day.',
         monthView: 'Month',
@@ -243,7 +246,7 @@ const en: Translations = {
         dayTitle: (y: number, m: number, d: number) => `${new Date(y, m - 1, d).toLocaleString('en-US', { month: 'long', day: 'numeric' })}, ${y}`,
         more: (n: number) => `+${n} more`,
         retry: 'Try again',
-        newTodo: 'New event',
+        newTodo: 'Add event',
         board: 'Board',
     },
     sidebar: {
@@ -682,9 +685,9 @@ const en: Translations = {
         macNote: 'macOS 11 or later · Apple Silicon / Intel',
         linuxNote: 'x86_64',
         androidNote: 'Android 7 or later · arm64 · sideloaded APK',
-        googlePlay: 'View on Google Play',
-        googlePlayNote: 'Currently available to accounts enrolled in the closed test.',
-        googlePlayAction: 'Open store',
+        googlePlay: 'Apply for the Android closed test',
+        googlePlayNote: 'Closed test · join our Google Group, then opt in on Google Play.',
+        googlePlayAction: 'How to join',
         errPlatform: 'This operating system is not supported.',
         errUnreleased: 'There is no installer for this operating system yet.',
         errUpstream: 'Could not fetch the installer. Please try again in a moment.',

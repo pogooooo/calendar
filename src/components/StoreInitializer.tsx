@@ -18,7 +18,7 @@ import { bustFetchCache } from "@/lib/fetchOnce";
 
 // /privacy 는 구글 플레이가 여는 개인정보처리방침 — 빠져 있어 로그아웃한 사람은 /download 로 튕겼다
 // /verifyEmail 은 가입 인증 메일의 링크 — 로그인 전에 열린다
-const PUBLIC_ROUTES = ["/signIn", "/signUp", "/download", "/forgotPassword", "/resetPassword", "/privacy", "/verifyEmail"];
+const PUBLIC_ROUTES = ["/signIn", "/signUp", "/download", "/android-test", "/forgotPassword", "/resetPassword", "/privacy", "/verifyEmail"];
 const NO_PREFETCH_ROUTES = PUBLIC_ROUTES;
 
 /**
@@ -28,12 +28,18 @@ const NO_PREFETCH_ROUTES = PUBLIC_ROUTES;
  * - /privacy : 로그인한 채로도 읽을 수 있어야 한다.
  * - /verifyEmail : 다른 계정으로 로그인한 기기에서 열어도 인증은 끝나야 한다.
  */
-const STAY_WHEN_AUTHED = ["/download", "/resetPassword", "/privacy", "/verifyEmail"];
+const STAY_WHEN_AUTHED = ["/download", "/android-test", "/resetPassword", "/privacy", "/verifyEmail"];
 
 const normalizePath = (pathname: string) =>
     pathname.length > 1 ? pathname.replace(/\/$/, "") : pathname;
 
 export default function StoreInitializer({ children }: { children: React.ReactNode }) {
+    const pathname = usePathname();
+    if (process.env.NODE_ENV === 'development' && pathname.startsWith('/dev/design')) return <>{children}</>;
+    return <LiveStoreInitializer>{children}</LiveStoreInitializer>;
+}
+
+function LiveStoreInitializer({ children }: { children: React.ReactNode }) {
     const authFetch = useAuthFetch();
     const router = useRouter();
     const pathname = usePathname();

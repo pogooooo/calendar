@@ -127,7 +127,7 @@ export async function refreshCandidates(token: string): Promise<string[]> {
 }
 
 /**
- * 홈 위젯 전용 열쇠 — 할 일 넣기(/api/widget/todo) 하나만 된다.
+ * 홈 위젯 전용 열쇠 — 권한 있는 일정의 조회·편집(/api/widget/todo)에만 쓴다.
  *
  * 위젯은 앱을 열지 않고 서버에 써야 하는데, 앱의 리프레시 토큰은 쓸 때마다 바뀌므로(회전) 위젯이 그걸
  * 쓰면 앱 쪽 토큰이 무효가 돼 로그아웃된다. 그래서 따로 준다. 수명은 리프레시 토큰과 같은 30일이고,

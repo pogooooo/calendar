@@ -58,7 +58,7 @@ export default function CelestialCategoryLayout({
                         );
                     })}
 
-                    <S.DeckAddCard type="button" onClick={onAdd}>
+                    <S.DeckAddCard type="button" onClick={onAdd} aria-label={t.category.newCategory}>
                         {t.category.addCategory}
                     </S.DeckAddCard>
                 </S.CategoryList>

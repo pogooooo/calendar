@@ -25,5 +25,4 @@ export default function NowNextWidget() {
 
 const Wrap = styled.div`
     height: 100%;
-    & * { background-color: transparent; }
 `;

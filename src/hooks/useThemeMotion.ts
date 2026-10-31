@@ -1,6 +1,10 @@
 "use client";
-import { useSyncExternalStore } from 'react';
+import { useContext, useSyncExternalStore } from 'react';
+import {WidgetMotionContext} from '@/components/widget/WidgetMotionContext';
+import {resolveWidgetEffect} from '@/lib/widgetAppearance';
 import useSettingStore from '@/store/useSettingStore';
+import useMobilePresentation from './useMobilePresentation';
+import { resolveThemeMotion } from '@/lib/presentationMotion';
 
 const QUERY = '(prefers-reduced-motion: reduce)';
 let media: MediaQueryList | null = null;
@@ -32,5 +36,8 @@ export function useMotionHeldByOs() {
 export default function useThemeMotion() {
     const motion = useSettingStore(s=>s.motion);
     const held = useMotionHeldByOs();
-    return held ? 'off' : motion;
+    const mobile = useMobilePresentation();
+    const widget = useContext(WidgetMotionContext);
+    // Mobile keeps brief state feedback; ambient motion is independently suppressed.
+    return resolveWidgetEffect(resolveThemeMotion(motion,mobile,held,false),widget);
 }

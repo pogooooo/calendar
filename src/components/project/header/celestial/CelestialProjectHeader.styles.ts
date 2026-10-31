@@ -119,7 +119,8 @@ export const HeaderActionButton = styled.button`
 
     ${MOBILE} {
         padding: 10px 8px;
-        font-size: 0.75rem;
+        min-height:44px;
+        font-size: 0.85rem;
         letter-spacing: 0.02em;
     }
 `;

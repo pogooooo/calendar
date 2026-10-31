@@ -104,6 +104,24 @@ Play용 서명 AAB는 `src-tauri/gen/android/app/build/outputs/bundle/arm64Relea
 
 서비스 계정 API 배포는 구성하지 않았으므로 현재는 로그인된 Chrome Play Console 경로를 사용한다. API 자동화를 새로 연결할 경우 별도 서비스 계정과 최소 앱 권한 설정이 필요하다. [Google Play 출시 트랙 문서](https://developers.google.com/android-publisher/tracks) 참고.
 
+## Android 비공개 테스트 참여 경로
+
+다운로드 페이지의 Android 버튼은 `/download#android-test`로 이동하며 `/android-test`에서도 같은 신청서를 연다. 사이트 내 Google Forms에 이메일·수집 이용 동의를 제출한 뒤 운영자가 Google Play 명단에 직접 등록하고 신청 이메일로 등록 완료만 알린다. 참여·설치 방법은 사이트에 표시하므로 개인별로 따로 설명할 필요는 없다. 등록 완료 이메일을 받은 뒤 같은 Google 계정으로 테스트 참여, 설치를 진행한다. 신청서 열기·신청 접수·테스터 등록·Play 참여 완료를 구분한다.
+
+폼과 응답 시트의 소유 계정은 `halustudioteam@gmail.com`이다. 공개 신청 URL은 `src/lib/androidTesting.ts`에서 관리한다. CRONOS DB에 신청 명단을 추가하지 않는다. 응답 요약 공개·로그인 강제·응답 1회 제한은 끄고 이메일은 응답자 직접 입력으로 받는다. 운영자 새 응답 이메일 알림과 응답 시트를 연결한다.
+
+- 신청 관리: https://docs.google.com/forms/d/1IUorP00C3BB7PXNNfweayWKu_Ai1bF96LKD5v6apz1k/edit#responses
+- 응답 시트: https://docs.google.com/spreadsheets/d/138jYQXdpR4MwGRHHrGnQiEibdNvxyR3zMqMj-Bz5bH0/edit
+- 처리 순서: 응답 확인 → 기존 Alpha의 `품앗이` 이메일 목록에 신청 이메일 추가 → 명단 저장 확인 → 같은 이메일로 등록 완료 회신. `테스터용 부계정들` 목록과 기존 테스터 접근은 보존한다.
+- 신청 철회·테스트 종료 시 Google Forms 응답과 연결 시트 모두에서 해당 신청 정보를 삭제하고, 요청에 따라 Play 테스터 명단도 정리한다. 자동 삭제·자동 승인·자동 안내 메일은 구현하지 않는다.
+- 접수 검증용 `cronos.support+form-test@gmail.com` 응답 1건이 있다. 실제 테스터 신청이 아니므로 등록 처리 대상에서 제외한다.
+
+Android 홈 위젯은 배포 APK 1.3.3에 `빠른 추가` 전용 `QuickAddActivity`가 포함되어 있고, 해당 위젯의 클릭이 이 Activity로 연결됨을 APK 분석으로 확인했다. 새 `WidgetEditActivity`(날짜별 목록·수정·완료)는 작업 코드에만 있으며 배포 APK에는 없다. 인증된 빠른 추가는 앱 본문 대신 런처 위 작성창에서 API로 저장한다. 최초 로그인·위젯 동기화 또는 인증 만료 시에는 앱 인증이 필요하다. 최신 로컬 편집창은 작은 하단 창과 즉시 제목 입력·키보드 표시를 사용하며 Android 컴파일을 확인했다. 실기기 런처·키보드 조작은 별도 검증이 필요하다.
+
+2026-10-31 콘솔 확인: Alpha는 이메일 목록 방식이며 `테스터용 부계정들` 11명과 `품앗이` 2명이 선택되어 있다. 기존 `halustudio_@googlegroups.com` 그룹 가입만으로는 테스트 권한이 생기지 않는다. 배포 시에도 이메일 목록 방식과 기존 두 목록의 선택 상태를 보존한다. 신규 버전 출시와 신청 이메일 등록은 별도 작업이다.
+
+`npm run check:android-test`는 공개 폼·임베드 목적지, Play 계정 전달과 패키지 일치를 검사한다. 실제 폼 접수와 운영자 응답 확인은 Google 화면에서 별도로 확인한다.
+
 ## 배포 후 검증과 복구
 
 `npm run deploy:check -- --live`를 다시 실행한다. 홈페이지·다운로드가 정상이고 `/api/update` 버전·플랫폼이 게시한 릴리스와 같아야 한다. `/api/download?platform=windows&check=1` 및 `platform=android`의 version과 파일명을 확인한다. 설치 파일 서명과 기존 설치 앱의 업데이트 확인, Android 설치/위젯 기본 동작을 가능한 기기에서 확인한다. Play Console은 새 버전과 기존 Alpha 트랙의 상태를 따로 확인한다.

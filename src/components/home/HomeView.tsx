@@ -14,7 +14,8 @@ import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useT } from "@/i18n/useT";
 import { localDateKey, utcDayKey, endDateKey, labelKey, labelDate, wallNow, zonedTime } from "@/lib/dateKey";
 import { isOccurrenceDone, toggleOccurrence, type Occurrence } from "@/lib/todoDone";
-import { Plus, SlidersHorizontal } from "lucide-react";
+import { Plus, SlidersHorizontal, Pencil } from "lucide-react";
+import * as TaskActions from './HomeTaskActions.styles';
 import Arrow from "@/assets/Arrow";
 import DateTimePicker from "@/components/input/dateTimePicker/DateTimePicker";
 import useSwipe from "@/hooks/useSwipe";
@@ -38,6 +39,8 @@ import * as OceanS from './ocean/OceanHome.styles';
 import OceanHomeLayout from './ocean/OceanHomeLayout';
 import useAnniversaryFx from "@/components/fx/useAnniversaryFx";
 import { useListMotion, useSwapMotion } from "@/hooks/useMotion";
+import useMobilePresentation from '@/hooks/useMobilePresentation';
+import MobileHomeLayout from './MobileHomeLayout';
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
 const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
@@ -49,6 +52,7 @@ const pad2 = (n: number) => String(n).padStart(2, "0");
 export default function HomeView() {
     const S = usePickTheme(STYLES);
     const Layout = usePickTheme(LAYOUTS);
+    const mobileApp = useMobilePresentation();
     const { todos, toggleTodo, addTodo } = useTodoStore();
     const { projects, fetchProjects } = useProjectStore();
     const { challenges, fetchChallenges, toggleChallengeCompletion, addChallenge } = useChallengeStore();
@@ -288,10 +292,12 @@ export default function HomeView() {
     const quickCategory = categories[0];
     // "자세히": 적던 제목을 들고 할 일 창(시간·카테고리·반복·메모)을 연다. 빠른 추가는 하루 종일로만 넣기 때문
     const [detailOpen, setDetailOpen] = React.useState(false);
+    const [editingTodo, setEditingTodo] = React.useState<ExpandedTodoType | null>(null);
     // 창도 보고 있는 날(지금 시각)로 연다 — 예전엔 늘 오늘로 열려, 다른 날을 보다 적은 일정이 오늘에 들어갔다.
     // 열 때 한 번 정한다: 열린 동안 값이 바뀌면 할 일 창이 칸을 다시 채워 적던 것이 지워진다
     const [detailDate, setDetailDate] = React.useState<Date | undefined>(undefined);
     const openDetail = () => {
+        setEditingTodo(null);
         // 칸 Date 에 담는다 — 지금 시각도 고른 시간대의 시각으로
         const now = wallNow();
         setDetailDate(new Date(focus.getFullYear(), focus.getMonth(), focus.getDate(), now.getHours(), now.getMinutes()));
@@ -340,7 +346,7 @@ export default function HomeView() {
     };
 
     const regions = {
-        arch: (<S.ArchWrap>
+        arch: (<S.ArchWrap data-home-arch>
                         <MonthArch daysInMonth={daysInMonth} focusIdx={focusIdx} monthLoad={monthLoad} marks={marks} focus={focus} />
 
                         <S.ArchFoot>
@@ -353,7 +359,7 @@ export default function HomeView() {
                             <span className="edge">{daysInMonth}</span>
                         </S.ArchFoot>
                     </S.ArchWrap>),
-        navigation: (<S.DayNav>
+        navigation: (<S.DayNav data-home-nav>
                         <S.NavButton type="button" onClick={() => shiftDay(-1)} aria-label={t.calendar.prevDay}>
                             <Arrow width={34} height={13} isRight={false} />
                         </S.NavButton>
@@ -376,13 +382,13 @@ export default function HomeView() {
                         </S.TodayButton>
                     </S.DayNav>),
         today: (<S.ListCol>
-                            <S.SectionHead ref={todayHeadRef}>
+                            <S.SectionHead data-home-section-head ref={todayHeadRef}>
                                 <i className="hd" />
                                 {isToday ? t.home.today : t.calendar.dayLabelShort(month + 1, focus.getDate())}
                                 <span className="hr" />
                                 <b>{dayTodos.length}</b>
                             </S.SectionHead>
-                            <S.QuickForm onSubmit={handleQuickAdd}>
+                            <S.QuickForm data-home-quick onSubmit={handleQuickAdd}>
                                 <i className="dot" style={quickCategory ? { background: quickCategory.color } : undefined} />
                                 <input
                                     value={quick}
@@ -405,17 +411,22 @@ export default function HomeView() {
 
                             <S.Scroll ref={todayListRef}>
                                 {dayTodos.length === 0 ? (
-                                    <S.Empty><EmptyArt kind="todos" />{isToday ? t.home.noTodayTodos : t.home.noDayTodos}</S.Empty>
+                                    <S.Empty data-home-empty><EmptyArt kind="todos" />{isToday ? t.home.noTodayTodos : t.home.noDayTodos}</S.Empty>
                                 ) : (
                                     dayTodos.map(todo => {
                                         const done = isDoneOn(todo);
                                         // 그날 시작하는 시각 일정만 (하루 종일·전날부터 이어진 것은 비운다)
                                         const at = !todo.isAllDay && todo.startAt && localDateKey(todo.startAt) === focusKey ? clock.format(new Date(todo.startAt)) : null;
                                         return (
-                                            <S.Row key={todo.id} type="button" aria-pressed={done} data-done={done ? "" : undefined} $done={done} onClick={() => handleToggleTodo(todo)}>
-                                                <S.Mark $on={done} data-motion-mark="" />
-                                                <span className="name">{todo.title}</span>
-                                                {at && <em>{at}</em>}
+                                            <S.Row as="div" data-home-row key={todo.id} data-done={done ? "" : undefined} $done={done} style={{padding:0,gap:0,cursor:'default'}}>
+                                                <TaskActions.Check type="button" aria-label={`${done ? t.interaction.undo : t.menu.done}: ${todo.title}`} aria-pressed={done} onClick={() => handleToggleTodo(todo)}>
+                                                    <S.Mark $on={done} data-motion-mark="" />
+                                                </TaskActions.Check>
+                                                <TaskActions.Open type="button" aria-label={`${t.menu.edit}: ${todo.title}`} onClick={()=>{setEditingTodo(todo.originalTodo ?? todo);setDetailOpen(true);}}>
+                                                    <span className="name">{todo.title}</span>
+                                                    {at && <em>{at}</em>}
+                                                    <Pencil size={14} aria-hidden="true" />
+                                                </TaskActions.Open>
                                             </S.Row>
                                         );
                                     })
@@ -423,7 +434,7 @@ export default function HomeView() {
                             </S.Scroll>
                         </S.ListCol>),
         upcoming: (<S.ListCol>
-                            <S.SectionHead>
+                            <S.SectionHead data-home-section-head>
                                 <i className="hd" />
                                 {t.home.thisWeek}
                                 <span className="hr" />
@@ -438,7 +449,7 @@ export default function HomeView() {
                                         const done = isDoneOn(todo);
                                         return (
                                             // 그 날로 데려간다. 그냥 /calendar 로 보내면 오늘이 열려 다시 찾아야 한다.
-                                            <S.Row key={todo.id} type="button" $done={done} $soft onClick={() => router.push(`/calendar?date=${key}`)}>
+                                            <S.Row data-home-row key={todo.id} type="button" $done={done} $soft onClick={() => router.push(`/calendar?date=${key}`)}>
                                                 <S.Mark $on={done} />
                                                 <span className="name">{todo.title}</span>
                                                 <em>{t.calendar.days[labelDate(key).getDay()]}</em>
@@ -569,10 +580,11 @@ export default function HomeView() {
         dialogs: (<><TodoModal
                 isOpen={detailOpen}
                 onClose={closeDetail}
+                todo={editingTodo}
                 categories={categories}
                 initialTitle={quick}
                 selectedDate={detailDate}
-                onSaved={() => setQuick("")}
+                onSaved={() => { if(!editingTodo) setQuick(""); }}
             />
 
             <ChallengeModal
@@ -585,5 +597,5 @@ export default function HomeView() {
         </>),
         listProps: daySwipe,
     };
-    return <Layout {...regions} />;
+    return mobileApp ? <MobileHomeLayout {...regions} /> : <Layout {...regions} />;
 }

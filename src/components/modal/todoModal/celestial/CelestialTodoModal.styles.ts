@@ -27,6 +27,7 @@ export const FormWrapper = styled.form`
 
 export const Header = styled.div`
     display: flex;
+    flex-shrink: 0;
     justify-content: space-between;
     align-items: center;
     padding: 20px 24px 12px 24px;
@@ -91,6 +92,8 @@ export const ScrollBody = styled.div`
     gap: 4px;
     overflow-y: auto;
     background-color: ${(props) => props.theme.colors.surface};
+    /* A stacked date field needs its full label + control height, even in a short sheet. */
+    & > * { flex-shrink: 0; }
 
     ${MOBILE} {
         flex: 1;
@@ -401,7 +404,8 @@ export const ToggleSwitch = styled.label`
     min-width: 60px !important;
     height: 22px;
 
-    input { opacity: 0; width: 0; height: 0; }
+    input { position:absolute; inset:0; opacity:0; width:100%; height:100%; margin:0; cursor:pointer; z-index:1; }
+    &:has(input:focus-visible) { outline:2px solid ${(p)=>p.theme.colors.primary}; outline-offset:4px; }
 
     .slider {
         position: absolute;
@@ -429,6 +433,7 @@ export const ToggleSwitch = styled.label`
 
 export const Footer = styled.div`
     display: flex;
+    flex-shrink: 0;
     justify-content: flex-end;
     gap: 10px;
     padding: 16px 24px;

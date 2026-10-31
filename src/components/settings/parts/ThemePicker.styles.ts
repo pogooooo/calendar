@@ -11,7 +11,13 @@ import { MOBILE } from "@/styles/breakpoints";
  */
 export const GalleryFit = styled.div`
     & > [role="radiogroup"] { grid-template-columns: repeat(auto-fill, minmax(188px, 1fr)); }
-    ${MOBILE} { & > [role="radiogroup"] { grid-template-columns: none; } }
+    ${MOBILE} {
+        && > [role="radiogroup"] {
+            display:grid; grid-auto-flow:row; grid-template-columns:repeat(2,minmax(0,1fr));
+            grid-auto-columns:auto; gap:10px; overflow:visible; padding:0;
+        }
+        [data-theme-tile] > :first-child { height:60px; }
+    }
 `;
 
 /** 타일 아래 줄 오른쪽 끝의 작은 오브제 — 줄 높이를 거의 늘리지 않게 위아래로 조금 걸친다. 폰의 좁은 타일에서는 빼고 무대에만 */

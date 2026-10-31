@@ -68,7 +68,7 @@ const ProjectBoardView = React.forwardRef<HTMLDivElement, ProjectBoardProps>(({
     useSwapMotion(picked, () => Array.from(gridRef.current?.children ?? []), { order: COLUMN_ORDER });
 
     return (
-        <S.SectionWrapper ref={ref} style={{ flex }} $mobileHeight="420px">
+        <S.SectionWrapper ref={ref} style={{ flex }}>
             <S.SectionTitle>{tr.board}</S.SectionTitle>
 
             {isMobile && (

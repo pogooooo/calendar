@@ -23,7 +23,8 @@ export default function CategoryAddModalView({
                                                       isSubmitting, handleSubmit
                                                   }: CategoryAddThemeProps) {
     const S = usePickTheme(STYLES);
-    const f = useT().form;
+    const t = useT();
+    const f = t.form;
 
     return (
         <BaseModal isOpen={isOpen} onClose={onClose} maxWidth="400px">
@@ -33,11 +34,13 @@ export default function CategoryAddModalView({
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         placeholder={f.newCategoryName}
+                        aria-label={f.newCategoryName}
+                        data-autofocus
                         required
                         className="title-input"
                         autoFocus
                     />
-                    <button type="button" className="close-btn" onClick={onClose}>
+                    <button type="button" className="close-btn" onClick={onClose} aria-label={t.interaction.dismiss}>
                         <X size={26} />
                     </button>
                 </S.Header>
@@ -49,6 +52,7 @@ export default function CategoryAddModalView({
                             <span className="hex-text">{color.toUpperCase()}</span>
                             <input
                                 type="color"
+                                aria-label={f.color}
                                 value={color}
                                 onChange={(e) => setColor(e.target.value)}
                             />
@@ -58,6 +62,7 @@ export default function CategoryAddModalView({
                     <S.MemoRow>
                         <label><AlignLeft size={16} /> {f.description}</label>
                         <textarea
+                            aria-label={f.description}
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                             placeholder={f.categoryDescPlaceholder}

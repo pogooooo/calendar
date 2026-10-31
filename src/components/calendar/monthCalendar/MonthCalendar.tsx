@@ -42,6 +42,8 @@ export interface MonthProps extends Omit<React.HTMLAttributes<HTMLDivElement>, '
      * 월간으로 돌아왔는데 9월이 떠 있는 일을 막는다.
      */
     followSelectedDate?: boolean;
+    visibleMonth?: Date;
+    onVisibleMonthChange?: (date: Date) => void;
 }
 
 export interface MonthThemeProps {
@@ -94,10 +96,19 @@ export interface MonthThemeProps {
 }
 
 const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
-    ({ asChild = false, todos = [], categories = [], selectedDate, onDateChange, followSelectedDate = false, ...props }, ref) => {
+    ({ asChild = false, todos = [], categories = [], selectedDate, onDateChange, followSelectedDate = false, visibleMonth, onVisibleMonthChange, ...props }, ref) => {
+
         // 칸 Date — 이 기기 시각의 연·월·일이 고른 시간대의 날이다 (src/lib/dateKey.ts 의 labelKey)
-        const [currentDate, setCurrentDate] = React.useState(
+        const [localMonth, setLocalMonth] = React.useState(
             () => (followSelectedDate && selectedDate ? new Date(selectedDate) : wallNow()));
+        const currentDate = visibleMonth ?? localMonth;
+        const currentRef=React.useRef(currentDate);
+        currentRef.current=currentDate;
+        const setCurrentDate = React.useCallback((next: Date | ((date: Date) => Date)) => {
+            const date = typeof next === 'function' ? next(currentRef.current) : next;
+            if (onVisibleMonthChange) onVisibleMonthChange(date);
+            else setLocalMonth(date);
+        },[onVisibleMonthChange]);
         const [direction, setDirection] = React.useState(0);
         /**
          * 끈 카테고리를 기억한다 (켠 것이 아니라). 예전엔 카테고리가 처음 왔을 때 전부 켜 둔 목록을 들고 있어서,
@@ -255,8 +266,9 @@ const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
         const isOnToday = React.useMemo(() => {
             const today = wallNow();
             return currentDate.getFullYear() === today.getFullYear()
-                && currentDate.getMonth() === today.getMonth();
-        }, [currentDate]);
+                && currentDate.getMonth() === today.getMonth()
+                && (!selectedDate || labelKey(selectedDate) === todayKey);
+        }, [currentDate, selectedDate, todayKey]);
 
         // 고른 날짜가 다른 달로 넘어가면 보여 주는 달도 따라간다 — 넘기는 쪽도 함께(앞 달이면 왼쪽에서 들어온다)
         const shownMonth = React.useRef(currentDate);
@@ -269,7 +281,7 @@ const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
             if (from === to) return;
             setDirection(to < from ? -1 : 1);
             setCurrentDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1));
-        }, [followSelectedDate, selectedDate]);
+        }, [followSelectedDate, selectedDate, setCurrentDate]);
 
         const toggleCategory = (categoryId: string) => {
             setHiddenCategoryIds(prev =>

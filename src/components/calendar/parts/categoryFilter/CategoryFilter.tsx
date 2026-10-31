@@ -8,6 +8,7 @@ import { useTheme } from "styled-components";
 import { CategoryType } from "@/types/calendar";
 import { useT } from "@/i18n/useT";
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
+import useThemeMotion from '@/hooks/useThemeMotion';
 import * as CelestialS from "./celestial/CategoryFilter.styles";
 import * as MapleS from "./maple/CategoryFilter.styles";
 import * as OceanS from './ocean/CategoryFilter.styles';
@@ -40,6 +41,18 @@ export default function CategoryFilter({
     const anchorRef = React.useRef<HTMLDivElement>(null);
     const theme = useTheme();
     const t = useT();
+    const motionLevel=useThemeMotion();
+    React.useEffect(()=>{
+        if(!isOpen) return;
+        const onKey=(event:KeyboardEvent)=>{
+            if(event.key==='Escape' && !event.defaultPrevented) {
+                event.preventDefault();setIsOpen(false);
+                anchorRef.current?.querySelector<HTMLButtonElement>('button')?.focus({preventScroll:true});
+            }
+        };
+        window.addEventListener('keydown',onKey);
+        return ()=>window.removeEventListener('keydown',onKey);
+    },[isOpen]);
 
     React.useLayoutEffect(() => {
         if (!isOpen || !anchorRef.current) return;
@@ -62,12 +75,14 @@ export default function CategoryFilter({
                         <S.SettingsBackdrop onClick={() => setIsOpen(false)} />
 
                         <S.SettingsPopover
+                            role="group"
+                            aria-label={t.popup.display}
                             as={motion.div}
                             $openUp={openUp}
-                            initial={{ opacity: 0, y: openUp ? 8 : -8 }}
+                            initial={motionLevel==='off'?false:{ opacity: 0, y: motionLevel==='full'?(openUp ? 8 : -8):0 }}
                             animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: openUp ? 8 : -8 }}
-                            transition={{ duration: 0.16, ease: "easeOut" }}
+                            exit={{ opacity: 0, y: motionLevel==='full'?(openUp ? 8 : -8):0 }}
+                            transition={{ duration: motionLevel==='off'?0:0.16, ease: "easeOut" }}
                         >
                             <div className="popover-content">
                                 {hasExtras && <S.PopoverLabel>{t.popup.display}</S.PopoverLabel>}

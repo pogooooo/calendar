@@ -1,10 +1,11 @@
 "use client";
 /**
- * Ocean 위젯의 바탕 무늬 — 앱의 물을 유리 너머로 보는 듯: 물빛(위는 청록, 아래로 얕아져 모래빛), 물바닥에 어른거리는 빛 그물,
+ * Ocean 위젯의 장식 — 물바닥에 어른거리는 빛 그물,
  * 위에서 비스듬히 내려오는 햇살. 빛 그물은 앱의 물 셰이더와 같은 식으로 멈춘 한 장을 그린다(caustic.ts) —
  * 예전의 SVG 난류는 구겨진 비닐처럼 보였다(사용자: "물결 무늬가 부자연스러워"). 떠 있던 유리 방울은 걷었다("물방울 지워줘").
  * 멈춘 그림이다 — 위젯은 투명 창이라 끝없이 움직이면 깜빡인다(BUGS 1.2.0). 커서가 들어오면 빛 그물이 조금 흘렀다 돌아온다
- * (useHoverOnce — 다시 그리지 않고 겹 하나를 옮길 뿐). 글 뒤에 깔리고 누르는 것은 받지 않는다.
+ * (useHoverOnce — 다시 그리지 않고 겹 하나를 옮길 뿐). 물빛 면은 BackgroundSurface에서 따로 조절한다.
+ * 글 뒤에 깔리고 누르는 것은 받지 않는다.
  */
 import { useEffect, useRef } from "react";
 import { useTheme } from "styled-components";
@@ -50,7 +51,6 @@ export default function OceanWidgetDecor({ kind }: { kind: WidgetKind; locked: b
 
     return (
         <S.Decor ref={ref} aria-hidden="true" data-ambient="widget-decor">
-            <span className="tint" />
             <canvas ref={canvas} className="caustics" />
             <span className="rays" />
         </S.Decor>

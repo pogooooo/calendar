@@ -7,23 +7,22 @@
  * 위젯 창에서는 ThemeAtmosphere 가 아예 건너뛰고, 로그인 쪽 화면은 그림판(MapleAuthPanel)이 제 가지를 띄우므로 여기서는 비운다.
  */
 import { usePathname } from "next/navigation";
+import Image from 'next/image';
 import * as S from "./MapleAtmosphere.styles";
 import MapleWind from "./MapleWind";
 
-const LEAF = 'M24 4l5 12 9-5-3 14 10 2-13 8 1 12-9-6-9 6 1-12-13-8 10-2-3-14 9 5Z';
+const LEAVES=['red','orange','yellow','brown','orange'];
 /** 그림판이 제 가지를 그리는 화면 */
 const AUTH = ["/signIn", "/signUp", "/forgotPassword", "/resetPassword", "/verifyEmail"];
 
 export default function MapleAtmosphere() {
     const pathname = usePathname() ?? "";
-    // A quiet paper surface belongs behind the notebook calendar.
-    if (pathname.startsWith('/calendar')) return null;
     if (AUTH.some((p) => pathname.startsWith(p))) return null;
     return <S.Garden aria-hidden="true" data-ambient="maple">
         <MapleWind
             variant="screen"
-            fallback={Array.from({length:5},(_,i)=><span className={`fall leaf-${i}`} key={i}>
-                <svg className="leaf" viewBox="0 0 48 54"><path d={LEAF} /><path className="vein" d="M24 17v36m0-24-12-7m12 13 13-9" /></svg>
+            fallback={LEAVES.map((leaf,i)=><span className={`fall leaf-${i}`} key={i}>
+                <Image className="leaf" src={`/themes/maple/leaf-${leaf}.webp`} alt="" width={64} height={64} unoptimized loading="eager"/>
             </span>)}
         />
         <div className="paper-light" />

@@ -1,11 +1,11 @@
 import * as GemS from "./gem/GemBaseModal.styles";
 import * as React from "react";
 import { createPortal } from "react-dom";
-import { AnimatePresence, useReducedMotion, type MotionProps } from "framer-motion";
+import { AnimatePresence, type MotionProps } from "framer-motion";
 import { ThemeProvider, DefaultTheme } from "styled-components";
 import { MOBILE_BREAKPOINT } from "@/styles/breakpoints";
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
-import useThemeMotion from "@/hooks/useThemeMotion";
+import useThemeMotion, { useMotionHeldByOs } from "@/hooks/useThemeMotion";
 import * as CelestialS from "./celestial/CelestialBaseModal.styles";
 import * as MapleS from "./maple/MapleBaseModal.styles";
 import * as OceanS from './ocean/OceanBaseModal.styles';
@@ -68,7 +68,7 @@ export default function BaseModal({ isOpen, onClose, children, maxWidth = "400px
     const S = usePickTheme(STYLES);
     const themedMotion = usePickTheme(MOTION);
     const containerRef = React.useRef<HTMLDivElement>(null);
-    const reducedMotion = useReducedMotion();
+    const reducedMotion = useMotionHeldByOs();
     // 움직임 설정 — 몸짓의 모양만 고른다(아래 효과들의 의존성에는 넣지 않는다: 초점 효과는 열릴 때만 돈다)
     const motionLevel = useThemeMotion();
     const closeRef = React.useRef(onClose);
@@ -122,9 +122,10 @@ export default function BaseModal({ isOpen, onClose, children, maxWidth = "400px
         const container = containerRef.current;
         if (!container) return;
         // Focusing the sheet itself on phones avoids opening the keyboard before the user chooses a field.
-        container.focus({ preventScroll: true });
+        const initialField = !isMobile ? container.querySelector<HTMLElement>('[data-autofocus]') : null;
+        (initialField ?? container).focus({ preventScroll: true });
         const handleKeyDown = (e: KeyboardEvent) => {
-            const dialogs = document.querySelectorAll('[role="dialog"]');
+            const dialogs = document.querySelectorAll('[role="dialog"], [role="alertdialog"]');
             if (e.defaultPrevented || dialogs[dialogs.length - 1] !== container) return;
             if (e.key === 'Escape') { e.preventDefault(); closeRef.current(); }
         };
@@ -133,7 +134,7 @@ export default function BaseModal({ isOpen, onClose, children, maxWidth = "400px
             window.removeEventListener('keydown', handleKeyDown);
             if (previousFocus?.isConnected) previousFocus.focus({ preventScroll: true });
         };
-    }, [isOpen]);
+    }, [isOpen, isMobile]);
 
     // 이름표만 따로 맞춘다 — 초점은 건드리지 않는다
     React.useEffect(() => {

@@ -1,62 +1,66 @@
-import { NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
-import { verifyWidgetToken } from "@/lib/jwt";
-import { categoryAccessWhere, checkCategoryPermission } from "@/lib/apiAuth";
-import { CreateTodoSchema } from "@/lib/schema";
-import { checkRateLimit } from "@/lib/rateLimiter";
+import { NextResponse } from 'next/server';
+import prisma from '@/lib/prisma';
+import { authorizeWidget } from '@/lib/widgetAuth';
+import { categoryAccessWhere } from '@/lib/apiAuth';
+import { readTodos, createTodo, updateTodo, deleteTodo } from '@/lib/todoHandlers';
+import { widgetTodos } from '@/lib/widgetTodoProjection';
+import { zonedTimeToDate, zonedDateKey, addDaysToKey, isValidTimeZone } from '@/lib/timezone';
+import type { TodoType } from '@/types';
 
-/**
- * 홈 위젯에서 앱을 열지 않고 할 일 하나를 넣는다 (안드로이드의 QuickAddActivity 가 부른다).
- *
- * 열쇠는 위젯 전용(/api/widget/token)이라 이 길 말고는 못 쓴다. 그 사용자가 모든 기기에서 로그아웃했거나
- * (살아 있는 리프레시 토큰이 없으면) 그 뒤로 비밀번호가 바뀌었으면(판 번호가 다르면) 열쇠가 아직 안 끝났어도 받지 않는다
- * — 다시 로그인하라는 뜻의 401. 예전엔 비밀번호를 바꿔도 흘러나간 열쇠가 30일 동안 들었다.
- * 카테고리를 안 주거나 못 쓰는 것이면 앱의 빠른 추가처럼 첫 카테고리에 넣는다.
- */
-export const POST = async (request: Request) => {
+const jsonError = () => NextResponse.json({ message: '잘못된 요청입니다.' }, { status: 400 });
+async function run(request: Request, operation: (userId: string) => Promise<NextResponse>) {
     try {
-        const token = request.headers.get("Authorization")?.split(" ")[1];
-        const claim = token ? await verifyWidgetToken(token) : null;
-        if (!claim) return NextResponse.json({ message: "앱을 열어 다시 로그인해 주세요." }, { status: 401 });
-        const userId = claim.userId;
-        const owner = await prisma.user.findUnique({ where: { id: userId }, select: { tokenVersion: true } });
-        if (!owner || owner.tokenVersion !== claim.version) return NextResponse.json({ message: "앱을 열어 다시 로그인해 주세요." }, { status: 401 });
-
-        const rl = await checkRateLimit(`widget-todo:${userId}`, { maxAttempts: 30, windowMs: 60_000, blockMs: 60_000 });
-        if (!rl.allowed) return NextResponse.json({ message: "잠시 뒤에 다시 시도해 주세요." }, { status: 429 });
-
-        const live = await prisma.refreshToken.count({ where: { userId, expires: { gt: new Date() } } });
-        if (live === 0) return NextResponse.json({ message: "앱을 열어 다시 로그인해 주세요." }, { status: 401 });
-
-        const body = await request.json().catch(() => null) as Record<string, unknown> | null;
-        if (!body) return NextResponse.json({ message: "잘못된 요청입니다." }, { status: 400 });
-
-        let categoryId = typeof body.categoryId === "string" ? body.categoryId : "";
-        if (!categoryId || !(await checkCategoryPermission(categoryId, userId))) {
-            const first = await prisma.category.findFirst({ where: categoryAccessWhere(userId), select: { id: true } });
-            if (!first) return NextResponse.json({ message: "앱에서 카테고리를 먼저 만들어 주세요." }, { status: 400 });
-            categoryId = first.id;
-        }
-
-        const parsed = CreateTodoSchema.safeParse({ ...body, categoryId });
-        if (!parsed.success) return NextResponse.json({ message: parsed.error.issues[0].message }, { status: 400 });
-        const { title, memo, startAt, endAt, isAllDay, location } = parsed.data;
-
-        const todo = await prisma.todo.create({
-            data: {
-                title,
-                categoryId,
-                memo,
-                startAt: startAt ? new Date(startAt) : null,
-                endAt: endAt ? new Date(endAt) : null,
-                isAllDay: isAllDay ?? false,
-                location,
-            },
-            include: { completions: true },
-        });
-        return NextResponse.json(todo);
+        const user = await authorizeWidget(request);
+        return typeof user === 'string' ? await operation(user) : user;
     } catch (error) {
-        console.error("[WIDGET_TODO_POST_ERROR]", error);
-        return NextResponse.json({ message: "서버 오류 발생" }, { status: 500 });
+        console.error('[WIDGET_TODO_ERROR]', error);
+        return NextResponse.json({ message: '서버 오류 발생' }, { status: 500 });
     }
-};
+}
+export const GET = (request: Request) => run(request, async userId => {
+    const params = new URL(request.url).searchParams;
+    if (params.has('id')) return readTodos(request, userId);
+    const timeZone = params.get('timeZone') ?? 'Asia/Seoul';
+    if (!isValidTimeZone(timeZone)) return jsonError();
+    const day = params.get('date') ?? zonedDateKey(new Date(), timeZone);
+    const instant = new Date(day+'T00:00:00Z');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || Number.isNaN(instant.getTime()) || instant.toISOString().slice(0,10) !== day) return jsonError();
+    const categories = await prisma.category.findMany({ where: categoryAccessWhere(userId), select: { id: true, name: true, color: true } });
+    // Fetch the same authorized sources as the app; no client-supplied category can widen access.
+    const response = await readTodos(new Request(new URL('/api/todo', request.url)), userId);
+    if (!response.ok) return response;
+    const todos = await response.json() as TodoType[];
+    const start = zonedTimeToDate(day, 0, 0, timeZone)!;
+    const end = new Date(zonedTimeToDate(addDaysToKey(day,1),0,0,timeZone)!.getTime()-1);
+    const today = zonedDateKey(new Date(), timeZone);
+    const first = today.slice(0,7)+'-01';
+    const forecastEnd = addDaysToKey(today,45);
+    const forecastLimit = new Date(zonedTimeToDate(addDaysToKey(forecastEnd,1),0,0,timeZone)!.getTime()-1);
+    return NextResponse.json({ date: day, timeZone, categories,
+        items: widgetTodos(todos,categories,start,end,timeZone),
+        snapshotTodos: widgetTodos(todos,categories,zonedTimeToDate(first,0,0,timeZone)!,forecastLimit,timeZone),
+    }, { headers: { 'Cache-Control': 'no-store' } });
+});
+export const POST = (request: Request) => run(request, async userId => {
+    const body = await request.json().catch(() => null);
+    if (!body || typeof body !== 'object' || Array.isArray(body)) return jsonError();
+    if (body.requestId !== undefined && (typeof body.requestId !== 'string' || !/^[a-f\d]{8}-(?:[a-f\d]{4}-){3}[a-f\d]{12}$/i.test(body.requestId))) return jsonError();
+    if (body.startAt && body.endAt && Date.parse(body.endAt) < Date.parse(body.startAt)) return jsonError();
+    if (!body.categoryId) body.categoryId = (await prisma.category.findFirst({ where: categoryAccessWhere(userId), select: { id: true } }))?.id;
+    return createTodo(new Request(request.url, { method:'POST', body:JSON.stringify(body) }), userId, body.requestId);
+});
+export const PATCH = (request: Request) => run(request, async userId => {
+    const body = await request.json().catch(() => null);
+    if (!body || typeof body !== 'object' || Array.isArray(body)) return jsonError();
+    if (body.targetDate !== undefined && typeof body.completed !== 'boolean') return jsonError();
+    if (body.startAt && body.endAt && Date.parse(body.endAt) < Date.parse(body.startAt)) return jsonError();
+    return updateTodo(new Request(request.url,{ method:'PATCH', body:JSON.stringify(body) }),userId);
+});
+export const DELETE = (request: Request) => run(request, userId => {
+    const day = new URL(request.url).searchParams.get('targetDate');
+    if (day !== null) {
+        const instant = new Date(day+'T00:00:00Z');
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || Number.isNaN(instant.getTime()) || instant.toISOString().slice(0,10) !== day) return Promise.resolve(jsonError());
+    }
+    return deleteTodo(request,userId);
+});

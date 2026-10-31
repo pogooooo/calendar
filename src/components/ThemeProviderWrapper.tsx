@@ -18,6 +18,11 @@ import ThemeAtmosphere from './ambient/ThemeAtmosphere';
 import FxStage from './fx/FxStage';
 import { MotionConfig } from 'framer-motion';
 import InterfaceMotion from './transition/InterfaceMotion';
+import useMobilePresentation from '@/hooks/useMobilePresentation';
+import usePresentation from '@/hooks/usePresentation';
+import PresentationDetails from '@/styles/PresentationDetails.styles';
+import { useMotionHeldByOs } from '@/hooks/useThemeMotion';
+import { resolveThemeMotion } from '@/lib/presentationMotion';
 
 /** 갈래가 화면 전체에 얹는 한 겹 (종이결 같은 것). 없는 갈래는 아무것도 안 얹는다. */
 const GROUNDS: Partial<Record<ThemeFamily, React.ComponentType>> = { maple: MapleGround, celestial: CelestialGround, ocean: OceanGround , gem: GemGround };
@@ -32,12 +37,20 @@ export default function ThemeProviderWrapper({ children }: { children: React.Rea
     const motion = useSettingStore((state) => state.motion);
     const motionOverOs = useSettingStore((state) => state.motionOverOs);
     const locale = useSettingStore((state) => state.locale);
+    const mobile = useMobilePresentation();
+    const presentation = usePresentation();
+    const heldByOs = useMotionHeldByOs();
+
+    useEffect(() => {
+        document.documentElement.dataset.presentation = presentation;
+        return () => { delete document.documentElement.dataset.presentation; };
+    }, [presentation]);
 
     useEffect(() => {
         const root = document.documentElement;
         const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
         // 기기의 동작 줄이기를 따른다 — 설정에서 '그래도 움직이기'를 켰으면 고른 값 그대로
-        const syncMotion = () => { root.dataset.themeMotion = preference.matches && !motionOverOs ? 'off' : motion; };
+        const syncMotion = () => { root.dataset.themeMotion = resolveThemeMotion(motion,mobile,preference.matches,motionOverOs); };
         const syncVisibility = () => { root.toggleAttribute('data-page-hidden', document.hidden); };
         syncMotion(); syncVisibility();
         preference.addEventListener('change', syncMotion);
@@ -48,7 +61,7 @@ export default function ThemeProviderWrapper({ children }: { children: React.Rea
             delete root.dataset.themeMotion;
             root.removeAttribute('data-page-hidden');
         };
-    }, [motion, motionOverOs]);
+    }, [motion, motionOverOs, mobile]);
 
     /**
      * 테마 이름 규칙: 갈래 이름이 밝은 벌, 거기에 '-어두운벌' 을 붙인 것이 어두운 벌이다.
@@ -109,8 +122,9 @@ export default function ThemeProviderWrapper({ children }: { children: React.Rea
 
     return (
         <ThemeProvider theme={theme}>
-            <MotionConfig reducedMotion={motion === 'off' ? 'always' : 'user'}>
+            <MotionConfig reducedMotion={motion === 'off' || heldByOs ? 'always' : 'never'}>
             <GlobalScrollbar />
+            <PresentationDetails />
             {Ground && <Ground />}
             <GlobalTypography
                 $sizePx={getFontSize(fontSizeKey).px}

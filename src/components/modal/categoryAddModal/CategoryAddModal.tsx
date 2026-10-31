@@ -4,6 +4,7 @@ import * as React from "react";
 import CategoryAddModalView from "./CategoryAddModalView";
 import { useDialog } from "@/components/dialog/DialogProvider";
 import { useT } from "@/i18n/useT";
+import useDraftClose from '@/hooks/useDraftClose';
 
 export interface CategoryAddModalProps {
     isOpen: boolean;
@@ -24,18 +25,23 @@ export interface CategoryAddThemeProps extends CategoryAddModalProps {
 }
 
 export default function CategoryAddModal(props: CategoryAddModalProps) {
-    const { isOpen, onClose, onAdd } = props;    const dialog = useDialog();
+    const { isOpen, onClose, onAdd } = props;
+    const dialog = useDialog();
     const t = useT();
 
     const [name, setName] = React.useState("");
     const [color, setColor] = React.useState("");
     const [description, setDescription] = React.useState("");
     const [isSubmitting, setIsSubmitting] = React.useState(false);
+    const initialColor=React.useRef('');
+    const close=useDraftClose(onClose,()=>!!(name.trim() || description || color!==initialColor.current),isSubmitting);
 
     React.useEffect(() => {
         if (isOpen) {
             setName("");
-            setColor('#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0'));
+            const color='#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+            initialColor.current=color;
+            setColor(color);
             setDescription("");
             setIsSubmitting(false);
         }
@@ -64,6 +70,7 @@ export default function CategoryAddModal(props: CategoryAddModalProps) {
 
     const themeProps: CategoryAddThemeProps = {
         ...props,
+        onClose:()=>{void close();},
         name, setName,
         color, setColor,
         description, setDescription,

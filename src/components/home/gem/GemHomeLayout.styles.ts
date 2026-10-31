@@ -32,4 +32,5 @@ export const Arch = styled.svg`
     color:${({theme})=>theme.colors.primary};
     .gold { color:${({theme})=>theme.colors.accent}; }
     text { fill:currentColor; font: 13px ${({theme})=>theme.fonts.numeral}; }
+    @media(max-width:768px) { height:72px; }
 `;

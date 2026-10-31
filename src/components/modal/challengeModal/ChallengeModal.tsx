@@ -5,6 +5,7 @@ import ChallengeModalView from "./ChallengeModalView";
 import { CategoryType } from "@/store/useCategoryStore";
 import { useDialog } from "@/components/dialog/DialogProvider";
 import { useT } from "@/i18n/useT";
+import useDraftClose from '@/hooks/useDraftClose';
 
 export interface ChallengeData {
     title: string;
@@ -38,7 +39,8 @@ export interface ChallengeThemeProps extends ChallengeModalProps {
 }
 
 export default function ChallengeModal(props: ChallengeModalProps) {
-    const { isOpen, categories, initialData, onSave } = props;    const dialog = useDialog();
+    const { isOpen, categories, initialData, onSave } = props;
+    const dialog = useDialog();
     const t = useT();
 
     const [title, setTitle] = React.useState("");
@@ -47,6 +49,9 @@ export default function ChallengeModal(props: ChallengeModalProps) {
     const [targetCount, setTargetCount] = React.useState<string>("");
     const [categoryId, setCategoryId] = React.useState<string>("");
     const [isSubmitting, setIsSubmitting] = React.useState(false);
+    const close=useDraftClose(props.onClose,()=> initialData
+        ? title!==initialData.title || description!==(initialData.description??'') || interval!==initialData.interval || targetCount!==(initialData.targetCount?String(initialData.targetCount):'') || categoryId!==initialData.categoryId
+        : !!(title.trim() || description || interval!==1 || targetCount || categoryId!==(categories[0]?.id??'')),isSubmitting);
 
     // 칸은 열릴 때 한 번만 채운다 — 예전엔 categories·initialData 의 참조가 바뀔 때마다(다시 읽기만 해도) 치던 제목이 지워졌다
     const wasOpen = React.useRef(false);
@@ -101,6 +106,7 @@ export default function ChallengeModal(props: ChallengeModalProps) {
 
     const themeProps: ChallengeThemeProps = {
         ...props,
+        onClose:()=>{void close();},
         title, setTitle,
         description, setDescription,
         interval, setInterval,

@@ -3,6 +3,7 @@
 import * as GemS from "./gem/GemCategory.styles";
 import React from "react";
 import SecondaryButton from "@/components/button/secondary/SecondaryButton";
+import BaseModal from '@/components/modal/baseModal/BaseModal';
 import InlineError from "@/components/error/inlineError/InlineError";
 import { CategoryThemeProps } from "./CategoryPage";
 import { useT } from "@/i18n/useT";
@@ -246,9 +247,12 @@ export default function CategoryView(props: CategoryThemeProps) {
                                 : (todo.completions ?? []).some(c => utcDayKey(c.targetDate) === todayKey);
                             const [y, m, d] = occKey.split("-").map(Number);
                             return (
-                            <S.TodoCard key={todo.id} $isDone={isDone} data-done={isDone ? "" : undefined} onClick={() => handleEditTodo(todo)}>
+                            <S.TodoCard key={todo.id} $isDone={isDone} data-done={isDone ? "" : undefined}>
                                 <button
                                     className="check-btn"
+                                    type="button"
+                                    aria-label={`${isDone?t.interaction.undo:t.menu.done}: ${todo.title}`}
+                                    aria-pressed={isDone}
                                     data-motion-mark=""
                                     onClick={(e) => {
                                         e.stopPropagation();
@@ -260,15 +264,17 @@ export default function CategoryView(props: CategoryThemeProps) {
                                     {isDone ? '✦' : ''}
                                 </button>
 
-                                <div className="todo-info">
+                                <button type="button" className="todo-info" aria-label={`${t.menu.edit}: ${todo.title}`} onClick={()=>handleEditTodo(todo)} style={{border:0,background:'none',font:'inherit',textAlign:'left',cursor:'pointer',padding:0}}>
                                     <span className="title">{todo.title}</span>
                                     <span className="date">
                                         {`${todo.startAt ? t.calendar.dayTitle(y, m, d) : t.category.noDate}${todo.repeat > 0 ? ` (↻ ${todo.repeat}${t.todo.perNDays})` : ''}`}
                                     </span>
-                                </div>
+                                </button>
 
                                 <button
                                     className="delete-btn"
+                                    type="button"
+                                    aria-label={`${t.menu.delete}: ${todo.title}`}
                                     title={t.todo.delete}
                                     onClick={async (e) => {
                                         e.stopPropagation();
@@ -307,9 +313,8 @@ export default function CategoryView(props: CategoryThemeProps) {
 
     const dialogs = (
         <>
-            {isInviteModalOpen && (
-                <S.ModalOverlay onClick={closeInviteModal}>
-                    <S.ModalContent onClick={(e) => e.stopPropagation()}>
+            <BaseModal isOpen={isInviteModalOpen} onClose={closeInviteModal} maxWidth="400px" ariaLabel={t.category.inviteTitle}>
+                    <S.ModalContent style={{width:'100%',border:0,boxShadow:'none'}}>
                         <S.Corners><i /><i /><i /><i /></S.Corners>
                         <div className="modal-header">
                             <h3>{t.category.inviteTitle}</h3>
@@ -318,25 +323,27 @@ export default function CategoryView(props: CategoryThemeProps) {
                             <p>{t.category.inviteHint}</p>
                             <input
                                 type="email"
+                                aria-label={t.category.inviteTitle}
+                                aria-invalid={!!inviteError}
+                                aria-describedby={inviteError ? 'invite-email-error' : undefined}
+                                data-autofocus
                                 placeholder="example@email.com"
                                 value={inviteEmail}
                                 onChange={(e) => setInviteEmail(e.target.value)}
                                 onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) handleInviteSubmit(); }}
                                 autoFocus
                             />
-                            {inviteError && <InlineError>{inviteError}</InlineError>}
+                            {inviteError && <div id="invite-email-error"><InlineError>{inviteError}</InlineError></div>}
                         </div>
                         <div className="modal-actions">
                             <SecondaryButton $width={70} $height={32} onClick={closeInviteModal}>{t.category.cancel}</SecondaryButton>
                             <SecondaryButton $width={70} $height={32} $variant="primary" onClick={handleInviteSubmit}>{t.category.invite}</SecondaryButton>
                         </div>
                     </S.ModalContent>
-                </S.ModalOverlay>
-            )}
+            </BaseModal>
 
-            {kickTarget && (
-                <S.ModalOverlay onClick={closeKickModal}>
-                    <S.ModalContent onClick={(e) => e.stopPropagation()}>
+            {kickTarget && <BaseModal isOpen onClose={closeKickModal} maxWidth="400px" ariaLabel={kickTarget.id === me ? t.category.leaveTitle : t.category.kickTitle}>
+                    <S.ModalContent style={{width:'100%',border:0,boxShadow:'none'}}>
                         <S.Corners><i /><i /><i /><i /></S.Corners>
                         <div className="modal-header">
                             <h3>{kickTarget.id === me ? t.category.leaveTitle : t.category.kickTitle}</h3>
@@ -349,8 +356,7 @@ export default function CategoryView(props: CategoryThemeProps) {
                             <SecondaryButton $width={80} $height={32} $variant="danger" onClick={handleKickSubmit}>{kickTarget.id === me ? t.category.leave : t.category.kick}</SecondaryButton>
                         </div>
                     </S.ModalContent>
-                </S.ModalOverlay>
-            )}
+            </BaseModal>}
         </>
     );
 

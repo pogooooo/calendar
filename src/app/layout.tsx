@@ -40,11 +40,14 @@ export const metadata: Metadata = {
  * 따르기를 고르지 않았으면(기본) 기기 설정과 상관없이 고른 움직임대로 (ThemeProviderWrapper 가 이어받는다).
  */
 const PRE_PAINT = `(function(){try{
-if(location.pathname.indexOf("/widget")===0)return;
 var d=document.documentElement;
+var p=location.pathname.indexOf("/widget")===0?"desktop-widget":window.__TAURI_INTERNALS__?(/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)?"mobile-app":"desktop-app"):"web";
+if(${DEVELOPMENT_THEMES_ENABLED}&&location.pathname.indexOf("/dev/design")===0){var v=new URLSearchParams(location.search).get("platform");if(v==="mobile-app"||v==="desktop-app"||v==="desktop-widget")p=v;}
+d.setAttribute("data-presentation",p);
+if(p==="desktop-widget")return;
 var s=JSON.parse(localStorage.getItem("setting-store")||"null");s=s&&s.state;
 var r=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
-d.setAttribute("data-theme-motion",r&&s&&s.motionOverOs===false?"off":((s&&s.motion)||"full"));
+var m=r&&s&&s.motionOverOs===false?"off":((s&&s.motion)||"full");if(p==="mobile-app"&&m==="full")m="gentle";d.setAttribute("data-theme-motion",m);
 if(!s||!s.theme)return;
 var o=(s.themeOptions||{})[s.theme];var k=o&&o!=="light"?s.theme+"-"+o:s.theme;
 if(!${DEVELOPMENT_THEMES_ENABLED}&&(k==="gem"||k.indexOf("gem-")===0))k=k==="gem-dark"?"celestial-dark":"celestial";

@@ -94,6 +94,7 @@ export default function AndroidWidgetSync() {
     const memo = useDailyStore((s) => s.memo);
     const memoDate = useDailyStore((s) => s.memoDate);
     const locale = useSettingStore((s) => s.locale);
+    const timezone = useSettingStore((s) => s.timezone);
     const t = useT();
     const theme = useTheme();
     const router = useRouter();
@@ -146,7 +147,7 @@ export default function AndroidWidgetSync() {
             }
         }, 400);
         return () => { if (timer.current !== null) window.clearTimeout(timer.current); };
-    }, [userId, todosLoaded, todos, categories, challenges, anniversaries, projects, memo, memoDate, t, locale, theme, tick, widgetKey]);
+    }, [userId, todosLoaded, todos, categories, challenges, anniversaries, projects, memo, memoDate, t, locale, timezone, theme, tick, widgetKey]);
 
     // 위젯에서 열었을 때 갈 곳
     React.useEffect(() => {
@@ -157,7 +158,7 @@ export default function AndroidWidgetSync() {
                 const { invoke } = await import("@tauri-apps/api/core");
                 const link = await invoke<string | null>("take_pending_link");
                 if (stopped || !link) return;
-                // 위젯의 빠른 추가(QuickAddActivity)가 서버에 바로 넣고 남긴 신호 — 길은 그대로, 할 일만 다시 받는다.
+                // 위젯 편집창이 서버에 저장한 신호 — 길은 그대로, 할 일을 다시 받는다.
                 // 안 받으면 뒤에 살아 있던 앱이 옛 목록으로 위젯 재료를 덮어써 방금 넣은 것이 위젯에서 사라진다.
                 if (link.startsWith("cronos://refresh")) {
                     // 방금(1.5초 안에) 읽었어도 그건 넣기 전의 목록일 수 있다

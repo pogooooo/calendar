@@ -61,7 +61,7 @@ class Palette(
                 ink = c["text"] ?: 0xFF292D3B.toInt(),
                 muted = c["textSecondary"] ?: 0xFF626577.toInt(),
                 gold = gold,
-                goldText = blend(gold, Color.BLACK, 0.14f),
+                goldText = blend(gold, Color.BLACK, 0.4f),
                 weekend = c["weekend"] ?: 0xFFC4696E.toInt(),
             )
         }

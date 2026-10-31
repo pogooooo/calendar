@@ -26,5 +26,4 @@ export default function MemoWidget() {
 
 const Wrap = styled.div`
     height: 100%;
-    & * { background-color: transparent; }
 `;

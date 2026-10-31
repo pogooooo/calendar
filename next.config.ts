@@ -62,6 +62,6 @@ if (!isDesktop) {
 // 개발 서버의 Turbopack이 그 안에 동시에 쓰면 배포 빌드의 webpack 파일과 섞인다.
 export default function config(phase: string): NextConfig {
     return phase === PHASE_DEVELOPMENT_SERVER
-        ? { ...nextConfig, distDir: ".next-dev" }
+        ? { ...nextConfig, distDir: ".next-dev", allowedDevOrigins: ['127.0.0.1'] }
         : nextConfig;
 }

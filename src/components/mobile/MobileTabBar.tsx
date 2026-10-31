@@ -20,13 +20,36 @@ const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: Ma
 
 export { MOBILE_BREAKPOINT, TAB_BAR_HEIGHT };
 
-export default function MobileTabBar() {
+export default function MobileTabBar({activePath}:{activePath?:string} = {}) {
     const S = usePickTheme(STYLES);
     const router = useRouter();
-    const pathname = usePathname();
+    const routePathname = usePathname();
+    const pathname = activePath ?? routePathname;
     const t = useT();
     const [more, setMore] = React.useState(false);
     const [showDownload, setShowDownload] = React.useState(false);
+    const sheetRef = React.useRef<HTMLDivElement>(null);
+
+    React.useEffect(()=>{
+        if(!more) return;
+        const previous=document.activeElement instanceof HTMLElement ? document.activeElement : null;
+        const sheet=sheetRef.current;
+        if(!sheet) return;
+        sheet.focus({preventScroll:true});
+        const onKey=(event:KeyboardEvent)=>{
+            const dialogs=document.querySelectorAll('[role="dialog"], [role="alertdialog"]');
+            if(event.defaultPrevented || dialogs[dialogs.length-1]!==sheet) return;
+            if(event.key==='Escape') {event.preventDefault();setMore(false);return;}
+            if(event.key!=='Tab') return;
+            const buttons=Array.from(sheet.querySelectorAll<HTMLButtonElement>('button:not(:disabled)'));
+            const first=buttons[0],last=buttons[buttons.length-1];
+            if(!first) {event.preventDefault();return;}
+            if(event.shiftKey && (document.activeElement===first || document.activeElement===sheet)) {event.preventDefault();last.focus();}
+            else if(!event.shiftKey && (document.activeElement===last || document.activeElement===sheet)) {event.preventDefault();first.focus();}
+        };
+        window.addEventListener('keydown',onKey);
+        return ()=>{window.removeEventListener('keydown',onKey);if(previous?.isConnected) previous.focus({preventScroll:true});};
+    },[more]);
 
     React.useEffect(() => setShowDownload(!isDesktopApp()), []);
     React.useEffect(() => setMore(false), [pathname]);
@@ -66,11 +89,11 @@ export default function MobileTabBar() {
         <>
             {more && (
                 <S.Sheet onClick={() => setMore(false)}>
-                    <S.SheetBody onClick={(e) => e.stopPropagation()}>
+                    <S.SheetBody ref={sheetRef} data-mobile-more role="dialog" aria-modal="true" aria-label={t.sidebar.more} tabIndex={-1} onClick={(e) => e.stopPropagation()}>
                         <S.SheetHead>
                             <i />
                             {t.sidebar.more}
-                            <S.CloseBtn onClick={() => setMore(false)} aria-label={t.widgetShell.close}>
+                            <S.CloseBtn data-more-close onClick={() => setMore(false)} aria-label={t.widgetShell.close}>
                                 <X size={16} />
                             </S.CloseBtn>
                         </S.SheetHead>
@@ -86,7 +109,7 @@ export default function MobileTabBar() {
                 </S.Sheet>
             )}
 
-            <S.Bar role="navigation">
+            <S.Bar data-mobile-nav role="navigation" aria-label="CRONOS">
                 {tabs.map(tab => (
                     <S.Tab key={tab.path} aria-current={isActive(tab.path) ? "page" : undefined} $on={!!isActive(tab.path)} onClick={() => go(tab.path)}>
                         {tab.icon}

@@ -267,7 +267,7 @@ const ProjectTimelineView = React.forwardRef<HTMLDivElement, ProjectTimelineProp
 
     if (isMobile) {
         return (
-            <S.SectionWrapper ref={ref} style={{ flex }} $mobileHeight="340px">
+            <S.SectionWrapper ref={ref} style={{ flex }}>
                 <S.SectionTitle>{tr.timeline}</S.SectionTitle>
                 {onConnectDependency && <S.LinkHint role="status">{linkMessage || (source ? t.interaction.linkSelectedMobile(tasks.find(t => t.id === source)?.title ?? '') : t.interaction.linkHintMobile)}</S.LinkHint>}
                 <S.AgendaList>
@@ -291,7 +291,7 @@ const ProjectTimelineView = React.forwardRef<HTMLDivElement, ProjectTimelineProp
     }
 
     return (
-        <S.SectionWrapper ref={ref} style={{ flex }} $mobileHeight="340px">
+        <S.SectionWrapper ref={ref} style={{ flex }}>
             <S.SectionTitle>{tr.timeline}</S.SectionTitle>
             {onConnectDependency && <S.LinkHint role="status">{linkMessage || (source ? t.interaction.linkSelected(tasks.find(t => t.id === source)?.title ?? '') : t.interaction.linkHint)}</S.LinkHint>}
             <S.TimelineLayout>

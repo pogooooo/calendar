@@ -27,6 +27,7 @@ interface CelestialDateTimePickerProps {
     };
     /** 좁은 자리(홈의 날짜 줄)에서는 해를 빼고 "9. 30 (수)" 로만 적는다 */
     short?: boolean;
+    ariaLabel?: string;
 }
 
 
@@ -57,7 +58,7 @@ function buildGrid(view: Date) {
     });
 }
 
-export default function DateTimePicker({ value, onChange, mode = "datetime", range, short = false }: CelestialDateTimePickerProps) {
+export default function DateTimePicker({ value, onChange, mode = "datetime", range, short = false, ariaLabel }: CelestialDateTimePickerProps) {
     const S = usePickTheme(STYLES);
     const t = useT();
     const f = t.form;
@@ -233,7 +234,7 @@ export default function DateTimePicker({ value, onChange, mode = "datetime", ran
 
     return (
         <>
-            <S.Trigger ref={triggerRef} type="button" $open={open} onClick={() => (open ? setOpen(false) : openPopover())}>
+            <S.Trigger ref={triggerRef} type="button" $open={open} aria-label={ariaLabel} aria-expanded={open} onClick={() => (open ? setOpen(false) : openPopover())}>
                 <CalendarDays size={14} />
                 <span>{label}</span>
             </S.Trigger>

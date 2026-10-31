@@ -9,9 +9,9 @@ const LATIN_MONTH = new Intl.DateTimeFormat('en', { month: 'long' });
  * 달 이름은 장식이라 읽어 주지 않는다 (옆의 날짜 글씨가 같은 말을 한다).
  */
 export default function OceanMonthHeader(p: MonthHeaderProps) {
-    return <S.Header data-theme-layout="ocean-month-header">
-        {p.month && <S.Title aria-hidden="true"><span className="eyebrow">MAKE ROOM FOR YOUR DAY</span><span className="month" key={p.month.getMonth()}>{LATIN_MONTH.format(p.month)}<i> / {String(p.month.getMonth() + 1).padStart(2, '0')}</i></span></S.Title>}
-        <S.Nav>{p.navigation}</S.Nav>
+    return <S.Header data-calendar-header data-theme-layout="ocean-month-header">
+        {p.month && <S.Title data-calendar-decoration aria-hidden="true"><span className="eyebrow">MAKE ROOM FOR YOUR DAY</span><span className="month" key={p.month.getMonth()}>{LATIN_MONTH.format(p.month)}<i> / {String(p.month.getMonth() + 1).padStart(2, '0')}</i></span></S.Title>}
+        <S.Nav data-calendar-navigation>{p.navigation}</S.Nav>
         <S.Filters>{p.filters}</S.Filters>
     </S.Header>;
 }

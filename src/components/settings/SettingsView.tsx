@@ -6,6 +6,9 @@ import * as React from "react";
 import LocaleSelect from "@/components/LocaleSelect";
 import TimezoneSelect from "@/components/TimezoneSelect";
 import WidgetPreview from "./celestial/WidgetPreview";
+import WidgetAppearanceSettings from '@/components/widget/WidgetAppearanceSettings';
+import {isWidgetKind,type WidgetKind} from '@/lib/widgetKinds';
+import BaseModal from '@/components/modal/baseModal/BaseModal';
 import Backdrop from "./parts/Backdrop";
 import ThemePicker from "./parts/ThemePicker";
 import type { SettingsThemeProps } from "./SettingsPage";
@@ -72,6 +75,7 @@ export default function SettingsView({
     const S = usePickTheme(STYLES);
     const L = usePickTheme(LAYOUTS);
     const [tab, setTab] = React.useState<TabId>("look");
+    const [editingWidget,setEditingWidget]=React.useState<WidgetKind|null>(null);
     const motion = useSettingStore(s => s.motion);
     const setMotion = useSettingStore(s => s.setMotion);
     // 기기에서 동작 줄이기가 켜져 있으면 위의 고른 값과 상관없이 아무것도 움직이지 않는다 — 고른 값만 보이면 고장으로 읽혔다.
@@ -117,6 +121,8 @@ export default function SettingsView({
     const isMobile = useIsMobile();
     const paneBodyRef = React.useRef<HTMLDivElement>(null);
     const paneAxis: Axis = isMobile ? "x" : ((L as { PANE_AXIS?: Axis }).PANE_AXIS ?? "y");
+    const tabListId=React.useId();
+    const horizontalTabs=paneAxis==='x';
     useSwapMotion(tab, paneBodyRef, { order: TABS.map((x) => x.id), axis: paneAxis });
 
     // 위젯은 kind 마다 group 이 붙어 있다. 평평하게 늘어놓으면 그 정보가 버려진다.
@@ -157,13 +163,23 @@ export default function SettingsView({
                         ))}
                     </L.ConstellationArt>
 
-                    <L.TabList role="tablist" aria-orientation="vertical">
+                    <L.TabList data-settings-tabs role="tablist" aria-label={t.settings.title} aria-orientation={horizontalTabs ? 'horizontal' : 'vertical'} onKeyDown={(event)=>{
+                        const forward=horizontalTabs?'ArrowRight':'ArrowDown', backward=horizontalTabs?'ArrowLeft':'ArrowUp';
+                        if(![forward,backward,'Home','End'].includes(event.key)) return;
+                        event.preventDefault();
+                        const index=event.key==='Home'?0:event.key==='End'?TABS.length-1:(activeIndex+(event.key===forward?1:-1)+TABS.length)%TABS.length;
+                        setTab(TABS[index].id);
+                        event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]')[index]?.focus();
+                    }}>
                         {TABS.map((x) => (
                             <L.TabButton
                                 key={x.id}
                                 role="tab"
                                 type="button"
                                 aria-selected={tab === x.id}
+                                tabIndex={tab===x.id?0:-1}
+                                id={`${tabListId}-tab-${x.id}`}
+                                aria-controls={`${tabListId}-panel`}
                                 $active={tab === x.id}
                                 onClick={() => setTab(x.id)}
                             >
@@ -178,7 +194,7 @@ export default function SettingsView({
                 </L.Constellation>
 
                 <L.Pane>
-                    <L.PaneHeader>
+                    <L.PaneHeader data-settings-heading>
                         {/* 판 머리의 천체 — 판마다 다른 하나(혼천의·해와 달·달의 궤도·보름·팔각별) */}
                         <L.Orbit viewBox="0 0 200 200" aria-hidden="true">
                             <circle className="hair" cx="100" cy="100" r="96" />
@@ -213,7 +229,7 @@ export default function SettingsView({
                         {active.note && <L.PaneNote>{active.note}</L.PaneNote>}
                     </L.PaneHeader>
 
-                    <L.PaneBody key={tab} ref={paneBodyRef}>
+                    <L.PaneBody key={tab} ref={paneBodyRef} role="tabpanel" id={`${tabListId}-panel`} aria-labelledby={`${tabListId}-tab-${tab}`}>
                         {/* ── 모양 ──────────────────────────────────────────── */}
                         {tab === "look" && (
                             <>
@@ -244,7 +260,10 @@ export default function SettingsView({
                                             >{(locale === 'ko' ? ['풍성하게', '잔잔하게', '끄기'] : ['Full', 'Gentle', 'Off'])[i]}</L.Seg>)}
                                         </L.SegGroup>
                                     </L.SegRow>
-                                    {osReducedMotion && motion !== 'off' && (
+                                    {isMobile && <L.RowNote role="note">{locale === 'ko'
+                                        ? '모바일 앱은 짧고 명확한 반응을 중심으로 움직임을 줄입니다. 웹사이트는 화면 크기에 맞춰 테마 효과를 조절합니다. 끄기를 선택하면 두 환경 모두 움직임을 끕니다.'
+                                        : 'The mobile app uses brief, restrained feedback. The website adapts theme effects to the screen size. Off disables motion in both.'}</L.RowNote>}
+                                    {!isMobile && osReducedMotion && motion !== 'off' && (
                                         <L.RowNote role="note" style={{ marginTop: -4, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
                                             <span style={{ flex: '1 1 260px' }}>
                                                 {motionOverOs
@@ -262,7 +281,7 @@ export default function SettingsView({
                                             </S.FormButton>
                                         </L.RowNote>
                                     )}
-                                    {!webgl && motion !== 'off' && (
+                                    {!isMobile && !webgl && motion !== 'off' && (
                                         <L.RowNote role="note" style={{ marginTop: -4, marginBottom: 14 }}>
                                             {locale === 'ko'
                                                 ? "이 기기에서는 3D 그래픽(WebGL)을 쓸 수 없어, 바탕의 물·잎을 가벼운 그림으로 대신 그려요. 브라우저 설정의 '그래픽 가속 사용'을 켜거나 그래픽 드라이버를 업데이트하면 원래대로 보여요."
@@ -277,6 +296,7 @@ export default function SettingsView({
                                                 <L.Seg
                                                     key={o.key} type="button"
                                                     $selected={fontSizeKey === o.key}
+                                                    aria-pressed={fontSizeKey===o.key}
                                                     onClick={() => onFontSizeChange(o.key)}
                                                 >
                                                     <L.Star $on={fontSizeKey === o.key} $small />
@@ -294,6 +314,7 @@ export default function SettingsView({
                                                 <L.Seg
                                                     key={o.key} type="button"
                                                     $selected={fontWeightKey === o.key}
+                                                    aria-pressed={fontWeightKey===o.key}
                                                     onClick={() => onFontWeightChange(o.key)}
                                                     style={o.weight > 0 ? { fontWeight: o.weight } : undefined}
                                                 >
@@ -309,6 +330,7 @@ export default function SettingsView({
                                             <L.FontCard
                                                 key={f.key} type="button"
                                                 $selected={fontKey === f.key}
+                                                aria-pressed={fontKey===f.key}
                                                 onClick={() => onFontChange(f.key)}
                                             >
                                                 <L.FontPreview $family={f.family}>
@@ -346,6 +368,7 @@ export default function SettingsView({
                                                         {t.widget.close}
                                                     </S.FormButton>
                                                 </L.WidgetActions>
+                                                {isWidgetKind(kind)&&<S.FormButton type="button" $variant="default" onClick={()=>setEditingWidget(kind)}>{t.widgetShell.appearance}</S.FormButton>}
                                             </L.WidgetBody>
                                         </L.WidgetCard>
                                     ))}
@@ -459,7 +482,11 @@ export default function SettingsView({
                                         <S.FormLabel>{t.account.newName}</S.FormLabel>
                                         <S.FormInput
                                             value={newName}
+                                            aria-label={t.account.newName}
+                                            autoComplete="nickname"
+                                            readOnly={namePending}
                                             onChange={(e) => onNewNameChange(e.target.value)}
+                                            onKeyDown={(e)=>{if(e.key==='Enter' && !e.nativeEvent.isComposing && !namePending && newName.trim() && newName.trim()!==user?.name){e.preventDefault();onNameSave();}}}
                                             placeholder={t.account.newNamePlaceholder}
                                             maxLength={30}
                                         />
@@ -473,7 +500,7 @@ export default function SettingsView({
                                             {namePending ? t.account.saving : t.account.save}
                                         </S.FormButton>
                                     </S.ButtonRow>
-                                    {nameStatus && <S.StatusMessage $type={nameStatus.type}>{nameStatus.msg}</S.StatusMessage>}
+                                    {nameStatus && <S.StatusMessage role={nameStatus.type==='error'?'alert':'status'} $type={nameStatus.type}>{nameStatus.msg}</S.StatusMessage>}
                                 </L.Block>
 
                                 <L.Block>
@@ -482,6 +509,7 @@ export default function SettingsView({
                                         <S.FormLabel>{t.account.currentPassword}</S.FormLabel>
                                         <S.FormInput
                                             type="password" value={pwForm.current}
+                                            aria-label={t.account.currentPassword}
                                             onChange={(e) => onPwFormChange("current", e.target.value)}
                                             placeholder={t.account.currentPassword}
                                             autoComplete="current-password"
@@ -491,6 +519,7 @@ export default function SettingsView({
                                         <S.FormLabel>{t.account.newPassword}</S.FormLabel>
                                         <S.FormInput
                                             type="password" value={pwForm.next}
+                                            aria-label={t.account.newPassword}
                                             onChange={(e) => onPwFormChange("next", e.target.value)}
                                             placeholder={t.account.newPasswordPlaceholder}
                                             autoComplete="new-password"
@@ -500,6 +529,7 @@ export default function SettingsView({
                                         <S.FormLabel>{t.account.confirmPassword}</S.FormLabel>
                                         <S.FormInput
                                             type="password" value={pwForm.confirm}
+                                            aria-label={t.account.confirmPassword}
                                             onChange={(e) => onPwFormChange("confirm", e.target.value)}
                                             placeholder={t.account.confirmPasswordPlaceholder}
                                             autoComplete="new-password"
@@ -514,7 +544,7 @@ export default function SettingsView({
                                             {pwPending ? t.account.changing : t.account.changePassword}
                                         </S.FormButton>
                                     </S.ButtonRow>
-                                    {pwStatus && <S.StatusMessage $type={pwStatus.type}>{pwStatus.msg}</S.StatusMessage>}
+                                    {pwStatus && <S.StatusMessage role={pwStatus.type==='error'?'alert':'status'} $type={pwStatus.type}>{pwStatus.msg}</S.StatusMessage>}
                                 </L.Block>
 
                                 <L.DangerBlock>
@@ -533,6 +563,7 @@ export default function SettingsView({
                                                 <S.FormLabel>{t.account.passwordConfirm}</S.FormLabel>
                                                 <S.FormInput
                                                     type="password" value={deletePassword}
+                                                    aria-label={t.account.passwordConfirm}
                                                     onChange={(e) => onDeletePasswordChange(e.target.value)}
                                                     placeholder={t.account.passwordConfirmPlaceholder}
                                                 />
@@ -541,6 +572,7 @@ export default function SettingsView({
                                                 <S.FormLabel>{t.account.deleteConfirmLabel}</S.FormLabel>
                                                 <S.FormInput
                                                     value={deleteConfirm}
+                                                    aria-label={t.account.deleteConfirmLabel}
                                                     onChange={(e) => onDeleteConfirmChange(e.target.value)}
                                                     placeholder={t.account.deleteConfirmPlaceholder}
                                                 />
@@ -557,7 +589,7 @@ export default function SettingsView({
                                                     {deletePending ? t.account.processing : t.account.finalDelete}
                                                 </S.FormButton>
                                             </S.ButtonRow>
-                                            {deleteStatus && <S.StatusMessage $type={deleteStatus.type}>{deleteStatus.msg}</S.StatusMessage>}
+                                            {deleteStatus && <S.StatusMessage role={deleteStatus.type==='error'?'alert':'status'} $type={deleteStatus.type}>{deleteStatus.msg}</S.StatusMessage>}
                                         </>
                                     )}
                                 </L.DangerBlock>
@@ -566,6 +598,9 @@ export default function SettingsView({
                     </L.PaneBody>
                 </L.Pane>
             </L.Frame>
+            <BaseModal isOpen={editingWidget!==null} onClose={()=>setEditingWidget(null)} maxWidth="620px" ariaLabel={`${t.widgetShell.appearance} · ${widgetList.find(w=>w.kind===editingWidget)?.label??''}`}>
+                {editingWidget&&<WidgetAppearanceSettings kind={editingWidget} title={widgetList.find(w=>w.kind===editingWidget)?.label} onDone={()=>setEditingWidget(null)}/>}
+            </BaseModal>
         </L.Shell>
     );
 }

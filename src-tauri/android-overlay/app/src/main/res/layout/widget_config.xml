@@ -29,6 +29,15 @@
             android:layout_marginBottom="20dp"
             android:contentDescription="@string/widget_config_title" />
 
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="@string/widget_config_style" android:textColor="#ECE6D6" android:textSize="16sp" />
+        <RadioGroup android:id="@+id/cfg_style" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginBottom="16dp">
+            <RadioButton android:id="@+id/cfg_style_simple" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp" android:text="@string/widget_style_simple" android:textColor="#ECE6D6" android:buttonTint="#D4AF37" />
+            <RadioButton android:id="@+id/cfg_style_ornate" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp" android:text="@string/widget_style_ornate" android:textColor="#ECE6D6" android:buttonTint="#D4AF37" />
+        </RadioGroup>
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="@string/widget_style_note" android:textColor="#BDB6A7" android:textSize="13sp" android:layout_marginBottom="16dp" />
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

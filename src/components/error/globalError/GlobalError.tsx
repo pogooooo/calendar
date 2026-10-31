@@ -15,5 +15,5 @@ const ErrMessage = styled.div`
 `
 
 export default function GlobalError({ children, className }: ErrorProps) {
-    return <ErrMessage className={className}>{children}</ErrMessage>;
+    return <ErrMessage className={className} role={children?.trim()?'alert':undefined} aria-atomic="true">{children}</ErrMessage>;
 }

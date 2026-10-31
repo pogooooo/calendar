@@ -9,6 +9,7 @@ export default function GemCalendarEtching({ month }: { month: Date }) {
             <path className="gem" d="m13 13 7-3 5 5-3 7-7 3-5-5Z" />
             <path className="facet" d="m13 13 6 3 6-1m-6 1 3 6m-3-6-4 9m4-9-9 4" />
             <path className="metal" d="M3 56v4m53-57h4" />
+            <path className="glint" d="M19 6q0 11 10 11-10 0-10 11 0-11-10-11 10 0 10-11Z" />
         </svg>)}
     </S.Etching>;
 }

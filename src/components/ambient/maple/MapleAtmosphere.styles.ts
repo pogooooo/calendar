@@ -11,6 +11,11 @@ const sunlight = keyframes`0%,100% { opacity:.03; transform:translateX(-10%); } 
  */
 export const Garden = styled.div`
     position:fixed; inset:0; pointer-events:none; overflow:hidden; z-index:-1; color:${p=>p.theme.colors.primary};
+    /* Keep the live canopy and depth at the edges, with a quiet reading corridor in the middle. */
+    canvas:not([data-variant]) {
+        mask-image:linear-gradient(90deg,#000 10%,transparent 25%,transparent 89%,#000 100%),linear-gradient(#000 10%,transparent 24%);
+        mask-composite:add;
+    }
     .fall { position:absolute; top:0; right:3%; width:34px; animation:${fall} 34s linear infinite; opacity:0; }
     .leaf { width:100%; height:auto; fill:currentColor; animation:${flutter} 7s ease-in-out infinite; }
     .vein { fill:none; stroke:${p=>p.theme.colors.background}; stroke-width:.9; }

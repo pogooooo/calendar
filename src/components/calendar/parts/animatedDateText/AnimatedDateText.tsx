@@ -21,6 +21,8 @@ interface AnimatedDateTextProps {
 export default function AnimatedDateText({ text, direction }: AnimatedDateTextProps) {
     const S = usePickTheme(STYLES);
     const level = useThemeMotion();
+    const animateDate = usePickTheme({ celestial: false, maple: true, ocean: true, gem: true });
+    if (level === 'off' || !animateDate) return <S.DateTextContainer><span>{text}</span></S.DateTextContainer>;
     const reducedMotion = level !== 'full';
     return (
         <S.DateTextContainer>
@@ -31,7 +33,7 @@ export default function AnimatedDateText({ text, direction }: AnimatedDateTextPr
                     initial={{ y: reducedMotion ? 0 : direction > 0 ? 16 : -16, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     exit={{ y: reducedMotion ? 0 : direction > 0 ? -16 : 16, opacity: 0 }}
-                    transition={{ duration: level === 'off' ? 0 : reducedMotion ? .14 : .26, ease: [0.22, 1, 0.36, 1] }}
+                    transition={{ duration: reducedMotion ? .14 : .26, ease: [0.22, 1, 0.36, 1] }}
                     style={{ display: 'inline-block', whiteSpace: 'pre' }}
                 >
                     {text}

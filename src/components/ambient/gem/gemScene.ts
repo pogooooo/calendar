@@ -99,7 +99,7 @@ export function createGemScene(canvas: HTMLCanvasElement, { color, gold, dark, m
         metalness: .08, roughness: .025, transmission: .22, thickness: 1.2,
         ior: 2.15, dispersion: .055, clearcoat: 1, clearcoatRoughness: .025,
         attenuationColor: stoneColor.clone(), attenuationDistance: 1.5,
-        envMapIntensity: 2.7, flatShading: true, vertexColors: true,
+        envMapIntensity: 3.2, flatShading: true, vertexColors: true,
     });
     const diamondMaterial = new THREE.MeshPhysicalMaterial({ color: '#ffefdd', metalness: .12, roughness: .06, transmission: .3, ior: 2.25, thickness: .2, clearcoat: 1, envMapIntensity: 2.1, flatShading: true });
     const mainGeo = cutStone(16);
@@ -151,6 +151,37 @@ export function createGemScene(canvas: HTMLCanvasElement, { color, gold, dark, m
     jewelry.rotation.set(.16, -.28, -.24);
     jewelry.position.set(.08, -.1, 0);
 
+    // Camera-facing flashes sit on the actual crown and gallery, rather than floating over the UI.
+    const glintCanvas = document.createElement('canvas');
+    glintCanvas.width = glintCanvas.height = 128;
+    const glintContext = glintCanvas.getContext('2d');
+    if (glintContext) {
+        const halo = glintContext.createRadialGradient(64, 64, 0, 64, 64, 62);
+        halo.addColorStop(0, '#ffffff'); halo.addColorStop(.1, '#fff3d9bb'); halo.addColorStop(.4, '#fff3d926'); halo.addColorStop(1, '#ffffff00');
+        glintContext.fillStyle = halo; glintContext.fillRect(0, 0, 128, 128);
+        glintContext.fillStyle = '#ffffff'; glintContext.beginPath();
+        glintContext.moveTo(64, 3); glintContext.quadraticCurveTo(68, 60, 113, 64);
+        glintContext.quadraticCurveTo(68, 68, 64, 125); glintContext.quadraticCurveTo(60, 68, 15, 64);
+        glintContext.quadraticCurveTo(60, 60, 64, 3); glintContext.fill();
+    }
+    const glintTexture = new THREE.CanvasTexture(glintCanvas);
+    glintTexture.colorSpace = THREE.SRGBColorSpace;
+    const glints = Array.from({ length: 8 }, (_, i) => {
+        const a = i / 8 * Math.PI * 2 + .25;
+        const material = new THREE.SpriteMaterial({ map: glintTexture, color: '#fff6e4', transparent: true, opacity: 0,
+            blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false });
+        const sprite = new THREE.Sprite(material);
+        sprite.position.set(Math.cos(a) * (i % 2 ? 1.09 : .78), Math.sin(a) * (i % 2 ? 1.45 : 1.03), .46);
+        sprite.scale.setScalar(.34); jewelry.add(sprite);
+        return sprite;
+    });
+    const polishGlints = (at: number) => glints.forEach((sprite, i) => {
+        const peak = motion === 'full' ? Math.pow(Math.max(0, Math.sin(at * 1.1 + i * 1.9)), 14) : (i === 1 || i === 5 ? .4 : 0);
+        sprite.material.opacity = peak * .9;
+        sprite.scale.setScalar(.16 + peak * .42);
+        sprite.material.rotation = -.15 + i * .28 + at * .035;
+    });
+
     let frame = 0, last = 0, time = 0, active = true;
     let px = 0, py = 0, targetX = 0, targetY = 0;
     const dispose = () => {
@@ -163,6 +194,7 @@ export function createGemScene(canvas: HTMLCanvasElement, { color, gold, dark, m
         scene.traverse(object => { if (object instanceof THREE.Mesh) geometries.add(object.geometry); });
         geometries.forEach(geometry => geometry.dispose());
         goldMaterial.dispose(); stoneMaterial.dispose(); diamondMaterial.dispose();
+        glints.forEach(sprite => sprite.material.dispose()); glintTexture.dispose();
         env?.dispose(); renderer.dispose();
     };
     const render = () => {
@@ -179,7 +211,8 @@ export function createGemScene(canvas: HTMLCanvasElement, { color, gold, dark, m
             jewelry.rotation.x = .16 + Math.cos(time * .15 * pace) * .045 + py * .06;
             jewelry.rotation.z = -.24 + Math.sin(time * .1 * pace) * .025;
             jewelry.position.y = -.1 + Math.sin(time * .23 * pace) * .035;
-            key.position.x = -3 + Math.sin(time * .13 * pace) * .45 + px * .5;
+            key.position.x = -3 + Math.sin(time * .23 * pace) * 1.1 + px * .5;
+            polishGlints(time);
             render();
         }
         if (active) frame = requestAnimationFrame(tick);
@@ -203,7 +236,7 @@ export function createGemScene(canvas: HTMLCanvasElement, { color, gold, dark, m
     document.addEventListener('visibilitychange', visibility);
     canvas.addEventListener('webglcontextlost', lost);
     window.addEventListener('pointermove', pointer, { passive: true });
-    resize(); visibility();
+    polishGlints(0); resize(); visibility();
     return {
         dispose,
         // RGB sliders update uniforms/materials in place: never recreate WebGL or PMREM per input.
@@ -219,6 +252,7 @@ export function createGemScene(canvas: HTMLCanvasElement, { color, gold, dark, m
                 if (motion !== 'full') targetX = targetY = 0;
                 visibility();
             }
+            polishGlints(time);
             if (!document.hidden) render();
         },
     };

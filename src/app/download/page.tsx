@@ -5,7 +5,8 @@ import * as React from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { Globe, MonitorDown, ArrowRight, ArrowDown, Smartphone, ExternalLink } from "lucide-react";
+import { Globe, MonitorDown, ArrowRight, ArrowDown, Smartphone } from "lucide-react";
+import AndroidTestSignup from "@/components/download/AndroidTestSignup";
 import CronosOrbit from "@/assets/download/CronosOrbit";
 import CursorTrail from "@/components/download/CursorTrail";
 import useAuthStore from "@/store/useAuthStore";
@@ -23,7 +24,6 @@ const HeroScene = dynamic(() => import("@/components/download/HeroScene"), {
 });
 
 const REPO = "https://github.com/pogooooo/calendar";
-const GOOGLE_PLAY_URL = "https://play.google.com/store/apps/details?id=com.cronos.todoapp";
 /**
  * 저장소가 밖에서 안 보이는 동안(계정 플래그)에는 GitHub 줄을 감춘다 — 누르면 404 만 나온다.
  * 다시 보이게 되면 이 값만 true 로 바꾸면 된다. 내려받기 자체는 /api/download 가 서버에서 받아 오므로 무관하다.
@@ -420,10 +420,10 @@ export default function DownloadPage() {
                             {t.download.useOnWeb}
                             <ArrowRight size={14} className="arrow" />
                         </S.GhostCta>
-                        <S.GhostCta as="a" href={GOOGLE_PLAY_URL} target="_blank" rel="noopener noreferrer">
+                        <S.GhostCta as="a" href="#android-test">
                             <Smartphone size={16} />
                             {t.download.googlePlay}
-                            <ExternalLink size={14} />
+                            <ArrowRight size={14} />
                         </S.GhostCta>
                     </S.CtaRow>
 
@@ -435,6 +435,8 @@ export default function DownloadPage() {
                     <HeroScene />
                 </S.HeroArt>
             </S.Hero>
+
+            <AndroidTestSignup />
 
             <S.Section>
                 <RevealTitle>{t.download.featuresTitle}</RevealTitle>
@@ -459,11 +461,11 @@ export default function DownloadPage() {
                 <RevealTitle>{t.download.platformsTitle}</RevealTitle>
                 <Reveal delay={80}>
                     <S.PlatformList>
-                        <S.PlatformRow as="a" href={GOOGLE_PLAY_URL} target="_blank" rel="noopener noreferrer" $mine={mine === "android"} data-store-link="">
+                        <S.PlatformRow as="a" href="#android-test" $mine={mine === "android"} data-store-link="">
                             <S.RowName>Android · Google Play</S.RowName>
                             <S.RowNote>{t.download.googlePlayNote}</S.RowNote>
                             <S.RowMeta>{t.download.googlePlayAction}</S.RowMeta>
-                            <S.RowAction><ExternalLink size={15} /></S.RowAction>
+                            <S.RowAction><ArrowRight size={15} /></S.RowAction>
                         </S.PlatformRow>
                         {PLATFORMS.map(p => {
                             const info = infos[p.key];

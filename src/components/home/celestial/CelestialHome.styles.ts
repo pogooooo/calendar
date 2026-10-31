@@ -29,7 +29,7 @@ export const Arch = styled.svg`
     ${ornamentStrokes}
 
     @media (max-width: 768px) {
-        max-height: 120px;
+        max-height: 76px;
     }
 
     .basel { stroke-opacity: 0.55; }
@@ -73,7 +73,7 @@ export const ArchFoot = styled.div`
     }
     .summary { white-space: nowrap; }
     @media(max-width:768px) {
-        .center { gap:4px; font-size:.68rem; letter-spacing:.04em; min-width:0; }
+        .center { gap:4px; font-size:.75rem; letter-spacing:.02em; min-width:0; }
     }
 `;
 

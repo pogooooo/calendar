@@ -6,7 +6,6 @@ import * as GemS from "./gem/GemMonthCalendar.styles";
 import * as React from "react";
 import { fx, rectOf } from '@/lib/fx';
 import { Slot } from "@radix-ui/react-slot";
-import { AnimatePresence } from "framer-motion";
 import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 
 import { MonthThemeProps, CalendarTodoType } from "./MonthCalendar";
@@ -30,7 +29,7 @@ import { addDaysToKey } from "@/lib/timezone";
 import useAnniversaryStore from "@/store/useAnniversaryStore";
 import { anniversariesOn } from "@/lib/anniversary";
 import AnniversaryCrown from "@/components/calendar/parts/anniversary/AnniversaryCrown";
-import SwapLayer from "@/components/transition/SwapLayer";
+import { useSwapMotion } from '@/hooks/useMotion';
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import CelestialMonthHeader from "./celestial/CelestialMonthHeader";
 import MapleMonthHeader from "./maple/MapleMonthHeader";
@@ -60,6 +59,7 @@ interface WeekRowProps {
     todayStr: string;
     currentMonth: number;
     selectedDate?: Date;
+    tabStopKey: string;
     handleCreateTodo: (date: Date) => void;
     handleContextMenu: (e: React.MouseEvent, todo: CalendarTodoType) => void;
     handleContextMenuChallenge: (e: React.MouseEvent, challenge: CalendarTodoType) => void;
@@ -75,9 +75,9 @@ interface WeekRowProps {
     dropTarget: string | null;
 }
 
-/** 데스크톱·위젯의 바는 칸 높이에 들어가는 만큼(재서 정한다), 폰은 마름모라 작으니 여섯까지 — 두 줄 (그 뒤는 +N) */
+/** Desktop/widget rows are measured. Phones preview two titles, with the full list below. */
 const DEFAULT_VISIBLE_LEVELS = 2;
-const MAX_VISIBLE_LEVELS_MOBILE = 6;
+const MAX_VISIBLE_LEVELS_MOBILE = 1;
 /** 바를 아직 못 쟀을 때의 한 층 높이 (바 20px + 사이 2px) 와 "+N" 줄 높이 */
 const FALLBACK_BAR_PITCH = 22;
 const FALLBACK_MORE_HEIGHT = 20;
@@ -85,7 +85,7 @@ const FALLBACK_MORE_HEIGHT = 20;
 const WeekRow = ({
                      dates, row, todos, challengeTodos, categories, todayStr, currentMonth,
                      handleCreateTodo, handleContextMenu,
-                     selectedDate, onCellClick, setMoreModalDate, handleQuickEdit, handleMoveTodo, handleResizeTodo,
+                     selectedDate, tabStopKey, onCellClick, setMoreModalDate, handleQuickEdit, handleMoveTodo, handleResizeTodo,
                      onDragStart, consumeDragClick, draggingId, dropTarget
                  }: WeekRowProps) => {
     const S = usePickTheme(STYLES);
@@ -171,8 +171,10 @@ const WeekRow = ({
 
                 // 이 칸이 쓰는 층 수가 들어가면 다 보이고, 넘치면 한 층을 "+N" 자리로 비운다
                 const needed = dayTodos.reduce((m: number, t: CalendarTodoType) => Math.max(m, (todoLevels[t.id] ?? 0) + 1), 0);
-                const maxLevels = isMobile ? MAX_VISIBLE_LEVELS_MOBILE : needed <= fit.all ? fit.all : fit.withMore;
-                const hiddenCount = dayTodos.filter((t: CalendarTodoType) => todoLevels[t.id] >= maxLevels).length;
+                const maxLevels = isMobile ? (dayTodos.length > MAX_VISIBLE_LEVELS_MOBILE ? 1 : MAX_VISIBLE_LEVELS_MOBILE)
+                    : needed <= fit.all ? fit.all : fit.withMore;
+                const hiddenCount = isMobile ? Math.max(0, dayTodos.length - maxLevels)
+                    : dayTodos.filter((t: CalendarTodoType) => todoLevels[t.id] >= maxLevels).length;
 
                 const tier = dayTiers[idx];
                 const connectLeft = tier > 0 && idx > 0 && dayTiers[idx - 1] === tier;
@@ -185,6 +187,22 @@ const WeekRow = ({
                         key={idx}
                         ref={idx === 0 ? firstCellRef : undefined}
                         data-calendar-date={cellKey}
+                        data-month-cell
+                        data-selected={isSelected ? '' : undefined}
+                        role={onCellClick ? 'button' : undefined}
+                        tabIndex={onCellClick ? (cellKey===tabStopKey?0:-1) : undefined}
+                        aria-label={onCellClick ? `${cellKey}${isToday ? ` · ${t.home.today}` : ''}` : undefined}
+                        aria-pressed={onCellClick ? isSelected : undefined}
+                        onKeyDown={onCellClick ? (event) => {
+                            if (event.target !== event.currentTarget) return;
+                            if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onCellClick(date); }
+                            const delta:Record<string,number>={ArrowLeft:-1,ArrowRight:1,ArrowUp:-7,ArrowDown:7,Home:-date.getDay(),End:6-date.getDay()};
+                            if(event.key in delta && !event.altKey && !event.ctrlKey && !event.metaKey) {
+                                event.preventDefault();event.stopPropagation();
+                                const key=addDaysToKey(cellKey,delta[event.key]);
+                                event.currentTarget.closest('[data-month-grid]')?.querySelector<HTMLElement>(`[data-calendar-date="${key}"]`)?.focus();
+                            }
+                        } : undefined}
                         aria-current={isToday ? 'date' : undefined}
                         $dropTarget={dropTarget === cellKey}
                         $isToday={isToday}
@@ -208,6 +226,7 @@ const WeekRow = ({
                             </S.DayHeaderLeft>
 
                             <S.AddTodoButton
+                                tabIndex={cellKey===tabStopKey?0:-1}
                                 aria-label={`${t.calendar.addTask}: ${cellKey}`}
                                 className="add-btn"
                                 onClick={(e) => { e.stopPropagation(); handleCreateTodo(date); }}
@@ -222,7 +241,8 @@ const WeekRow = ({
                         </S.CompactTaskCount>}
                         <S.TodoBarList data-month-bars="">
                             {Array.from({ length: Math.min(maxLevel, maxLevels) }).map((_, levelIndex) => {
-                                const todoAtThisLevel = dayTodos.find((t: CalendarTodoType) => todoLevels[t.id] === levelIndex);
+                                const todoAtThisLevel = isMobile ? dayTodos[levelIndex]
+                                    : dayTodos.find((t: CalendarTodoType) => todoLevels[t.id] === levelIndex);
 
                                 if (todoAtThisLevel && todoAtThisLevel.startAt && todoAtThisLevel.endAt) {
                                     const span = weekSpans.get(todoAtThisLevel.id);
@@ -236,13 +256,15 @@ const WeekRow = ({
                                     return (
                                         <S.TodoBarItem key={todoAtThisLevel.id}
                                                        data-month-bar=""
+                                                       data-done={isDone ? '' : undefined}
+                                                       style={{ '--event-color': color ?? 'currentColor' } as React.CSSProperties}
                                                        role="button"
                                                        tabIndex={isStart || idx === 0 ? 0 : -1}
                                                        aria-label={todoAtThisLevel.title}
-                                                       title={movable ? `${todoAtThisLevel.title} · ${t.interaction.calendarDragHint}` : todoAtThisLevel.title}
+                                                       title={movable && !isMobile ? `${todoAtThisLevel.title} · ${t.interaction.calendarDragHint}` : todoAtThisLevel.title}
                                                        $dragging={draggingId === todoAtThisLevel.id}
                                                        $movable={movable}
-                                                       onPointerDown={e => { if (movable) onDragStart(e, todoAtThisLevel, cellKey); }}
+                                                       onPointerDown={e => { if (movable && !isMobile) onDragStart(e, todoAtThisLevel, cellKey); }}
                                                        $isStart={isStart}
                                                        $isEnd={isEnd}
                                                        $color={color}
@@ -260,7 +282,7 @@ const WeekRow = ({
                                                            e.stopPropagation();
                                                            handleContextMenu(e, todoAtThisLevel);
                                                        }}>
-                                            {(isStart || idx === 0) && <span className="todo-title">{todoAtThisLevel.title}</span>}
+                                            {(isMobile || isStart || idx === 0) && <span className="todo-title">{todoAtThisLevel.title}</span>}
                                             {movable && !isMobile && (['start', 'end'] as const).map(edge => ((edge === 'start' && isStart) || (edge === 'end' && isEnd)) && <S.RangeHandle
                                                 key={edge} type="button" $edge={edge}
                                                 aria-label={`${todoAtThisLevel.title} · ${edge === 'start' ? t.form.startDate : t.form.endDate}`}
@@ -282,7 +304,7 @@ const WeekRow = ({
                             })}
 
                             {hiddenCount > 0 && (
-                                <S.MoreButton data-month-more="" onClick={(e) => { e.stopPropagation(); setMoreModalDate(date); }}>
+                                <S.MoreButton data-month-more="" aria-label={`${cellKey} · ${t.calendar.more(hiddenCount)}`} onClick={(e) => { e.stopPropagation(); setMoreModalDate(date); }}>
                                     <span className="full">{t.calendar.more(hiddenCount)}</span>
                                     <span className="short">{`+${hiddenCount}`}</span>
                                 </S.MoreButton>
@@ -322,6 +344,8 @@ const MonthCalendarView = React.forwardRef<HTMLDivElement, CelestialMonthProps>(
         });
         // 손가락으로는 작은 화살표보다 쓸어 넘기는 쪽이 빠르다.
         const swipe = useSwipe(handleNextMonth, handlePrevMonth);
+        const gridRef = React.useRef<HTMLDivElement>(null);
+        useSwapMotion(currentDate.getFullYear() * 12 + currentDate.getMonth(), gridRef);
 
         return (
             <S.CelestialCalendarWrapper as={Component} ref={ref} {...props}>
@@ -351,12 +375,10 @@ const MonthCalendarView = React.forwardRef<HTMLDivElement, CelestialMonthProps>(
 
                 <S.SliderWrapper {...swipe}>
                     <S.CalendarWindow data-fx-zone="month">
-                        <Etching month={currentDate} />
-                        {/* SwapLayer animates the calendar; the shared FX stage adds each theme's particles. */}
-                        <AnimatePresence initial={false} custom={direction} mode="popLayout">
-                            <SwapLayer
-                                key={currentDate.toISOString()}
-                                direction={direction}
+                        <div data-calendar-decoration><Etching month={currentDate} /></div>
+                        {/* One live grid: rapid navigation never retains stale dates. */}
+                            <div
+                                ref={gridRef}
                                 // isolation — 판 안의 층(날짜 줄 z 2, + 단추 z 10 따위)이 판 밖과 다투지 않게 판마다 가둔다.
                                 // 안 그러면 넘어가는 옛 장(z 2) 위로 밑에 깔린 새 장의 날짜 숫자가 비쳐 올라왔다(Maple 책장 넘김)
                                 style={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative', isolation: 'isolate' }}
@@ -369,7 +391,7 @@ const MonthCalendarView = React.forwardRef<HTMLDivElement, CelestialMonthProps>(
                                     ))}
                                 </S.Header>
 
-                                <S.GridContainer>
+                                <S.GridContainer data-month-grid>
                                     {weeks.map((weekDates, idx) => (
                                         <WeekRow
                                             key={idx}
@@ -385,6 +407,7 @@ const MonthCalendarView = React.forwardRef<HTMLDivElement, CelestialMonthProps>(
                                             handleContextMenuChallenge={handleContextMenuChallenge}
                                             handleQuickToggleChallenge={handleQuickToggleChallenge}
                                             selectedDate={selectedDate}
+                                            tabStopKey={selectedDate && weeks.flat().some(d=>labelKey(d)===labelKey(selectedDate)) ? labelKey(selectedDate) : labelKey(new Date(currentDate.getFullYear(),currentDate.getMonth(),1))}
                                             onCellClick={onDateChange}
                                             setMoreModalDate={setMoreModalDate}
                                             handleQuickEdit={handleQuickEdit}
@@ -397,8 +420,7 @@ const MonthCalendarView = React.forwardRef<HTMLDivElement, CelestialMonthProps>(
                                         />
                                     ))}
                                 </S.GridContainer>
-                            </SwapLayer>
-                        </AnimatePresence>
+                            </div>
                     </S.CalendarWindow>
                 </S.SliderWrapper>
 

@@ -36,11 +36,13 @@ class WidgetConfigActivity : Activity() {
         val seek = findViewById<SeekBar>(R.id.cfg_alpha)
         val alphaText = findViewById<TextView>(R.id.cfg_alpha_value)
         val modes = findViewById<RadioGroup>(R.id.cfg_mode)
+        val styles = findViewById<RadioGroup>(R.id.cfg_style)
         val preview = findViewById<ImageView>(R.id.cfg_preview)
 
         seek.max = 80 // 20..100
         seek.progress = WidgetPrefs.alpha(this, widgetId) - 20
         modes.check(when (WidgetPrefs.mode(this, widgetId)) { "light" -> R.id.cfg_mode_light; "dark" -> R.id.cfg_mode_dark; else -> R.id.cfg_mode_app })
+        styles.check(if (WidgetPrefs.style(this, widgetId) == "ornate") R.id.cfg_style_ornate else R.id.cfg_style_simple)
 
         val snap = Snapshot.load(this)
         val (wDp, hDp) = previewSize()
@@ -49,7 +51,8 @@ class WidgetConfigActivity : Activity() {
             alphaText.text = "$alpha%"
             val mode = when (modes.checkedRadioButtonId) { R.id.cfg_mode_light -> "light"; R.id.cfg_mode_dark -> "dark"; else -> "app" }
             val palette = Palette.resolve(snap?.theme, mode)
-            preview.setImageBitmap(WidgetPainter(this, palette, alpha, snap).paint(kind, wDp, hDp).bitmap)
+            val style = if (styles.checkedRadioButtonId == R.id.cfg_style_ornate) "ornate" else "simple"
+            preview.setImageBitmap(WidgetPainter(this, palette, alpha, snap, presentationStyle = style).paint(kind, wDp, hDp).bitmap)
         }
         seek.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(sb: SeekBar?, p: Int, fromUser: Boolean) = repaint()
@@ -57,11 +60,13 @@ class WidgetConfigActivity : Activity() {
             override fun onStopTrackingTouch(sb: SeekBar?) {}
         })
         modes.setOnCheckedChangeListener { _, _ -> repaint() }
+        styles.setOnCheckedChangeListener { _, _ -> repaint() }
         repaint()
 
         findViewById<TextView>(R.id.cfg_ok).setOnClickListener {
             val mode = when (modes.checkedRadioButtonId) { R.id.cfg_mode_light -> "light"; R.id.cfg_mode_dark -> "dark"; else -> "app" }
-            WidgetPrefs.save(this, widgetId, seek.progress + 20, mode)
+            val style = if (styles.checkedRadioButtonId == R.id.cfg_style_ornate) "ornate" else "simple"
+            WidgetPrefs.save(this, widgetId, seek.progress + 20, mode, style)
             // 이 위젯만 새로 그린다 (놓는 순간에는 런처가 아직 onUpdate 를 안 불렀을 수 있다)
             val info = manager.getAppWidgetInfo(widgetId)
             val p = CronosWidgetProvider.PROVIDERS.firstOrNull { it.name == info?.provider?.className }

@@ -92,6 +92,7 @@ export default function AnniversaryPage() {
                         type="button"
                         title={t.anniversaryPage.iconLabels[i.key]}
                         $selected={icon === i.key}
+                        aria-pressed={icon === i.key}
                         onClick={() => setIcon(i.key)}
                     >
                         <AnniversaryIcon name={i.key} size={17} />

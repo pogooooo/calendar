@@ -4,7 +4,7 @@ import * as GemS from "./gem/GemWeekCalendar.styles";
 import * as React from "react";
 import { useTheme } from "styled-components";
 import { Slot } from "@radix-ui/react-slot";
-import { motion, AnimatePresence } from "framer-motion";
+import { useSwapMotion } from '@/hooks/useMotion';
 import { Plus } from 'lucide-react';
 
 import { WeekThemeProps } from "./WeekCalendar";
@@ -31,11 +31,6 @@ import * as OceanS from './ocean/OceanWeekCalendar.styles';
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
 const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
 
-const slideVariants = {
-    enter: (direction: number) => ({ x: direction > 0 ? 18 : -18, opacity: 0 }),
-    center: { x: 0, opacity: 1 },
-    exit: (direction: number) => ({ x: direction < 0 ? 18 : -18, opacity: 0 }),
-};
 
 const MAX_VISIBLE_LEVELS = 3;
 
@@ -65,6 +60,8 @@ const WeekCalendarView = React.forwardRef<HTMLDivElement, CelestialWeekProps>(
      }, ref) => {
         const S = usePickTheme(STYLES);
         const Component = asChild ? Slot : 'div';
+        const gridRef=React.useRef<HTMLDivElement>(null);
+        useSwapMotion(weekDates[0].getTime(),gridRef);
         const theme = useTheme();
         const t = useT();
         const anniversaries = useAnniversaryStore(s => s.anniversaries);
@@ -106,18 +103,7 @@ const WeekCalendarView = React.forwardRef<HTMLDivElement, CelestialWeekProps>(
                     <S.CalendarRow>
                     <S.CalendarWindow>
                         <CalendarAmbience />
-                        <AnimatePresence initial={false} custom={direction} mode="popLayout">
-                            <motion.div
-                                key={weekDates[0].toISOString()}
-                                custom={direction}
-                                variants={slideVariants}
-                                initial="enter"
-                                animate="center"
-                                exit="exit"
-                                transition={{
-                                    x: { type: "tween", duration: 0.2, ease: "easeOut" },
-                                    opacity: { duration: 0.15 }
-                                }}
+                            <div ref={gridRef}
                                 style={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative', zIndex: 1 }}
                             >
                                 <S.Header>
@@ -206,8 +192,7 @@ const WeekCalendarView = React.forwardRef<HTMLDivElement, CelestialWeekProps>(
                                         );
                                     })}
                                 </S.BarContainer>
-                            </motion.div>
-                        </AnimatePresence>
+                            </div>
                     </S.CalendarWindow>
                     </S.CalendarRow>
                 </S.SliderWrapper>

@@ -41,6 +41,7 @@ export const ColumnPick = styled.button<{ $on: boolean }>`
     justify-content: center;
     gap: 6px;
     min-height: 38px;
+    ${MOBILE} { min-height:44px; font-family:${p => p.theme.fonts.body}; font-size:.82rem; letter-spacing:0; }
     padding: 6px 4px;
     font-family: ${(props) => props.theme.fonts.display};
     font-size: 0.74rem;
@@ -139,6 +140,7 @@ export const CardList = styled.div`
     display: flex;
     flex-direction: column;
     gap: 8px;
+    ${MOBILE} { flex:none; overflow:visible; padding:8px 10px 12px; }
 `;
 
 export const CardBox = styled.div<{ $isLocked?: boolean }>`
@@ -152,6 +154,7 @@ export const CardBox = styled.div<{ $isLocked?: boolean }>`
     cursor: pointer;
     opacity: ${(props) => props.$isLocked ? 0.6 : 1};
     transition: background-color 0.2s, border-color 0.2s;
+    ${MOBILE} { min-height:86px; padding:12px; gap:10px; }
 
     &:hover {
         border-color: ${(props) => props.theme.colors.primary}80;
@@ -193,6 +196,7 @@ export const CardTitle = styled.div<{ $isDone?: boolean }>`
         flex: 1;
         word-break: keep-all;
     }
+    ${MOBILE} { font-size:.92rem; line-height:1.45; }
 `;
 
 export const PriorityTag = styled.span<{ $priority: string }>`
@@ -291,6 +295,6 @@ export const CardMoveButton = styled.button`
     ${MOBILE} {
         font-size: 0.72rem;
         padding: 7px 12px;
-        min-height: 34px;
+        min-height: 44px;
     }
 `;

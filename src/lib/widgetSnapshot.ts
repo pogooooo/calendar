@@ -14,7 +14,8 @@
  * 창(window): 이 달 첫날부터, 이 달 끝과 오늘+14일 중 늦은 쪽까지.
  * 월간 위젯이 지난 날의 점까지 찍고, "다음" 이 달을 넘겨서도 보이게.
  */
-import { localDateKey, utcDayKey, zonedTime } from "@/lib/dateKey";
+import { localDateKey, utcDayKey, zonedTime, activeTimeZone } from "@/lib/dateKey";
+import { doneKeysIn } from './todoDone';
 import { challengeExpired } from "@/lib/challengeDays";
 import { expandTodos } from "@/hooks/useExpandedTodos";
 import type { Translations } from "@/i18n/types";
@@ -22,7 +23,7 @@ import type { TodoType, CategoryType, ChallengeType, ProjectType } from "@/types
 import type { AnniversaryType } from "@/store/useAnniversaryStore";
 
 export interface SnapshotTodo {
-    /** 원래 할 일의 id (반복 펼침의 꼬리표는 뗀다) — 위젯에서 누르면 그 날짜의 일간으로 간다 */
+    /** 원래 할 일의 id (반복 펼침의 꼬리표는 뗀다) — 위젯 편집창이 원본을 읽을 때 쓴다 */
     id: string;
     title: string;
     startAt: string;   // ISO
@@ -31,6 +32,9 @@ export interface SnapshotTodo {
     /** 이 회차를 끝냈는가 — 여러 날 일정은 한 번 끝낸다(src/lib/todoDone.ts). 위젯은 그 회차의 모든 날에 같은 값을 쓴다 */
     done: boolean;
     color: string;
+    categoryId?: string | null;
+    completionDate?: string;
+    doneKeys?: string[];
 }
 
 export interface SnapshotChallenge {
@@ -88,6 +92,7 @@ export interface WidgetSnapshot {
     /** 만든 날 (사용자 시간대). */
     date: string;
     locale: string;
+    timeZone?: string;
     theme: SnapshotTheme;
     todos: SnapshotTodo[];
     challenges: SnapshotChallenge[];
@@ -109,7 +114,7 @@ export interface SnapshotInput {
     t: Translations;
     locale: string;
     theme: { family?: string; mode?: string; variant?: string; gemColor?: string; colors: SnapshotTheme["colors"] };
-    /** 위젯 전용 열쇠와 서버 주소. 없으면(로그아웃·웹) 위젯은 누르면 앱을 연다 */
+    /** 위젯 전용 열쇠와 서버 주소. 없으면 편집창에 로그인 안내를 표시한다. */
     quickAdd?: { api: string; token: string } | null;
     now?: Date;
 }
@@ -138,6 +143,9 @@ export function buildWidgetSnapshot(input: SnapshotInput): WidgetSnapshot {
             allDay: !!td.isAllDay,
             done: !!td.isDone,
             color: color(td.categoryId),
+            categoryId: td.categoryId,
+            completionDate: localDateKey(td.startAt!),
+            doneKeys: doneKeysIn(td),
         }))
         .sort((a, b) => a.startAt.localeCompare(b.startAt));
 
@@ -177,6 +185,7 @@ export function buildWidgetSnapshot(input: SnapshotInput): WidgetSnapshot {
         generatedAt: now.toISOString(),
         date: todayKey,
         locale,
+        timeZone: activeTimeZone(),
         theme: {
             family: theme.family ?? "celestial",
             mode: theme.mode === "dark" ? "dark" : "light",

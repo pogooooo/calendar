@@ -21,13 +21,14 @@ class PreviewRenderReceiver : BroadcastReceiver() {
         val debuggable = (context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
         if (!debuggable) return
         val family = intent.getStringExtra("family")
+        val appearance = WidgetPrefs.normalizeStyle(intent.getStringExtra("style"))
         // "maple_vintage" → 갈래 maple, 벌 vintage
         val fam = family?.substringBefore("_")
         val vintage = if (family?.substringAfter("_", "") == "vintage") Snapshot.ThemeSpec("maple", "light", mapOf(
             "background" to 0xFFE7DABF.toInt(), "surface" to 0xFFF2E8D3.toInt(), "primary" to 0xFF96452A.toInt(), "accent" to 0xFFBB9150.toInt(),
             "text" to 0xFF38291E.toInt(), "textSecondary" to 0xFF76624C.toInt(), "weekend" to 0xFF9A4A3B.toInt(),
         ), "vintage") else null
-        val dir = File(context.filesDir, if (family != null) "previews/$family" else "previews").apply { mkdirs() }
+        val dir = File(context.filesDir, if (family != null) "previews/${family}_$appearance" else "previews").apply { mkdirs() }
         val live = if (intent.getBooleanExtra("live", false)) Snapshot.load(context) else null
         val snap = live ?: Snapshot.parse(context.assets.open("widget-sample.json").bufferedReader().readText())
         // 견본은 그날(견본의 date) 낮 12:42 에 본 것으로 그린다 — 에뮬레이터 시계가 다른 날이면 목록이 다 비어 그려졌다
@@ -42,9 +43,36 @@ class PreviewRenderReceiver : BroadcastReceiver() {
         for ((kind, size) in sizes) {
             for (dark in listOf(false, true)) {
                 val palette = if (fam != null) Palette.of(fam, dark, if (dark) null else vintage) else Palette.of(snap.theme?.family, dark, snap.theme)
-                val bmp = WidgetPainter(context, palette, WidgetPrefs.DEFAULT_ALPHA, snap, now = now).paint(kind.substringBefore("_"), size.first, size.second).bitmap
+                val bmp = WidgetPainter(context, palette, WidgetPrefs.DEFAULT_ALPHA, snap, now = now, presentationStyle = appearance).paint(kind.substringBefore("_"), size.first, size.second).bitmap
                 File(dir, "widget_preview_${kind}${if (dark) "_dark" else ""}.png").outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
             }
         }
+        // Exercise the real preference store with impossible launcher IDs; always clean up.
+        val ids = intArrayOf(-91001, -91002)
+        val proof = org.json.JSONObject()
+        try {
+            WidgetPrefs.remove(context, ids)
+            proof.put("missingDefaultsToSimple", WidgetPrefs.style(context, ids[0]) == "simple")
+            WidgetPrefs.save(context, ids[0], 80, "dark", "ornate")
+            WidgetPrefs.save(context, ids[1], 96, "light", "simple")
+            proof.put("stylesAreIndependent", WidgetPrefs.style(context, ids[0]) == "ornate" && WidgetPrefs.style(context, ids[1]) == "simple")
+            proof.put("brightnessPreserved", WidgetPrefs.mode(context, ids[0]) == "dark" && WidgetPrefs.mode(context, ids[1]) == "light")
+            proof.put("invalidStyleFallsBack", WidgetPrefs.normalizeStyle("unknown") == "simple")
+            val palette = Palette.of(fam, false, snap.theme)
+            var sameActions = true
+            var distinctSurfaces = true
+            for ((kind, size) in sizes) {
+                val key = kind.substringBefore("_")
+                val simple = WidgetPainter(context, palette, 88, snap, now=now, presentationStyle="simple").paint(key,size.first,size.second)
+                val ornate = WidgetPainter(context, palette, 88, snap, now=now, presentationStyle="ornate").paint(key,size.first,size.second)
+                sameActions = sameActions && simple.rowLinks == ornate.rowLinks && simple.cellLinks == ornate.cellLinks && simple.overlay == ornate.overlay && simple.monthRows == ornate.monthRows
+                distinctSurfaces = distinctSurfaces && !simple.bitmap.sameAs(ornate.bitmap)
+                simple.bitmap.recycle(); ornate.bitmap.recycle()
+            }
+            proof.put("sameDataAndActionsAcrossStyles", sameActions)
+            proof.put("differentAppearanceAtEverySize", distinctSurfaces)
+        } finally { WidgetPrefs.remove(context, ids) }
+        proof.put("removedStyleResets", WidgetPrefs.style(context, ids[0]) == "simple")
+        File(dir,"style-proof.json").writeText(proof.toString(2))
     }
 }

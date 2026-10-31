@@ -7,7 +7,7 @@ import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialWidgetShell.styles";
 import * as MapleS from "./maple/MapleWidgetShell.styles";
 import { GLASS_MARGIN } from "./celestial/CelestialWidgetShell.styles";
-import useWidgetStore, { BgMode, WidgetBgSettings } from "@/store/useWidgetStore";
+import useWidgetStore from "@/store/useWidgetStore";
 import { useT } from "@/i18n/useT";
 import { invoke } from "@tauri-apps/api/core";
 import { convertFileSrc } from "@tauri-apps/api/core";
@@ -19,6 +19,12 @@ import { mirrorWidgetStateToFile } from "@/lib/widgetStateFile";
 import * as OceanS from './ocean/OceanWidgetShell.styles';
 import WidgetCharm from './WidgetCharm';
 import WidgetDecor from './WidgetDecor';
+import WidgetAppearanceSettings from './WidgetAppearanceSettings';
+import {MotionRules,Overlay} from './WidgetAppearance.styles';
+import {WidgetMotionContext} from './WidgetMotionContext';
+import useThemeMotion from '@/hooks/useThemeMotion';
+import {normalizeWidgetAppearance,resolveWidgetEffect} from '@/lib/widgetAppearance';
+import {normalizeWidgetBackground,widgetBackgroundStyle} from '@/lib/widgetBackground';
 import { gemWidgetColors } from '@/styles/gem/palette';
 
 interface Props {
@@ -71,37 +77,6 @@ function getLuminance(hex: string): number {
     return 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);
 }
 
-function buildBackground(bg: WidgetBgSettings, surfaceColor: string): React.CSSProperties {
-    switch (bg.mode) {
-        case "theme": {
-            const alpha = Math.round(bg.opacity * 255).toString(16).padStart(2, "0");
-            return {
-                background: surfaceColor + alpha,
-                backdropFilter: "none",
-                WebkitBackdropFilter: "none",
-            };
-        }
-        case "glass": {
-            return {
-                background: "transparent",
-                backdropFilter: "none",
-                WebkitBackdropFilter: "none",
-            };
-        }
-        case "custom": {
-            const hex = bg.customColor.replace("#", "");
-            const r = parseInt(hex.slice(0, 2), 16);
-            const g = parseInt(hex.slice(2, 4), 16);
-            const b = parseInt(hex.slice(4, 6), 16);
-            return {
-                background: `rgba(${r},${g},${b},${bg.opacity})`,
-                backdropFilter: "none",
-                WebkitBackdropFilter: "none",
-            };
-        }
-    }
-}
-
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
 const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
 const CONTRAST_PALETTES: ThemeImpls<typeof gemWidgetColors | null> = {
@@ -113,8 +88,14 @@ export default function WidgetShell({ kind, title, children }: Props) {
     const contrastPalette = usePickTheme(CONTRAST_PALETTES);
     const theme = useTheme();
     const t = useT();
-    const bg = useWidgetStore((s) => s[kind].bg);
-    const updateBg = useWidgetStore((s) => s.updateBg);
+    const savedBg = useWidgetStore((s) => s[kind].bg);
+    const bg = useMemo(()=>normalizeWidgetBackground(savedBg),[savedBg]);
+    const savedAppearance=useWidgetStore(s=>s[kind].appearance);
+    const appearance=normalizeWidgetAppearance(savedAppearance);
+    const appMotion=useThemeMotion();
+    const widgetMotion=resolveWidgetEffect(appMotion,appearance.effect);
+    const settingsButton=useRef<HTMLButtonElement>(null);
+    const settingsPane=useRef<HTMLDivElement>(null);
 
     const [showSettings, setShowSettings] = useState(false);
     const [locked, setLocked] = useState(false);
@@ -169,7 +150,7 @@ export default function WidgetShell({ kind, title, children }: Props) {
     }, [kind]);
     const surfaceColor = theme?.colors?.surface;
     // "테마 바탕"은 그 테마의 카드색(surface). 예전의 Maple 은 종이결 그림을 깔았다(2026-10-15 걷었다)
-    const bgStyle = buildBackground(bg, surfaceColor);
+    const bgStyle = widgetBackgroundStyle(bg, surfaceColor);
 
     const bgRef = useRef(bg);
     const surfaceColorRef = useRef(surfaceColor);
@@ -216,22 +197,6 @@ export default function WidgetShell({ kind, title, children }: Props) {
             baseColors: theme?.colors,
         };
     }, [theme, contrastPalette, bg.autoTextColor, bg.mode, bg.customColor, surfaceColor, sampledLuminance, dynamicTextColor, baselineTextColor]);
-
-    const handleModeChange = useCallback((mode: BgMode) => {
-        updateBg(kind, { mode });
-    }, [kind, updateBg]);
-
-    const handleOpacity = useCallback((v: number) =>
-        updateBg(kind, { opacity: v }), [kind, updateBg]);
-
-    const handleColor = useCallback((c: string) =>
-        updateBg(kind, { customColor: c }), [kind, updateBg]);
-
-    const handleAutoTextColor = useCallback((v: boolean) =>
-        updateBg(kind, { autoTextColor: v }), [kind, updateBg]);
-
-    const handleGloss = useCallback((v: boolean) =>
-        updateBg(kind, { gloss: v }), [kind, updateBg]);
 
     const handleLock = useCallback(() => {
         setLocked(true);
@@ -445,17 +410,27 @@ export default function WidgetShell({ kind, title, children }: Props) {
         }
     }, [locked, handleUnlock]);
 
+    const closeSettings=useCallback(()=>{setShowSettings(false);requestAnimationFrame(()=>settingsButton.current?.focus());},[]);
+    useEffect(()=>{
+        if(!showSettings)return;
+        settingsPane.current?.focus({preventScroll:true});
+        const close=(event:KeyboardEvent)=>{if(event.key==='Escape'){event.preventDefault();closeSettings();}};
+        window.addEventListener('keydown',close);
+        return()=>window.removeEventListener('keydown',close);
+    },[showSettings,closeSettings]);
     return (
-        <S.Shell
-            style={bgStyle}
+        <WidgetMotionContext.Provider value={appearance.effect}><MotionRules><S.Shell
+            style={{background:'transparent',borderColor:'transparent',boxShadow:'none'}}
             data-widget={kind}
+            data-widget-design={appearance.design}
+            data-widget-motion={widgetMotion}
             $locked={locked}
             onContextMenu={handleContextMenu}
         >
             <ThemeProvider theme={widgetTheme}>
-                {bg.mode === 'theme' && !showSettings && <WidgetCharm locked={locked} />}
+                <S.BackgroundSurface data-widget-background aria-hidden data-ornate={appearance.design==='ornate' && bg.mode==='theme'} style={bgStyle}>
                 {bg.mode === "glass" && wallpaper.url && (
-                    <S.FakeGlassLayer $opacity={bg.opacity}>
+                    <S.FakeGlassLayer $blur={bg.glassBlur ?? 36.8}>
                         <S.VirtualMonitor
                             ref={monitorRef}
                             $url={wallpaper.url}
@@ -466,8 +441,9 @@ export default function WidgetShell({ kind, title, children }: Props) {
                 )}
 
                 {bg.mode === "glass" && bg.gloss && <S.GlossOverlay />}
-                {/* 갈래의 바탕 무늬 — 앱의 바탕을 닮게(멈춘 그림, 커서가 들어올 때만 한 번). 유리·색 바탕에서는 옅게 */}
-                <WidgetDecor kind={kind} locked={locked} dim={bg.mode !== "theme"} />
+                </S.BackgroundSurface>
+                {appearance.design==='ornate' && !showSettings && <div aria-hidden style={{position:'absolute',inset:0,pointerEvents:'none',opacity:appearance.intensity}}><WidgetCharm locked={locked} /></div>}
+                {appearance.design==='ornate'&&<WidgetDecor kind={kind} locked={locked} intensity={appearance.intensity}/>}
 
                 {!locked && (
                     <S.TopBar onMouseDown={startDrag}>
@@ -479,9 +455,10 @@ export default function WidgetShell({ kind, title, children }: Props) {
                         >
                             <S.Control
                                 type="button"
+                                ref={settingsButton}
                                 $active={showSettings}
-                                title={t.widgetShell.background}
-                                aria-label={t.widgetShell.background}
+                                title={t.widgetShell.appearance}
+                                aria-label={t.widgetShell.appearance}
                                 aria-expanded={showSettings}
                                 onClick={() => setShowSettings((v) => !v)}
                             ><Settings2 size={14} /></S.Control>
@@ -502,89 +479,23 @@ export default function WidgetShell({ kind, title, children }: Props) {
                 )}
 
                 {!locked && showSettings && (
-                    <ThemeProvider theme={contrastPalette ? theme : widgetTheme}>
-                    <S.SettingsPanel data-settings-open onClick={(e) => e.stopPropagation()}>
-                        <S.PanelLabel>{t.widgetShell.background}</S.PanelLabel>
-                        <S.ModeRow>
-                            {(["theme", "glass", "custom"] as BgMode[]).map((m) => (
-                                <S.ModeChip
-                                    key={m}
-                                    $active={bg.mode === m}
-                                    onClick={() => handleModeChange(m)}
-                                >
-                                    {m === "theme" ? t.widgetShell.theme : m === "glass" ? t.widgetShell.glass : t.widgetShell.color}
-                                </S.ModeChip>
-                            ))}
-                        </S.ModeRow>
-
-                        <S.PanelLabel>
-                            {bg.mode === "glass"
-                                ? t.widgetShell.blur(Math.round(bg.opacity * 40))
-                                : t.widgetShell.opacity(Math.round(bg.opacity * 100))}
-                        </S.PanelLabel>
-                        <S.Slider
-                            aria-label={bg.mode === "glass" ? t.widgetShell.blur(Math.round(bg.opacity * 40)) : t.widgetShell.opacity(Math.round(bg.opacity * 100))}
-                            type="range" min={0} max={100}
-                            value={Math.round(bg.opacity * 100)}
-                            onChange={(e) => handleOpacity(parseInt(e.target.value) / 100)}
-                        />
-
-                        {bg.mode === "glass" && (
-                            <>
-                                <S.PanelDivider />
-                                <S.ToggleRow>
-                                    <S.ToggleLabel>{t.widgetShell.gloss}</S.ToggleLabel>
-                                    <S.ToggleSwitch
-                                        aria-label={t.widgetShell.gloss}
-                                        aria-pressed={!!bg.gloss}
-                                        $on={!!bg.gloss}
-                                        onClick={() => handleGloss(!bg.gloss)}
-                                    >
-                                        {bg.gloss ? "ON" : "OFF"}
-                                    </S.ToggleSwitch>
-                                </S.ToggleRow>
-                            </>
-                        )}
-
-                        {bg.mode === "custom" && (
-                            <>
-                                <S.PanelLabel>{t.widgetShell.color}</S.PanelLabel>
-                                <S.ColorRow>
-                                    <S.ColorPicker
-                                        aria-label={t.widgetShell.color}
-                                        type="color"
-                                        value={bg.customColor}
-                                        onChange={(e) => handleColor(e.target.value)}
-                                    />
-                                    <S.ColorHex>{bg.customColor}</S.ColorHex>
-                                </S.ColorRow>
-                            </>
-                        )}
-
-                        <S.PanelDivider />
-                        <S.ToggleRow>
-                            <S.ToggleLabel>{t.widgetShell.autoTextColor}</S.ToggleLabel>
-                            <S.ToggleSwitch
-                                aria-label={t.widgetShell.autoTextColor}
-                                aria-pressed={bg.autoTextColor}
-                                $on={bg.autoTextColor}
-                                onClick={() => handleAutoTextColor(!bg.autoTextColor)}
-                            >
-                                {bg.autoTextColor ? "ON" : "OFF"}
-                            </S.ToggleSwitch>
-                        </S.ToggleRow>
-
-                        <S.PanelDone onClick={() => setShowSettings(false)}>
-                            {t.widgetShell.done}
-                        </S.PanelDone>
-                    </S.SettingsPanel>
-                    </ThemeProvider>
+                    <ThemeProvider theme={theme}><Overlay ref={settingsPane} data-settings-open role="dialog" aria-modal="true" tabIndex={-1} aria-label={t.widgetShell.appearance} onKeyDown={(event)=>{
+                        if(event.key!=='Tab') return;
+                        const pane=settingsPane.current;
+                        const controls=Array.from(pane?.querySelectorAll<HTMLElement>('button:not(:disabled),input:not(:disabled),[tabindex="0"]')??[]).filter(e=>e.getClientRects().length>0);
+                        const first=controls[0],last=controls[controls.length-1];
+                        if(!first) {event.preventDefault();return;}
+                        if(event.shiftKey && (document.activeElement===first || document.activeElement===pane)) {event.preventDefault();last.focus();}
+                        else if(!event.shiftKey && (document.activeElement===last || document.activeElement===pane)) {event.preventDefault();first.focus();}
+                    }}>
+                        <WidgetAppearanceSettings kind={kind} title={title} compact onDone={closeSettings}/>
+                    </Overlay></ThemeProvider>
                 )}
 
-                <S.Content ref={contentRef} $kind={kind} $locked={locked}>
+                <S.Content inert={showSettings} ref={contentRef} $kind={kind} $locked={locked}>
                     {children}
                 </S.Content>
             </ThemeProvider>
-        </S.Shell>
+        </S.Shell></MotionRules></WidgetMotionContext.Provider>
     );
 }

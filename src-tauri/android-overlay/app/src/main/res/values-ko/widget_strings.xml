@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 홈 위젯 고르기 화면의 이름·설명과 위젯 설정 화면의 글. 위젯 안의 내용은 앱 언어(스냅샷 labels)를 따른다. -->
 <resources>
+    <string name="widget_config_style">위젯 표현 스타일</string>
+    <string name="widget_style_simple">간소화 · 기본값</string>
+    <string name="widget_style_ornate">화려함 · 테마 장식</string>
+    <string name="widget_style_note">이 위젯에만 저장됩니다. 간소화는 가독성을 위해 바탕 불투명도를 최소 94%로 유지합니다. 앱 애니메이션 설정과는 별개입니다.</string>
     <string name="widget_previous">이전 날짜</string>
     <string name="widget_next">다음 날짜</string>
     <string name="widget_return_today">오늘로 돌아가기</string>
