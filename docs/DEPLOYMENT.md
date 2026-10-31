@@ -1,6 +1,6 @@
 # CRONOS 배포 절차
 
-사용자가 "배포해"라고 요청하면 기존 서비스의 웹, Windows 데스크톱, Android 비공개 테스트 Alpha를 업데이트한다. 이 문서의 경로와 계정은 2026-10-24 KST에 확인했다. 실행 전 원격 버전과 인증을 다시 확인한다.
+사용자가 "배포해"라고 요청하면 기존 서비스의 웹, Windows 데스크톱, Android 비공개 테스트 Alpha를 업데이트한다. 아래 경로와 상태는 2026-11-01 KST에 다시 확인했다. 실행 전 원격 버전과 인증을 다시 확인한다.
 
 ## 배포 경로와 현재 상태
 
@@ -8,12 +8,12 @@
 | --- | --- | --- |
 | 소스 | https://github.com/pogooooo/calendar · 기본 브랜치 `master` | 로컬 origin과 일치. 기존 Git 자격 증명으로 `pogooooo`의 push 권한 확인 |
 | 웹과 공용 API | https://cronos.pogoo.workers.dev | Cloudflare Worker `cronos`. 홈페이지·다운로드·업데이터 HTTP 200 |
-| Cloudflare 관리 | https://dash.cloudflare.com/b39c857d1473af13bda46e5b9b74fcb9/workers/services/view/cronos/production | Wrangler OAuth 계정 `poggo201103@gmail.com`. 최신 배포 2026-10-13 11:14 KST |
-| 데스크톱 릴리스 | https://github.com/pogooooo/calendar/releases | 최신 `v1.3.1` (2026-10-13). Windows EXE/MSI와 `.sig`, `latest.json`, Android APK 포함 |
-| 다운로드 | https://cronos.pogoo.workers.dev/download | Worker가 GitHub 자산을 중계. Windows·APK는 1.3.1, macOS는 1.0.1. Linux는 1.0.1 자산이 있으나 가용성 조회가 간헐적으로 없음 반환 |
-| 데스크톱 자동 업데이트 | https://cronos.pogoo.workers.dev/api/update | 현재 `1.3.1`, `windows-x86_64`. GitHub 직접 주소가 예비 endpoint |
+| Cloudflare 관리 | https://dash.cloudflare.com/b39c857d1473af13bda46e5b9b74fcb9/workers/services/view/cronos/production | Wrangler OAuth 계정 `poggo201103@gmail.com`. 2026-11-01 배포 `591e7ee4-7f8f-4254-8a94-25735b772528` |
+| 데스크톱 릴리스 | https://github.com/pogooooo/calendar/releases | 최신 `v1.3.4` (2026-11-01 KST). Windows EXE/MSI와 `.sig`, `latest.json`, Android APK 포함 |
+| 다운로드 | https://cronos.pogoo.workers.dev/download | Worker가 GitHub 자산을 중계. Windows·APK는 1.3.4, macOS·Linux는 기존 1.0.1 유지. 네 플랫폼 가용성 응답 확인 |
+| 데스크톱 자동 업데이트 | https://cronos.pogoo.workers.dev/api/update | 현재 `1.3.4`, `windows-x86_64`. GitHub 직접 주소가 예비 endpoint |
 | Google Play 관리 | https://play.google.com/console/u/3/developers/6851888871428387760/app/4972920876506897910/app-dashboard | `halustudioteam@gmail.com` · 개발자 `HaluStudio` · 앱 `CRONOS: 할 일·캘린더·프로젝트` |
-| Android 기존 출시 트랙 | https://play.google.com/console/u/3/developers/6851888871428387760/app/4972920876506897910/tracks/4699311535365955880 | **비공개 테스트 Alpha**, 활성. 최신 `1.2.0`, versionCode `1002000`, 2026-10-07 제공. 프로덕션으로 승급하지 않는다 |
+| Android 기존 출시 트랙 | https://play.google.com/console/u/3/developers/6851888871428387760/app/4972920876506897910/tracks/4699311535365955880 | **비공개 테스트 Alpha**, 활성. `1.3.4` / `1003004` 심사 중. 기존 `1.3.3`은 테스터에게 제공 중. 프로덕션으로 승급하지 않는다 |
 | Android 스토어 주소 | https://play.google.com/store/apps/details?id=com.cronos.todoapp | 패키지 `com.cronos.todoapp`. 비공개 테스트이므로 참여 권한에 따라 접근 가능 |
 
 Google 계정의 `/u/3/` 번호는 브라우저 로그인 순서에 따라 바뀔 수 있다. 이메일과 개발자 ID·앱 ID로 식별한다. Play 배포는 로그인된 Chrome 콘솔로 진행할 수 있다. Google Play Developer API의 서비스 계정 자동 업로드는 구성하지 않았다.
@@ -118,7 +118,7 @@ Play용 서명 AAB는 `src-tauri/gen/android/app/build/outputs/bundle/arm64Relea
 - 신청 철회·테스트 종료 시 Google Forms 응답과 연결 시트 모두에서 해당 신청 정보를 삭제하고, 요청에 따라 Play 테스터 명단도 정리한다. 자동 삭제·자동 승인·자동 안내 메일은 구현하지 않는다.
 - 접수 검증용 `cronos.support+form-test@gmail.com` 응답 1건이 있다. 실제 테스터 신청이 아니므로 등록 처리 대상에서 제외한다.
 
-Android 홈 위젯은 배포 APK 1.3.3에 `빠른 추가` 전용 `QuickAddActivity`가 포함되어 있고, 해당 위젯의 클릭이 이 Activity로 연결됨을 APK 분석으로 확인했다. 새 `WidgetEditActivity`(날짜별 목록·수정·완료)는 작업 코드에만 있으며 배포 APK에는 없다. 인증된 빠른 추가는 앱 본문 대신 런처 위 작성창에서 API로 저장한다. 최초 로그인·위젯 동기화 또는 인증 만료 시에는 앱 인증이 필요하다. 최신 로컬 편집창은 작은 하단 창과 즉시 제목 입력·키보드 표시를 사용하며 Android 컴파일을 확인했다. 실기기 런처·키보드 조작은 별도 검증이 필요하다.
+Android 홈 위젯의 `WidgetEditActivity`(날짜별 목록·추가·수정·완료)는 배포 APK 1.3.4와 Play 제출 AAB에 포함되어 있다. 앱 본문 대신 런처 위 전용 창에서 API로 저장한다. 최초 로그인·위젯 동기화 또는 인증 만료 시에는 앱 인증이 필요하다. APK 매니페스트의 편집창 포함, Android 컴파일, 로컬 Worker의 위젯 인증·추가·수정·완료·삭제·중복 방지와 16KB 정렬을 확인했다. 실기기 런처·키보드 조작은 별도 검증이 필요하다.
 
 2026-10-31 콘솔 확인: Alpha는 이메일 목록 방식이며 `테스터용 부계정들` 11명과 `품앗이` 2명이 선택되어 있다. 기존 `halustudio_@googlegroups.com` 그룹 가입만으로는 테스트 권한이 생기지 않는다. 배포 시에도 이메일 목록 방식과 기존 두 목록의 선택 상태를 보존한다. 신규 버전 출시와 신청 이메일 등록은 별도 작업이다.
 
@@ -131,6 +131,16 @@ Android 홈 위젯은 배포 APK 1.3.3에 `빠른 추가` 전용 `QuickAddActivi
 웹에 문제가 생기면 배포 전에 기록한 이전 deployment의 version ID로 `npx wrangler rollback <이전버전ID>`를 사용한다. D1 데이터/마이그레이션은 Worker 롤백과 별개다. 데스크톱·Play는 설치된 앱 버전을 낮추는 대신 수정한 더 높은 버전을 배포한다. Play 단계적 출시를 쓰는 경우 필요하면 해당 출시를 중단한다. 대상별 버전, URL, 배포 ID, 실제 제공/심사 중/실패 상태와 남은 제약을 사용자에게 보고한다.
 
 ## 준비 작업 검증 결과
+
+### 2026-11-01 실제 배포
+
+- 공개 버전 `1.3.4`, 소스 태그 `v1.3.4` / 커밋 `a99fcfb`. 제품 변경 커밋은 `f5033a0`이며 Cloudflare 환경값 보완 커밋까지 포함했다. 보석 테마는 계속 개발 모드에서만 선택할 수 있다.
+- 웹 Worker 버전 `591e7ee4-7f8f-4254-8a94-25735b772528`. 복구 대상은 직전 `c6258a4e-4a6c-4a0b-a81e-61ea43cb4409`이다. 실제 웹의 BUILD_ID와 검증한 빌드가 일치하며 신청 화면과 인증 보호 응답을 확인했다.
+- [v1.3.4 릴리스](https://github.com/pogooooo/calendar/releases/tag/v1.3.4)에 Windows EXE·MSI, 두 업데이트 서명, `latest.json`, 기존 APK 키로 서명한 Android APK를 게시했다. 업로드 6개 파일의 크기·SHA-256, Worker로 실제 내려받은 EXE·MSI·APK 해시와 업데이터의 버전·서명이 로컬 검증 파일과 일치한다.
+- Google Play Alpha에 `1.3.4` / `1003004` AAB와 한국어·영어 노트를 업로드하고 변경사항 1개를 제출했다. 게시 개요에서 **검토 중인 변경사항 → Alpha → 1.3.4**를 확인했다. 심사 접수와 테스터 제공 완료를 구분하며 관리형 게시는 기존처럼 꺼져 있다. 기존 두 테스터 목록과 178개 국가 설정은 변경하지 않았다. 선택적인 네이티브 디버그 기호 업로드 권고는 남아 있으며 출시 차단 오류는 없었다.
+- DB 스키마·원격 데이터 마이그레이션·초기화는 실행하지 않았다. 로컬 Worker 검증은 분리된 테스트 계정을 사용했고 새로 만든 검증 일정만 제거했다. Windows 업데이트 서명, AAB·APK 인증서 연속성, ARM64 ELF·APK ZIP의 16KB 정렬과 새 위젯 편집창 포함을 확인했다. 실제 기기 설치·런처·키보드 동작은 이번에 검증하지 않았다.
+- OpenNext의 로컬 환경값 컴파일 모듈에서 비공개 값을 제거한 뒤 전체 1,855개 배포 파일을 검사했다. Cloudflare 바인딩만 사용하는 로그인·위젯 CRUD·재시도와 서버 CSS 검사를 다시 통과했다.
+- macOS·Linux 신규 빌드는 게시하지 않았으며 기존 1.0.1 다운로드를 유지했다. Actions의 과거 실행 기록은 확인되지만 현재 릴리스 워크플로는 수동 실행만 받으므로 로컬 서명 게시 경로를 사용했다.
 
 ### 2026-10-26 실제 배포
 
