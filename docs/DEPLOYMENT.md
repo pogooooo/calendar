@@ -65,6 +65,8 @@ npm run deploy
 
 일반 배포는 DB를 바꾸지 않는다. 스키마 변경이 있을 때만 필요한 마이그레이션을 확인하고 데이터 보존과 구버전 앱 호환성을 검토한다. `.env`, `.dev.vars`, Wrangler 인증 값과 Worker 시크릿은 커밋하지 않는다. 기존 시크릿을 빌드 산출물에 하드코딩하지 않는다.
 
+OpenNext는 `.env*`를 `.open-next/cloudflare/next-env.mjs`에도 컴파일한다. `build-cloudflare.mjs`는 추적된 `.env*` 파일을 제거하고 이 모듈에는 `NEXT_PUBLIC_` 값만 남긴다. `AUTH_SECRET` 같은 비공개 값은 Cloudflare 런타임 바인딩만 사용한다. 로컬 Worker에서도 바인딩 기반 로그인과 위젯 API를 검증한 뒤 배포한다.
+
 ## Windows 데스크톱과 직접 다운로드 APK
 
 ```powershell

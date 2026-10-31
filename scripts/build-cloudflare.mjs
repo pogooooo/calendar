@@ -1,5 +1,7 @@
 import { spawnSync } from "node:child_process";
-import { rmSync } from "node:fs";
+import { readdirSync, rmSync, writeFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 
 rmSync(".next", { recursive: true, force: true });
 
@@ -23,9 +25,20 @@ const result = spawnSync("npx", ["opennextjs-cloudflare", "build"], {
 // Next's standalone trace may copy local environment files. The Worker uses
 // Cloudflare bindings; keep those local files out of the deployment artifact.
 if (result.status === 0) {
-    for (const file of [".env", ".env.production"]) {
-        rmSync(`.open-next/server-functions/default/${file}`, { force: true });
+    const serverDir = ".open-next/server-functions/default";
+    for (const file of readdirSync(serverDir)) {
+        if (file === ".env" || file.startsWith(".env.")) rmSync(`${serverDir}/${file}`, { force: true });
     }
+    // OpenNext also compiles .env files into a runtime fallback module. Private
+    // values must come exclusively from Cloudflare bindings, never local files.
+    const envFile = resolve(".open-next/cloudflare/next-env.mjs");
+    const values = await import(pathToFileURL(envFile).href);
+    const content = ["production", "development", "test"].map(mode => {
+        const publicValues = Object.fromEntries(Object.entries(values[mode] ?? {}).filter(([key]) => key.startsWith("NEXT_PUBLIC_")));
+        return `export const ${mode} = ${JSON.stringify(publicValues)};\n`;
+    }).join("");
+    writeFileSync(envFile, content, "utf8");
+    console.log("[build-cloudflare] 로컬 비공개 환경값을 제거했습니다. 런타임 Cloudflare 설정을 사용합니다.");
 }
 
 process.exit(result.status ?? 1);
