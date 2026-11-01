@@ -462,7 +462,8 @@ export default function WidgetShell({ kind, title, children }: Props) {
                                 aria-expanded={showSettings}
                                 onClick={() => setShowSettings((v) => !v)}
                             ><Settings2 size={14} /></S.Control>
-                            <S.Control type="button" title={t.widgetShell.lock} aria-label={t.widgetShell.lock} onClick={handleLock}><Lock size={14} /></S.Control>
+                            {!showSettings&&<S.Control type="button" title={t.widgetShell.lock} aria-label={t.widgetShell.lock} onClick={handleLock}><Lock size={14} /></S.Control>}
+                            {!showSettings&&
                             <S.Control
                                 type="button"
                                 $danger
@@ -473,7 +474,7 @@ export default function WidgetShell({ kind, title, children }: Props) {
                                     await mirrorWidgetStateToFile();
                                     closeWindow();
                                 }}
-                            ><X size={14} /></S.Control>
+                            ><X size={14} /></S.Control>}
                         </S.BtnGroup>
                     </S.TopBar>
                 )}

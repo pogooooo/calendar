@@ -44,6 +44,7 @@ export const SectionWrapper = styled(C.SectionWrapper)`
 `;
 
 export const SectionTitle = styled(OceanSectionTitle)`
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
     ${DESKTOP} { grid-column: 1; grid-row: 1; }
 `;
 
@@ -213,7 +214,7 @@ export const TaskResizeHandle = styled(C.TaskResizeHandle)`
 
 /** 잇기 고리 — 막대에 올렸을 때만 보이는 작은 무채색 동그라미. 고르면 청록 */
 export const Connector = styled(C.Connector)`
-    right: -24px;
+    right: 8px;
     width: 18px;
     height: 18px;
     border: 1px solid ${(p) => hairline(p.theme, true)};

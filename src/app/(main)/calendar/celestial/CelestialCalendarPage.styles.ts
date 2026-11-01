@@ -87,7 +87,7 @@ export const Fab = styled.button`
     height: 52px;
     ${gilt}
     border: 1px solid ${(props) => props.theme.colors.primary};
-    box-shadow: inset 0 1px 0 rgba(255, 248, 220, 0.7), inset 0 -1px 0 rgba(110, 80, 10, 0.3), 0 8px 20px -8px ${(props) => props.theme.colors.primary};
+    box-shadow: 0 8px 20px -8px ${(props) => props.theme.colors.primary};
     cursor: pointer;
     transition: transform 0.12s ease;
 

@@ -3,6 +3,10 @@ import styled from "styled-components";
 export const FormWrapper = styled.form`
     display: flex;
     flex-direction: column;
+    /* The keyboard can make BaseModal shorter than this form's content. Let only ScrollBody shrink. */
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
     width: 100%;
     max-height: 85vh;
     background-color: ${(props) => props.theme.colors.surface};
@@ -11,6 +15,7 @@ export const FormWrapper = styled.form`
 
 export const Header = styled.div`
     display: flex;
+    flex-shrink: 0;
     justify-content: space-between;
     align-items: center;
     padding: 16px 20px 12px 20px;
@@ -204,6 +209,7 @@ export const Footer = styled.div`
     position: relative;
     z-index: 1;
     display: flex;
+    flex-shrink: 0;
     justify-content: flex-end;
     gap: 10px;
     padding: 12px 20px;
@@ -212,6 +218,7 @@ export const Footer = styled.div`
 `;
 
 export const ErrorMessage = styled.p`
+    flex-shrink: 0;
     margin: 0;
     padding: 8px 20px;
     color: ${(p) => p.theme.colors.error};

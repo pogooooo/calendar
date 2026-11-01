@@ -13,7 +13,9 @@ import { hair } from "@/styles/maple/ink";
 import { withAlpha } from "@/styles/color";
 
 export * from "../celestial/CelestialTimeline.styles";
-export { SectionWrapper, SectionTitle } from "@/components/project/maple/section";
+export { SectionWrapper } from "@/components/project/maple/section";
+import {SectionTitle as MapleTitle} from '@/components/project/maple/section';
+export const SectionTitle=styled(MapleTitle)`display:flex;align-items:center;justify-content:space-between;gap:12px;`;
 
 type Themed = { theme: { mode: string; colors: { primary: string; accent: string; success: string; text: string; textSecondary: string; surface: string } } };
 const dark = (p: { theme: { mode: string } }) => p.theme.mode === "dark";

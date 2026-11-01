@@ -1,10 +1,10 @@
 "use client";
 import * as React from "react";
 
-/** Mouse drag or touch long-press. A normal touch scroll never starts a drag. */
+/** Mouse drag or touch long-press; dedicated touch handles can start immediately. */
 export default function useDragTarget<T>(attribute: string, onDrop: (source: T, target: string) => void) {
     const callback = React.useRef(onDrop);
-    callback.current = onDrop;
+    React.useEffect(()=>{callback.current=onDrop;},[onDrop]);
     const [drag, setDrag] = React.useState<{ source: T; target: string | null; x: number; y: number } | null>(null);
     const session = React.useRef<{ source: T; id: number; x: number; y: number; active: boolean; touch: boolean; timer?: ReturnType<typeof setTimeout>; element: HTMLElement } | null>(null);
     const clickedAfterDrag = React.useRef(false);
@@ -60,20 +60,22 @@ export default function useDragTarget<T>(attribute: string, onDrop: (source: T, 
         };
     }, [attribute]);
 
-    const begin = (e: React.PointerEvent<HTMLElement>, source: T) => {
+    const begin = (e: React.PointerEvent<HTMLElement>, source: T, options?: { immediateTouch?: boolean }) => {
         if (!e.isPrimary || e.button !== 0 || session.current) return;
         clickedAfterDrag.current = false;
         const current = { source, id: e.pointerId, x: e.clientX, y: e.clientY, active: false, touch: e.pointerType === "touch", element: e.currentTarget };
         session.current = current;
         if (current.touch) {
-            session.current.timer = setTimeout(() => {
+            const activate = () => {
                 if (session.current !== current) return;
                 current.active = true;
                 clickedAfterDrag.current = true;
                 document.documentElement.setAttribute("data-drag-active", "true");
                 current.element.setPointerCapture(current.id);
                 setDrag({ source, target: null, x: current.x, y: current.y });
-            }, 350);
+            };
+            if (options?.immediateTouch) activate();
+            else session.current.timer = setTimeout(activate, 350);
         }
     };
     const consumeClick = () => {
@@ -81,5 +83,6 @@ export default function useDragTarget<T>(attribute: string, onDrop: (source: T, 
         clickedAfterDrag.current = false;
         return value;
     };
-    return { drag, begin, consumeClick };
+    const refreshTarget=React.useCallback(()=>setDrag(value=>value?{...value,target:document.elementFromPoint(value.x,value.y)?.closest(`[${attribute}]`)?.getAttribute(attribute)??null}:null),[attribute]);
+    return { drag, begin, consumeClick,refreshTarget };
 }

@@ -8,7 +8,8 @@ import type { ProjectTaskType } from '@/types';
 import useIsMobile from "@/hooks/useIsMobile";
 import useDragTarget from "@/hooks/useDragTarget";
 import { Link2 } from "lucide-react";
-import { activeTimeZone, labelDate, labelKey, localDateKey, zonedTime } from "@/lib/dateKey";
+import { activeTimeZone, endDateKey, labelDate, labelKey, localDateKey, zonedTime } from "@/lib/dateKey";
+import {calendarDayNumber,packTimelineRows} from '@/lib/projectTimelineLayout';
 import { shiftZonedDays } from "@/lib/taskInteractions";
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialTimeline.styles";
@@ -79,36 +80,58 @@ const ProjectTimelineView = React.forwardRef<HTMLDivElement, ProjectTimelineProp
     const [draggingTaskId, setDraggingTaskId] = React.useState<string | null>(null);
 
     const todayTime = React.useMemo(() => dayTimeOf(new Date()), []);
+    const datedTasks = React.useMemo(()=>tasks.filter(task=>Number.isFinite(Date.parse(task.startAt ?? task.endAt ?? ''))).sort((a,b)=>Date.parse(a.startAt??a.endAt!)-Date.parse(b.startAt??b.endAt!)||a.id.localeCompare(b.id)),[tasks]);
+    const undatedTasks = React.useMemo(()=>tasks.filter(task=>!datedTasks.includes(task)),[tasks,datedTasks]);
+    const getTaskDays = React.useCallback((task:ProjectTaskType)=>{
+        const startTs=task.startAt||task.endAt?dayTimeOf(task.startAt??task.endAt!):todayTime;
+        const endTs=task.startAt&&task.endAt?labelDate(endDateKey(task.startAt,task.endAt)).getTime():startTs;
+        return {startTs,endTs:Math.max(startTs,endTs)};
+    },[todayTime]);
+    const defaultStart=new Date(todayTime);defaultStart.setDate(defaultStart.getDate()-30);
+    const defaultEnd=new Date(todayTime);defaultEnd.setDate(defaultEnd.getDate()+89);
+    const rangeStart=datedTasks.reduce((start,task)=>Math.min(start,getTaskDays(task).startTs),defaultStart.getTime());
+    const rangeEnd=datedTasks.reduce((end,task)=>Math.max(end,getTaskDays(task).endTs),defaultEnd.getTime());
     const timelineDays = React.useMemo(() => {
-        const start = new Date(todayTime);
-        start.setDate(start.getDate() - 30);
-        return Array.from({ length: 120 }, (_, i) => {
+        const start = new Date(rangeStart);
+        const count=calendarDayNumber(new Date(rangeEnd))-calendarDayNumber(start)+1;
+        return Array.from({ length: count }, (_, i) => {
             const d = new Date(start); d.setDate(d.getDate() + i); return d;
         });
-    }, [todayTime]);
+    }, [rangeStart,rangeEnd]);
 
     const timelineStart  = timelineDays[0].getTime();
-    const taskIndexMap   = React.useMemo(
-        () => new Map(tasks.map((t, i) => [t.id, i])),
-        [tasks]
-    );
+    const {rows:taskIndexMap,rowCount}=React.useMemo(()=>packTimelineRows(datedTasks.map(task=>{
+        const {startTs,endTs}=getTaskDays(task);
+        return {id:task.id,start:calendarDayNumber(new Date(startTs)),end:calendarDayNumber(new Date(endTs))};
+    })),[datedTasks,getTaskDays]);
+    const months=React.useMemo(()=>{
+        const groups:{key:string;label:string;days:number}[]=[];
+        for(const day of timelineDays){
+            const key=labelKey(day).slice(0,7),last=groups.at(-1);
+            if(last?.key===key)last.days++;else groups.push({key,label:`${day.getFullYear()}.${String(day.getMonth()+1).padStart(2,'0')}`,days:1});
+        }
+        return groups;
+    },[timelineDays]);
 
     const scrollRef = React.useRef<HTMLDivElement>(null);
+    const previousStart=React.useRef<number|null>(null);
+    const goToToday=React.useCallback(()=>{
+        if(scrollRef.current)scrollRef.current.scrollLeft=(calendarDayNumber(new Date(todayTime))-calendarDayNumber(new Date(timelineStart)))*DAY_WIDTH-150;
+    },[timelineStart,todayTime]);
     React.useEffect(() => {
-        if (scrollRef.current) {
-            const idx = timelineDays.findIndex(d => d.getTime() === todayTime);
-            if (idx !== -1) scrollRef.current.scrollLeft = idx * DAY_WIDTH - 150;
-        }
-    }, [timelineDays, todayTime]);
+        if(!scrollRef.current){previousStart.current=null;return;}
+        if(previousStart.current===null)goToToday();
+        else scrollRef.current.scrollLeft+=(calendarDayNumber(new Date(previousStart.current))-calendarDayNumber(new Date(timelineStart)))*DAY_WIDTH;
+        previousStart.current=timelineStart;
+    }, [timelineStart,goToToday,isMobile]);
 
     // ── 기본 위치 계산 ────────────────────────────────────────────────────────
     const getBaseTaskBounds = React.useCallback((t: ProjectTaskType) => {
-        const startTs = t.startAt ? dayTimeOf(t.startAt) : todayTime;
-        const endTs   = t.endAt   ? dayTimeOf(t.endAt)   : startTs;
-        const left    = Math.floor((startTs - timelineStart) / 86400000) * DAY_WIDTH;
-        const width   = Math.max(1, Math.floor((endTs - startTs) / 86400000) + 1) * DAY_WIDTH;
+        const {startTs,endTs}=getTaskDays(t);
+        const left    = (calendarDayNumber(new Date(startTs))-calendarDayNumber(new Date(timelineStart))) * DAY_WIDTH;
+        const width   = (calendarDayNumber(new Date(endTs))-calendarDayNumber(new Date(startTs))+1) * DAY_WIDTH;
         return { left, width, startTs, endTs };
-    }, [timelineStart, todayTime]);
+    }, [timelineStart,getTaskDays]);
 
     // 의존선 SVG 전용 — 드래그 중 실시간 위치 반영
     const getBoundsForSvg = React.useCallback((t: ProjectTaskType) => {
@@ -292,23 +315,30 @@ const ProjectTimelineView = React.forwardRef<HTMLDivElement, ProjectTimelineProp
 
     return (
         <S.SectionWrapper ref={ref} style={{ flex }}>
-            <S.SectionTitle>{tr.timeline}</S.SectionTitle>
+            <S.SectionTitle><span>{tr.timeline}</span><S.TodayButton type="button" onClick={goToToday}>{t.home.today}</S.TodayButton></S.SectionTitle>
             {onConnectDependency && <S.LinkHint role="status">{linkMessage || (source ? t.interaction.linkSelected(tasks.find(t => t.id === source)?.title ?? '') : t.interaction.linkHint)}</S.LinkHint>}
             <S.TimelineLayout>
-                <S.TimelineGridArea ref={scrollRef}>
+                {undatedTasks.length>0&&<S.UndatedTasks><summary>{t.form.noDate} · {undatedTasks.length}</summary><div>{undatedTasks.map(task=><span key={task.id} data-project-task={task.id}>
+                    <button type="button" aria-label={source?t.interaction.linkTarget(task.title):undefined} onClick={()=>source?void connect(source,task.id):onEditTask(task)}>{task.title}</button>
+                    {onConnectDependency&&<button type="button" aria-label={t.interaction.linkStart(task.title)} aria-pressed={source===task.id} onPointerDown={e=>linkDrag.begin(e,task.id)} onClick={()=>selectSource(task.id)}><Link2 size={14}/></button>}
+                </span>)}</div></S.UndatedTasks>}
+                <S.TimelineGridArea ref={scrollRef} data-timeline-scroll role="region" aria-label={tr.timeline} tabIndex={0}>
                     <S.TimelineContent>
                         <S.TimelineDateHeader>
+                            <S.TimelineMonthRow>{months.map(month=><S.MonthCell key={month.key} style={{width:month.days*DAY_WIDTH}}><span>{month.label}</span></S.MonthCell>)}</S.TimelineMonthRow>
+                            <S.TimelineDayRow>
                             {timelineDays.map((day, i) => {
                                 const isToday = day.getTime() === todayTime;
                                 return (
-                                    <S.DateCell key={i} $isToday={isToday} data-weekend={day.getDay() % 6 === 0 ? "" : undefined}>
-                                        <S.DateNumber $isToday={isToday}>{day.getDate()}</S.DateNumber>
+                                    <S.DateCell key={i} $isToday={isToday} data-timeline-date={labelKey(day)} title={labelKey(day)} data-weekend={day.getDay() % 6 === 0 ? "" : undefined}>
+                                        <S.DateNumber $isToday={isToday} aria-current={isToday?'date':undefined}>{day.getDate()}</S.DateNumber>
                                     </S.DateCell>
                                 );
                             })}
+                            </S.TimelineDayRow>
                         </S.TimelineDateHeader>
 
-                        <S.TimelineGraphContainer ref={graphRef} data-connecting={source ? 'true' : undefined} style={{ height: Math.max(tasks.length * ROW_HEIGHT, 80) }}>
+                        <S.TimelineGraphContainer ref={graphRef} data-timeline-graph data-connecting={source ? 'true' : undefined} style={{ height: Math.max(rowCount * ROW_HEIGHT, 80) }}>
                             <S.TimelineBackground>
                                 {/* 주말은 data-weekend 로만 알린다 — 칠할지는 갈래가 정한다 */}
                                 {timelineDays.map((day, i) => (
@@ -318,7 +348,7 @@ const ProjectTimelineView = React.forwardRef<HTMLDivElement, ProjectTimelineProp
 
                             <S.DependencySvg>
                                 <defs><marker id={arrowId} markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="currentColor" /></marker></defs>
-                                {tasks.flatMap(task => {
+                                {datedTasks.flatMap(task => {
                                     if (!task.blockedBy?.length) return [];
                                     return task.blockedBy.map(dep => {
                                         const depTask = tasks.find(t => t.id === dep.id);
@@ -342,16 +372,19 @@ const ProjectTimelineView = React.forwardRef<HTMLDivElement, ProjectTimelineProp
                                 {linkDrag.drag && graphRef.current && (() => {
                                     const task = tasks.find(t => t.id === linkDrag.drag!.source);
                                     if (!task) return null;
+                                    const row=taskIndexMap.get(task.id);
+                                    if(row===undefined)return null;
                                     const rect = graphRef.current!.getBoundingClientRect();
                                     const x1 = getBoundsForSvg(task).right;
-                                    const y1 = (taskIndexMap.get(task.id) ?? 0) * ROW_HEIGHT + ROW_HEIGHT / 2;
+                                    const y1 = row * ROW_HEIGHT + ROW_HEIGHT / 2;
                                     const x2 = linkDrag.drag!.x - rect.left;
                                     const y2 = linkDrag.drag!.y - rect.top;
                                     return <S.DependencyLine strokeDasharray="4 4" d={`M ${x1} ${y1} C ${x1+24} ${y1}, ${x2-24} ${y2}, ${x2} ${y2}`} />;
                                 })()}
                             </S.DependencySvg>
 
-                            {tasks.map(task => {
+                            {datedTasks.length===0&&<S.GraphEmpty>{undatedTasks.length?t.form.noDate:tr.noTasks}</S.GraphEmpty>}
+                            {datedTasks.map(task => {
                                 const { left, width } = getBaseTaskBounds(task);
                                 const top      = (taskIndexMap.get(task.id) ?? 0) * ROW_HEIGHT + 10;
                                 const isDragged = draggingTaskId === task.id;
@@ -360,10 +393,12 @@ const ProjectTimelineView = React.forwardRef<HTMLDivElement, ProjectTimelineProp
                                     <S.TaskNode
                                         key={task.id}
                                         data-project-task={task.id}
+                                        data-timeline-row={taskIndexMap.get(task.id)}
+                                        data-has-connector={onConnectDependency?'':undefined}
                                         role="button"
                                         tabIndex={0}
-                                        aria-label={source ? t.interaction.linkTarget(task.title) : task.title}
-                                        title={task.title}
+                                        aria-label={source ? t.interaction.linkTarget(task.title) : `${task.title} · ${dayLabel(task.startAt??task.endAt)} — ${dayLabel(task.endAt??task.startAt)}`}
+                                        title={`${task.title}\n${dayLabel(task.startAt??task.endAt)} — ${dayLabel(task.endAt??task.startAt)}`}
                                         $connectTarget={!!source && source !== task.id && (linkDrag.drag?.target === task.id || !!linkSource)}
                                         ref={el => {
                                             if (el) taskElemsRef.current.set(task.id, el);
@@ -394,7 +429,7 @@ const ProjectTimelineView = React.forwardRef<HTMLDivElement, ProjectTimelineProp
                                             title={t.interaction.linkHint}
                                             onPointerDown={e => { e.stopPropagation(); linkDrag.begin(e, task.id); }}
                                             onMouseDown={e => e.stopPropagation()}
-                                            onKeyDown={e => e.stopPropagation()}
+                                            onKeyDown={e => {if(e.key!=='Escape')e.stopPropagation();}}
                                             onClick={e => { e.stopPropagation(); selectSource(task.id); }}
                                         ><Link2 size={12} /></S.Connector>}
                                         <S.TaskResizeHandle

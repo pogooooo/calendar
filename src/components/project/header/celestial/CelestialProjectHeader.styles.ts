@@ -7,7 +7,7 @@
 import styled, { css } from "styled-components";
 import { celestialOnly, star4Mark } from "@/styles/celestial/ornaments";
 import { MOBILE } from "@/styles/breakpoints";
-import { gilt, sheen } from "@/styles/celestial/almanac";
+import { gilt } from "@/styles/celestial/almanac";
 
 export const HeaderWrapper = styled.div`
     width: 100%;
@@ -114,7 +114,6 @@ export const HeaderActionButton = styled.button`
     /* 마지막(새 프로젝트)이 이 줄의 할 일 — 금빛으로 채운다 */
     &:last-child {
         ${gilt}
-        ${sheen}
     }
 
     ${MOBILE} {

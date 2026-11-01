@@ -1,4 +1,4 @@
-import { addDaysToKey, zonedDateKey } from "./timezone";
+import { addDaysToKey, zonedDateKey, zonedWallTime, zonedTimeToDate } from "./timezone";
 import { lastInstant } from "@/utils/DateUtils";
 
 /** Calendar-day arithmetic preserves wall-clock time across DST and month/year boundaries. */
@@ -33,6 +33,16 @@ export function overlapsCalendarDays(start: string | number | Date, end: string 
 
 export function calendarDayDelta(from: string, to: string): number {
     return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86400000);
+}
+
+/** Move a timed task by wall-clock minutes while retaining its exact elapsed duration. */
+export function shiftTimedRange(start:string|number|Date,end:string|number|Date,minutes:number,timeZone:string){
+    const first=new Date(start),last=new Date(end),wall=zonedWallTime(first,timeZone);
+    if(!wall||!Number.isFinite(last.getTime())||last<first||!Number.isFinite(minutes))return null;
+    const clock=new Date(Date.UTC(wall.year,wall.month-1,wall.day,wall.hour,wall.minute+minutes,wall.second,first.getUTCMilliseconds()));
+    const moved=zonedTimeToDate(clock.toISOString().slice(0,10),clock.getUTCHours(),clock.getUTCMinutes(),timeZone,clock.getUTCSeconds(),clock.getUTCMilliseconds());
+    if(!moved)return null;
+    return {startAt:moved.toISOString(),endAt:new Date(moved.getTime()+last.getTime()-first.getTime()).toISOString()};
 }
 
 /** Resize only one edge, preserving its time and rejecting an inverted interval. */

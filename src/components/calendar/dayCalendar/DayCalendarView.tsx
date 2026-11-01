@@ -2,17 +2,20 @@
 
 import * as GemS from "./gem/GemDayCalendar.styles";
 import * as React from "react";
+import {createPortal} from 'react-dom';
 import { Slot } from "@radix-ui/react-slot";
-import { Plus, Trash2, Check, ChevronDown } from "lucide-react";
+import { Plus, Trash2, Check, ChevronDown, GripVertical } from "lucide-react";
 
-import { DayThemeProps } from "./DayCalendar";
+import { DayThemeProps,type CalendarTodoType } from "./DayCalendar";
+import useDragTarget from '@/hooks/useDragTarget';
+import {shiftTimedRange} from '@/lib/taskInteractions';
 
 import CategoryFilter from "@/components/calendar/parts/categoryFilter/CategoryFilter";
 import RulerScroll from "@/components/scroll/RulerScroll";
 import TodoContextMenu from "@/components/calendar/parts/contextMenu/TodoContextMenu";
 import TodoModal from "@/components/modal/todoModal/TodoModal";
 import { useT } from "@/i18n/useT";
-import { labelKey, wallTime } from "@/lib/dateKey";
+import { labelKey, wallTime,activeTimeZone,localDateKey } from "@/lib/dateKey";
 import { useListMotion, useSwapMotion } from "@/hooks/useMotion";
 import useMobilePresentation from '@/hooks/useMobilePresentation';
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
@@ -47,13 +50,49 @@ const DayCalendarView = React.forwardRef<HTMLDivElement, CelestialDayProps>(
          dayTodos, selectedDate, isModalOpen, modalTodo, setIsModalOpen,
          contextMenu, setContextMenu, openTodoMenu,
          handleQuickEdit, handleQuickDelete, handleQuickDeleteOne, handleQuickToggle,
+         moveTime,timeMoveSaving,timeMoveNotice,undoTimeMove,retryTimeMove,dismissTimeMove,
          ...props
      }, ref) => {
         const S = usePickTheme(STYLES);
         const Component = asChild ? Slot : 'div';
         const t = useT();
         const mobileApp = useMobilePresentation();
+        const timeDragHint = mobileApp ? t.interaction.timeDragHandleHint : t.interaction.timeDragHint;
         const foldKey = mobileApp ? 'cronos-mobile-day-folded' : STORAGE_FOLD;
+        const timeGridRef=React.useRef<HTMLDivElement>(null);
+        const timeDrag=useDragTarget<{todo:CalendarTodoType;slot:number;y:number}>('data-day-slot',(source,target)=>{
+            const slot=Number(target);
+            if(Number.isInteger(slot)&&slot>=0&&slot<144)void moveTime(source.todo,(slot-source.slot)*10);
+        });
+        const draggingTime=!!timeDrag.drag;
+        const dragPoint=React.useRef(timeDrag.drag);
+        React.useEffect(()=>{dragPoint.current=timeDrag.drag;},[timeDrag.drag]);
+        const {refreshTarget}=timeDrag;
+        React.useEffect(()=>{
+            if(!draggingTime)return;
+            let frame=0;
+            const preventScroll=(event:TouchEvent)=>{if(event.cancelable)event.preventDefault();};
+            const step=()=>{
+                const point=dragPoint.current,area=timeGridRef.current?.querySelector<HTMLElement>('[data-ruler-tick]')?.parentElement;
+                if(point&&area){
+                    const box=area.getBoundingClientRect();
+                    if(point.x>=box.left&&point.x<=box.right&&point.y>=box.top-16&&point.y<=box.bottom+16&&Math.abs(point.y-point.source.y)>12){
+                        const edge=Math.min(24,box.height/4);
+                        const speed=point.y<box.top+edge?-2:point.y>box.bottom-edge?2:0;
+                        const before=area.scrollTop;
+                        if(speed)area.scrollTop+=speed;
+                        if(area.scrollTop!==before)refreshTarget();
+                    }
+                }
+                frame=requestAnimationFrame(step);
+            };
+            frame=requestAnimationFrame(step);
+            document.addEventListener('touchmove',preventScroll,{passive:false});
+            return()=>{cancelAnimationFrame(frame);document.removeEventListener('touchmove',preventScroll);};
+        },[draggingTime,refreshTarget]);
+        const preview=timeDrag.drag?.target!==null&&timeDrag.drag?.target!==undefined&&timeDrag.drag.source.todo.startAt&&timeDrag.drag.source.todo.endAt
+            ?shiftTimedRange(timeDrag.drag.source.todo.startAt,timeDrag.drag.source.todo.endAt,(Number(timeDrag.drag.target)-timeDrag.drag.source.slot)*10,activeTimeZone()):null;
+        const previewTime=(value:string,withDate=false)=>{const w=wallTime(value);return w?`${withDate?`${w.month}/${w.day} `:''}${w.hour.toString().padStart(2,'0')}:${w.minute.toString().padStart(2,'0')}`:'--:--';};
 
         const [mainSplit, setMainSplit] = React.useState(() => {
             try {
@@ -165,6 +204,15 @@ const DayCalendarView = React.forwardRef<HTMLDivElement, CelestialDayProps>(
             document.addEventListener('mouseup', onUp);
         }, []);
 
+        const timeMoveFeedback = (timeMoveSaving || timeMoveNotice) && (
+            <S.TimeMoveNotice role="status" data-day-time-feedback>
+                <span>{timeMoveSaving ? t.account.saving : timeMoveNotice}</span>
+                {!timeMoveSaving && undoTimeMove && <button type="button" onClick={() => void undoTimeMove()}>{t.interaction.undo}</button>}
+                {!timeMoveSaving && retryTimeMove && <button type="button" onClick={() => void retryTimeMove()}>{t.calendar.retry}</button>}
+                {!timeMoveSaving && <button type="button" aria-label={t.interaction.dismiss} onClick={dismissTimeMove}>×</button>}
+            </S.TimeMoveNotice>
+        );
+
         return (
             <S.CelestialCalendarWrapper data-day-calendar as={Component} ref={ref} {...props}>
                 <S.DateHeader data-day-date-heading>
@@ -180,6 +228,7 @@ const DayCalendarView = React.forwardRef<HTMLDivElement, CelestialDayProps>(
                     <hr />
                 </S.DateHeader>
 
+                {!mobileApp && timeMoveFeedback}
                 <S.ContentLayout data-day-content ref={contentRef}>
                     {/* 그날의 일정 목록 — 폰에서는 달력 칸이 좁아 일정이 점으로만 찍히니 고치고 지우는 유일한 길이고,
                         데스크톱에서는 달력에서 날짜를 누르면 그날 할 일을 시간표 위에서 한눈에 본다. */}
@@ -220,7 +269,7 @@ const DayCalendarView = React.forwardRef<HTMLDivElement, CelestialDayProps>(
                         )}
                     </S.TodoCard>
 
-                    <S.TimelineSection data-calendar-panel="timeline"
+                    <S.TimelineSection ref={timeGridRef} data-calendar-panel="timeline" aria-busy={timeMoveSaving}
                         $collapsed={fold.timeline}
                         style={fold.timeline ? { flex: '0 0 auto' } : { flex: mainSplit }}
                     >
@@ -233,14 +282,20 @@ const DayCalendarView = React.forwardRef<HTMLDivElement, CelestialDayProps>(
                             <span className="chev"><ChevronDown size={14} /></span>
                             <span className="label">{t.calendar.timeline}</span>
                         </S.SectionToggle>
+                        {mobileApp && timeMoveFeedback}
                         {!fold.timeline && (
+                        <>
+                        <S.TimeDragHint title={timeDragHint}>{mobileApp ? t.interaction.timeDragHandleHint : t.interaction.timeDragLabel}</S.TimeDragHint>
                         <RulerScroll flagFor={(r) => `${Math.round(r * 23).toString().padStart(2, "0")}:00`}>
-                            {hours.map((hour) => (
+                            {hours.map((hour) => {
+                                const hourSlots = Array.from({ length: 6 }, (_, slotIdx) => getSlotTodos(hour, slotIdx));
+                                return (
                                 <S.TimeRow
                                     key={hour}
+                                    style={{ '--day-slot-count': Math.max(...hourSlots.map(todos => todos.length)) } as React.CSSProperties}
                                     data-ruler-tick
                                     data-ruler-label={hour.toString().padStart(2, "0")}
-                                    {...(Array.from({ length: 6 }).some((_, s) => getSlotTodos(hour, s).length > 0)
+                                    {...(hourSlots.some(todos => todos.length > 0)
                                         ? { "data-ruler-mark": "" }
                                         : {})}
                                 >
@@ -250,23 +305,25 @@ const DayCalendarView = React.forwardRef<HTMLDivElement, CelestialDayProps>(
                                     <div className="time-slots">
                                         <div className="slot-bar-container">
                                             {Array.from({ length: 6 }).map((_, slotIdx) => {
-                                                const slotTodos = getSlotTodos(hour, slotIdx);
+                                                const slotTodos = hourSlots[slotIdx];
                                                 const hasTodo = slotTodos.length > 0;
 
                                                 const prevSlotTodos = slotIdx > 0
-                                                    ? getSlotTodos(hour, slotIdx - 1)
+                                                    ? hourSlots[slotIdx - 1]
                                                     : (hour > 0 ? getSlotTodos(hour - 1, 5) : []);
 
                                                 const nextSlotTodos = slotIdx < 5
-                                                    ? getSlotTodos(hour, slotIdx + 1)
+                                                    ? hourSlots[slotIdx + 1]
                                                     : (hour < 23 ? getSlotTodos(hour + 1, 0) : []);
 
                                                 return (
                                                     <div
                                                         key={slotIdx}
+                                                        data-day-slot={hour*6+slotIdx}
+                                                        data-time-drop={timeDrag.drag?.target===String(hour*6+slotIdx)?'':undefined}
                                                         className={`slot-box ${hasTodo ? 'filled' : ''}`}
                                                         // 빈 칸을 누르면 그 시각에 새 일정 (예전엔 손가락 모양만 바뀌고 아무 일도 없었다)
-                                                        onClick={hasTodo ? undefined : () => createAt(hour, slotIdx * 10)}
+                                                        onClick={hasTodo ? undefined : () => {if(!timeDrag.consumeClick())createAt(hour, slotIdx * 10);}}
                                                         title={hasTodo ? undefined : `${hour.toString().padStart(2, '0')}:${(slotIdx * 10).toString().padStart(2, '0')} · ${t.calendar.addTask}`}
                                                     >
                                                         {slotTodos.map((todo, idx) => {
@@ -276,12 +333,40 @@ const DayCalendarView = React.forwardRef<HTMLDivElement, CelestialDayProps>(
                                                             return (
                                                                 <S.SlotTodoItem
                                                                     key={`${todo.id}-${idx}`}
-                                                                    onClick={(e) => openTodoMenu(e, todo)}
+                                                                    role={!isContinuingPrev?'button':undefined}
+                                                                    tabIndex={!isContinuingPrev?0:-1}
+                                                                    aria-hidden={isContinuingPrev||undefined}
+                                                                    aria-label={!isContinuingPrev?`${todo.title} · ${timeDragHint}`:undefined}
+                                                                    data-day-timed-task={todo.id}
+                                                                    data-time-dragging={timeDrag.drag?.source.todo.id===todo.id?'':undefined}
+                                                                    onPointerDown={e=>{
+                                                                        e.stopPropagation();
+                                                                        if(mobileApp&&e.pointerType==='touch'){timeDrag.consumeClick();return;}
+                                                                        if(!timeMoveSaving)timeDrag.begin(e,{todo,slot:hour*6+slotIdx,y:e.clientY});
+                                                                    }}
+                                                                    onKeyDown={e=>{
+                                                                        if(e.altKey&&(e.key==='ArrowUp'||e.key==='ArrowDown')){e.preventDefault();e.stopPropagation();void moveTime(todo,e.key==='ArrowUp'?-10:10);}
+                                                                        else if(e.key==='Enter'||e.key===' '){e.preventDefault();openTodoMenu(e,todo);}
+                                                                    }}
+                                                                    onClick={(e) => {e.stopPropagation();if(!timeDrag.consumeClick())openTodoMenu(e, todo);}}
                                                                     $isContinuingPrev={isContinuingPrev}
                                                                     $isContinuingNext={isContinuingNext}
                                                                     $isDone={todo.isDone}
                                                                 >
-                                                                    {!isContinuingPrev && <span className="todo-text">{todo.title}</span>}
+                                                                    {!isContinuingPrev && <>
+                                                                        {mobileApp && <span
+                                                                            className="time-drag-handle"
+                                                                            data-day-time-handle={todo.id}
+                                                                            aria-hidden="true"
+                                                                            title={t.interaction.timeDragHandleHint}
+                                                                            onPointerDown={e=>{
+                                                                                e.stopPropagation();
+                                                                                if(!timeMoveSaving)timeDrag.begin(e,{todo,slot:hour*6+slotIdx,y:e.clientY},{immediateTouch:true});
+                                                                            }}
+                                                                            onClick={e=>{e.stopPropagation();timeDrag.consumeClick();}}
+                                                                        ><GripVertical size={20} /></span>}
+                                                                        <span className="todo-text">{todo.title}</span>
+                                                                    </>}
                                                                 </S.SlotTodoItem>
                                                             );
                                                         })}
@@ -291,8 +376,10 @@ const DayCalendarView = React.forwardRef<HTMLDivElement, CelestialDayProps>(
                                         </div>
                                     </div>
                                 </S.TimeRow>
-                            ))}
+                                );
+                            })}
                         </RulerScroll>
+                        </>
                         )}
                     </S.TimelineSection>
 
@@ -433,6 +520,9 @@ const DayCalendarView = React.forwardRef<HTMLDivElement, CelestialDayProps>(
                         </S.MemoCard>
                     </S.SideSection>
                 </S.ContentLayout>
+                {timeDrag.drag&&preview&&createPortal(<S.TimeDragPreview role="status" style={{left:Math.max(12,Math.min(timeDrag.drag.x+14,window.innerWidth-280)),top:Math.max(12,Math.min(timeDrag.drag.y+14,window.innerHeight-86))}}>
+                    <strong>{timeDrag.drag.source.todo.title}</strong><span>{previewTime(preview.startAt)} — {previewTime(preview.endAt,localDateKey(preview.startAt)!==localDateKey(preview.endAt))}</span>
+                </S.TimeDragPreview>,document.body)}
 
                 <TodoContextMenu
                     menuState={contextMenu}

@@ -259,7 +259,7 @@ export const PrimaryCta = styled.button`
         top: 0;
         bottom: 0;
         width: 42%;
-        background: linear-gradient(100deg, transparent, ${p => p.theme.colors.primary}44, transparent);
+        background: ${p => p.theme.family === 'celestial' ? 'none' : `linear-gradient(100deg, transparent, ${p.theme.colors.primary}44, transparent)`};
         transform: translateX(-130%);
     }
 

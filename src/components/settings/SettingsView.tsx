@@ -368,7 +368,7 @@ export default function SettingsView({
                                                         {t.widget.close}
                                                     </S.FormButton>
                                                 </L.WidgetActions>
-                                                {isWidgetKind(kind)&&<S.FormButton type="button" $variant="default" onClick={()=>setEditingWidget(kind)}>{t.widgetShell.appearance}</S.FormButton>}
+                                                {isWidgetKind(kind)&&<S.FormButton type="button" $variant="default" aria-label={`${label} · ${t.widgetShell.appearance}`} onClick={()=>setEditingWidget(kind)}>{t.widgetShell.appearance}</S.FormButton>}
                                             </L.WidgetBody>
                                         </L.WidgetCard>
                                     ))}
@@ -598,8 +598,8 @@ export default function SettingsView({
                     </L.PaneBody>
                 </L.Pane>
             </L.Frame>
-            <BaseModal isOpen={editingWidget!==null} onClose={()=>setEditingWidget(null)} maxWidth="620px" ariaLabel={`${t.widgetShell.appearance} · ${widgetList.find(w=>w.kind===editingWidget)?.label??''}`}>
-                {editingWidget&&<WidgetAppearanceSettings kind={editingWidget} title={widgetList.find(w=>w.kind===editingWidget)?.label} onDone={()=>setEditingWidget(null)}/>}
+            <BaseModal isOpen={editingWidget!==null} onClose={()=>setEditingWidget(null)} maxWidth="860px" ariaLabel={`${t.widgetShell.appearance} · ${widgetList.find(w=>w.kind===editingWidget)?.label??''}`}>
+                {editingWidget&&<WidgetAppearanceSettings key={editingWidget} kind={editingWidget} title={widgetList.find(w=>w.kind===editingWidget)?.label} onDone={()=>setEditingWidget(null)}/>}
             </BaseModal>
         </L.Shell>
     );

@@ -6,7 +6,7 @@
  */
 import styled, { css } from "styled-components";
 import type * as React from "react";
-import { gilt, sheen } from "@/styles/celestial/almanac";
+import { gilt } from "@/styles/celestial/almanac";
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     asChild?: boolean;
@@ -41,14 +41,13 @@ export const SecondaryButton = styled.button<ButtonProps>`
             `;
         }
         if (props.$variant === 'primary') {
-            // 금박 — 납작한 금색은 노란 물감처럼 보였다. 흰 글씨 대신 짙은 먹 (almanac.ts)
+            // 단색 금색과 짙은 먹으로 주요 행동을 구분한다.
             return css`
                 ${gilt}
-                ${sheen}
                 border: 1px solid ${(props) => props.theme.colors.primary};
                 
                 &:hover {
-                    box-shadow: inset 0 1px 0 rgba(255, 248, 220, 0.7), inset 0 -1px 0 rgba(110, 80, 10, 0.3), 0 6px 16px -6px ${(props) => props.theme.colors.primary};
+                    box-shadow: 0 0 0 2px ${(props) => props.theme.colors.primary}33;
                 }
             `;
         }

@@ -15,7 +15,9 @@ import useChallengeStore from "@/store/useChallengeStore";
 import useTodoStore from "@/store/useTodoStore";
 import { useT } from "@/i18n/useT";
 import { useDialog } from "@/components/dialog/DialogProvider";
-import { localDateKey, endDateKey, labelKey, zonedTime } from "@/lib/dateKey";
+import { localDateKey, endDateKey, labelKey, zonedTime, activeTimeZone,parseExcludedDates } from "@/lib/dateKey";
+import {calendarDayDelta,shiftTimedRange,shiftZonedDays} from '@/lib/taskInteractions';
+import {addDaysToKey} from '@/lib/timezone';
 import { toggleOccurrence } from "@/lib/todoDone";
 import { isBetween } from "@/utils/DateUtils";
 import { completionKey, completionTargetFor, slotIndexOn } from "@/lib/challengeDays";
@@ -77,7 +79,7 @@ export interface DayThemeProps {
     setIsModalOpen: (open: boolean) => void;
     contextMenu: { x: number; y: number; todo: CalendarTodoType } | null;
     setContextMenu: (menu: { x: number; y: number; todo: CalendarTodoType } | null) => void;
-    openTodoMenu: (e: React.MouseEvent, todo: CalendarTodoType) => void;
+    openTodoMenu: (e: React.MouseEvent|React.KeyboardEvent, todo: CalendarTodoType) => void;
     handleQuickEdit: (todo: CalendarTodoType) => void;
     handleQuickDelete: (todo: CalendarTodoType) => void;
     handleQuickDeleteOne: (todo: CalendarTodoType) => void;
@@ -86,6 +88,12 @@ export interface DayThemeProps {
     createAt: (hour: number, minute: number) => void;
     /** 새 일정 창에 미리 채울 시각 (빈 칸을 눌러 열었을 때) */
     modalDate: Date;
+    moveTime:(todo:CalendarTodoType,minutes:number)=>Promise<void>;
+    timeMoveSaving:boolean;
+    timeMoveNotice:string|null;
+    undoTimeMove:(()=>Promise<void>)|null;
+    retryTimeMove:(()=>Promise<void>)|null;
+    dismissTimeMove:()=>void;
 }
 
 const DayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
@@ -106,7 +114,7 @@ const DayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
         const { tasks, memo, memoDate, fetchDailyData, addDailyTask, toggleDailyTask, deleteDailyTask, updateDailyMemo } = useDailyStore();
         const { projects, fetchProjects } = useProjectStore();
         const { challenges, fetchChallenges, toggleChallengeCompletion } = useChallengeStore();
-        const { deleteTodo, deleteTodoOccurrence, toggleTodo } = useTodoStore();
+        const { deleteTodo, deleteTodoOccurrence, toggleTodo,updateTodo } = useTodoStore();
         const authFetch = useAuthFetch();
         const dialog = useDialog();
         const t = useT();
@@ -313,7 +321,7 @@ const DayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
         const [contextMenu, setContextMenu] =
             React.useState<{ x: number; y: number; todo: CalendarTodoType } | null>(null);
 
-        const openTodoMenu = (e: React.MouseEvent, todo: CalendarTodoType) => {
+        const openTodoMenu = (e: React.MouseEvent|React.KeyboardEvent, todo: CalendarTodoType) => {
             e.preventDefault();
             e.stopPropagation();
             const box = (e.currentTarget as HTMLElement).getBoundingClientRect();
@@ -334,6 +342,39 @@ const DayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
         };
         // 프로젝트·프로젝트 할 일도 여기서 바로 고치고 끝낸다 (예전엔 "프로젝트 화면에서" 안내만)
         const projectActions = useProjectItemActions();
+        const timeMoving=React.useRef(false);
+        const [timeMoveSaving,setTimeMoveSaving]=React.useState(false);
+        const [timeMoveNotice,setTimeMoveNotice]=React.useState<string|null>(null);
+        const [undoTimeMove,setUndoTimeMove]=React.useState<(()=>Promise<void>)|null>(null);
+        const [retryMove,setRetryMove]=React.useState<{todo:CalendarTodoType;minutes:number}|null>(null);
+        const moveTime=async(todo:CalendarTodoType,minutes:number):Promise<void>=>{
+            if(timeMoving.current||!minutes||todo.isAllDay)return;
+            const original=todo.originalTodo??todo;
+            if(!original.startAt||!original.endAt)return;
+            const next=shiftTimedRange(original.startAt,original.endAt,minutes,activeTimeZone());
+            if(!next)return;
+            timeMoving.current=true;setTimeMoveNotice(null);setRetryMove(null);setContextMenu(null);
+            try{
+                const foreign=isForeign(todo);
+                if(!foreign&&(original.repeat??0)>0&&!(await dialog.confirm({title:t.interaction.timeMoveSeries,message:t.interaction.timeMoveSeriesMessage,confirmLabel:t.interaction.moveAll})))return;
+                setTimeMoveSaving(true);
+                const before={startAt:new Date(original.startAt).toISOString(),endAt:new Date(original.endAt).toISOString(),repeatEndDate:original.repeatEndDate??null,excludedDates:original.excludedDates??null};
+                const shift=calendarDayDelta(localDateKey(original.startAt),localDateKey(next.startAt));
+                const data={...next,...(shift?{repeatEndDate:original.repeatEndDate?shiftZonedDays(original.repeatEndDate,shift,activeTimeZone()):null,excludedDates:original.excludedDates?JSON.stringify(parseExcludedDates(original.excludedDates).map(key=>addDaysToKey(key,shift))):null}:{})};
+                const error=foreign?(await projectActions.reschedule(todo,next.startAt,next.endAt)).error:await updateTodo(authFetch,original.id,data,{shiftCompletionsDays:shift});
+                setTimeMoveNotice(error||t.interaction.timeMoved);
+                setRetryMove(error?{todo,minutes}:null);
+                setUndoTimeMove(error?null:()=>async()=>{
+                    if(timeMoving.current)return;
+                    timeMoving.current=true;setTimeMoveSaving(true);
+                    try{
+                        const error=foreign?(await projectActions.reschedule(todo,before.startAt,before.endAt)).error:await updateTodo(authFetch,original.id,before,{shiftCompletionsDays:-shift});
+                        setTimeMoveNotice(error||t.interaction.saved);
+                        if(!error)setUndoTimeMove(null);
+                    }finally{timeMoving.current=false;setTimeMoveSaving(false);}
+                });
+            }finally{timeMoving.current=false;setTimeMoveSaving(false);}
+        };
 
         const handleQuickEdit = async (todo: CalendarTodoType) => {
             setContextMenu(null);
@@ -441,6 +482,8 @@ const DayCalendar = React.forwardRef<HTMLDivElement, DayProps>(
             handleQuickDelete,
             handleQuickDeleteOne,
             handleQuickToggle,
+            moveTime,timeMoveSaving,timeMoveNotice,undoTimeMove,retryTimeMove:retryMove?()=>moveTime(retryMove.todo,retryMove.minutes):null,
+            dismissTimeMove:()=>{setTimeMoveNotice(null);setUndoTimeMove(null);setRetryMove(null);},
         };
 
         return (

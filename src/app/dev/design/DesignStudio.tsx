@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import styled, { createGlobalStyle } from 'styled-components';
 import MainLayout from '@/components/layout/AppLayout';
 import CalendarPage from '@/app/(main)/calendar/page';
@@ -22,6 +22,7 @@ import { bustFetchCache } from '@/lib/fetchOnce';
 import DesktopWidgetStudio from './DesktopWidgetStudio';
 import { DialogProvider } from '@/components/dialog/DialogProvider';
 import type { TodoType, CategoryType, AuthFetch } from '@/types';
+import type {ProjectTaskType} from '@/store/useProjectStore';
 
 /** Isolated data and network scope. No preview write can reach a user's API. */
 export default function DesignStudio() {
@@ -29,6 +30,7 @@ export default function DesignStudio() {
     const [screen, setScreen] = useState(()=>typeof window==='undefined'?'calendar':new URLSearchParams(location.search).get('screen')??'calendar');
     const [empty, setEmpty] = useState(()=>typeof window!=='undefined'&&new URLSearchParams(location.search).get('empty')==='1');
     const [failure, setFailure] = useState(false);
+    const failureRef = useRef(false);
     const [saved, setSaved] = useState(false);
     const theme = useSettingStore(s=>s.theme);
     const motion = useSettingStore(s=>s.motion);
@@ -49,7 +51,7 @@ export default function DesignStudio() {
         const method=init.method??'GET';
         if(method!=='GET') {
             // Fail one request, then let the same retained draft be retried without closing its dialog.
-            if(failure) { setFailure(false); return Response.json({error:'프리뷰 저장 오류'}, {status:503}); }
+            if(failureRef.current) { failureRef.current=false; setFailure(false); return Response.json({error:'프리뷰 저장 오류'}, {status:503}); }
             await new Promise(r=>setTimeout(r,1800));
             setSaved(true);
             const input=typeof init.body==='string'?JSON.parse(init.body):{};
@@ -61,20 +63,29 @@ export default function DesignStudio() {
             p==='/api/anniversary'?useAnniversaryStore.getState().anniversaries:
             p==='/api/dailyTask'?useDailyStore.getState().tasks:p==='/api/dailyMemo'?{content:useDailyStore.getState().memo}:{};
         return Response.json(data);
-    },[failure,categories]);
+    },[categories]);
 
     useEffect(()=>{
         const old = useSettingStore.getState();
         const previousData = {todos:useTodoStore.getState().todos,categories:useCategoryStore.getState().categories,projects:useProjectStore.getState().projects,challenges:useChallengeStore.getState().challenges,anniversaries:useAnniversaryStore.getState().anniversaries,daily:useDailyStore.getState()};
         const raw=localStorage.getItem('setting-store');
         const q=new URLSearchParams(location.search);
+        useSettingStore.setState({timezone:'Asia/Seoul'});
         const family=q.get('theme');
         if(family && ['celestial','maple','ocean'].includes(family)) useSettingStore.setState({theme:family});
         if(q.get('mode')) useSettingStore.getState().setThemeOption(family??old.theme,q.get('mode')!);
         const isEmpty=q.get('empty')==='1';
         useTodoStore.setState({todos:isEmpty?[]:fixture});
         useCategoryStore.setState({categories});
-        useProjectStore.setState({projects:isEmpty?[]:[{id:'studio-project',title:'서비스 개편 · 사용자 경험 개선 프로젝트',status:'doing',categoryId:categories[0].id,startAt:`${day}T00:00:00+09:00`,endAt:`${day}T23:59:00+09:00`,tasks:[{id:'studio-task',title:'캘린더와 위젯의 정보 위계 점검',status:'todo',priority:'high',projectId:'studio-project'}]}]});
+        const timelineFixture: ProjectTaskType[] = Array.from({length:13},(_,index)=>{
+            const [start,end]=index===0?[3,4]:index===1?[3,5]:index===2?[4,6]:index===12?[6,8]:[9+(index-3)*2,10+(index-3)*2];
+            const date=(value:number)=>`${day.slice(0,7)}-${String(value).padStart(2,'0')}`;
+            return {id:`studio-timeline-${index+1}`,projectId:'studio-project',title:`할 일 ${index+1} · ${index===12?'배포 전 접근성과 한국어 긴 제목의 표시 확인':'서비스 개편 일정 검토'}`,
+                status:index===1?'in_progress':index===3?'done':'todo',priority:'medium',startAt:`${date(start)}T09:00:00+09:00`,endAt:`${date(end)}T18:00:00+09:00`};
+        });
+        timelineFixture[12].blockedBy=[timelineFixture[0]];
+        const projectTasks=q.get('timeline')==='dense'?timelineFixture.map(task=>({...task,startAt:timelineFixture[0].startAt,endAt:timelineFixture[12].endAt})):q.get('timeline')==='many'?timelineFixture:[{id:'studio-task',title:'캘린더와 위젯의 정보 위계 점검',status:'todo',priority:'high',projectId:'studio-project'}];
+        useProjectStore.setState({projects:isEmpty?[]:[{id:'studio-project',title:'서비스 개편 · 사용자 경험 개선 프로젝트',status:'doing',categoryId:categories[0].id,startAt:`${day}T00:00:00+09:00`,endAt:`${day}T23:59:00+09:00`,tasks:projectTasks}]});
         useChallengeStore.setState({challenges:isEmpty?[]:[{id:'studio-challenge',title:'물 2L 마시기',startAt:`${day}T00:00:00+09:00`,interval:1,targetCount:30,categoryId:categories[1].id,completions:[]}]});
         useAnniversaryStore.setState({anniversaries:isEmpty?[]:[{id:'studio-anniversary',title:'함께한 날',month:Number(day.slice(5,7)),day:Number(day.slice(8,10))}]});
         useDailyStore.setState({tasks:[],memo:'읽는 영역과 조작 영역을 분리해 확인합니다.',memoDate:day});
@@ -90,7 +101,7 @@ export default function DesignStudio() {
             useAnniversaryStore.setState({anniversaries:previousData.anniversaries});
             useDailyStore.setState(previousData.daily);
             bustFetchCache();
-            useSettingStore.setState({theme:old.theme,themeOptions:old.themeOptions,motion:old.motion,fontSize:old.fontSize,fontWeight:old.fontWeight,font:old.font});
+            useSettingStore.setState({theme:old.theme,themeOptions:old.themeOptions,motion:old.motion,fontSize:old.fontSize,fontWeight:old.fontWeight,font:old.font,timezone:old.timezone});
             if(raw) localStorage.setItem('setting-store',raw);
         };
     },[categories,day,fixture]);
@@ -107,7 +118,7 @@ export default function DesignStudio() {
             <select aria-label="프리뷰 모션" value={motion} onChange={e=>useSettingStore.getState().setMotion(e.target.value as 'full'|'gentle'|'off')}><option>full</option><option>gentle</option><option>off</option></select>
             <select aria-label="프리뷰 글자 크기" value={fontSize} onChange={e=>useSettingStore.getState().setFontSize(e.target.value)}><option value="sm">14px</option><option value="md">16px</option><option value="lg">18px</option><option value="xl">20px</option></select>
             <button onClick={()=>{setEmpty(!empty);useTodoStore.setState({todos:empty?fixture:[]});}}>빈 일정</button>
-            <label><input type="checkbox" checked={failure} onChange={e=>setFailure(e.target.checked)}/>저장 오류</label>
+            <label><input type="checkbox" checked={failure} onChange={e=>{failureRef.current=e.target.checked;setFailure(e.target.checked);}}/>저장 오류</label>
             {saved && <span role="status">프리뷰 저장 완료</span>}
         </Tools>}
         {screen==='widget'?content:<MainLayout activePath={screen==='home'?'/':`/${screen}`}>{content}</MainLayout>}
@@ -115,12 +126,12 @@ export default function DesignStudio() {
 }
 const Tools=styled.div`
     position:fixed;left:0;right:0;top:0;z-index:9000;display:flex;gap:8px;align-items:center;flex-wrap:wrap;
-    padding:6px 10px;background:#202735;color:#fff;font:12px/1.3 system-ui;
+    padding:calc(6px + var(--native-inset-top,0px)) 10px 6px;background:#202735;color:#fff;font:12px/1.3 system-ui;
     button,select {font:12px system-ui;color:#fff;background:#344257;border:1px solid #6c7b91;border-radius:4px;min-height:28px;}
-    & ~ [data-app-shell] {padding-top:42px !important;}
-    @media(max-width:600px){gap:4px;font-size:10px; &>span:first-child{display:none;} &~[data-app-shell]{padding-top:68px !important;}}
+    & ~ [data-app-shell] {padding-top:calc(42px + var(--native-inset-top,0px)) !important;}
+    @media(max-width:600px){gap:4px;font-size:10px; &>span:first-child{display:none;} &~[data-app-shell]{padding-top:calc(68px + var(--native-inset-top,0px)) !important;}}
 `;
 const StudioInsets=createGlobalStyle`
-    html:has([data-preview-tools]) [role='dialog'] {max-height:calc(100dvh - 92px) !important;}
-    html:has([data-preview-tools]) div:has(> [role='dialog']) {padding-top:78px !important;padding-bottom:12px !important;}
+    html:has([data-preview-tools]) [role='dialog'] {max-height:calc(100dvh - 92px - var(--native-inset-top,0px)) !important;}
+    html:has([data-preview-tools]) div:has(> [role='dialog']) {padding-top:calc(78px + var(--native-inset-top,0px)) !important;padding-bottom:12px !important;}
 `;

@@ -26,7 +26,7 @@ function sourceModule(relative) {
             return { useRef: (value) => ({ current: value }), useCallback: (fn) => fn };
         }
         if (id === "react" && filename.endsWith("useDragTarget.ts")) {
-            return { useRef: value => ({ current: value }), useState: value => [value, () => {}], useEffect: fn => hookCleanups.push(fn()) };
+            return { useRef: value => ({ current: value }), useState: value => [value, () => {}], useEffect: fn => hookCleanups.push(fn()),useCallback:fn=>fn };
         }
         if (id.startsWith("@/") || id.startsWith(".")) {
             const base = id.startsWith("@/") ? path.resolve("src", id.slice(2)) : path.resolve(path.dirname(filename), id);
@@ -100,6 +100,11 @@ assert.deepEqual(toggled, ['2026-10-01'], 'Ticking writes the first day of the o
 const { zonedDayStart, addDaysToKey } = sourceModule("src/lib/timezone.ts");
 const { shiftZonedDays, calendarDayDelta, dependencyIssue, overlapsCalendarDays } = sourceModule("src/lib/taskInteractions.ts");
 const { resizeZonedRange } = sourceModule("src/lib/taskInteractions.ts");
+const {shiftTimedRange}=sourceModule('src/lib/taskInteractions.ts');
+assert.deepEqual(shiftTimedRange('2026-11-01T09:05:17.123+09:00','2026-11-01T10:35:17.123+09:00',20,'Asia/Seoul'),{startAt:'2026-11-01T00:25:17.123Z',endAt:'2026-11-01T01:55:17.123Z'},'Time drag retains duration, off-grid minutes and sub-minute precision');
+assert.deepEqual(shiftTimedRange('2026-11-01T23:50:00+09:00','2026-11-02T00:40:00+09:00',20,'Asia/Seoul'),{startAt:'2026-11-01T15:10:00.000Z',endAt:'2026-11-01T16:00:00.000Z'},'Time drag can cross midnight without shortening a task');
+assert.deepEqual(shiftTimedRange('2026-03-08T01:30:00-05:00','2026-03-08T03:30:00-04:00',60,'America/New_York'),{startAt:'2026-03-08T07:30:00.000Z',endAt:'2026-03-08T08:30:00.000Z'},'A DST gap advances wall time and preserves elapsed duration');
+assert.equal(shiftTimedRange('invalid','2026-11-01T00:00:00Z',10,'Asia/Seoul'),null);
 assert.deepEqual(resizeZonedRange('2026-10-02T09:30:00+09:00','2026-10-04T10:30:00+09:00','end',2,'Asia/Seoul'),{startAt:'2026-10-02T00:30:00.000Z',endAt:'2026-10-06T01:30:00.000Z'});
 assert.deepEqual(resizeZonedRange('2026-10-02T09:30:00+09:00','2026-10-04T10:30:00+09:00','start',1,'Asia/Seoul'),{startAt:'2026-10-03T00:30:00.000Z',endAt:'2026-10-04T01:30:00.000Z'});
 assert.equal(resizeZonedRange('2026-10-02T09:30:00+09:00','2026-10-04T10:30:00+09:00','end',-3,'Asia/Seoul'),null);
@@ -239,15 +244,26 @@ console.log("Widget completion dates, recurrence, date boundaries, quick-add fai
 // Exercise the actual gesture controller without native input or a browser account.
 const listeners = new Map();
 const eventTarget = { addEventListener: (name, fn) => listeners.set(name, fn), removeEventListener: name => listeners.delete(name) };
-let targetDate = '2026-10-03', prevented = 0;
-globalThis.document = { ...eventTarget, documentElement: { setAttribute: () => {}, removeAttribute: () => {} }, elementFromPoint: () => ({ closest: () => targetDate ? ({ getAttribute: () => targetDate }) : null }) };
+let targetDate = '2026-10-03', prevented = 0, dragActive = false;
+const hitTests = [];
+globalThis.document = {
+    ...eventTarget,
+    documentElement: {
+        setAttribute: (name) => { if (name === 'data-drag-active') dragActive = true; },
+        removeAttribute: (name) => { if (name === 'data-drag-active') dragActive = false; },
+    },
+    elementFromPoint: (x, y) => {
+        hitTests.push([x, y]);
+        return { closest: () => targetDate ? ({ getAttribute: () => targetDate }) : null };
+    },
+};
 globalThis.window = eventTarget;
 globalThis.requestAnimationFrame = fn => { fn(); return 1; };
 globalThis.cancelAnimationFrame = () => {};
 const element = { captured: false, hasPointerCapture() { return this.captured; }, setPointerCapture() { this.captured = true; }, releasePointerCapture() { this.captured = false; } };
 const dropCalls = [];
 const drag = sourceModule('src/hooks/useDragTarget.ts').default('data-calendar-date', (source, target) => dropCalls.push([source, target]));
-const pointer = (clientX, pointerType = 'mouse') => ({ isPrimary:true, button:0, pointerType, pointerId:1, clientX, clientY:100, currentTarget:element, preventDefault: () => prevented++ });
+const pointer = (clientX, pointerType = 'mouse', clientY = 100) => ({ isPrimary:true, button:0, pointerType, pointerId:1, clientX, clientY, currentTarget:element, preventDefault: () => prevented++ });
 drag.begin(pointer(100), 'click');
 listeners.get('pointermove')(pointer(103)); listeners.get('pointerup')(pointer(103));
 assert.deepEqual(dropCalls, []); assert.equal(drag.consumeClick(), false);
@@ -267,5 +283,46 @@ assert.deepEqual(dropCalls[1], ['touch-task','2026-10-03']);
 targetDate = null;
 drag.begin(pointer(100), 'outside'); listeners.get('pointermove')(pointer(150)); listeners.get('pointerup')(pointer(150));
 assert.equal(dropCalls.length,2, 'Dropping outside a target must not save');
+
+// A touch-action:none move handle must capture immediately; vertical movement is a drag, not scroll.
+targetDate = '60';
+const writesBeforeHandle = dropCalls.length;
+const preventedBeforeHandle = prevented;
+drag.begin(pointer(100,'touch'), 'time-handle', { immediateTouch: true });
+assert.equal(element.captured, true, 'The handle captures on touch down without waiting for a long press');
+assert.equal(dragActive, true, 'Immediate touch reports an active drag before any movement');
+listeners.get('pointermove')(pointer(100,'touch',220));
+assert.equal(dropCalls.length, writesBeforeHandle, 'Moving the handle must not write before release');
+assert.equal(prevented, preventedBeforeHandle + 1, 'Vertical handle movement prevents the scrolling default');
+assert.deepEqual(hitTests.at(-1), [100,220], 'The vertical pointer position selects the destination');
+listeners.get('pointerup')(pointer(100,'touch',220));
+assert.deepEqual(dropCalls.at(-1), ['time-handle','60'], 'Releasing the immediate handle saves the selected time slot');
+assert.equal(dropCalls.length, writesBeforeHandle + 1, 'A handle gesture writes once');
+assert.equal(element.captured, false);
+assert.equal(dragActive, false);
+assert.equal(drag.consumeClick(), true, 'A handle drop suppresses its trailing click');
+assert.equal(drag.consumeClick(), false, 'The trailing click is suppressed only once');
+
+const writesBeforeCancel = dropCalls.length;
+drag.begin(pointer(100,'touch'), 'cancelled-handle', { immediateTouch: true });
+listeners.get('pointermove')(pointer(100,'touch',220));
+listeners.get('pointercancel')(pointer(100,'touch',220));
+listeners.get('pointerup')(pointer(100,'touch',220));
+assert.equal(dropCalls.length, writesBeforeCancel, 'Pointer cancellation followed by release must not save');
+assert.equal(element.captured, false);
+assert.equal(dragActive, false);
+assert.equal(drag.consumeClick(), true, 'Cancellation still suppresses an accidental trailing click');
+
+drag.begin(pointer(100,'touch'), 'escaped-handle', { immediateTouch: true });
+listeners.get('pointermove')(pointer(100,'touch',240));
+listeners.get('keydown')({ key:'Escape', preventDefault: () => prevented++ });
+listeners.get('pointerup')(pointer(100,'touch',240));
+assert.equal(dropCalls.length, writesBeforeCancel, 'Escape followed by release must not save an immediate touch drag');
+assert.equal(element.captured, false);
+assert.equal(dragActive, false);
+drag.begin(pointer(100), 'next-click');
+listeners.get('pointerup')(pointer(100));
+assert.equal(drag.consumeClick(), false, 'A new gesture clears stale click suppression after cancellation');
+assert.equal(dropCalls.length, writesBeforeCancel, 'The next ordinary click is not treated as a drag');
 hookCleanups.forEach(fn => fn?.());
-console.log('Calendar drag, click suppression, cancellation, touch long-press and scroll checks passed; dependency cycles and project failure rollback checks passed.');
+console.log('Calendar drag, immediate touch handles, click suppression, cancellation, touch long-press and scroll checks passed; dependency cycles and project failure rollback checks passed.');

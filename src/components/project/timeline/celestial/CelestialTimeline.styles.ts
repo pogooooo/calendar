@@ -1,7 +1,20 @@
 import styled from "styled-components";
 import { MOBILE } from '@/styles/breakpoints';
-import { SectionWrapper, SectionTitle } from "@/components/project/celestial/section";
-export { SectionWrapper, SectionTitle };
+import { SectionWrapper, SectionTitle as BaseTitle } from "@/components/project/celestial/section";
+export { SectionWrapper };
+export const SectionTitle=styled(BaseTitle)`display:flex;align-items:center;justify-content:space-between;gap:12px;`;
+export const TodayButton=styled.button`
+    min-height:30px;padding:3px 12px;border:1px solid ${p=>p.theme.colors.primary}66;background:transparent;color:${p=>p.theme.colors.text};font:inherit;font-size:.7rem;cursor:pointer;
+    &:hover{background:${p=>p.theme.colors.primary}12;} &:focus-visible{outline:2px solid ${p=>p.theme.colors.primary};outline-offset:2px;}
+`;
+export const UndatedTasks=styled.details`
+    flex:none;font-size:.75rem;padding:0 12px 8px;color:${p=>p.theme.colors.textSecondary};
+    summary{cursor:pointer;width:fit-content;} >div{display:flex;flex-wrap:wrap;gap:6px;max-height:100px;overflow:auto;margin-top:8px;}
+    >div>span{display:inline-flex;align-items:center;gap:4px;max-width:100%;} >div>span>button:first-child{min-width:0;}
+    button{padding:4px 8px;border:1px solid ${p=>p.theme.colors.border};background:${p=>p.theme.colors.surface};color:${p=>p.theme.colors.text};font:inherit;cursor:pointer;max-width:100%;overflow-wrap:anywhere;}
+    button[aria-pressed=true]{border-color:${p=>p.theme.colors.primary};background:${p=>p.theme.colors.primary}18;} button:focus-visible{outline:2px solid ${p=>p.theme.colors.primary};outline-offset:2px;}
+`;
+export const GraphEmpty=styled.p`position:sticky;left:16px;top:20px;width:fit-content;padding:14px 16px;color:${p=>p.theme.colors.textSecondary};font-size:.78rem;margin:0;z-index:3;`;
 
 export const LinkHint = styled.div`
     padding: 5px 12px 7px;
@@ -21,7 +34,7 @@ export const MobileConnector = styled.button`
     &[aria-pressed="true"] { background: ${(p) => p.theme.colors.primary}22; }
 `;
 export const Connector = styled(MobileConnector)`
-    position: absolute; right: -20px; top: 50%; transform: translateY(-50%);
+    position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
     width: 22px; height: 22px; border-radius: 50%;
     background: ${(p) => p.theme.colors.background};
     z-index: 4; touch-action: none;
@@ -100,7 +113,9 @@ export const AgendaTitle = styled.span<{ $done: boolean }>`
 
 export const TimelineLayout = styled.div`
     display: flex;
+    flex-direction:column;
     flex: 1;
+    min-height:0;min-width:0;
     overflow: hidden;
 `;
 
@@ -111,6 +126,8 @@ export const TimelineGridArea = styled.div`
     overflow-x: auto;
     overflow-y: auto;
     position: relative;
+    min-height:0;min-width:0;overscroll-behavior:contain;
+    &:focus-visible{outline:2px solid ${(p)=>p.theme.colors.primary};outline-offset:-2px;}
 `;
 
 export const TimelineContent = styled.div`
@@ -118,21 +135,28 @@ export const TimelineContent = styled.div`
     flex-direction: column;
     min-width: max-content; /* 내부 컨텐츠 크기에 맞게 부모를 강제로 늘려 스크롤 생성 */
     min-height: 100%;
+    flex:none;
 `;
 
 export const TimelineDateHeader = styled.div`
     display: flex;
-    height: 36px;
+    height: 56px;min-height:56px;flex:none;flex-direction:column;
     border-bottom: 1px solid ${(props) => props.theme.colors.primary}33;
     position: sticky;
     top: 0;
     background: ${(props) => props.theme.colors.background};
     z-index: 5;
 `;
+export const TimelineMonthRow=styled.div`height:20px;display:flex;flex:none;border-bottom:1px solid ${p=>p.theme.colors.border}44;`;
+export const MonthCell=styled.div`
+    flex:none;position:relative;border-right:1px solid ${p=>p.theme.colors.border}66;line-height:20px;font-size:.62rem;color:${p=>p.theme.colors.textSecondary};
+    span{position:sticky;left:8px;display:inline-block;padding:0 8px;font-variant-numeric:tabular-nums;}
+`;
+export const TimelineDayRow=styled.div`display:flex;height:36px;flex:none;`;
 
 export const TimelineGraphContainer = styled.div`
     position: relative;
-    min-height: 100%;
+    min-height:0;flex:none;isolation:isolate;z-index:0;
 `;
 
 export const TimelineBackground = styled.div`
@@ -147,6 +171,7 @@ export const TimelineBackground = styled.div`
 export const TimelineVerticalLine = styled.div<{ $isToday?: boolean }>`
     width: 48px;
     min-width: 48px;
+    flex:0 0 48px;box-sizing:border-box;
     border-right: 1px dashed ${(props) => props.theme.colors.primary}22;
     background-color: ${(props) => props.$isToday ? props.theme.colors.primary + '11' : 'transparent'};
 `;
@@ -154,6 +179,7 @@ export const TimelineVerticalLine = styled.div<{ $isToday?: boolean }>`
 export const DateCell = styled.div<{ $isToday?: boolean }>`
     width: 48px;
     min-width: 48px;
+    flex:0 0 48px;box-sizing:border-box;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -204,8 +230,8 @@ export const TaskNode = styled.div<{ $status?: string; $isDragging?: boolean; $c
     display: flex;
     align-items: center;
     padding: 0 8px;
-    /* 이름표가 막대 폭을 보고 안·밖을 고른다 (TaskNodeText) */
-    container-type: inline-size;
+    &[data-has-connector]{padding-right:36px;}
+    /* Labels remain inside their interval so tasks sharing a row never cover one another. */
 
     cursor: ${(props) => props.$isDragging ? 'grabbing' : 'grab'};
     z-index: ${(props) => props.$isDragging ? 10 : 3};
@@ -224,6 +250,7 @@ export const TaskNode = styled.div<{ $status?: string; $isDragging?: boolean; $c
         color: ${(props) => props.theme.colors.text};
         text-decoration: none;
     }
+    &:focus-visible{outline:2px solid ${(p)=>p.theme.colors.primary};outline-offset:2px;}
 `;
 
 export const TaskNodeText = styled.span`
@@ -235,14 +262,6 @@ export const TaskNodeText = styled.span`
     overflow: hidden;
     user-select: none;
 
-    /* 하루·이틀짜리 막대 안에서는 "포…" 만 남았다 — 좁으면 막대 오른쪽, 잇기 단추 너머에 쓴다 */
-    @container (max-width: 110px) {
-        position: absolute;
-        left: calc(100% + 28px);
-        max-width: 260px;
-        color: inherit;
-        pointer-events: none;
-    }
 `;
 
 export const TaskResizeHandle = styled.div`

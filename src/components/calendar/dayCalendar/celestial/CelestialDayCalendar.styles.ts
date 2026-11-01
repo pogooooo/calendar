@@ -181,6 +181,11 @@ export const TimeRow = styled.div`
     min-height: 36px;
     border-bottom: 1px solid ${(props) => props.theme.colors.primary}33;
 
+    html[data-presentation='mobile-app'] && {
+        /* Each overlapping task keeps a 48px row height, plus the existing padding and borders. */
+        min-height: max(48px, calc(var(--day-slot-count, 0) * 48px + 15px));
+    }
+
     &:hover { --slot-rule: ${(props) => props.theme.colors.primary}40; }
 
     .time-label {
@@ -211,6 +216,7 @@ export const TimeRow = styled.div`
         }
 
         .slot-box {
+              &[data-time-drop]{outline:2px solid ${(p)=>p.theme.colors.primary};outline-offset:-2px;background:${(p)=>p.theme.colors.primary}22;}
             flex: 1;
             min-width: 0;
             border-right: 1px dashed var(--slot-rule, transparent);
@@ -232,6 +238,9 @@ export const TimeRow = styled.div`
 `;
 
 export const SlotTodoItem = styled.div<{ $isContinuingPrev: boolean; $isContinuingNext: boolean; $isDone?: boolean }>`
+    cursor:grab;touch-action:pan-y;user-select:none;-webkit-user-select:none;
+    &[data-time-dragging]{opacity:.55;}
+    &:focus-visible{outline:2px solid ${(p)=>p.theme.colors.text};outline-offset:-2px;z-index:45;}
     ${celestialOnly(css`
         && .todo-text { font-size: 0.74rem; font-weight: 600; line-height: 1.3; }
     `)}
@@ -261,6 +270,16 @@ export const SlotTodoItem = styled.div<{ $isContinuingPrev: boolean; $isContinui
         pointer-events: none;
         text-decoration: ${(props) => (props.$isDone ? 'line-through' : 'none')};
     }
+
+    .time-drag-handle {
+        position:absolute;left:0;top:0;bottom:0;z-index:25;
+        display:flex;align-items:center;justify-content:center;
+        width:48px;min-height:48px;touch-action:none;cursor:grab;
+        color:${(props)=>props.theme.family==='celestial'&&props.theme.mode==='dark'?props.theme.colors.surface:props.theme.colors.text};
+        border-right:1px solid ${(props)=>props.theme.colors.primary}55;
+        svg{pointer-events:none;}
+    }
+    html[data-presentation='mobile-app'] && .todo-text {left:56px;}
 `;
 
 export const SideSection = styled.div`
@@ -273,6 +292,23 @@ export const SideSection = styled.div`
         flex: none !important;
         margin-top: 10px;
     }
+`;
+
+export const TimeDragHint=styled.p`flex:none;margin:0;padding:5px 12px 8px;color:${p=>p.theme.colors.textSecondary};font-size:.64rem;line-height:1.5;`;
+export const TimeMoveNotice=styled.div`
+    flex:none;display:flex;width:100%;box-sizing:border-box;align-items:center;gap:8px;padding:8px 12px;margin:4px 0;border:1px solid ${p=>p.theme.colors.primary}55;background:${p=>p.theme.colors.surface};font-size:.74rem;color:${p=>p.theme.colors.text};
+    span{flex:1;min-width:0;overflow-wrap:anywhere;}
+    button{min-height:32px;padding:3px 8px;border:1px solid ${p=>p.theme.colors.primary}66;color:inherit;background:transparent;cursor:pointer;font:inherit;}
+    html[data-presentation='mobile-app'] & {
+        margin:0;border-inline:0;flex-wrap:wrap;
+        span{flex-basis:100%;}
+        button{min-height:48px;min-width:48px;padding:8px 12px;}
+    }
+    ${TOUCH} {button{min-height:48px;min-width:48px;padding:8px 12px;}}
+`;
+export const TimeDragPreview=styled.div`
+    position:fixed;z-index:10020;pointer-events:none;width:260px;max-width:calc(100vw - 24px);padding:12px 14px;border:1px solid ${p=>p.theme.colors.primary};background:${p=>p.theme.colors.surface};color:${p=>p.theme.colors.text};box-shadow:0 8px 25px #00000033;font-family:${p=>p.theme.fonts.body};
+    strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:.8rem;} span{display:block;margin-top:5px;color:${p=>p.theme.colors.primary};font-size:.82rem;font-variant-numeric:tabular-nums;}
 `;
 
 const BaseCard = styled.div`

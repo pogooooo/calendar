@@ -61,7 +61,22 @@ if (!isDesktop) {
 // export 빌드는 distDir가 out-desktop이어도 중간 산출물은 .next에 쓴다.
 // 개발 서버의 Turbopack이 그 안에 동시에 쓰면 배포 빌드의 webpack 파일과 섞인다.
 export default function config(phase: string): NextConfig {
+    const nativeDevHost = process.env.TAURI_DEV_HOST;
     return phase === PHASE_DEVELOPMENT_SERVER
-        ? { ...nextConfig, distDir: ".next-dev", allowedDevOrigins: ['127.0.0.1'] }
+        ? { ...nextConfig, distDir: ".next-dev", allowedDevOrigins: ['127.0.0.1', '10.0.2.2', 'tauri.localhost'],
+            // Android's local protocol forwards HTTP, so connect dev assets/HMR to the host directly.
+            ...(nativeDevHost ? {
+                assetPrefix: `http://${nativeDevHost}:3000`,
+                crossOrigin: 'anonymous' as const,
+                async headers() {
+                    return [
+                        ...(await nextConfig.headers?.() ?? []),
+                        {source:'/_next/static/:path*',headers:[{key:'Access-Control-Allow-Origin',value:'*'}]},
+                    ];
+                },
+                // Tauri's HTTP proxy cannot carry React's separate debug WebSocket stream.
+                experimental: { ...nextConfig.experimental, reactDebugChannel: false },
+            } : {}),
+        }
         : nextConfig;
 }
