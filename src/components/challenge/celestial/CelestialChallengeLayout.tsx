@@ -9,6 +9,7 @@ import EmptyArt from "@/components/empty/EmptyArt";
 import { useT } from "@/i18n/useT";
 import type { ChallengeType } from "@/types";
 import type { ChallengeLayoutProps } from "../ChallengeLayout.types";
+import FinishedChallengeItem from "../FinishedChallengeItem";
 
 /**
  * Celestial(과 Maple)의 챌린지 배치 — 왼쪽 목록 | 오른쪽 위 스티커 판 · 아래 자세히. 판 사이를 끌어 넓이를 바꾼다.
@@ -17,7 +18,7 @@ import type { ChallengeLayoutProps } from "../ChallengeLayout.types";
 export default function CelestialChallengeLayout({
     S, categories, challenges, ongoing, finished,
     selectedChallenge, select, onCreate, onEdit, onDelete,
-    today, onToggleToday, filter, board, dialogs,
+    today, onToggleToday, isCompletionSaving, filter, board, dialogs,
 }: ChallengeLayoutProps) {
     const theme = useTheme();
     const tr = useT().challenge;
@@ -178,7 +179,11 @@ export default function CelestialChallengeLayout({
                                 <div style={{ padding: '12px 16px 4px', marginTop: '10px', fontSize: '0.8rem', fontWeight: 600, color: theme?.colors.textSecondary, borderTop: `1px solid ${theme?.colors.primary}33` }}>
                                     {tr.finished}
                                 </div>
-                                {finished.map(renderChallengeCard)}
+                                {finished.map(challenge => (
+                                    <FinishedChallengeItem key={challenge.id} challenge={challenge} onEdit={onEdit}>
+                                        {renderChallengeCard(challenge)}
+                                    </FinishedChallengeItem>
+                                ))}
                             </>
                         )}
                     </S.TimelineScrollArea>
@@ -220,6 +225,7 @@ export default function CelestialChallengeLayout({
                                             <SecondaryButton
                                                 $variant={today === "undo" ? "default" : "primary"}
                                                 onClick={onToggleToday}
+                                                disabled={isCompletionSaving}
                                                 style={{ padding: '12px', fontSize: '1rem', fontWeight: 600, gap: '8px' }}
                                             >
                                                 {today === "undo" ? <X size={18} /> : <Check size={18} />}
@@ -243,7 +249,7 @@ export default function CelestialChallengeLayout({
                                             </SecondaryButton>
                                         )}
                                         <div className="sub-actions">
-                                            <SecondaryButton onClick={onEdit} style={{ gap: '6px' }}>
+                                            <SecondaryButton onClick={() => onEdit(selectedChallenge)} style={{ gap: '6px' }}>
                                                 <Settings2 size={16} /> {tr.edit}
                                             </SecondaryButton>
                                             <SecondaryButton $variant="danger" onClick={onDelete} style={{ gap: '6px' }}>

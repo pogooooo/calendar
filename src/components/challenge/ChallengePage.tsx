@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import * as React from "react";
 import ChallengeView from "./ChallengeView";
@@ -6,7 +6,8 @@ import ChallengeView from "./ChallengeView";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import useChallengeStore from "@/store/useChallengeStore";
 import useCategoryStore from "@/store/useCategoryStore";
-import { ChallengeData } from "@/components/modal/challengeModal/ChallengeModal";
+import type { ChallengeData } from "@/components/modal/challengeModal/ChallengeModal";
+import type { ChallengeType } from "@/types";
 import { localDateKey } from "@/lib/dateKey";
 import { useCurrentDayKey } from "@/hooks/useCurrentDay";
 import { challengeExpired, completionKey, completionTargetFor, slotIndexOn } from "@/lib/challengeDays";
@@ -25,9 +26,10 @@ export default function ChallengePage() {
     const [selectedChallengeId, setSelectedChallengeId] = React.useState<string | null>(null);
     const selectedChallenge = challenges.find(c => c.id === selectedChallengeId && selectedCategoryIds.includes(c.categoryId)) ?? null;
 
-    const [isModalOpen, setIsModalOpen] = React.useState(false);
-    const [modalMode, setModalMode] = React.useState<'create' | 'edit'>('create');
+    const [editor, setEditor] = React.useState<{ mode: 'create' } | { mode: 'edit'; challenge: ChallengeType } | null>(null);
 
+    const [isCompletionSaving, setIsCompletionSaving] = React.useState(false);
+    const completionPending = React.useRef(false);
     const hasFetchedData = React.useRef(false);
 
     React.useEffect(() => {
@@ -59,8 +61,8 @@ export default function ChallengePage() {
         [challenges, selectedCategoryIds]
     );
 
-    const handleCreateNew = () => { setSelectedChallengeId(null); setModalMode('create'); setIsModalOpen(true); };
-    const handleEditClick = () => { if (!selectedChallenge) return; setModalMode('edit'); setIsModalOpen(true); };
+    const handleCreateNew = () => { setSelectedChallengeId(null); setEditor({ mode: 'create' }); };
+    const handleEditClick = (challenge: ChallengeType) => setEditor({ mode: 'edit', challenge });
 
     const handleDelete = async () => {
         if (!selectedChallenge) return;
@@ -75,10 +77,12 @@ export default function ChallengePage() {
     };
 
     const handleSaveChallenge = async (data: ChallengeData): Promise<void> => {
+        if (!editor) return;
+
         let error: string | null;
-        const before = new Set(challenges.map(c=>c.id));
-        if (modalMode === 'edit' && selectedChallenge) {
-            error = await updateChallenge(authFetch, selectedChallenge.id, data);
+        const before = new Set(challenges.map(c => c.id));
+        if (editor.mode === 'edit') {
+            error = await updateChallenge(authFetch, editor.challenge.id, data);
         } else {
             // 정오로 저장하면 어느 시간대에서 읽어도 같은 달력일로 해석된다
             const startAt = `${localDateKey(new Date())}T12:00:00.000Z`;
@@ -86,14 +90,14 @@ export default function ChallengePage() {
         }
         // 실패했는데 모달을 닫으면 사용자는 저장된 줄 안다
         if (error) { await dialog.notify({ title: t.alert.saveFailed, message: error }); return; }
-        if(modalMode==='create') {
-            const created=useChallengeStore.getState().challenges.find(c=>!before.has(c.id));
-            if(created) {
-                setSelectedChallengeId(created.id);
-                setSelectedCategoryIds(ids=>ids.includes(created.categoryId)?ids:[...ids,created.categoryId]);
-            }
+        const saved = editor.mode === 'edit'
+            ? useChallengeStore.getState().challenges.find(c => c.id === editor.challenge.id)
+            : useChallengeStore.getState().challenges.find(c => !before.has(c.id));
+        if (saved) {
+            setSelectedChallengeId(saved.id);
+            setSelectedCategoryIds(ids => ids.includes(saved.categoryId) ? ids : [...ids, saved.categoryId]);
         }
-        setIsModalOpen(false);
+        setEditor(null);
     };
 
     /* 날 셈은 날짜 키로 (src/lib/challengeDays.ts) — 오늘은 사용자가 고른 시간대의 날이고 자정을 넘기면 바뀐다.
@@ -110,10 +114,19 @@ export default function ChallengePage() {
         return (selectedChallenge.completions ?? []).some(comp => completionKey(comp) === todayKey);
     }, [selectedChallenge, isTodayValidDay, todayKey]);
 
-    const handleToggleToday = async () => {
-        if (!selectedChallenge || !isTodayValidDay) return;
-        await toggleChallengeCompletion(authFetch, selectedChallenge.id, completionTargetFor(todayKey));
+    const handleToggleDate = async (dayKey: string) => {
+        if (!selectedChallenge || completionPending.current || dayKey > todayKey || slotIndexOn(selectedChallenge, dayKey) === null) return;
+        completionPending.current = true;
+        setIsCompletionSaving(true);
+        try {
+            const error = await toggleChallengeCompletion(authFetch, selectedChallenge.id, completionTargetFor(dayKey));
+            if (error) await dialog.notify({ title: t.alert.saveFailed, message: error });
+        } finally {
+            completionPending.current = false;
+            setIsCompletionSaving(false);
+        }
     };
+    const handleToggleToday = () => handleToggleDate(todayKey);
 
     const isChallengeEnded = React.useMemo(
         () => !!selectedChallenge && challengeExpired(selectedChallenge, todayKey),
@@ -125,8 +138,11 @@ export default function ChallengePage() {
         selectedChallenge, setSelectedChallengeId,
         handleCreateNew, handleEditClick, handleDelete, handleToggleToday, isCompletedToday,
         isTodayValidDay,
-        isChallengeEnded, todayKey,
-        isModalOpen, setIsModalOpen, modalMode, handleSaveChallenge,
+        isChallengeEnded, todayKey, handleToggleDate, isCompletionSaving,
+        isModalOpen: editor !== null,
+        editingChallenge: editor?.mode === 'edit' ? editor.challenge : null,
+        closeEditor: () => setEditor(null),
+        handleSaveChallenge,
     };
 
     return <ChallengeView {...themeProps} />;

@@ -22,10 +22,11 @@ export interface ChallengeLayoutProps {
     selectedChallenge: ChallengeType | null;
     select: (id: string | null) => void;
     onCreate: () => void;
-    onEdit: () => void;
+    onEdit: (challenge: ChallengeType) => void;
     onDelete: () => void;
     today: ChallengeTodayState;
     onToggleToday: () => void;
+    isCompletionSaving: boolean;
     /** 카테고리 거르개 */
     filter: ReactNode;
     /** 고른 챌린지의 스티커 판 (고르지 않았거나 칸이 없으면 안내 문구) */

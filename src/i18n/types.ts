@@ -448,6 +448,8 @@ export interface Translations {
         indefinite: (n: number) => string;
         doneToday: string;
         cancelToday: string;
+        recordsHint: string;
+        recordAction: (dayKey: string, done: boolean) => string;
         ended: string;
         goalReached: string;
         notTodaySlot: string;

@@ -6,9 +6,10 @@ import * as React from "react";
 import CategoryFilter from "@/components/calendar/parts/categoryFilter/CategoryFilter";
 import ChallengeModal, { ChallengeData } from "@/components/modal/challengeModal/ChallengeModal";
 import { DynamicSticker } from "@/assets/ChallengeStickers";
+import { ChallengeRecords } from "./ChallengeRecords.styles";
 import { useT } from "@/i18n/useT";
 import type { CategoryType, ChallengeType } from "@/types";
-import { usePickTheme, type ThemeImpls } from "@/styles/themed";
+import { useThemeFamily, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialChallenge.styles";
 import * as MapleS from "./maple/MapleChallenge.styles";
 import * as OceanS from './ocean/OceanChallenge.styles';
@@ -32,17 +33,19 @@ interface CelestialChallengeProps {
     selectedChallenge: ChallengeType | null;
     setSelectedChallengeId: (id: string | null) => void;
     handleCreateNew: () => void;
-    handleEditClick: () => void;
+    handleEditClick: (challenge: ChallengeType) => void;
     handleDelete: () => void;
     handleToggleToday: () => void;
+    handleToggleDate: (dayKey: string) => void;
+    isCompletionSaving: boolean;
     isCompletedToday: boolean;
     isTodayValidDay: boolean;
     isChallengeEnded: boolean;
     /** 오늘 (사용자 시간대의 날짜 키) */
     todayKey: string;
     isModalOpen: boolean;
-    setIsModalOpen: (isOpen: boolean) => void;
-    modalMode: 'create' | 'edit';
+    closeEditor: () => void;
+    editingChallenge: ChallengeType | null;
     handleSaveChallenge: (data: ChallengeData) => Promise<void>;
 }
 
@@ -50,11 +53,12 @@ export default function ChallengeView({
     categories, challenges, selectedCategoryIds, toggleCategory,
     selectedChallenge, setSelectedChallengeId,
     handleCreateNew, handleEditClick, handleDelete,
-    handleToggleToday, isCompletedToday, isTodayValidDay, isChallengeEnded, todayKey,
-    isModalOpen, setIsModalOpen, modalMode, handleSaveChallenge,
+    handleToggleToday, handleToggleDate, isCompletionSaving, isCompletedToday, isTodayValidDay, isChallengeEnded, todayKey,
+    isModalOpen, closeEditor, editingChallenge, handleSaveChallenge,
 }: CelestialChallengeProps) {
-    const S = usePickTheme(STYLES);
-    const Layout = usePickTheme(LAYOUTS);
+    const family = useThemeFamily();
+    const S = STYLES[family];
+    const Layout = LAYOUTS[family];
     const tr = useT().challenge;
 
     // ── 유틸 — 날 셈은 날짜 키로 (src/lib/challengeDays.ts) ────────────────────
@@ -78,7 +82,7 @@ export default function ChallengeView({
         order: [...ongoingChallenges, ...finishedChallenges].map(c => c.id),
         axis: "y",
     });
-    useListMotion(() => document.querySelector(`${S.TimelineScrollArea}`), { exit: "collapse", filter: (el) => el.matches(`${S.ChallengeRow}`) });
+    useListMotion(() => document.querySelector(`${S.TimelineScrollArea}`), { exit: "collapse", filter: (el) => el.matches(`${S.ChallengeRow}, [data-finished-challenge]`) });
     // 오늘 칸을 채우면 그 스티커가 갈래의 끝냄 몸짓을 한 번 한다(바다: 물결 고리 · Maple: 도장 · Celestial: 톡) — 다른 챌린지로 갈면 빼고
     const stickerGridRef = React.useRef<HTMLDivElement>(null);
     useListMotion(stickerGridRef, { reset: selectedChallenge?.id, enter: false });
@@ -96,13 +100,32 @@ export default function ChallengeView({
         if (slots.length === 0) return <span className="placeholder">{tr.firstSticker}</span>;
 
         return (
-            <S.StickerGrid ref={stickerGridRef}>
-                {slots.map((isFilled, idx) => (
-                    <S.StickerSlot key={idx} data-done={isFilled ? "" : undefined} data-motion-mark="">
-                        <DynamicSticker isFilled={isFilled} idx={idx} />
-                    </S.StickerSlot>
-                ))}
-            </S.StickerGrid>
+            <ChallengeRecords>
+                <p className="records-hint">{tr.recordsHint}</p>
+                <S.StickerGrid ref={stickerGridRef} aria-busy={isCompletionSaving}>
+                    {slots.map((isFilled, idx) => {
+                        const dayKey = slotKey(selectedChallenge, idx);
+                        return (
+                            <S.StickerSlot
+                                as="button"
+                                type="button"
+                                className="record-slot"
+                                key={dayKey}
+                                data-done={isFilled ? "" : undefined}
+                                data-motion-mark=""
+                                aria-pressed={isFilled}
+                                aria-label={tr.recordAction(dayKey, isFilled)}
+                                title={tr.recordAction(dayKey, isFilled)}
+                                disabled={isCompletionSaving || dayKey > todayKey}
+                                onClick={() => handleToggleDate(dayKey)}
+                            >
+                                <span aria-hidden="true"><DynamicSticker isFilled={isFilled} idx={idx} /></span>
+                                <span className="record-date" aria-hidden="true">{dayKey.slice(5).replace('-', '/')}</span>
+                            </S.StickerSlot>
+                        );
+                    })}
+                </S.StickerGrid>
+            </ChallengeRecords>
         );
     };
 
@@ -131,6 +154,7 @@ export default function ChallengeView({
             onDelete={handleDelete}
             today={today}
             onToggleToday={handleToggleToday}
+            isCompletionSaving={isCompletionSaving}
             filter={(
                 <CategoryFilter
                     categories={categories}
@@ -142,11 +166,11 @@ export default function ChallengeView({
             dialogs={(
                 <ChallengeModal
                     isOpen={isModalOpen}
-                    onClose={() => setIsModalOpen(false)}
+                    onClose={closeEditor}
                     categories={categories}
                     initialData={
-                        modalMode === 'edit' && selectedChallenge
-                            ? { ...selectedChallenge, description: selectedChallenge.description ?? null, targetCount: selectedChallenge.targetCount ?? null }
+                        editingChallenge
+                            ? { ...editingChallenge, description: editingChallenge.description ?? null, targetCount: editingChallenge.targetCount ?? null }
                             : null
                     }
                     onSave={handleSaveChallenge}

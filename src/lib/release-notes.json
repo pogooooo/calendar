@@ -1,5 +1,21 @@
 [
   {
+    "version": "1.3.6",
+    "date": "2026-11-18",
+    "notes": {
+      "ko": [
+        "완료했거나 기간이 끝난 챌린지도 목록에서 바로 수정할 수 있습니다. 날짜별 스티커에서 과거 달성 기록을 추가하거나 취소할 수 있습니다.",
+        "보석 테마는 개발 중이며 배포 버전의 테마 선택 목록에서 숨겼습니다.",
+        "Next.js 보안 패치를 적용했습니다."
+      ],
+      "en": [
+        "Edit completed and expired challenges directly from the list. Select dated stickers to add or undo past completions.",
+        "The Gem theme remains in development and is hidden from the theme picker in released builds.",
+        "Applied the Next.js security update."
+      ]
+    }
+  },
+  {
     "version": "1.3.5",
     "date": "2026-11-02",
     "notes": {

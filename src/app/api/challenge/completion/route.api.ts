@@ -27,13 +27,22 @@ export async function POST(req: Request) {
         const dateObj = new Date(targetDate);
         dateObj.setUTCHours(0, 0, 0, 0);
 
-        const existingCompletion = await prisma.challengeCompletion.findFirst({
-            where: { challengeId, targetDate: dateObj }
-        });
+        // Legacy SQLite records can store dates as integer timestamps while D1 uses text.
+        // Match the UTC calendar day after Prisma has decoded either representation.
+        const completions = await prisma.challengeCompletion.findMany({ where: { challengeId } });
+        const dayKey = dateObj.toISOString().slice(0, 10);
+        const existingCompletions = completions.filter(completion =>
+            completion.targetDate.toISOString().slice(0, 10) === dayKey
+        );
+        const existingCompletion = existingCompletions[0];
 
         // 바라는 상태(done)가 오면 그대로 둔다 — 없으면(옛 앱) 뒤집는다. 겹친 요청은 500 대신 이미 그 상태로 본다
         if (!(done ?? !existingCompletion)) {
-            await prisma.challengeCompletion.deleteMany({ where: { challengeId, targetDate: dateObj } });
+            if (existingCompletions.length) {
+                await prisma.challengeCompletion.deleteMany({
+                    where: { challengeId, id: { in: existingCompletions.map(completion => completion.id) } },
+                });
+            }
         } else if (!existingCompletion) {
             try {
                 await prisma.challengeCompletion.create({

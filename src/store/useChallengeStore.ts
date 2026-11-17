@@ -18,7 +18,7 @@ interface ChallengeState {
     addChallenge: (authFetch: AuthFetch, data: Partial<ChallengeType>) => Promise<string | null>;
     updateChallenge: (authFetch: AuthFetch, challengeId: string, data: Partial<ChallengeType>) => Promise<string | null>;
     deleteChallenge: (authFetch: AuthFetch, challengeId: string) => Promise<string | null>;
-    toggleChallengeCompletion: (authFetch: AuthFetch, challengeId: string, targetDate: string) => Promise<void>;
+    toggleChallengeCompletion: (authFetch: AuthFetch, challengeId: string, targetDate: string) => Promise<string | null>;
 }
 
 // 서버는 보낸 시각의 UTC 날(그날 0시)로 완료를 적고 지운다. 미리 고칠 때도 같은 날로 셈한다 —
@@ -127,7 +127,7 @@ const useChallengeStore = create<ChallengeState>((set, get) => ({
     toggleChallengeCompletion: async (authFetch, challengeId, targetDate) => {
         const previous = get().challenges;
         const challenge = previous.find(c => c.id === challengeId);
-        if (!challenge) return;
+        if (!challenge) return "챌린지를 찾을 수 없습니다.";
 
         const dateKey = toDateKey(targetDate);
 
@@ -168,7 +168,7 @@ const useChallengeStore = create<ChallengeState>((set, get) => ({
                 // 바라는 상태를 같이 보낸다 — 다른 기기에서 이미 바뀐 것을 옛 화면에서 눌러도 서버가 거꾸로 뒤집지 않게
                 body: JSON.stringify({ challengeId, targetDate, done: !existingComp }),
             });
-            if (!res.ok) throw new Error("업데이트 실패");
+            if (!res.ok) throw new Error(await readError(res, "달성 기록을 저장하지 못했습니다."));
 
             const updatedCompletions = await res.json();
             set((state) => ({
@@ -176,10 +176,14 @@ const useChallengeStore = create<ChallengeState>((set, get) => ({
                     c.id === challengeId ? { ...c, completions: updatedCompletions } : c
                 )
             }));
+            return null;
         } catch (err) {
             console.error("[CHALLENGE_TOGGLE_ERROR]", err);
             reportSaveFailure("challenge");
-            set({ challenges: previous });
+            set(state => ({
+                challenges: state.challenges.map(current => current.id === challengeId ? { ...current, completions: challenge.completions } : current),
+            }));
+            return err instanceof Error ? err.message : "달성 기록을 저장하지 못했습니다.";
         }
     }
 }));

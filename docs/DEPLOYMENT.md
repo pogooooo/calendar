@@ -55,7 +55,7 @@ Android의 Rust 라이브러리는 `src-tauri/build.rs`에서 Android 대상에�
 
 ## 웹 업데이트
 
-배포 빌드는 Next.js 16.4.3과 OpenNext Cloudflare 1.20.13을 사용한다. 기존 설정과 어댑터의 호환성을 위해 웹·네이티브 프런트엔드 모두 `next build --webpack`으로 빌드한다. 지원 종료된 Next.js를 허용하는 옵션으로 배포 검사를 건너뛰지 않는다. 배포 전에 로컬 `wrangler dev`에서 페이지 응답·인증 API·`check:ssr-styles`를 확인한다.
+배포 빌드는 Next.js 16.4.6과 OpenNext Cloudflare 1.20.13을 사용한다. 기존 설정과 어댑터의 호환성을 위해 웹·네이티브 프런트엔드 모두 `next build --webpack`으로 빌드한다. 지원 종료된 Next.js를 허용하는 옵션으로 배포 검사를 건너뛰지 않는다. 배포 전에 로컬 `wrangler dev`에서 페이지 응답·인증 API·`check:ssr-styles`를 확인한다.
 
 ```powershell
 npm run deploy

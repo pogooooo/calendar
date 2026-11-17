@@ -458,6 +458,8 @@ const en: Translations = {
         indefinite: (n: number) => `No end · ${n} done`,
         doneToday: 'Mark today done!',
         cancelToday: 'Undo today',
+        recordsHint: 'Select a dated sticker to update past completions.',
+        recordAction: (dayKey: string, done: boolean) => `${done ? 'Undo' : 'Mark'} completion for ${dayKey}`,
         ended: 'Challenge ended',
         goalReached: 'Goal reached',
         notTodaySlot: 'Today is not a scheduled day',

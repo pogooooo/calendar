@@ -7,6 +7,7 @@ import EmptyArt from "@/components/empty/EmptyArt";
 import { useT } from "@/i18n/useT";
 import type { ChallengeType } from "@/types";
 import type { ChallengeLayoutProps } from "../ChallengeLayout.types";
+import FinishedChallengeItem from "../FinishedChallengeItem";
 import { streakOf, weekOf } from "./challengeWeek";
 import { useCurrentDayKey } from "@/hooks/useCurrentDay";
 import { useListMotion, useSwapMotion } from "@/hooks/useMotion";
@@ -59,7 +60,7 @@ function WeekStrip({ challenge, days, todayKey }: { challenge: ChallengeType; da
 export default function OceanChallengeLayout({
     categories, challenges, ongoing, finished,
     selectedChallenge, select, onCreate, onEdit, onDelete,
-    today, onToggleToday, filter, board, dialogs,
+    today, onToggleToday, isCompletionSaving, filter, board, dialogs,
 }: ChallengeLayoutProps) {
     const t = useT();
     const tr = t.challenge;
@@ -186,7 +187,7 @@ export default function OceanChallengeLayout({
                                 </O.IconButton>
                             </O.Stepper>
                         )}
-                        <O.IconButton type="button" onClick={onEdit} aria-label={tr.edit} title={tr.edit}><Pencil /></O.IconButton>
+                        <O.IconButton type="button" onClick={() => onEdit(sel)} aria-label={tr.edit} title={tr.edit}><Pencil /></O.IconButton>
                         <O.IconButton type="button" $danger onClick={onDelete} aria-label={tr.delete} title={tr.delete}><Trash2 /></O.IconButton>
                     </O.Tools>
                 </>
@@ -223,7 +224,13 @@ export default function OceanChallengeLayout({
             {finished.length > 0 && (
                 <O.Section>
                     <O.SectionHead>{tr.finished}<b>{finished.length}</b></O.SectionHead>
-                    <O.Grid ref={finishedRef}>{finished.map((c, i) => tile(c, ongoing.length + i, true))}</O.Grid>
+                    <O.Grid ref={finishedRef}>
+                        {finished.map((challenge, index) => (
+                            <FinishedChallengeItem key={challenge.id} challenge={challenge} onEdit={onEdit} vertical>
+                                {tile(challenge, ongoing.length + index, true)}
+                            </FinishedChallengeItem>
+                        ))}
+                    </O.Grid>
                 </O.Section>
             )}
         </>
@@ -254,7 +261,7 @@ export default function OceanChallengeLayout({
                     </O.Meter>
 
                     {today === "mark" || today === "undo" ? (
-                        <O.TodayButton type="button" $undo={today === "undo"} onClick={onToggleToday}>
+                        <O.TodayButton type="button" $undo={today === "undo"} onClick={onToggleToday} disabled={isCompletionSaving}>
                             {today === "undo" ? <Undo2 /> : <Check />}
                             {today === "undo" ? tr.cancelToday : tr.doneToday}
                         </O.TodayButton>

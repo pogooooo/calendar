@@ -459,6 +459,8 @@ const ko: Translations = {
         indefinite: (n: number) => `무기한 · ${n}회 달성`,
         doneToday: '오늘 달성 완료!',
         cancelToday: '오늘 달성 취소',
+        recordsHint: '날짜별 스티커를 눌러 지난 달성 기록도 수정할 수 있습니다.',
+        recordAction: (dayKey: string, done: boolean) => `${dayKey} 달성 ${done ? '취소' : '기록'}`,
         ended: '챌린지 종료',
         goalReached: '목표 달성 완료',
         notTodaySlot: '오늘은 달성일이 아닙니다',
