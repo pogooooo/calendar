@@ -12,8 +12,8 @@
 export const REPO = process.env.GITHUB_REPO ?? "pogooooo/calendar";
 const API = `https://api.github.com/repos/${REPO}`;
 const UA = "cronos-download";
-/** 거슬러 올라가며 찾아볼 릴리스 수 */
-const LOOKBACK = 10;
+/** GitHub's maximum page size. Continue through older pages when needed. */
+const TAG_PAGE_SIZE = 100;
 
 export type Asset = { id: number; name: string; browser_download_url: string; size: number };
 export type Release = { tag_name?: string; body?: string; draft?: boolean; prerelease?: boolean; assets?: Asset[] };
@@ -58,13 +58,16 @@ async function* walkReleases(): AsyncGenerator<Release> {
     const latest = await fetchLatestRelease();
     if (latest) yield latest;
 
-    const tags = await ghJson<{ name: string }[]>(`tags?per_page=${LOOKBACK}`);
-    if (!tags) return;
+    for (let page = 1; ; page += 1) {
+        const tags = await ghJson<{ name: string }[]>(`tags?per_page=${TAG_PAGE_SIZE}&page=${page}`);
+        if (!tags?.length) return;
 
-    for (const { name } of tags) {
-        if (name === latest?.tag_name) continue;
-        const rel = await ghJson<Release>(`releases/tags/${encodeURIComponent(name)}`);
-        if (rel && !rel.draft && !rel.prerelease) yield rel;
+        for (const { name } of tags) {
+            if (name === latest?.tag_name) continue;
+            const rel = await ghJson<Release>(`releases/tags/${encodeURIComponent(name)}`);
+            if (rel && !rel.draft && !rel.prerelease) yield rel;
+        }
+        if (tags.length < TAG_PAGE_SIZE) return;
     }
 }
 
