@@ -93,6 +93,8 @@ GitHub 직접 익명 다운로드가 404인 이력이 있어 앱의 기본 업�
 
 ## Android Google Play 업데이트
 
+Android 시작 검증은 서명된 릴리스 APK로 수행한다. 기존 APK 위에 업데이트 설치한 뒤 첫 화면 진입, 여러 번의 완전 종료·재실행, 백그라운드 복귀와 `logcat -b crash`를 확인한다. `src-tauri/android-overlay/app/cronos-runtime.pro`는 Rust에서 JNI로 호출하는 `TauriActivity.getPluginManager`를 보존한다. Rust 빌드 캐시로 자동 생성 규칙이 누락되는 경우에도 이 규칙이 적용되며, `native-release.mjs`는 패키징 후 실제 R8 매핑을 검사해 해당 메서드가 제거된 빌드를 차단한다.
+
 ```powershell
 npm run android:bundle
 ```

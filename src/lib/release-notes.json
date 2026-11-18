@@ -1,5 +1,19 @@
 [
   {
+    "version": "1.3.7",
+    "date": "2026-11-18",
+    "notes": {
+      "ko": [
+        "Android에서 로딩 화면 직후 앱이 종료되는 문제를 수정했습니다.",
+        "릴리스 최적화 후 앱 시작에 필요한 네이티브 호출이 보존되는지 확인하는 빌드 검증을 추가했습니다."
+      ],
+      "en": [
+        "Fixed an Android crash immediately after the splash screen.",
+        "Added a release-build check to ensure the native startup entry point survives code shrinking."
+      ]
+    }
+  },
+  {
     "version": "1.3.6",
     "date": "2026-11-18",
     "notes": {

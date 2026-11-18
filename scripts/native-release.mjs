@@ -3,6 +3,7 @@ import { homedir } from "node:os";
 import { delimiter, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawn, spawnSync } from "node:child_process";
+import { verifyAndroidRuntime } from "./check-android-runtime.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const mode = process.argv[2];
@@ -114,6 +115,8 @@ try {
         if (!check) {
             run([join(root, "scripts", "android-overlay.mjs")], env);
             await androidBuild(cli, gen, env);
+            const config = JSON.parse(readFileSync(join(root, "src-tauri", "tauri.conf.json"), "utf8"));
+            verifyAndroidRuntime(gen, config.identifier);
         }
     }
     if (check) console.log("[release] 점검만 완료했습니다. 빌드·업로드하지 않았습니다.");
