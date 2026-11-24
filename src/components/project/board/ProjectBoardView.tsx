@@ -1,6 +1,5 @@
 "use client";
 
-import * as GemS from "./gem/GemProjectBoard.styles";
 import * as React from 'react';
 import { useT } from "@/i18n/useT";
 import { ProjectBoardProps } from "./ProjectBoard";
@@ -13,9 +12,10 @@ import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialProjectBoard.styles";
 import * as MapleS from "./maple/MapleProjectBoard.styles";
 import * as OceanS from './ocean/OceanProjectBoard.styles';
+import * as GemS from "./gem/GemProjectBoard.styles";
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS, gem: GemS };
 
 /** 칸의 차례 — 끝 쪽 칸으로 가면 오른쪽에서 들어온다 */
 const COLUMN_ORDER = ["todo", "in_progress", "done"];

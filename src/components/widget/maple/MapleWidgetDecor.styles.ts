@@ -1,48 +1,54 @@
-/**
- * MapleWidgetDecor 의 모양 — 위젯 판 전체에 깔리는 한 겹(z-index 0, 내용 뒤).
- * 단풍 그늘은 캔버스 한 장(paintDapple)에 그린다. 커서가 들어올 때의 일렁임도 그 캔버스가 다시 그린다(MapleWidgetDecor).
- */
-import styled from "styled-components";
+import styled, { keyframes } from "styled-components";
 import { withAlpha } from "@/styles/color";
-import { agedArt } from "@/styles/vintage";
+import { watercolorLeaf } from "@/styles/maple/ink";
 
-const dark = (p: { theme: { mode?: string } }) => p.theme.mode === "dark";
+const turnLeaf = keyframes`
+    0%, 100% { transform: rotate(0); }
+    45% { transform: rotate(9deg); }
+`;
 
 export const Decor = styled.div`
     position: absolute;
     inset: 0;
-    z-index: 0;
     pointer-events: none;
     overflow: hidden;
+    border-radius: inherit;
 
-    /* 위에서 비치는 따뜻한 빛 — 오른쪽 위는 호박빛, 왼쪽 아래는 단풍빛을 아주 옅게 */
-    .light {
+    /* A bound edge leaves the writing surface clear, even on narrow widgets. */
+    &::before {
+        content: "";
         position: absolute;
-        inset: 0;
-        background:
-            radial-gradient(ellipse at 100% 0%, ${(p) => withAlpha(p.theme.colors.accent, dark(p) ? 0.12 : 0.24)}, transparent 58%),
-            radial-gradient(ellipse at 0% 100%, ${(p) => withAlpha(p.theme.colors.primary, dark(p) ? 0.08 : 0.07)}, transparent 50%);
+        top: 12px;
+        bottom: 12px;
+        left: 1px;
+        width: 3px;
+        border-radius: 2px;
+        background: linear-gradient(to bottom,
+            transparent,
+            ${(p) => withAlpha(p.theme.colors.primary, p.theme.mode === "dark" ? .65 : .48)} 12px,
+            ${(p) => withAlpha(p.theme.colors.primary, .24)} 70%,
+            transparent);
     }
 
-    .twig {
+    .pressed-leaf {
+        ${watercolorLeaf("orange", "24px")}
         position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        opacity: 0;
-        transition: opacity 0.6s ease;
-        ${agedArt}
+        top: 3px;
+        left: 28px;
+        rotate: 24deg;
+        transform-origin: 32% 72%;
     }
-    .twig[data-ready] { opacity: 1; }
-`;
 
-/** 낙엽이 지는 동안만 뜨는 캔버스 — 위젯 창 전체, 내용 위(누르는 것은 받지 않는다) */
-export const Fall = styled.canvas`
-    position: fixed;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 40;
-    pointer-events: none;
-    ${agedArt}
+    .corner-leaf {
+        ${watercolorLeaf("red", "68px")}
+        position: absolute; right: -24px; bottom: -19px;
+        rotate: -23deg; opacity: .86;
+    }
+    .small-leaf {
+        ${watercolorLeaf("brown", "30px")}
+        position: absolute; right: 33px; bottom: -10px;
+        rotate: 38deg; opacity: .7;
+    }
+
+    &[data-glint] .pressed-leaf { animation: ${turnLeaf} 660ms ease-out both; }
 `;

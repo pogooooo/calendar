@@ -1,45 +1,127 @@
 "use client";
-import {ThemeProvider,useTheme} from 'styled-components';
-import {Check} from 'lucide-react';
-import useSettingStore from '@/store/useSettingStore';
-import {usePickTheme} from '@/styles/themed';
-import {inkOnFill} from '@/styles/color';
-import {widgetBackgroundStyle,type WidgetBgSettings} from '@/lib/widgetBackground';
-import type {WidgetAppearance} from '@/lib/widgetAppearance';
-import type {WidgetKind} from '@/lib/widgetKinds';
-import * as Celestial from './celestial/CelestialWidgetShell.styles';
-import * as Maple from './maple/MapleWidgetShell.styles';
-import * as Ocean from './ocean/OceanWidgetShell.styles';
-import * as Gem from './gem/GemWidgetShell.styles';
-import WidgetDecor from './WidgetDecor';
-import {WidgetMotionContext} from './WidgetMotionContext';
-const SHELLS={celestial:Celestial,maple:Maple,ocean:Ocean,gem:Gem};
 
-/** Read-only examples: no account data or widget actions are mounted. */
-export default function WidgetAppearancePreview({kind,label,appearance:a,bg,compact}:{kind:WidgetKind;label:string;appearance:WidgetAppearance;bg:WidgetBgSettings;compact:boolean}){
-    const ko=useSettingStore(state=>state.locale)==='ko',theme=useTheme(),W=usePickTheme(SHELLS);
-    const text=(korean:string,english:string)=>ko?korean:english;
-    const solid=bg.mode==='custom'?bg.customColor:theme.colors.surface;
-    const previewTheme={...theme,baseColors:theme.colors,colors:{...theme.colors,surface:'transparent',...(bg.autoTextColor&&bg.mode!=='glass'&&bg.opacity>=.6?{text:inkOnFill(solid),textSecondary:inkOnFill(solid)}:{})}};
-    return <aside className="appearance-preview" aria-label={text('장식과 색상 미리보기','Ornament and color preview')}>
-        <div className="preview-heading"><strong>{text('미리보기','Preview')}</strong><span>{text('예시 데이터','Sample data')}</span></div>
-        <div className="sample" data-preview-compact={compact||undefined} role="img" aria-label={text(`예시 미리보기 · 배경 ${Math.round(bg.opacity*100)}% · 장식 ${a.design==='simple'?0:Math.round(a.intensity*100)}%`,`Sample preview · backdrop ${Math.round(bg.opacity*100)}% · ornaments ${a.design==='simple'?0:Math.round(a.intensity*100)}%`)}>
-            <ThemeProvider theme={previewTheme}>
-                <W.BackgroundSurface aria-hidden data-widget-preview-background data-ornate={a.design==='ornate'&&bg.mode==='theme'} style={{...widgetBackgroundStyle(bg,theme.colors.surface),inset:0,backdropFilter:bg.mode==='glass'?`blur(${bg.glassBlur??36.8}px)`:'none',WebkitBackdropFilter:bg.mode==='glass'?`blur(${bg.glassBlur??36.8}px)`:'none'}}>{bg.mode==='glass'&&bg.gloss&&<W.GlossOverlay/>}</W.BackgroundSurface>
-                <WidgetMotionContext.Provider value="off">{a.design==='ornate'&&<WidgetDecor kind={kind} locked intensity={a.intensity}/>}</WidgetMotionContext.Provider>
-                <div className="sample-content" aria-hidden style={{color:previewTheme.colors.text}}>
-                    {kind==='monthly'||kind==='weekly'?<><strong>{text('11월의 기록','November journal')}</strong><div className="mini-calendar">
-                        {(ko?['일','월','화','수','목','금','토']:['S','M','T','W','T','F','S']).map((day,index)=><small key={index}>{day}</small>)}
-                        {Array.from({length:kind==='weekly'?7:28},(_,index)=><span key={index} className={`${index===3?'sample-today ':''}${index>=14?'sample-extra':''}`}>{index+1}</span>)}
-                    </div></>:kind==='anniversary'?<><span className="sample-kicker">{text('다가오는 기념일','Upcoming anniversary')}</span><strong className="sample-count">D−12</strong><span>{text('함께한 날','Our day')}</span></>:<><strong>{kind==='projects'?text('프로젝트 기록','Project journal'):kind==='challenge'?text('작은 습관','Daily habit'):kind==='due'?text('오늘 마감','Due today'):kind==='nownext'?text('지금과 다음','Now and next'):text('오늘의 기록','Today’s journal')}</strong>
-                        {kind==='memo'?<p className="sample-note">{text('작은 일도 놓치지 않기.','Make room for the little things.')}</p>:<><div className="sample-row"><span className="sample-time">10:30</span><span>{text('다음 일정 확인하기','Review the next event')}</span></div><div className="sample-row sample-extra"><Check size={13}/><span>{text('마무리한 일 기록하기','Record what is done')}</span></div></>}
-                        {(kind==='projects'||kind==='challenge'||kind==='stats')&&<div className="sample-progress sample-extra"><i/></div>}
-                    </>}
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { ThemeProvider, useTheme } from "styled-components";
+import useSettingStore from "@/store/useSettingStore";
+import { usePickTheme, useThemeFamily } from "@/styles/themed";
+import { useWidgetPreviewDesktop, rgbLuminance } from "@/hooks/useWidgetPreviewDesktop";
+import type { WidgetBgSettings } from "@/lib/widgetBackground";
+import type { WidgetAppearance, WidgetEffect } from "@/lib/widgetAppearance";
+import type { WidgetKind } from "@/lib/widgetKinds";
+import WidgetContent from "./WidgetContent";
+import WidgetLayers, { WIDGET_SHELLS } from "./WidgetLayers";
+import { GLASS_MARGIN } from "./celestial/CelestialWidgetShell.styles";
+import { WidgetMotionContext } from "./WidgetMotionContext";
+import { WidgetPreviewContext } from "./WidgetPreviewContext";
+import { MotionRules } from "./WidgetAppearance.styles";
+
+const SAMPLE_WALLPAPER = "data:image/svg+xml," + encodeURIComponent(`
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" preserveAspectRatio="none">
+        <defs>
+            <linearGradient id="sky" x2="100%" y2="100%">
+                <stop stop-color="#dfbb9c"/>
+                <stop offset=".54" stop-color="#66949e"/>
+                <stop offset="1" stop-color="#23334d"/>
+            </linearGradient>
+        </defs>
+        <path fill="url(#sky)" d="M0 0h400v400H0z"/>
+        <path fill="#344b63" opacity=".6" d="M0 310Q106 118 215 232T400 191V400H0z"/>
+        <path fill="#223249" d="M0 362Q120 212 232 315T400 278V400H0z"/>
+    </svg>
+`);
+
+export default function WidgetAppearancePreview({
+    kind, label, appearance, bg, compact, previewMotion,
+}: {
+    kind: WidgetKind;
+    label: string;
+    appearance: WidgetAppearance;
+    bg: WidgetBgSettings;
+    compact: boolean;
+    previewMotion?: Exclude<WidgetEffect, "inherit">;
+}) {
+    const ko = useSettingStore(state => state.locale) === "ko";
+    const theme = useTheme();
+    const S = usePickTheme(WIDGET_SHELLS);
+    const desktop = useWidgetPreviewDesktop(kind, compact);
+    const stage = useRef<HTMLDivElement>(null);
+    const [scale, setScale] = useState(0);
+    const [inspect, setInspect] = useState(false);
+    const playback = useRef<Animation[]>([]);
+    const gem = useThemeFamily() === "gem";
+    const { width, height, url, mw, mh, x, y, luminance } = desktop;
+    useEffect(() => {
+        const node = stage.current;
+        if (!node) return;
+        const fit = () => setScale(Math.min(node.clientWidth / width, node.clientHeight / height, 1));
+        fit();
+        const observer = new ResizeObserver(fit);
+        observer.observe(node);
+        return () => observer.disconnect();
+    }, [width, height]);
+    useLayoutEffect(() => {
+        stage.current?.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    }, [inspect]);
+    useEffect(() => () => { playback.current.forEach(animation => animation.cancel()); }, [previewMotion]);
+    const replay = () => {
+        playback.current.forEach(animation => animation.cancel());
+        const decor = stage.current?.querySelector("[data-gem-widget-setting] > i");
+        const content = stage.current?.querySelector("[data-gem-preview-content]");
+        const gentle = previewMotion === "gentle";
+        const target = decor ?? content;
+        if (!target) return;
+        const frames = decor ? [{ transform: "none" }, { transform: gentle ? "scale(1.035, 1.02)" : "scale(1.08, 1.04)" }, { transform: "none" }]
+            : [{ opacity: .68 }, { opacity: 1 }];
+        playback.current = [target.animate(frames, { duration: gentle ? 230 : 460, easing: "ease-out" })];
+    };
+
+    const surface = bg.mode === "custom" ? bg.customColor : theme.colors.surface;
+    const hex = /^#[\da-f]{6}$/i.test(surface) ? parseInt(surface.slice(1), 16) : null;
+    const solid = hex === null ? null : rgbLuminance(hex >> 16, (hex >> 8) & 255, hex & 255);
+    const wallpaperLuminance = url ? luminance : rgbLuminance(52, 75, 99);
+    const effective = bg.mode === "glass" ? wallpaperLuminance
+        : wallpaperLuminance !== undefined && solid !== null ? wallpaperLuminance * (1 - bg.opacity) + solid * bg.opacity
+        : solid ?? undefined;
+    const contrast = !bg.autoTextColor || effective === undefined ? {}
+        : effective > .179 ? { text: "#1a1a1a", textSecondary: "#555555" }
+        : { text: "#ffffff", textSecondary: "#dddddd" };
+    const widgetTheme = { ...theme, baseColors: theme.colors, colors: { ...theme.colors, ...contrast, surface: "transparent" } };
+    const wallpaper = { url: url ?? SAMPLE_WALLPAPER, mw, mh };
+    const wallpaperOffset = `translate(${-x}px, ${-y}px)`;
+    return <aside className="appearance-preview" aria-label={ko ? `${label} 미리보기` : `${label} preview`}>
+        <div className="preview-heading"><strong>{ko ? "미리보기" : "Preview"}</strong><span>{url ? (ko ? "내 바탕화면" : "Your wallpaper") : (ko ? "예시 바탕화면" : "Sample wallpaper")}</span></div>
+        {gem && <div className="gem-preview-actions">
+            <button type="button" aria-pressed={inspect} onClick={() => setInspect(value => !value)}>{ko ? "실제 크기" : "Actual size"}</button>
+            {previewMotion && <button type="button" disabled={previewMotion === "off"} onClick={replay}>{ko ? "움직임 재생" : "Play motion"}</button>}
+        </div>}
+        <div className="sample" ref={stage} data-inspect={inspect ? "" : undefined}
+            tabIndex={inspect ? 0 : undefined} role={inspect ? "region" : undefined}
+            aria-label={inspect ? (ko ? "실제 크기 위젯 미리보기" : "Actual size widget preview") : undefined}>
+            <div className="preview-wallpaper" style={{ width: width * (inspect ? 1 : scale), height: height * (inspect ? 1 : scale) }} inert>
+                <div style={{ position: "absolute", inset: 0, width, height, transform: `scale(${inspect ? 1 : scale})`, transformOrigin: "top left" }}>
+                    <S.VirtualMonitor $url={wallpaper.url} $mw={mw} $mh={mh} style={{ transform: wallpaperOffset }} />
+                    <WidgetPreviewContext.Provider value>
+                        <WidgetMotionContext.Provider value="off">
+                            <ThemeProvider theme={widgetTheme}>
+                                <MotionRules>
+                                    <S.Shell data-widget={kind} data-widget-preview data-widget-design={appearance.design}
+                                        data-widget-motion="off"
+                                        style={{ width, height,
+                                            background: "transparent", borderColor: "transparent", boxShadow: "none" }}>
+                                        <WidgetLayers kind={kind} bg={bg} appearance={appearance} wallpaper={wallpaper}
+                                            wallpaperTransform={`translate(${-x + GLASS_MARGIN}px, ${-y + GLASS_MARGIN}px)`} locked={false} />
+                                        <S.Content $kind={kind} data-gem-preview-content><WidgetContent kind={kind} /></S.Content>
+                                    </S.Shell>
+                                </MotionRules>
+                            </ThemeProvider>
+                        </WidgetMotionContext.Provider>
+                    </WidgetPreviewContext.Provider>
                 </div>
-            </ThemeProvider>
+            </div>
         </div>
-        <div className="preview-caption"><span>{text('배경','Backdrop')} {Math.round(bg.opacity*100)}%</span><span>{text('장식','Ornaments')} {a.design==='simple'?0:Math.round(a.intensity*100)}%</span></div>
-        <p className="preview-scope">{text(`이 기기의 ${label} 위젯에 바로 적용됩니다.`,`Changes apply immediately to ${label} on this device.`)}</p>
-        <p className="preview-note">{text('체크무늬는 투명한 부분입니다. 실제 위젯에서는 바탕화면이 보입니다.','The checkerboard marks transparency. Your wallpaper shows through in the widget.')}</p>
+        <div className="preview-caption"><span>{ko ? "배경" : "Backdrop"} {Math.round(bg.opacity * 100)}%</span><span>{ko ? "장식" : "Ornaments"} {appearance.design === "simple" ? 0 : Math.round(appearance.intensity * 100)}%</span></div>
+        <p className="preview-note">{inspect
+            ? (ko ? "스크롤하여 위젯의 나머지 부분을 확인할 수 있습니다." : "Scroll to see the rest of the widget.")
+            : (ko ? "위젯 크기에 맞춰 축소한 고정 미리보기입니다." : "A still preview scaled to fit the widget’s size.")}</p>
     </aside>;
 }

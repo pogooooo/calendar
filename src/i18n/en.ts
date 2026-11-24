@@ -244,6 +244,11 @@ const en: Translations = {
         prevMonth: 'Previous month',
         nextMonth: 'Next month',
         expandDay: 'Expand the day calendar',
+        resizeCalendars: "Resize month and day (drag or use arrow keys, double-click to reset)",
+        focusSection: "Focus view",
+        resizePanel: section => "Resize " + section,
+        resizeHelp: "Drag or use arrow keys. Home or double-click restores the original height.",
+        allSections: "All sections",
         collapseDay: 'Collapse the day calendar',
         dayLabelShort: (m: number, d: number) => `${m}/${d}`,
         monthTitle: (y: number, m: number) => `${new Date(y, m - 1).toLocaleString('en-US', { month: 'long' })} ${y}`,
@@ -265,6 +270,7 @@ const en: Translations = {
         memberManagement: 'Account Settings',
         logout: 'Log Out',
         userSuffix: '',
+        effectSound: 'Sidebar sound effects',
         more: 'More',
     },
     auth: {
@@ -497,6 +503,7 @@ const en: Translations = {
     },
     home: {
         quickDetail: 'Details (time, category, repeat)',
+        quickDetailLabel: 'Details',
         project: 'Project',
         challenge: 'Challenge',
         tasks: 'Tasks',
@@ -657,6 +664,8 @@ const en: Translations = {
     anniversaryPage: {
         title: 'Anniversaries',
         formCaption: 'Mark a new day',
+        editTitle: 'Edit anniversary',
+        nameLabel: 'Anniversary name',
         namePlaceholder: 'Anniversary name (e.g. Wedding day)',
         monthOption: (n: number) => `${n}`,
         dayOption: (n: number) => `${n}`,

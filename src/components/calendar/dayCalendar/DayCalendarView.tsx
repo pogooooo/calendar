@@ -1,8 +1,11 @@
 "use client";
 
-import * as GemS from "./gem/GemDayCalendar.styles";
 import * as React from "react";
 import {createPortal} from 'react-dom';
+import PanelHeightHandle, { type DayPanel } from "./PanelHeightHandle";
+import EngravedDayBar from "./celestial/EngravedDayBar";
+import useIsMobile from "@/hooks/useIsMobile";
+import { DateActions, FocusPicker } from "./DayFocus.styles";
 import { Slot } from "@radix-ui/react-slot";
 import { Plus, Trash2, Check, ChevronDown, GripVertical } from "lucide-react";
 
@@ -15,16 +18,19 @@ import RulerScroll from "@/components/scroll/RulerScroll";
 import TodoContextMenu from "@/components/calendar/parts/contextMenu/TodoContextMenu";
 import TodoModal from "@/components/modal/todoModal/TodoModal";
 import { useT } from "@/i18n/useT";
-import { labelKey, wallTime,activeTimeZone,localDateKey } from "@/lib/dateKey";
+import { labelKey, wallTime, wallNow, activeTimeZone, localDateKey } from "@/lib/dateKey";
+import { useCurrentDayKey } from "@/hooks/useCurrentDay";
 import { useListMotion, useSwapMotion } from "@/hooks/useMotion";
 import useMobilePresentation from '@/hooks/useMobilePresentation';
-import { usePickTheme, type ThemeImpls } from "@/styles/themed";
+import useThemeMotion from '@/hooks/useThemeMotion';
+import { usePickTheme, useThemeFamily, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialDayCalendar.styles";
+import * as GemS from "./gem/GemDayCalendar.styles";
 import * as MapleS from "./maple/MapleDayCalendar.styles";
 import * as OceanS from './ocean/OceanDayCalendar.styles';
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS, gem: GemS };
 
 // contextMenu 는 div 의 HTML 속성 이름과 겹친다. 우리 뜻(열린 메뉴 상태)을 쓴다.
 type CelestialDayProps = DayThemeProps & Omit<React.HTMLAttributes<HTMLDivElement>, "contextMenu">;
@@ -33,10 +39,30 @@ const STORAGE_MAIN = 'cronos-day-main-split';
 const STORAGE_SIDE = 'cronos-day-side-split';
 const STORAGE_FOLD = 'cronos-day-folded';
 
-type SectionKey = 'timeline' | 'challenge' | 'task' | 'memo';
+type SectionKey = DayPanel;
+type DayView = 'all' | DayPanel;
 type FoldState = Record<SectionKey, boolean>;
 
-const DEFAULT_FOLD: FoldState = { timeline: false, challenge: false, task: false, memo: false };
+/** The six cells remain the drop targets. Reserve one lane for the full run within this hour. */
+function layoutHour(slots: CalendarTodoType[][]) {
+    const spans = new Map<string, { first: number; last: number; lane: number }>();
+    slots.forEach((items, slot) => {
+        for (const { id } of items) {
+            const span = spans.get(id);
+            if (span) span.last = slot;
+            else spans.set(id, { first: slot, last: slot, lane: 0 });
+        }
+    });
+    const occupiedUntil: number[] = [];
+    for (const span of spans.values()) {
+        const free = occupiedUntil.findIndex(end => end < span.first);
+        span.lane = free < 0 ? occupiedUntil.length : free;
+        occupiedUntil[span.lane] = span.last;
+    }
+    return { spans, lanes: Math.max(1, occupiedUntil.length) };
+}
+
+const DEFAULT_FOLD: FoldState = { todos: false, timeline: false, challenge: false, task: false, memo: false };
 
 const DayCalendarView = React.forwardRef<HTMLDivElement, CelestialDayProps>(
     ({
@@ -57,6 +83,11 @@ const DayCalendarView = React.forwardRef<HTMLDivElement, CelestialDayProps>(
         const Component = asChild ? Slot : 'div';
         const t = useT();
         const mobileApp = useMobilePresentation();
+        const narrow = useIsMobile();
+        const family = useThemeFamily();
+        const gem = family === "gem";
+        const categoryColors = React.useMemo(() => new Map(categories.map(c => [c.id, c.color])), [categories]);
+        const keyboardList = gem && !mobileApp;
         const timeDragHint = mobileApp ? t.interaction.timeDragHandleHint : t.interaction.timeDragHint;
         const foldKey = mobileApp ? 'cronos-mobile-day-folded' : STORAGE_FOLD;
         const timeGridRef=React.useRef<HTMLDivElement>(null);
@@ -94,50 +125,102 @@ const DayCalendarView = React.forwardRef<HTMLDivElement, CelestialDayProps>(
             ?shiftTimedRange(timeDrag.drag.source.todo.startAt,timeDrag.drag.source.todo.endAt,(Number(timeDrag.drag.target)-timeDrag.drag.source.slot)*10,activeTimeZone()):null;
         const previewTime=(value:string,withDate=false)=>{const w=wallTime(value);return w?`${withDate?`${w.month}/${w.day} `:''}${w.hour.toString().padStart(2,'0')}:${w.minute.toString().padStart(2,'0')}`:'--:--';};
 
-        const [mainSplit, setMainSplit] = React.useState(() => {
+        const [mainSplit] = React.useState(() => {
             try {
                 const v = parseFloat(localStorage.getItem(STORAGE_MAIN) ?? '');
                 return isNaN(v) ? 0.6 : v;
             } catch { return 0.6; }
         });
 
-        const [sideSplit, setSideSplit] = React.useState(() => {
+        const [sideSplit] = React.useState(() => {
             try {
                 const v = parseFloat(localStorage.getItem(STORAGE_SIDE) ?? '');
                 return isNaN(v) ? 0.6 : v;
             } catch { return 0.6; }
         });
 
-        const [fold, setFold] = React.useState<FoldState>(() => {
+        const [focus, setFocus] = React.useState<DayView>("all");
+        const [savedFold, setFold] = React.useState<FoldState>(() => {
             try {
                 const raw = localStorage.getItem(STORAGE_FOLD);
                 return raw ? { ...DEFAULT_FOLD, ...JSON.parse(raw) } : DEFAULT_FOLD;
             } catch { return DEFAULT_FOLD; }
         });
-        React.useEffect(()=>{
+        React.useEffect(() => {
+            const defaults = mobileApp
+                ? { ...DEFAULT_FOLD, timeline: family !== 'celestial', task: true, memo: true }
+                : DEFAULT_FOLD;
             try {
-                const saved=localStorage.getItem(foldKey);
-                setFold(saved?{...DEFAULT_FOLD,...JSON.parse(saved)}:mobileApp?{timeline:true,challenge:false,task:true,memo:true}:DEFAULT_FOLD);
-            } catch { setFold(mobileApp?{timeline:true,challenge:false,task:true,memo:true}:DEFAULT_FOLD); }
-        },[foldKey,mobileApp]);
+                const saved = localStorage.getItem(foldKey);
+                setFold(saved ? { ...defaults, ...JSON.parse(saved) } : defaults);
+            } catch { setFold(defaults); }
+        }, [family, foldKey, mobileApp]);
 
+        // Focusing a folded section temporarily opens it without changing the saved overview.
+        const fold = React.useMemo(() => focus === "all"
+            ? savedFold : { ...savedFold, [focus]: false }, [focus, savedFold]);
+        const hide = (section: DayView) => focus !== "all" && focus !== section ? true : undefined;
+        const contentRef = React.useRef<HTMLDivElement>(null);
+        const dayKey = labelKey(selectedDate);
+        const motion = useThemeMotion();
+        const foldStart = React.useRef<{ panel: HTMLElement; height: number } | null>(null);
+        const foldAnimation = React.useRef<Animation | null>(null);
+        const timelinePosition = React.useRef<{ day: string; top: number } | null>(null);
+        const positionTimeline = gem || family === "celestial";
         const toggleFold = React.useCallback((key: SectionKey) => {
+            if (positionTimeline) {
+                const panel = contentRef.current?.querySelector<HTMLElement>(`[data-calendar-panel="${key}"]`);
+                if (gem && panel && motion !== "off") foldStart.current = { panel, height: panel.getBoundingClientRect().height };
+                const scroll = key === "timeline" ? panel?.querySelector('[data-ruler-tick]')?.parentElement : null;
+                if (scroll) timelinePosition.current = { day: dayKey, top: scroll.scrollTop };
+            }
             setFold(prev => {
                 const next = { ...prev, [key]: !prev[key] };
                 try { localStorage.setItem(foldKey, JSON.stringify(next)); } catch {}
                 return next;
             });
-        }, [foldKey]);
+        }, [dayKey, foldKey, gem, motion, positionTimeline]);
+        React.useLayoutEffect(() => {
+            const from = foldStart.current;
+            foldStart.current = null;
+            foldAnimation.current?.cancel();
+            if (!from || motion === "off" || !from.panel.isConnected) return;
+            const height = from.panel.getBoundingClientRect().height;
+            if (Math.abs(height - from.height) < 2) return;
+            foldAnimation.current = from.panel.animate([
+                { minHeight: `${from.height}px`, maxHeight: `${from.height}px` },
+                { minHeight: `${height}px`, maxHeight: `${height}px` },
+            ], { duration: motion === "gentle" ? 125 : 200, easing: "ease-out" });
+        }, [fold, motion]);
+        React.useLayoutEffect(() => () => { foldAnimation.current?.cancel(); }, []);
 
         const doneChallenges = dayChallenges.filter(c => c.isDone).length;
-
-        const contentRef = React.useRef<HTMLDivElement>(null);
-        const sideRef = React.useRef<HTMLDivElement>(null);
 
         /* 날을 옮기면(달력 칸·쓸기·주간 띠) 그날 내용이 오는 쪽에서 들어온다 — 다음 날이면 오른쪽에서.
            요소는 그대로라 적던 메모·임시 작업 칸·접어 둔 칸·시간표 스크롤이 남는다.
            목록에 든 줄은 들어오고 빠진 줄은 접히며, 끝낸 줄은 한 번 — 날을 옮긴 때는 통째로 갈린 것이라 빼고 */
-        const dayKey = labelKey(selectedDate);
+        const todayKey = useCurrentDayKey();
+        const positionedDay = React.useRef<string | null>(null);
+        React.useLayoutEffect(() => {
+            if (!positionTimeline || fold.timeline) return;
+            const rows = Array.from(timeGridRef.current?.querySelectorAll<HTMLElement>('[data-ruler-tick]') ?? []);
+            if (!rows.length) return;
+            if (positionedDay.current === dayKey) {
+                const saved = timelinePosition.current;
+                const area = rows[0].parentElement;
+                if (area && saved?.day === dayKey) area.scrollTop = saved.top;
+                return;
+            }
+            const marked = rows.filter(row => row.hasAttribute('data-ruler-mark'));
+            const currentHour = wallNow().getHours();
+            const row = dayKey === todayKey
+                ? marked.find(item => Number(item.dataset.rulerLabel) >= currentHour) ?? marked.at(-1) ?? rows[currentHour]
+                : marked[0] ?? rows[8];
+            const scroll = row?.parentElement;
+            if (!row || !scroll) return;
+            scroll.scrollTop += row.getBoundingClientRect().top - scroll.getBoundingClientRect().top;
+            positionedDay.current = dayKey;
+        }, [dayKey, fold.timeline, positionTimeline, todayKey]);
         const titleRef = React.useRef<HTMLSpanElement>(null);
         const stampRef = React.useRef<HTMLDivElement>(null);
         const todoListRef = React.useRef<HTMLDivElement>(null);
@@ -145,64 +228,26 @@ const DayCalendarView = React.forwardRef<HTMLDivElement, CelestialDayProps>(
         const challengeListRef = React.useRef<HTMLDivElement>(null);
         useSwapMotion(dayKey, titleRef, { size: "line" });
         useSwapMotion(dayKey, stampRef, { size: 'line', axis: 'y' });
-        useSwapMotion(dayKey, contentRef);
+        // Keep the Gem frames and scroll containers anchored; only their contents change days.
+        useSwapMotion(dayKey, () => gem
+            ? Array.from(contentRef.current?.querySelectorAll('[data-day-todo-list], [data-day-empty], [data-calendar-panel] > :not(button):not([data-motion-snapshot])') ?? [])
+            : contentRef.current);
         // 펼친 내용만 갈래의 몸짓으로 드러낸다. 입력 요소를 다시 만들지 않아 메모와 초점이 유지된다.
-        useSwapMotion(String(fold.timeline), () => contentRef.current?.querySelector('[data-calendar-panel="timeline"] > :not(button)'), { axis:'y', size:'line' });
-        useSwapMotion(String(fold.challenge), () => contentRef.current?.querySelector('[data-calendar-panel="challenge"] > :not(button)'), { axis:'y', size:'line' });
-        useSwapMotion(String(fold.task), () => contentRef.current?.querySelector('[data-calendar-panel="task"] > :not(button)'), { axis:'y', size:'line' });
-        useSwapMotion(String(fold.memo), () => contentRef.current?.querySelector('[data-calendar-panel="memo"] > :not(button)'), { axis:'y', size:'line' });
+        const foldSize = gem ? 'pane' : 'line';
+        useSwapMotion(String(fold.timeline), () => Array.from(contentRef.current?.querySelectorAll('[data-calendar-panel="timeline"] > :not(button):not([role="status"])') ?? []), { axis:'y', size:foldSize });
+        useSwapMotion(String(fold.challenge), () => contentRef.current?.querySelector('[data-calendar-panel="challenge"] > :not(button)'), { axis:'y', size:foldSize });
+        useSwapMotion(String(fold.task), () => contentRef.current?.querySelector('[data-calendar-panel="task"] > :not(button)'), { axis:'y', size:foldSize });
+        useSwapMotion(String(fold.memo), () => contentRef.current?.querySelector('[data-calendar-panel="memo"] > :not(button)'), { axis:'y', size:foldSize });
         useListMotion(todoListRef, { reset: dayKey, exit: "collapse" });
         useListMotion(taskListRef, { reset: dayKey, exit: "collapse" });
         useListMotion(challengeListRef, { reset: dayKey });
 
-        const mainSplitRef = React.useRef(mainSplit);
-        const sideSplitRef = React.useRef(sideSplit);
-        mainSplitRef.current = mainSplit;
-        sideSplitRef.current = sideSplit;
-
-        const handleMainDrag = React.useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-            e.preventDefault();
-            const container = contentRef.current;
-            if (!container) return;
-            const startY = e.clientY;
-            const startSplit = mainSplitRef.current;
-            const containerH = container.getBoundingClientRect().height;
-
-            const onMove = (ev: MouseEvent) => {
-                const delta = ev.clientY - startY;
-                const next = Math.max(0.15, Math.min(0.85, startSplit + delta / containerH));
-                setMainSplit(next);
-            };
-            const onUp = () => {
-                document.removeEventListener('mousemove', onMove);
-                document.removeEventListener('mouseup', onUp);
-                try { localStorage.setItem(STORAGE_MAIN, mainSplitRef.current.toString()); } catch {}
-            };
-            document.addEventListener('mousemove', onMove);
-            document.addEventListener('mouseup', onUp);
-        }, []);
-
-        const handleSideDrag = React.useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-            e.preventDefault();
-            const container = sideRef.current;
-            if (!container) return;
-            const startY = e.clientY;
-            const startSplit = sideSplitRef.current;
-            const containerH = container.getBoundingClientRect().height;
-
-            const onMove = (ev: MouseEvent) => {
-                const delta = ev.clientY - startY;
-                const next = Math.max(0.15, Math.min(0.85, startSplit + delta / containerH));
-                setSideSplit(next);
-            };
-            const onUp = () => {
-                document.removeEventListener('mousemove', onMove);
-                document.removeEventListener('mouseup', onUp);
-                try { localStorage.setItem(STORAGE_SIDE, sideSplitRef.current.toString()); } catch {}
-            };
-            document.addEventListener('mousemove', onMove);
-            document.addEventListener('mouseup', onUp);
-        }, []);
+        const panelLabels = { todos: t.home.tasks, timeline: t.calendar.timeline, challenge: t.popup.challenges, task: t.calendar.temporaryTask, memo: t.calendar.dailyMemo };
+        const resize = (panel: DayPanel) => focus === "all" && !fold[panel] && (
+            <PanelHeightHandle panel={panel} label={panelLabels[panel]} mobile={mobileApp || narrow} />
+        );
+        const [selectedId, selectTodo] = React.useState<string>();
+        const showMenu: typeof openTodoMenu = (event, todo) => { selectTodo(todo.id); openTodoMenu(event, todo); };
 
         const timeMoveFeedback = (timeMoveSaving || timeMoveNotice) && (
             <S.TimeMoveNotice role="status" data-day-time-feedback>
@@ -214,35 +259,49 @@ const DayCalendarView = React.forwardRef<HTMLDivElement, CelestialDayProps>(
         );
 
         return (
-            <S.CelestialCalendarWrapper data-day-calendar as={Component} ref={ref} {...props}>
+            <S.CelestialCalendarWrapper data-day-calendar data-day-focus={focus === "all" ? undefined : focus} as={Component} ref={ref} {...props}>
                 <S.DateHeader data-day-date-heading>
-                    <S.DateStamp ref={stampRef} aria-hidden="true">{selectedDate.getDate()}<small>{selectedDate.toLocaleDateString('en-US', { weekday: 'short' })}</small></S.DateStamp>
-                    <span ref={titleRef}>{formattedDate}</span>
-                    <CategoryFilter
-                        categories={categories}
-                        selectedCategoryIds={selectedCategoryIds}
-                        onToggle={toggleCategory}
-                        showProjects={showProjects}
-                        onToggleProjects={onToggleProjects}
-                    />
+                    <S.DateStamp data-day-date-stamp ref={stampRef} aria-hidden="true">{selectedDate.getDate()}<small>{selectedDate.toLocaleDateString('en-US', { weekday: 'short' })}</small></S.DateStamp>
+                    <span data-day-date-text ref={titleRef}>{formattedDate}</span>
                     <hr />
+                    <DateActions>
+                        <FocusPicker>
+                            <span aria-hidden="true">{t.calendar.focusSection}</span>
+                            <select aria-label={t.calendar.focusSection} value={focus} onChange={event => setFocus(event.target.value as DayView)}>
+                                <option value="all">{t.calendar.allSections}</option>
+                                <option value="todos">{t.home.tasks}</option>
+                                <option value="timeline">{t.calendar.timeline}</option>
+                                <option value="challenge">{t.popup.challenges}</option>
+                                <option value="task">{t.calendar.temporaryTask}</option>
+                                <option value="memo">{t.calendar.dailyMemo}</option>
+                            </select>
+                        </FocusPicker>
+                        <CategoryFilter
+                            categories={categories}
+                            selectedCategoryIds={selectedCategoryIds}
+                            onToggle={toggleCategory}
+                            showProjects={showProjects}
+                            onToggleProjects={onToggleProjects}
+                        />
+                    </DateActions>
                 </S.DateHeader>
 
                 {!mobileApp && timeMoveFeedback}
                 <S.ContentLayout data-day-content ref={contentRef}>
                     {/* 그날의 일정 목록 — 폰에서는 달력 칸이 좁아 일정이 점으로만 찍히니 고치고 지우는 유일한 길이고,
                         데스크톱에서는 달력에서 날짜를 누르면 그날 할 일을 시간표 위에서 한눈에 본다. */}
-                    <S.TodoCard data-day-todo-card>
-                        <S.TodoCardHead>
-                            <i />
-                            <span>{t.home.tasks}</span>
+                    <S.TodoCard data-day-todo-card data-calendar-panel="todos" data-collapsed={fold.todos || undefined} data-focus-hidden={hide("todos")}>
+                        <S.SectionToggle type="button" $collapsed={fold.todos} aria-expanded={!fold.todos} onClick={() => toggleFold("todos")}>
+                            <span className="chev"><ChevronDown size={14}/></span><span className="label">{t.home.tasks}</span>
                             {dayTodos.length > 0 && <span className="count">{dayTodos.length}</span>}
-                        </S.TodoCardHead>
+                        </S.SectionToggle>
 
-                        {dayTodos.length > 0 ? (
-                            <S.TodoList data-day-todo-list ref={todoListRef}>
+                        {!fold.todos && (dayTodos.length > 0 ? (
+                            <S.TodoList data-day-todo-list ref={todoListRef} tabIndex={keyboardList ? 0 : undefined}
+                                role={keyboardList ? "region" : undefined}
+                                aria-label={keyboardList ? `${t.home.tasks} · ${dayTodos.length}` : undefined}>
                                 {dayTodos.map((todo) => {
-                                    const color = categories.find(c => c.id === todo.categoryId)?.color;
+                                    const color = todo.categoryId ? categoryColors.get(todo.categoryId) : undefined;
                                     // 고른 시간대의 시각 — 예전엔 이 기기 시각이라 시간대가 다르면 홈·시간표와 다른 시각이 섰다
                                     const start = todo.startAt ? wallTime(todo.startAt as string) : null;
                                     const time = todo.isAllDay || !start
@@ -250,26 +309,31 @@ const DayCalendarView = React.forwardRef<HTMLDivElement, CelestialDayProps>(
                                         : `${String(start.hour).padStart(2, "0")}:${String(start.minute).padStart(2, "0")}`;
                                     return (
                                         <S.TodoRow
+                                            data-engraved-row={family === "celestial" ? "" : undefined}
+                                            title={todo.title}
                                             data-day-todo-row
                                             key={todo.id}
                                             type="button"
                                             $isDone={!!todo.isDone}
                                             data-done={todo.isDone ? "" : undefined}
-                                            onClick={(e) => openTodoMenu(e, todo)}
+                                            onClick={(e) => showMenu(e, todo)}
                                         >
+                                            {family === "celestial" ? <EngravedDayBar title={todo.title} time={time ?? t.todo.allDay} color={color} done={todo.isDone} selected={todo.id === selectedId}/> : <>
                                             <span className="dot" data-motion-mark="" style={color ? { backgroundColor: color } : undefined} />
                                             <span className="title">{todo.title}</span>
                                             <span className="time">{time ?? t.todo.allDay}</span>
+                                            </>}
                                         </S.TodoRow>
                                     );
                                 })}
                             </S.TodoList>
                         ) : (
-                            <S.ChallengeEmpty>{t.home.noTodayTodos}</S.ChallengeEmpty>
-                        )}
+                            <S.ChallengeEmpty data-day-empty>{t.home.noTodayTodos}</S.ChallengeEmpty>
+                        ))}
+                        {resize("todos")}
                     </S.TodoCard>
 
-                    <S.TimelineSection ref={timeGridRef} data-calendar-panel="timeline" aria-busy={timeMoveSaving}
+                    <S.TimelineSection ref={timeGridRef} data-calendar-panel="timeline" data-focus-hidden={hide("timeline")} aria-busy={timeMoveSaving}
                         $collapsed={fold.timeline}
                         style={fold.timeline ? { flex: '0 0 auto' } : { flex: mainSplit }}
                     >
@@ -289,10 +353,11 @@ const DayCalendarView = React.forwardRef<HTMLDivElement, CelestialDayProps>(
                         <RulerScroll flagFor={(r) => `${Math.round(r * 23).toString().padStart(2, "0")}:00`}>
                             {hours.map((hour) => {
                                 const hourSlots = Array.from({ length: 6 }, (_, slotIdx) => getSlotTodos(hour, slotIdx));
+                                const { spans, lanes } = layoutHour(hourSlots);
                                 return (
                                 <S.TimeRow
                                     key={hour}
-                                    style={{ '--day-slot-count': Math.max(...hourSlots.map(todos => todos.length)) } as React.CSSProperties}
+                                    style={{ '--day-slot-count': lanes } as React.CSSProperties}
                                     data-ruler-tick
                                     data-ruler-label={hour.toString().padStart(2, "0")}
                                     {...(hourSlots.some(todos => todos.length > 0)
@@ -326,13 +391,18 @@ const DayCalendarView = React.forwardRef<HTMLDivElement, CelestialDayProps>(
                                                         onClick={hasTodo ? undefined : () => {if(!timeDrag.consumeClick())createAt(hour, slotIdx * 10);}}
                                                         title={hasTodo ? undefined : `${hour.toString().padStart(2, '0')}:${(slotIdx * 10).toString().padStart(2, '0')} · ${t.calendar.addTask}`}
                                                     >
-                                                        {slotTodos.map((todo, idx) => {
+                                                        {slotTodos.map(todo => {
+                                                            const span = spans.get(todo.id)!;
                                                             const isContinuingPrev = prevSlotTodos.some(pt => pt.id === todo.id);
                                                             const isContinuingNext = nextSlotTodos.some(nt => nt.id === todo.id);
 
                                                             return (
                                                                 <S.SlotTodoItem
-                                                                    key={`${todo.id}-${idx}`}
+                                                                    key={todo.id}
+                                                                    style={{ gridRow: span.lane + 1, '--time-span': span.last - slotIdx + 1,
+                                                                        '--time-category': todo.categoryId ? categoryColors.get(todo.categoryId) : undefined } as React.CSSProperties}
+                                                                    data-short-time={span.last === slotIdx ? '' : undefined}
+                                                                    title={todo.title}
                                                                     role={!isContinuingPrev?'button':undefined}
                                                                     tabIndex={!isContinuingPrev?0:-1}
                                                                     aria-hidden={isContinuingPrev||undefined}
@@ -346,15 +416,14 @@ const DayCalendarView = React.forwardRef<HTMLDivElement, CelestialDayProps>(
                                                                     }}
                                                                     onKeyDown={e=>{
                                                                         if(e.altKey&&(e.key==='ArrowUp'||e.key==='ArrowDown')){e.preventDefault();e.stopPropagation();void moveTime(todo,e.key==='ArrowUp'?-10:10);}
-                                                                        else if(e.key==='Enter'||e.key===' '){e.preventDefault();openTodoMenu(e,todo);}
+                                                                        else if(e.key==='Enter'||e.key===' '){e.preventDefault();showMenu(e,todo);}
                                                                     }}
-                                                                    onClick={(e) => {e.stopPropagation();if(!timeDrag.consumeClick())openTodoMenu(e, todo);}}
+                                                                    onClick={(e) => {e.stopPropagation();if(!timeDrag.consumeClick())showMenu(e, todo);}}
                                                                     $isContinuingPrev={isContinuingPrev}
                                                                     $isContinuingNext={isContinuingNext}
                                                                     $isDone={todo.isDone}
                                                                 >
-                                                                    {!isContinuingPrev && <>
-                                                                        {mobileApp && <span
+                                                                    {mobileApp && !isContinuingPrev && <span
                                                                             className="time-drag-handle"
                                                                             data-day-time-handle={todo.id}
                                                                             aria-hidden="true"
@@ -364,9 +433,13 @@ const DayCalendarView = React.forwardRef<HTMLDivElement, CelestialDayProps>(
                                                                                 if(!timeMoveSaving)timeDrag.begin(e,{todo,slot:hour*6+slotIdx,y:e.clientY},{immediateTouch:true});
                                                                             }}
                                                                             onClick={e=>{e.stopPropagation();timeDrag.consumeClick();}}
-                                                                        ><GripVertical size={20} /></span>}
-                                                                        <span className="todo-text">{todo.title}</span>
-                                                                    </>}
+                                                                    ><GripVertical size={20} /></span>}
+                                                                    {(!isContinuingPrev || slotIdx === 0) && (family === "celestial" ?
+                                                                        <EngravedDayBar timed title={todo.title} done={todo.isDone} selected={selectedId === todo.id}
+                                                                            color={todo.categoryId ? categoryColors.get(todo.categoryId) : undefined}
+                                                                            handle={mobileApp && !isContinuingPrev} begins={!isContinuingPrev}
+                                                                            ends={span.last < 5 || hour === 23 || !getSlotTodos(hour + 1, 0).some(next => next.id === todo.id)} />
+                                                                        : <span className="todo-text">{todo.title}</span>)}
                                                                 </S.SlotTodoItem>
                                                             );
                                                         })}
@@ -381,20 +454,16 @@ const DayCalendarView = React.forwardRef<HTMLDivElement, CelestialDayProps>(
                         </RulerScroll>
                         </>
                         )}
+                        {resize("timeline")}
                     </S.TimelineSection>
 
-                    {!fold.timeline && (
-                        <S.ResizeHandle onMouseDown={handleMainDrag}>
-                            <span /><span /><span />
-                        </S.ResizeHandle>
-                    )}
 
                     <S.SideSection
-                        ref={sideRef}
+                        data-day-side data-focus-hidden={focus === "todos" || focus === "timeline" || undefined}
                         style={fold.timeline ? { flex: 1 } : { flex: 1 - mainSplit }}
                     >
                         {/* 오늘의 챌린지 — 여기서 바로 완료 처리 */}
-                        <S.ChallengeCard data-calendar-panel="challenge" $collapsed={fold.challenge}>
+                        <S.ChallengeCard data-calendar-panel="challenge" data-focus-hidden={hide("challenge")} $collapsed={fold.challenge}>
                             <S.SectionToggle
                                 type="button"
                                 $collapsed={fold.challenge}
@@ -410,7 +479,7 @@ const DayCalendarView = React.forwardRef<HTMLDivElement, CelestialDayProps>(
 
                             {!fold.challenge && (
                                 dayChallenges.length > 0 ? (
-                                    <S.ChallengeList ref={challengeListRef}>
+                                    <S.ChallengeList data-day-challenge-list ref={challengeListRef}>
                                         {dayChallenges.map(item => (
                                             <S.ChallengeItem key={item.id} $isDone={item.isDone} data-done={item.isDone ? "" : undefined}>
                                                 <input
@@ -429,9 +498,10 @@ const DayCalendarView = React.forwardRef<HTMLDivElement, CelestialDayProps>(
                                     <S.ChallengeEmpty>{t.calendar.noChallengeToday}</S.ChallengeEmpty>
                                 )
                             )}
+                            {resize("challenge")}
                         </S.ChallengeCard>
 
-                        <S.TaskCard data-calendar-panel="task"
+                        <S.TaskCard data-calendar-panel="task" data-focus-hidden={hide("task")}
                             $collapsed={fold.task}
                             style={fold.task ? { flex: '0 0 auto' } : (fold.memo ? { flex: 1 } : { flex: sideSplit })}
                         >
@@ -476,15 +546,11 @@ const DayCalendarView = React.forwardRef<HTMLDivElement, CelestialDayProps>(
                                     </S.TaskForm>
                                 </>
                             )}
+                            {resize("task")}
                         </S.TaskCard>
 
-                        {!fold.task && !fold.memo && (
-                            <S.ResizeHandle onMouseDown={handleSideDrag}>
-                                <span /><span /><span />
-                            </S.ResizeHandle>
-                        )}
 
-                        <S.MemoCard data-calendar-panel="memo"
+                        <S.MemoCard data-calendar-panel="memo" data-focus-hidden={hide("memo")}
                             $collapsed={fold.memo}
                             style={fold.memo ? { flex: '0 0 auto' } : (fold.task ? { flex: 1 } : { flex: 1 - sideSplit })}
                         >
@@ -517,6 +583,7 @@ const DayCalendarView = React.forwardRef<HTMLDivElement, CelestialDayProps>(
                                     )}
                                 </>
                             )}
+                            {resize("memo")}
                         </S.MemoCard>
                     </S.SideSection>
                 </S.ContentLayout>

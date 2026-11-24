@@ -1,140 +1,311 @@
-import styled, { css } from 'styled-components';
-import * as C from '../celestial/CelestialMonthCalendar.styles';
-import { MOBILE, NOT_WIDGET, SAFE_T, SAFE_B } from '@/styles/breakpoints';
-import { gemstoneNumeral, mineralSurface, gemControl, facetArrival } from './GemCalendarMaterial.styles';
+import styled, { css } from "styled-components";
+import { MOBILE, NOT_WIDGET, TOUCH } from "@/styles/breakpoints";
+import { gemCalendarCompactButton, gemCalendarCompactIcon, gemTodayInlay, gemEventTrack } from "../../gemCalendarStyles";
+import * as Base from "../celestial/CelestialMonthCalendar.styles";
 
-export * from '../celestial/CelestialMonthCalendar.styles';
+export * from "../celestial/CelestialMonthCalendar.styles";
 
-export const CelestialCalendarWrapper = styled(C.CelestialCalendarWrapper)`
-    min-width:0;
+export const HeaderFrame = styled.header`
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 7px 13px;
+    width: 100%;
+    padding: 9px 12px;
+    box-sizing: border-box;
+    border: 1px solid transparent;
+    border-radius: 13px 13px 0 0;
+    color: var(--gem-ink);
+    /* Broad polished faces at the heading; finer quartz belongs to the calendar below. */
+    background: var(--gem-heading-map) center / cover no-repeat padding-box,
+        var(--gem-gold-edge) center / cover no-repeat border-box;
+    [data-widget] & {
+        padding: 3px 5px; border-radius: 6px 6px 0 0; gap: 3px;
+        background: var(--gem-heading-map) center / cover no-repeat padding-box, var(--gem-gold-edge) center / cover no-repeat border-box;
+    }
+    @media (max-width: 580px) {
+        padding: 5px 6px;
+        gap: 4px;
+    }
+    html[data-presentation="mobile-app"] &&[data-calendar-header] {
+        margin-bottom: 0;
+        padding: 3px 4px;
+    }
 `;
-export const DateRangeDisplay = styled(C.DateRangeDisplay)`
-    font-size:1.3rem; font-weight:500; letter-spacing:-.025em; color:${p => p.theme.colors.text};
-    .nav-btn { width:32px; height:32px; padding:0; border-radius:6px; color:${p => p.theme.colors.primary}; }
-    .nav-btn:hover { transform:none; background:${p => p.theme.colors.primary}10; }
-    .nav-btn:focus-visible { outline:2px solid ${p => p.theme.colors.primary}; outline-offset:2px; }
-    ${MOBILE} { font-size:1.05rem; }
+
+export const DateRangeDisplay = styled(Base.DateRangeDisplay)`
+    width: auto;
+    gap: 6px;
+    && { margin: 0; }
+    color: var(--gem-ink);
+    font: 700 clamp(1rem, 1.55vw, 1.45rem)/1.25 ${p => p.theme.fonts.body};
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -.035em;
+    & > button { transition: none; }
+    && .nav-btn {
+        ${gemCalendarCompactIcon}
+        transition: none;
+        &:hover { transform: none; }
+    }
+    [data-widget] & {
+        gap: 3px; margin: 0; font-size: .9rem;
+    }
+    @media (max-width: 390px) {
+        gap: 3px;
+        ${NOT_WIDGET} & { flex: 1; flex-wrap: wrap; min-width: 0; }
+    }
 `;
-export const TodayButton = styled(C.TodayButton)`
-    ${gemControl}
-    min-height:28px; padding:4px 10px; font-family:${p => p.theme.fonts.body}; font-size:.69rem; letter-spacing:.04em;
-    &:disabled { opacity:.42; }
+
+export const TodayButton = styled(Base.TodayButton)`
+    && { ${gemCalendarCompactButton} }
+    padding: 0 8px;
+    font: 650 .7rem/1.1 ${p => p.theme.fonts.body};
+    letter-spacing: 0;
+    &:disabled { opacity: .72; }
+    ${TOUCH} { min-width: 44px; }
 `;
-export const CalendarWindow = styled(C.CalendarWindow)`
-    ${mineralSurface}
-    position:relative; isolation:isolate; border-radius:10px; padding:8px;
-    [data-widget] & { padding:3px; border-radius:6px; }
-    ${MOBILE} { padding:5px; border-radius:9px; }
+
+export const CalendarWindow = styled(Base.CalendarWindow)`
+    box-sizing: border-box;
+    border: 1px solid var(--gem-frame-gold);
+    border-top: 0;
+    border-radius: 0 0 13px 13px;
+    color: var(--gem-ink);
+    background: var(--gem-calendar-quartz-glaze), var(--gem-calendar-quartz-map) center / cover no-repeat,
+        var(--gem-calendar-quartz-base);
+    background-blend-mode: normal, var(--gem-calendar-quartz-blend);
+    [data-widget] & {
+        border-radius: 0; border-inline: 0; border-block-end: 0;
+        background: transparent;
+        --gem-ink: ${p => p.theme.colors.text};
+        --gem-muted: ${p => p.theme.colors.textSecondary};
+        --gem-calendar-adjacent-ink: ${p => p.theme.colors.textSecondary};
+    }
 `;
-export const Header = styled(C.Header)`
-    border:0; border-bottom:1px solid ${p => p.theme.colors.accent}66;
-    background:linear-gradient(90deg,transparent,${p => p.theme.colors.accent}0A,transparent);
-    &::before,&::after { display:none; }
+
+export const Header = styled(Base.Header)`
+    flex: none;
+    border: 0;
+    background: color-mix(in srgb, var(--gem-surface) 31%, transparent);
+    &::after { display: none; }
 `;
-export const DayNameBox = styled(C.DayNameBox)`
-    height:38px; border-right:0; color:${p => p.theme.colors.textSecondary};
-    .day-name { font-family:${p => p.theme.fonts.body}; font-size:.65rem; font-weight:600; letter-spacing:.18em; }
-    &:first-child .day-name { color:${p => p.theme.colors.weekend}; }
-    ${MOBILE} { height:30px; .day-name { font-size:.58rem; letter-spacing:.09em; } }
-    [data-widget] & { height:25px; .day-name { font-size:.56rem; letter-spacing:.04em; } }
+
+export const DayNameBox = styled(Base.DayNameBox)`
+    height: 30px;
+    border: 0;
+    color: var(--gem-ink);
+    .day-name { font: 650 .76rem/1.15 ${p => p.theme.fonts.body}; letter-spacing: 0; }
+    &:first-child, &:last-child { color: ${p => p.theme.colors.weekend}; }
+    [data-widget] & { height: 22px; .day-name { font-size: .62rem; } }
 `;
-export const GridContainer = styled(C.GridContainer)`
-    border:0; border-radius:0 0 4px 4px;
-    grid-template-rows:repeat(6,minmax(56px,1fr));
-    ${MOBILE} { ${NOT_WIDGET} & {
-        grid-template-rows:repeat(6,minmax(0,1fr));
-        max-height:min(62dvh,max(210px,calc(100dvh - 400px - ${SAFE_T} - ${SAFE_B})));
-    } }
-    [data-widget] & { grid-template-rows:repeat(6,minmax(0,1fr)); }
+
+export const GridContainer = styled(Base.GridContainer)`
+    position: relative;
+    --gem-frame-inset: 3px;
+    border: 0;
+    isolation: isolate;
+    grid-template-rows: repeat(6, minmax(56px, 1fr));
+    ${MOBILE} { --gem-frame-inset: 2px; --gem-frame-corner: 10px; }
+    [data-widget] & { --gem-frame-inset: 2px; --gem-frame-corner: 10px; }
+    html[data-presentation="mobile-app"] &&[data-month-grid] {
+        background: color-mix(in srgb, var(--gem-surface) 13%, transparent);
+    }
 `;
-export const WeekRowContainer = styled(C.WeekRowContainer)`
-    border-bottom:1px solid ${p => p.theme.colors.border};
-    &:last-child { border-bottom:0; }
+
+export const WeekRowContainer = styled(Base.WeekRowContainer)`
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    border: 0;
+    container-type: inline-size;
 `;
-export const DayCell = styled(C.DayCell)`
-    border-right:1px solid ${p => p.theme.colors.border}; min-width:0; min-height:0;
-    opacity:${p => p.$isCurrentMonth ? 1 : .43};
-    background:${p => p.$isSelected ? `linear-gradient(135deg,${p.theme.colors.primary}13,${p.theme.colors.primary}04)` : 'transparent'};
-    box-shadow:${p => p.$isSelected ? `inset 0 0 0 1px ${p.theme.colors.primary}44` : 'none'};
-    :where(html:not([data-theme-motion="off"])) & { transition:background .22s ease,box-shadow .22s ease; }
-    &:hover { background-color:${p => p.theme.colors.primary}08; box-shadow:inset 0 0 0 1px ${p => p.theme.colors.accent}66; }
-    .day-header { position:relative; height:34px; min-height:34px; flex-shrink:0; padding:2px 6px; overflow:visible; }
-    .day-header .day-number { position:relative; display:inline-flex; align-items:center; justify-content:center; width:32px; height:30px; font-family:${p => p.theme.fonts.numeral}; font-size:1.15rem; font-weight:500; letter-spacing:-.025em; line-height:1; }
-    .today-label { display:none; }
-    ${p => p.$isToday && css`
-        .day-header .day-number { ${gemstoneNumeral} }
-        .today-label { display:block; position:absolute; right:27px; top:14px; font-family:${p => p.theme.fonts.body}; font-size:.48rem; font-weight:600; color:${p => p.theme.colors.primary}; letter-spacing:.06em; }
+
+export const DayCell = styled(Base.DayCell)`
+    ${gemTodayInlay}
+    opacity: 1;
+    transition: none;
+    border: 0;
+    background-color: ${p => p.$isCurrentMonth ? "transparent" : "var(--gem-adjacent-cell)"};
+    &, &:hover { box-shadow: none; }
+    html[data-presentation] &&[data-selected] {
+        box-shadow: none;
+    }
+    &&[data-selected] { background-image: linear-gradient(var(--gem-calendar-selection), var(--gem-calendar-selection)); }
+    &::before {
+        content: "";
+        position: absolute;
+        inset: 2px 3px 4px;
+        z-index: 0;
+        pointer-events: none;
+        border-radius: 8px;
+        border: 1px solid var(--gem-frame-silver);
+        background: var(--gem-calendar-lift);
+        box-shadow: var(--gem-calendar-lift-shadow);
+        opacity: 0;
+        transition: opacity .14s ease-out;
+    }
+    @media (any-hover: hover) { &:hover::before { opacity: 1; } }
+    ${p => p.$dropTarget && css`
+        && { outline: 2px solid var(--gem-ink); outline-offset: -2px; }
     `}
-    ${p => p.$dropTarget && css`&& { box-shadow:inset 0 0 0 2px ${p.theme.colors.primary}; background-color:${p.theme.colors.primary}16; }`}
-    &:focus-visible { outline:2px solid ${p => p.theme.colors.primary}; outline-offset:-3px; }
-    @media(max-width:1500px) { .today-label { display:none; } }
-    ${MOBILE} {
-        .day-header { height:34px; min-height:34px; padding:2px 1px; }
-        .day-header .day-number { width:28px; height:28px; font-size:.87rem; }
+    &:focus-visible { outline: 2px solid var(--gem-ink); outline-offset: -2px; z-index: 2; }
+    .day-header {
+        min-height: 30px;
+        padding: 1px 6px 3px;
+        justify-content: flex-start;
+        gap: 5px;
+        align-content: center;
     }
-    [data-widget] & { .day-header { height:28px; min-height:28px; padding:1px 2px; } .day-header .day-number { width:26px; height:25px; font-size:.95rem; font-weight:600; } .today-label { display:none; } }
-    @media(max-height:380px) { [data-widget] & { .day-header { height:24px; min-height:24px; padding:0 1px; } .day-header .day-number { height:23px; width:24px; font-size:.75rem; } } }
-    @media(max-height:260px) { [data-widget] & { .day-header { height:18px; min-height:18px; } .day-header .day-number { height:17px; width:20px; font-size:.65rem; } } }
-    @media(max-width:768px) and (max-height:700px) { ${NOT_WIDGET} & {
-        .day-header { height:25px; min-height:25px; padding:1px; }
-        .day-header .day-number { width:24px; height:23px; font-size:.78rem; }
-    } }
-`;
-export const DayHeaderLeft = styled(C.DayHeaderLeft)`
-    gap:3px; min-width:0;
-`;
-export const AddTodoButton = styled(C.AddTodoButton)`
-    top:8px; right:5px; width:17px; height:17px; border:0; border-radius:4px;
-    background:${p => p.theme.colors.primary}08; color:${p => p.theme.colors.primary};
-    &:hover { background:${p => p.theme.colors.primary}18; box-shadow:none; }
-    &:focus-visible { outline:2px solid ${p => p.theme.colors.primary}; opacity:1; }
-    [data-widget] & { top:5px; right:3px; }
-`;
-export const TodoBarList = styled(C.TodoBarList)`
-    /* Leave room for two lines, or a line and More, in a six-row 720px calendar. */
-    margin:1px 0 2px; gap:2px; min-height:0;
-    ${MOBILE} { margin:2px 0; gap:4px; }
-    @media(max-width:768px) and (max-height:700px) { ${NOT_WIDGET} & { margin:0; padding:1px 2px; gap:3px; } }
-`;
-export const TodoBarItem = styled(C.TodoBarItem)`
-    border-radius:${p => p.$isStart ? '3px' : '0'} ${p => p.$isEnd ? '3px 3px' : '0 0'} ${p => p.$isStart ? '3px' : '0'};
-    border-top:1px solid ${p => p.$isDone ? 'transparent' : `${p.$color ?? p.theme.colors.primary}30`};
-    background:${p => p.$isDone ? 'transparent' : `linear-gradient(100deg,color-mix(in srgb,${p.$color ?? p.theme.colors.primary} 18%,${p.theme.colors.background}),color-mix(in srgb,${p.$color ?? p.theme.colors.primary} 10%,${p.theme.colors.background}))`};
-    color:${p => p.$isDone ? p.theme.colors.textSecondary : p.theme.colors.text};
-    font-family:${p => p.theme.fonts.body}; font-size:.69rem; line-height:18px;
-    box-shadow:${p => p.$isStart ? `inset 2px 0 0 ${p.$color ?? p.theme.colors.primary}` : 'none'};
-    .todo-title { letter-spacing:.005em; }
-    /* Filled event bars retain the app surface, even when widget text follows a custom backdrop. */
-    [data-widget] & .todo-title {
-        color:${p => p.$isDone ? p.theme.colors.textSecondary : (p.theme.baseColors?.text ?? p.theme.colors.text)};
+    .day-header .day-number {
+        box-sizing: border-box;
+        display: inline-flex;
+        justify-content: center;
+        min-width: 28px;
+        color: ${p => p.$isCurrentMonth || p.$isSelected ? "var(--gem-ink)" : "var(--gem-calendar-adjacent-ink)"};
+        font: 650 .9rem/1.2 ${p => p.theme.fonts.body};
+        font-variant-numeric: lining-nums tabular-nums;
     }
-    :where(html:not([data-theme-motion="off"])) & { transition:filter .18s ease,box-shadow .18s ease,opacity .18s ease; }
-    &:hover { filter:brightness(${p => p.theme.mode === 'dark' ? 1.18 : .97}); }
-    &:focus-visible { outline:2px solid ${p => p.theme.colors.primary}; outline-offset:1px; }
+    &&[aria-current="date"] .day-number { font-weight: 800; }
+    [data-gem-month] { font: 650 .625rem/1.12 ${p => p.theme.fonts.body}; color: var(--gem-calendar-adjacent-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    [data-gem-month] { margin-inline-end: auto; }
+    && .add-btn { opacity: 0; pointer-events: none; }
+    @media (any-hover: hover) {
+        &&:hover .add-btn { opacity: 1; pointer-events: auto; }
+    }
+    && .add-btn:focus-visible { opacity: 1; pointer-events: auto; }
     ${MOBILE} {
-        ${NOT_WIDGET} & {
-        border:0; border-radius:0; width:7px; height:8px; min-height:8px; padding:0; box-shadow:none;
-        transform:none; clip-path:polygon(25% 0,75% 0,100% 30%,80% 85%,50% 100%,20% 85%,0 30%);
-        background:${p => p.$color ?? p.theme.colors.primary}; opacity:${p => p.$isDone ? .38 : 1};
+        .day-header { min-height: 30px; gap: 3px; padding: 1px 3px 3px; }
+        .day-header .day-number { font-size: .8rem; }
+    }
+    @media (max-width: 360px) {
+        ${NOT_WIDGET} &&:has([data-gem-month]) .day-header {
+            flex-wrap: wrap; align-content: start; gap: 2px;
+            min-height: 33px; flex-basis: 33px; height: auto;
+        }
+    }
+    [data-widget] & .day-header { min-height: 25px; gap: 3px; padding: 1px 3px 2px; }
+    [data-widget] & .day-header .day-number { font-size: .76rem; min-width: 20px; }
+    [data-widget] & [data-gem-month] { font-size: .55rem; }
+    @container (max-width: 320px) {
+        [data-widget] & .day-header { gap: 1px; padding-inline: 1px; }
+        [data-widget] & .day-header .day-number { font-size: .7rem; }
+        [data-widget] & [data-gem-month] { display: none; }
+    }
+    @media (max-height: 420px) {
+        [data-widget] & .day-header > :first-child { flex: 0 1 auto; }
+    }
+`;
+
+export const DayHeaderLeft = styled(Base.DayHeaderLeft)`
+    flex: 0 1 auto;
+    &[data-date-select] {
+        flex: 1 1 auto;
+        align-self: stretch;
+        padding: 0;
+        border: 0;
+        border-radius: 5px;
+        background: transparent;
+        color: inherit;
+        font: inherit;
+        cursor: pointer;
+        min-width: 0;
+    }
+    &[data-date-select]:focus-visible { outline-offset: -1px; }
+`;
+
+export const AddTodoButton = styled(Base.AddTodoButton)`
+    position: static;
+    flex: 0 0 auto;
+    margin-inline-start: auto;
+    padding: 0;
+    border-radius: 50%;
+    border-color: var(--gem-frame-silver);
+    background: var(--gem-control);
+    color: var(--gem-ink);
+    transition: none;
+    &:hover { transform: none; border-color: var(--gem-frame-gold); }
+    svg { width: 12px; height: 12px; }
+    [data-widget] & { width: 14px; height: 14px; svg { width: 10px; height: 10px; } }
+    @container (max-width: 320px) {
+        [data-widget] & { width: 12px; height: 12px; }
+    }
+`;
+
+export const TodoBarList = styled(Base.TodoBarList)`
+    margin-block: 2px;
+    overflow: visible;
+    z-index: auto;
+    [data-widget] & { overflow: hidden; }
+`;
+
+export const TodoBarItem = styled(Base.TodoBarItem)`
+    /* Sample one continuous cut across the week instead of restarting the texture in each cell. */
+    --gem-track-position: calc(-100cqw * var(--col, 0) / 7 - ${p => p.$isStart ? "4px" : "0px"}) 58%;
+    --gem-track-size: max(320px, 100cqw) auto;
+    ${gemEventTrack}
+    height: 21px;
+    margin-inline-end: ${p => p.$isEnd ? "4px" : "0"};
+    font: 650 .73rem/1.1 ${p => p.theme.fonts.body};
+    & .todo-title { padding-inline: 7px 4px; }
+    ${NOT_WIDGET} &[data-gem-title-span] > .todo-title {
+        position: absolute;
+        z-index: 2;
+        inset-inline-start: 0;
+        box-sizing: border-box;
+        width: calc(var(--gem-title-span) * (100cqw / 7) - 11px);
+        pointer-events: none;
+    }
+    &[data-dragging] { opacity: .55; }
+    ${MOBILE} {
+        ${NOT_WIDGET} && {
+            ${gemEventTrack}
+            width: 100%; height: 16px; margin: 0; transform: none; overflow: hidden; touch-action: pan-y;
+            & .todo-title { display: block; padding-inline: 4px; font-size: .64rem; }
+            & > :not(.todo-title) { display: none; }
+            &[data-gem-title-span] { overflow: visible; }
         }
     }
 `;
-export const MoreButton = styled(C.MoreButton)`
-    color:${p => p.theme.colors.primary}; font-size:.61rem; letter-spacing:.01em;
-    border:0; border-radius:2px; background:transparent;
-    &:hover { background:${p => p.theme.colors.primary}0D; }
+
+export const TodoBarSpacer = styled(Base.TodoBarSpacer)`height: 21px;`;
+
+export const RangeHandle = styled(Base.RangeHandle)`
+    color: #fff3ee;
+    border-radius: var(--gem-radius, 999px);
+    opacity: 0;
+    [data-month-bar]:hover &, &:focus-visible { opacity: .85; }
 `;
-export const ModalContainer = styled(C.ModalContainer)`
-    background:${p => p.theme.colors.surface}; border:1px solid ${p => p.theme.colors.accent}75; border-radius:12px;
-    box-shadow:inset 0 0 0 4px ${p => p.theme.colors.primary}07,0 22px 70px #0004;
+
+export const MoreButton = styled(Base.MoreButton)`
+    border-radius: var(--gem-radius, 999px);
+    color: var(--gem-ink);
+    font-weight: 650;
+    &:hover { background: color-mix(in srgb, var(--gem-line) 26%, transparent); }
+    &:focus-visible { outline: 2px solid var(--gem-ink); outline-offset: -1px; }
 `;
-export const ModalHeader = styled(C.ModalHeader)`
-    border-bottom-color:${p => p.theme.colors.border}; letter-spacing:.02em;
-`;
-export const CloseButton = styled(C.CloseButton)`
-    ${gemControl}
-`;
-export const MoveNotice = styled(C.MoveNotice)`
-    border-color:${p => p.theme.colors.border}; border-radius:6px;
-    :where(html[data-theme-motion="full"]) & { animation:${facetArrival} .24s ease both; }
+
+export const CompactTaskCount = styled(Base.CompactTaskCount)`
+    ${MOBILE} {
+        ${NOT_WIDGET} && {
+            display: grid;
+            place-items: center;
+            position: static;
+            align-self: flex-start;
+            margin: 0 3px 2px;
+            min-width: 21px;
+            height: 16px;
+            padding-inline: 4px;
+            border: 1px solid var(--gem-frame-silver);
+            border-radius: var(--gem-radius);
+            background: var(--gem-action);
+            color: var(--gem-action-ink);
+            font: 650 .65rem/1 ${p => p.theme.fonts.body};
+        }
+    }
+    @media (max-height: 420px) {
+        [data-widget] & {
+            top: auto;
+            bottom: 2px;
+            border-radius: var(--gem-radius);
+            background: var(--gem-record);
+        }
+    }
 `;

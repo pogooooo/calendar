@@ -18,6 +18,7 @@ import useAuthStore from "@/store/useAuthStore";
 import { useAuthFetch, isTokenExpired } from "@/hooks/useAuthFetch";
 import { API_BASE } from "@/lib/apiBase";
 import { bustFetchCache } from "@/lib/fetchOnce";
+import { isGemTheme } from "@/styles/themeAvailability";
 
 const WIDGET_KEY = "cronos-widget-key";
 /** 이번 실행에서 이미 새로 받았다는 표 — 앱을 새로 켤 때마다 한 번은 새로 받는다 */
@@ -95,6 +96,7 @@ export default function AndroidWidgetSync() {
     const memoDate = useDailyStore((s) => s.memoDate);
     const locale = useSettingStore((s) => s.locale);
     const timezone = useSettingStore((s) => s.timezone);
+    const gemColor = useSettingStore((s) => s.gemColor);
     const t = useT();
     const theme = useTheme();
     const router = useRouter();
@@ -137,7 +139,10 @@ export default function AndroidWidgetSync() {
                 const snapshot = buildWidgetSnapshot({
                     todos, categories, challenges, anniversaries, projects,
                     memo: todayMemo.current, t, locale,
-                    theme: { family: theme.family, mode: theme.mode, variant: theme.variant, gemColor: theme.gemColor, colors: theme.colors },
+                    theme: {
+                        family: theme.family, mode: theme.mode, variant: theme.variant,
+                        colors: isGemTheme(theme.name) ? { ...theme.colors, gemStone: gemColor } : theme.colors,
+                    },
                     quickAdd: widgetKey && API_BASE ? { api: API_BASE, token: widgetKey } : null,
                 });
                 const { invoke } = await import("@tauri-apps/api/core");
@@ -147,7 +152,7 @@ export default function AndroidWidgetSync() {
             }
         }, 400);
         return () => { if (timer.current !== null) window.clearTimeout(timer.current); };
-    }, [userId, todosLoaded, todos, categories, challenges, anniversaries, projects, memo, memoDate, t, locale, timezone, theme, tick, widgetKey]);
+    }, [userId, todosLoaded, todos, categories, challenges, anniversaries, projects, memo, memoDate, t, locale, timezone, theme, gemColor, tick, widgetKey]);
 
     // 위젯에서 열었을 때 갈 곳
     React.useEffect(() => {

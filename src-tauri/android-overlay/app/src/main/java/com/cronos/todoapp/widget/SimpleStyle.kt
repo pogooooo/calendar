@@ -27,6 +27,10 @@ class SimpleStyle(context: Context, density: Float, family: String) : WidgetStyl
     override fun glyph(c: Canvas, x: Float, cy: Float, sizeDp: Float, color: Int): Float =
         ornament.glyph(c, x, cy, sizeDp, color)
     override fun todayMark(c: Canvas, cx: Float, cy: Float, rDp: Float, pal: Palette) {
+        if (pal.family == "gem") {
+            ornament.todayMark(c, cx, cy, rDp, pal)
+            return
+        }
         val r = dp(rDp)
         c.drawRoundRect(RectF(cx-r, cy-r, cx+r, cy+r), dp(5f), dp(5f), fill(Palette.withAlpha(pal.gold, .13f)))
         c.drawLine(cx-r*.65f, cy+r, cx+r*.65f, cy+r, stroke(pal.goldText, 1.5f))

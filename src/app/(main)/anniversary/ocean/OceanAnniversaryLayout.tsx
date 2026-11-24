@@ -1,12 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { Plus, Trash2, X } from "lucide-react";
+import { Pencil, Plus, Trash2, X } from "lucide-react";
 import { useT } from "@/i18n/useT";
 import AnniversaryIcon from "@/assets/AnniversaryIcon";
 import EmptyArt from "@/components/empty/EmptyArt";
 import { useLeaveMotion, useListMotion, useSwapMotion } from "@/hooks/useMotion";
 import type { AnniversaryLayoutProps } from "../AnniversaryLayout.types";
+import type { AnniversaryType } from "@/store/useAnniversaryStore";
 import * as O from "./OceanAnniversary.styles";
 
 /* 꼬리표는 장식 글씨라 라틴 이름으로 (홈의 "Today · Wednesday" 와 같은 손) */
@@ -23,9 +24,19 @@ const spacing = (days: number) => 12 + Math.min(56, Math.round(Math.sqrt(Math.ma
  * 물때 줄: 가로 선 위의 정거장 — 날짜 꼬리표, 점, 카드. 날 사이가 멀수록 간격이 조금 벌어진다. 폰은 세로 줄.
  * (Celestial·Maple: 위의 서식 판과 아래 가운데 정렬 카드 격자)
  */
-export default function OceanAnniversaryLayout({ items, onDelete, onSubmit, fields }: AnniversaryLayoutProps) {
+export default function OceanAnniversaryLayout({ items, onEdit, onDelete, onSubmit, fields }: AnniversaryLayoutProps) {
     const t = useT();
     const tp = t.anniversaryPage;
+    const actions = (item: AnniversaryType) => (
+        <O.ActionGroup>
+            <O.Action $edit type="button" onClick={() => onEdit(item)} title={t.menu.edit} aria-label={`${t.menu.edit}: ${item.title}`}>
+                <Pencil />
+            </O.Action>
+            <O.Action type="button" onClick={() => onDelete(item)} title={t.menu.delete} aria-label={`${t.menu.delete}: ${item.title}`}>
+                <Trash2 />
+            </O.Action>
+        </O.ActionGroup>
+    );
     const [open, setOpen] = React.useState(false);
     const composerRef = React.useRef<HTMLFormElement>(null);
     // 접을 때는 서식이 위로 걷히며 나간 뒤에 닫는다 (열 때는 서식의 drop 몸짓)
@@ -125,9 +136,7 @@ export default function OceanAnniversaryLayout({ items, onDelete, onSubmit, fiel
                                 <><span className="d">D-</span><b>{first.diff}</b></>
                             )}
                         </div>
-                        <O.Delete type="button" onClick={() => onDelete(first.anniversary)} aria-label={t.dialog.delete} title={t.dialog.delete}>
-                            <Trash2 />
-                        </O.Delete>
+                        {actions(first.anniversary)}
                     </O.Hero>
 
                     {rest.length > 0 && (
@@ -153,9 +162,7 @@ export default function OceanAnniversaryLayout({ items, onDelete, onSubmit, fiel
                                                         <span className="date">{tp.everyYear(a.month, a.day)}</span>
                                                     </span>
                                                     <span className="dday">{it.isToday ? tp.todayMark : `D-${it.diff}`}</span>
-                                                    <O.Delete type="button" onClick={() => onDelete(a)} aria-label={t.dialog.delete} title={t.dialog.delete}>
-                                                        <Trash2 />
-                                                    </O.Delete>
+                                                    {actions(a)}
                                                 </O.StopCard>
                                             </O.Stop>
                                         );

@@ -37,6 +37,21 @@ interface Star {
 interface Fall { x: number; y: number; len: number; v: number; age: number; life: number }
 interface Pulse { x: number; y: number; age: number }
 
+
+/** Two small figures share the sky's sprite, depth and tint. Coordinates have one scale on both axes. */
+const starFigures = [
+    {
+        anchor: [.53, .10], depth: .54,
+        points: [[-.50,.025],[-.26,.16],[-.14,-.09],[.13,-.015],[.38,-.24]],
+        strokes: [[0,1,2,3,4]],
+    },
+    {
+        anchor: [.185,.82], depth: .68,
+        points: [[-.4,-.27],[-.20,-.15],[-.16,.01],[.1,-.02],[.32,.25],[.04,.28]],
+        strokes: [[0,1,2,3,4,5,2],[0,2]],
+    },
+] as const;
+
 const rand = (a: number, b: number) => a + Math.random() * (b - a);
 
 function rgbOf(hex: string): [number, number, number] {
@@ -90,6 +105,22 @@ export function createSky(canvas: HTMLCanvasElement, o: SkyOptions) {
     /** 커서를 비춰야 드러나는 옅은 별 — 데스크톱 '풍성하게'에서만 */
     const hidden: Star[] = [];
 
+
+    const layoutFigures = () => {
+        const scale = Math.min(220, W * .23, H * .27);
+        return starFigures.slice(0, W < 640 ? 1 : 2).map((figure, index) => ({
+            strokes: figure.strokes,
+            stars: figure.points.map(([x, y], i): Star => ({
+                x: (W < 640 ? .68 : figure.anchor[0]) + x * scale / W,
+                y: figure.anchor[1] + y * scale / H,
+                z: figure.depth, r: i === 0 || i === 3 ? 3.4 : 1.2,
+                spark: i === 0 || i === 3, a: aMax * (.76 + (i % 3) * .10),
+                tw: .26 + i * .029, ph: i * 1.7 + index * .9,
+            })),
+        }));
+    };
+    let figures: ReturnType<typeof layoutFigures> = [];
+
     const seed = () => {
         stars.length = 0;
         hidden.length = 0;
@@ -120,6 +151,7 @@ export function createSky(canvas: HTMLCanvasElement, o: SkyOptions) {
     const resize = () => {
         W = Math.max(1, window.innerWidth);
         H = Math.max(1, window.innerHeight);
+        figures = layoutFigures();
         canvas.width = Math.round(W * dpr);
         canvas.height = Math.round(H * dpr);
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -203,6 +235,34 @@ export function createSky(canvas: HTMLCanvasElement, o: SkyOptions) {
         ctx.clearRect(0, 0, W, H);
         ctx.fillStyle = fill;
         const tws = gentle ? 0.5 : 1;
+
+        // Lay down the hairlines first. Their endpoints follow exactly the same parallax as their stars.
+        ctx.strokeStyle = fill;
+        ctx.lineWidth = .85;
+        for (const figure of figures) {
+            const near = hand ? lens(figure.stars[2], 120) : 0;
+            ctx.globalAlpha = (o.dark ? .20 : .25) + .15 * near;
+            ctx.beginPath();
+            for (const stroke of figure.strokes) {
+                for (let i = 1; i < stroke.length; i++) {
+                    const a = figure.stars[stroke[i - 1]], b = figure.stars[stroke[i]];
+                    const dx = (b.x - a.x) * W, dy = (b.y - a.y) * H;
+                    const length = Math.hypot(dx, dy);
+                    if (length < 8) continue;
+                    const x = a.x * W - par.x * 18 * a.z, y = a.y * H - par.y * 13 * a.z;
+                    // A thin gap around each point lets the star supply its own light.
+                    const start = (a.r + 1) / length, end = 1 - (b.r + 1) / length;
+                    ctx.moveTo(x + dx * start, y + dy * start);
+                    ctx.lineTo(x + dx * end, y + dy * end);
+                }
+            }
+            ctx.stroke();
+            for (const s of figure.stars) {
+                const glow = .83 + .17 * Math.sin(t * s.tw * tws + s.ph);
+                drawStar(s, s.a * glow + near * .25, 1 + near * .25);
+            }
+        }
+
         // 숨은 별 — 커서가 비추는 자리에서만 드러난다 (둘레엔 옅은 별빛 웅덩이)
         if (hidden.length && cursor.on > 0.01) {
             ctx.globalAlpha = cursor.on;

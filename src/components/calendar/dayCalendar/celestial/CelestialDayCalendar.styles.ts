@@ -1,28 +1,39 @@
+import { field, moonRing, paperButton } from "@/styles/celestial/controls";
 import styled, { css } from "styled-components";
+import { focusedDay } from "../DayFocus.styles";
 import { MOBILE, TOUCH } from "@/styles/breakpoints";
 import { celestialOnly, star4Mark } from "@/styles/celestial/ornaments";
 import { astralSurface } from '@/styles/celestial/calendarDetails';
 
 export const CelestialCalendarWrapper = styled.div`
+    ${focusedDay}
+    ${celestialOnly(css`
+        && [data-calendar-panel="timeline"] { background: transparent; }
+        [data-mobile-calendar] &&:not([data-day-focus]) [data-day-todo-list] {
+            max-height: 10rem; overflow-y: auto;
+            [data-day-todo-row] { flex-shrink: 0; }
+        }
+    `)}
+    container: day-pane / inline-size;
     display: flex;
     flex-direction: column;
     align-items: center;
     height: 100%;
     width: 100%;
 
-    /* 일간 캘린더 안의 스크롤바는 모두 감춘다 (스크롤 자체는 그대로 동작).
-       전역 GlobalScrollbar('*')보다 선택자 우선순위가 높아 여기서 덮인다 */
-    &, & * {
-        scrollbar-width: none;
-        -ms-overflow-style: none;
+    &&:not([data-day-focus]) [data-panel-sized] {
+        box-sizing: border-box;
+        height: var(--panel-height) !important;
+        min-height: var(--panel-height) !important;
+        max-height: var(--panel-height) !important;
+        overflow: hidden;
     }
+    &&:not([data-day-focus]) [data-panel-sized] :is([data-day-todo-list], [data-day-challenge-list], [data-day-task-list]) {
+        flex: 1 1 0; min-height: 0; max-height: none; overflow-y: auto;
+    }
+    &&:not([data-day-focus]) [data-day-content]:has([data-panel-sized]) { overflow-y: auto; }
+    && [data-day-todo-card][data-collapsed] { height: auto; max-height: none; min-height: 0; flex-grow: 0; align-self: start; width: 100%; }
 
-    &::-webkit-scrollbar,
-    & *::-webkit-scrollbar {
-        display: none;
-        width: 0;
-        height: 0;
-    }
 `;
 
 export const DateHeader = styled.div`
@@ -41,13 +52,6 @@ export const DateHeader = styled.div`
     gap: 15px;
     margin-bottom: 15px;
 
-    /* 폰에서는 바로 위 줄이 이미 날짜를 보여준다. 여기서는 갈래 고르개만 남긴다. */
-    ${MOBILE} {
-        gap: 10px;
-        margin-bottom: 10px;
-        & > span { display:block; flex:1; min-width:0; font-size:.8rem; letter-spacing:0; }
-    }
-
     & > hr {
         flex: 1;
         border: none;
@@ -55,8 +59,23 @@ export const DateHeader = styled.div`
         margin: 0;
     }
 
-    & > span {
-        white-space: nowrap;
+    &&[data-day-date-heading] {
+        box-sizing: border-box;
+        flex: none;
+        gap: 8px;
+        margin-block: 0 6px;
+        align-items: center;
+        > [data-day-date-text] { flex: 0 1 auto; min-width: 0; line-height: 1.3; white-space: normal; word-break: keep-all; }
+        > hr { min-width: 0; }
+    }
+    @container day-pane (max-width: 32rem) {
+        &&[data-day-date-heading] { gap: 6px; padding-block: 0; min-height: 36px; }
+        &&[data-day-date-heading] > hr { display: none; }
+    }
+    @container day-pane (max-width: 25rem) {
+        /* The complete date is still visible beside the picker. Omit its decorative duplicate. */
+        &&[data-day-date-heading] > [data-day-date-stamp] { display: none; }
+        &&[data-day-date-heading] > [data-day-date-text] { font-size: .88rem; overflow: visible; text-overflow: clip; }
     }
 `;
 
@@ -179,6 +198,7 @@ export const TimeRow = styled.div`
     display: flex;
     align-items: stretch;
     min-height: 36px;
+    ${celestialOnly(css`&:has([data-engraved-bar]) { --day-lane-min: max(30px, 1.4rem); }`)}
     border-bottom: 1px solid ${(props) => props.theme.colors.primary}33;
 
     html[data-presentation='mobile-app'] && {
@@ -201,6 +221,7 @@ export const TimeRow = styled.div`
     }
 
     .time-slots {
+        min-width: 0;
         flex: 1;
         display: flex;
         align-items: stretch;
@@ -220,8 +241,8 @@ export const TimeRow = styled.div`
             flex: 1;
             min-width: 0;
             border-right: 1px dashed var(--slot-rule, transparent);
-            display: flex;
-            flex-direction: column;
+            display: grid;
+            grid-template-rows: repeat(var(--day-slot-count, 1), minmax(var(--day-lane-min, 1.4rem), 1fr));
             cursor: pointer;
             transition: background-color 0.1s;
             position: relative;
@@ -242,6 +263,9 @@ export const SlotTodoItem = styled.div<{ $isContinuingPrev: boolean; $isContinui
     &[data-time-dragging]{opacity:.55;}
     &:focus-visible{outline:2px solid ${(p)=>p.theme.colors.text};outline-offset:-2px;z-index:45;}
     ${celestialOnly(css`
+        && { background: transparent; box-shadow: none; width: 100%; }
+        &&:has([data-engraved-bar]) { z-index: 2; }
+        && .todo-text, && .time-drag-handle { color: ${p => p.theme.colors.text}; }
         && .todo-text { font-size: 0.74rem; font-weight: 600; line-height: 1.3; }
     `)}
     flex: 1;
@@ -249,7 +273,8 @@ export const SlotTodoItem = styled.div<{ $isContinuingPrev: boolean; $isContinui
     min-width: 0;
     width: ${(props) => (props.$isContinuingNext ? "calc(100% + 2px)" : "100%")};
     position: relative;
-    z-index: ${(props) => (props.$isDone ? 40 : (props.$isContinuingPrev ? 10 : 30))};
+    z-index: 1;
+    &:has(.todo-text) { z-index: 2; }
 
     background-color: ${(props) => props.theme.mode === "dark"
         ? props.theme.colors.primary
@@ -261,7 +286,9 @@ export const SlotTodoItem = styled.div<{ $isContinuingPrev: boolean; $isContinui
 
     .todo-text {
         position: absolute;
-        left: 4px;
+        left: var(--title-inset, 4px);
+        max-width: max(0px, calc(var(--time-span, 1) * (100% - 2px) - var(--title-inset, 4px) - 6px));
+        overflow: hidden; text-overflow: ellipsis;
         z-index: 20;
         font-size: 0.6rem;
         color: ${(props) => props.theme.mode === "dark" ? props.theme.colors.surface : props.theme.colors.text};
@@ -279,7 +306,21 @@ export const SlotTodoItem = styled.div<{ $isContinuingPrev: boolean; $isContinui
         border-right:1px solid ${(props)=>props.theme.colors.primary}55;
         svg{pointer-events:none;}
     }
-    html[data-presentation='mobile-app'] && .todo-text {left:56px;}
+    html[data-presentation='mobile-app'] &&:has(.time-drag-handle) {
+        --title-inset: 52px;
+        .todo-text { left: var(--title-inset); }
+        &[data-short-time] {
+            --title-inset: min(26px, 45%);
+            .time-drag-handle { width: var(--title-inset); }
+            &:has([data-engraved-bar]) {
+                --title-inset: 3px;
+                .time-drag-handle { top: auto; bottom: 0; width: 100%; height: 24px; min-height: 24px; border: 0; }
+                .time-drag-handle svg { width: 16px; height: 16px; transform: rotate(90deg); }
+                [data-engraved-bar] { top: 0; }
+                .face { padding-inline: 3px; height: 24px; gap: 2px; }
+            }
+        }
+    }
 `;
 
 export const SideSection = styled.div`
@@ -408,6 +449,11 @@ export const ChallengeItem = styled.label<{ $isDone: boolean }>`
         opacity: ${(props) => (props.$isDone ? 0.55 : 1)};
         text-decoration: ${(props) => (props.$isDone ? 'line-through' : 'none')};
     }
+    ${celestialOnly(css`
+        .box { ${moonRing} }
+        .box > svg, input:not(:checked) + .box::after { display: none; }
+        @media (pointer: coarse) { min-height: 44px; }
+    `)}
 `;
 
 export const ChallengeEmpty = styled.div`
@@ -425,6 +471,7 @@ export const ChallengeEmpty = styled.div`
 /* 그날의 할 일 목록. 예전엔 폰에서만 보였다 — 데스크톱에서 달력의 날짜를 누르면 오른쪽 일간에
    시간표만 바뀌고 그날 할 일이 한눈에 안 보였다. 이제 어디서나 시간표 위에 선다 (길면 안에서 굴린다). */
 export const TodoCard = styled(BaseCard)`
+    ${celestialOnly(css`&&[data-day-todo-card] { background: transparent; box-shadow: none; }`)}
     display: flex;
     flex: none;
     margin-bottom: 10px;
@@ -477,6 +524,7 @@ export const TodoList = styled.div`
 `;
 
 export const TodoRow = styled.button<{ $isDone: boolean }>`
+    &&&[data-engraved-row] { flex-shrink: 0; padding: 0; min-height: 45px; border: 0; background: transparent; }
     ${celestialOnly(css<{ $isDone: boolean }>`
         && .title { opacity: 1; color: ${p => p.$isDone ? p.theme.colors.textSecondary : p.theme.colors.text}; }
         && .time { font-size: 0.74rem; letter-spacing: 0; }
@@ -613,6 +661,14 @@ export const TaskItem = styled.div<{ $isDone: boolean }>`
     ${TOUCH} {
         .delete-btn { opacity: 1; min-width: 32px; min-height: 32px; }
     }
+    ${celestialOnly(css`
+        .check-btn { ${moonRing} }
+        .check-btn > svg, .check-btn:not([aria-pressed="true"])::after { display: none; }
+        @media (pointer: coarse) {
+            min-height: 44px;
+            .check-btn::before { content: ""; position: absolute; inset: -14px; }
+        }
+    `)}
 `;
 
 export const TaskForm = styled.form`
@@ -653,6 +709,8 @@ export const TaskForm = styled.form`
             background-color: ${(props) => props.theme.colors.primary}1A;
         }
     }
+    && input { ${field} }
+    && button { ${paperButton} }
 `;
 
 export const MemoError = styled.div`

@@ -1,6 +1,5 @@
 "use client";
 
-import * as GemS from "./gem/GemUpdateNotice.styles";
 import * as React from "react";
 import { X, Download } from "lucide-react";
 import { useT } from "@/i18n/useT";
@@ -13,7 +12,7 @@ import * as MapleS from "./maple/MapleUpdateNotice.styles";
 import * as OceanS from './ocean/OceanUpdateNotice.styles';
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS  };
 
 type Phase = "idle" | "available" | "downloading" | "ready" | "failed";
 

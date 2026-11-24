@@ -1,11 +1,10 @@
 "use client";
 
-import styled from "styled-components";
+import WidgetContent from "@/components/widget/WidgetContent";
 import WidgetShell from "@/components/widget/WidgetShell";
 import WidgetAuthNotice from "@/components/widget/WidgetAuthNotice";
 import { useWidgetTitle } from "@/hooks/useWidgetMeta";
 import { useWidgetInit } from "@/hooks/useWidgetInit";
-import { StatsPanel } from "@/components/widget/WidgetPanels";
 
 export default function StatsWidget() {
     const title = useWidgetTitle("stats");
@@ -16,14 +15,7 @@ export default function StatsWidget() {
 
     return (
         <WidgetShell kind="stats" title={title}>
-            <Wrap>
-                <StatsPanel />
-            </Wrap>
+            <WidgetContent kind="stats" />
         </WidgetShell>
     );
 }
-
-
-const Wrap = styled.div`
-    height: 100%;
-`;

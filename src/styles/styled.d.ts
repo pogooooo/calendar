@@ -25,9 +25,6 @@ declare module 'styled-components' {
          */
         variant?: 'vintage';
 
-        /** Exact user-selected sRGB stone color; readable interface colors are derived separately. */
-        gemColor?: string;
-
         colors: {
             background: string;
             primary: string;
@@ -67,6 +64,7 @@ declare module 'styled-components' {
          * Maple 은 붉은 primary 대신 먹을 준다 — 틀은 조용해야 한다. 뒤에 알파 두 자리를 붙여 쓰므로 hex 여야 한다.
          */
         line?: string;
+        scrollbarUsesPrimary?: boolean;
 
         fontSizes: {
             h1: string;

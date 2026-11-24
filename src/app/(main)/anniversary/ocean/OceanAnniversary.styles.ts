@@ -182,18 +182,24 @@ export const AddButton = styled(C.AddButton)`
 
 /* ── 가장 가까운 날 ──────────────────────────────────────────────── */
 
-/** 지우기 — 판 오른쪽 위, 올리면 보인다 (손가락에는 늘 옅게) */
-export const Delete = styled.button`
-    ${ghostIcon("32px")}
+export const ActionGroup = styled.div`
     position: absolute;
     top: 14px;
     right: 14px;
-    opacity: 0;
+    display: flex;
+`;
+
+export const Action = styled.button<{ $edit?: boolean }>`
+    ${ghostIcon("32px")}
+    opacity: ${p => p.$edit ? 1 : 0};
     transition: opacity 0.15s ease, color 0.15s ease, background-color 0.15s ease;
     svg { width: 16px; height: 16px; }
-    &:hover:not(:disabled) { color: ${(p) => p.theme.colors.error}; background-color: ${(p) => withAlpha(p.theme.colors.error, 0.1)}; }
+    &:hover:not(:disabled) {
+        color: ${p => p.$edit ? p.theme.colors.primary : p.theme.colors.error};
+        background-color: ${p => withAlpha(p.$edit ? p.theme.colors.primary : p.theme.colors.error, 0.1)};
+    }
     &:focus-visible { opacity: 1; }
-    @media (hover: none) { opacity: 0.6; }
+    @media (hover: none) { opacity: 1; }
 `;
 
 /** 큰 판 — 왼쪽에 꼬리표·아이콘·이름·날짜, 오른쪽에 아주 큰 남은 날 수 */
@@ -261,7 +267,7 @@ export const Hero = styled.section<{ $today: boolean }>`
     }
     ${(p) => p.$today && css`.count b { font-size: 5.5rem; letter-spacing: -0.04em; }`}
 
-    &:hover ${Delete} { opacity: 1; }
+    &:hover ${Action} { opacity: 1; }
 
     ${MOBILE} {
         gap: 16px;
@@ -271,7 +277,8 @@ export const Hero = styled.section<{ $today: boolean }>`
         .name { font-size: 1.45rem; }
         .count .d { font-size: 1.2rem; margin-top: 0.3rem; }
         .count b { font-size: ${(p) => (p.$today ? "3.2rem" : "4.6rem")}; }
-        ${Delete} { top: 8px; right: 8px; width: 40px; height: 40px; }
+        ${ActionGroup} { top: 8px; right: 8px; }
+        ${Action} { width: 40px; height: 40px; }
     }
 `;
 
@@ -296,7 +303,9 @@ export const TideHead = styled.div`
 export const Track = styled.div`
     overflow-x: auto;
     overscroll-behavior-x: contain;
-    scrollbar-width: thin;
+    @supports not selector(::-webkit-scrollbar) {
+        scrollbar-width: thin;
+    }
     margin: 0 -28px -32px;
     padding: 0 28px 52px;
 
@@ -412,19 +421,21 @@ export const StopCard = styled.div`
         font-variant-numeric: tabular-nums;
     }
 
-    ${Delete} { top: 10px; right: 10px; width: 30px; height: 30px; }
-    &:hover ${Delete} { opacity: 1; }
+    ${ActionGroup} { top: 10px; right: 10px; }
+    ${Action} { width: 30px; height: 30px; }
+    &:hover ${Action} { opacity: 1; }
 
     ${MOBILE} {
         flex: 1;
         flex-direction: row;
         align-items: center;
-        gap: 12px;
+        gap: 8px;
         padding: 12px 8px 12px 14px;
         .icon { flex: none; margin: 0; }
         .text { flex: 1; }
         .dday { flex: none; margin: 0; font-size: 1.1rem; }
-        ${Delete} { position: static; flex: none; width: 36px; height: 36px; }
+        ${ActionGroup} { position: static; flex: none; }
+        ${Action} { width: 36px; height: 36px; }
     }
 `;
 

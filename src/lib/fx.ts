@@ -17,6 +17,7 @@ export type FxKind =
     | "drop"         // 할 일을 다른 날로 끌어다 놓음 (rect: 놓은 칸)
     | "remove"       // 무엇을 지움 — 조용히 흩어진다 (rect: 지운 것의 자리)
     | "add"          // 무엇을 새로 넣음
+    | "saved"        // 저장 응답이 성공으로 돌아옴
     | "welcome"      // 로그인·가입 — 다음 화면이 뜬 뒤에 인사한다
     | "anniversary"  // 오늘이 기념일 — 하루 한 번 (rect: 그 기념일 줄)
     | "palette"      // 빠른 이동(Ctrl K)을 엶 — 창 둘레에 작게 (rect: 그 창)

@@ -1,3 +1,4 @@
+import { field } from "@/styles/celestial/controls";
 /**
  * DateTimePicker 의 모양.
  *
@@ -45,6 +46,7 @@ export const Trigger = styled.button<{ $open: boolean }>`
     ${p => p.$open && css`
         box-shadow: 0 0 8px ${p.theme.colors.primary}44;
     `}
+    ${field}
 `;
 
 export const Popover = styled.div<{ $up: boolean }>`

@@ -1,11 +1,10 @@
 "use client";
 
-import styled from "styled-components";
+import WidgetContent from "@/components/widget/WidgetContent";
 import WidgetShell from "@/components/widget/WidgetShell";
 import WidgetAuthNotice from "@/components/widget/WidgetAuthNotice";
 import { useWidgetTitle } from "@/hooks/useWidgetMeta";
 import { useWidgetInit } from "@/hooks/useWidgetInit";
-import { ProjectsPanel } from "@/components/widget/WidgetPanels";
 
 export default function ProjectsWidget() {
     const title = useWidgetTitle("projects");
@@ -16,13 +15,7 @@ export default function ProjectsWidget() {
 
     return (
         <WidgetShell kind="projects" title={title}>
-            <Wrap>
-                <ProjectsPanel />
-            </Wrap>
+            <WidgetContent kind="projects" />
         </WidgetShell>
     );
 }
-
-const Wrap = styled.div`
-    height: 100%;
-`;

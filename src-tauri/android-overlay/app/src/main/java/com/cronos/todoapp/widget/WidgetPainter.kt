@@ -97,6 +97,10 @@ class WidgetPainter(
 
     fun paint(kind: String, wDp: Int, hDp: Int): Painted {
         shifted = when (kind) {
+            "today" -> Calendar.getInstance(snap?.timeZone ?: java.util.TimeZone.getDefault()).apply {
+                timeInMillis = now
+                add(Calendar.DAY_OF_MONTH, steps)
+            }.timeInMillis
             "week" -> now + steps * 7L * Snapshot.DAY_MS
             else -> now + steps * Snapshot.DAY_MS
         }
@@ -220,13 +224,25 @@ class WidgetPainter(
 
     // ── I. 오늘 할 일 ─────────────────────────────────────────────
     private fun today(c: Canvas, s: Snapshot, w: Float, h: Float, bmp: Bitmap): Painted {
-        val key = s.todayKey(shifted)
-        val rows = s.todos.filter { it.spans(key) }.sortedWith(compareBy({ it.doneOn(key) }, { !it.allDay }, { it.start }))
+        val key = Snapshot.dayKey(shifted, s.timeZone)
+        val day = Calendar.getInstance(s.timeZone).apply {
+            timeInMillis = shifted
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val start = day.timeInMillis
+        day.add(Calendar.DAY_OF_MONTH, 1)
+        val end = day.timeInMillis
+        val rows = s.todos.filter { it.start < end && it.last >= start }
+            .sortedWith(compareBy({ it.doneOn(key) }, { !it.allDay }, { it.start }))
         val done = rows.count { it.doneOn(key) }
         val total = rows.size
-        val titleText = if (steps == 0) s.label("today") else s.formatDate(shifted)
+        val dateText = s.formatDate(shifted, zone = s.timeZone)
+        val titleText = if (steps == 0) s.label("today") else dateText
         // 옮겨 본 날이면 제목이 이미 날짜다 — 오른쪽에 또 적지 않는다
-        val dateSub = if (steps == 0) s.formatDate(shifted) + "  " else null
+        val dateSub = if (steps == 0) "$dateText  " else null
         val y0 = header(c, w, titleText, dateSub, if (total > 0) "$done/$total" else null, inset = dp(ARROW_INSET))
         dayArrows(c, w)
 
@@ -243,7 +259,7 @@ class WidgetPainter(
             val cy = y0 + dp(ROW_H) * i + dp(ROW_H) / 2f
             bullet(c, dp(PAD_X) + dp(4f), cy, 3.5f, t.color, completed)
             val sp = side(if (completed) Palette.withAlpha(pal.muted, 0.7f) else pal.muted)
-            val sideText = if (t.allDay) s.label("allDay") else t.timeRange()
+            val sideText = if (t.allDay) s.label("allDay") else t.timeRange(s.timeZone)
             val sideW = sp.measureText(sideText)
             drawRight(c, sideText, w - dp(PAD_X), baseline(sp, cy), sp)
             val bp = body(if (completed) pal.muted else pal.ink)
@@ -496,7 +512,7 @@ class WidgetPainter(
         // 위젯을 크게 놓아도 무엇이 있는지 보려면 눌러서 앱을 열어야 했다. 들어가는 만큼 적고 넘치면 "+N".
         val lineH = dp(MONTH_LINE_H)
         val numberH = dp(MONTH_NUMBER_H)
-        val titled = cellH >= numberH + lineH * 2 && cellW >= dp(30f)
+        val titled = cellH >= numberH + lineH * 2 && cellW >= dp(if (pal.family == "gem") 45f else 30f)
         val tp = text(8.5f, pal.ink)
         val tpDone = TextPaint(tp).apply { color = pal.muted; isStrikeThruText = true }
         val moreP = text(8f, pal.muted, tabular = true)
@@ -511,7 +527,7 @@ class WidgetPainter(
             val key = String.format(java.util.Locale.US, "%04d-%02d-%02d", year, cal.get(Calendar.MONTH) + 1, d)
             val isToday = key == todayKey
             val weekend = col == 0 || col == 6
-            val p = TextPaint(np).apply { color = if (isToday) pal.goldText else if (weekend) pal.weekend else pal.ink }
+            val p = TextPaint(np).apply { color = if (isToday && pal.family != "gem") pal.goldText else if (weekend && !isToday) pal.weekend else pal.ink }
             if (isToday) style.todayMark(c, cx, cy, 9.5f, pal)
             drawCenter(c, "$d", cx, baseline(p, cy), p)
             val items = monthTodos.filter { it.spans(key) }
@@ -531,6 +547,8 @@ class WidgetPainter(
                     ly += lineH
                 }
                 if (ordered.size > shown) c.drawText("+${ordered.size - shown}", left + dp(5f), baseline(moreP, ly), moreP)
+            } else if (pal.family == "gem" && items.isNotEmpty()) {
+                drawCenter(c, items.size.toString(), cx, baseline(moreP, cy + dp(10f)), moreP)
             } else {
                 val dots = min(items.size, 3)
                 var dx = cx - dp(5f) * (dots - 1) / 2f

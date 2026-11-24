@@ -1,9 +1,9 @@
+import { lunarTrack } from "@/components/calendar/parts/LunarEvent";
 import styled, { css } from "styled-components";
 import { astralSurface, todayNumeral } from '@/styles/celestial/calendarDetails';
 import { celestialOnly, star4Mark } from "@/styles/celestial/ornaments";
 import { NOT_WIDGET, MOBILE, TOUCH, SAFE_T, SAFE_B } from "@/styles/breakpoints";
 import { motion } from "framer-motion";
-import { hide_scrollbar } from "@/styles/shared";
 
 export const MoveNotice = styled.div`
     display: flex;
@@ -20,6 +20,77 @@ export const MoveNotice = styled.div`
 `;
 
 export const CelestialCalendarWrapper = styled.div`
+    --month-date-size: max(24px, 1.65rem);
+    container: month-pane / inline-size;
+    && [data-calendar-navigation] .nav-btn:hover { transform: none; }
+    && [data-calendar-navigation] .nav-btn:hover svg { translate: none; }
+    [data-calendar-region="month"] & { min-inline-size: 13rem; }
+
+    @container month-pane (max-width: 30rem) {
+        && [data-calendar-header] {
+            display: flex; align-items: center; flex-wrap: wrap; gap: 3px 6px;
+            padding-inline: 0; min-height: 0;
+        }
+        && [data-calendar-header] :is([data-calendar-decoration], .header-star) { display: none; }
+        && [data-calendar-navigation] { flex: 1 0 max-content; max-width: 100%; gap: 2px; margin: 0; }
+        && .day-header { padding-inline: 2px; gap: 2px; }
+    }
+    @container month-pane (max-width: 19rem) {
+        /* First line is always the period. Even a large type setting leaves the filter reachable. */
+        && [data-calendar-header] { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 2px; }
+        && [data-calendar-navigation] { display: contents; }
+        && [data-calendar-navigation] > .nav-btn:first-child { grid-area: 1 / 1; }
+        && [data-calendar-navigation] > div { grid-area: 1 / 2; margin: 0; justify-content: center; text-align: center; }
+        && [data-calendar-navigation] > .nav-btn:nth-of-type(2) { grid-area: 1 / 3; }
+        && [data-calendar-navigation] > button:last-child { grid-area: 2 / 1 / 3 / 3; justify-self: start; margin: 0; }
+        && [data-calendar-header] > :last-child { grid-area: 2 / 3; justify-self: end; }
+    }
+    @container month-pane (max-width: 25rem) {
+        /* Keep the date and its add action on separate lines when a seven-column cell is too narrow. */
+        @media (min-width: 769px) {
+            && [data-month-cell] .day-header {
+                --month-date-row: calc(max(28px, 1.7rem) + 19px);
+                display: grid; grid-template: minmax(0, 1fr) 18px / minmax(0, 1fr) auto;
+                padding: 0 2px; gap: 1px; align-items: center;
+                height: var(--month-date-row); flex-basis: var(--month-date-row);
+            }
+            && .day-header > :has(.dn, .day-number) { grid-area: 1 / 1 / 2 / -1; }
+            && .day-header > [data-gem-month] { grid-area: 2 / 1; }
+            && .day-header > .add-btn { grid-area: 2 / 2; width: 17px; height: 17px; min-width: 0; min-height: 0; }
+        }
+    }
+    &:is([data-month-calendar="celestial"], [data-month-calendar="maple"]) {
+        .month-numeral, [data-anniversary-crown] > :first-child {
+            box-sizing: border-box; display: inline-grid; place-items: center; flex: none;
+            width: var(--month-date-size); height: var(--month-date-size); margin: 0;
+        }
+        .month-numeral > .day-number, [data-anniversary-crown] .dn { font-variant-numeric: tabular-nums; line-height: 1; }
+        [data-anniversary-crown] { gap: 0; }
+        [data-anniversary-crown] .reel:not(:empty) { padding-inline-start: 3px; }
+    }
+    [data-widget] & { --month-date-size: 22px; }
+    @media (max-height: 420px) {
+        [data-widget] & { --month-date-size: 18px; }
+        [data-widget] && [data-month-grid] {
+            grid-template-rows: repeat(6, minmax(40px, 1fr));
+            overflow-y: auto;
+        }
+        @container month-pane (max-width: 21rem) {
+            [data-widget] && [data-month-cell] { position: relative; }
+            [data-widget] && [data-month-cell] .day-header { position: static; }
+            [data-widget] && [data-month-cell] .add-btn {
+                position: absolute; inset: auto 1px 1px auto;
+            }
+            [data-widget] && [data-month-cell] > button { align-self: flex-start; margin-inline: 2px 0; }
+        }
+    }
+    @container month-pane (max-width: 30rem) {
+        && [data-month-weekdays] { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+        && [data-month-weekdays] > div { padding-inline: 0; justify-content: center; min-width: 0; }
+        && [data-month-more] .full { display: none; }
+        && [data-month-more] .short { display: inline; }
+    }
+
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -144,6 +215,7 @@ export const SliderWrapper = styled.div`
 `;
 
 export const CalendarWindow = styled.div`
+    > div:has(> [data-month-grid]) { flex: 1 1 auto; min-height: 0; }
     ${celestialOnly(css`
         && { ${astralSurface} box-sizing:border-box; border:1px solid ${p => p.theme.colors.primary}88; border-radius:2px; }
         [data-widget] && { border:0; border-radius:0; background:transparent; }
@@ -252,7 +324,6 @@ export const GridContainer = styled.div`
     background-color: transparent;
 
     overflow-y: auto;
-    ${hide_scrollbar}
 
     [data-widget] & {
         grid-template-rows: repeat(6, minmax(0, 1fr));
@@ -372,10 +443,11 @@ export const DayCell = styled.div<{ $isToday: boolean; $isCurrentMonth: boolean;
         }
     }
 
-    &:hover .add-btn {
-        opacity: 1;
+    && .day-header { padding-block: 0; }
+    @media (hover: hover) {
+        &:hover .add-btn { opacity: 1; pointer-events: auto; }
     }
-    &:focus-within .add-btn { opacity:1; }
+    .add-btn:focus-visible { opacity: 1; pointer-events: auto; }
 
     /* 48px 짜리 칸이다. 숫자와 여백을 줄여 마름모가 들어갈 자리를 만든다. */
     ${MOBILE} {
@@ -406,11 +478,9 @@ export const DayHeaderLeft = styled.div`
 
 
 export const AddTodoButton = styled.button`
-    position: absolute;
-    top: 5px;
-    /* 셀 오른쪽 끝에 붙인다 */
-    left: auto;
-    right: 6px;
+    position: static;
+    flex: none;
+    padding: 0;
     width: 18px;
     height: 18px;
     border-radius: 20%;
@@ -422,15 +492,12 @@ export const AddTodoButton = styled.button`
     align-items: center;
     cursor: pointer;
     opacity: 0;
+    pointer-events: none;
     transition: opacity 0.2s ease, transform 0.1s ease;
     z-index: 10;
 
-    &:hover {
-        transform: scale(1.1);
-    }
-
     /* 손가락에는 hover 가 없다. 숨겨두면 영영 못 누른다. */
-    ${TOUCH} { opacity: 0.6; }
+    ${TOUCH} { opacity: 0.6; pointer-events: auto; }
 
     /* 폰에서는 칸이 48px 밖에 안 돼 이게 날짜를 덮는다. 대신 화면 오른쪽
        아래 떠 있는 + 단추(캘린더 페이지의 Fab)로 일정을 만든다. */
@@ -455,7 +522,6 @@ export const TodoBarList = styled.div`
     min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
-    ${hide_scrollbar}
 
     [data-widget] & {
         overflow: hidden;
@@ -491,9 +557,10 @@ export const CompactTaskCount = styled.button`
     @media (max-height: 420px) {
         [data-widget] & {
             display: flex;
-            position: absolute;
-            right: 2px;
-            top: 3px;
+            position: static;
+            align-self: flex-end;
+            flex: 0 0 14px;
+            margin: 1px 3px 0;
             align-items: center;
             justify-content: center;
             min-width: 14px;
@@ -612,6 +679,8 @@ export const TodoBarItem = styled.div<{ $isStart: boolean; $isEnd: boolean; $col
         `}
         ${MOBILE} { ${NOT_WIDGET} & { width: 7px; height: 7px; border-radius: 50%; transform: none; &::before { display: none; } } }
     `)}
+    ${lunarTrack}
+    &&&[data-lunar-track] { height: 21px; }
 `;
 
 export const RangeHandle = styled.button<{ $edge: 'start' | 'end' }>`

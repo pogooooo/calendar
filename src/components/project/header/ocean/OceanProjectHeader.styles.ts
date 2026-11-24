@@ -98,8 +98,6 @@ export const TabContainer = styled(C.TabContainer)`
     margin-bottom: 16px;
     padding: 0 2px;
     box-shadow: inset 0 -1px 0 ${(p) => hairline(p.theme)};
-    scrollbar-width: none;
-    &::-webkit-scrollbar { display: none; }
 
     ${MOBILE} {
         gap: 4px;

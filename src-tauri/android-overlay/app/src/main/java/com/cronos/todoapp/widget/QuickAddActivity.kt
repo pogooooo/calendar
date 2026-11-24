@@ -149,7 +149,7 @@ class QuickAddActivity : Activity() {
             background = GradientDrawable().apply {
                 setColor(Color.TRANSPARENT)
                 setStroke(dp(1), palette.line)
-                cornerRadius = dp(6).toFloat()
+                cornerRadius = dp(if (palette.family == "gem") 25 else 6).toFloat()
             }
             setPadding(dp(12), dp(11), dp(12), dp(11))
             setOnEditorActionListener { _, actionId, event ->
@@ -205,9 +205,14 @@ class QuickAddActivity : Activity() {
             gravity = Gravity.CENTER
             minWidth = dp(88)
             minHeight = dp(48)
-            setTextColor(opaque(palette.bg))
             setPadding(dp(18), dp(10), dp(18), dp(10))
-            background = GradientDrawable().apply { setColor(palette.gold); cornerRadius = dp(6).toFloat() }
+            if (palette.family == "gem") {
+                setTextColor(GemWidgetStyle.ACTION_INK)
+                background = GemWidgetStyle.actionSurface(this@QuickAddActivity, palette)
+            } else {
+                setTextColor(opaque(palette.bg))
+                background = GradientDrawable().apply { setColor(palette.gold); cornerRadius = dp(6).toFloat() }
+            }
             setOnClickListener { submit() }
         }
         buttons.addView(addButton, LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply { marginStart = dp(6) })

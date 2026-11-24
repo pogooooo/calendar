@@ -1,6 +1,5 @@
 "use client";
 
-import * as GemS from "./gem/GemProjectHeader.styles";
 import * as React from 'react';
 import { ProjectHeaderProps } from "./ProjectHeader";
 import { useT } from "@/i18n/useT";
@@ -8,9 +7,10 @@ import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialProjectHeader.styles";
 import * as MapleS from "./maple/MapleProjectHeader.styles";
 import * as OceanS from './ocean/OceanProjectHeader.styles';
+import * as GemS from "./gem/GemProjectHeader.styles";
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS, gem: GemS };
 
 const ProjectHeaderView = React.forwardRef<HTMLDivElement, ProjectHeaderProps>(({
                                                                                          selectedProject,

@@ -51,18 +51,38 @@ export const Column = styled.div`
     box-sizing: border-box;
 `;
 
+export const TodayColumn = styled(Column)`
+    padding-block-start: 4px;
+
+    ${Fit} { padding-block-end: 6px; }
+`;
+
+export const TodayBody = styled.div`
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    flex-direction: column;
+
+    @media (max-height: 180px) {
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        ${Fit} { flex: none; overflow: visible; }
+    }
+`;
+
 /** 위젯 안의 날짜 줄 — 하루씩 옮기고, 가운데를 누르면 오늘로 */
 export const DayNav = styled.div`
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 4px;
+    gap: 2px;
     flex-shrink: 0;
-    margin-bottom: 4px;
+    margin-block-end: 10px;
 
     .label {
-        min-width: 5.5em;
-        padding: 1px 6px;
+        min-inline-size: 4.8em;
+        min-block-size: 24px;
+        padding: 0 2px;
         background: none;
         border: none;
         font-family: ${p => p.theme.fonts.display};
@@ -73,24 +93,24 @@ export const DayNav = styled.div`
     }
 
     .label:disabled { cursor: default; color: ${p => p.theme.colors.textSecondary}; }
+    .label:focus-visible { outline: 2px solid currentColor; outline-offset: -2px; }
 `;
 
 export const NavBtn = styled.button`
     width: 24px;
     height: 24px;
+    flex-shrink: 0;
     padding: 0;
     display: flex;
     align-items: center;
     justify-content: center;
     background: none;
-    border: 1px solid ${p => p.theme.colors.primary}40;
-    color: ${p => p.theme.colors.primary};
-    font-size: 0.8rem;
-    line-height: 1;
+    border: 0;
+    color: ${p => p.theme.colors.textSecondary};
     cursor: pointer;
 
-    &:hover { border-color: ${p => p.theme.colors.primary}; }
-
+    &:hover, &:active { color: ${p => p.theme.colors.text}; }
+    &:focus-visible { outline: 2px solid currentColor; outline-offset: -2px; }
 `;
 
 export const SectionHead = styled.div`

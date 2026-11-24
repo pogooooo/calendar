@@ -18,7 +18,7 @@ import { loadObjet } from "./registry";
 import type { ObjetDef, ObjetInput, ObjetInstance, ObjetTone, Three } from "./types";
 
 export type ObjetMotion = "full" | "gentle" | "off";
-export type ObjetInteraction = "drag" | "hover" | "none";
+export type ObjetInteraction = NonNullable<ObjetDef["interaction"]>;
 
 /** 그릴 때 배율(한 변). 1배 화면에서도 2배로 그려 줄여 담는다 */
 const SUPERSAMPLE = 2;
@@ -55,7 +55,7 @@ class Slot {
     active = false;
     hovered = false;
     interaction: ObjetInteraction = "none";
-    readonly input: ObjetInput = { hover: false, x: 0, y: 0, dragging: false, dragX: 0, dragY: 0 };
+    readonly input: ObjetInput = { hover: false, x: 0, y: 0, dragging: false, dragX: 0, dragY: 0, pressed: false };
     private detachPointer: () => void = () => {};
     disposed = false;
     /** 처음 보인 뒤에야 렌더러를 열고 오브제를 받는다 — 숨은 칸(폰의 사이드바 같은)은 맥락을 만들지 않는다 */
@@ -138,6 +138,10 @@ class Slot {
     setMotion(motion: ObjetMotion) {
         if (motion === this.init.motion) return;
         this.init = { ...this.init, motion };
+        if (this.interaction === "surface" && motion !== "full") {
+            this.hovered = false;
+            this.input.pressed = false;
+        }
         this.syncHover();
         this.dirty = true;
         this.lastT = 0;
@@ -152,12 +156,60 @@ class Slot {
     /** '잔잔하게'·끄기면 올리기 반응을 하지 않는다 */
     private syncHover() {
         const hover = this.motion === "full" && (this.active || (this.hovered && this.interaction !== "none"));
-        if (hover !== this.input.hover) { this.input.hover = hover; this.stage.wake(); }
+        if (hover === this.input.hover) return;
+        this.input.hover = hover;
+        if (this.interaction === "surface") this.moving = this.motion === "full";
+        this.stage.wake();
+    }
+
+    private bindSurfacePointer() {
+        // The overlay fills its host and passes pointer input through to the controls underneath.
+        const host = this.canvas.closest<HTMLElement>("[data-objet-surface]")?.offsetParent;
+        if (!(host instanceof HTMLElement)) return;
+        const move = (event: PointerEvent) => {
+            if (this.motion !== "full" || event.pointerType !== "mouse") return;
+            const bounds = host.getBoundingClientRect();
+            if (!bounds.width || !bounds.height) return;
+            const x = Math.max(-1, Math.min(1, (event.clientX - bounds.left) / bounds.width * 2 - 1));
+            const y = Math.max(-1, Math.min(1, (event.clientY - bounds.top) / bounds.height * 2 - 1));
+            if (this.hovered && Math.abs(x - this.input.x) + Math.abs(y - this.input.y) < .002) return;
+            this.input.x = x;
+            this.input.y = y;
+            this.hovered = true;
+            this.syncHover();
+            this.moving = true;
+            this.stage.wake();
+        };
+        const leave = () => {
+            this.hovered = false;
+            this.syncHover();
+        };
+        const press = (event: PointerEvent) => {
+            if (this.motion !== "full" || event.pointerType !== "mouse" || event.button !== 0) return;
+            move(event);
+            this.input.pressed = true;
+            this.moving = true;
+            this.stage.wake();
+        };
+        host.addEventListener("pointerenter", move, { passive: true });
+        host.addEventListener("pointermove", move, { passive: true });
+        host.addEventListener("pointerleave", leave, { passive: true });
+        host.addEventListener("pointerdown", press, { passive: true });
+        this.detachPointer = () => {
+            host.removeEventListener("pointerenter", move);
+            host.removeEventListener("pointermove", move);
+            host.removeEventListener("pointerleave", leave);
+            host.removeEventListener("pointerdown", press);
+        };
     }
 
     private bindPointer() {
         const el = this.canvas;
         const mode = this.interaction;
+        if (mode === "surface") {
+            this.bindSurfacePointer();
+            return;
+        }
         if (mode === "none") { el.style.pointerEvents = "none"; return; }
         el.style.pointerEvents = "auto";
         if (mode === "drag") { el.style.cursor = "grab"; el.style.touchAction = "pan-y"; }
@@ -444,7 +496,7 @@ class Stage {
         for (const s of this.slots) {
             if (!s.inst || !s.visible || s.w < 2 || s.h < 2) continue;
             const live = s.motion !== "off";
-            const busy = s.input.dragging || s.input.hover;
+            const busy = s.input.dragging || (s.input.hover && s.interaction !== "surface");
             const wants = live && (s.moving || busy);
             const due = s.dirty || (wants && now - s.lastDraw >= (busy ? FRAME_MS_ACTIVE : FRAME_MS) - 2);
             if (!due) {
@@ -457,6 +509,7 @@ class Stage {
             const more = s.inst.update(dt, s.input);
             s.input.dragX = 0;
             s.input.dragY = 0;
+            s.input.pressed = false;
             this.draw(r, s);
             s.dirty = false;
             s.lastDraw = now;

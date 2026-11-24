@@ -5,6 +5,7 @@ import { useT } from "@/i18n/useT";
 import { expandTodos } from "@/hooks/useExpandedTodos";
 import { localDateKey, endDateKey, labelKey, wallTime, zonedTime } from "@/lib/dateKey";
 import useProjectStore from "@/store/useProjectStore";
+import { useThemeFamily } from "@/styles/themed";
 import { projectCalendarItems } from "@/lib/projectCalendar";
 import type { TodoType, CategoryType } from "@/types";
 import View from "./DayPeekView";
@@ -21,6 +22,7 @@ export interface DayPeekProps {
     todos: TodoType[];
     categories: CategoryType[];
     onOpenDay: () => void;
+    onAdd?: () => void;
 }
 
 export interface DayPeekItem {
@@ -40,15 +42,17 @@ export interface DayPeekThemeProps {
     isToday: boolean;
     items: DayPeekItem[];
     onOpenDay: () => void;
-    labels: { openDay: string; empty: string; allDay: string };
+    onAdd?: () => void;
+    labels: { openDay: string; add: string; empty: string; allDay: string; more: (count: number) => string };
 }
 
 const pad = (n: number) => String(n).padStart(2, "0");
 /** 고른 시간대의 시각 — 예전엔 이 기기 시각이라 시간대가 다르면 일간·홈과 다른 시각이 섰다 */
 const hhmm = (d: Date) => { const w = wallTime(d); return w ? `${pad(w.hour)}:${pad(w.minute)}` : ""; };
 
-export default function DayPeek({ date, todos, categories, onOpenDay }: DayPeekProps) {
+export default function DayPeek({ date, todos, categories, onOpenDay, onAdd }: DayPeekProps) {
     const t = useT();
+    const gem = useThemeFamily() === "gem";
     const projects = useProjectStore((s) => s.projects);
 
     // date 는 칸 Date — 날 키는 labelKey 로 (localDateKey 로 읽으면 고른 시간대가 기기보다 서쪽일 때 하루 앞 날이 된다)
@@ -73,7 +77,8 @@ export default function DayPeek({ date, todos, categories, onOpenDay }: DayPeekP
             .sort((a, b) => Number(a.done) - Number(b.done) || Number(!a.allDay) - Number(!b.allDay) || (a.time ?? "").localeCompare(b.time ?? ""));
     }, [todos, projects, categories, key]);
 
-    const title = `${date.getMonth() + 1}. ${date.getDate()} · ${t.calendar.days[date.getDay()]}`;
+    const title = gem ? t.calendar.dayLabelShort(date.getMonth() + 1, date.getDate())
+        : `${date.getMonth() + 1}. ${date.getDate()} · ${t.calendar.days[date.getDay()]}`;
 
     return (
         <View
@@ -82,7 +87,8 @@ export default function DayPeek({ date, todos, categories, onOpenDay }: DayPeekP
             isToday={key === localDateKey(new Date())}
             items={items}
             onOpenDay={onOpenDay}
-            labels={{ openDay: t.calendar.openDay, empty: t.calendar.peekEmpty, allDay: t.todo.allDay }}
+            onAdd={onAdd}
+            labels={{ openDay: t.calendar.openDay, add: t.calendar.addTask, empty: t.calendar.peekEmpty, allDay: t.todo.allDay, more: t.calendar.more }}
         />
     );
 }

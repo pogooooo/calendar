@@ -22,11 +22,14 @@ export const Shell = styled(C.Shell)`
 `;
 export const BackgroundSurface = styled(Shell)`
     ${C.backdropLayer}
-    &[data-ornate=true]::after {
-        content:'';position:absolute;inset:0;pointer-events:none;
-        background:${p=>dark(p)
-            ? 'linear-gradient(180deg, rgba(10,48,54,.85), rgba(10,48,54,.55) 55%, rgba(15,38,40,.5))'
-            : 'linear-gradient(180deg, rgba(38,153,161,.42), rgba(117,204,199,.3) 55%, rgba(240,232,214,.55))'};
+    &[data-widget-background-mode="theme"]::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(110deg,
+            ${(p) => withAlpha(p.theme.baseColors?.surface ?? p.theme.colors.surface, dark(p) ? .68 : .48)},
+            transparent), url("/themes/ocean/widget-lagoon.webp") center / cover;
+        opacity: ${(p) => dark(p) ? .22 : .72};
     }
 `;
 

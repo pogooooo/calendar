@@ -1,0 +1,115 @@
+/* Generated neutral materials are recolored by useGemMaterials. No photographed hue is baked into the UI. */
+:root {
+    --gem-radius: 999px;
+    --gem-frame-gold: #a77543;
+    --gem-frame-silver: #94809e;
+    --gem-gold-edge: var(--gem-gold-map);
+    --gem-silver-edge: var(--gem-silver-map);
+}
+
+html[data-theme-family="gem"] {
+    --gem-surface: var(--gem-custom-surface, #f3eaf2);
+    --gem-ink: #301235;
+    --gem-muted: #58405b;
+    --gem-line: var(--gem-custom-line, #ad8fab);
+    --gem-tint-ink: var(--gem-custom-primary, #65416d);
+    --gem-gold: #966b3e;
+    --gem-slab: oklch(from var(--gem-stone, #4c224e) .29 min(c, .16) h);
+    --gem-slab-ink: #fff7fc;
+    --gem-action-ink: #fff7fc;
+    --gem-shade: var(--gem-surface);
+    --gem-ground: var(--gem-ground-map) center / cover fixed;
+    --gem-panel: var(--gem-quartz-map) center / cover no-repeat;
+    --gem-record: var(--gem-pearl-map) center / cover no-repeat;
+    --gem-heading: var(--gem-heading-map) 42% 48% / cover no-repeat;
+    --gem-day-stone: var(--gem-timeline-map) center / cover no-repeat;
+    --gem-rail: var(--gem-event-map) center / cover no-repeat;
+    --gem-action: var(--gem-action-map) 50% 46% / max(100%, 360px) auto no-repeat padding-box, var(--gem-gold-edge) center / cover no-repeat border-box;
+    --gem-control: var(--gem-control-map) 50% 45% / max(100%, 72px) auto no-repeat padding-box, var(--gem-silver-edge) center / cover no-repeat border-box;
+    --gem-field: var(--gem-field-map) center / cover no-repeat padding-box, var(--gem-silver-edge) center / cover no-repeat border-box;
+    --gem-navigation: var(--gem-navigation-map) 30% 48% / cover no-repeat;
+    --gem-rim-light: #f1d6b57a;
+    --gem-rim-shade: #4d335a33;
+    --gem-panel-shadow: 0 3px 9px #3c25431a;
+    --gem-control-shadow: inset 0 1px 0 #fffafc94, inset 0 -1px 0 #48365030, 0 1px 3px #281c3220;
+    --gem-calendar-ground: var(--gem-surface);
+    --gem-calendar-glaze: linear-gradient(#ffffff09, #ffffff09);
+    --gem-month-header-glaze: linear-gradient(#ffffff0a, #ffffff0a);
+    --gem-calendar-quartz-base: var(--gem-surface);
+    --gem-calendar-quartz-glaze: linear-gradient(transparent, transparent);
+    --gem-calendar-quartz-blend: normal;
+    --gem-calendar-selection: color-mix(in srgb, var(--gem-ink) 10%, transparent);
+    --gem-calendar-adjacent-ink: color-mix(in srgb, var(--gem-ink) 77%, var(--gem-muted));
+    --gem-adjacent-cell: #27152c1a;
+    --gem-calendar-lift: var(--gem-control-map) center / cover no-repeat;
+    --gem-calendar-lift-shadow: 0 7px 15px #35193c66, 0 2px 4px #35193c3d, inset 0 1px #fff7fb;
+    --gem-hover-ring: #9a6a36;
+    --gem-hover-shadow: inset 0 0 0 1px var(--gem-rim-light), 0 3px 7px #35193c35;
+    --gem-hover-wash: #754c7a20;
+    --gem-event-track: linear-gradient(#14091a08, #14091a08), var(--gem-event-map) center / auto 100px repeat-x, var(--gem-slab);
+    --gem-event-done: linear-gradient(#ffffff08, #ffffff08), var(--gem-pearl-map) center / auto 140px repeat-x, var(--gem-surface);
+    --gem-event-done-base: var(--gem-surface);
+    --gem-event-ink: #fff7fc;
+    --gem-event-done-ink: var(--gem-muted);
+    --scroll-ink: var(--gem-frame-silver);
+}
+
+html[data-theme-family="gem"][data-theme-mode="dark"] {
+    --gem-surface: var(--gem-custom-surface, #2b1c32);
+    --gem-ink: #fff2fa;
+    --gem-muted: #d6bed5;
+    --gem-line: var(--gem-custom-line, #96779c);
+    --gem-tint-ink: var(--gem-custom-primary, #dcb9df);
+    --gem-frame-gold: #c6a377;
+    --gem-frame-silver: #ad9bb7;
+    --gem-gold: #ddbd8e;
+    --gem-shade: color-mix(in srgb, var(--gem-surface) 83%, #100b16);
+    --gem-ground: var(--gem-ground-map) center / cover fixed;
+    --gem-calendar-glaze: linear-gradient(#10091809, #10091809);
+    --gem-month-header-glaze: linear-gradient(#10091809, #10091809);
+    --gem-adjacent-cell: #0d071c48;
+    --gem-calendar-lift-shadow: 0 8px 18px #06030de0, 0 2px 4px #100817b0, inset 0 1px #e4cee3;
+    --gem-hover-ring: #edce9e;
+    --gem-rim-light: #edd3ac70;
+    --gem-rim-shade: #08040b9c;
+    --gem-panel-shadow: 0 3px 10px #07030d38;
+    --gem-control-shadow: inset 0 1px 0 #d8bcd92e, inset 0 -1px 0 #0b071b70, 0 1px 4px #09041066;
+    --gem-hover-shadow: inset 0 0 0 1px var(--gem-rim-light), 0 3px 8px #0803108c;
+    --gem-hover-wash: #e5c4e22b;
+}
+
+html[data-theme-family="gem"] [data-app-shell] { background: var(--gem-ground); }
+
+/* Hover identifies the actual action without moving its text or changing its material. */
+@media (hover: hover) and (pointer: fine) {
+    html[data-theme-family="gem"] :is(button, a[href], [role="button"], [role="option"], [role="tab"]):not(:disabled):not([aria-disabled="true"]):not([data-month-cell]):not([data-month-bar]):hover {
+        box-shadow: var(--gem-hover-shadow);
+    }
+    html[data-theme-family="gem"] :is(input, textarea, select):not(:disabled):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):hover {
+        box-shadow: inset 0 0 0 1px var(--gem-hover-ring);
+    }
+    html[data-theme-family="gem"] [data-home-row]:hover {
+        background-color: var(--gem-hover-wash);
+        box-shadow: inset 3px 0 var(--gem-hover-ring);
+    }
+}
+html[data-theme-family="gem"] :is(button, a[href], [role="button"], [role="option"], [role="tab"]):focus-visible {
+    outline: 2px solid var(--gem-ink);
+    outline-offset: 2px;
+}
+
+/* Outgoing copies are visual only, including during a rapid second navigation. */
+[data-motion-snapshot], [data-motion-snapshot] * { pointer-events: none !important; animation: none !important; transition: none !important; }
+
+/* Mobile keeps the same real materials, with quieter large reading surfaces. */
+html[data-theme-family="gem"][data-presentation="mobile-app"]:where(:not([data-mobile-appearance="rich"]))[data-theme-mode] {
+    --gem-ground: var(--gem-pearl-map) center / cover no-repeat, var(--gem-surface);
+    --gem-panel: var(--gem-quartz-map) center / cover no-repeat;
+    --gem-heading: var(--gem-panel);
+}
+html[data-theme-family="gem"][data-presentation="mobile-app"]:where(:not([data-mobile-appearance="rich"])) [role="dialog"] button[type="submit"]:not(:disabled) {
+    --mobile-submit-background: var(--gem-action);
+    --mobile-submit-ink: var(--gem-action-ink);
+    border: 1px solid transparent;
+    border-radius: var(--gem-radius);
+}

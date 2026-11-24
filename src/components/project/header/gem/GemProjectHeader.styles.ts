@@ -1,26 +1,41 @@
-/** Gem finishes over the shared, behavior-compatible component structure. */
-import styled from 'styled-components';
-import * as Base from '../celestial/CelestialProjectHeader.styles';
-import { gemHeading, gemControl } from '@/styles/gem/material';
-import { inkOnFill } from '@/styles/color';
-export * from '../celestial/CelestialProjectHeader.styles';
+import styled from "styled-components";
+import * as C from "../celestial/CelestialProjectHeader.styles";
+import { gemstoneAction, gemstoneHeading, gemstonePill, gemstoneSlab } from "@/features/gem/GemWorkspace.styles";
 
-export const HeaderTitle = styled(Base.HeaderTitle)`
-    ${gemHeading}
+export * from "../celestial/CelestialProjectHeader.styles";
+
+export const Header = styled(C.Header)`
+    ${gemstoneHeading}
+    padding: 12px clamp(12px, 2vw, 24px);
+    border: 1px solid var(--gem-line);
+    border-radius: 14px;
 `;
 
-export const HeaderActionButton = styled(Base.HeaderActionButton)`
-    ${gemControl}
-    &:last-child {
-        background: ${({theme})=>theme.colors.primary};
-        color: ${({theme})=>inkOnFill(theme.colors.primary)};
-        border-color: ${({theme})=>theme.colors.primary};
-        box-shadow: inset 0 1px 0 #FFFFFF35, inset 0 0 0 3px ${({theme})=>theme.colors.accent}22;
-        text-shadow: none;
-        &:hover { background: ${({theme})=>theme.colors.primary}; filter: brightness(1.06); }
+export const TitleText = styled(C.TitleText)`
+    font-size: clamp(1.2rem, 2.1vw, 1.8rem);
+    font-weight: 700;
+    letter-spacing: -.02em;
+`;
+
+export const HeaderLine = styled(C.HeaderLine)`
+    border: 0;
+    height: 1px;
+    background: var(--gem-gold-edge);
+`;
+
+export const HeaderActionButton = styled(C.HeaderActionButton)`
+    ${gemstonePill}
+    min-height: 40px;
+    &:last-child { ${gemstoneAction} }
+`;
+
+export const Tab = styled(C.Tab)`
+    ${gemstonePill}
+    &::after { content: none; }
+    &[aria-pressed="true"], &[aria-selected="true"] {
+        ${gemstoneSlab}
+        font-weight: 700;
     }
-`;
-
-export const Tab = styled(Base.Tab)`
-    ${gemControl}
+    &:hover { color: var(--gem-ink); }
+    &[aria-pressed="true"]:hover:not(:disabled), &[aria-selected="true"]:hover:not(:disabled) { color: var(--gem-slab-ink); }
 `;

@@ -1,37 +1,40 @@
 "use client";
 
-import * as GemS from "./gem/GemSideBar.styles";
 import { useState, useRef, useEffect } from "react";
-import { AnimatePresence, useReducedMotion } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
+import useThemeMotion from "@/hooks/useThemeMotion";
 import DefaultProfile from "@/assets/icons/DefaultProfile";
 import SidebarMenuButton from "@/components/button/sidebarMenu/SidebarMenuButton";
 import Setting from "@/assets/icons/Setting";
 import Home from "@/assets/icons/Home";
 import NavIcon from "@/assets/NavIcon";
 import useAuthStore from "@/store/useAuthStore";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
+import { useScreenNavigation } from "@/components/navigation/useScreenNavigation";
 import { LogOut, UserCog, ChevronDown } from "lucide-react";
 import { useT } from "@/i18n/useT";
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialSideBar.styles";
 import * as MapleS from "./maple/MapleSideBar.styles";
 import * as OceanS from './ocean/OceanSideBar.styles';
+import * as GemS from "./gem/GemSideBar.styles";
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS, gem: GemS };
 
-const Profile = () => {
+const Profile = ({ activePath }: { activePath?: string }) => {
     const S = usePickTheme(STYLES);
     const user = useAuthStore((state) => state.user);
     const logout = useAuthStore((state) => state.logout);
-    const router = useRouter();
+    const navigate = useScreenNavigation();
     // 지금 화면이 홈·설정이면 그 단추에 aria-current — 화면 읽기 프로그램이 알리고, 바다의 독은 고른 표시를 단다
-    const pathname = usePathname();
+    const path = usePathname();
+    const pathname = activePath ?? path;
     const t = useT();
     const [open, setOpen] = useState(false);
     const popupRef = useRef<HTMLDivElement>(null);
-    const reduceMotion = useReducedMotion();
-    const dur = (v: number) => (reduceMotion ? 0 : v);
+    const motion = useThemeMotion();
+    const dur = (v: number) => motion === 'off' ? 0 : motion === 'gentle' ? Math.min(v, .12) : v;
 
     useEffect(() => {
         if (!open) return;
@@ -53,13 +56,13 @@ const Profile = () => {
 
     const handleLogout = async () => {
         setOpen(false);
-        await logout();
-        router.push("/signIn");
+        if (activePath === undefined) await logout();
+        navigate("/signIn");
     };
 
     return (
         <S.ProfileWrapper>
-            <S.LogoRow onClick={() => { router.push("/") }}>
+            <S.LogoRow onClick={() => { navigate("/") }}>
                 <S.Logo>CRONOS</S.Logo>
                 <hr />
             </S.LogoRow>
@@ -68,6 +71,7 @@ const Profile = () => {
                 <S.UserClickable
                     role="button"
                     tabIndex={0}
+                    title={user?.name ?? undefined}
                     aria-haspopup="true"
                     aria-expanded={open}
                     onClick={() => setOpen((v) => !v)}
@@ -90,7 +94,7 @@ const Profile = () => {
                         style={{
                             marginLeft: "auto",
                             flexShrink: 0,
-                            transition: "transform 0.2s",
+                            transition: `transform ${dur(.2)}s`,
                             transform: open ? "rotate(180deg)" : "rotate(0deg)",
                             opacity: 0.6,
                         }}
@@ -101,9 +105,9 @@ const Profile = () => {
                     {open && (
                         <S.ProfilePopup
                             key="profile-popup"
-                            initial={{ opacity: 0, y: -4 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -2, pointerEvents: "none" }}
+                            initial={motion === 'off' ? false : { opacity: 0, y: motion === 'full' ? -6 : 0 }}
+                            animate={{ opacity: 1, y: 0, pointerEvents: "auto" }}
+                            exit={{ opacity: 0, y: motion === 'full' ? -3 : 0, pointerEvents: "none" }}
                             transition={{ duration: dur(0.16), ease: [0.22, 1, 0.36, 1] }}
                         >
                             <S.PopupHeader>
@@ -123,18 +127,18 @@ const Profile = () => {
                             <S.StarDivider aria-hidden="true">
                                 <S.RuleLine
                                     $origin="right"
-                                    initial={{ scaleX: 0 }}
+                                    initial={motion === 'full' ? { scaleX: 0 } : false}
                                     animate={{ scaleX: 1 }}
                                     transition={{ duration: dur(0.26), delay: dur(0.04), ease: "easeOut" }}
                                 />
                                 <S.RuleStar
-                                    initial={{ scale: 0, rotate: -45 }}
+                                    initial={motion === 'full' ? { scale: 0, rotate: -45 } : false}
                                     animate={{ scale: 1, rotate: 0 }}
                                     transition={{ duration: dur(0.22), delay: dur(0.06), ease: "easeOut" }}
                                 />
                                 <S.RuleLine
                                     $origin="left"
-                                    initial={{ scaleX: 0 }}
+                                    initial={motion === 'full' ? { scaleX: 0 } : false}
                                     animate={{ scaleX: 1 }}
                                     transition={{ duration: dur(0.26), delay: dur(0.04), ease: "easeOut" }}
                                 />
@@ -145,7 +149,7 @@ const Profile = () => {
                             <S.PopupItem
                                 onClick={() => {
                                     setOpen(false);
-                                    router.push("/settings?tab=account");
+                                    navigate("/settings?tab=account");
                                 }}
                             >
                                 <UserCog size={15} />
@@ -161,11 +165,11 @@ const Profile = () => {
                 </AnimatePresence>
             </S.UserWrapper>
 
-            <SidebarMenuButton label={t.sidebar.settings} aria-current={pathname?.startsWith("/settings") ? "page" : undefined} onClick={() => { router.push("/settings") }}>
+            <SidebarMenuButton label={t.sidebar.settings} aria-current={pathname?.startsWith("/settings") ? "page" : undefined} onClick={() => { navigate("/settings") }}>
                 <NavIcon name="settings" size={26} fallback={<Setting width={26} />} />
             </SidebarMenuButton>
 
-            <SidebarMenuButton label={t.sidebar.home} aria-current={pathname === "/" ? "page" : undefined} onClick={() => { router.push("/") }}>
+            <SidebarMenuButton label={t.sidebar.home} aria-current={pathname === "/" ? "page" : undefined} onClick={() => { navigate("/") }}>
                 <NavIcon name="home" size={26} fallback={<Home width={26} />} />
             </SidebarMenuButton>
         </S.ProfileWrapper>

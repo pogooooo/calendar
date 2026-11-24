@@ -1,6 +1,5 @@
 "use client";
 
-import * as GemS from "./gem/SidebarMenuButton.styles";
 import React from 'react';
 import { Slot } from "@radix-ui/react-slot";
 import { ChevronRight } from "lucide-react";
@@ -9,9 +8,10 @@ import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/SidebarMenuButton.styles";
 import * as MapleS from "./maple/SidebarMenuButton.styles";
 import * as OceanS from './ocean/SidebarMenuButton.styles';
+import * as GemS from "./gem/GemSidebarMenuButton.styles";
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS, gem: GemS };
 
 export type { ButtonProps } from "./celestial/SidebarMenuButton.styles";
 

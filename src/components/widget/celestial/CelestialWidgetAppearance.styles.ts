@@ -20,7 +20,7 @@ export const Surface=styled(Base)`
  .preview-heading{letter-spacing:.06em;}
  && .numeric-value input{font-family:${p=>p.theme.fonts.body};}
  &&[data-compact] .settings-head::before{display:none;}
- && button{background-image:none;letter-spacing:.025em;}
+ && button:not(:where(.preview-wallpaper *)){background-image:none;letter-spacing:.025em;}
  && .quick-looks button,&& .option-cards button{position:relative;border-color:${p=>p.theme.colors.primary}55;background:${p=>p.theme.colors.background}66;}
  && .quick-looks button::after,&& .option-cards button::after{content:'';position:absolute;inset:4px;border:1px solid ${p=>p.theme.colors.primary}22;pointer-events:none;}
  && .quick-looks button:hover:not(:disabled):not([aria-pressed=true]),&& .option-cards button:hover:not(:disabled){border-color:${p=>p.theme.colors.primary};background:${p=>p.theme.colors.primary}0D;}

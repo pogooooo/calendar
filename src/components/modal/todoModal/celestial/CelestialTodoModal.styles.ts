@@ -1,4 +1,6 @@
-import styled from "styled-components";
+import { celestialOnly } from "@/styles/celestial/ornaments";
+import { paperButton, switchControl } from "@/styles/celestial/controls";
+import styled, { css } from "styled-components";
 import { MOBILE } from "@/styles/breakpoints";
 
 export const FormWrapper = styled.form`
@@ -82,6 +84,10 @@ export const Header = styled.div`
             background-color: ${(props) => props.theme.colors.error}1A;
         }
     }
+    ${celestialOnly(css`
+        && .title-input { padding-inline: 9px; min-height: 38px; }
+        && .close-btn { ${paperButton} }
+    `)}
 `;
 
 export const ScrollBody = styled.div`
@@ -429,6 +435,7 @@ export const ToggleSwitch = styled.label`
 
     input:checked + .slider { background-color: ${(props) => props.theme.colors.primary}; }
     input:checked + .slider::before { transform: translateX(38px); }
+    ${switchControl}
 `;
 
 export const Footer = styled.div`

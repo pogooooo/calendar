@@ -2,7 +2,7 @@
  * 기념일 화면의 Celestial 모양 — 별자리 워터마크, 마름모 귀퉁이의 카드, 금빛 D-day.
  */
 import styled, { css, keyframes } from "styled-components";
-import { MOBILE } from "@/styles/breakpoints";
+import { MOBILE, TOUCH } from "@/styles/breakpoints";
 import { celestialOnly, cornerStars, star4Mark } from "@/styles/celestial/ornaments";
 
 export const todayGlow = keyframes`
@@ -103,6 +103,26 @@ export const AddForm = styled.form`
     border: 1px solid ${p => p.theme.colors.primary}55;
 `;
 
+export const EditForm = styled.form`
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 20px;
+    overflow-y: auto;
+
+    h2 { margin: 0; font-size: 1.15rem; color: ${p => p.theme.colors.text}; }
+    [role="alert"] { margin: 0; color: ${p => p.theme.colors.error}; font-size: 0.85rem; }
+
+    /* The date dropdowns can extend past the input row in short windows. */
+    overscroll-behavior: contain;
+`;
+
+export const EditActions = styled.div`
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+`;
+
 export const FormCaption = styled.span`
     position: absolute;
     top: -9px;
@@ -160,15 +180,11 @@ export const FormRow = styled.div`
     gap: 8px;
     flex-wrap: wrap;
 
-    /* 폰에서 그냥 흘려 두면 [이름][월] / [일][추가] 로 섞여 접힌다.
-       월과 일은 한 쌍이므로 이름 → 월·일 → 추가 순으로 못 박는다. */
+    /* 이름, 반복 날짜, 추가 버튼을 작은 화면에서는 한 줄씩 배치한다. */
     ${MOBILE} {
         display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 8px;
-
-        > input { grid-column: 1 / -1; }
-        > button { grid-column: 1 / -1; justify-content: center; }
+        grid-template-columns: minmax(0, 1fr);
+        > button { justify-content: center; }
     }
 `;
 
@@ -190,15 +206,14 @@ export const TitleInput = styled.input`
     flex: 1;
     min-width: 180px;
 
-    /* 옆의 고르개(46px)와 키를 맞춘다 */
+    /* 옆의 날짜 입력과 같은 높이로 맞춘다. */
     ${MOBILE} { min-width: 0; min-height: 46px; }
 `;
 
 export const DateField = styled.div`
-    width: 104px;
-    flex-shrink: 0;
-
-    ${MOBILE} { width: auto; }
+    &&[data-anniversary-date] { display:flex; width:auto; min-width:min(100%, 11.5rem); flex:1 1 12rem; grid-column:1 / -1; }
+    &&[data-anniversary-date] > button { width:100%; min-height:44px; background:${p=>p.theme.colors.background}; color:${p=>p.theme.colors.text}; }
+    &&[data-anniversary-date] > button span {white-space:normal; overflow-wrap:anywhere;}
 `;
 
 export const AddButton = styled.button`
@@ -276,10 +291,10 @@ export const Card = styled.div<{ $today: boolean }>`
     &:hover button { opacity: 1; }
 `;
 
-export const CardDelete = styled.button`
+export const CardAction = styled.button<{ $edit?: boolean }>`
     position: absolute;
     top: 8px;
-    right: 8px;
+    ${p => p.$edit ? "left" : "right"}: 8px;
     z-index: 1;
     display: flex;
     align-items: center;
@@ -290,10 +305,12 @@ export const CardDelete = styled.button`
     border: none;
     color: ${p => p.theme.colors.textSecondary};
     cursor: pointer;
-    opacity: 0;
+    opacity: ${p => p.$edit ? 1 : 0};
     transition: opacity 0.2s, color 0.2s;
 
-    &:hover { color: #e05b5b; }
+    &:hover { color: ${p => p.$edit ? p.theme.colors.primary : p.theme.colors.error}; }
+    &:focus-visible { opacity: 1; outline: 2px solid ${p => p.theme.colors.primary}; }
+    ${TOUCH} { opacity: 1; width: 36px; height: 36px; }
 `;
 
 export const CardNumeral = styled.span`
@@ -310,7 +327,7 @@ export const CardEmblem = styled.span<{ $today: boolean }>`
     height: 64px;
     margin: 2px 0;
 
-    svg {
+    > svg {
         width: 100%;
         height: 100%;
 

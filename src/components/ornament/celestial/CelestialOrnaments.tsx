@@ -36,10 +36,10 @@ export const star8Path = (cx: number, cy: number, r: number) => {
 };
 
 export const Star4 = ({ cx, cy, r, className }: { cx: number; cy: number; r: number; className?: string }) =>
-    <path className={className ?? "fill"} d={star4Path(cx, cy, r)} />;
+    <path data-sky-star="" className={className ?? "fill"} d={star4Path(cx, cy, r)} />;
 
 export const Star8 = ({ cx, cy, r, className }: { cx: number; cy: number; r: number; className?: string }) =>
-    <path className={className ?? "fill"} d={star8Path(cx, cy, r)} />;
+    <path data-sky-star="" className={className ?? "fill"} d={star8Path(cx, cy, r)} />;
 
 /* ── 달 ─────────────────────────────────────────────────────────────── */
 
@@ -62,7 +62,7 @@ export const litPath = (cx: number, cy: number, r: number, phase: number) => {
 
 /** 테두리 동그라미 + 그 위상만큼 찬 달 */
 export const MoonDisc = ({ cx, cy, r, phase, ring = true }: { cx: number; cy: number; r: number; phase: number; ring?: boolean }) => (
-    <g>
+    <g data-moon-phase="" style={{ "--phase-delay": `-${(1 - phase) * 6}s` } as React.CSSProperties}>
         {ring && <circle className="line" cx={f(cx)} cy={f(cy)} r={r} />}
         {Math.abs(phase - 0.5) < 0.005
             ? <circle className="fill" cx={f(cx)} cy={f(cy)} r={r} />
@@ -85,7 +85,7 @@ export const crescentPath = (cx: number, cy: number, r: number) => {
 
 export const SunMoon = ({ cx, cy, r, rays = 32 }: { cx: number; cy: number; r: number; rays?: number }) => (
     <g>
-        <circle className="line dash" cx={cx} cy={cy} r={r} />
+        <circle className="line dash" data-sun-rim="" cx={cx} cy={cy} r={r} />
         {Array.from({ length: rays }, (_, i) => {
             const a = (i / rays) * Math.PI * 2;
             const r1 = r * 0.42, r2 = i % 2 ? r * 0.78 : r * 0.88;

@@ -245,6 +245,11 @@ const ko: Translations = {
         prevMonth: '이전 달',
         nextMonth: '다음 달',
         expandDay: '일간 캘린더 펼치기',
+        resizeCalendars: "월간·일간 크기 조절 (끌기 또는 방향키, 두 번 누르면 초기화)",
+        focusSection: "크게 보기",
+        resizePanel: section => section + " 높이 조절",
+        resizeHelp: "끌거나 위아래 방향키로 조절 · Home 또는 두 번 클릭으로 기본 높이",
+        allSections: "전체 보기",
         collapseDay: '일간 캘린더 접기',
         dayLabelShort: (m: number, d: number) => `${m}월 ${d}일`,
         monthTitle: (y: number, m: number) => `${y}년 ${m}월`,
@@ -266,6 +271,7 @@ const ko: Translations = {
         memberManagement: '회원 관리',
         logout: '로그아웃',
         userSuffix: '님',
+        effectSound: '사이드바 효과음',
         more: '더보기',
     },
     auth: {
@@ -498,6 +504,7 @@ const ko: Translations = {
     },
     home: {
         quickDetail: '자세히 (시간·카테고리·반복)',
+        quickDetailLabel: '자세히',
         project: '프로젝트',
         challenge: '챌린지',
         tasks: '할 일',
@@ -658,6 +665,8 @@ const ko: Translations = {
     anniversaryPage: {
         title: '기념일',
         formCaption: '새로운 날을 새기다',
+        editTitle: '기념일 수정',
+        nameLabel: '기념일 이름',
         namePlaceholder: '기념일 이름 (예: 결혼기념일)',
         monthOption: (n: number) => `${n}월`,
         dayOption: (n: number) => `${n}일`,

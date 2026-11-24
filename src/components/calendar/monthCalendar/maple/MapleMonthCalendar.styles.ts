@@ -304,9 +304,7 @@ export const DayCell = styled(C.DayCell)`
 
 /** 칸 위의 + — 날짜가 오른쪽에 있으니 왼쪽 위에, 옅은 둥근 네모로 */
 export const AddTodoButton = styled(C.AddTodoButton)`
-    top: 6px;
-    left: 6px;
-    right: auto;
+    order: -1;
     width: 22px;
     height: 22px;
     border: none;
@@ -429,14 +427,11 @@ export const MoreButton = styled(C.MoreButton)`
     }
 `;
 
-/** 낮은 위젯 창의 개수 표 — 날짜가 오른쪽 위에 있으니 왼쪽 위에. + 단추가 뜰 때(칸에 마우스)는 비켜 준다 */
+/** 작은 위젯의 일정 수는 날짜와 추가 버튼 아래에 놓는다. */
 export const CompactTaskCount = styled(C.CompactTaskCount)`
     @media (max-height: 420px) {
         [data-widget] & {
-            /* 날짜 줄(위 4px + 24px)의 가운데에 */
-            top: 9px;
-            left: 4px;
-            right: auto;
+            align-self: flex-start;
             border: none;
             border-radius: 6px;
             background-color: ${(p) => hair(p.theme, 0.08)};
@@ -444,7 +439,7 @@ export const CompactTaskCount = styled(C.CompactTaskCount)`
             transition: opacity 0.15s ease;
         }
 
-        [data-widget] ${DayCell}:hover & { opacity: 0; }
+
     }
 `;
 

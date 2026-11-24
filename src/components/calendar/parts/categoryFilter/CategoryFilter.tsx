@@ -1,6 +1,6 @@
 "use client";
 
-import * as GemS from "./gem/CategoryFilter.styles";
+import { CornerStars, MenuCrown } from "@/components/ornament/celestial/ControlOrnaments";
 import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Settings2 } from "lucide-react";
@@ -12,9 +12,10 @@ import useThemeMotion from '@/hooks/useThemeMotion';
 import * as CelestialS from "./celestial/CategoryFilter.styles";
 import * as MapleS from "./maple/CategoryFilter.styles";
 import * as OceanS from './ocean/CategoryFilter.styles';
+import * as GemS from './gem/GemCategoryFilter.styles';
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS, gem: GemS };
 
 interface CategoryFilterProps {
     categories: CategoryType[];
@@ -84,6 +85,7 @@ export default function CategoryFilter({
                             exit={{ opacity: 0, y: motionLevel==='full'?(openUp ? 8 : -8):0 }}
                             transition={{ duration: motionLevel==='off'?0:0.16, ease: "easeOut" }}
                         >
+                            {S === CelestialS && <><CornerStars four /><MenuCrown /></>}
                             <div className="popover-content">
                                 {hasExtras && <S.PopoverLabel>{t.popup.display}</S.PopoverLabel>}
 

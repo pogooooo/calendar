@@ -3,7 +3,7 @@ import { useContext, useSyncExternalStore } from 'react';
 import {WidgetMotionContext} from '@/components/widget/WidgetMotionContext';
 import {resolveWidgetEffect} from '@/lib/widgetAppearance';
 import useSettingStore from '@/store/useSettingStore';
-import useMobilePresentation from './useMobilePresentation';
+import { useSimpleMobileAppearance } from './useMobilePresentation';
 import { resolveThemeMotion } from '@/lib/presentationMotion';
 
 const QUERY = '(prefers-reduced-motion: reduce)';
@@ -36,7 +36,7 @@ export function useMotionHeldByOs() {
 export default function useThemeMotion() {
     const motion = useSettingStore(s=>s.motion);
     const held = useMotionHeldByOs();
-    const mobile = useMobilePresentation();
+    const mobile = useSimpleMobileAppearance();
     const widget = useContext(WidgetMotionContext);
     // Mobile keeps brief state feedback; ambient motion is independently suppressed.
     return resolveWidgetEffect(resolveThemeMotion(motion,mobile,held,false),widget);

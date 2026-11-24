@@ -1,11 +1,10 @@
 "use client";
 
-import styled from "styled-components";
+import WidgetContent from "@/components/widget/WidgetContent";
 import WidgetShell from "@/components/widget/WidgetShell";
 import WidgetAuthNotice from "@/components/widget/WidgetAuthNotice";
 import { useWidgetTitle } from "@/hooks/useWidgetMeta";
 import { useWidgetInit } from "@/hooks/useWidgetInit";
-import { QuickTaskPanel } from "@/components/widget/WidgetPanels";
 
 export default function QuickTaskWidget() {
     const title = useWidgetTitle("quicktask");
@@ -16,14 +15,7 @@ export default function QuickTaskWidget() {
 
     return (
         <WidgetShell kind="quicktask" title={title}>
-            <Wrap>
-                <QuickTaskPanel />
-            </Wrap>
+            <WidgetContent kind="quicktask" />
         </WidgetShell>
     );
 }
-
-
-const Wrap = styled.div`
-    height: 100%;
-`;

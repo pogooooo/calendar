@@ -1,3 +1,4 @@
+import { field, menuFrame, optionRow } from "@/styles/celestial/controls";
 import styled, { css, keyframes } from "styled-components";
 import { MOBILE } from "@/styles/breakpoints";
 import { celestialOnly } from "@/styles/celestial/ornaments";
@@ -37,6 +38,7 @@ export const Trigger = styled.button<{ $size: "sm" | "md" }>`
         outline-offset: 2px;
     }
     &:disabled { opacity: 0.5; cursor: default; }
+    ${field}
 `;
 
 export const Value = styled.span<{ $placeholder?: boolean }>`
@@ -54,6 +56,11 @@ export const Chev = styled.span<{ $open: boolean }>`
     font-size: 0.66rem;
     transition: transform 0.18s;
     ${p => p.$open && css`transform: rotate(180deg);`}
+    ${celestialOnly(css<{ $open: boolean }>`
+        display: grid; place-items: center; padding-left: 8px; border-left: 1px solid var(--ce-line);
+        color: var(--ce-brass); transform: none; transition: none;
+        svg { transform: rotate(${p => p.$open ? 180 : 0}deg); }
+    `)}
 `;
 
 /** 다른 화면과 같은 배경색을 쓴다 — 별도 종이색을 두지 않는다 */
@@ -67,9 +74,18 @@ export const Menu = styled.div`
     box-shadow: 0 10px 26px -12px rgba(0, 0, 0, 0.34);
     padding: 4px 0;
     animation: ${drop} 0.16s ease-out both;
-    scrollbar-width: thin;
+    @supports not selector(::-webkit-scrollbar) {
+        scrollbar-width: thin;
+    }
 
     :where(html[data-theme-motion="off"]) & { animation: none; }
+    ${menuFrame}
+    ${celestialOnly(css`
+        max-height: min(260px, calc(100dvh - 16px));
+        overflow: hidden;
+        display: flex; flex-direction: column;
+        .ce-list { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+    `)}
 `;
 
 export const Item = styled.button<{ $on: boolean }>`
@@ -93,6 +109,13 @@ export const Item = styled.button<{ $on: boolean }>`
         outline: 2px solid ${p => p.theme.colors.primary};
         outline-offset: -2px;
     }
+    ${optionRow}
+    ${celestialOnly(css`
+        min-height: 36px;
+        @media (pointer: coarse) { min-height: 44px; }
+        .ce-choice { flex: none; width: 13px; height: 13px; border: 1px solid currentColor; border-radius: 50%; display: grid; place-items: center; }
+        &[aria-selected="true"] .ce-choice::after { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+    `)}
 `;
 
 export const Diamond = styled.span<{ $on: boolean }>`

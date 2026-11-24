@@ -1,80 +1,106 @@
-/** Gem finishes over the shared, behavior-compatible component structure. */
-import styled from 'styled-components';
-import * as Base from '../celestial/CelestialCategory.styles';
-import { gemHeading, gemPanel, gemFocus } from '@/styles/gem/material';
-export * from '../celestial/CelestialCategory.styles';
+import styled, { css } from "styled-components";
+import * as C from "../celestial/CelestialCategory.styles";
+import { gemstoneAction, gemstoneHeading, gemstonePanel, gemstonePill, gemstoneSlab } from "@/features/gem/GemWorkspace.styles";
+import { MOBILE } from "@/styles/breakpoints";
+import { gemField } from "@/features/gem/GemLive.styles";
 
-export const SLENDER_STAR_48 = 'M17 6H31L39 16V32L31 42H17L9 32V16Z M17 6L20 17H28L31 6 M9 16L20 17L16 25L9 32 M39 16L28 17L32 25L39 32 M17 42L20 31H28L31 42 M20 17L16 25L20 31H28L32 25L28 17';
+export * from "../celestial/CelestialCategory.styles";
 
-export const CategoryWrapper = styled(Base.CategoryWrapper)`background: transparent;`;
-export const Zodiac = styled(Base.Zodiac)`display: none;`;
-
-export const Corners = styled(Base.Corners)`
-    i { width: 9px; height: 9px; border: 0; background: transparent; transform: none; color: ${({ theme }) => theme.colors.accent}; }
-    i:nth-child(1) { top: 3px; left: 3px; border-top: 1px solid; border-left: 1px solid; }
-    i:nth-child(2) { top: 3px; right: 3px; border-top: 1px solid; border-right: 1px solid; }
-    i:nth-child(3) { bottom: 3px; left: 3px; border-bottom: 1px solid; border-left: 1px solid; }
-    i:nth-child(4) { bottom: 3px; right: 3px; border-bottom: 1px solid; border-right: 1px solid; }
-`;
-
-export const PageHeader = styled(Base.PageHeader)`
-    ${gemHeading}
-    i { width: 10px; height: 13px; border: 0; transform: none; background: ${({ theme }) => `linear-gradient(135deg, ${theme.colors.accent}, ${theme.gemColor ?? theme.colors.primary})`}; clip-path: polygon(25% 0,75% 0,100% 28%,100% 72%,75% 100%,25% 100%,0 72%,0 28%); }
-    span { letter-spacing: .035em; }
-`;
-
-export const DeckCard = styled(Base.DeckCard)`
-    ${gemPanel}
-    ${gemFocus}
-    border-color: ${({ theme, $isSelected }) => $isSelected ? theme.colors.primary : `${theme.colors.accent}42`};
-    background: ${({ theme, $isSelected }) => $isSelected ? `linear-gradient(110deg, ${theme.colors.primary}15, ${theme.colors.surface})` : `${theme.colors.surface}B0`};
-    box-shadow: ${({ theme, $isSelected }) => $isSelected ? `inset 3px 0 0 ${theme.colors.primary}, inset 0 1px 0 ${theme.colors.accent}20` : 'none'};
-    transform: none;
-    &::before { display: none; }
-    &:hover { transform: translateY(-1px); border-color: ${({ theme }) => theme.colors.primary}; }
-    .chip { width: 10px; height: 13px; clip-path: polygon(25% 0,75% 0,100% 28%,100% 72%,75% 100%,25% 100%,0 72%,0 28%); background-image: linear-gradient(135deg, #FFFFFF65, transparent 45%, #00000020); }
-    .nm { font-family: ${({ theme }) => theme.fonts.body}; font-weight: ${({ $isSelected }) => $isSelected ? 600 : 400}; }
-    .mark { font-size: 0; }
-    .mark::after { content: ''; display: block; width: 6px; height: 9px; background: ${({ theme }) => theme.colors.primary}; clip-path: polygon(25% 0,75% 0,100% 28%,100% 72%,75% 100%,25% 100%,0 72%,0 28%); }
-    html[data-theme-motion='off'] & { animation: none; transition: none; transform: none; }
-`;
-
-export const DeckAddCard = styled(Base.DeckAddCard)`
-    ${gemFocus}
-    border-style: dashed;
-    border-color: ${({ theme }) => theme.colors.border};
-    border-radius: 3px 12px 3px 12px;
+export const CategoryWrapper = styled(C.CategoryWrapper).attrs(({ className }) => ({ className, "data-theme-layout": "gem-category" }))`
     background: transparent;
-    &:hover { box-shadow: none; background: ${({ theme }) => theme.colors.primary}08; }
+    ${MOBILE} { height: auto; min-height: 100%; }
 `;
-
-export const Plate = styled(Base.Plate)`
-    ${gemPanel}
+export const CenterWrapper = styled(C.CenterWrapper)`
+    ${MOBILE} { height: auto; }
 `;
-
-export const TodoCard = styled(Base.TodoCard)`
-    ${gemPanel}
-    &::before { display: none; }
-    .check-btn { border-radius: 2px 5px 2px 5px; box-shadow: none; }
-    &:focus-within .delete-btn { opacity: 1; }
-    @media (hover: none) { .delete-btn { opacity: 1; } }
+export const ContentContainer = styled(C.ContentContainer)`
+    ${MOBILE} { flex: none; overflow: visible; }
 `;
-
-export const ModalContent = styled(Base.ModalContent)`
-    ${gemPanel}
+export const CategoryList = styled(C.CategoryList)`
+    ${MOBILE} {
+        > * { min-width: clamp(86px, 29vw, 124px); }
+        > :last-child { min-width: 44px; }
+    }
 `;
-
-export const EmblemWrap = styled(Base.EmblemWrap)`
-    svg .ring { display: none; }
-    svg .star { fill: ${({ $color }) => $color}12; stroke-width: 1; }
-    &:focus-within { outline: 2px solid ${({ theme }) => theme.colors.primary}; outline-offset: 4px; border-radius: 5px; }
+export const Zodiac = styled(C.Zodiac)`display: none;`;
+export const Corners = styled(C.Corners)`display: none;`;
+export const PageHeader = styled(C.PageHeader)`
+    ${gemstonePanel}
+    ${gemstoneHeading}
+    padding: 12px clamp(12px, 2vw, 22px);
+    span { font-size: clamp(1.15rem, 2vw, 1.65rem); font-weight: 700; letter-spacing: -.02em; }
+    i { transform: none; border: 0; border-radius: 50%; background: var(--gem-gold-edge); }
+    hr { background: var(--gem-gold-edge); }
 `;
-
-export const DetailHeader = styled(Base.DetailHeader)`
-    button { font-family: ${({ theme }) => theme.fonts.body}; letter-spacing: 0; text-shadow: none !important; }
+export const DeckCard = styled(C.DeckCard).attrs(p => ({ "aria-pressed": p.$isSelected }))`
+    ${gemstonePill}
+    min-height: 44px;
+    animation: none;
+    &::before { content: none; }
+    &, &:hover { transform: none; }
+    .num, .mark { display: none; }
+    .chip { clip-path: none; border-radius: 50%; }
+    .nm { font-weight: 700; }
+    ${p => p.$isSelected && css`
+        ${gemstoneSlab}
+        .nm { color: var(--gem-slab-ink); }
+    `}
 `;
-
-export const EmptyStateContainer = styled(Base.EmptyStateContainer)`
-    svg .ring { display: none; }
-    svg .star { fill: ${({ theme }) => theme.gemColor ?? theme.colors.primary}12; }
+export const DeckAddCard = styled(C.DeckAddCard)`
+    ${gemstoneAction}
+    min-height: 44px;
 `;
+export const Plate = styled(C.Plate)`
+    ${gemstonePanel}
+    ${gemstoneHeading}
+    margin-block-end: 12px;
+`;
+export const EmblemWrap = styled(C.EmblemWrap)`
+    border: 1px solid transparent;
+    border-radius: 50%;
+    background: linear-gradient(${p => p.$color}, ${p => p.$color}) padding-box, var(--gem-gold-edge) border-box;
+    animation: none;
+    width: 44px;
+    height: 44px;
+    svg { opacity: 0; }
+    &:focus-within { outline: 2px solid var(--gem-gold); outline-offset: 2px; }
+`;
+export const PlateText = styled(C.PlateText)`
+    .numeral { display: none; }
+    .title-input { border-radius: var(--gem-radius); }
+`;
+export const DetailHeader = styled(C.DetailHeader)`
+    gap: 8px;
+    button { ${gemstonePill} min-height: 44px; padding: 8px 14px; letter-spacing: 0; }
+    button::after { content: none; }
+    ${p => css`
+        button.${p.$activeTab === "info" ? "info-tab" : "todo-tab"} {
+            ${gemstoneSlab}
+            text-shadow: none;
+            font-weight: 700;
+            &:hover:not(:disabled) { color: var(--gem-slab-ink); }
+        }
+    `}
+`;
+export const DescBlock = styled(C.DescBlock)`
+    textarea { ${gemField} border-radius: 10px; }
+`;
+export const TodoCard = styled(C.TodoCard)`
+    ${gemstonePanel}
+    background: var(--gem-record);
+    border-radius: 10px;
+    &::before { content: none; }
+    .check-btn, .delete-btn { ${gemstonePill} }
+    .check-btn[aria-pressed="true"] { ${gemstoneSlab} }
+    .delete-btn:focus-visible { opacity: 1; }
+    .todo-info .title { white-space: normal; overflow-wrap: anywhere; }
+    ${MOBILE} {
+        padding: 8px;
+        .check-btn, .delete-btn { width: 44px; height: 44px; }
+        .delete-btn { opacity: 1; }
+    }
+`;
+export const TodoGrid = styled(C.TodoGrid)`
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
+`;
+export const EmptyBox = styled(C.EmptyBox)`${gemstonePanel}`;

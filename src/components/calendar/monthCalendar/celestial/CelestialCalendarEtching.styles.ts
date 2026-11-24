@@ -1,13 +1,32 @@
-import styled from 'styled-components';
+import styled, { css, keyframes } from 'styled-components';
 
+const twinkle = keyframes`
+    0%, 67%, 100% { opacity: .62; }
+    82% { opacity: 1; filter: drop-shadow(0 0 1px currentColor); }
+`;
+const progress = keyframes`to { stroke-dashoffset: -24; }`;
+const ink = css`
+    pointer-events: none;
+    color: ${p => p.theme.mode === 'dark' ? p.theme.colors.accent : '#836929'};
+    .hair, .line { fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: .85; }
+    .dash { stroke-dasharray: 1 5; }
+    .fill { fill: currentColor; stroke: none; }
+    html[data-theme-motion="full"]:not([data-page-hidden]) & [data-sky-star] { animation: ${twinkle} 8s ease-in-out infinite; }
+    html[data-theme-motion="full"] & [data-sky-star]:nth-child(2n) { animation-delay: -3s; }
+    [data-widget] & { display: none; }
+`;
 export const Etching = styled.div`
-    position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:0;
-    color:${p => p.theme.colors.primary};
-    .solar-seal { position:absolute; display:block; flex:none; aspect-ratio:1; width:min(54%,400px); height:auto; right:-6%; bottom:-16%; opacity:${p => p.theme.mode==='dark' ? .17 : .2}; }
-    svg { fill:none; stroke:currentColor; stroke-linecap:round; stroke-linejoin:round; }
-    .line { stroke-width:1.1; } .hair { stroke-width:.75; } .dash { stroke-dasharray:1 5; } .fill { fill:currentColor; stroke:none; }
-    .plate-index { position:absolute; bottom:10px; left:12px; display:flex; gap:9px; align-items:center; font-family:${p => p.theme.fonts.display}; font-size:.56rem; letter-spacing:.16em; color:${p => p.theme.colors.textSecondary}; opacity:.7; }
-    .plate-index span:last-child { border-left:1px solid currentColor; padding-left:9px; }
-    @media(max-width:768px) { .solar-seal { width:100%; right:-20%; bottom:-7%; opacity:.3; } .plate-index { display:none; } }
-    [data-widget] & { display:none; }
+    ${ink}
+    position: absolute; inset: 0; overflow: hidden; z-index: 0;
+    .solar-seal { position: absolute; display: block; width: min(54%,400px); height: auto; right: -6%; bottom: -16%; opacity: ${p => p.theme.mode === "dark" ? .17 : .16}; }
+    html[data-theme-motion="full"]:not([data-page-hidden]) & [data-sun-rim] { animation: ${progress} 10s linear infinite; }
+    @container month-pane (max-width: 25rem) { .solar-seal { width: 75%; opacity:.10; } }
+`;
+export const Index = styled.div`
+    ${ink}
+    display: flex; flex: none; align-items: center; gap: 8px; height: 18px; padding: 0 9px;
+    overflow: hidden; font: 500 .51rem/1 ${p => p.theme.fonts.display}; letter-spacing: .16em;
+    opacity: .64;
+    b { border-left: 1px solid currentColor; padding-left: 8px; }
+    @media (max-height: 520px) { display: none; }
 `;

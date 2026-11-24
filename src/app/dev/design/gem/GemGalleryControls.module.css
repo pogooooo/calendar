@@ -1,0 +1,209 @@
+.controls {
+    --warm-stone: linear-gradient(113deg, #edd6e327, #e6c6dc0c 57%, #9f779f3f),
+        var(--refraction-map) 42% center / auto 100% no-repeat;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+    gap: 12px;
+}
+
+.specimen {
+    min-width: 0;
+    padding: 12px 14px 11px;
+    border: 1px solid #a5819e64;
+    background: #f8f0f4b5;
+}
+
+.specimen h3 {
+    margin: 0;
+    color: var(--stone-ink);
+    font: 700 .87rem/1.4 var(--display);
+}
+
+.specimen p {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 4px 10px;
+    margin: 0;
+    color: var(--quiet-ink);
+    font-size: .78rem;
+}
+
+.specimen p span {
+    color: var(--stone-ink);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.stage {
+    display: grid;
+    min-height: 70px;
+    margin-block: 8px;
+    place-items: center;
+    border-block: 1px solid #b397a75e;
+    background: linear-gradient(112deg, #efdeebbe, #d8b9daa8),
+        var(--quiet-facet-map) 54% center / cover no-repeat, #e7d2e6;
+}
+
+.lever {
+    display: grid;
+    width: 120px;
+    min-height: 44px;
+    padding: 0;
+    place-items: center;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    cursor: pointer;
+}
+
+.leverRail {
+    --knob-size: 30px;
+    position: relative;
+    width: 112px;
+    height: 36px;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background: linear-gradient(105deg, #d4b5d02e, #f4e2ee24) padding-box,
+        var(--quartz-map) 62% center / cover no-repeat padding-box,
+        var(--gold-foil) border-box;
+    box-shadow: inset 0 0 0 1px #f8ecdf9c, inset 0 -2px #72516c32;
+}
+
+.lever[aria-checked="true"] .leverRail {
+    background: linear-gradient(105deg, #43264e4d, #33193c91) padding-box,
+        var(--mineral-map) 54% 33% / cover no-repeat padding-box,
+        var(--gold-foil) border-box;
+    box-shadow: inset 0 0 0 1px #edd2a94d, inset 0 -2px #22102d80;
+}
+
+.leverKnob {
+    position: absolute;
+    inset-block-start: 2px;
+    inset-inline-start: 2px;
+    width: var(--knob-size);
+    height: var(--knob-size);
+    border: 1px solid #88654a;
+    border-radius: 50%;
+    background: var(--warm-stone);
+    box-shadow: inset 0 0 0 1px #fff0dc99, inset 0 -2px #744c704d;
+    transition: inset-inline-start .18s var(--ease);
+}
+
+.lever[aria-checked="true"] .leverKnob { inset-inline-start: calc(100% - var(--knob-size) - 2px); }
+
+.range {
+    --thumb-size: 28px;
+    --track-height: 10px;
+    appearance: none;
+    width: min(82%, 230px);
+    height: 44px;
+    margin: 0;
+    padding: 0;
+    border-radius: 999px;
+    background: transparent;
+    cursor: pointer;
+    --rail: linear-gradient(90deg, #4a2656ba var(--meter), #ead7e453 var(--meter)) padding-box,
+        var(--pearl-map) center 68% / cover no-repeat padding-box, var(--gold-foil) border-box;
+}
+
+.range::-webkit-slider-runnable-track {
+    box-sizing: border-box;
+    height: var(--track-height);
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background: var(--rail);
+}
+
+.range::-moz-range-track {
+    box-sizing: border-box;
+    height: var(--track-height);
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background: var(--rail);
+}
+
+.range::-webkit-slider-thumb {
+    appearance: none;
+    box-sizing: border-box;
+    width: var(--thumb-size);
+    height: var(--thumb-size);
+    margin-top: calc((var(--track-height) - 2px - var(--thumb-size)) / 2);
+    border: 1px solid #87614a;
+    border-radius: 50%;
+    background: var(--warm-stone);
+    box-shadow: inset 0 0 0 1px #fff0dc99, inset 0 -2px #744c704d;
+}
+
+.range::-moz-range-thumb {
+    box-sizing: border-box;
+    width: var(--thumb-size);
+    height: var(--thumb-size);
+    border: 1px solid #87614a;
+    border-radius: 50%;
+    background: var(--warm-stone);
+    box-shadow: inset 0 0 0 1px #fff0dc99, inset 0 -2px #744c704d;
+}
+
+.check {
+    position: relative;
+    display: grid;
+    width: 44px;
+    height: 44px;
+    place-items: center;
+    cursor: pointer;
+}
+
+.check input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.checkStone {
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    place-items: center;
+    color: #fff8ed;
+}
+
+.checkStone::before {
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    border: 1px solid #957050;
+    border-radius: inherit;
+    background: var(--warm-stone);
+    box-shadow: inset 0 0 0 1px #fff0dc99, inset 0 -2px #744c704d;
+    content: "";
+}
+
+.checkStone svg { visibility: hidden; }
+
+.check input:checked + .checkStone::before {
+    background: linear-gradient(180deg, #3f214a21, #431e5a8c 44%, #321443d9 68%, #3b204fcc),
+        linear-gradient(90deg, #32144399, #64417d3d 70%, #6c418c2e),
+        var(--refraction-map) 30% center / auto 100% no-repeat;
+    box-shadow: inset 0 0 0 1px #e5bc9d80, inset 0 -2px #26133173;
+}
+
+.check input:checked + .checkStone svg { visibility: visible; }
+
+.check input:focus-visible + .checkStone {
+    outline: 2px solid var(--stone-ink);
+    outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .leverKnob { transition: none; }
+}
+
+:global(html[data-theme-motion="off"]) .leverKnob { transition: none; }

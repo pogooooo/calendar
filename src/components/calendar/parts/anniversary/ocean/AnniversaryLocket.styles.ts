@@ -26,9 +26,10 @@ export const Root = styled(C.Root)`
 
     .art { display: none; }
     .ic {
-        top: 4px;
-        left: 4px;
-        margin: 0;
+        inset: 0;
+        margin: auto;
+        display: grid;
+        place-items: center;
         animation: none !important;
         filter: none !important;
     }

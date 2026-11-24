@@ -139,7 +139,10 @@ class WidgetEditActivity : Activity() {
     private fun button(value: String, action: () -> Unit): TextView = Button(this).apply {
         text = value; textSize = 15f; setTextColor(palette.ink); isAllCaps = false
         gravity = Gravity.CENTER; minHeight = dp(48); setPadding(dp(10), dp(8), dp(10), dp(8))
-        background = GradientDrawable().apply { setColor(Palette.withAlpha(palette.ink, .07f)); cornerRadius = dp(9).toFloat() }
+        background = GradientDrawable().apply {
+            setColor(Palette.withAlpha(palette.ink, .07f))
+            cornerRadius = dp(if (palette.family == "gem") 24 else 9).toFloat()
+        }
         isFocusable = true; contentDescription = value
         setOnClickListener { if (!busy) action() }
     }
@@ -219,7 +222,11 @@ class WidgetEditActivity : Activity() {
             inputType = InputType.TYPE_CLASS_TEXT or (if (multiline) InputType.TYPE_TEXT_FLAG_MULTI_LINE else InputType.TYPE_TEXT_FLAG_CAP_SENTENCES)
             setSingleLine(!multiline); if (multiline) { minLines = 2; maxLines = 5 }
             id = View.generateViewId(); caption.labelFor = id
-            background = GradientDrawable().apply { setColor(Palette.withAlpha(palette.ink, .04f)); setStroke(dp(1), Palette.withAlpha(palette.ink, .2f)); cornerRadius = dp(8).toFloat() }
+            background = GradientDrawable().apply {
+                setColor(Palette.withAlpha(palette.ink, .04f))
+                setStroke(dp(1), Palette.withAlpha(palette.ink, .2f))
+                cornerRadius = dp(if (palette.family == "gem" && !multiline) 24 else 8).toFloat()
+            }
         }.also { add(it) }
     }
     private fun showForm(todo: JSONObject?, selected: JSONObject?, restored: JSONObject? = null) {
@@ -290,9 +297,15 @@ class WidgetEditActivity : Activity() {
             override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
         saveButton = button("저장") { save() }.apply {
-            val fill = palette.gold or 0xFF000000.toInt()
-            setTextColor(if (androidx.core.graphics.ColorUtils.calculateContrast(Color.BLACK, fill) >= androidx.core.graphics.ColorUtils.calculateContrast(Color.WHITE, fill)) Color.BLACK else Color.WHITE)
-            backgroundTintList = android.content.res.ColorStateList.valueOf(fill)
+            if (palette.family == "gem") {
+                setTextColor(GemWidgetStyle.ACTION_INK)
+                backgroundTintList = null
+                background = GemWidgetStyle.actionSurface(this@WidgetEditActivity, palette)
+            } else {
+                val fill = palette.gold or 0xFF000000.toInt()
+                setTextColor(if (androidx.core.graphics.ColorUtils.calculateContrast(Color.BLACK, fill) >= androidx.core.graphics.ColorUtils.calculateContrast(Color.WHITE, fill)) Color.BLACK else Color.WHITE)
+                backgroundTintList = android.content.res.ColorStateList.valueOf(fill)
+            }
         }
         sheet.removeView(status); footer.addView(status)
         footer.addView(saveButton, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT)); footer.visibility = View.VISIBLE

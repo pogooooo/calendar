@@ -23,13 +23,14 @@ interface MainLayoutProps {
 }
 
 export default function MainLayout({ children, activePath }: MainLayoutProps) {
+    const preview = activePath !== undefined;
     return (
         <DialogProvider>
             <AppShell data-app-shell>
                 <MobileUsability />
                 <TitleBar />
                 <LayoutWrapper>
-                    <Sidebar />
+                    <Sidebar activePath={activePath} />
                     <MainContent data-main-content>
                         <PageTransition>
                             {children}
@@ -37,10 +38,12 @@ export default function MainLayout({ children, activePath }: MainLayoutProps) {
                     </MainContent>
                 </LayoutWrapper>
                 <MobileTabBar activePath={activePath} />
-                <UpdateNotice />
+                {!preview && <>
+                    <UpdateNotice />
+                    <InviteNotice />
+                    <AndroidWidgetSync />
+                </>}
                 <SaveFailureNotice />
-                <InviteNotice />
-                <AndroidWidgetSync />
                 <AndroidBackButton />
                 <RouteTitle />
                 <QuickNavigation />

@@ -1,12 +1,11 @@
-/** Unfinished themes remain available locally while released builds use the public catalog. */
-export const DEVELOPMENT_THEMES_ENABLED = process.env.NODE_ENV !== 'production';
+/** Preview builds can select Gem without advertising it in the public theme picker. */
+export const GEM_THEME_AVAILABLE = process.env.NODE_ENV === "development"
+    || process.env.NEXT_PUBLIC_CRONOS_GEM_PREVIEW === "1";
 
-export function isThemeAvailable(name: string): boolean {
-    return DEVELOPMENT_THEMES_ENABLED || (name !== 'gem' && !name.startsWith('gem-'));
-}
+export const isGemTheme = (name: string): boolean => name === "gem" || name.startsWith("gem-");
 
-/** Keep saved development preferences intact, including their light/dark variant. */
 export function availableThemeName(name: string): string {
-    if (isThemeAvailable(name)) return name;
-    return name === 'gem-dark' ? 'celestial-dark' : 'celestial';
+    if (!isGemTheme(name)) return name;
+    if (name === "gem-dark") return GEM_THEME_AVAILABLE ? name : "celestial-dark";
+    return GEM_THEME_AVAILABLE ? "gem" : "celestial";
 }

@@ -20,8 +20,8 @@ body {
 }
 
 /* 🌟 위젯 창 투명 배경 (수정됨) */
-html:has([data-widget]),
-html:has([data-widget]) body {
+html:has([data-widget]:not([data-widget-preview])),
+html:has([data-widget]:not([data-widget-preview])) body {
   background: transparent !important;
   background-color: transparent !important;
   /* 최상단 배경 변수만 투명하게 만들고, 내부 컴포넌트에는 영향 가지 않게! */

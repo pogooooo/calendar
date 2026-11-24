@@ -59,12 +59,6 @@ export const Head = styled(C.Head)`
     @media (max-width: 768px) and (max-height: 700px) { padding-right: 60px; }
 `;
 
-/* 손가락으로 굴리는 목록 — 카드 안에 회색 막대가 서 있으면 어수선했다 */
-export const List = styled(C.List)`
-    scrollbar-width: none;
-    &::-webkit-scrollbar { display: none; }
-`;
-
 /** 한 줄 — 단풍잎(카테고리 색), 제목, 시각 */
 export const Row = styled(C.Row)`
     gap: 12px;

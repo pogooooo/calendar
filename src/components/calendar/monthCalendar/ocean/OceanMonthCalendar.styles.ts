@@ -191,8 +191,6 @@ export const DayCell = styled(C.DayCell)`
 `;
 
 export const AddTodoButton = styled(C.AddTodoButton)`
-    top: 7px;
-    right: 7px;
     width: 20px;
     height: 20px;
     border-radius: 6px;

@@ -1,7 +1,8 @@
 "use client";
 
-import { Cake, Trash2 } from "lucide-react";
+import { Cake, Pencil, Trash2 } from "lucide-react";
 import { useT } from "@/i18n/useT";
+import { useThemeFamily } from "@/styles/themed";
 import AnniversaryIcon from "@/assets/AnniversaryIcon";
 import EmptyArt from "@/components/empty/EmptyArt";
 import type { AnniversaryLayoutProps } from "../AnniversaryLayout.types";
@@ -17,8 +18,9 @@ const RING_C = 2 * Math.PI * RING_R;
  * Celestial(과 Maple)의 기념일 배치 — 별자리 워터마크 아래 위의 새 기념일 서식, 아래 카드 격자.
  * 예전 기념일 화면의 뼈대를 그대로 옮겼다. 모양은 받은 S(갈래의 *.styles)가 입힌다.
  */
-export default function CelestialAnniversaryLayout({ S, items, onDelete, onSubmit, fields }: AnniversaryLayoutProps) {
+export default function CelestialAnniversaryLayout({ S, items, onEdit, onDelete, onSubmit, fields }: AnniversaryLayoutProps) {
     const t = useT();
+    const gem = useThemeFamily() === "gem";
 
     return (
         <S.Page>
@@ -49,15 +51,18 @@ export default function CelestialAnniversaryLayout({ S, items, onDelete, onSubmi
                     <p>{t.anniversaryPage.empty}<br />{t.anniversaryPage.emptyHint}</p>
                 </S.Empty>
             ) : (
-                <S.CardGrid>
+                <S.CardGrid data-gem-route-content={gem ? "" : undefined}>
                     {items.map(({ anniversary: a, diff, isToday }, idx) => {
                         return (
                             <S.Card key={a.id} $today={isToday} data-fx-anchor={isToday ? "anniversary-today" : undefined}>
                                 <S.Corners><i /><i /><i /><i /></S.Corners>
-                                <S.CardDelete type="button" onClick={() => onDelete(a)} aria-label={`${t.menu.delete}: ${a.title}`}>
+                                <S.CardAction $edit type="button" onClick={() => onEdit(a)} title={t.menu.edit} aria-label={`${t.menu.edit}: ${a.title}`}>
+                                    <Pencil size={14} />
+                                </S.CardAction>
+                                <S.CardAction type="button" onClick={() => onDelete(a)} aria-label={`${t.menu.delete}: ${a.title}`}>
                                     <Trash2 size={13} />
-                                </S.CardDelete>
-                                <S.CardNumeral>{ROMAN[idx] ?? String(idx + 1)}</S.CardNumeral>
+                                </S.CardAction>
+                                {!gem && <S.CardNumeral>{ROMAN[idx] ?? String(idx + 1)}</S.CardNumeral>}
                                 <S.CardEmblem $today={isToday}>
                                     <svg viewBox="0 0 64 64">
                                         {/* 안쪽 고리와 네 방위의 눈금 — Maple 은 감춘다 */}
@@ -80,7 +85,7 @@ export default function CelestialAnniversaryLayout({ S, items, onDelete, onSubmi
                                 <S.CardTitle>{a.title}</S.CardTitle>
                                 <S.CardDate>{t.anniversaryPage.everyYear(a.month, a.day)}</S.CardDate>
                                 <S.CardDday $today={isToday}>
-                                    <i />{isToday ? t.anniversaryPage.todayMark : `D-${diff}`}<i />
+                                    <i />{isToday ? gem ? t.home.today : t.anniversaryPage.todayMark : `D-${diff}`}<i />
                                 </S.CardDday>
                             </S.Card>
                         );

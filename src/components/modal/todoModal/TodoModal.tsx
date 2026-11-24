@@ -17,6 +17,8 @@ import useSettingStore from '@/store/useSettingStore';
 import { createPortal } from 'react-dom';
 import { SavedNotice } from './MobileFormDetails.styles';
 import { allDayToggleEnd } from '@/lib/todoFormRange';
+import { fx, rectOf } from "@/lib/fx";
+import { useThemeFamily } from "@/styles/themed";
 
 export interface TodoModalProps {
     isOpen: boolean;
@@ -96,6 +98,7 @@ export default function TodoModal(props: TodoModalProps) {
     const authFetch = useAuthFetch();
     const dialog = useDialog();
     const mobile = useMobilePresentation();
+    const family = useThemeFamily();
     const english = useSettingStore(s=>s.locale)==='en';
     const [submitError, setSubmitError] = React.useState('');
     const [savedNotice, setSavedNotice] = React.useState(false);
@@ -151,19 +154,26 @@ export default function TodoModal(props: TodoModalProps) {
      * 예전엔 categories·selectedDate·todo 의 "참조"가 바뀔 때마다 다시 채웠다 — 토큰 갱신·위젯 동기화·안드로이드 위젯 폴링으로
      * 카테고리를 다시 읽기만 해도 치던 제목이 지워졌다(데스크톱·앱에서 "제목 입력이 안 된다").
      */
-    const initKey = isOpen ? `${todo?.id ?? "new"}|${selectedDate ? new Date(selectedDate).getTime() : ""}` : null;
+    const initKey = isOpen ? todo?.id ?? "new" : null;
     const initDone = React.useRef<string | null>(null);
     const initialNewDates = React.useRef({start:'',end:''});
+    const originalDraft = React.useRef("");
+    const draftTouched = React.useRef(false);
+    const edit = <T,>(setter: (value: T) => void) => (value: T) => {
+        draftTouched.current = true;
+        setter(value);
+    };
     React.useEffect(() => {
         if (!initKey) { initDone.current = null; return; }
         if (initDone.current === initKey) return;
         initDone.current = initKey;
+        draftTouched.current = !todo && Boolean(initialTitle?.trim());
         setSubmitError('');
         setProjectId('');
         {
             if (todo) {
                 setTitle(todo.title);
-                setCategoryId(todo.categoryId);
+                setCategoryId(todo.categoryId || categories[0]?.id || "");
                 setMemo(todo.memo || "");
                 setIsAllDay(todo.isAllDay || false);
                 setLocation(todo.location || "");
@@ -172,6 +182,12 @@ export default function TodoModal(props: TodoModalProps) {
                 // 칸에는 고른 시간대의 시각을 — 예전엔 이 기기 시각이라 시간대가 다르면 달력·홈과 다른 날·시각이 떴다
                 setStartAt(todo.startAt ? toLocalInput(todo.startAt) : "");
                 setEndAt(todo.endAt ? toLocalInput(todo.endAt) : "");
+                originalDraft.current = JSON.stringify([
+                    todo.title, todo.memo || "", todo.location || "", todo.startAt ? toLocalInput(todo.startAt) : "",
+                    todo.endAt ? toLocalInput(todo.endAt) : "", todo.categoryId || categories[0]?.id || "",
+                    todo.repeat || 0, !!todo.isAllDay, todo.repeatCount ? "count" : todo.repeatEndDate ? "until" : "never",
+                    String(todo.repeatCount || ""), !todo.repeatCount && todo.repeatEndDate ? toLocalInput(todo.repeatEndDate).slice(0, 10) : "",
+                ]);
 
                 if (todo.repeatCount) {
                     setRepeatEndType('count');
@@ -237,7 +253,11 @@ export default function TodoModal(props: TodoModalProps) {
         setIsSaving(true);
         setSubmitError('');
         try {
-            await submit();
+            const rect = mobile ? undefined : rectOf(e.currentTarget.querySelector('button[type="submit"]'));
+            if (await submit()) {
+                if (mobile || family === "gem") setSavedNotice(true);
+                if (rect) fx.emit("saved", { rect });
+            }
         } catch {
             await reportError(t.alert.saveFailed);
         } finally {
@@ -283,13 +303,12 @@ export default function TodoModal(props: TodoModalProps) {
                 isAllDay,
             });
             if (error) {
-                await reportError(`${t.alert.saveFailed} ${error}`);
+                await reportError(error);
                 return;
             }
             props.onSaved?.();
-            if (mobile) setSavedNotice(true);
             onClose();
-            return;
+            return true;
         }
 
         const safeRepeat = Number.isFinite(repeat) && repeat > 0 ? Math.floor(repeat) : 0;
@@ -314,13 +333,13 @@ export default function TodoModal(props: TodoModalProps) {
             : await addTodo(authFetch, todoData);
 
         if (errorMessage) {
-            await reportError(`${t.alert.saveFailed} ${errorMessage}`);
+            await reportError(errorMessage);
             return;
         }
 
         props.onSaved?.();
-        if (mobile) setSavedNotice(true);
         onClose();
+        return true;
     };
 
     const handleDelete = async () => {
@@ -336,6 +355,7 @@ export default function TodoModal(props: TodoModalProps) {
     };
 
     const handleDateChange = (setter: (val: string) => void, currentValue: string, newValue: string) => {
+        draftTouched.current = true;
         const composed = isAllDay
             ? `${newValue}T${currentValue.slice(11, 16) || "00:00"}`
             : newValue;
@@ -363,34 +383,36 @@ export default function TodoModal(props: TodoModalProps) {
             if(closingAsked.current) return;
             if (submitting.current) { setSubmitError(english ? 'Saving. Please wait.' : '저장 중입니다. 잠시만 기다려 주세요.'); return; }
             const changed = todo
-                ? title!==todo.title || memo!==(todo.memo||'') || location!==(todo.location||'') || startAt!==toLocalInput(todo.startAt) || endAt!==toLocalInput(todo.endAt) || categoryId!==todo.categoryId || repeat!==(todo.repeat||0) || isAllDay!==!!todo.isAllDay || repeatCount!==(todo.repeatCount||'') || repeatEndDate!==(todo.repeatEndDate ? toLocalInput(todo.repeatEndDate).slice(0,10) : '')
+                ? originalDraft.current !== JSON.stringify([title, memo, location, startAt, endAt, categoryId, repeat, isAllDay,
+                    repeatEndType, repeatEndType === "count" ? String(repeatCount) : "", repeatEndType === "until" ? repeatEndDate : ""])
                 : !!(title.trim() || memo || location || projectId || repeat || repeatEndDate || repeatCount || isAllDay || categoryId!==(categories[0]?.id??'') || startAt!==initialNewDates.current.start || endAt!==initialNewDates.current.end);
-            if (!changed) { onClose(); return; }
+            if (!draftTouched.current || !changed) { onClose(); return; }
             closingAsked.current=true;
             void dialog.confirmDanger({title:t.interaction.discardTitle,message:t.interaction.unsaved,confirmLabel:t.interaction.discardClose,cancelLabel:t.interaction.keepWriting}).then(ok=>{if(ok) onClose();}).finally(()=>{closingAsked.current=false;});
         },
-        title, setTitle,
-        categoryId, setCategoryId,
-        memo, setMemo,
+        title, setTitle: edit(setTitle),
+        categoryId, setCategoryId: edit(setCategoryId),
+        memo, setMemo: edit(setMemo),
         startAt, setStartAt,
         endAt, setEndAt,
         isAllDay, setIsAllDay: (next) => {
+            draftTouched.current = true;
             // An untouched late-night default ends tomorrow. Choosing all-day means one calendar day.
             // Preserve explicit multi-day ranges and every existing event.
             setEndAt(allDayToggleEnd(startAt,endAt,initialNewDates.current,next,!!todo));
             setIsAllDay(next);
         },
-        location, setLocation,
-        repeat, setRepeat,
-        repeatEndType, setRepeatEndType,
-        repeatEndDate, setRepeatEndDate,
-        repeatCount, setRepeatCount,
+        location, setLocation: edit(setLocation),
+        repeat, setRepeat: edit(setRepeat),
+        repeatEndType, setRepeatEndType: edit(setRepeatEndType),
+        repeatEndDate, setRepeatEndDate: edit(setRepeatEndDate),
+        repeatCount, setRepeatCount: edit(setRepeatCount),
         isCategoryOpen, setIsCategoryOpen,
         isRepeatEndOpen, setIsRepeatEndOpen,
         selectedCategory, repeatEndOptions, selectedRepeatEndLabel,
-        projectId, setProjectId, projectOptions,
+        projectId, setProjectId: edit(setProjectId), projectOptions,
         handleDateChange, handleSubmit, handleDelete, isSaving, submitError
     };
 
-    return <><TodoModalView {...themeProps} />{mobile && savedNotice && createPortal(<SavedNotice role="status">{english ? '✓ Saved' : '✓ 저장했습니다.'}</SavedNotice>,document.body)}</>;
+    return <><TodoModalView {...themeProps} />{savedNotice && createPortal(<SavedNotice role="status">{english ? '✓ Saved' : '✓ 저장했습니다.'}</SavedNotice>,document.body)}</>;
 }

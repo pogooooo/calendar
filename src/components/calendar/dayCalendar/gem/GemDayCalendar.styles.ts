@@ -1,102 +1,192 @@
-import styled, { css } from 'styled-components';
-import * as C from '../celestial/CelestialDayCalendar.styles';
-import { mineralSurface, gemControl, facetArrival } from '../../monthCalendar/gem/GemCalendarMaterial.styles';
+import styled, { css } from "styled-components";
+import { gemCalendarToday } from "../../gemCalendarStyles";
+import { gemPanel } from "@/features/gem/GemLive.styles";
+import * as Base from "../celestial/CelestialDayCalendar.styles";
 
-export * from '../celestial/CelestialDayCalendar.styles';
+export * from "../celestial/CelestialDayCalendar.styles";
 
-const panel = css`
-    ${mineralSurface}
-    border-radius:7px; position:relative;
-    border-top-color:${p => p.theme.colors.accent}75;
-`;
-const cutMark = css`
-    transform:none; border-radius:0;
-    clip-path:polygon(25% 0,75% 0,100% 30%,80% 85%,50% 100%,20% 85%,0 30%);
+const dayStoneSurface = css`
+    background: var(--gem-day-material, var(--gem-pearl-map)) var(--gem-day-material-position, center) / cover no-repeat,
+        var(--gem-surface);
 `;
 
-export const CelestialCalendarWrapper = styled(C.CelestialCalendarWrapper)`
-    min-width:0;
+const detailPanel = css`
+    ${gemPanel}
+    --gem-frame: var(--gem-frame-silver);
+    border-radius: 10px;
+    ${dayStoneSurface}
+    html[data-presentation="mobile-app"] &&[data-calendar-panel] {
+        ${dayStoneSurface}
+    }
 `;
-export const DateHeader = styled(C.DateHeader)`
-    min-height:48px; gap:10px; margin-bottom:13px; font-size:.79rem; letter-spacing:0;
-    & > span { min-width:0; overflow:hidden; text-overflow:ellipsis; }
-    & > hr { border-top-color:${p => p.theme.colors.accent}66; }
-    @media(max-width:768px) { min-height:42px; margin-bottom:10px; & > span { font-size:.78rem; } }
+
+export const DateHeader = styled(Base.DateHeader)`
+    box-sizing: border-box;
+    justify-content: space-between;
+    gap: 7px;
+    margin: 0 0 8px;
+    padding: 7px 12px;
+    min-height: 54px;
+    flex: none;
+    border: 1px solid transparent;
+    border-radius: 12px 12px 5px 5px;
+    color: var(--gem-ink);
+    background: var(--gem-heading-map) center / cover no-repeat padding-box,
+        var(--gem-gold-edge) center / cover no-repeat border-box;
+    font: 700 clamp(.95rem, 1.3vw, 1.16rem)/1.3 ${p => p.theme.fonts.body};
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0;
+    & > span { flex: 1; min-width: 0; white-space: normal; overflow-wrap: anywhere; }
+    & > hr { display: none; }
+    [data-widget] & { min-height: 32px; padding: 3px 6px; }
 `;
-export const DateStamp = styled(C.DateStamp)`
-    display:flex; flex-direction:column; flex:none; align-items:center; justify-content:center; gap:1px;
-    width:40px; min-height:44px; padding:4px 3px; position:relative;
-    font-family:${p => p.theme.fonts.numeral}; font-size:1.55rem; line-height:1; letter-spacing:-.05em; color:${p => p.theme.colors.primary};
-    background:linear-gradient(145deg,${p => p.theme.gemColor ?? p.theme.colors.primary}18,transparent 72%);
-    border:1px solid ${p => p.theme.colors.accent}66; border-radius:9px 3px;
-    small { font-family:${p => p.theme.fonts.body}; font-size:.49rem; line-height:1.15; text-transform:uppercase; letter-spacing:.12em; color:${p => p.theme.colors.textSecondary}; }
-    [data-widget] & { display:none; }
+
+export const ContentLayout = styled(Base.ContentLayout)`
+    gap: 12px;
+    padding: 0 2px 4px 0;
+    overflow-anchor: none;
+    @supports not selector(::-webkit-scrollbar) {
+        scrollbar-width: thin;
+        scrollbar-color: var(--gem-frame-silver) transparent;
+    }
 `;
-export const ContentLayout = styled(C.ContentLayout)`
-    padding:0 1px 2px;
+
+export const TodoCard = styled(Base.TodoCard)`
+    ${detailPanel}
+    --day-card-ink: var(--gem-ink);
+    --day-card-line: color-mix(in srgb, var(--gem-frame-gold) 46%, transparent);
+    margin-bottom: 0;
+    color: var(--day-card-ink);
+    border-color: var(--gem-frame-gold);
+    max-height: none;
+    flex: 0 0 auto;
+    html[data-presentation="mobile-app"] &&[data-day-todo-card] {
+        --day-card-ink: var(--gem-ink);
+        --day-card-line: var(--gem-line);
+        ${dayStoneSurface}
+        border: 1px solid var(--gem-line);
+    }
 `;
-export const TimelineSection = styled(C.TimelineSection)`${panel}`;
-export const TaskCard = styled(C.TaskCard)`${panel}`;
-export const ChallengeCard = styled(C.ChallengeCard)`${panel}`;
-export const TodoCard = styled(C.TodoCard)`${panel}`;
-export const MemoCard = styled(C.MemoCard)`
-    ${panel}
-    textarea { line-height:1.75; background:transparent; caret-color:${p => p.theme.colors.primary}; }
-    textarea:focus { box-shadow:inset 2px 0 0 ${p => p.theme.colors.primary}55; }
+
+export const TodoCardHead = styled(Base.TodoCardHead)`
+    flex: none;
+    min-height: 40px;
+    background: var(--gem-heading);
+    border-color: var(--day-card-line);
+    color: var(--day-card-ink);
+    font: 700 .88rem/1.3 ${p => p.theme.fonts.body};
+    i { ${gemCalendarToday} transform: none; }
+    .count { color: inherit; }
 `;
-export const SectionToggle = styled(C.SectionToggle)`
-    padding:10px 12px; font-family:${p => p.theme.fonts.body}; font-size:.78rem; font-weight:600;
-    border-bottom-color:${p => p.theme.colors.border}; letter-spacing:.01em;
-    background:linear-gradient(90deg,${p => p.theme.colors.accent}07,transparent 65%);
-    .chev { color:${p => p.theme.colors.primary}; }
-    .count { font-family:${p => p.theme.fonts.numeral}; color:${p => p.theme.colors.textSecondary}; }
-    &:focus-visible { outline:2px solid ${p => p.theme.colors.primary}; outline-offset:-3px; }
+
+export const TodoList = styled(Base.TodoList)`
+    flex: 0 0 auto;
+    &&[data-day-todo-list] { overflow: visible; max-height: none; }
+    &:focus-visible { outline: 2px solid var(--day-card-ink); outline-offset: -2px; }
 `;
-export const TodoCardHead = styled(C.TodoCardHead)`
-    padding:10px 12px; border-color:${p => p.theme.colors.border}; font-family:${p => p.theme.fonts.body}; font-size:.78rem; font-weight:600;
-    background:linear-gradient(90deg,${p => p.theme.colors.accent}07,transparent 65%);
-    i { ${cutMark} width:9px; height:11px; border:0; background:linear-gradient(135deg,${p => p.theme.colors.accent},${p => p.theme.colors.primary}); }
+
+export const TodoRow = styled(Base.TodoRow)`
+    flex: none;
+    color: var(--day-card-ink);
+    border-color: var(--day-card-line);
+    .dot { border-radius: 50%; transform: none; }
+    && .title, && .time { color: var(--day-card-ink); opacity: 1; }
+    && .title {
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        font-weight: 650;
+    }
+    && .time { font: 600 .75rem/1.3 ${p => p.theme.fonts.body}; letter-spacing: 0; color: var(--gem-muted); }
+    @media (hover: hover) {
+        &:hover { background: var(--gem-hover-wash); box-shadow: inset 3px 0 var(--gem-hover-ring); }
+    }
+    &:focus-visible { outline: 2px solid var(--day-card-ink); outline-offset: -2px; }
 `;
-export const TimeRow = styled(C.TimeRow)`
-    border-bottom-color:${p => p.theme.colors.border};
-    .time-label { width:46px; font-family:${p => p.theme.fonts.body}; font-variant-numeric:tabular-nums; font-size:max(11px,.72rem); font-weight:500; letter-spacing:-.02em; color:${p => p.theme.colors.textSecondary}; border-right-color:${p => p.theme.colors.border}; }
-    .time-slots { padding:6px 10px; }
-    .slot-box:hover { background:${p => p.theme.colors.primary}12; }
+
+export const ChallengeEmpty = styled(Base.ChallengeEmpty)`
+    color: var(--gem-muted);
+    opacity: 1;
 `;
-export const SlotTodoItem = styled(C.SlotTodoItem)`
-    box-shadow:none; font-family:${p => p.theme.fonts.body};
-    border-radius:${p => p.$isContinuingPrev ? 0 : '3px'} ${p => p.$isContinuingNext ? 0 : '3px'} ${p => p.$isContinuingNext ? 0 : '3px'} ${p => p.$isContinuingPrev ? 0 : '3px'};
-    opacity:${p => p.$isDone ? .7 : 1};
+
+export const TimelineSection = styled(Base.TimelineSection)`
+    ${detailPanel}
+    --gem-day-material: var(--gem-timeline-map);
+    --gem-day-material-position: 58% 37%;
+    min-height: ${p => p.$collapsed ? 0 : "228px"};
 `;
-export const ResizeHandle = styled(C.ResizeHandle)`
-    height:12px; gap:4px;
-    span { width:3px; height:3px; border-radius:0; rotate:45deg; background:${p => p.theme.colors.accent}70; }
+
+export const TimeRow = styled(Base.TimeRow)`
+    border-color: var(--day-card-line, var(--gem-line));
+    .time-label {
+        font: 650 .75rem/1.25 ${p => p.theme.fonts.body};
+        font-variant-numeric: tabular-nums;
+        color: var(--gem-ink);
+        border-color: var(--gem-frame-silver);
+        background: color-mix(in srgb, var(--gem-surface) 37%, transparent);
+    }
+    .time-slots { min-width: 0; padding-inline: 5px; }
 `;
-export const TodoRow = styled(C.TodoRow)`
-    border-bottom-color:${p => p.theme.colors.border}; border-radius:4px; padding:8px;
-    .dot { ${cutMark} width:8px; height:10px; }
-    .title { font-size:.8rem; opacity:1; color:${p => p.$isDone ? p.theme.colors.textSecondary : p.theme.colors.text}; }
-    .time { font-family:${p => p.theme.fonts.numeral}; font-size:.68rem; letter-spacing:0; }
-    &:hover { background:${p => p.theme.colors.primary}08; }
-    &:focus-visible { outline:2px solid ${p => p.theme.colors.primary}; outline-offset:-2px; }
-    :where(html[data-theme-motion="full"]) & { animation:${facetArrival} .28s ease both; transition:background .2s ease; }
+
+export const SlotTodoItem = styled(Base.SlotTodoItem)`
+    background: var(--gem-event-track);
+    color: var(--gem-slab-ink);
+    border-radius: ${p => `${p.$isContinuingPrev ? 0 : 5}px ${p.$isContinuingNext ? 0 : 5}px ${p.$isContinuingNext ? 0 : 5}px ${p.$isContinuingPrev ? 0 : 5}px`};
+    .todo-text, .time-drag-handle { color: inherit; }
+    .todo-text { font-weight: 650; }
+    .time-drag-handle { border-color: #f3d9ed5c; }
+    &:focus-visible { outline-color: var(--gem-slab-ink); }
 `;
-export const ChallengeItem = styled(C.ChallengeItem)`
-    .box { border-radius:4px 1px; border-color:${p => p.theme.colors.primary}85; box-shadow:${p => p.$isDone ? `0 2px 8px ${p.theme.colors.primary}20` : 'none'}; }
-    .title { font-size:.8rem; opacity:1; color:${p => p.$isDone ? p.theme.colors.textSecondary : p.theme.colors.text}; }
+
+export const SectionToggle = styled(Base.SectionToggle)`
+    min-height: 40px;
+    font: 700 .84rem/1.25 ${p => p.theme.fonts.body};
+    letter-spacing: 0;
+    border-bottom-color: var(--gem-frame-silver);
+    color: var(--gem-ink);
+    &:hover { background: color-mix(in srgb, var(--gem-ink) 5%, transparent); }
 `;
-export const TaskItem = styled(C.TaskItem)`
-    .check-btn { border-radius:4px 1px; border-color:${p => p.theme.colors.primary}85; }
-    .task-text { font-size:.8rem; }
-    &:hover { background:${p => p.theme.colors.primary}09; }
-    :where(html[data-theme-motion="full"]) & { animation:${facetArrival} .25s ease both; }
+
+export const TimeMoveNotice = styled(Base.TimeMoveNotice)`
+    ${detailPanel}
+    button { border-radius: var(--gem-radius, 999px); }
 `;
-export const TaskForm = styled(C.TaskForm)`
-    border-top-color:${p => p.theme.colors.border};
-    input { min-width:0; border-color:${p => p.theme.colors.border}; border-radius:5px; background:${p => p.theme.colors.primary}03; }
-    input:focus { box-shadow:0 0 0 2px ${p => p.theme.colors.primary}13; }
-    button { ${gemControl} }
+
+export const TimeDragPreview = styled(Base.TimeDragPreview)`
+    ${detailPanel}
 `;
-export const ChallengeEmpty = styled(C.ChallengeEmpty)`
-    padding:15px 12px; font-family:${p => p.theme.fonts.body}; font-size:.73rem; line-height:1.6; letter-spacing:0;
+
+export const TaskCard = styled(Base.TaskCard)`
+    ${detailPanel}
+    --gem-day-material: var(--gem-quartz-map);
+`;
+export const ChallengeCard = styled(Base.ChallengeCard)`
+    ${detailPanel}
+    --gem-day-material: var(--gem-quartz-map);
+    --gem-day-material-position: center 62%;
+`;
+export const MemoCard = styled(Base.MemoCard)`
+    ${detailPanel}
+    --gem-day-material: var(--gem-timeline-map);
+    textarea { color: var(--gem-ink); }
+`;
+
+export const TaskForm = styled(Base.TaskForm)`
+    gap: 5px;
+    input {
+        border: 1px solid transparent;
+        border-radius: var(--gem-radius, 999px);
+        background: var(--gem-field);
+        color: var(--gem-ink);
+    }
+    input::placeholder { color: var(--gem-muted); }
+    button { padding: 0; }
+    button:not(:disabled) {
+        border: 1px solid transparent;
+        border-radius: var(--gem-radius, 999px);
+        background: var(--gem-action);
+        color: var(--gem-action-ink);
+    }
 `;

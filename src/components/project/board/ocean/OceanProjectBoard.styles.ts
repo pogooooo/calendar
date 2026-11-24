@@ -149,8 +149,10 @@ export const AddTaskButton = styled(C.AddTaskButton)`
 export const CardList = styled(C.CardList)`
     padding: 12px;
     gap: 8px;
-    scrollbar-width: thin;
-    scrollbar-color: ${(p) => ink(p.theme, 0.18)} transparent;
+    @supports not selector(::-webkit-scrollbar) {
+        scrollbar-width: thin;
+        scrollbar-color: ${(p) => ink(p.theme, 0.18)} transparent;
+    }
 
     ${MOBILE} { padding: 0 12px 12px; }
 `;

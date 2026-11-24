@@ -114,7 +114,7 @@ export const CardList = styled(C.CardList)`
     gap: 8px;
     /* 카드 안의 굴림 막대는 가는 것 하나 — 앱 전체의 눈금자 막대는 칸 안에서 무겁다.
        마우스 화면에서만(손가락 화면에서는 겹쳐 뜨는 막대가 자리를 차지하는 막대로 바뀐다) */
-    @media (hover: hover) {
+    @supports not selector(::-webkit-scrollbar) {
         scrollbar-width: thin;
         scrollbar-color: ${(p) => hair(p.theme, 0.22)} transparent;
     }

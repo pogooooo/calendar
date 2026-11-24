@@ -9,14 +9,16 @@ import useTodoStore from '@/store/useTodoStore';
 import useCategoryStore from '@/store/useCategoryStore';
 import {isWidgetKind} from '@/lib/widgetKinds';
 import {useWidgetTitle} from '@/hooks/useWidgetMeta';
+import {rgbLuminance} from '@/hooks/useWidgetPreviewDesktop';
 
 const PANELS={today:TodayPanel,nownext:NowNextPanel,due:DuePanel,anniversary:AnniversaryPanel,projects:ProjectsPanel,stats:StatsPanel,challenge:ChallengePanel,memo:MemoPanel,quicktask:QuickTaskPanel};
+const backdropLuminance = (rgbLuminance(36, 48, 59) + rgbLuminance(48, 62, 75)) / 2;
 export default function DesktopWidgetStudio(){
     const [kind]=useState(()=>{const k=new URLSearchParams(location.search).get('kind');return isWidgetKind(k)?k:'monthly';});
     const title=useWidgetTitle(kind);
     const todos=useTodoStore(s=>s.todos),categories=useCategoryStore(s=>s.categories);
     const Panel=kind==='monthly'||kind==='weekly'?null:PANELS[kind];
-    return <Backdrop data-widget-preview><WidgetShell kind={kind} title={title}><Content>{kind==='monthly'?<MonthCalendar todos={todos} categories={categories}/>:kind==='weekly'?<WeekCalendar todos={todos} categories={categories}/>:Panel?<Panel/>:null}</Content></WidgetShell></Backdrop>;
+    return <Backdrop data-widget-preview><WidgetShell kind={kind} title={title} backdropLuminance={backdropLuminance}><Content>{kind==='monthly'?<MonthCalendar todos={todos} categories={categories}/>:kind==='weekly'?<WeekCalendar todos={todos} categories={categories}/>:Panel?<Panel/>:null}</Content></WidgetShell></Backdrop>;
 }
 /** A checkerboard makes actual backdrop transparency visible without an OS wallpaper. */
 const Backdrop=styled.div`position:fixed;inset:0;z-index:1;background:repeating-conic-gradient(#24303b 0% 25%,#303e4b 0% 50%) 0 0/24px 24px;`;

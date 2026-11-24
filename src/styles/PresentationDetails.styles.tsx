@@ -7,7 +7,7 @@ import type { DefaultTheme } from 'styled-components';
 const primaryInk=(theme:DefaultTheme)=>theme.mode==='dark'?theme.colors.accent:theme.colors.primary;
 export default function PresentationDetails(){
     const theme=useTheme();
-    const ink=usePickTheme({celestial:controlInk,maple:primaryInk,ocean:primaryInk,gem:primaryInk});
+    const ink=usePickTheme({celestial:controlInk,maple:primaryInk,ocean:primaryInk,gem:theme=>theme.colors.primary});
     return <Details $controlInk={ink(theme)}/>;
 }
 
@@ -35,9 +35,13 @@ const Details=createGlobalStyle<{ $controlInk:string }>`
     [data-calendar-panel] > button { color:var(--control-ink); }
     [data-calendar-panel] > button:focus-visible { outline-offset:-3px; }
     [data-month-cell]:focus-visible {outline:2px solid ${({theme})=>theme.colors.primary};outline-offset:-3px;z-index:2;}
-    [data-calendar-region='month'] [data-month-cell] .day-header {height:30px;flex-basis:30px;min-height:30px;}
+
     [data-calendar-region='month'] [data-month-more] {height:16px;min-height:16px;line-height:16px;font-size:.66rem;}
-    [data-calendar-region='month'] [data-month-cell] .day-header {height:28px !important;flex-basis:28px !important;min-height:28px !important;}
+    [data-calendar-region='month'] [data-month-cell] .day-header {
+        height: var(--month-date-row, max(28px, 1.7rem));
+        min-height: var(--month-date-row, max(28px, 1.7rem));
+        flex-basis: var(--month-date-row, max(28px, 1.7rem));
+    }
     [data-calendar-region='month'] [data-month-bars] {margin-block:2px !important;}
     [data-day-date-heading] > span {white-space:normal;line-height:1.5;overflow:visible;text-overflow:clip;}
     [role='dialog'] { max-height:calc(100dvh - 24px); }
@@ -47,7 +51,7 @@ const Details=createGlobalStyle<{ $controlInk:string }>`
         animation:none !important; transition:none !important; scroll-behavior:auto !important;
     }
     html[data-page-hidden] [data-ambient] * { animation-play-state:paused !important; }
-    html[data-presentation='mobile-app'] {
+    html[data-presentation='mobile-app']:where(:not([data-mobile-appearance='rich'])) {
         [data-ambient], [data-calendar-decoration] { display:none !important; }
         [data-app-shell] { --app-top-clearance:0px; --app-dock-clearance:0px; }
         [data-home-arch] { display:none; }

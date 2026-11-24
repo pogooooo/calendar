@@ -12,20 +12,16 @@
  * 타일에 올리거나(초점) 고르면 천천히 돈다. 오브제의 색은 지금 테마가 아니라 그 갈래의 것(지금의 밝기)으로 —
  * Ocean 화면에서도 Celestial 타일의 혼천의는 금빛이다. 축소판 그림·글자는 덮지 않는다(ThemePicker.styles).
  */
-import { useState, type ComponentType } from "react";
+import { useState } from "react";
 import { ThemeProvider, useTheme } from "styled-components";
 import Objet, { type ObjetName } from "@/components/objet/Objet";
-import { groundOf, themes, type ThemeChoice } from "@/styles/theme";
-import { applyGemColor } from '@/styles/gem/palette';
-import useSettingStore from '@/store/useSettingStore';
-import GemColorPicker, { GemMark } from './gem/GemColorPicker';
+import { themes, type ThemeChoice } from "@/styles/theme";
 import type * as Layout from "../celestial/CelestialSettings.layout";
+import useSettingStore from "@/store/useSettingStore";
+import { defaultMaterialUrls } from "@/features/gem/materials/liveMaterials";
 import * as P from "./ThemePicker.styles";
 
 type L = typeof Layout;
-
-const FAMILY_MARKS: Record<string, ComponentType | undefined> = { gem: GemMark };
-const FAMILY_CUSTOMIZERS: Record<string, ComponentType | undefined> = { gem: GemColorPicker };
 
 /** 갈래마다의 오브제 — 작은 자리(타일)와 큰 자리(무대) */
 const OBJET: Record<string, { name: ObjetName; small: Record<string, unknown>; large: Record<string, unknown> }> = {
@@ -50,11 +46,9 @@ function ArcanaMark() {
 /** 그 갈래의 오브제 — 그 갈래의 색(지금 화면의 밝기)으로 칠한다. Celestial 은 타로 한 장(선화) */
 function FamilyObjet({ id, size, active, large = false }: { id: string; size: string; active: boolean; large?: boolean }) {
     const page = useTheme();
-    const gemColor = useSettingStore(state => state.gemColor);
-    const family = applyGemColor(themes[page.mode === "dark" ? `${id}-dark` : id] ?? themes[id] ?? page, gemColor);
-    const Mark = FAMILY_MARKS[id];
-    if (Mark) return <ThemeProvider theme={family}><Mark /></ThemeProvider>;
+    const family = themes[page.mode === "dark" ? `${id}-dark` : id] ?? themes[id] ?? page;
     if (id === "celestial") return <ThemeProvider theme={family}><ArcanaMark /></ThemeProvider>;
+    if (id === "gem") return <P.GemMark aria-hidden="true" />;
     const spec = OBJET[id];
     if (!spec) return null;
     return (
@@ -73,9 +67,21 @@ const CELL_PLAN = [
 
 /** 갈래 하나의 축소판 — 그림이 있는 갈래(Maple)는 그림, 없으면 색(또는 바다처럼 무늬)으로 그린 앱 화면 */
 function ThemeThumb({ L, theme, option, height }: { L: L; theme: ThemeChoice; option: string; height: number }) {
-    const gemColor = useSettingStore(state => state.gemColor);
-    const base = themes[option === 'light' ? theme.id : `${theme.id}-${option}`] ?? themes[theme.id];
-    const g = base ? groundOf(applyGemColor(base, gemColor)) : theme.grounds[option] ?? theme.grounds[theme.options[0]];
+    const g = theme.grounds[option] ?? theme.grounds[theme.options[0]];
+    if (theme.id === "gem") {
+        const textures = defaultMaterialUrls(option === "dark" ? "dark" : "light");
+        return <P.GemMini $height={height} aria-hidden="true" style={{
+            color: g.ink,
+            background: `url("${textures.calendar}") center / cover, ${g.cell}`,
+        }}>
+            <div className="mini-rail" style={{ background: `url("${textures.geode}") center / cover` }} />
+            <div className="mini-dates">
+                {Array.from({ length: 14 }, (_, index) => <span key={index}
+                    data-today={index === 8 ? "" : undefined} data-picked={index === 10 ? "" : undefined}>{index + 8}</span>)}
+                <i style={{ background: `url("${textures.event}") center / cover, ${g.event}` }} />
+            </div>
+        </P.GemMini>;
+    }
     if (theme.preview?.[option]) return <L.MiniImage src={theme.preview[option]} alt="" draggable={false} $h={height} />;
     return (
         <L.Mini $bg={g.bg} $h={height}>
@@ -115,9 +121,9 @@ interface Props {
 }
 
 export default function ThemePicker({ L, themes: choices, currentTheme, themeOptions, onThemeChange, onThemeOptionChange, optionLabels, label, variantLabel }: Props) {
+    const ko = useSettingStore(state => state.locale) === "ko";
     const current = choices.find((th) => th.id === currentTheme) ?? choices[0];
     const currentOption = themeOptions[current.id] ?? current.options[0];
-    const Customizer = FAMILY_CUSTOMIZERS[current.id];
     // 올리거나 초점이 온 타일 — 그 타일의 오브제가 돈다
     const [lit, setLit] = useState<string | null>(null);
 
@@ -175,6 +181,7 @@ export default function ThemePicker({ L, themes: choices, currentTheme, themeOpt
                         </P.StageObjet>
                     </P.StageHead>
                     <L.StageDesc data-theme-description>{current.description}</L.StageDesc>
+                    {current.id === "gem" && <small>{ko ? "개발 미리보기에서 사용 가능" : "Available in preview builds"}</small>}
                     {current.options.length > 1 && (
                         <L.SegGroup role="radiogroup" aria-label={variantLabel}>
                             {current.options.map((o) => (
@@ -194,7 +201,6 @@ export default function ThemePicker({ L, themes: choices, currentTheme, themeOpt
                     )}
                 </L.StageInfo>
             </L.ThemeStage>
-            {Customizer && <Customizer />}
         </>
     );
 }

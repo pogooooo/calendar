@@ -1,11 +1,8 @@
 ﻿"use client";
 
-import * as GemS from "./gem/GemWidgetShell.styles";
 import React, { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { ThemeProvider, useTheme } from "styled-components";
-import { usePickTheme, type ThemeImpls } from "@/styles/themed";
-import * as CelestialS from "./celestial/CelestialWidgetShell.styles";
-import * as MapleS from "./maple/MapleWidgetShell.styles";
+import { usePickTheme } from "@/styles/themed";
 import { GLASS_MARGIN } from "./celestial/CelestialWidgetShell.styles";
 import useWidgetStore from "@/store/useWidgetStore";
 import { useT } from "@/i18n/useT";
@@ -16,21 +13,19 @@ import { Settings2, Lock, X } from "lucide-react";
 
 import type { WidgetKind } from "@/store/useWidgetStore";
 import { mirrorWidgetStateToFile } from "@/lib/widgetStateFile";
-import * as OceanS from './ocean/OceanWidgetShell.styles';
-import WidgetCharm from './WidgetCharm';
-import WidgetDecor from './WidgetDecor';
 import WidgetAppearanceSettings from './WidgetAppearanceSettings';
 import {MotionRules,Overlay} from './WidgetAppearance.styles';
 import {WidgetMotionContext} from './WidgetMotionContext';
 import useThemeMotion from '@/hooks/useThemeMotion';
 import {normalizeWidgetAppearance,resolveWidgetEffect} from '@/lib/widgetAppearance';
-import {normalizeWidgetBackground,widgetBackgroundStyle} from '@/lib/widgetBackground';
-import { gemWidgetColors } from '@/styles/gem/palette';
+import {normalizeWidgetBackground} from '@/lib/widgetBackground';
+import WidgetLayers, { WIDGET_SHELLS } from "./WidgetLayers";
 
 interface Props {
     kind: WidgetKind;
     title: string;
     children: React.ReactNode;
+    backdropLuminance?: number;
 }
 
 const isTauri = () => typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
@@ -78,14 +73,8 @@ function getLuminance(hex: string): number {
 }
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
-const CONTRAST_PALETTES: ThemeImpls<typeof gemWidgetColors | null> = {
-    celestial: null, maple: null, ocean: null, gem: gemWidgetColors,
-};
-
-export default function WidgetShell({ kind, title, children }: Props) {
-    const S = usePickTheme(STYLES);
-    const contrastPalette = usePickTheme(CONTRAST_PALETTES);
+export default function WidgetShell({ kind, title, children, backdropLuminance }: Props) {
+    const S = usePickTheme(WIDGET_SHELLS);
     const theme = useTheme();
     const t = useT();
     const savedBg = useWidgetStore((s) => s[kind].bg);
@@ -103,8 +92,6 @@ export default function WidgetShell({ kind, title, children }: Props) {
     // 벽지를 읽어 정한 글자색. 아직 못 읽었으면 null 이고, 그때는 아래 baseline 을 쓴다.
     const [dynamicTextColor, setDynamicTextColor] = useState<{ text: string; textSecondary: string } | null>(null);
     const [sampledLuminance, setSampledLuminance] = useState<number | null>(null);
-    const sampledLuminanceRef = useRef<number | null>(null);
-    const hasContrastPaletteRef = useRef(!!contrastPalette);
 
     const monitorRef = useRef<HTMLDivElement>(null);
     const contentRef = useRef<HTMLDivElement>(null);
@@ -149,8 +136,6 @@ export default function WidgetShell({ kind, title, children }: Props) {
         };
     }, [kind]);
     const surfaceColor = theme?.colors?.surface;
-    // "테마 바탕"은 그 테마의 카드색(surface). 예전의 Maple 은 종이결 그림을 깔았다(2026-10-15 걷었다)
-    const bgStyle = widgetBackgroundStyle(bg, surfaceColor);
 
     const bgRef = useRef(bg);
     const surfaceColorRef = useRef(surfaceColor);
@@ -158,11 +143,7 @@ export default function WidgetShell({ kind, title, children }: Props) {
     useEffect(() => {
         bgRef.current = bg;
         surfaceColorRef.current = surfaceColor;
-        sampledLuminanceRef.current = null;
-        setSampledLuminance(null);
     }, [bg, surfaceColor]);
-
-    useEffect(() => { hasContrastPaletteRef.current = !!contrastPalette; }, [contrastPalette]);
 
     /**
      * 벽지를 아직 못 읽었을 때(브라우저·첫 프레임·벽지 읽기 실패) 쓰는 글자색.
@@ -172,31 +153,30 @@ export default function WidgetShell({ kind, title, children }: Props) {
      * 벽지를 읽고 나면 그 값으로 바꾼다. 유리 모드는 벽지를 모르면 테마 글자색을 둔다.
      */
     const baselineTextColor = useMemo(() => {
-        const lum = bg.mode === "custom" ? getLuminance(bg.customColor)
+        const solidLuminance = bg.mode === "custom" ? getLuminance(bg.customColor)
             : bg.mode === "theme" ? getLuminance(surfaceColor || "#ffffff")
             : null;
+        const lum = backdropLuminance === undefined ? solidLuminance
+            : solidLuminance === null ? backdropLuminance
+            : solidLuminance * bg.opacity + backdropLuminance * (1 - bg.opacity);
         if (lum === null) return {};
         return lum > 0.179
             ? { text: "#1a1a1a", textSecondary: "#555555" }
             : { text: "#ffffff", textSecondary: "#dddddd" };
-    }, [bg.mode, bg.customColor, surfaceColor]);
+    }, [bg.mode, bg.customColor, bg.opacity, surfaceColor, backdropLuminance]);
 
     const widgetTheme = useMemo(() => {
-        const contrastColors = bg.autoTextColor && contrastPalette
-            ? contrastPalette(theme, bg.mode === 'custom' ? bg.customColor : surfaceColor, sampledLuminance)
-            : {};
         return {
             ...theme,
             colors: {
                 ...theme?.colors,
                 ...(bg.autoTextColor ? (dynamicTextColor ?? baselineTextColor) : {}),
-                ...contrastColors,
                 surface: "transparent",
             },
             // 모달처럼 불투명해야 하는 요소가 되돌려 쓸 원본 색상
             baseColors: theme?.colors,
         };
-    }, [theme, contrastPalette, bg.autoTextColor, bg.mode, bg.customColor, surfaceColor, sampledLuminance, dynamicTextColor, baselineTextColor]);
+    }, [theme, bg.autoTextColor, dynamicTextColor, baselineTextColor]);
 
     const handleLock = useCallback(() => {
         setLocked(true);
@@ -351,16 +331,6 @@ export default function WidgetShell({ kind, title, children }: Props) {
 
                             const newColor = effLum > 0.179 ? "#1a1a1a" : "#ffffff";
 
-                            // Gem's colored controls follow the sampled wallpaper, too. Quantizing
-                            // avoids sub-pixel color noise while a stationary widget stays idle.
-                            if (hasContrastPaletteRef.current) {
-                                const measured = Math.round(effLum * 1000) / 1000;
-                                if (sampledLuminanceRef.current !== measured) {
-                                    sampledLuminanceRef.current = measured;
-                                    setSampledLuminance(measured);
-                                }
-                            }
-
                             if (textColorRef.current !== newColor) {
                                 textColorRef.current = newColor;
                                 setDynamicTextColor(
@@ -428,22 +398,8 @@ export default function WidgetShell({ kind, title, children }: Props) {
             onContextMenu={handleContextMenu}
         >
             <ThemeProvider theme={widgetTheme}>
-                <S.BackgroundSurface data-widget-background aria-hidden data-ornate={appearance.design==='ornate' && bg.mode==='theme'} style={bgStyle}>
-                {bg.mode === "glass" && wallpaper.url && (
-                    <S.FakeGlassLayer $blur={bg.glassBlur ?? 36.8}>
-                        <S.VirtualMonitor
-                            ref={monitorRef}
-                            $url={wallpaper.url}
-                            $mw={wallpaper.mw}
-                            $mh={wallpaper.mh}
-                        />
-                    </S.FakeGlassLayer>
-                )}
-
-                {bg.mode === "glass" && bg.gloss && <S.GlossOverlay />}
-                </S.BackgroundSurface>
-                {appearance.design==='ornate' && !showSettings && <div aria-hidden style={{position:'absolute',inset:0,pointerEvents:'none',opacity:appearance.intensity}}><WidgetCharm locked={locked} /></div>}
-                {appearance.design==='ornate'&&<WidgetDecor kind={kind} locked={locked} intensity={appearance.intensity}/>}
+                <WidgetLayers kind={kind} bg={bg} appearance={appearance} wallpaper={wallpaper}
+                    monitorRef={monitorRef} locked={locked} hideCharm={showSettings} />
 
                 {!locked && (
                     <S.TopBar onMouseDown={startDrag}>

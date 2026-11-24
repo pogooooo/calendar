@@ -1,9 +1,12 @@
 "use client";
 
-import * as GemS from "./gem/GemDateTimePicker.styles";
 import * as React from "react";
 import { useT } from "@/i18n/useT";
 import { createPortal } from "react-dom";
+import { AnimatePresence, motion } from "framer-motion";
+import { useSwapMotion } from "@/hooks/useMotion";
+import GemSelectionFrame from "@/components/calendar/parts/GemSelectionFrame";
+import useThemeMotion from "@/hooks/useThemeMotion";
 import { CalendarDays, ChevronLeft, ChevronRight, Clock } from "lucide-react";
 import TimeDial from "./TimeDial";
 import { localDateKey, wallNow } from "@/lib/dateKey";
@@ -11,9 +14,10 @@ import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialDateTimePicker.styles";
 import * as MapleS from "./maple/MapleDateTimePicker.styles";
 import * as OceanS from './ocean/OceanDateTimePicker.styles';
+import * as GemS from "./gem/GemDateTimePicker.styles";
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS, gem: GemS };
 
 interface CelestialDateTimePickerProps {
     value: string;
@@ -27,6 +31,9 @@ interface CelestialDateTimePickerProps {
     };
     /** 좁은 자리(홈의 날짜 줄)에서는 해를 빼고 "9. 30 (수)" 로만 적는다 */
     short?: boolean;
+    displayLabel?: string;
+    disabled?: boolean;
+    showIcon?: boolean;
     ariaLabel?: string;
 }
 
@@ -58,23 +65,35 @@ function buildGrid(view: Date) {
     });
 }
 
-export default function DateTimePicker({ value, onChange, mode = "datetime", range, short = false, ariaLabel }: CelestialDateTimePickerProps) {
+export default function DateTimePicker({ value, onChange, mode = "datetime", range, short = false, showIcon = true, ariaLabel, displayLabel, disabled }: CelestialDateTimePickerProps) {
     const S = usePickTheme(STYLES);
+    const gem = S === GemS;
+    const motionLevel = useThemeMotion();
     const t = useT();
     const f = t.form;
     const WEEKDAYS = f.weekdays;
     const triggerRef = React.useRef<HTMLButtonElement>(null);
     const popRef = React.useRef<HTMLDivElement>(null);
     const gridRef = React.useRef<HTMLDivElement>(null);
+    const monthLabelRef = React.useRef<HTMLElement>(null);
 
     const [open, setOpen] = React.useState(false);
     const [pos, setPos] = React.useState<{ top: number; left: number; up: boolean } | null>(null);
 
     const selected = parseValue(value, mode);
     const [view, setView] = React.useState(() => new Date(selected.getFullYear(), selected.getMonth(), 1));
+    const monthKey = view.getFullYear() * 12 + view.getMonth();
+    useSwapMotion(monthKey, gridRef, { disabled: !open });
+    useSwapMotion(monthKey, monthLabelRef, { size: 'line', disabled: !open });
 
     const hour = selected.getHours();
     const minute = selected.getMinutes();
+
+    const [edge, setEdge] = React.useState<"start" | "end">(range?.edge ?? "start");
+    const closeToTrigger = () => {
+        setOpen(false);
+        triggerRef.current?.focus({ preventScroll: true });
+    };
 
     const openPopover = () => {
         const rect = triggerRef.current?.getBoundingClientRect();
@@ -83,6 +102,7 @@ export default function DateTimePicker({ value, onChange, mode = "datetime", ran
         const left = Math.max(8, Math.min(rect.left, window.innerWidth - S.POP_WIDTH - 8));
 
         setView(new Date(selected.getFullYear(), selected.getMonth(), 1));
+        setEdge(range?.edge ?? "start");
         setPos({ top: rect.bottom + 6, left, up: false });
         setOpen(true);
     };
@@ -93,6 +113,7 @@ export default function DateTimePicker({ value, onChange, mode = "datetime", ran
         const rect = triggerRef.current?.getBoundingClientRect();
         if (!el || !rect) return;
 
+        el.focus({ preventScroll: true });
         const h = el.offsetHeight;
         let top = rect.bottom + 6;
         let up = false;
@@ -121,7 +142,7 @@ export default function DateTimePicker({ value, onChange, mode = "datetime", ran
             if (e.key === "Escape") {
                 e.stopImmediatePropagation();
                 e.stopPropagation();
-                setOpen(false);
+                closeToTrigger();
             }
         };
 
@@ -133,8 +154,7 @@ export default function DateTimePicker({ value, onChange, mode = "datetime", ran
         };
     }, [open]);
 
-    const [edge, setEdge] = React.useState<"start" | "end">(range?.edge ?? "start");
-    React.useEffect(() => { if (open) setEdge(range?.edge ?? "start"); }, [open, range?.edge]);
+
 
     const rangeStart = range ? parseValue(range.start, mode) : null;
     const rangeEnd = range ? parseValue(range.end, mode) : null;
@@ -144,7 +164,7 @@ export default function DateTimePicker({ value, onChange, mode = "datetime", ran
     const pickDay = (d: Date) => {
         if (!range) {
             onChange(emit(d, hour, minute, mode));
-            if (mode === "date") setOpen(false);
+            if (mode === "date") closeToTrigger();
             return;
         }
 
@@ -171,7 +191,7 @@ export default function DateTimePicker({ value, onChange, mode = "datetime", ran
         now.setMinutes(Math.round(now.getMinutes() / 5) * 5, 0, 0);
         setView(new Date(now.getFullYear(), now.getMonth(), 1));
         onChange(emit(now, now.getHours(), now.getMinutes(), mode));
-        if (mode === "date") setOpen(false);
+        if (mode === "date") closeToTrigger();
     };
 
     const shiftActive = (delta: number) => {
@@ -196,7 +216,7 @@ export default function DateTimePicker({ value, onChange, mode = "datetime", ran
     };
 
     const shiftRef = React.useRef(shiftActive);
-    shiftRef.current = shiftActive;
+    React.useLayoutEffect(() => { shiftRef.current = shiftActive; });
 
     React.useEffect(() => {
         const el = gridRef.current;
@@ -211,16 +231,17 @@ export default function DateTimePicker({ value, onChange, mode = "datetime", ran
         return () => el.removeEventListener("wheel", onWheel);
     }, [open]);
 
-    const onGridKey = (e: React.KeyboardEvent) => {
+    const onGridKey = (e: React.KeyboardEvent<HTMLDivElement>) => {
         const map: Record<string, number> = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 };
         // 시·분 칸에 적는 중의 ←·→ 는 글자 사이를 오가는 것이다 — 예전엔 여기까지 올라와 날짜가 하루씩 옮겨졌다
         const inField = (e.target as HTMLElement).tagName === "INPUT";
         if (map[e.key] !== undefined && !inField) {
             e.preventDefault();
+            e.currentTarget.focus({ preventScroll: true });
             shiftActive(map[e.key]);
-        } else if (e.key === "Enter") {
+        } else if (e.key === "Enter" && (e.target === e.currentTarget || inField)) {
             e.preventDefault();
-            setOpen(false);
+            closeToTrigger();
         }
     };
 
@@ -234,18 +255,24 @@ export default function DateTimePicker({ value, onChange, mode = "datetime", ran
 
     return (
         <>
-            <S.Trigger ref={triggerRef} type="button" $open={open} aria-label={ariaLabel} aria-expanded={open} onClick={() => (open ? setOpen(false) : openPopover())}>
-                <CalendarDays size={14} />
-                <span>{label}</span>
+            <S.Trigger ref={triggerRef} type="button" disabled={disabled} $open={open} aria-label={ariaLabel} aria-expanded={open} onClick={() => (open ? setOpen(false) : openPopover())}>
+                {showIcon && <CalendarDays size={14} aria-hidden="true" />}
+                <span>{displayLabel ?? label}</span>
             </S.Trigger>
 
-            {open && pos && typeof document !== "undefined" && createPortal(
-                <S.Popover ref={popRef} $up={pos.up} style={{ top: pos.top, left: pos.left }} onKeyDown={onGridKey} tabIndex={-1}>
+            {typeof document !== "undefined" && createPortal(
+                <AnimatePresence initial={false}>
+                {open && pos && <S.Popover as={motion.div} role="dialog" aria-label={ariaLabel ?? label} key="date-picker" ref={popRef} $up={pos.up}
+                    initial={gem && motionLevel !== 'off' ? { opacity: 1, y: motionLevel === 'full' ? (pos.up ? 4 : -4) : 0 } : false}
+                    animate={gem ? { opacity: 1, y: 0, pointerEvents: 'auto' } : undefined}
+                    exit={gem ? { opacity: 0, transition: { duration: motionLevel === 'off' ? 0 : .08 }, pointerEvents: 'none' } : undefined}
+                    transition={{ duration: motionLevel === 'off' ? 0 : motionLevel === 'gentle' ? .12 : .2, ease: [.22, 1, .36, 1] }}
+                    style={{ top: pos.top, left: pos.left, ...(gem ? { animation: 'none' } : {}) }} onKeyDown={onGridKey} tabIndex={-1}>
                     <S.MonthNav>
                         <button type="button" aria-label={t.calendar.prevMonth} onClick={() => setView(v => new Date(v.getFullYear(), v.getMonth() - 1, 1))}>
                             <ChevronLeft size={15} />
                         </button>
-                        <strong>{view.getFullYear()}. {view.getMonth() + 1}</strong>
+                        <strong ref={monthLabelRef}>{view.getFullYear()}. {view.getMonth() + 1}</strong>
                         <button type="button" aria-label={t.calendar.nextMonth} onClick={() => setView(v => new Date(v.getFullYear(), v.getMonth() + 1, 1))}>
                             <ChevronRight size={15} />
                         </button>
@@ -278,16 +305,22 @@ export default function DateTimePicker({ value, onChange, mode = "datetime", ran
                                     type="button"
                                     $out={d.getMonth() !== view.getMonth()}
                                     $today={key === todayKey}
+                                    aria-current={key === todayKey ? "date" : undefined}
+                                    aria-pressed={range ? (isStart || isEnd) : key === selectedKey}
                                     $selected={range ? (isStart || isEnd) : key === selectedKey}
+                                    data-gem-static-frame={gem && range && (isStart || isEnd) ? "" : undefined}
+                                    data-gem-frame-anchor={gem && !range && key === selectedKey ? "" : undefined}
                                     $inRange={between}
                                     $edgeStart={isStart && startKey < endKey}
                                     $edgeEnd={isEnd && startKey < endKey}
                                     onClick={() => pickDay(d)}
                                 >
+                                    {gem && key === todayKey && <i className="gem-today-inlay" aria-hidden="true" />}
                                     <span>{d.getDate()}</span>
                                 </S.Day>
                             );
                         })}
+                        {gem && !range && <GemSelectionFrame period={monthKey} selected={selectedKey} />}
                     </S.Grid>
 
                     {mode === "datetime" && (
@@ -306,9 +339,10 @@ export default function DateTimePicker({ value, onChange, mode = "datetime", ran
 
                     <S.Foot>
                         <button type="button" onClick={pickNow}>{mode === "datetime" ? f.now : f.today}</button>
-                        <button type="button" className="ok" onClick={() => setOpen(false)}>{f.done}</button>
+                        <button type="button" className="ok" onClick={closeToTrigger}>{f.done}</button>
                     </S.Foot>
-                </S.Popover>,
+                </S.Popover>}
+                </AnimatePresence>,
                 document.body,
             )}
         </>

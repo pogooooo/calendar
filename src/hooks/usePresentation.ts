@@ -1,6 +1,7 @@
 "use client";
 
-import { useSyncExternalStore } from 'react';
+import { WidgetPreviewContext } from "@/components/widget/WidgetPreviewContext";
+import { useContext, useSyncExternalStore } from 'react';
 import { usePathname } from 'next/navigation';
 import { isMobileShell, isDesktopShell } from '@/lib/platform';
 
@@ -22,5 +23,7 @@ const snapshot = (): Presentation => {
 /** Platform is independent of viewport size: a narrow website is still a rich website. */
 export default function usePresentation(): Presentation {
     usePathname(); // Re-evaluate the snapshot after client navigation.
-    return useSyncExternalStore(subscribe, snapshot, () => 'web');
+    const preview = useContext(WidgetPreviewContext);
+    const presentation = useSyncExternalStore(subscribe, snapshot, (): Presentation => 'web');
+    return preview ? 'desktop-widget' : presentation;
 }

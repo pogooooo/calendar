@@ -20,31 +20,14 @@ const onPrimary = (p: { theme: { mode: string } }) => (dark(p) ? "#06110F" : "#F
 
 /** 날짜 줄 — ‹ 오늘 › */
 export const DayNav = styled(C.DayNav)`
-    gap: 6px;
-    margin-bottom: 8px;
-
     .label {
-        min-width: 5em;
         font-family: ${(p) => p.theme.fonts.body};
         font-size: 0.76rem;
         font-weight: 600;
         letter-spacing: -0.005em;
         color: ${(p) => p.theme.colors.text};
-        border-radius: 6px;
     }
     .label:disabled { color: ${(p) => p.theme.colors.textSecondary}; }
-`;
-
-export const NavBtn = styled(C.NavBtn)`
-    width: 24px;
-    height: 24px;
-    border: 1px solid ${(p) => hairline(p.theme, true)};
-    border-radius: 8px;
-    font-size: 0.86rem;
-    color: ${(p) => p.theme.colors.textSecondary};
-    transition: background-color 0.15s ease, color 0.15s ease;
-
-    &&:hover { border-color: ${(p) => hairline(p.theme, true)}; color: ${(p) => p.theme.colors.text}; background-color: ${(p) => ink(p.theme, dark(p) ? 0.1 : 0.06)}; }
 `;
 
 /** 마디 머리 — 작고 옅은 굵은 글씨, 밑줄 없음 (한글이라 고정폭 대문자 꼬리표 대신 본문 글꼴) */

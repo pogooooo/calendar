@@ -18,6 +18,7 @@ export interface AnniversaryLayoutProps {
     S: AnniversaryStyles;
     /** 다가오는 차례 */
     items: AnniversaryItem[];
+    onEdit: (a: AnniversaryType) => void;
     onDelete: (a: AnniversaryType) => void;
     /** 새 기념일 서식 보내기 */
     onSubmit: (e: FormEvent) => void;

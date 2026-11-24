@@ -15,14 +15,16 @@
  * 그리지 않는 때: 움직임 '끄기'·OS 의 동작 줄이기(떨림도 없다), 창이 숨었을 때, 데스크톱 위젯 창(투명 창이라 깜빡인다 — 1.2.0).
  * '잔잔하게'면 입자를 줄이고, 자주 일어나는 화면 옮김에는 그리지 않으며, 떨림은 한 번만.
  */
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { useTheme } from "styled-components";
 import { fx, type FxEvent, type FxKind, type FxRect } from "@/lib/fx";
 import { usePickTheme } from "@/styles/themed";
 import useThemeMotion from "@/hooks/useThemeMotion";
-import useMobilePresentation from '@/hooks/useMobilePresentation';
+import { useSimpleMobileAppearance } from '@/hooks/useMobilePresentation';
+import usePresentation from '@/hooks/usePresentation';
 import { isWidgetWindow } from '@/hooks/useAuthFetch';
+import { webglAvailable } from "@/lib/webgl";
 import type { FxEngine, FxModule } from "./engine";
 import * as S from "./FxStage.styles";
 
@@ -30,7 +32,7 @@ const LOADERS = {
     celestial: () => import("./celestial/celestialFx").then((m) => m.default),
     maple: () => import("./maple/mapleFx").then((m) => m.default),
     ocean: () => import("./ocean/oceanFx").then((m) => m.default),
-    gem: () => import("./gem/gemFx").then((m) => m.default),
+    gem: () => import("./gem/gemFx").then((m) => m.loadGemFx()),
 };
 
 const CALENDAR_LOADERS = {
@@ -92,12 +94,14 @@ export default function FxStage() {
     const baseLoad = usePickTheme(LOADERS);
     const calendarLoad = usePickTheme(CALENDAR_LOADERS);
     const load = pathname?.startsWith('/calendar') ? calendarLoad : baseLoad;
-    const mobileApp = useMobilePresentation();
-    const inWidget = isWidgetWindow() || mobileApp;
+    const simpleMobile = useSimpleMobileAppearance();
+    const presentation = usePresentation();
+    const suppressFx = isWidgetWindow() || simpleMobile || presentation === "desktop-widget";
 
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const engineRef = useRef<FxEngine | null>(null);
     const engineLoading = useRef<Promise<FxEngine | null> | null>(null);
+    const failedCanvas = useRef<HTMLCanvasElement | null>(null);
     const modRef = useRef<FxModule | null>(null);
     const modLoading = useRef<Promise<FxModule | null> | null>(null);
     /** 방금 누른 자리와 항목 · 창(대화상자·차림표) 밖에서 마지막으로 누른 것 */
@@ -110,10 +114,12 @@ export default function FxStage() {
     const waiting = useRef(new Map<FxKind, { at: number; timer: ReturnType<typeof setTimeout> }>());
     const idleTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
     const motionRef = useRef(motion);
-    motionRef.current = motion;
     const theme = useTheme();
     const darkRef = useRef(theme.mode === "dark");
-    darkRef.current = theme.mode === "dark";
+    useLayoutEffect(() => {
+        motionRef.current = motion;
+        darkRef.current = theme.mode === "dark";
+    }, [motion, theme.mode]);
 
     /** 엔진은 처음 쓸 때 만든다. WebGL 이 없으면 조용히 포기 */
     const engine = async (): Promise<FxEngine | null> => {
@@ -121,12 +127,14 @@ export default function FxStage() {
         if (!engineLoading.current) {
             engineLoading.current = (async () => {
                 const canvas = canvasRef.current;
-                if (!canvas) return null;
+                if (!canvas || failedCanvas.current === canvas || !webglAvailable()) return null;
                 try {
                     const [THREE, { FxEngine }] = await Promise.all([import("three"), import("./engine")]);
+                    if (canvasRef.current !== canvas) return null;
                     engineRef.current = new FxEngine(THREE, canvas, isLite());
                     return engineRef.current;
                 } catch {
+                    failedCanvas.current = canvas;
                     return null;
                 }
             })().finally(() => { engineLoading.current = null; });
@@ -154,7 +162,7 @@ export default function FxStage() {
         const mod = modRef.current ?? (await modLoading.current?.catch(() => null)) ?? null;
         if (!mod?.effects[e.kind]) return;
         const eng = await engine();
-        if (!eng || motionRef.current === "off" || document.hidden) return;
+        if (!eng || modRef.current !== mod || motionRef.current === "off" || document.hidden) return;
         const recent = performance.now() - pointer.current.at < 1500;
         eng.play(mod, e, {
             gentle: motionRef.current === "gentle",
@@ -198,7 +206,7 @@ export default function FxStage() {
 
     // 방금 누른 자리와 그 항목 — 끝냄·넣음 효과를 그 자리에서, 지우기는 그 항목 자리에서
     useEffect(() => {
-        if (inWidget) return;
+        if (suppressFx) return;
         const on = (e: PointerEvent) => {
             // 움직임을 껐으면 항목을 찾을 일도 없다 (누를 때마다 상자를 재지 않는다)
             const t: Touch = { x: e.clientX, y: e.clientY, at: performance.now(), item: motionRef.current === "off" ? undefined : itemRectAt(e.target) };
@@ -208,11 +216,11 @@ export default function FxStage() {
         };
         window.addEventListener("pointerdown", on, { capture: true, passive: true });
         return () => window.removeEventListener("pointerdown", on, { capture: true });
-    }, [inWidget]);
+    }, [suppressFx]);
 
     // 갈래가 바뀌면 그 갈래의 모듈을 받는다. 방금 테마를 바꿔서 바뀐 것이면 새 갈래가 인사를 한다
     useEffect(() => {
-        if (inWidget) return;
+        if (suppressFx) return;
         let alive = true;
         modRef.current = null;
         const loading = load().then((m) => {
@@ -226,14 +234,22 @@ export default function FxStage() {
         });
         modLoading.current = loading;
         loading.catch(() => {});
-        return () => { alive = false; };
+        return () => {
+            alive = false;
+            modRef.current = null;
+            engineRef.current?.stopAll();
+        };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [load, inWidget]);
+    }, [load, suppressFx]);
 
     // 한가할 때 three·엔진을 미리 받아 둔다 — 첫 효과 때 읽고 해석하느라 화면이 멈칫하지 않게
     useEffect(() => {
-        if (inWidget || motion === "off") return;
-        const warm = () => { void import("three").catch(() => {}); void import("./engine").catch(() => {}); };
+        if (suppressFx || motion === "off") return;
+        const warm = () => {
+            if (!webglAvailable()) return;
+            void import("three").catch(() => {});
+            void import("./engine").catch(() => {});
+        };
         const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number; cancelIdleCallback?: (id: number) => void };
         if (w.requestIdleCallback) {
             const id = w.requestIdleCallback(warm, { timeout: 6000 });
@@ -241,7 +257,7 @@ export default function FxStage() {
         }
         const t = setTimeout(warm, 3000);
         return () => clearTimeout(t);
-    }, [inWidget, motion]);
+    }, [suppressFx, motion]);
 
     // 개발 중에만: 콘솔·시험 도구에서 효과를 불러 본다.
     //   window.__fx.emit("complete")                         — 지금 갈래로 (자리·떨림·인사 차례까지 실제와 같게)
@@ -267,7 +283,7 @@ export default function FxStage() {
     }, []);
 
     useEffect(() => {
-        if (inWidget || mobileApp) return;
+        if (suppressFx) return;
         return fx.on((raw) => {
             if (motionRef.current === "off" || document.hidden) return;
             // 테마를 바꾸면 새 갈래의 모듈이 들어온 뒤에 인사한다
@@ -286,7 +302,7 @@ export default function FxStage() {
             void play(e);
         });
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [inWidget, mobileApp]);
+    }, [suppressFx]);
 
     // 화면을 옮김 (처음 뜰 때는 빼고). 로그인 직후의 옮김은 효과 대신 인사를 한다
     const firstPath = useRef(true);
@@ -308,6 +324,12 @@ export default function FxStage() {
         if (motion === "off") engineRef.current?.stopAll();
     }, [motion]);
     useEffect(() => {
+        if (!suppressFx) return;
+        clearTimeout(idleTimer.current);
+        engineRef.current?.dispose();
+        engineRef.current = null;
+    }, [suppressFx]);
+    useEffect(() => {
         const onVis = () => { if (document.hidden) engineRef.current?.stopAll(); };
         const onResize = () => engineRef.current?.resize();
         document.addEventListener("visibilitychange", onVis);
@@ -321,6 +343,6 @@ export default function FxStage() {
         };
     }, []);
 
-    if (inWidget) return null;
+    if (suppressFx) return null;
     return <S.Canvas ref={canvasRef} aria-hidden="true" data-fx-stage="" />;
 }

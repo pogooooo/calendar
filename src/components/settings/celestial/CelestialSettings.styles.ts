@@ -1,3 +1,4 @@
+import { field, actionButton } from "@/styles/celestial/controls";
 import styled from "styled-components";
 import { MOBILE, TAB_BAR_HEIGHT, SAFE_B } from "@/styles/breakpoints";
 
@@ -286,6 +287,7 @@ export const FormInput = styled.input`
         color: ${p => p.theme.colors.textSecondary};
         opacity: 0.5;
     }
+    ${field}
 `;
 
 export const ButtonRow = styled.div`
@@ -321,6 +323,7 @@ export const FormButton = styled.button<{ $variant?: "primary" | "danger" | "def
         opacity: 0.35;
         cursor: not-allowed;
     }
+    ${actionButton}
 `;
 
 export const StatusMessage = styled.div<{ $type: "success" | "error" }>`
@@ -359,9 +362,6 @@ export const NavPanel = styled.nav`
         border-bottom: 1px solid ${p => p.theme.colors.primary};
         display: flex;
         overflow-x: auto;
-        scrollbar-width: none;
-
-        &::-webkit-scrollbar { display: none; }
     }
 `;
 

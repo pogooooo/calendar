@@ -1,16 +1,16 @@
 "use client";
 
-import * as GemS from "./gem/AnniversaryCrown.styles";
 import * as React from "react";
 import type { AnniversaryType } from "@/store/useAnniversaryStore";
 import { star4Path } from '@/components/ornament/celestial/CelestialOrnaments';
-import { usePickTheme, type ThemeImpls } from "@/styles/themed";
+import { usePickTheme, useThemeFamily, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/AnniversaryCrown.styles";
 import * as MapleS from "./maple/AnniversaryCrown.styles";
 import * as OceanS from './ocean/AnniversaryCrown.styles';
+import * as GemS from './gem/GemAnniversaryCrown.styles';
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS, gem: GemS };
 
 interface Props {
     items: AnniversaryType[];
@@ -29,6 +29,7 @@ interface Props {
  */
 export default function AnniversaryCrown({ items, children, today = false, flip = false }: Props) {
     const S = usePickTheme(STYLES);
+    const gem = useThemeFamily() === "gem";
     const reelRef = React.useRef<HTMLDivElement>(null);
     const [active, setActive] = React.useState(0);
 
@@ -60,9 +61,10 @@ export default function AnniversaryCrown({ items, children, today = false, flip 
             $flip={flip}
             onWheel={handleWheel}
             aria-label={items.map((a) => a.title).join(", ")}
+            title={gem ? items.map(a => a.title).join(", ") : undefined}
         >
             <S.Ring>
-                <svg viewBox="0 0 34 34" aria-hidden>
+                {!gem && <svg viewBox="0 0 34 34" aria-hidden>
                     <circle className="ring" cx="17" cy="17" r="13.5" />
                     {multi && <circle className="ring2" cx="17" cy="17" r="16" />}
                     <path
@@ -71,8 +73,8 @@ export default function AnniversaryCrown({ items, children, today = false, flip 
                     />
                     {today && <circle className="sweep" cx="17" cy="17" r="13.5" />}
                     <circle className="bead" r="1.5" />
-                </svg>
-                {children != null && <b className="dn">{children}</b>}
+                </svg>}
+                {gem ? children : children != null && <b className="dn">{children}</b>}
             </S.Ring>
 
             <S.Reveal $multi={multi} $flip={flip}>

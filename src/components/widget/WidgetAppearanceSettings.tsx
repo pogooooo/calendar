@@ -7,6 +7,7 @@ import {normalizeWidgetAppearance,resolveWidgetEffect,type WidgetAppearance} fro
 import {normalizeWidgetBackground,type WidgetBgSettings} from '@/lib/widgetBackground';
 import {useWidgetMeta} from '@/hooks/useWidgetMeta';
 import {useMotionHeldByOs} from '@/hooks/useThemeMotion';
+import {useSwapMotion} from '@/hooks/useMotion';
 import {usePickTheme} from '@/styles/themed';
 import * as Celestial from './celestial/CelestialWidgetAppearance.styles';
 import * as Maple from './maple/MapleWidgetAppearance.styles';
@@ -53,6 +54,7 @@ export default function WidgetAppearanceSettings({kind,compact=false,onDone,titl
     const [saveError,setSaveError]=useState(false);
     const [colorDraft,setColorDraft]=useState({source:bg.customColor,text:bg.customColor,error:false});
     const panel=useRef<HTMLDivElement>(null),retry=useRef<null|(()=>void)>(null);
+    useSwapMotion(section, panel, {order: SECTIONS});
     const appMotion=useSettingStore(state=>state.motion),heldByOs=useMotionHeldByOs();
     const effectiveMotion=heldByOs?'off':resolveWidgetEffect(appMotion,a.effect);
     const changed=JSON.stringify(initial)!==JSON.stringify({appearance:a,bg});
@@ -86,11 +88,12 @@ export default function WidgetAppearanceSettings({kind,compact=false,onDone,titl
 
     return <><DialogLayout/><S.Surface data-widget-appearance={kind} data-compact={compact?'':undefined}>
         <header className="settings-head"><div><span className="eyebrow">{text('위젯 꾸미기','Widget appearance')}</span><h3>{label}</h3></div>
-            <span className="scope" title={text(`이 기기의 ${label} 위젯에 적용됩니다.`,`Applies to ${label} on this device.`)}>{text('이 위젯만','This widget only')}</span>
+            {!compact&&<span className="scope" title={text(`이 기기의 ${label} 위젯에 적용됩니다.`,`Applies to ${label} on this device.`)}>{text('이 위젯만','This widget only')}</span>}
             {onDone&&<button type="button" className="icon-button" aria-label={text('위젯 설정 닫기','Close widget settings')} onClick={onDone}><X size={18}/></button>}
         </header>
         <div className="settings-workspace">
-            <WidgetAppearancePreview kind={kind} label={label} appearance={a} bg={bg} compact={compact}/>
+            <WidgetAppearancePreview kind={kind} label={label} appearance={a} bg={bg} compact={compact}
+                previewMotion={section === 'motion' ? effectiveMotion : undefined}/>
             <div className="settings-editor">
                 <div className="section-tabs" role="tablist" aria-label={text('위젯 설정 항목','Widget settings sections')}>
                     {SECTIONS.map(value=><button type="button" key={value} role="tab" aria-label={sectionLabels[value]} aria-describedby={`${id}-${value}-value`} id={`${id}-${value}-tab`} aria-selected={section===value} aria-controls={`${id}-${value}-panel`} tabIndex={section===value?0:-1}
@@ -128,7 +131,7 @@ export default function WidgetAppearanceSettings({kind,compact=false,onDone,titl
                     {section==='ornaments'&&<>
                         <h4>{text('장식 표시와 진하기','Ornament visibility and opacity')}</h4>
                         <div className="choices two option-cards">
-                            <button type="button" aria-pressed={a.design==='ornate'} onClick={()=>change({design:'ornate'})}><strong>{text('테마 장식','Theme ornaments')}</strong><small>{text('문양·물빛·단풍 그늘','Patterns, waterlight and leaves')}</small></button>
+                            <button type="button" aria-pressed={a.design==='ornate'} onClick={()=>change({design:'ornate'})}><strong>{text('테마 장식','Theme ornaments')}</strong><small>{text('테마 문양과 가장자리 장식','Theme motifs and trim')}</small></button>
                             <button type="button" aria-pressed={a.design==='simple'} onClick={()=>change({design:'simple'})}><strong>{text('장식 숨기기','Hide ornaments')}</strong><small>{text('정보를 또렷하게','Focus on information')}</small></button>
                         </div>
                         <RangeControl label={text('장식 불투명도','Ornament opacity')} value={Math.round(a.intensity*100)} disabled={a.design==='simple'} onChange={value=>change({intensity:value/100})} low={text('숨김','Hidden')} high={text('선명하게','Vivid')}/>

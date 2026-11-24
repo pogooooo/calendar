@@ -1,6 +1,5 @@
 "use client";
 
-import * as GemS from "./gem/GemCategoryAddModal.styles";
 import * as React from "react";
 import { useT } from "@/i18n/useT";
 import { CategoryAddThemeProps } from "./CategoryAddModal";
@@ -13,7 +12,7 @@ import * as MapleS from "./maple/MapleCategoryAddModal.styles";
 import * as OceanS from './ocean/OceanCategoryAddModal.styles';
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS  };
 
 export default function CategoryAddModalView({
                                                       isOpen, onClose,

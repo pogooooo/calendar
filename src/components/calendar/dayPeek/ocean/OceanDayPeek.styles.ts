@@ -75,10 +75,6 @@ export const Head = styled(C.Head)`
     ${focusRing}
 `;
 
-export const List = styled(C.List)`
-    scrollbar-width: none;
-`;
-
 /** 한 줄 — 44px, 카테고리 색 점 · 제목 · 시각, 아래로 머리카락 선 */
 export const Row = styled(C.Row)`
     gap: 12px;

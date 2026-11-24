@@ -1,15 +1,14 @@
 "use client";
 
-import GemAtmosphere from './gem/GemAtmosphere';
 import { usePathname } from 'next/navigation';
-import { usePickTheme } from '@/styles/themed';
+import { useThemeFamily } from '@/styles/themed';
 import CelestialAtmosphere from './celestial/CelestialAtmosphere';
 import MapleAtmosphere from './maple/MapleAtmosphere';
 import OceanAtmosphere from './ocean/OceanAtmosphere';
-import useMobilePresentation from '@/hooks/useMobilePresentation';
+import { useSimpleMobileAppearance } from '@/hooks/useMobilePresentation';
 import usePresentation from '@/hooks/usePresentation';
 
-const VIEWS = { celestial: CelestialAtmosphere, maple: MapleAtmosphere, ocean: OceanAtmosphere , gem: GemAtmosphere };
+const VIEWS = { celestial: CelestialAtmosphere, maple: MapleAtmosphere, ocean: OceanAtmosphere, gem: null };
 
 /**
  * Decorative only: every theme controls its own shapes, density and movement.
@@ -18,10 +17,10 @@ const VIEWS = { celestial: CelestialAtmosphere, maple: MapleAtmosphere, ocean: O
  * 창 전체를 계속 다시 칠하게 되어 윈도우에서 위젯이 깜빡였다(1.2.0). 작은 위젯에 떨어지는 잎이 있을 자리도 없다.
  */
 export default function ThemeAtmosphere() {
-    const View = usePickTheme(VIEWS);
+    const View = VIEWS[useThemeFamily()];
     const pathname = usePathname();
-    const mobile = useMobilePresentation();
+    const simpleMobile = useSimpleMobileAppearance();
     const presentation = usePresentation();
-    if (mobile || presentation === 'desktop-widget' || pathname?.startsWith('/widget')) return null;
+    if (!View || simpleMobile || presentation === 'desktop-widget' || pathname?.startsWith('/widget')) return null;
     return <View />;
 }

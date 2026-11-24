@@ -1,11 +1,12 @@
 "use client"
 
-import GemGround from '@/styles/gem/GemGround';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useLayoutEffect, useMemo } from 'react';
+import { usePathname } from 'next/navigation';
 import { ThemeProvider } from 'styled-components';
 import { themes } from '@/styles/theme';
-import { availableThemeName } from '@/styles/themeAvailability';
-import { applyGemColor } from '@/styles/gem/palette';
+import { availableThemeName, GEM_THEME_AVAILABLE, isGemTheme } from '@/styles/themeAvailability';
+import { DEFAULT_STONE, gemThemeWithColor } from '@/features/gem/color';
+import useGemMaterials from '@/features/gem/materials/useGemMaterials';
 import GlobalScrollbar from '@/styles/GlobalScrollbar';
 import GlobalTypography, { getFontSize, getFontWeight } from '@/styles/GlobalTypography';
 import useSettingStore from "@/store/useSettingStore";
@@ -18,16 +19,19 @@ import ThemeAtmosphere from './ambient/ThemeAtmosphere';
 import FxStage from './fx/FxStage';
 import { MotionConfig } from 'framer-motion';
 import InterfaceMotion from './transition/InterfaceMotion';
-import useMobilePresentation from '@/hooks/useMobilePresentation';
+import { useSimpleMobileAppearance } from '@/hooks/useMobilePresentation';
 import usePresentation from '@/hooks/usePresentation';
 import PresentationDetails from '@/styles/PresentationDetails.styles';
 import { useMotionHeldByOs } from '@/hooks/useThemeMotion';
 import { resolveThemeMotion } from '@/lib/presentationMotion';
 
 /** 갈래가 화면 전체에 얹는 한 겹 (종이결 같은 것). 없는 갈래는 아무것도 안 얹는다. */
-const GROUNDS: Partial<Record<ThemeFamily, React.ComponentType>> = { maple: MapleGround, celestial: CelestialGround, ocean: OceanGround , gem: GemGround };
+const GROUNDS: Partial<Record<ThemeFamily, React.ComponentType>> = { maple: MapleGround, celestial: CelestialGround, ocean: OceanGround };
 
 export default function ThemeProviderWrapper({ children }: { children: React.ReactNode }) {
+    const path = usePathname();
+    const gemGallery = process.env.NODE_ENV === "development"
+        && (path === "/dev/design/gem" || path.startsWith("/dev/design/gem/"));
     const themeName = useSettingStore((state) => state.theme);
     const themeOptions = useSettingStore((state) => state.themeOptions);
     const gemColor = useSettingStore((state) => state.gemColor);
@@ -37,14 +41,16 @@ export default function ThemeProviderWrapper({ children }: { children: React.Rea
     const motion = useSettingStore((state) => state.motion);
     const motionOverOs = useSettingStore((state) => state.motionOverOs);
     const locale = useSettingStore((state) => state.locale);
-    const mobile = useMobilePresentation();
+    const mobile = useSimpleMobileAppearance();
     const presentation = usePresentation();
     const heldByOs = useMotionHeldByOs();
 
-    useEffect(() => {
-        document.documentElement.dataset.presentation = presentation;
-        return () => { delete document.documentElement.dataset.presentation; };
-    }, [presentation]);
+    useLayoutEffect(() => {
+        const root = document.documentElement;
+        root.dataset.presentation = presentation;
+        if (presentation === 'mobile-app') root.dataset.mobileAppearance = mobile ? 'simple' : 'rich';
+        else delete root.dataset.mobileAppearance;
+    }, [presentation, mobile]);
 
     useEffect(() => {
         const root = document.documentElement;
@@ -80,10 +86,37 @@ export default function ThemeProviderWrapper({ children }: { children: React.Rea
 
     // "기본" 은 갈래가 정한 본문 글꼴이다 — 지금은 세 갈래 모두 Pretendard
     const bodyFamily = fontOption.key === "default" ? baseTheme.fonts.body : fontOption.family;
+    const gem = isGemTheme(baseTheme.name);
+    const materialColor = useGemMaterials(baseTheme.mode, gemColor, gem && !gemGallery, GEM_THEME_AVAILABLE);
     const theme = useMemo(() => ({
-        ...applyGemColor(baseTheme, gemColor),
+        ...gemThemeWithColor(baseTheme, materialColor),
         fonts: { ...baseTheme.fonts, body: bodyFamily },
-    }), [baseTheme, bodyFamily, gemColor]);
+    }), [baseTheme, bodyFamily, materialColor]);
+
+    useLayoutEffect(() => {
+        const root = document.documentElement;
+        const custom = gem && !gemGallery && materialColor !== DEFAULT_STONE;
+        root.toggleAttribute("data-gem-custom-color", custom);
+        const colors = {
+            "--gem-custom-background": theme.colors.background,
+            "--gem-custom-surface": theme.colors.surface,
+            "--gem-custom-line": theme.colors.border,
+            "--gem-custom-primary": theme.colors.primary,
+        };
+        for (const [key, value] of Object.entries(colors)) {
+            if (custom) root.style.setProperty(key, value);
+            else root.style.removeProperty(key);
+        }
+        if (gem && !gemGallery) {
+            root.dataset.themeFamily = "gem";
+            root.dataset.themeMode = theme.mode;
+            root.style.setProperty("--gem-stone", materialColor);
+        } else {
+            delete root.dataset.themeFamily;
+            delete root.dataset.themeMode;
+            root.style.removeProperty("--gem-stone");
+        }
+    }, [gem, theme.mode, materialColor, gemGallery, theme.colors]);
 
     useEffect(() => {
         ensureFontLoaded(fontOption);
@@ -125,15 +158,15 @@ export default function ThemeProviderWrapper({ children }: { children: React.Rea
             <MotionConfig reducedMotion={motion === 'off' || heldByOs ? 'always' : 'never'}>
             <GlobalScrollbar />
             <PresentationDetails />
-            {Ground && <Ground />}
+            {!gemGallery && Ground && <Ground />}
             <GlobalTypography
                 $sizePx={getFontSize(fontSizeKey).px}
                 $weight={getFontWeight(fontWeightKey).weight}
             />
-            <ThemeAtmosphere />
+            {!gemGallery && <ThemeAtmosphere />}
             <InterfaceMotion />
             {children}
-            <FxStage />
+            {!gemGallery && <FxStage />}
             </MotionConfig>
         </ThemeProvider>
     );

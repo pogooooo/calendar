@@ -1,6 +1,5 @@
 "use client";
 
-import * as GemS from "./gem/GemChallenge.styles";
 import * as React from "react";
 
 import CategoryFilter from "@/components/calendar/parts/categoryFilter/CategoryFilter";
@@ -9,10 +8,11 @@ import { DynamicSticker } from "@/assets/ChallengeStickers";
 import { ChallengeRecords } from "./ChallengeRecords.styles";
 import { useT } from "@/i18n/useT";
 import type { CategoryType, ChallengeType } from "@/types";
-import { useThemeFamily, type ThemeImpls } from "@/styles/themed";
+import { usePickTheme, useThemeFamily, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialChallenge.styles";
 import * as MapleS from "./maple/MapleChallenge.styles";
 import * as OceanS from './ocean/OceanChallenge.styles';
+import * as GemS from "./gem/GemChallenge.styles";
 import CelestialChallengeLayout from "./celestial/CelestialChallengeLayout";
 import OceanChallengeLayout from "./ocean/OceanChallengeLayout";
 import type { ChallengeTodayState } from "./ChallengeLayout.types";
@@ -20,10 +20,10 @@ import { challengeExpired, completionKey, slotKey, slotsUntil } from "@/lib/chal
 import { useListMotion, useSwapMotion } from "@/hooks/useMotion";
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS, gem: GemS };
 
 /** 갈래마다 제 배치 — Maple 은 Celestial 의 배치(목록 | 판 둘)에 제 모양을 입히고, 바다는 카드 갤러리와 펼친 무대 */
-const LAYOUTS = { celestial: CelestialChallengeLayout, maple: CelestialChallengeLayout, ocean: OceanChallengeLayout , gem: CelestialChallengeLayout };
+const LAYOUTS = { celestial: CelestialChallengeLayout, maple: CelestialChallengeLayout, ocean: OceanChallengeLayout, gem: CelestialChallengeLayout };
 
 interface CelestialChallengeProps {
     categories: CategoryType[];
@@ -57,7 +57,7 @@ export default function ChallengeView({
     isModalOpen, closeEditor, editingChallenge, handleSaveChallenge,
 }: CelestialChallengeProps) {
     const family = useThemeFamily();
-    const S = STYLES[family];
+    const S = usePickTheme(STYLES);
     const Layout = LAYOUTS[family];
     const tr = useT().challenge;
 

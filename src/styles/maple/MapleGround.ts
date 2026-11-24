@@ -13,7 +13,7 @@ import { withAlpha } from "@/styles/color";
  *
  * 종이색과 빛은 html 에만 칠하고 body·앱 껍데기는 비운다(바다와 같은 까닭) — 단풍 장면(MapleAtmosphere)이 내용 뒤
  * z-index:-1 에 깔리므로, 껍데기가 칠해져 있으면 그 면이 장면을 통째로 덮는다.
- * 위젯 창은 html:has([data-widget]) 의 투명(globals.css, 더 좁은 규칙)이 이긴다.
+ * 위젯 창은 html:has([data-widget]:not([data-widget-preview])) 의 투명(globals.css, 더 좁은 규칙)이 이긴다.
  */
 const GRAIN = (r: number, g: number, b: number) =>
     `url("data:image/svg+xml,${encodeURIComponent(
@@ -75,27 +75,10 @@ const MapleGround = createGlobalStyle`
         opacity: ${(p) => p.theme.mode === "dark" ? 0.08 : p.theme.variant === "vintage" ? 0.16 : 0.1};
     }
 
-    html:has([data-widget]) body::after {
+    html:has([data-widget]:not([data-widget-preview])) body::after {
         display: none;
     }
 
-    /* 스크롤 막대 — 눈금자(GlobalScrollbar) 대신 둥근 막대 하나. 트랙은 비운다 */
-    @media (hover: hover) {
-        html *::-webkit-scrollbar-track {
-            background-image: none;
-            border: none;
-        }
-        html *::-webkit-scrollbar-thumb {
-            border: 3px solid transparent;
-            border-radius: 999px;
-            background-clip: padding-box;
-            background-color: ${(p) => withAlpha(p.theme.colors.text, p.theme.mode === "dark" ? 0.24 : 0.2)};
-        }
-        html *::-webkit-scrollbar-thumb:hover {
-            box-shadow: none;
-            background-color: ${(p) => withAlpha(p.theme.colors.text, 0.36)};
-        }
-    }
 `;
 
 export default MapleGround;

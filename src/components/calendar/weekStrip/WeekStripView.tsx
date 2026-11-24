@@ -1,31 +1,33 @@
 "use client";
 
-import * as GemS from "./gem/GemWeekStrip.styles";
 import * as React from "react";
 import { fx, rectOf } from '@/lib/fx';
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { WeekStripThemeProps } from "./WeekStrip";
-import { usePickTheme, type ThemeImpls } from "@/styles/themed";
+import { usePickTheme, useThemeFamily, type ThemeImpls } from "@/styles/themed";
+import * as GemS from "./gem/GemWeekStrip.styles";
 import * as CelestialS from "./celestial/CelestialWeekStrip.styles";
 import * as MapleS from "./maple/MapleWeekStrip.styles";
 import { leafShapeOf } from "@/styles/maple/ink";
 import { useSwapMotion } from "@/hooks/useMotion";
+import GemSelectionFrame from "../parts/GemSelectionFrame";
 import * as OceanS from './ocean/OceanWeekStrip.styles';
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS, gem: GemS };
 
 export default function WeekStripView({
     days, dayNames, title, isTodayShown,
     onPrevWeek, onNextWeek, onToday, onSelect, swipe, labels,
 }: WeekStripThemeProps) {
     const S = usePickTheme(STYLES);
+    const gem = useThemeFamily() === "gem";
     // 주를 넘기면(‹ ›·쓸기·오늘) 일곱 칸이 오는 쪽에서 들어온다 — 다음 주면 오른쪽에서
     const daysRef = React.useRef<HTMLDivElement>(null);
     useSwapMotion(days[0]?.key, daysRef);
     return (
         <S.Strip data-week-strip {...swipe}>
-            <S.Head>
+            <S.Head data-week-navigation>
                 <button type="button" onClick={onPrevWeek} aria-label={labels.prevWeek}>
                     <ChevronLeft size={16} />
                 </button>
@@ -53,6 +55,7 @@ export default function WeekStripView({
                         type="button"
                         role="tab"
                         aria-selected={d.isSelected}
+                        data-gem-frame-anchor={gem && d.isSelected ? "" : undefined}
                         tabIndex={d.isSelected?0:-1}
                         aria-current={d.isToday ? 'date' : undefined}
                         aria-label={`${d.date.getMonth() + 1}/${d.date.getDate()} ${dayNames[i]}`}
@@ -61,7 +64,8 @@ export default function WeekStripView({
                         $weekend={d.isWeekend}
                         onClick={(event) => { fx.emit('calendar-pick',{rect:rectOf(event.currentTarget)}); onSelect(d.date); }}
                     >
-                        <span className="name">{d.isToday ? labels.today : dayNames[i]}</span>
+                        {gem && d.isToday && <i className="gem-today-inlay" aria-hidden="true" />}
+                        <span className="name">{d.isToday && !gem ? labels.today : dayNames[i]}</span>
                         <span className="num">{d.date.getDate()}</span>
                         <span className="dots" aria-hidden>
                             {d.dots.map((c, j) => <i key={j} style={{ background: c }} data-leaf={leafShapeOf(c)} />)}
@@ -69,6 +73,7 @@ export default function WeekStripView({
                         </span>
                     </S.Day>
                 ))}
+                {gem && <GemSelectionFrame period={days[0]?.key ?? ""} selected={days.find(day => day.isSelected)?.key} />}
             </S.Days>
         </S.Strip>
     );

@@ -1,3 +1,4 @@
+import { optionRow } from "@/styles/celestial/controls";
 /**
  * 설정 화면의 뼈대. 폼 요소(FormInput, FormButton …)는 예전 그대로
  * SettingsView.styles.ts 를 쓰고, 여기에는 판 넷으로 나뉜 새 틀만 둔다.
@@ -523,6 +524,7 @@ export const Seg = styled.button<{ $selected: boolean }>`
     }
 
     ${MOBILE} { min-height: 46px; justify-content: center; padding: 0 6px; }
+    ${optionRow}
 `;
 
 /* ── 폰트 ────────────────────────────────────────────────────────────── */

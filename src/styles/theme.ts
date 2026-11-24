@@ -1,8 +1,8 @@
 import { DefaultTheme } from "styled-components";
 import { THEME_FAMILIES, type ThemeFamily } from "./themed";
-import { isThemeAvailable } from './themeAvailability';
 import { causticNet } from "./ocean/shoreArt";
-import { applyGemColor, DEFAULT_GEM_COLOR } from './gem/palette';
+import { GEM_THEME_AVAILABLE } from "./themeAvailability";
+import { DEFAULT_STONE, gemThemeWithColor } from "@/features/gem/color";
 
 const commonStyles = {
     fontSizes: {
@@ -61,15 +61,16 @@ const MAPLE_FONTS = {
     body: PRETENDARD,
 };
 
-const GEM_FONTS = {
-    display: "'Cormorant Garamond', 'Gowun Batang', 'Noto Serif KR', serif",
-    numeral: "'Cormorant Garamond', 'Times New Roman', serif",
-    body: PRETENDARD,
-};
-
 const CELESTIAL: ThemeFamily = 'celestial';
 const MAPLE: ThemeFamily = 'maple';
 const OCEAN: ThemeFamily = 'ocean';
+const GEM: ThemeFamily = 'gem';
+
+const GEM_FONTS = {
+    display: "'Cormorant Garamond', 'Gowun Batang', 'Batang', Georgia, serif",
+    numeral: "'Cormorant Garamond', Georgia, serif",
+    body: PRETENDARD,
+};
 
 /** 갈래마다 하나. 설정 화면에 보이는 이름·설명·미리보기 그림이 여기서 나온다. */
 const FAMILY_META: Record<ThemeFamily, { label: string; description: string; preview?: Record<string, string> }> = {
@@ -77,7 +78,7 @@ const FAMILY_META: Record<ThemeFamily, { label: string; description: string; pre
     ocean: { label: 'Ocean', description: 'Liquid glass over a sunlit lagoon — light ripples where you touch' },
     // 미리보기 그림(눌린 잎과 회중시계)은 2026-10-15 다시 그리며 걷었다 — 이제 다른 갈래처럼 색으로 그린 축소판
     maple: { label: 'Maple', description: 'Autumn maple — a branch of red and gold leaves over warm paper, leaves drifting down' },
-    gem: { label: 'Gem', description: 'Faceted gemstones, champagne gold and flowing mineral light — in your own color' },
+    gem: { label: 'Gem', description: 'Polished amethyst, quartz, and a fine gold setting' },
 };
 
 const celestial: DefaultTheme = {
@@ -197,22 +198,6 @@ const mapleVintage: DefaultTheme = {
     line: '#76624C',
 };
 
-const gem: DefaultTheme = applyGemColor({
-    name: 'gem', family: 'gem', mode: 'light', ...commonStyles,
-    fonts: GEM_FONTS,
-    colors: {
-        background: '#EEE8E5', primary: '#7951A9', accent: '#95713E', surface: '#F1EAE8',
-        text: '#281E33', textSecondary: '#716178', border: '#BFB1C7',
-        success: '#416E59', error: '#A13D5D', weekend: '#A13D5D',
-    },
-    preview: { cell: '#EBE3EB', event: '#C7B5DD' },
-}, DEFAULT_GEM_COLOR);
-
-const gemDark: DefaultTheme = applyGemColor({
-    ...gem, name: 'gem-dark', mode: 'dark',
-    colors: { ...gem.colors, success: '#91C2A7', error: '#EC9CB7', weekend: '#EC9CB7' },
-}, DEFAULT_GEM_COLOR);
-
 /**
  * 이름 규칙: 갈래 이름이 밝은 벌, 거기에 '-벌 이름'(dark·vintage)을 붙인 것이 다른 벌이다.
  * ThemeProviderWrapper 가 이 규칙으로 찾는다.
@@ -223,11 +208,34 @@ export const themes: Record<string, DefaultTheme> = {
     maple,
     'maple-dark': mapleDark,
     'maple-vintage': mapleVintage,
-    gem,
-    'gem-dark': gemDark,
+    gem: {
+        name: 'gem', family: GEM, mode: 'light', ...commonStyles, fonts: GEM_FONTS,
+        colors: {
+            background: '#EDE2EC', surface: '#F5ECF2', text: '#301235', textSecondary: '#58405B',
+            primary: '#65416D', accent: '#A47B55', border: '#B799B4', success: '#38674C', error: '#852D55', weekend: '#763A59',
+        },
+        preview: {
+            cell: '#D1B4D2', event: '#4B2A56', today: '#A47B55',
+            bg: 'linear-gradient(#e9cde766, #d5b2d670), var(--gem-calendar-map) center / cover, #d1b4d2',
+        },
+        line: '#957594',
+    },
+    'gem-dark': {
+        name: 'gem-dark', family: GEM, mode: 'dark', ...commonStyles, fonts: GEM_FONTS,
+        colors: {
+            background: '#221625', surface: '#33223B', text: '#F9EFF7', textSecondary: '#D3BBD0',
+            primary: '#DCB9DF', accent: '#E4C499', border: '#8B698C', success: '#9AD5AE', error: '#F4A2C3', weekend: '#EAB0C9',
+        },
+        preview: {
+            cell: '#51365B', event: '#6B4275', today: '#E4C499',
+            bg: 'linear-gradient(#3a224b7a, #302035bd), var(--gem-calendar-map) center / cover, #33223b',
+        },
+        line: '#AA84A6',
+    },
     /* 맑은 물 아래 흰 모래 — 옅은 바다 안개빛 바탕에 물빛이 어른거리고, 판은 무채색 반투명 유리. 색은 깊은 청록 하나만 */
     ocean: {
         name: 'ocean', family: OCEAN, mode: 'light', ...commonStyles,
+        scrollbarUsesPrimary: true,
         fonts: OCEAN_FONTS,
           colors: { background:'#D6E7E4', primary:'#146E82', accent:'#62A7AE', surface:'#E6F1EE', text:'#193F48', textSecondary:'#456973', border:'#A6C5C7', success:'#287253', error:'#A84434', weekend:'#A14D3D' },
         preview: {
@@ -239,6 +247,7 @@ export const themes: Record<string, DefaultTheme> = {
     /* 밤바다에서 헤엄 — 먹빛 물 위에 달빛 물결, 판은 짙은 반투명 유리, 색은 맑은 물빛 하나 */
     'ocean-dark': {
         name: 'ocean-dark', family: OCEAN, mode: 'dark', ...commonStyles,
+        scrollbarUsesPrimary: true,
         fonts: OCEAN_FONTS,
         colors: { background:'#0A1213', primary:'#6CCDC2', accent:'#3A9890', surface:'#121B1C', text:'#E5ECEA', textSecondary:'#93A29F', border:'#26312F', success:'#67C7A2', error:'#EE8774', weekend:'#EE917D' },
         preview: {
@@ -296,13 +305,13 @@ const rankOf = (option: string) => {
     return i < 0 ? OPTION_ORDER.length : i;
 };
 
-export function listThemes(): ThemeChoice[] {
-    return THEME_FAMILIES.filter(isThemeAvailable).map((family) => {
+export function listThemes(gemColor = DEFAULT_STONE): ThemeChoice[] {
+    return THEME_FAMILIES.filter(family => family !== GEM || GEM_THEME_AVAILABLE).map((family) => {
         const variants = Object.values(themes).filter((t) => t.family === family);
         const ordered = [...variants].sort((a, b) => rankOf(optionOf(a)) - rankOf(optionOf(b)));
 
         const grounds: Record<string, ThemeGround> = {};
-        ordered.forEach((t) => { grounds[optionOf(t)] = groundOf(t); });
+        ordered.forEach((t) => { grounds[optionOf(t)] = groundOf(gemThemeWithColor(t, gemColor)); });
 
         return {
             id: family,

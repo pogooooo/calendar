@@ -2,6 +2,7 @@
 
 import SecondaryButton from "@/components/button/secondary/SecondaryButton";
 import { useT } from "@/i18n/useT";
+import { useThemeFamily } from "@/styles/themed";
 import type { CategoryLayoutProps } from "../CategoryLayout.types";
 
 const ROMAN = [
@@ -18,6 +19,7 @@ export default function CelestialCategoryLayout({
     activeTab, plate, tabs, creator, description, members, todos, empty, dialogs,
 }: CategoryLayoutProps) {
     const t = useT();
+    const gem = useThemeFamily() === "gem";
 
     return (
         <S.CategoryWrapper>
@@ -59,12 +61,12 @@ export default function CelestialCategoryLayout({
                     })}
 
                     <S.DeckAddCard type="button" onClick={onAdd} aria-label={t.category.newCategory}>
-                        {t.category.addCategory}
+                        {gem ? t.category.newCategory : t.category.addCategory}
                     </S.DeckAddCard>
                 </S.CategoryList>
             </S.SidebarContainer>
 
-            <S.ContentContainer>
+            <S.ContentContainer data-gem-route-content={gem ? "" : undefined}>
                 {selectedCategory ? (
                     <S.DetailInfo key={selectedCategory.id}>
                         {/* ── 표제부 ── */}

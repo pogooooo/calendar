@@ -30,7 +30,7 @@ const statusColor = (p: Themed, status?: string) => (status === "done"
  * 마우스 화면에서만: 손가락 화면에 이 속성을 주면 겹쳐 뜨던 막대가 자리를 차지하는 막대로 바뀐다(GlobalScrollbar 와 같은 까닭)
  */
 const thinScroll = css`
-    @media (hover: hover) {
+    @supports not selector(::-webkit-scrollbar) {
         scrollbar-width: thin;
         scrollbar-color: ${(p) => hair(p.theme, 0.22)} transparent;
     }

@@ -1,0 +1,42 @@
+{
+  "workflow": "Generate material image -> extract neutral luminance and gloss -> colorize at runtime. Do not synthesize substitute crystal geometry.",
+  "generator": "built-in image_gen",
+  "workspaceDirectory": "src/features/gem/materials",
+  "preparationScript": "scripts/prepare-gem-materials.mjs",
+  "elementCrops": "materialCrops.ts",
+  "elementCropTextures": "cropTextures.ts",
+  "existingGeode": { "neutral": "geode-neutral.webp", "gloss": "geode-neutral-gloss.webp", "shadow": "geode-neutral-shadow.webp", "prompt": "geode-neutral.prompt.txt" },
+  "materials": [
+    {
+      "name": "cut",
+      "neutral": "cut-neutral.webp",
+      "gloss": "cut-gloss.webp",
+      "defaultTextures": ["generated/cut.webp"],
+      "prompt": "A production material texture asset, NOT a UI mockup or object: macro photograph of an uncolored polished amethyst gemstone viewed very close through its broad expertly polished surface. Neutral grayscale only, no purple or color cast. Edge-to-edge continuous vitreous crystal: rich internal fine fracture inclusions, varying clear depths, slightly interlocking irregular broad reflective crystal planes and smaller internal facets, small precise white reflections across selected faces and charcoal depths between them. Smooth expensive lapidary polish with crisp micro-detail, luminance broadly medium gray, highlights not burned out, visibly gemstone rather than flat glass or marble. A restrained elegant arrangement with one third calm readable area and two thirds crystalline intensity, without a hard boundary. No repeated triangles, no hexagonal tessellation, no huge diagonal stripes, no scratch marks, no star sparkles, no lens flares, no specimen silhouette, no text or frames. Landscape 3:2, highest native resolution. Useful for gem buttons, selected tabs and event chips: texture detail must remain noticeable in a narrow horizontal crop.",
+      "source": "C:\\Users\\pogo\\.codex\\generated_images\\01a16cc3-413e-7d42-8fb7-8a4973ebad4e\\exec-d2224d91-1ff3-43d1-b38b-fb938a6e88be.png"
+    },
+    {
+      "name": "quartz",
+      "neutral": "quartz-neutral.webp",
+      "gloss": "quartz-gloss.webp",
+      "defaultTextures": ["generated/quartz-light.webp", "generated/quartz-dark.webp"],
+      "prompt": "A production grayscale texture asset: a high-resolution edge-to-edge thin polished translucent quartz slab, macro mineral photography, neutral achromatic black-and-white only. Fine irregular cloudy crystal growth, overlapping internal translucent strata, slight refraction along natural cleavage boundaries, luminous tiny internal inclusions, subtle depth and moderate microcontrast. Broad undulating optical fields interspersed with finer mineral detail. Distinctly clear polished gemstone rather than stone marble, paper, wrinkled plastic, frosted blur or geometric illustration. The material is optically transparent looking but the OUTPUT is opaque continuous texture; no external scene. Quiet enough to place calendar text on top, but retain crisp crystal seams and grain everywhere; do not blur. Mostly silver-gray values from 90 to 210 with a few deep seams and very small bright glints. No ornate objects, no jewels, no gold, no star sparkle, no large diagonal lines, no borders, no words. Landscape 3:2, maximum native resolution. This will be recolored lilac/white or a user chosen RGB color by the app.",
+      "source": "C:\\Users\\pogo\\.codex\\generated_images\\01a16cc3-413e-7d42-8fb7-8a4973ebad4e\\exec-594e29fd-8588-4e2e-8c82-a312984bfe1b.png"
+    },
+    {
+      "name": "pearl",
+      "neutral": "pearl-neutral.webp",
+      "gloss": "pearl-gloss.webp",
+      "defaultTextures": ["generated/pearl-light.webp", "generated/pearl-dark.webp"],
+      "prompt": "Create a standalone material texture, not a mockup: extreme macro photograph of subtly lustrous natural mother of pearl cut into a flat unbroken sheet. Achromatic neutral grayscale ONLY, absolutely no rainbow colors. Subtle fine layered nacre growth, narrow organic softly curved lamellae, pearly optical depth, refined very small satin specular highlights. Mostly pale and middle gray with small moderate darker contours, crisp natural detail, an evenly calm readable center, richer lamellae toward the edges with no artificial vignette. Luxurious and tangible, neither opaque flat paint nor fog. No round pearls, beads, waves, crumpled fabric, marble, cloud sky, polygon pattern, scratches, stars or artificial flares. Fill entire frame with the material, no specimen edge, text, labels or frame. Landscape 3:2 at highest native resolution. Intended for small secondary controls and input fields, with hue supplied by application code.",
+      "source": "C:\\Users\\pogo\\.codex\\generated_images\\01a16cc3-413e-7d42-8fb7-8a4973ebad4e\\exec-8bea6d87-8931-4b3d-b966-82d4b0be3377.png"
+    },
+    {
+      "name": "metal",
+      "neutral": "metal-neutral.webp",
+      "defaultTextures": ["generated/gold.webp", "generated/silver.webp"],
+      "prompt": "An edge-to-edge square production material texture of perfectly polished precious metal, photographed as a flat large surface at macro scale, monochrome neutral silver grayscale ONLY. Elegant controlled broad specular gradients reflecting a soft studio light source, very fine near-invisible forging grain, rich contrast between deep neutral silver and luminous silver, subtle smooth nonrepeating variations across the entire surface. Jewel-setting quality metal, NOT brushed scratched steel or chrome waves. No distinct objects, no bevelled frames, no holes, no text, no lines, no glitter stars. No sharp black/white band interruptions. Not a generic computer generated gradient: retain fine real metal surface detail. This material will be cropped into thin continuous gold or silver borders around UI elements and tint will be applied separately. Square highest native resolution.",
+      "source": "C:\\Users\\pogo\\.codex\\generated_images\\01a16cc3-413e-7d42-8fb7-8a4973ebad4e\\exec-46fd72fb-ba50-4256-ba8d-8cfe7a68de36.png"
+    }
+  ]
+}

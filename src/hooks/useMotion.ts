@@ -13,7 +13,6 @@
  * 데스크톱 위젯 창(투명 창)은 날짜 넘김만 아주 짧게, 목록의 몸짓은 없다 — 창 전체를 다시 칠해 깜빡인다(1.2.0).
  * 끝난 몸짓은 아무것도 남기지 않는다: transform 이 남으면 안의 fixed 단추가 화면이 아니라 그 상자에 선다(BUGS.md).
  */
-import { gemMotion } from '@/styles/gem/motion';
 import * as React from "react";
 import { useTheme } from "styled-components";
 import useThemeMotion from "@/hooks/useThemeMotion";
@@ -26,9 +25,11 @@ import {
 import { tideMotion } from "@/styles/ocean/water";
 import { paperMotion } from "@/styles/maple/motion";
 import { starMotion } from "@/styles/celestial/motion";
+import { gemMotion } from "@/features/gem/motion";
+import { captureContent, exchangeContent, type ContentSnapshot } from "@/features/gem/contentTransition";
 
 /** 갈래마다 제 몸짓 — Celestial 은 별빛(곧게 미끄러지며 맑아짐), Maple 은 종이, 바다는 물. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const SETS = { celestial: starMotion, maple: paperMotion, ocean: tideMotion , gem: gemMotion };
+const SETS = { celestial: starMotion, maple: paperMotion, ocean: tideMotion, gem: gemMotion };
 
 export function useMotionSet(): MotionSet {
     return usePickTheme(SETS);
@@ -44,7 +45,7 @@ export type MotionTarget =
 function targetsOf(t: MotionTarget): Element[] {
     const v = typeof t === "function" ? t() : t.current;
     const list: ReadonlyArray<Element | null | undefined> = Array.isArray(v) ? v : [v as Element | null | undefined];
-    return list.filter((el): el is Element => !!el && el.isConnected);
+    return list.filter((el): el is Element => !!el && el.isConnected && !el.closest('[data-motion-snapshot]'));
 }
 
 /**
@@ -94,6 +95,8 @@ export interface SwapOptions {
     /** 판 이름처럼 글자 차례가 뜻이 없는 열쇠의 차례 */
     order?: readonly SwapKey[];
     disabled?: boolean;
+    /** Gem content identities in target order. Unchanged regions are kept in place. */
+    contentKeys?: readonly string[];
 }
 
 function dirOf(prev: SwapKey, next: SwapKey, o: SwapOptions): Dir {
@@ -115,12 +118,18 @@ export function useSwapMotion(key: SwapKey | null | undefined, target: MotionTar
     const set = useMotionSet();
     const level = useThemeMotion();
     const live = React.useRef({ set, level, target, opts });
-    live.current = { set, level, target, opts };
     const prev = React.useRef(key);
-    const running = React.useRef<Animation[]>([]);
+    const running = React.useRef<Array<() => void>>([]);
+    const snapshots = React.useRef<Array<ContentSnapshot | undefined>>([]);
+    const contentKeys = React.useRef<readonly string[]>([]);
 
-    React.useEffect(() => () => { running.current.forEach(a => a.cancel()); }, []);
-    React.useEffect(() => { if (level === 'off') running.current.forEach(a => a.cancel()); }, [level]);
+    useIsoLayoutEffect(() => {
+        live.current = { set, level, target, opts };
+    });
+    useIsoLayoutEffect(() => {
+        const animations = running.current;
+        return () => { animations.splice(0).forEach(cancel => cancel()); snapshots.current = []; contentKeys.current = []; };
+    }, [set, level, opts.disabled]);
 
     useIsoLayoutEffect(() => {
         const before = prev.current;
@@ -129,15 +138,32 @@ export function useSwapMotion(key: SwapKey | null | undefined, target: MotionTar
         const { set, level, target, opts } = live.current;
         if (level === "off" || opts.disabled) return;
         const axis = opts.axis ?? "x";
-        const first = targetsOf(target)[0];
+        const targets = targetsOf(target);
+        const first = targets[0];
         const box = first?.getBoundingClientRect();
-        const step = set.swapIn({ dir: dirOf(before, key, opts), axis, level, size: opts.size ?? "pane", widget: isWidgetWindow(), extent: box ? (axis === "x" ? box.width : box.height) : undefined });
+        const widget = isWidgetWindow();
+        const step = set.swapIn({ dir: dirOf(before, key, opts), axis, level, size: opts.size ?? "pane", widget, extent: box ? (axis === "x" ? box.width : box.height) : undefined });
         // 빠르게 잇달아 넘기면 앞 몸짓을 지우고 새로 — 겹쳐 쌓이지 않게
-        running.current.forEach((a) => a.cancel());
-        running.current = [];
+        const animations = running.current;
+        animations.splice(0).forEach(cancel => cancel());
         if (!step) return;
-        running.current = targetsOf(target).map((el) => startOnNextFrame(el.animate(enterFrames(step.pose, restOpacity(el)), optionsOf(step))));
+        animations.push(...targets.map((el, index) => {
+            if (set === gemMotion && opts.contentKeys && contentKeys.current[index] === opts.contentKeys[index]) return () => {};
+            if (set === gemMotion) return exchangeContent(el, widget ? undefined : snapshots.current[index], level);
+            const animation = startOnNextFrame(el.animate(enterFrames(step.pose, restOpacity(el)), optionsOf(step)));
+            return () => animation.cancel();
+        }));
     }, [key]);
+
+    // Only regions that supply semantic content keys keep an outgoing copy.
+    useIsoLayoutEffect(() => {
+        if (set !== gemMotion || level === "off" || opts.disabled || !opts.contentKeys || isWidgetWindow()) return;
+        const elements = targetsOf(target);
+        snapshots.current = elements.map((el, index) => contentKeys.current[index] === opts.contentKeys?.[index]
+            ? snapshots.current[index] ?? captureContent(el)
+            : captureContent(el));
+        contentKeys.current = opts.contentKeys;
+    });
 }
 
 /**
@@ -271,13 +297,10 @@ export function useListMotion(target: MotionTarget, opts: ListMotionOptions = {}
     const set = useMotionSet();
     const level = useThemeMotion();
     const theme = useTheme();
-    const live = React.useRef({ set, level, theme, target, opts });
-    live.current = { set, level, theme, target, opts };
     const mem = React.useRef({ box: null as Element | null, kids: [] as Element[], done: new WeakMap<Element, boolean>(), reset: undefined as unknown, ready: false, since: 0 });
 
     // 그릴 때마다 — 목록이 바뀐 commit 에서만 무언가 한다(바뀐 것이 없으면 아이들을 훑기만)
     useIsoLayoutEffect(() => {
-        const { set, level, theme, target, opts } = live.current;
         const m = mem.current;
         const now = performance.now();
         // 처음 그린 때·통째로 갈린 때부터 셈한다 — 그 뒤 잠깐은 자료가 막 도착하는 때다
@@ -285,7 +308,7 @@ export function useListMotion(target: MotionTarget, opts: ListMotionOptions = {}
         if (fresh) { m.ready = true; m.since = now; m.reset = opts.reset; }
         const box = targetsOf(target)[0] ?? null;
         const kids = box
-            ? Array.from(opts.items ? box.querySelectorAll(opts.items) : box.children).filter((el) => !GHOSTS.has(el) && (!opts.filter || opts.filter(el)))
+            ? Array.from(opts.items ? box.querySelectorAll(opts.items) : box.children).filter((el) => !GHOSTS.has(el) && !el.closest('[data-motion-snapshot]') && (!opts.filter || opts.filter(el)))
             : [];
         // 목록 상자가 새로 생겼으면(빈 칸 안내 → 목록) 예전 줄은 없던 셈 — 빈 목록에 넣은 첫 줄도 들어온다
         const sameBox = !!box && box === m.box;

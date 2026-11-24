@@ -1,12 +1,11 @@
 'use client';
 
-import * as GemS from "./gem/GemProjectPage.styles";
 import React, { useEffect, useState, useRef } from 'react';
 import useProjectStore, { ProjectType, ProjectTaskType } from '@/store/useProjectStore';
 import useCategoryStore from '@/store/useCategoryStore';
 import { useAuthFetch } from '@/hooks/useAuthFetch';
 import { useDialog } from '@/components/dialog/DialogProvider';
-import { usePickTheme, type ThemeImpls } from "@/styles/themed";
+import { usePickTheme, useThemeFamily, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialProjectPage.styles";
 import * as MapleS from "./maple/MapleProjectPage.styles";
 
@@ -24,14 +23,17 @@ import { fromLocalInput, todayKey } from "@/lib/localTime";
 import { boxesOf, useSwapMotion } from "@/hooks/useMotion";
 import * as OceanS from './ocean/OceanProjectPage.styles';
 import OceanProjectLayout from './ocean/OceanProjectLayout';
+import * as GemS from "./gem/GemProjectPage.styles";
+import GemProjectLayout from "./gem/GemProjectLayout";
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS, gem: GemS };
 
-const LAYOUTS = { celestial: CelestialProjectLayout, maple: MapleProjectLayout, ocean: OceanProjectLayout , gem: CelestialProjectLayout };
+const LAYOUTS = { celestial: CelestialProjectLayout, maple: MapleProjectLayout, ocean: OceanProjectLayout, gem: GemProjectLayout };
 
 export default function ProjectPage() {
     const S = usePickTheme(STYLES);
+    const gem = useThemeFamily() === "gem";
     const ProjectLayout = usePickTheme(LAYOUTS);
     const authFetch = useAuthFetch();
     const dialog = useDialog();
@@ -89,7 +91,11 @@ export default function ProjectPage() {
             if (rafId !== null) cancelAnimationFrame(rafId);
             rafId = requestAnimationFrame(() => {
                 if (!layoutRef.current) return;
-                const { top, height } = layoutRef.current.getBoundingClientRect();
+                const splitTop = gem ? timelineRef.current?.getBoundingClientRect().top : undefined;
+                const bounds = layoutRef.current.getBoundingClientRect();
+                const top = splitTop ?? bounds.top;
+                const height = bounds.bottom - top;
+                if (height <= 0) return;
                 const pointerRatio = ((moveEvent.clientY - top) / height) * 100;
                 const newRatio = Math.min(Math.max(layoutRef.current.dataset.boardFirst === "false" ? 100 - pointerRatio : pointerRatio, 20), 80);
                 boardRatioRef.current = newRatio;
@@ -108,6 +114,15 @@ export default function ProjectPage() {
 
         document.addEventListener('mousemove', onMouseMove, { passive: true });
         document.addEventListener('mouseup', onMouseUp);
+    };
+
+    const resizeWithKeyboard = (event: React.KeyboardEvent) => {
+        if (!["ArrowUp", "ArrowDown", "Home"].includes(event.key)) return;
+        event.preventDefault();
+        const ratio = event.key === "Home" ? 50 : boardRatioRef.current + (event.key === "ArrowUp" ? 5 : -5);
+        const next = Math.max(20, Math.min(80, ratio));
+        boardRatioRef.current = next;
+        setBoardRatio(next);
     };
 
     const handleSaveProject = async (e: React.FormEvent) => {
@@ -201,7 +216,12 @@ export default function ProjectPage() {
                             if (!selectedProjectId) return;
                             await updateProjectTask(authFetch, selectedProjectId, taskId, { startAt: newStart, endAt: newEnd });
                         }}
-                    />)} resizer={(<S.Resizer onMouseDown={handleMouseDownResizer} />)} />
+                    />)} resizer={(<S.Resizer onMouseDown={handleMouseDownResizer} {...(gem ? {
+                        role: "separator", tabIndex: 0, "aria-orientation": "horizontal" as const,
+                        "aria-label": `${t.calendar.timeline} / ${t.calendar.board}`,
+                        "aria-valuemin": 20, "aria-valuemax": 80, "aria-valuenow": boardRatio,
+                        onKeyDown: resizeWithKeyboard,
+                    } : {})} />)} />
             )}
 
             <ProjectTaskEditor target={taskTarget} onClose={() => setTaskTarget(null)} />

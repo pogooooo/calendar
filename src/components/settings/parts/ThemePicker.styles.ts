@@ -3,6 +3,15 @@
  * 오브제는 축소판 그림이나 글자를 덮지 않는다: 타일은 아래 줄 오른쪽 끝, 무대는 이름 줄 오른쪽.
  */
 import styled from "styled-components";
+
+export const GemMark = styled.span`
+    display: inline-block;
+    width: min(100%, 30px);
+    aspect-ratio: 1;
+    border: 1px solid transparent;
+    border-radius: 50%;
+    background: var(--gem-action-map) 61% 52% / 110px auto no-repeat padding-box, var(--gem-gold-edge) border-box;
+`;
 import { MOBILE } from "@/styles/breakpoints";
 
 /**
@@ -61,4 +70,24 @@ export const Arcana = styled.svg`
     stroke-width: 1.1;
     .inner { opacity: 0.55; }
     .star { fill: currentColor; stroke: none; }
+`;
+
+export const GemMini = styled.div<{ $height: number }>`
+    display: grid;
+    grid-template-columns: 19% 1fr;
+    overflow: hidden;
+    height: ${p => p.$height}px;
+    border-radius: 7px;
+    .mini-rail { border-inline-end: 1px solid #b88e63; }
+    .mini-dates {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        grid-template-rows: 1fr 1fr;
+        padding: 5px 3px;
+        position: relative;
+    }
+    span { position: relative; padding: 3px 0; text-align: center; font: 650 clamp(7px, .63rem, 13px)/1.15 ${p => p.theme.fonts.body}; }
+    [data-today]::before { content: ""; position: absolute; inset: 1px 32% auto; height: 2px; border-radius: 3px; background: #b38a58; }
+    [data-picked] { box-shadow: inset 0 0 0 1px #b38a58; border-radius: 4px; }
+    i { position: absolute; inset: 79% 9% auto 31%; height: 11%; border: 1px solid #b38a586e; border-radius: 5px; }
 `;

@@ -1,3 +1,4 @@
+import { lunarTrack } from "@/components/calendar/parts/LunarEvent";
 import styled, {css, keyframes} from "styled-components";
 import { motion } from "framer-motion";
 import { celestialOnly, dotMark, star4Mark } from "@/styles/celestial/ornaments";
@@ -310,6 +311,8 @@ export const AddTodoButton = styled.button`
     align-items: center;
     cursor: pointer;
     opacity: 0;
+    pointer-events: none;
+    &:focus-visible { opacity: 1; pointer-events: auto; }
     transition: opacity 0.2s ease, transform 0.1s ease;
     z-index: 10;
 
@@ -340,6 +343,7 @@ export const DaySlot = styled.div<{ $isToday: boolean }>`
     }
 
     &:hover .add-btn {
+        pointer-events: auto;
         opacity: 0.8;
     }
 `;
@@ -389,6 +393,7 @@ export const TodoBarItem = styled.div<{ $isStart: boolean, $isEnd: boolean, $col
             opacity: 0.8;
         }
     `}
+    ${lunarTrack}
 `;
 
 export const TodoBarSpacer = styled.div` height: 25px; width: 100%; `;

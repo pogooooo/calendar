@@ -1,10 +1,6 @@
 package com.cronos.todoapp.widget
 
 import android.graphics.Color
-import kotlin.math.max
-import kotlin.math.min
-import kotlin.math.pow
-import kotlin.math.roundToInt
 
 /**
  * 위젯이 쓰는 색 한 벌. 앱 테마(스냅샷의 theme)와 위젯 설정(벌 강제)으로 정한다.
@@ -25,8 +21,8 @@ class Palette(
     val weekend: Int,
     /** 빈티지 벌(앱의 maple-vintage) — 색은 스냅샷이 주고, 붓은 잎 그림을 빛바랜 사진처럼 누른다 */
     val vintage: Boolean = false,
-    val gemColor: Int = gold,
-    val metal: Int = gold,
+    /** Neutral gem material is tinted independently from the metal frame. */
+    val gemStone: Int = 0xFF4C224E.toInt(),
 ) {
     /** 실선·테두리. Celestial 은 금색 55%, Maple 은 글자색을 옅게(카드의 옅은 선) */
     val line: Int get() = if (family == "maple") withAlpha(ink, if (dark) 0.16f else 0.12f) else withAlpha(gold, 0.55f)
@@ -118,46 +114,25 @@ class Palette(
             )
         }
 
-        /** Gem keeps the chosen stone hue even when the home widget forces another brightness. */
-        fun gem(dark: Boolean, spec: Snapshot.ThemeSpec?): Palette {
+        private fun gem(dark: Boolean, spec: Snapshot.ThemeSpec?): Palette {
             val c = if (spec != null && (spec.mode == "dark") == dark) spec.colors else emptyMap()
-            val stone = spec?.gemColor ?: 0xFF9268C4.toInt()
-            fun mix(from: Int, to: Int, amount: Float) = Color.rgb(
-                (Color.red(from) + (Color.red(to) - Color.red(from)) * amount).roundToInt(),
-                (Color.green(from) + (Color.green(to) - Color.green(from)) * amount).roundToInt(),
-                (Color.blue(from) + (Color.blue(to) - Color.blue(from)) * amount).roundToInt(),
-            )
-            fun luminance(color: Int): Double {
-                fun linear(channel: Int): Double {
-                    val v = channel / 255.0
-                    return if (v <= 0.04045) v / 12.92 else ((v + 0.055) / 1.055).pow(2.4)
-                }
-                return linear(Color.red(color)) * 0.2126 + linear(Color.green(color)) * 0.7152 + linear(Color.blue(color)) * 0.0722
+            // A widget can force its own brightness. Preserve the user's stone hue in that mode too.
+            val stone = spec?.colors?.get("gemStone")?.takeUnless { it == 0xFF4C224E.toInt() }
+            val tintedSurface = stone?.let {
+                blend(if (dark) 0xFF241D27.toInt() else 0xFFFFF9F6.toInt(), it, if (dark) .17f else .10f)
             }
-            val bg = mix(if (dark) 0xFF100D16.toInt() else 0xFFF0EBE7.toInt(), stone, if (dark) .09f else .065f)
-            val surface = mix(if (dark) 0xFF211B29.toInt() else 0xFFF5F0EA.toInt(), stone, if (dark) .12f else .045f)
-            fun readable(color: Int): Int {
-                val pole = if (dark) Color.WHITE else 0xFF17111E.toInt()
-                for (step in 0..100) {
-                    val candidate = mix(color, pole, step / 100f)
-                    val ink = luminance(candidate)
-                    if (listOf(bg, surface).all { background ->
-                        val paper = luminance(background)
-                        (max(ink, paper) + .05) / (min(ink, paper) + .05) >= 4.5
-                    }) return candidate
-                }
-                return pole
+            val tintedInk = stone?.let {
+                blend(if (dark) 0xFFFFF5FC.toInt() else 0xFF261B2A.toInt(), it, .28f)
             }
-            val primary = c["primary"] ?: readable(stone)
             return Palette(
                 family = "gem", dark = dark,
-                bg = c["background"] ?: bg,
-                ink = c["text"] ?: mix(if (dark) 0xFFF6F0EB.toInt() else 0xFF241B2D.toInt(), stone, .04f),
-                muted = c["textSecondary"] ?: readable(if (dark) 0xFFBCAFC8.toInt() else 0xFF75677C.toInt()),
-                gold = primary, goldText = primary,
-                weekend = c["weekend"] ?: readable(if (dark) 0xFFEC9CB7.toInt() else 0xFFA13D5D.toInt()),
-                gemColor = stone,
-                metal = c["accent"] ?: if (dark) 0xFFDCC197.toInt() else 0xFF95713E.toInt(),
+                bg = c["surface"] ?: tintedSurface ?: if (dark) 0xFF2C1C34.toInt() else 0xFFEDE0EB.toInt(),
+                ink = c["text"] ?: if (dark) 0xFFFFF2FA.toInt() else 0xFF301235.toInt(),
+                muted = c["textSecondary"] ?: if (dark) 0xFFDDC8DE.toInt() else 0xFF654A65.toInt(),
+                gold = if (dark) 0xFFE4C394.toInt() else 0xFF89603D.toInt(),
+                goldText = c["primary"] ?: tintedInk ?: if (dark) 0xFFEBCBEA.toInt() else 0xFF66376D.toInt(),
+                weekend = c["weekend"] ?: if (dark) 0xFFE8ABC2.toInt() else 0xFF79364E.toInt(),
+                gemStone = spec?.colors?.get("gemStone") ?: 0xFF4C224E.toInt(),
             )
         }
 

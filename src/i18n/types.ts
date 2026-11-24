@@ -233,6 +233,11 @@ export interface Translations {
         prevMonth: string;
         nextMonth: string;
         expandDay: string;
+        resizeCalendars: string;
+        focusSection: string;
+        resizePanel: (section: string) => string;
+        resizeHelp: string;
+        allSections: string;
         collapseDay: string;
         dayLabelShort: (m: number, d: number) => string;
         monthTitle: (y: number, m: number) => string;
@@ -254,6 +259,7 @@ export interface Translations {
         memberManagement: string;
         logout: string;
         userSuffix: string;
+        effectSound: string;
         more: string;
     };
     auth: {
@@ -490,6 +496,7 @@ export interface Translations {
     home: {
         /** 홈 빠른 추가 옆 단추: 제목을 들고 할 일 창을 연다 */
         quickDetail: string;
+        quickDetailLabel: string;
         project: string;
         challenge: string;
         tasks: string;
@@ -653,6 +660,8 @@ export interface Translations {
     anniversaryPage: {
         title: string;
         formCaption: string;
+        editTitle: string;
+        nameLabel: string;
         namePlaceholder: string;
         monthOption: (n: number) => string;
         dayOption: (n: number) => string;

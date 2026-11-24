@@ -77,7 +77,7 @@ export const CategoryList = styled(C.CategoryList)`
     padding: 6px;
 
     /* 카드 안의 굴림 막대는 가는 것 하나 — 마우스 화면에서만(손가락 화면에서는 겹쳐 뜨는 막대가 자리를 차지하는 막대로 바뀐다) */
-    @media (hover: hover) {
+    @supports not selector(::-webkit-scrollbar) {
         scrollbar-width: thin;
         scrollbar-color: ${(p) => hair(p.theme, 0.22)} transparent;
     }

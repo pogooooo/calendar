@@ -15,6 +15,7 @@ import android.widget.RemoteViews
 import com.cronos.todoapp.MainActivity
 import com.cronos.todoapp.R
 import java.util.Calendar
+import java.util.TimeZone
 
 /**
  * 홈 위젯 — 앱이 그린 그림 한 장(WidgetPainter)을 ImageView 에 얹고, 그 위에 투명한 칸을 겹쳐 누르는 자리를 단다.
@@ -66,11 +67,14 @@ abstract class CronosWidgetProvider : AppWidgetProvider() {
         }
         if (intent.action == ACTION_SHIFT) {
             val id = intent.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID)
-            if (id == AppWidgetManager.INVALID_APPWIDGET_ID) return
+            if (id == AppWidgetManager.INVALID_APPWIDGET_ID || kind !in SHIFT_KINDS) return
+            val snap = Snapshot.load(context) ?: return
+            val zone = navigationZone(snap)
             val delta = intent.getIntExtra(EXTRA_DELTA, 0)
-            WidgetPrefs.setOffset(context, id, if (delta == 0) 0 else WidgetPrefs.offset(context, id) + delta)
+            val steps = if (delta == 0) 0 else WidgetPrefs.offset(context, id, zone) + delta
+            WidgetPrefs.setOffset(context, id, steps, zone)
             val manager = AppWidgetManager.getInstance(context)
-            manager.updateAppWidget(id, build(context, manager, id, Snapshot.load(context)))
+            manager.updateAppWidget(id, build(context, manager, id, snap))
         }
     }
 
@@ -81,18 +85,21 @@ abstract class CronosWidgetProvider : AppWidgetProvider() {
         val palette = Palette.resolve(snap?.theme, WidgetPrefs.mode(context, id))
         // 옮겨 볼 수 있는 것은 한 때를 보여 주는 위젯만 — "지금·다음" 처럼 시각이 중요한 것은 늘 지금이다.
         // 한 칸의 크기는 화가가 종류에 맞춰 잡는다 (오늘=하루, 주간=한 주, 월간=한 달)
-        val steps = if (kind in SHIFT_KINDS) WidgetPrefs.offset(context, id) else 0
-        val painted = WidgetPainter(context, palette, alpha, snap, steps = steps,
+        val canShift = snap != null && kind in SHIFT_KINDS
+        val steps = if (canShift) WidgetPrefs.offset(context, id, navigationZone(snap)) else 0
+        val now = System.currentTimeMillis()
+        val painted = WidgetPainter(context, palette, alpha, snap, now = now, steps = steps,
             presentationStyle = WidgetPrefs.style(context, id)).paint(kind, wDp, hDp)
 
         val views = RemoteViews(context.packageName, R.layout.widget_canvas)
         views.setImageViewBitmap(R.id.widget_image, painted.bitmap)
         views.setContentDescription(R.id.widget_image, context.getString(labelRes()))
         // 일정 위젯은 앱 홈 대신 런처 위의 목록·편집창을 연다.
-        val selected = Calendar.getInstance(WidgetDataClient(context).timeZone).apply {
+        val selected = Calendar.getInstance(snap?.timeZone ?: TimeZone.getDefault()).apply {
+            timeInMillis = now
             add(when (kind) { "month", "monthgauge" -> Calendar.MONTH; "week" -> Calendar.WEEK_OF_YEAR; else -> Calendar.DAY_OF_MONTH }, steps)
         }
-        val date = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).apply { timeZone = selected.timeZone }.format(selected.time)
+        val date = Snapshot.dayKey(selected.timeInMillis, selected.timeZone)
         val root = when (kind) {
             "quickadd" -> "cronos://todo/new?date=$date"
             "today", "nownext", "dayprogress", "monthgauge", "week", "month" -> "cronos://day/$date"
@@ -101,7 +108,6 @@ abstract class CronosWidgetProvider : AppWidgetProvider() {
         views.setOnClickPendingIntent(R.id.widget_root, link(context, id, 0, root))
 
         // 날짜 넘김 — 왼쪽은 뒤로, 오른쪽은 앞으로. 옮긴 채로 두어도 날이 바뀌면 오늘로 돌아온다 (WidgetPrefs.offset)
-        val canShift = kind in SHIFT_KINDS
         views.setViewVisibility(R.id.ov_prev, if (canShift) View.VISIBLE else View.GONE)
         views.setViewVisibility(R.id.ov_next, if (canShift) View.VISIBLE else View.GONE)
         views.setViewVisibility(R.id.ov_today, if (canShift) View.VISIBLE else View.GONE)
@@ -135,6 +141,9 @@ abstract class CronosWidgetProvider : AppWidgetProvider() {
         }
         return views
     }
+
+    private fun navigationZone(snap: Snapshot?): TimeZone =
+        if (kind == "today" && snap != null) snap.timeZone else TimeZone.getDefault()
 
     /** 이 종류의 위젯을 그냥 눌렀을 때 갈 곳 */
     private fun rootLink(snap: Snapshot?): String = when (kind) {

@@ -1,9 +1,8 @@
 "use client";
 
-import GemCalendarLayout from './gem/GemCalendarLayout';
-import * as GemS from "./gem/GemCalendarPage.styles";
 import React, { useState } from "react";
-import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { ControlSeal } from "@/components/ornament/celestial/ControlOrnaments";
+import { Plus } from "lucide-react";
 import useCategoryStore from "@/store/useCategoryStore";
 import useTodoStore from "@/store/useTodoStore";
 import MonthCalendar from "@/components/calendar/monthCalendar/MonthCalendar";
@@ -16,40 +15,40 @@ import useSwipe from "@/hooks/useSwipe";
 import { useSwapMotion } from "@/hooks/useMotion";
 import { useT } from "@/i18n/useT";
 import { wallNow } from "@/lib/dateKey";
-import { usePickTheme, type ThemeImpls } from "@/styles/themed";
+import { usePickTheme, useThemeFamily, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialCalendarPage.styles";
 import CelestialCalendarLayout from "./celestial/CelestialCalendarLayout";
 import MapleCalendarLayout from "./maple/MapleCalendarLayout";
 import * as MapleS from "./maple/MapleCalendarPage.styles";
 import * as OceanS from './ocean/OceanCalendarPage.styles';
 import OceanCalendarLayout from './ocean/OceanCalendarLayout';
+import * as GemS from './gem/GemCalendarPage.styles';
+import GemCalendarLayout from './gem/GemCalendarLayout';
 import * as Mobile from './CalendarMobile.styles';
 import CalendarWorkspace from '@/components/calendar/CalendarWorkspace';
 import useMobilePresentation from '@/hooks/useMobilePresentation';
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS, gem: GemS };
 
-const LAYOUTS = { celestial: CelestialCalendarLayout, maple: MapleCalendarLayout, ocean: OceanCalendarLayout , gem: GemCalendarLayout };
+const LAYOUTS = { celestial: CelestialCalendarLayout, maple: MapleCalendarLayout, ocean: OceanCalendarLayout, gem: GemCalendarLayout };
 
-const DAY_COLLAPSE_KEY = "cronos-day-collapsed";
 
 /** 폰의 두 화면 차례 — 뒤 화면(주간·일간)으로 가면 오른쪽에서 들어온다 */
 const MOBILE_VIEWS = ["month", "week"] as const;
 
-const MIN_RATIO = 35;
-const MAX_RATIO = 82;
-
 export default function CalendarPage() {
     const S = usePickTheme(STYLES);
-    const DesktopLayout = usePickTheme(LAYOUTS);
+    const family = useThemeFamily();
+    const gem = family === "gem";
+    const celestial = family === "celestial";
+    const DesktopLayout = LAYOUTS[family];
     const { categories } = useCategoryStore();
     const { todos } = useTodoStore();
     const t = useT();
     const narrow = useIsMobile();
     const mobileApp = useMobilePresentation();
     const isMobile = narrow || mobileApp;
-    const isStacked = useIsMobile(1250);
 
     /** 폰에서는 두 달력을 한 화면에 같이 두지 않는다. 하나씩 갈아 끼운다. */
     // 폰은 두 화면이다: 월간, 그리고 주간 띠 + 그날 일간 (주간·일간을 합쳤다)
@@ -60,15 +59,6 @@ export default function CalendarPage() {
     // 예전엔 이 기기의 지금이라, 시간대가 다르면 일간·목록이 홈의 오늘과 다른 날로 열렸다
     const [selectedDate, setSelectedDate] = useState<Date>(wallNow);
     const [visibleMonth, setVisibleMonth] = useState<Date>(wallNow);
-    const [monthRatio, setMonthRatio] = useState(70);
-    const [dayCollapsed, setDayCollapsed] = useState(false);
-
-    React.useEffect(() => {
-        try {
-            setDayCollapsed(localStorage.getItem(DAY_COLLAPSE_KEY) === "1");
-        } catch {}
-    }, []);
-
     /**
      * 홈의 "이번 주" 줄이나 안드로이드 홈 위젯에서 넘어올 때 ?date=YYYY-MM-DD 를 달고 온다.
      * ?add=1 이면 할 일 추가 창을 열어 둔다 (위젯의 "빠른 추가").
@@ -98,69 +88,23 @@ export default function CalendarPage() {
         return () => window.removeEventListener("cronos-link", readQuery);
     }, []);
 
-    const toggleDay = React.useCallback(() => {
-        setDayCollapsed(prev => {
-            const next = !prev;
-            try { localStorage.setItem(DAY_COLLAPSE_KEY, next ? "1" : "0"); } catch {}
-            // 드래그로 넣어둔 인라인 flex 가 남아 있으면 전환이 먹지 않는다.
-            if (monthRef.current) monthRef.current.style.flex = "";
-            if (dayRef.current) dayRef.current.style.flex = "";
-            return next;
-        });
-    }, []);
-
-    const containerRef = React.useRef<HTMLDivElement>(null);
-    const monthRef = React.useRef<HTMLDivElement>(null);
-    const dayRef = React.useRef<HTMLDivElement>(null);
-    const ratioRef = React.useRef(70);
-
-    const handleResize = React.useCallback((e: React.MouseEvent) => {
-        e.preventDefault();
-        const startX = e.clientX;
-        const startRatio = ratioRef.current;
-
-        const onMove = (mv: MouseEvent) => {
-            const box = containerRef.current?.getBoundingClientRect();
-            if (!box) return;
-            const raw = startRatio + ((mv.clientX - startX) / box.width) * 100 * Number(containerRef.current?.dataset.resizeDirection ?? 1);
-            const next = Math.min(MAX_RATIO, Math.max(MIN_RATIO, raw));
-            ratioRef.current = next;
-            if (monthRef.current) monthRef.current.style.flex = `${next} 1 0`;
-            if (dayRef.current) dayRef.current.style.flex = `${100 - next} 1 0`;
-        };
-
-        const onUp = () => {
-            setMonthRatio(ratioRef.current);
-            document.removeEventListener("mousemove", onMove);
-            document.removeEventListener("mouseup", onUp);
-        };
-
-        document.addEventListener("mousemove", onMove, { passive: true });
-        document.addEventListener("mouseup", onUp);
-    }, []);
-
-    const handleReset = React.useCallback(() => {
-        ratioRef.current = 70;
-        setMonthRatio(70);
-        if (monthRef.current) monthRef.current.style.flex = "";
-        if (dayRef.current) dayRef.current.style.flex = "";
-    }, []);
-
-    const resizeByKey = (event:React.KeyboardEvent) => {
-        if(event.key==='Home'){event.preventDefault();handleReset();return;}
-        if(event.key!=='ArrowLeft'&&event.key!=='ArrowRight')return;
-        event.preventDefault();
-        const direction=Number(containerRef.current?.dataset.resizeDirection??1);
-        const next=Math.min(MAX_RATIO,Math.max(MIN_RATIO,ratioRef.current+(event.key==='ArrowRight'?5:-5)*direction));
-        ratioRef.current=next;setMonthRatio(next);
-        if(monthRef.current)monthRef.current.style.flex='';
-        if(dayRef.current)dayRef.current.style.flex='';
-    };
-
     const selectMobileDate = React.useCallback((date: Date) => {
         setSelectedDate(date);
         setVisibleMonth(new Date(date.getFullYear(),date.getMonth(),1));
     },[]);
+    const changeVisibleMonth = React.useCallback((date: Date) => {
+        setVisibleMonth(date);
+        if (!gem) return;
+        setSelectedDate(previous => {
+            const year = date.getFullYear();
+            const month = date.getMonth();
+            if (previous.getFullYear() === year && previous.getMonth() === month) return previous;
+            const day = Math.min(previous.getDate(), new Date(year, month + 1, 0).getDate());
+            const next = new Date(previous);
+            next.setFullYear(year, month, day);
+            return next;
+        });
+    }, [gem]);
     const stepDay = React.useCallback((delta: number) =>
         selectMobileDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate() + delta)), [selectedDate,selectMobileDate]);
 
@@ -196,12 +140,13 @@ export default function CalendarPage() {
                             $on={mobileView === id}
                             onClick={() => setMobileView(id)}
                         >
+                            {celestial && <ControlSeal kind={id === 'month' ? 'sun' : 'moon'} size={16} />}
                             {label}
                         </S.SwitchButton>
                     ))}
                 </S.ViewSwitch>
                     <S.Fab data-calendar-add type="button" onClick={() => setAddOpen(true)} aria-label={t.calendar.newTodo}>
-                        <Plus size={18} strokeWidth={2} /><span>{t.calendar.newTodo}</span>
+                        {celestial ? <ControlSeal kind="add" size={20} /> : <Plus size={18} strokeWidth={2} />}<span>{t.calendar.newTodo}</span>
                     </S.Fab>
                 </Mobile.Toolbar>
 
@@ -226,11 +171,11 @@ export default function CalendarPage() {
                                     selectedDate={selectedDate}
                                     /* 날짜를 누르면 아래 목록이 그 날로 바뀐다. 이미 고른 날을 또 누르면 일간으로. */
                                     onDateChange={(date) => {
-                                        if (date.toDateString() === selectedDate.toDateString()) setMobileView("week");
+                                        if (!gem && date.toDateString() === selectedDate.toDateString()) setMobileView("week");
                                         else selectMobileDate(date);
                                     }}
                                     visibleMonth={visibleMonth}
-                                    onVisibleMonthChange={setVisibleMonth}
+                                    onVisibleMonthChange={changeVisibleMonth}
                                 />
                             </Mobile.MonthArea>
                             <DayPeek
@@ -238,6 +183,7 @@ export default function CalendarPage() {
                                 todos={todos}
                                 categories={categories}
                                 onOpenDay={() => setMobileView("week")}
+                                onAdd={gem ? () => setAddOpen(true) : undefined}
                             />
                         </>
                     ) : (
@@ -254,49 +200,20 @@ export default function CalendarPage() {
         </>);
     }
 
-    return <><CalendarWorkspace onAdd={()=>setAddOpen(true)}><DesktopLayout containerRef={containerRef} collapsed={dayCollapsed} month={(<S.MonthSection data-calendar-region="month" ref={monthRef} $flex={monthRatio} $collapsed={dayCollapsed}>
-                    <MonthCalendar
-                        visibleMonth={visibleMonth}
-                        onVisibleMonthChange={setVisibleMonth}
-                        todos={todos}
-                        categories={categories}
-                        selectedDate={selectedDate}
-                        onDateChange={(date) => setSelectedDate(date)}
-                    />
-                </S.MonthSection>)} day={(<S.DaySection data-calendar-region="day" data-collapsed={dayCollapsed?'':undefined} ref={dayRef} $flex={100 - monthRatio} $collapsed={dayCollapsed}>
-                    <S.ToggleButton
-                        type="button"
-                        onClick={toggleDay}
-                        $collapsed={dayCollapsed}
-                        title={dayCollapsed ? t.calendar.expandDay : t.calendar.collapseDay}
-                    >
-                        {dayCollapsed ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
-                    </S.ToggleButton>
-
-                    <S.DayClip>
-                        <S.CollapsedRail $visible={dayCollapsed} aria-hidden={!dayCollapsed}>
-                            <span className="label">{t.calendar.dayView}</span>
-                            <span className="star">✦</span>
-                        </S.CollapsedRail>
-
-                        <S.DayBody $collapsed={dayCollapsed} inert={dayCollapsed && !isStacked} aria-hidden={dayCollapsed && !isStacked}>
-                            <DayCalendar
-                                selectedDate={selectedDate}
-                                todos={todos}
-                                categories={categories}
-                            />
-                        </S.DayBody>
-                    </S.DayClip>
-                </S.DaySection>)} resizer={(<S.Resizer
-                    $hidden={dayCollapsed}
-                    role="separator" tabIndex={dayCollapsed?-1:0} aria-orientation="vertical"
-                    aria-label={`${t.calendar.monthView} / ${t.calendar.dayView}`}
-                    aria-valuemin={MIN_RATIO} aria-valuemax={MAX_RATIO} aria-valuenow={monthRatio}
-                    aria-keyshortcuts="ArrowLeft ArrowRight Home" onKeyDown={resizeByKey}
-                    onMouseDown={dayCollapsed ? undefined : handleResize}
-                    onDoubleClick={dayCollapsed ? undefined : handleReset}
-                >
-                    <span className="line" />
-                    <span className="grip" />
-                </S.Resizer>)} /></CalendarWorkspace><TodoModal isOpen={addOpen} onClose={()=>setAddOpen(false)} categories={categories} selectedDate={selectedDate}/></>;
+    return <>
+        <CalendarWorkspace onAdd={() => setAddOpen(true)}>
+            <DesktopLayout
+                month={<MonthCalendar
+                    visibleMonth={visibleMonth}
+                    onVisibleMonthChange={changeVisibleMonth}
+                    todos={todos}
+                    categories={categories}
+                    selectedDate={selectedDate}
+                    onDateChange={gem ? selectMobileDate : setSelectedDate}
+                />}
+                day={<DayCalendar selectedDate={selectedDate} todos={todos} categories={categories} />}
+            />
+        </CalendarWorkspace>
+        <TodoModal isOpen={addOpen} onClose={() => setAddOpen(false)} categories={categories} selectedDate={selectedDate} />
+    </>;
 }

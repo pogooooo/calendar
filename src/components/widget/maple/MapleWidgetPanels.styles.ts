@@ -21,12 +21,7 @@ const line = (p: { theme: { mode: string; colors: { text: string } } }) => hair(
 
 /** 날짜 줄 — ‹ 오늘 › */
 export const DayNav = styled(C.DayNav)`
-    gap: 6px;
-    margin-bottom: 8px;
-
     .label {
-        min-width: 5em;
-        border-radius: 6px;
         font-family: ${(p) => p.theme.fonts.body};
         font-size: 0.78rem;
         font-weight: 600;
@@ -34,22 +29,6 @@ export const DayNav = styled(C.DayNav)`
         color: ${(p) => p.theme.colors.text};
     }
     .label:disabled { color: ${(p) => p.theme.colors.textSecondary}; }
-`;
-
-export const NavBtn = styled(C.NavBtn)`
-    width: 24px;
-    height: 24px;
-    border: 1px solid ${line};
-    border-radius: 8px;
-    font-size: 0.9rem;
-    color: ${(p) => p.theme.colors.textSecondary};
-    transition: background-color 0.15s ease, color 0.15s ease;
-
-    &&:hover {
-        border-color: ${line};
-        color: ${(p) => p.theme.colors.text};
-        background-color: ${(p) => hair(p.theme, dark(p) ? 0.1 : 0.06)};
-    }
 `;
 
 /** 마디 머리 — 작고 옅은 굵은 글씨, 밑줄 없음 */

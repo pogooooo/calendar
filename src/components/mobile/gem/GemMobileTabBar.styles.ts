@@ -1,29 +1,25 @@
-/** Gem finishes over the shared, behavior-compatible component structure. */
-import styled from 'styled-components';
-import * as Base from '../celestial/CelestialMobileTabBar.styles';
-import { gemControl, gemPanel } from '@/styles/gem/material';
-export * from '../celestial/CelestialMobileTabBar.styles';
+import styled from "styled-components";
+import * as O from "../ocean/OceanMobileTabBar.styles";
+import { MOBILE } from "@/styles/breakpoints";
+import { gemPanel, gemQuietButton } from "@/features/gem/GemLive.styles";
 
-export const Tab = styled(Base.Tab)`
-    ${gemControl}
-    border-radius: 0;
-    &::before { width:10px; height:10px; top:0; margin-left:-5px;
-        transform: scale(${({$on})=>$on?1:0});
-        clip-path:polygon(25% 0,75% 0,100% 30%,50% 100%,0 30%);
-        background: conic-gradient(from 45deg,${({theme})=>theme.colors.primary},${({theme})=>theme.colors.accent},${({theme})=>theme.colors.primary});
+export * from "../ocean/OceanMobileTabBar.styles";
+
+export const Bar = styled(O.Bar)`
+    ${MOBILE} {
+        background: var(--gem-panel);
+        border: 1px solid var(--gem-line);
+        backdrop-filter: none;
     }
 `;
 
-export const Bar = styled(Base.Bar)`
-    background: ${({theme})=>theme.colors.background}F5;
-    border-top-color:${({theme})=>theme.colors.accent}75;
-    box-shadow: 0 -4px 22px ${({theme})=>theme.colors.primary}08;
+export const Tab = styled(O.Tab)`
+    color: ${({ $on }) => $on ? "var(--gem-ink)" : "var(--gem-muted)"};
+    border: 1px solid ${({ $on }) => $on ? "var(--gem-line)" : "transparent"};
+    background: ${({ $on }) => $on ? "var(--gem-control)" : "transparent"};
+    span { font-size: .66rem; }
 `;
 
-export const SheetBody = styled(Base.SheetBody)`
-    ${gemPanel}
-`;
-
-export const CloseBtn = styled(Base.CloseBtn)`
-    ${gemControl}
-`;
+export const SheetBody = styled(O.SheetBody)`${gemPanel}`;
+export const CloseBtn = styled(O.CloseBtn)`${gemQuietButton}`;
+export const SheetRow = styled(O.SheetRow)`border-radius: var(--gem-radius);`;

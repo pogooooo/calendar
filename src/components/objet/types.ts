@@ -29,6 +29,8 @@ export interface ObjetInput {
     /** 지난 프레임 뒤로 끈 거리(CSS px) */
     dragX: number;
     dragY: number;
+    /** Mouse down on a decorative surface since the last rendered frame. */
+    pressed: boolean;
 }
 
 export interface ObjetContext {
@@ -62,9 +64,10 @@ export interface ObjetDef {
     create(ctx: ObjetContext): ObjetInstance;
     /**
      * 손을 어떻게 받나 — 'drag': 올리면 반응하고 끌어서 돌린다(가로로 끌면 돌고, 세로는 화면 스크롤로 남긴다),
-     * 'hover': 올리기만, 'none': 받지 않는다(누르는 것도 뒤로 통과). 부른 쪽이 interaction 으로 덮을 수 있다.
+     * 'hover': 올리기만, 'none': 받지 않는다(누르는 것도 뒤로 통과).
+     * 'surface' passively reads mouse input from the canvas's positioned ancestor.
      */
-    interaction?: "drag" | "hover" | "none";
+    interaction?: "drag" | "hover" | "none" | "surface";
 }
 
 export type ObjetRegistry = Record<string, ObjetDef>;

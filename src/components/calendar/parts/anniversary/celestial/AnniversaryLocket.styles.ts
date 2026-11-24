@@ -133,6 +133,14 @@ export const Root = styled.span<{ $today: boolean }>`
         .ring, .ic { animation: ${todayGlow} 2.8s ease-in-out infinite; }
     `)}
 
+    :where(html[data-theme-family="gem"]) && {
+        animation: none;
+        color: var(--gem-ink);
+        .ring, .ic, .spark { animation: none; filter: none; }
+        .ring { stroke: var(--gem-gold); }
+        .spark, .jw { display: none; }
+    }
+
     &:hover {
         filter: drop-shadow(0 0 6px ${(p) => p.theme.colors.primary}cc);
 

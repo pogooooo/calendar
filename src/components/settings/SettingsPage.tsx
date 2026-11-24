@@ -15,7 +15,7 @@ import { WIDGET_KINDS } from "@/lib/widgetKinds";
 import { useDialog } from "@/components/dialog/DialogProvider";
 import SettingsView from "./SettingsView";
 import type { Translations } from "@/i18n/types";
-import { listThemes, type ThemeChoice } from "@/styles/theme";
+import { listThemes, themes, type ThemeChoice } from "@/styles/theme";
 import { availableThemeName } from '@/styles/themeAvailability';
 import { fx } from "@/lib/fx";
 import { makeAuthSchemas } from "@/lib/schema";
@@ -169,10 +169,11 @@ export default function SettingsPage() {
     const authFetch = useAuthFetch();
 
     const { theme: savedTheme, updateTheme } = useSettingStore();
-    const currentTheme = availableThemeName(savedTheme);
+    const available = availableThemeName(savedTheme);
+    const currentTheme = themes[available]?.family ?? available;
     const savedThemeOptions = useSettingStore((s) => s.themeOptions);
     const themeOptions = currentTheme === savedTheme ? savedThemeOptions : {
-        ...savedThemeOptions, [currentTheme]: savedThemeOptions[savedTheme] ?? 'light',
+        ...savedThemeOptions, [currentTheme]: savedThemeOptions[savedTheme] ?? (available.endsWith("-dark") ? "dark" : "light"),
     };
     const setThemeOption = useSettingStore((s) => s.setThemeOption);
     const autostart = useSettingStore((s) => s.autostart);
@@ -337,10 +338,13 @@ export default function SettingsPage() {
         setDeleteStatus(null);
     };
 
+    const gemColor = useSettingStore(s => s.gemColor);
     const themeProps: SettingsThemeProps = {
         currentTheme,
         onThemeChange: handleThemeChange,
-        themes: listThemes(),
+        themes: listThemes(gemColor).map(choice => choice.id === "gem" && locale === "ko" ? {
+            ...choice, label: "Gem · 보석", description: "자수정 연마면과 석영의 결, 얇은 금속 세공",
+        } : choice),
         themeOptions,
         onThemeOptionChange: handleThemeOptionChange,
         fontKey,

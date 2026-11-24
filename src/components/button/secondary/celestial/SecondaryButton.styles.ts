@@ -1,3 +1,4 @@
+import { actionButton } from "@/styles/celestial/controls";
 /**
  * Celestial_SecondaryButton 의 모양.
  *
@@ -65,4 +66,5 @@ export const SecondaryButton = styled.button<ButtonProps>`
     &:active {
         transform: scale(0.96);
     }
+    ${actionButton}
 `;

@@ -3,9 +3,12 @@
 import { useEffect, useState, useMemo, useRef } from 'react';
 import styled, { createGlobalStyle } from 'styled-components';
 import MainLayout from '@/components/layout/AppLayout';
+import { useRouter } from 'next/navigation';
+import { ScreenNavigationScope } from '@/components/navigation/useScreenNavigation';
 import CalendarPage from '@/app/(main)/calendar/page';
 import HomeView from '@/components/home/HomeView';
 import ProjectPage from '@/app/(main)/project/page';
+import CategoryPage from '@/components/category/CategoryPage';
 import ChallengePage from '@/components/challenge/ChallengePage';
 import AnniversaryPage from '@/app/(main)/anniversary/page';
 import SettingsPage from '@/components/settings/SettingsPage';
@@ -21,11 +24,13 @@ import { labelKey, wallNow } from '@/lib/dateKey';
 import { bustFetchCache } from '@/lib/fetchOnce';
 import DesktopWidgetStudio from './DesktopWidgetStudio';
 import { DialogProvider } from '@/components/dialog/DialogProvider';
+import { THEME_FAMILIES } from '@/styles/themed';
 import type { TodoType, CategoryType, AuthFetch } from '@/types';
 import type {ProjectTaskType} from '@/store/useProjectStore';
 
 /** Isolated data and network scope. No preview write can reach a user's API. */
 export default function DesignStudio() {
+    const router = useRouter();
     const [ready, setReady] = useState(false);
     const [screen, setScreen] = useState(()=>typeof window==='undefined'?'calendar':new URLSearchParams(location.search).get('screen')??'calendar');
     const [empty, setEmpty] = useState(()=>typeof window!=='undefined'&&new URLSearchParams(location.search).get('empty')==='1');
@@ -39,25 +44,50 @@ export default function DesignStudio() {
     const categories = useMemo<CategoryType[]>(()=>[
         {id:'studio-work',name:'업무',color:'#387A9A'}, {id:'studio-life',name:'일상',color:'#B56B38'},
     ],[]);
-    const fixture = useMemo<TodoType[]>(()=>[
-        '팀 주간 회의와 다음 분기 서비스 출시 일정 검토', '병원 예약 · 검사 결과 확인', '완료한 기획안 전달',
-        '반복 일정 · 저녁 산책 30분', '디자인 시스템 접근성과 한국어 줄바꿈 최종 확인', '친구와 저녁 약속',
-        '이번 달 정산 자료와 영수증 정리', '서점에서 주문한 책 찾아오기',
-    ].map((title,i)=>({id:`studio-${i}`,title,categoryId:categories[i%2].id,isAllDay:i===6,repeat:i===3?1:0,
-        startAt:`${day}T${String(9+i).padStart(2,'0')}:00:00+09:00`,endAt:`${day}T${String(10+i).padStart(2,'0')}:00:00+09:00`,
-        memo:'테스트 데이터입니다. 실제 계정에는 저장되지 않습니다.',completions:i===2?[{targetDate:`${day}T00:00:00.000Z`}]:[],
-    })),[categories,day]);
+    const fixture = useMemo<TodoType[]>(()=>{
+        const todos: TodoType[] = [
+            '팀 주간 회의와 다음 분기 서비스 출시 일정 검토', '병원 예약 · 검사 결과 확인', '완료한 기획안 전달',
+            '반복 일정 · 저녁 산책 30분', '디자인 시스템 접근성과 한국어 줄바꿈 최종 확인', '친구와 저녁 약속',
+            '이번 달 정산 자료와 영수증 정리', '서점에서 주문한 책 찾아오기',
+        ].map((title,i)=>({id:`studio-${i}`,title,categoryId:categories[i%2].id,isAllDay:i===6,repeat:i===3?1:0,
+            startAt:`${day}T${String(9+i).padStart(2,'0')}:00:00+09:00`,endAt:`${day}T${String(10+i).padStart(2,'0')}:00:00+09:00`,
+            memo:'테스트 데이터입니다. 실제 계정에는 저장되지 않습니다.',completions:i===2?[{targetDate:`${day}T00:00:00.000Z`}]:[],
+        }));
+        const [year, month] = day.split('-').map(Number);
+        const rangeStart = new Date(Date.UTC(year, month, -2)).toISOString().slice(0, 10);
+        const rangeEnd = new Date(Date.UTC(year, month, 5)).toISOString().slice(0, 10);
+        return [...todos, {
+            id:'studio-month-boundary',
+            title:'월 경계를 넘는 서비스 배포 검토',
+            categoryId:categories[0].id,
+            startAt:`${rangeStart}T09:00:00+09:00`,
+            endAt:`${rangeEnd}T18:00:00+09:00`,
+            isAllDay:true,
+            repeat:0,
+            completions:[],
+        }];
+    },[categories,day]);
     const request: AuthFetch = useMemo(()=>async(url,init={})=>{
         const method=init.method??'GET';
+        const p=new URL(url,'http://preview.local').pathname;
         if(method!=='GET') {
             // Fail one request, then let the same retained draft be retried without closing its dialog.
             if(failureRef.current) { failureRef.current=false; setFailure(false); return Response.json({error:'프리뷰 저장 오류'}, {status:503}); }
             await new Promise(r=>setTimeout(r,1800));
             setSaved(true);
             const input=typeof init.body==='string'?JSON.parse(init.body):{};
+            if(method==='POST' && p==='/api/challenge/completion') {
+                // The real endpoint returns the completion array, not a challenge object.
+                // The store has already applied the requested state optimistically.
+                return Response.json(useChallengeStore.getState().challenges.find(c=>c.id===input.challengeId)?.completions??[]);
+            }
+            if(method==='PATCH' && p==='/api/anniversary') {
+                const item=useAnniversaryStore.getState().anniversaries.find(a=>a.id===input.id);
+                if(!item) return Response.json({error:'Not found'}, {status:404});
+                return Response.json({...item,...input});
+            }
             return Response.json({id:`studio-new-${Date.now()}`,...input,completions:[]});
         }
-        const p=new URL(url,'http://preview.local').pathname;
         const data=p==='/api/todo'?useTodoStore.getState().todos:p==='/api/category'?categories:
             p==='/api/project'?useProjectStore.getState().projects:p==='/api/challenge'?useChallengeStore.getState().challenges:
             p==='/api/anniversary'?useAnniversaryStore.getState().anniversaries:
@@ -71,8 +101,8 @@ export default function DesignStudio() {
         const raw=localStorage.getItem('setting-store');
         const q=new URLSearchParams(location.search);
         useSettingStore.setState({timezone:'Asia/Seoul'});
-        const family=q.get('theme');
-        if(family && ['celestial','maple','ocean'].includes(family)) useSettingStore.setState({theme:family});
+        const family=THEME_FAMILIES.find(theme=>theme===q.get('theme'));
+        if(family) useSettingStore.setState({theme:family});
         if(q.get('mode')) useSettingStore.getState().setThemeOption(family??old.theme,q.get('mode')!);
         const isEmpty=q.get('empty')==='1';
         useTodoStore.setState({todos:isEmpty?[]:fixture});
@@ -101,19 +131,41 @@ export default function DesignStudio() {
             useAnniversaryStore.setState({anniversaries:previousData.anniversaries});
             useDailyStore.setState(previousData.daily);
             bustFetchCache();
-            useSettingStore.setState({theme:old.theme,themeOptions:old.themeOptions,motion:old.motion,fontSize:old.fontSize,fontWeight:old.fontWeight,font:old.font,timezone:old.timezone});
-            if(raw) localStorage.setItem('setting-store',raw);
+            useSettingStore.setState({theme:old.theme,themeOptions:old.themeOptions,gemColor:old.gemColor,motion:old.motion,mobileAppearance:old.mobileAppearance,fontSize:old.fontSize,fontWeight:old.fontWeight,font:old.font,timezone:old.timezone});
+            if(raw===null) localStorage.removeItem('setting-store');
+            else localStorage.setItem('setting-store',raw);
         };
     },[categories,day,fixture]);
 
+    useEffect(() => {
+        const restore = () => setScreen(new URLSearchParams(location.search).get('screen') ?? 'calendar');
+        window.addEventListener('popstate', restore);
+        return () => window.removeEventListener('popstate', restore);
+    }, []);
+
+    function navigate(path: string) {
+        const target = new URL(path, location.origin);
+        const nextScreen = target.pathname === '/' ? 'home' : target.pathname.slice(1);
+        if (!['home', 'calendar', 'project', 'challenge', 'anniversary', 'category', 'settings', 'widget'].includes(nextScreen)) {
+            router.push(path);
+            return;
+        }
+        const url = new URL(location.href);
+        for (const key of ['date', 'id', 'tab', 'add']) url.searchParams.delete(key);
+        target.searchParams.forEach((value, key) => url.searchParams.set(key, value));
+        url.searchParams.set('screen', nextScreen);
+        if (url.href !== location.href) history.pushState(null, '', url);
+        setScreen(nextScreen);
+    }
+
     if(!ready) return <p>디자인 프리뷰 준비 중</p>;
-    const content=screen==='home'?<HomeView/>:screen==='project'?<ProjectPage/>:screen==='challenge'?<ChallengePage/>:screen==='anniversary'?<AnniversaryPage/>:screen==='settings'?<SettingsPage/>:screen==='widget'?<DialogProvider><DesktopWidgetStudio/></DialogProvider>:<CalendarPage/>;
+    const content=screen==='home'?<HomeView/>:screen==='project'?<ProjectPage/>:screen==='challenge'?<ChallengePage/>:screen==='anniversary'?<AnniversaryPage/>:screen==='category'?<CategoryPage/>:screen==='settings'?<SettingsPage/>:screen==='widget'?<DialogProvider><DesktopWidgetStudio/></DialogProvider>:<CalendarPage/>;
     return <AuthFetchScope.Provider value={request}>
         <StudioInsets/>
         {screen!=='widget' && <Tools data-preview-tools>
             <span>로컬 샘플 · 실제 저장 없음</span>
-            <select aria-label="프리뷰 화면" value={screen} onChange={e=>setScreen(e.target.value)}><option value="calendar">캘린더</option><option value="home">홈</option><option value="project">프로젝트</option><option value="challenge">챌린지</option><option value="anniversary">기념일</option><option value="settings">설정</option><option value="widget">데스크톱 위젯</option></select>
-            <select aria-label="프리뷰 테마" value={theme} onChange={e=>useSettingStore.setState({theme:e.target.value})}>{['celestial','maple','ocean'].map(x=><option key={x}>{x}</option>)}</select>
+            <select aria-label="프리뷰 화면" value={screen} onChange={e=>navigate('/'+e.target.value)}><option value="calendar">캘린더</option><option value="home">홈</option><option value="project">프로젝트</option><option value="challenge">챌린지</option><option value="anniversary">기념일</option><option value="category">카테고리</option><option value="settings">설정</option><option value="widget">데스크톱 위젯</option></select>
+            <select aria-label="프리뷰 테마" value={theme} onChange={e=>useSettingStore.setState({theme:e.target.value})}>{THEME_FAMILIES.map(x=><option key={x}>{x}</option>)}</select>
             <button onClick={()=>{const s=useSettingStore.getState();s.setThemeOption(s.theme,s.themeOptions[s.theme]==='dark'?'light':'dark');}}>밝기</button>
             <select aria-label="프리뷰 모션" value={motion} onChange={e=>useSettingStore.getState().setMotion(e.target.value as 'full'|'gentle'|'off')}><option>full</option><option>gentle</option><option>off</option></select>
             <select aria-label="프리뷰 글자 크기" value={fontSize} onChange={e=>useSettingStore.getState().setFontSize(e.target.value)}><option value="sm">14px</option><option value="md">16px</option><option value="lg">18px</option><option value="xl">20px</option></select>
@@ -121,7 +173,9 @@ export default function DesignStudio() {
             <label><input type="checkbox" checked={failure} onChange={e=>{failureRef.current=e.target.checked;setFailure(e.target.checked);}}/>저장 오류</label>
             {saved && <span role="status">프리뷰 저장 완료</span>}
         </Tools>}
-        {screen==='widget'?content:<MainLayout activePath={screen==='home'?'/':`/${screen}`}>{content}</MainLayout>}
+        <ScreenNavigationScope.Provider value={navigate}>
+            {screen==='widget'?content:<MainLayout activePath={screen==='home'?'/':`/${screen}`}>{content}</MainLayout>}
+        </ScreenNavigationScope.Provider>
     </AuthFetchScope.Provider>;
 }
 const Tools=styled.div`

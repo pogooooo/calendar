@@ -1,51 +1,65 @@
-/** Gem finishes over the shared, behavior-compatible component structure. */
-import styled from 'styled-components';
-import * as Base from '../celestial/CelestialWidgetPanels.styles';
-import { gemControl, gemHeading, gemField } from '@/styles/gem/material';
-export * from '../celestial/CelestialWidgetPanels.styles';
+import styled from "styled-components";
+import * as Base from "../celestial/CelestialWidgetPanels.styles";
 
-export const NavBtn = styled(Base.NavBtn)`
-    ${gemControl}
+export * from "../celestial/CelestialWidgetPanels.styles";
+
+export const DayNav = styled(Base.DayNav)`
+    .label {
+        font-family: ${p => p.theme.fonts.display};
+        letter-spacing: 0;
+    }
 `;
 
-export const NowTitle = styled(Base.NowTitle)`
-    ${gemHeading}
-    /* Task titles follow the widget's automatic contrast, including custom backgrounds. */
-    color: ${({theme}) => theme.colors.text};
+export const SectionHead = styled(Base.SectionHead)`
+    font-family: ${p => p.theme.fonts.display};
+    font-weight: 700;
+    letter-spacing: .015em;
+    border-bottom-color: var(--gem-line);
 `;
 
-export const MemoArea = styled(Base.MemoArea)`
-    ${gemField}
-    /* The widget owns its backdrop; app fields must not paint over it. */
-    background: transparent;
-    &::placeholder { color: ${({theme}) => theme.colors.textSecondary}; opacity: .8; }
+export const Mark = styled(Base.Mark)`
+    transform: none;
+    border-radius: 50%;
+`;
+
+export const Star = styled(Base.Star)`
+    font-size: 0;
+    width: 8px;
+    height: 8px;
+    border: 1px solid var(--gem-gold);
+    border-radius: 50%;
+`;
+
+export const Name = styled(Base.Name)`transition: none;`;
+
+export const Box = styled(Base.Box)`
+    border-radius: 50%;
+    border-color: var(--gem-gold);
+    background-image: ${p => p.$done ? "var(--gem-gold-vein-map)" : "none"};
+    background-position: 45% center;
+    background-size: cover;
+    color: #fff6fb;
+    &:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
 `;
 
 export const QuickInput = styled(Base.QuickInput)`
-    ${gemField}
-    background: transparent;
-    &::placeholder { color: ${({theme}) => theme.colors.textSecondary}; opacity: .8; }
+    min-width: 0;
+    padding-inline: 12px;
+    border-radius: var(--gem-radius);
+    border-color: var(--gem-line);
+    &:focus-visible { outline: 2px solid currentColor; outline-offset: 1px; }
 `;
 
 export const AddBtn = styled(Base.AddBtn)`
-    ${gemControl}
+    border: 1px solid transparent;
+    border-radius: var(--gem-radius);
+    color: var(--gem-action-ink);
+    background: var(--gem-action);
+    &:hover:not(:disabled) { border-color: transparent; filter: brightness(1.05); }
+    &:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
 `;
 
 export const DelBtn = styled(Base.DelBtn)`
-    ${gemControl}
-`;
-
-export const Dot = styled(Base.Dot)`
-    /* Widget pages clear background-color; completed days still need a visible fill. */
-    background-image: ${({$on, theme}) => $on
-        ? `linear-gradient(135deg, ${theme.colors.primary}, ${theme.colors.primary})`
-        : 'none'};
-    transition: box-shadow .2s ease, border-color .2s ease;
-    &:focus-visible { outline: 2px solid ${({theme}) => theme.colors.text}; outline-offset: 3px; }
-`;
-
-export const CatFill = styled(Base.CatFill)`
-    /* Keep category values visible inside the transparent widget wrapper. */
-    background-image: ${({$c}) => `linear-gradient(${$c}, ${$c})`};
-    transition: width .26s cubic-bezier(.22, 1, .36, 1);
+    border-radius: 50%;
+    &:focus-visible { outline: 2px solid currentColor; outline-offset: 1px; }
 `;

@@ -1,3 +1,4 @@
+import { switchControl } from "@/styles/celestial/controls";
 import styled from "styled-components";
 
 export const FormWrapper = styled.form`
@@ -258,6 +259,7 @@ export const ToggleSwitch = styled.label`
     input:checked + .slider { background-color: ${(props) => props.theme.colors.primary}; }
     input:checked + .slider::before { transform: translateX(38px); }
     input:focus-visible + .slider { outline: 2px solid ${(props) => props.theme.colors.primary}; outline-offset: 2px; }
+    ${switchControl}
 `;
 
 /* 고르개(DateTimePicker)가 줄의 남은 폭을 쓰게 */

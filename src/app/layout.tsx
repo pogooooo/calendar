@@ -1,4 +1,5 @@
 import "./globals.css";
+import "@/features/gem/GemLive.css";
 import {Orbit} from "next/font/google";
 import StyledComponentsRegistry from "@/lib/StyledComponentsRegistry";
 import {Metadata} from "next";
@@ -7,7 +8,7 @@ import ThemeProviderWrapper from "@/components/ThemeProviderWrapper";
 import StoreInitializer from "@/components/StoreInitializer";
 import DesktopWidgetRestore from "@/components/DesktopWidgetRestore";
 import DesktopDragRegion from "@/components/DesktopDragRegion";
-import { DEVELOPMENT_THEMES_ENABLED } from '@/styles/themeAvailability';
+import { GEM_THEME_AVAILABLE } from "@/styles/themeAvailability";
 
 const orbit = Orbit({
     subsets: ["latin"],
@@ -42,20 +43,23 @@ export const metadata: Metadata = {
 const PRE_PAINT = `(function(){try{
 var d=document.documentElement;
 var p=location.pathname.indexOf("/widget")===0?"desktop-widget":window.__TAURI_INTERNALS__?(/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)?"mobile-app":"desktop-app"):"web";
-if(${DEVELOPMENT_THEMES_ENABLED}&&location.pathname.indexOf("/dev/design")===0){var v=new URLSearchParams(location.search).get("platform");if(v==="mobile-app"||v==="desktop-app"||v==="desktop-widget")p=v;}
+if(${process.env.NODE_ENV === "development"}&&location.pathname.indexOf("/dev/design")===0){var v=new URLSearchParams(location.search).get("platform");if(v==="mobile-app"||v==="desktop-app"||v==="desktop-widget")p=v;}
 d.setAttribute("data-presentation",p);
 if(p==="desktop-widget")return;
 var s=JSON.parse(localStorage.getItem("setting-store")||"null");s=s&&s.state;
+if(p==="mobile-app")d.dataset.mobileAppearance=s&&s.mobileAppearance==="rich"?"rich":"simple";
 var r=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
-var m=r&&s&&s.motionOverOs===false?"off":((s&&s.motion)||"full");if(p==="mobile-app"&&m==="full")m="gentle";d.setAttribute("data-theme-motion",m);
+var m=r&&s&&s.motionOverOs===false?"off":((s&&s.motion)||"full");if(p==="mobile-app"&&d.dataset.mobileAppearance!=="rich"&&m==="full")m="gentle";d.setAttribute("data-theme-motion",m);
 if(!s||!s.theme)return;
 var o=(s.themeOptions||{})[s.theme];var k=o&&o!=="light"?s.theme+"-"+o:s.theme;
-if(!${DEVELOPMENT_THEMES_ENABLED}&&(k==="gem"||k.indexOf("gem-")===0))k=k==="gem-dark"?"celestial-dark":"celestial";
-var c={"celestial":"#EAE6DC","celestial-dark":"#121725","maple":"#EAE0D0","maple-dark":"#1A1512","maple-vintage":"#E7DABF","ocean":"#8DBCB0","ocean-dark":"#0A2226","gem":"#EAE2E5","gem-dark":"#1C1526"}[k];
-if(k==="gem"||k==="gem-dark"){
-var g=typeof s.gemColor==="string"?s.gemColor.trim():"";if(!/^#[0-9a-f]{6}$/i.test(g))g="#9268C4";
-var b=k==="gem-dark"?[16,13,22]:[240,235,231];var a=k==="gem-dark"?.09:.065;
-c="#"+b.map(function(v,i){return Math.round(v+(parseInt(g.slice(1+i*2,3+i*2),16)-v)*a).toString(16).padStart(2,"0");}).join("");}
+if(k==="gem"||k.indexOf("gem-")===0){
+    if(${GEM_THEME_AVAILABLE}){
+        k=k==="gem-dark"?"gem-dark":"gem";
+        d.dataset.themeFamily="gem";d.dataset.themeMode=k==="gem-dark"?"dark":"light";
+        if(/^#[0-9a-f]{6}$/i.test(s.gemColor))d.style.setProperty("--gem-stone",s.gemColor);
+    }else k=k==="gem-dark"?"celestial-dark":"celestial";
+}
+var c={"celestial":"#EAE6DC","celestial-dark":"#121725","maple":"#EAE0D0","maple-dark":"#1A1512","maple-vintage":"#E7DABF","ocean":"#8DBCB0","ocean-dark":"#0A2226","gem":"#EDE2EC","gem-dark":"#221625"}[k];
 if(!c)return;d.style.backgroundColor=c;d.style.colorScheme=/-dark$/.test(k)?"dark":"light";d.setAttribute("data-prepaint","");
 }catch(e){}})();`;
 

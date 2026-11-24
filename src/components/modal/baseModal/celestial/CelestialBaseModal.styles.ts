@@ -1,3 +1,4 @@
+import { field } from "@/styles/celestial/controls";
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
 import { SAFE_B, SAFE_T } from '@/styles/breakpoints';
@@ -52,5 +53,8 @@ export const Container = styled(motion.div)<{ $maxWidth: string }>`
     /* 키 작은 창(데스크톱 위젯 등)에서는 창 높이를 다 쓴다 — 85vh 로 두면 320px 위젯에서 시트가 더 작아진다 */
     @media (max-height: 520px) {
         max-height: calc(100% - 8px);
+    }
+    && :is(input:not([type]), input[type="text"], input[type="number"], input[type="date"], input[type="email"], textarea) {
+        ${field}
     }
 `;

@@ -9,6 +9,8 @@ import { bustFetchCache } from "@/lib/fetchOnce";
 import useAuthStore from "@/store/useAuthStore";
 import { useDialog } from "@/components/dialog/DialogProvider";
 import { useT } from "@/i18n/useT";
+import { useThemeFamily } from "@/styles/themed";
+import useIsMobile from "@/hooks/useIsMobile";
 import type { AuthFetch, CategoryType, TodoType } from "@/types";
 
 import CategoryView from "./CategoryView";
@@ -57,12 +59,14 @@ export interface CategoryThemeProps {
     setIsAddModalOpen: (isOpen: boolean) => void;
 }
 
-export default function CategoryPage() {
+export default function CategoryPage() {
     const { categories, deleteCategory, updateCategory, addCategory, fetchCategories } = useCategoryStore();
     const { todos, toggleTodo, deleteTodo, fetchTodos } = useTodoStore();
     const authFetch = useAuthFetch();
     const dialog = useDialog();
     const t = useT();
+    const gem = useThemeFamily() === "gem";
+    const narrow = useIsMobile();
 
     const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<'info' | 'todos'>('info');
@@ -80,6 +84,20 @@ export default function CategoryPage() {
     const [selectedTodo, setSelectedTodo] = useState<TodoType | null>(null);
 
     const selectedCategory = categories.find(c => c.id === selectedCategoryId);
+
+    useEffect(() => {
+        if (gem && !narrow && !selectedCategory && categories.length) {
+            let saved: string | null = null;
+            try { saved = localStorage.getItem("cronos-gem-category"); } catch {}
+            setSelectedCategoryId(categories.find(category => category.id === saved)?.id ?? categories[0].id);
+        }
+    }, [categories, gem, narrow, selectedCategory]);
+
+    useEffect(() => {
+        if (gem && selectedCategory) {
+            try { localStorage.setItem("cronos-gem-category", selectedCategory.id); } catch {}
+        }
+    }, [gem, selectedCategory]);
 
     const categoryTodos = useMemo(() => {
         if (!selectedCategory) return [];

@@ -1,3 +1,4 @@
+import { chartControl } from "@/styles/celestial/controls";
 /**
  * WeekStripView 의 모양.
  *
@@ -57,6 +58,7 @@ export const Head = styled.div`
         &:active { background: ${p => p.theme.colors.primary}1F; }
     }
 
+    ${celestialOnly(css`&& button.today { ${chartControl} }`)}
     .today {
         font-family: ${p => p.theme.fonts.display};
         font-size: 0.66rem;

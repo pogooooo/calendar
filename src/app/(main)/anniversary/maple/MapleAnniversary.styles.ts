@@ -166,18 +166,16 @@ export const Card = styled(C.Card)`
     ${MOBILE} { padding: 18px 10px 14px; }
 `;
 
-/** 지우기 — 오른쪽 위의 작은 둥근 단추(올리면 붉게). 손가락 화면에서는 늘 옅게 보인다 */
-export const CardDelete = styled(C.CardDelete)`
+export const CardAction = styled(C.CardAction)`
     top: 8px;
-    right: 8px;
     width: 28px;
     height: 28px;
     border-radius: 8px;
     transition: opacity 0.2s ease, color 0.15s ease, background-color 0.15s ease;
 
     &:hover {
-        color: ${(p) => p.theme.colors.error};
-        background-color: ${(p) => withAlpha(p.theme.colors.error, dark(p) ? 0.16 : 0.1)};
+        color: ${(p) => p.$edit ? p.theme.colors.primary : p.theme.colors.error};
+        background-color: ${(p) => withAlpha(p.$edit ? p.theme.colors.primary : p.theme.colors.error, dark(p) ? 0.16 : 0.1)};
     }
 
     &:focus-visible {
@@ -186,7 +184,7 @@ export const CardDelete = styled(C.CardDelete)`
         box-shadow: 0 0 0 2px ${(p) => withAlpha(p.theme.colors.primary, 0.35)};
     }
 
-    ${TOUCH} { opacity: 0.6; }
+    ${TOUCH} { width: 36px; height: 36px; }
 `;
 
 /** 로마 숫자 — 걷는다 */

@@ -1,11 +1,10 @@
 "use client";
 
-import styled from "styled-components";
+import WidgetContent from "@/components/widget/WidgetContent";
 import WidgetShell from "@/components/widget/WidgetShell";
 import WidgetAuthNotice from "@/components/widget/WidgetAuthNotice";
 import { useWidgetTitle } from "@/hooks/useWidgetMeta";
 import { useWidgetInit } from "@/hooks/useWidgetInit";
-import { NowNextPanel } from "@/components/widget/WidgetPanels";
 
 export default function NowNextWidget() {
     const title = useWidgetTitle("nownext");
@@ -16,13 +15,7 @@ export default function NowNextWidget() {
 
     return (
         <WidgetShell kind="nownext" title={title}>
-            <Wrap>
-                <NowNextPanel />
-            </Wrap>
+            <WidgetContent kind="nownext" />
         </WidgetShell>
     );
 }
-
-const Wrap = styled.div`
-    height: 100%;
-`;

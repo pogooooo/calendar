@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import * as React from "react";
+import { WidgetPreviewContext } from "@/components/widget/WidgetPreviewContext";
 import MonthCalendarView from "./MonthCalendarView";
 import { CategoryType } from "@/store/useCategoryStore";
 import { TodoType } from "@/store/useTodoStore";
@@ -145,10 +146,12 @@ const MonthCalendar = React.forwardRef<HTMLDivElement, MonthProps>(
         const projectActions = useProjectItemActions();
 
 
+        const preview = React.useContext(WidgetPreviewContext);
         React.useEffect(() => {
+            if (preview) return;
             fetchProjects(authFetch);
             fetchChallenges(authFetch);
-        }, [fetchProjects, fetchChallenges, authFetch]);
+        }, [fetchProjects, fetchChallenges, authFetch, preview]);
 
         const weeks = React.useMemo(() => {
             const year = currentDate.getFullYear();

@@ -28,7 +28,7 @@ const RAIL: Bead[] = Array.from({ length: 22 }, (_, i): Bead => {
 /**
  * Celestial 의 바탕 — 오른쪽 위 모서리에 걸친 큰 천체 궤도(겹고리·점선 고리·행성·달), 오른쪽 가장자리를 따라 내려오는 세로 금선과
  * 그 위에 꿴 문양, 그리고 가만히 있어도 반짝이며 손에 반응하는 별하늘(celestialSky — 커서를 비추면 숨은 별이 드러나고, 가끔 별이 곧게 떨어지고,
- * 누르면 고리가 번진다. 큰 궤도·해와 달도 커서를 따라 조금 비킨다). 비스듬한 선(별자리 잇는 선·비스듬한 별똥)은 없다. 글 뒤에 깔리므로 옅다.
+ * 누르면 고리가 번진다. 큰 궤도·해와 달도 커서를 따라 조금 비킨다). 별자리 선은 별과 같은 깊이에서 같은 금빛을 쓴다. 글 뒤에 깔리므로 옅다.
  */
 export default function CelestialAtmosphere() {
     const skyRef = useRef<HTMLDivElement>(null);

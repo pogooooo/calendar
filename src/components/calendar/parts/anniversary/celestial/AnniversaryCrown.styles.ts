@@ -55,11 +55,9 @@ export const Root = styled.span<{ $multi: boolean; $today: boolean; $flip: boole
     max-width: 100%;
     color: ${(p) => p.theme.colors.primary};
 
-    svg { transition: filter 0.25s ease; }
-
-    &:hover svg {
-        filter: drop-shadow(0 0 4px ${(p) => p.theme.colors.primary}bf);
-    }
+    ${p => p.$today && css`
+        .dn { font-weight: 700; text-decoration: underline; text-underline-offset: .12em; }
+    `}
 
     /* 오늘 기념일: 링이 숨쉰다 */
     ${(p) => p.$today && motionSafe(css`
@@ -73,6 +71,7 @@ export const Root = styled.span<{ $multi: boolean; $today: boolean; $flip: boole
             ${motionSafe(css`animation: ${sweep} 0.9s ease-in-out;`)}
         }
     `}
+
 `;
 
 export const Ring = styled.span`
@@ -94,7 +93,7 @@ export const Ring = styled.span`
         ${NOT_WIDGET} & {
             width: 20px;
             height: 20px;
-            margin: -1px 0;
+            margin: 0;
         }
     }
 
@@ -173,10 +172,10 @@ export const Ring = styled.span`
         line-height: 1;
         font-size: 0.78rem;
 
-        > * {
-            font-size: inherit;
-            line-height: inherit;
-        }
+        display: grid;
+        place-items: center;
+        letter-spacing: 0;
+        font-variant-numeric: tabular-nums;
     }
 `;
 

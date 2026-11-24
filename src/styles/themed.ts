@@ -16,12 +16,11 @@ import { useTheme } from "styled-components";
  * ── 테마를 새로 넣을 때 ──────────────────────────────────────────────
  * 1. THEME_FAMILIES 에 갈래 이름을 더한다.
  * 2. styles/theme.ts 에 밝은 벌·어두운 벌을 만든다.
- * 3. 그러면 usePickTheme 을 쓰는 모든 자리에서 타입 오류가 난다.
- *    ThemeImpls 가 갈래를 하나도 빠뜨릴 수 없는 형태라 컴파일러가
- *    "아직 안 만든 화면"을 전부 짚어 준다. 그 목록이 곧 할 일이다.
+ * 3. 공개 갈래의 화면 구현을 각 ThemeImpls 에 채운다.
  */
 
-export const THEME_FAMILIES = ["celestial", "maple", "ocean", "gem"] as const;
+const PUBLIC_FAMILIES = ["celestial", "maple", "ocean"] as const;
+export const THEME_FAMILIES = [...PUBLIC_FAMILIES, "gem"] as const;
 
 export type ThemeFamily = (typeof THEME_FAMILIES)[number];
 
@@ -30,12 +29,8 @@ export const DEFAULT_FAMILY: ThemeFamily = "celestial";
 const isKnownFamily = (v: unknown): v is ThemeFamily =>
     typeof v === "string" && (THEME_FAMILIES as readonly string[]).includes(v);
 
-/**
- * 갈래마다 하나씩. 부분(Partial)이 아니라 전부 채워야 한다 —
- * 빠진 갈래를 조용히 기본값으로 때우면, 새 테마에서 어느 화면이
- * 아직 옛 모습인지 아무도 모른 채 배포된다.
- */
-export type ThemeImpls<T> = Record<ThemeFamily, T>;
+/** Released families always provide an implementation. Preview families can share one. */
+export type ThemeImpls<T> = Record<(typeof PUBLIC_FAMILIES)[number], T> & { gem?: T };
 
 /** 지금 테마의 갈래. 'celestial-dark' 처럼 벌이 달라도 갈래는 같다. */
 export function useThemeFamily(): ThemeFamily {
@@ -55,5 +50,6 @@ export function useThemeFamily(): ThemeFamily {
  */
 export function usePickTheme<T>(impls: ThemeImpls<T>): T {
     const family = useThemeFamily();
-    return impls[family] ?? impls[DEFAULT_FAMILY];
+    const implementation = impls[family];
+    return implementation === undefined ? impls.celestial : implementation;
 }

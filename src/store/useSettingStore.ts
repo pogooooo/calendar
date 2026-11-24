@@ -5,20 +5,24 @@ import { create } from "zustand/react";
 import type { AuthFetch } from '@/types';
 import type { Locale } from '@/i18n/types';
 import { DEFAULT_TIMEZONE, detectTimeZone, isValidTimeZone } from '@/lib/timezone';
-import { DEFAULT_GEM_COLOR, normalizeGemColor } from '@/styles/gem/palette';
+import { DEFAULT_STONE, normalizeGemColor } from '@/features/gem/color';
+import { availableThemeName, GEM_THEME_AVAILABLE, isGemTheme } from '@/styles/themeAvailability';
 
 interface SettingState {
     theme: string;
     themeOptions: Record<string, string>;
-    /** Gem RGB, saved on this device like the selected theme variant. */
     gemColor: string;
     setGemColor: (color: string) => void;
+    gemSidebarSound: boolean;
+    setGemSidebarSound: (on: boolean) => void;
     locale: Locale;
     timezone: string;
     autostart: boolean;
     font: string;
     fontSize: string;
     fontWeight: string;
+    mobileAppearance: 'simple' | 'rich';
+    setMobileAppearance: (value: 'simple' | 'rich') => void;
     motion: 'full' | 'gentle' | 'off';
     setMotion: (motion: 'full' | 'gentle' | 'off') => void;
     /**
@@ -59,8 +63,9 @@ const useSettingStore = create<SettingState>()(
         (set, get) => ({
             theme: 'celestial',
             themeOptions: {},
-            gemColor: DEFAULT_GEM_COLOR,
-            setGemColor: (color) => set({ gemColor: normalizeGemColor(color) }),
+            gemColor: DEFAULT_STONE,
+            gemSidebarSound: true,
+            setGemSidebarSound: (on) => set({ gemSidebarSound: on }),
             locale: 'ko' as Locale,
             // 처음 켜는 기기는 그 기기의 시간대로 시작한다 (저장된 값이 있으면 그것이 이긴다).
             // 예전엔 늘 서울이라, 다른 시간대의 사람은 홈의 '오늘'이 하루 어긋났다 — 로스앤젤레스면 아침 8시부터 내일이 오늘로 떴다
@@ -69,13 +74,19 @@ const useSettingStore = create<SettingState>()(
             font: 'default',
             fontSize: 'md',
             fontWeight: 'normal',
+            mobileAppearance: 'simple',
+            setMobileAppearance: (mobileAppearance) => set({ mobileAppearance }),
             motion: 'full',
             setMotion: (motion) => set({ motion }),
             motionOverOs: true,
             setMotionOverOs: (on) => set({ motionOverOs: on }),
             isLoading: false,
 
-            setTheme: (inputTheme) => set({ theme: inputTheme }),
+            setTheme: (inputTheme) => {
+                if (GEM_THEME_AVAILABLE && isGemTheme(get().theme)) return;
+                set({ theme: availableThemeName(inputTheme) });
+            },
+            setGemColor: (color) => set({ gemColor: normalizeGemColor(color) }),
             setThemeOption: (themeId, option) =>
                 set((s) => ({ themeOptions: { ...s.themeOptions, [themeId]: option } })),
             setLocale: (locale) => set({ locale }),
@@ -95,7 +106,9 @@ const useSettingStore = create<SettingState>()(
                         if (res.ok) {
                             const data = await res.json();
                             // 읽는 사이에 테마를 골랐으면 그 값이 맞다 (서버에는 PATCH 가 따로 간다)
-                            const next = edits === themeEdits && typeof data.theme === 'string' && data.theme ? data.theme as string : null;
+                            const localGem = GEM_THEME_AVAILABLE && isGemTheme(get().theme);
+                            const next = !localGem && edits === themeEdits && typeof data.theme === 'string' && data.theme
+                                ? availableThemeName(data.theme) : null;
                             clearInterval(deferTimer);
                             if (next && next !== get().theme && busy()) {
                                 // 다른 기기에서 바꾼 테마 — 갈래가 바뀌면 화면이 통째로 다시 그려져, 열린 창에 치던 글·고른 날이 사라졌다.
@@ -121,18 +134,20 @@ const useSettingStore = create<SettingState>()(
 
             updateTheme: async (authFetch, inputTheme) => {
                 const prev = get().theme;
+                const next = availableThemeName(inputTheme);
                 themeEdits += 1;
-                set({ theme: inputTheme });
+                set({ theme: next });
+                if (GEM_THEME_AVAILABLE && isGemTheme(next)) return;
                 // 서버가 받지 않으면 다음 읽기가 옛 테마로 조용히 되돌린다 — 지금 되돌리고 알린다
                 const undo = () => {
-                    if (get().theme === inputTheme) set({ theme: prev });
+                    if (get().theme === next) set({ theme: prev });
                     reportSaveFailure("setting");
                 };
                 try {
                     const res = await authFetch('/api/setting', {
                         method: 'PATCH',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ theme: inputTheme }),
+                        body: JSON.stringify({ theme: next }),
                     });
                     if (!res.ok) undo();
                 } catch (err) {
@@ -144,8 +159,8 @@ const useSettingStore = create<SettingState>()(
         {
             name: "setting-store",
             merge: (persisted, current) => {
-                const saved = persisted && typeof persisted === 'object' ? persisted as Partial<SettingState> : {};
-                return { ...current, ...saved, gemColor: normalizeGemColor(saved.gemColor) };
+                const saved = persisted && typeof persisted === 'object' ? { ...persisted } : {};
+                return { ...current, ...saved, gemColor: normalizeGemColor((saved as { gemColor?: unknown }).gemColor) };
             },
         }
     )

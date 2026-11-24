@@ -149,7 +149,7 @@ export default function CelestialChallengeLayout({
                 <hr />
             </S.DateHeader>
 
-            <S.ContentLayout ref={contentRef}>
+            <S.ContentLayout ref={contentRef} data-gem-route-content={theme.family === "gem" ? "" : undefined}>
                 <S.TimelineSection ref={leftPanelRef} $flex={leftRatio}>
                     <div className="timeline-header">
                         {tr.myChallenges}

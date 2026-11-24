@@ -1,15 +1,14 @@
 "use client";
 
-import GemHomeLayout from './gem/GemHomeLayout';
-import * as GemS from "./gem/GemHome.styles";
 import * as React from "react";
-import { useRouter } from "next/navigation";
+import { useScreenNavigation } from "@/components/navigation/useScreenNavigation";
 
 import useTodoStore from "@/store/useTodoStore";
 import useProjectStore from "@/store/useProjectStore";
 import useChallengeStore from "@/store/useChallengeStore";
 import useAnniversaryStore from "@/store/useAnniversaryStore";
 import useCategoryStore from "@/store/useCategoryStore";
+import useSettingStore from "@/store/useSettingStore";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
 import { useT } from "@/i18n/useT";
 import { localDateKey, utcDayKey, endDateKey, labelKey, labelDate, wallNow, zonedTime } from "@/lib/dateKey";
@@ -22,12 +21,13 @@ import useSwipe from "@/hooks/useSwipe";
 import ChallengeModal, { type ChallengeData } from "@/components/modal/challengeModal/ChallengeModal";
 import TodoModal from "@/components/modal/todoModal/TodoModal";
 import { useDialog } from "@/components/dialog/DialogProvider";
-import { usePickTheme, type ThemeImpls } from "@/styles/themed";
+import { usePickTheme, useThemeFamily, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialHome.styles";
 import * as MapleS from "./maple/MapleHome.styles";
 import MonthArch from "./parts/MonthArch";
-import EmptyArt from "@/components/empty/EmptyArt";
+import HomeAnniversaryMark from "./parts/HomeAnniversaryMark";
 import CelestialHomeLayout from "./celestial/CelestialHomeLayout";
+import CelestialReadingPanel from "./celestial/CelestialReadingPanel";
 import MapleHomeLayout from "./maple/MapleHomeLayout";
 import { expandTodos, type ExpandedTodoType } from "@/hooks/useExpandedTodos";
 import { addDaysToKey, zonedDayStart } from "@/lib/timezone";
@@ -39,27 +39,33 @@ import * as OceanS from './ocean/OceanHome.styles';
 import OceanHomeLayout from './ocean/OceanHomeLayout';
 import useAnniversaryFx from "@/components/fx/useAnniversaryFx";
 import { useListMotion, useSwapMotion } from "@/hooks/useMotion";
-import useMobilePresentation from '@/hooks/useMobilePresentation';
+import { useSimpleMobileAppearance } from '@/hooks/useMobilePresentation';
 import MobileHomeLayout from './MobileHomeLayout';
+import * as GemS from "./gem/GemHome.styles";
+import GemHomeLayout from "./gem/GemHomeLayout";
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS, gem: GemS };
 
-const LAYOUTS = { celestial: CelestialHomeLayout, maple: MapleHomeLayout, ocean: OceanHomeLayout , gem: GemHomeLayout };
+const LAYOUTS = { celestial: CelestialHomeLayout, maple: MapleHomeLayout, ocean: OceanHomeLayout, gem: GemHomeLayout };
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
 
 export default function HomeView() {
     const S = usePickTheme(STYLES);
-    const Layout = usePickTheme(LAYOUTS);
-    const mobileApp = useMobilePresentation();
+    const family = useThemeFamily();
+    const gem = family === "gem";
+    const locale = useSettingStore(s => s.locale);
+    const Layout = LAYOUTS[family];
+    const TaskPanel = family === "celestial" ? CelestialReadingPanel : S.ListCol;
+    const simpleMobile = useSimpleMobileAppearance();
     const { todos, toggleTodo, addTodo } = useTodoStore();
     const { projects, fetchProjects } = useProjectStore();
     const { challenges, fetchChallenges, toggleChallengeCompletion, addChallenge } = useChallengeStore();
     const { anniversaries, fetchAnniversaries, addAnniversary } = useAnniversaryStore();
     const { categories, fetchCategories } = useCategoryStore();
     const authFetch = useAuthFetch();
-    const router = useRouter();
+    const navigate = useScreenNavigation();
     const t = useT();
     const dialog = useDialog();
 
@@ -130,7 +136,6 @@ export default function HomeView() {
     const todayListRef = React.useRef<HTMLDivElement>(null);
     const upcomingListRef = React.useRef<HTMLDivElement>(null);
     useSwapMotion(focusKey, todayHeadRef, { size: "line" });
-    useSwapMotion(focusKey, () => [todayListRef.current, upcomingListRef.current]);
     useListMotion(todayListRef, { reset: focusKey, exit: "collapse" });
     useListMotion(upcomingListRef, { reset: focusKey, exit: "collapse" });
     // 챌린지 줄의 이레 칸을 채우면 그 칸이 끝냄 몸짓을 한 번 (줄들은 갈래의 칸 안에 놓이므로 줄의 부모를 찾는다)
@@ -217,8 +222,24 @@ export default function HomeView() {
         return homeTodos
             .filter(t2 => { if (!t2.startAt) return false; const k = localDateKey(t2.startAt); return from <= k && k <= to; })
             .sort((a, b) => new Date(a.startAt!).getTime() - new Date(b.startAt!).getTime())
-            .slice(0, 6);
-    }, [homeTodos, focusKey]);
+            .slice(0, gem ? undefined : 6);
+    }, [homeTodos, focusKey, gem]);
+
+    const upcomingGroups = React.useMemo(() => {
+        const groups = new Map<string, typeof upcomingTodos>();
+        for (const todo of upcomingTodos) {
+            const key = gem ? todo.originalTodo?.id ?? todo.id : todo.id;
+            const group = groups.get(key);
+            if (group) group.push(todo);
+            else groups.set(key, [todo]);
+        }
+        return [...groups.entries()].slice(0, 6);
+    }, [upcomingTodos, gem]);
+    const listKeys = [
+        JSON.stringify(dayTodos.map(todo => [todo.id, todo.title, todo.startAt, todo.completions?.length])),
+        JSON.stringify(upcomingGroups.map(([key, entries]) => [key, entries.map(todo => [todo.id, todo.title, todo.startAt, todo.completions?.length])])),
+    ];
+    useSwapMotion(focusKey, () => [todayListRef.current, upcomingListRef.current], { contentKeys: listKeys });
 
     const activeProjects = React.useMemo(
         () => projects.filter(p => p.status !== "done").slice(0, 4),
@@ -367,6 +388,7 @@ export default function HomeView() {
                             <DateTimePicker
                                 mode="date"
                                 short
+                                showIcon={false}
                                 value={focusKey}
                                 onChange={(v) => {
                                     const m = v.match(/^(\d{4})-(\d{2})-(\d{2})/);
@@ -381,10 +403,10 @@ export default function HomeView() {
                             {t.home.today}
                         </S.TodayButton>
                     </S.DayNav>),
-        today: (<S.ListCol>
+        today: (<TaskPanel>
                             <S.SectionHead data-home-section-head ref={todayHeadRef}>
-                                <i className="hd" />
-                                {isToday ? t.home.today : t.calendar.dayLabelShort(month + 1, focus.getDate())}
+                                {!gem && <i className="hd" />}
+                                {gem && !simpleMobile ? (locale === "ko" ? "선택한 날의 일정" : "Events for selected day") : isToday ? t.home.today : t.calendar.dayLabelShort(month + 1, focus.getDate())}
                                 <span className="hr" />
                                 <b>{dayTodos.length}</b>
                             </S.SectionHead>
@@ -401,7 +423,7 @@ export default function HomeView() {
                                     }}
                                 />
                                 <button type="button" className="detail" onClick={openDetail} aria-label={t.home.quickDetail} title={t.home.quickDetail}>
-                                    <SlidersHorizontal size={15} strokeWidth={2} />
+                                    {gem ? t.home.quickDetailLabel : <SlidersHorizontal size={15} strokeWidth={2} />}
                                 </button>
                                 <button type="submit" disabled={!quick.trim() || quickPending} aria-label={t.calendar.newTodo}>
                                     <Plus size={16} strokeWidth={2.5} />
@@ -411,55 +433,69 @@ export default function HomeView() {
 
                             <S.Scroll ref={todayListRef}>
                                 {dayTodos.length === 0 ? (
-                                    <S.Empty data-home-empty><EmptyArt kind="todos" />{isToday ? t.home.noTodayTodos : t.home.noDayTodos}</S.Empty>
+                                    <S.Empty data-home-empty>{isToday ? t.home.noTodayTodos : t.home.noDayTodos}</S.Empty>
                                 ) : (
                                     dayTodos.map(todo => {
                                         const done = isDoneOn(todo);
+                                        const pending = todo.id.startsWith("temp-");
                                         // 그날 시작하는 시각 일정만 (하루 종일·전날부터 이어진 것은 비운다)
                                         const at = !todo.isAllDay && todo.startAt && localDateKey(todo.startAt) === focusKey ? clock.format(new Date(todo.startAt)) : null;
                                         return (
-                                            <S.Row as="div" data-home-row key={todo.id} data-done={done ? "" : undefined} $done={done} style={{padding:0,gap:0,cursor:'default'}}>
-                                                <TaskActions.Check type="button" aria-label={`${done ? t.interaction.undo : t.menu.done}: ${todo.title}`} aria-pressed={done} onClick={() => handleToggleTodo(todo)}>
+                                            <S.Row as="div" data-home-row key={todo.id} data-done={done ? "" : undefined} $done={done} aria-busy={pending} style={{padding:0,gap:0,cursor:'default'}}>
+                                                <TaskActions.Check type="button" disabled={pending} aria-label={`${done ? t.interaction.undo : t.menu.done}: ${todo.title}`} aria-pressed={done} onClick={() => handleToggleTodo(todo)}>
                                                     <S.Mark $on={done} data-motion-mark="" />
                                                 </TaskActions.Check>
-                                                <TaskActions.Open type="button" aria-label={`${t.menu.edit}: ${todo.title}`} onClick={()=>{setEditingTodo(todo.originalTodo ?? todo);setDetailOpen(true);}}>
+                                                <TaskActions.Open type="button" disabled={pending} aria-label={`${t.menu.edit}: ${todo.title}`} onClick={()=>{setEditingTodo(todo.originalTodo ?? todo);setDetailOpen(true);}}>
                                                     <span className="name">{todo.title}</span>
-                                                    {at && <em>{at}</em>}
-                                                    <Pencil size={14} aria-hidden="true" />
+                                                    {pending ? <em role="status">{t.account.saving}</em> : <>{at && <em>{at}</em>}<Pencil size={14} aria-hidden="true" /></>}
                                                 </TaskActions.Open>
                                             </S.Row>
                                         );
                                     })
                                 )}
                             </S.Scroll>
-                        </S.ListCol>),
-        upcoming: (<S.ListCol>
+                        </TaskPanel>),
+        upcoming: (<TaskPanel>
                             <S.SectionHead data-home-section-head>
                                 <i className="hd" />
                                 {t.home.thisWeek}
                                 <span className="hr" />
-                                <b>{upcomingTodos.length}</b>
+                                <b>{upcomingGroups.reduce((total, [, entries]) => total + entries.length, 0)}</b>
                             </S.SectionHead>
                             <S.Scroll ref={upcomingListRef}>
                                 {upcomingTodos.length === 0 ? (
                                     <S.Empty>{t.home.noUpcoming}</S.Empty>
                                 ) : (
-                                    upcomingTodos.map(todo => {
+                                    upcomingGroups.map(([groupKey, entries]) => {
+                                        const [todo, ...rest] = entries;
                                         const key = localDateKey(todo.startAt!);
                                         const done = isDoneOn(todo);
+                                        const weekday = (value: string) => gem
+                                            ? labelDate(value).toLocaleDateString(locale, { weekday: "short" })
+                                            : t.calendar.days[labelDate(value).getDay()];
+                                        if (rest.length > 0) return <GemS.RepeatedGroup key={groupKey} data-home-row>
+                                            <summary><S.Mark $on={done} /><span>{todo.title}</span><em>{entries.length} {locale === "ko" ? "건" : "events"}</em></summary>
+                                            {entries.map(entry => {
+                                                const day = localDateKey(entry.startAt!);
+                                                return <S.Row key={entry.id} type="button" $done={isDoneOn(entry)} $soft onClick={() => navigate(`/calendar?date=${day}`)}>
+                                                    <span className="name">{labelDate(day).toLocaleDateString(locale, { month: "numeric", day: "numeric" })}</span>
+                                                    <em>{weekday(day)}</em>
+                                                </S.Row>;
+                                            })}
+                                        </GemS.RepeatedGroup>;
                                         return (
                                             // 그 날로 데려간다. 그냥 /calendar 로 보내면 오늘이 열려 다시 찾아야 한다.
-                                            <S.Row data-home-row key={todo.id} type="button" $done={done} $soft onClick={() => router.push(`/calendar?date=${key}`)}>
+                                            <S.Row data-home-row key={groupKey} type="button" $done={done} $soft onClick={() => navigate(`/calendar?date=${key}`)}>
                                                 <S.Mark $on={done} />
                                                 <span className="name">{todo.title}</span>
-                                                <em>{t.calendar.days[labelDate(key).getDay()]}</em>
+                                                <em>{weekday(key)}</em>
                                             </S.Row>
                                         );
                                     })
                                 )}
                             </S.Scroll>
-                        </S.ListCol>),
-        projects: (<><S.PillarHead onClick={() => router.push("/project")}>
+                        </TaskPanel>),
+        projects: (<><S.PillarHead onClick={() => navigate("/project")}>
                         <span className="idx">I</span>
                         {t.home.project}
                         <i className="rule" />
@@ -474,8 +510,8 @@ export default function HomeView() {
                             return (
                                 // 그 프로젝트를 열어 준다 — 예전엔 /project 로만 보내서 늘 첫 프로젝트가 열렸다
                                 <S.ProjectRow key={p.id} role="button" tabIndex={0}
-                                    onClick={() => router.push(`/project?id=${encodeURIComponent(p.id)}`)}
-                                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); router.push(`/project?id=${encodeURIComponent(p.id)}`); } }}>
+                                    onClick={() => navigate(`/project?id=${encodeURIComponent(p.id)}`)}
+                                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); navigate(`/project?id=${encodeURIComponent(p.id)}`); } }}>
                                     <span className="name">{p.title}</span>
                                     <i className="bar">
                                         <b style={{ width: `${pct}%` }} />
@@ -488,7 +524,7 @@ export default function HomeView() {
 
                     </>),
         challenges: (<><S.PillarHeadRow className="mt">
-                        <S.PillarHead onClick={() => router.push("/challenge")}>
+                        <S.PillarHead onClick={() => navigate("/challenge")}>
                             <span className="idx">II</span>
                             {t.home.challenge}
                             <i className="rule" />
@@ -533,7 +569,7 @@ export default function HomeView() {
 
                     </>),
         anniversaries: (<><S.PillarHeadRow className="mt">
-                        <S.PillarHead onClick={() => router.push("/anniversary")}>
+                        <S.PillarHead onClick={() => navigate("/anniversary")}>
                             <span className="idx">III</span>
                             {t.sidebar.anniversary}
                             <i className="rule" />
@@ -568,9 +604,9 @@ export default function HomeView() {
                         upcomingAnniversaries.map(a => (
                             <S.AnniversaryRow key={a.id} role="button" tabIndex={0}
                                 data-fx-anchor={a.dday === 0 ? "anniversary-today" : undefined}
-                                onClick={() => router.push("/anniversary")}
-                                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") router.push("/anniversary"); }}>
-                                <span className="star">✦</span>
+                                onClick={() => navigate("/anniversary")}
+                                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") navigate("/anniversary"); }}>
+                                <span className="star"><HomeAnniversaryMark /></span>
                                 <span className="name">{a.title}</span>
                                 <em>{a.dday === 0 ? "D-DAY" : `D-${a.dday}`}</em>
                             </S.AnniversaryRow>
@@ -597,5 +633,5 @@ export default function HomeView() {
         </>),
         listProps: daySwipe,
     };
-    return mobileApp ? <MobileHomeLayout {...regions} /> : <Layout {...regions} />;
+    return simpleMobile ? <MobileHomeLayout {...regions} /> : <Layout {...regions} />;
 }

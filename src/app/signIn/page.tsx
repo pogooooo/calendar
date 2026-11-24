@@ -1,6 +1,5 @@
 "use client";
 
-import * as GemS from "./gem/GemSignIn.styles";
 import { useGoogleLogin } from "@react-oauth/google";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -34,7 +33,7 @@ import * as OceanS from './ocean/OceanSignIn.styles';
 type LoginFormData = LoginInput;
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS  };
 
 
 
@@ -259,6 +258,13 @@ const SignIn = () => {
                     <S.SwitchLink>
                         <TertiaryButton asChild><PolicyLink>{t.auth.privacyPolicy}</PolicyLink></TertiaryButton>
                     </S.SwitchLink>
+                    {process.env.NODE_ENV === "development" && (
+                        <S.SwitchLink>
+                            <TertiaryButton asChild>
+                                <a href="/dev/design?screen=home">샘플 일정으로 개발 화면 보기</a>
+                            </TertiaryButton>
+                        </S.SwitchLink>
+                    )}
                 </S.FormInner>
             </S.FormPanel>
         </S.PageWrapper>

@@ -1,3 +1,4 @@
+import { chartAdd } from "@/styles/celestial/controls";
 /**
  * 달력 화면(틀)의 모양 — 폰의 갈아 끼우는 두 화면, 데스크톱의 두 판과 그 사이의 나눔선.
  *
@@ -32,6 +33,13 @@ export const ViewSwitch = styled.div<{ $active?: number }>`
     grid-template-columns: repeat(2, 1fr);
     border: 1px solid ${(props) => props.theme.colors.primary}66;
     flex: none;
+    ${celestialOnly(css`
+        background: ${p => p.theme.colors.surface};
+        border-color: ${p => p.theme.colors.border};
+        border-radius: 5px;
+        &::before { border-radius: 3px; background: ${p => p.theme.mode === "light" ? "#202B40" : p.theme.colors.background}; box-shadow: inset 0 0 0 1px ${p => p.theme.colors.primary}, inset 0 0 0 3px ${p => p.theme.colors.background}, inset 0 0 0 4px ${p => p.theme.colors.primary}66; }
+        @media (prefers-reduced-motion: reduce) { &&::before { transition: none; } }
+    `)}
 `;
 
 export const SwitchButton = styled.button<{ $on: boolean }>`
@@ -48,6 +56,12 @@ export const SwitchButton = styled.button<{ $on: boolean }>`
 
     &:last-child { border-right: none; }
     &:active { background-color: ${(props) => props.theme.colors.primary}2E; }
+    ${celestialOnly(css`
+        && { display: inline-flex; gap: 5px; align-items: center; justify-content: center; line-height: 1.2; }
+        &[aria-selected="true"] { font-weight: 650; }
+        &:hover:not([aria-selected="true"]) { text-decoration: underline; text-underline-offset: 3px; }
+        &:focus-visible { outline: 2px solid ${p => p.theme.colors.text}; outline-offset: -2px; }
+    `)}
 `;
 
 /* 달력 한 짝이 남은 높이를 다 쓴다. 스크롤은 각 달력이 알아서 한다.
@@ -96,6 +110,9 @@ export const Fab = styled.button`
     :where(html:not([data-theme-motion="off"])) & {
         animation: ${fabIn} 0.34s cubic-bezier(0.2, 1.3, 0.4, 1) 0.1s both;
     }
+    ${celestialOnly(css`
+        &&&[data-calendar-add] { ${chartAdd} }
+    `)}
 `;
 
 export const PageWrapper = styled.div`

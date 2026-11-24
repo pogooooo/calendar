@@ -1,3 +1,4 @@
+import { field } from "@/styles/celestial/controls";
 /**
  * Celestial_SingleInput 의 모양.
  *
@@ -31,4 +32,5 @@ export const CelestialInput = styled.input<InputProps>`
     width: ${({ $width }) => (typeof $width === 'number' ? `${$width}px` : $width || '100%')};
     height: ${({ $height }) => (typeof $height === 'number' ? `${$height}px` : $height || 'auto')};
     ${celestial_singleInput_input}
+    ${field}
 `;

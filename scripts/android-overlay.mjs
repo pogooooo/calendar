@@ -17,6 +17,12 @@ if (!existsSync(gen)) {
 
 cpSync(join(overlay, "app"), join(gen, "app"), { recursive: true });
 
+// Use the same approved material crops in the web and Android widget renderers.
+const gemMaterials = join(root, "src", "features", "gem", "materials");
+const widgetDrawables = join(gen, "app", "src", "main", "res", "drawable-nodpi");
+cpSync(join(gemMaterials, "quartz-neutral.webp"), join(widgetDrawables, "gem_widget_quartz.webp"));
+cpSync(join(gemMaterials, "cut-neutral.webp"), join(widgetDrawables, "gem_widget_lustre.webp"));
+
 // 오버레이에서 지운 파일은 gen 에 남아 옛 자원을 가리키다 빌드를 깨뜨린다. 여기서 같이 지운다.
 const STALE = [
     "res/layout/widget_cronos.xml",
@@ -28,6 +34,7 @@ const STALE = [
     "java/com/cronos/todoapp/widget/WidgetSnapshot.kt",
     // 2026-09-17: 화가를 갈래 공용 WidgetPainter 로 바꾸며 이름을 바꿨다
     "java/com/cronos/todoapp/widget/CelestialPainter.kt",
+    "java/com/cronos/todoapp/widget/GemStyle.kt",
     // 2026-10-15: Maple 을 다시 그리며 위젯의 그림 파일(종이결·먹 테·가지·화살·놋쇠판·잎 표식)과 Cormorant 글꼴을 걷었다
     "res/drawable-nodpi/maple_acorn.webp",
     "res/drawable-nodpi/maple_bullet_filled.webp",

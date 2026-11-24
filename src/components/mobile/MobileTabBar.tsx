@@ -1,8 +1,8 @@
 "use client";
 
-import * as GemS from "./gem/GemMobileTabBar.styles";
 import * as React from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
+import { useScreenNavigation } from "@/components/navigation/useScreenNavigation";
 import { Home, Calendar, Kanban, Trophy, MoreHorizontal, Layers, Cake, Settings, MonitorDown, X, Search, LogOut } from "lucide-react";
 import { openQuickNavigation } from "@/components/navigation/QuickNavigation";
 import useAuthStore from "@/store/useAuthStore";
@@ -14,15 +14,16 @@ import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialMobileTabBar.styles";
 import * as MapleS from "./maple/MapleMobileTabBar.styles";
 import * as OceanS from './ocean/OceanMobileTabBar.styles';
+import * as GemS from "./gem/GemMobileTabBar.styles";
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS, gem: GemS };
 
 export { MOBILE_BREAKPOINT, TAB_BAR_HEIGHT };
 
 export default function MobileTabBar({activePath}:{activePath?:string} = {}) {
     const S = usePickTheme(STYLES);
-    const router = useRouter();
+    const navigate = useScreenNavigation();
     const routePathname = usePathname();
     const pathname = activePath ?? routePathname;
     const t = useT();
@@ -74,15 +75,15 @@ export default function MobileTabBar({activePath}:{activePath?:string} = {}) {
 
     const go = (p: string) => {
         setMore(false);
-        router.push(p);
+        navigate(p);
     };
 
     // 로그아웃은 사이드바의 프로필 메뉴에만 있었는데, 폰에서는 사이드바를 감춘다 — 폰(앱)에서는 로그아웃할 길이 아예 없었다
     const logout = useAuthStore((s) => s.logout);
     const handleLogout = async () => {
         setMore(false);
-        await logout();
-        router.push("/signIn");
+        if (activePath === undefined) await logout();
+        navigate("/signIn");
     };
 
     return (

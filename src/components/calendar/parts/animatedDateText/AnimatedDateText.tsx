@@ -1,16 +1,16 @@
 "use client";
 
-import * as GemS from "./gem/AnimatedDateText.styles";
 import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import useThemeMotion from '@/hooks/useThemeMotion';
+import { useSwapMotion } from '@/hooks/useMotion';
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/AnimatedDateText.styles";
 import * as MapleS from "./maple/AnimatedDateText.styles";
 import * as OceanS from './ocean/AnimatedDateText.styles';
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS  };
 
 interface AnimatedDateTextProps {
     text: string;
@@ -21,8 +21,11 @@ interface AnimatedDateTextProps {
 export default function AnimatedDateText({ text, direction }: AnimatedDateTextProps) {
     const S = usePickTheme(STYLES);
     const level = useThemeMotion();
-    const animateDate = usePickTheme({ celestial: false, maple: true, ocean: true, gem: true });
-    if (level === 'off' || !animateDate) return <S.DateTextContainer><span>{text}</span></S.DateTextContainer>;
+    const gem = usePickTheme({ celestial: false, maple: false, ocean: false, gem: true });
+    const labelRef = React.useRef<HTMLSpanElement>(null);
+    useSwapMotion(text, labelRef, { size: "line", axis: "y", dir: direction < 0 ? -1 : 1, disabled: !gem });
+    const animateDate = usePickTheme({ celestial: false, maple: true, ocean: true, gem: false });
+    if (level === 'off' || !animateDate) return <S.DateTextContainer><span ref={labelRef} style={{ display: 'inline-block' }}>{text}</span></S.DateTextContainer>;
     const reducedMotion = level !== 'full';
     return (
         <S.DateTextContainer>

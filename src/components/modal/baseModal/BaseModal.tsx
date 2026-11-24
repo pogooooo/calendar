@@ -1,4 +1,3 @@
-import * as GemS from "./gem/GemBaseModal.styles";
 import * as React from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, type MotionProps } from "framer-motion";
@@ -9,9 +8,10 @@ import useThemeMotion, { useMotionHeldByOs } from "@/hooks/useThemeMotion";
 import * as CelestialS from "./celestial/CelestialBaseModal.styles";
 import * as MapleS from "./maple/MapleBaseModal.styles";
 import * as OceanS from './ocean/OceanBaseModal.styles';
+import * as GemS from "./gem/GemBaseModal.styles";
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS, gem: GemS };
 
 type ModalMotion = Pick<MotionProps, "initial" | "animate" | "exit" | "transition">;
 /**
@@ -19,7 +19,15 @@ type ModalMotion = Pick<MotionProps, "initial" | "animate" | "exit" | "transitio
  * 바다는 오른쪽에서 밀려 들어오는 시트라 가운데서 커지는 기본 몸짓이 맞지 않는다 (OceanBaseModal.styles).
  * Maple 은 종이 한 장을 내려놓듯 (MapleBaseModal.styles).
  */
-const MOTION: ThemeImpls<{ desktop?: ModalMotion; overlay?: ModalMotion } | null> = { celestial: null, maple: MapleS.modalMotion, ocean: OceanS.modalMotion , gem: null };
+const MOTION: ThemeImpls<{ desktop?: ModalMotion; overlay?: ModalMotion } | null> = {
+    celestial: null, maple: MapleS.modalMotion, ocean: OceanS.modalMotion,
+    gem: { desktop: {
+        initial: { opacity: 0, y: 6, scale: .985 },
+        animate: { opacity: 1, y: 0, scale: 1 },
+        exit: { opacity: 0, y: 4 },
+        transition: { duration: .2, ease: [.22, 1, .36, 1] },
+    } },
+};
 const FADE: ModalMotion = { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 } };
 /** 움직임 '잔잔하게' — 미끄러지거나 커지지 않고 짧게 옅어졌다 나타나기만 (창·시트 모두) */
 const GENTLE: ModalMotion = { ...FADE, transition: { duration: 0.16 } };

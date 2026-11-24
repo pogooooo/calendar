@@ -11,7 +11,7 @@ export const TOUCH = `@media (hover: none)`;
  * 데스크톱이다. 폰 꾸밈(마름모·큰 손가락 단추)을 위젯에까지 주면 안 되는
  * 자리에서 이걸로 뺀다. :where 라서 세기(specificity)는 더하지 않는다.
  */
-export const NOT_WIDGET = `:where(body:not(:has([data-widget])))`;
+export const NOT_WIDGET = `:where(body:not(:has([data-widget]:not([data-widget-preview]))))`;
 /**
  * 화면 가장자리의 시스템 막대 높이 — 위는 상태 표시줄(시계), 아래는 제스처 줄·단추 막대.
  * 안드로이드 앱은 네이티브(MainActivity.fitSystemEdges)가 --native-inset-* 로 정확한 값을 넣는다.

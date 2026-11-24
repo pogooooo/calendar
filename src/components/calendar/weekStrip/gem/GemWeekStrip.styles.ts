@@ -1,30 +1,50 @@
-import styled, { css } from 'styled-components';
-import * as C from '../celestial/CelestialWeekStrip.styles';
-import { gemstoneNumeral, mineralSurface, gemControl } from '../../monthCalendar/gem/GemCalendarMaterial.styles';
+import styled from "styled-components";
+import { gemCalendarNav, gemTodayInlay } from "../../gemCalendarStyles";
+import { gemIconSize } from "@/features/gem/GemLive.styles";
+import { TOUCH } from "@/styles/breakpoints";
+import * as Base from "../celestial/CelestialWeekStrip.styles";
 
-export * from '../celestial/CelestialWeekStrip.styles';
+export * from "../celestial/CelestialWeekStrip.styles";
 
-export const Strip = styled(C.Strip)`
-    ${mineralSurface}
-    border-radius:8px; padding:5px 5px 7px;
+export const Strip = styled(Base.Strip)`
+    border: 1px solid var(--gem-line);
+    border-radius: 11px;
+    background: var(--gem-panel);
+    color: var(--gem-ink);
 `;
-export const Head = styled(C.Head)`
-    .title { font-family:${p => p.theme.fonts.display}; font-size:.95rem; letter-spacing:0; }
-    :where(html[data-theme-motion="gentle"]) & .title { animation:none; }
-    button { border-radius:5px; color:${p => p.theme.colors.primary}; }
-    .today { ${gemControl} min-height:29px; font-family:${p => p.theme.fonts.body}; font-size:.6rem; letter-spacing:.03em; }
-    button:focus-visible { outline:2px solid ${p => p.theme.colors.primary}; outline-offset:1px; }
+
+export const Head = styled(Base.Head)`
+    .title {
+        font: 650 .88rem/1.25 ${p => p.theme.fonts.body};
+        font-variant-numeric: tabular-nums;
+        letter-spacing: 0;
+        animation: none;
+    }
+    button {
+        ${gemCalendarNav}
+        min-height: 32px;
+        ${TOUCH} { min-height: 44px; }
+    }
+    button:not(.today) { ${gemIconSize} }
+    .today { letter-spacing: 0; border-color: transparent; }
 `;
-export const Days = styled(C.Days)`gap:3px;`;
-export const Day = styled(C.Day)`
-    min-height:72px; padding:7px 0 5px; gap:5px; border-radius:6px 2px;
-    background:${p => p.$selected ? `linear-gradient(135deg,${p.theme.colors.primary}12,${p.theme.colors.primary}04)` : 'transparent'};
-    border-color:${p => p.$selected ? `${p.theme.colors.primary}55` : 'transparent'};
-    .name { font-family:${p => p.theme.fonts.body}; font-size:.57rem; letter-spacing:.04em; }
-    .num { width:30px; height:29px; line-height:29px; border:0; border-radius:0; font-family:${p => p.theme.fonts.numeral}; font-size:1.04rem; }
-    ${p => p.$today && css`.num { ${gemstoneNumeral} width:30px; height:29px; }`}
-    .dots i { width:5px; height:6px; transform:none; border-radius:0; clip-path:polygon(25% 0,75% 0,100% 35%,50% 100%,0 35%); }
-    &:focus-visible { outline:2px solid ${p => p.theme.colors.primary}; outline-offset:-1px; }
-    :where(html:not([data-theme-motion="off"])) & { transition:background .22s ease,border-color .22s ease,box-shadow .22s ease; }
-    &:hover { box-shadow:inset 0 1px 0 ${p => p.theme.colors.accent}60; }
+
+export const Days = styled(Base.Days)`
+    position: relative;
+    --gem-frame-inset: 3px;
+    --gem-frame-corner: 11px;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+`;
+
+export const Day = styled(Base.Day)`
+    ${gemTodayInlay}
+    position: relative;
+    min-height: 64px;
+    border-radius: var(--gem-radius, 999px);
+    border-color: transparent;
+    background: ${p => p.$selected ? "var(--gem-calendar-selection)" : "transparent"};
+    color: ${p => p.$weekend ? p.theme.colors.weekend : "var(--gem-ink)"};
+    .name { font-family: ${p => p.theme.fonts.body}; letter-spacing: 0; font-size: .63rem; }
+    .num { border: 0; color: inherit; position: relative; font-weight: 700; }
+    .dots i { border-radius: 50%; transform: none; }
 `;

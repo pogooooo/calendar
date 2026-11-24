@@ -1,83 +1,100 @@
-/** Gem finishes over the shared, behavior-compatible component structure. */
-import styled from 'styled-components';
-import * as Base from '../celestial/CelestialAnniversary.styles';
-import { gemHeading, gemPanel, gemControl, gemField } from '@/styles/gem/material';
-import { inkOnFill } from '@/styles/color';
-export * from '../celestial/CelestialAnniversary.styles';
+import styled, { css } from "styled-components";
+import * as C from "../celestial/CelestialAnniversary.styles";
+import { gemstoneAction, gemstoneHeading, gemstonePanel, gemstonePill, gemstoneSlab } from "@/features/gem/GemWorkspace.styles";
+import { MOBILE, TOUCH } from "@/styles/breakpoints";
+import { gemField, gemIconSize } from "@/features/gem/GemLive.styles";
 
-export const Zodiac = styled(Base.Zodiac)`display: none;`;
+export * from "../celestial/CelestialAnniversary.styles";
 
-export const Corners = styled(Base.Corners)`
-    i { width: 9px; height: 9px; border: 0; background: transparent; transform: none; color: ${({ theme }) => theme.colors.accent}; }
-    i:nth-child(1) { top: 3px; left: 3px; border-top: 1px solid; border-left: 1px solid; }
-    i:nth-child(2) { top: 3px; right: 3px; border-top: 1px solid; border-right: 1px solid; }
-    i:nth-child(3) { bottom: 3px; left: 3px; border-bottom: 1px solid; border-left: 1px solid; }
-    i:nth-child(4) { bottom: 3px; right: 3px; border-bottom: 1px solid; border-right: 1px solid; }
+export const Page = styled(C.Page).attrs(({ className }) => ({ className, "data-theme-layout": "gem-anniversary" }))`
+    max-width: 1100px;
+`;
+export const Zodiac = styled(C.Zodiac)`display: none;`;
+export const Corners = styled(C.Corners)`display: none;`;
+
+export const PageHeader = styled(C.PageHeader)`
+    ${gemstonePanel}
+    ${gemstoneHeading}
+    padding: 14px clamp(12px, 2vw, 24px);
+    margin-block-end: 16px;
+    span { font-size: clamp(1.15rem, 2.1vw, 1.7rem); font-weight: 700; letter-spacing: -.02em; }
+    i { transform: none; border: 0; border-radius: 50%; background: var(--gem-gold-edge); }
+    hr { background: var(--gem-gold-edge); }
 `;
 
-export const PageHeader = styled(Base.PageHeader)`
-    ${gemHeading}
-    i { width: 10px; height: 13px; border: 0; transform: none; background: ${({ theme }) => `linear-gradient(135deg, ${theme.colors.accent}, ${theme.gemColor ?? theme.colors.primary})`}; clip-path: polygon(25% 0,75% 0,100% 28%,100% 72%,75% 100%,25% 100%,0 72%,0 28%); }
-    span { letter-spacing: .035em; }
+export const AddForm = styled(C.AddForm)`
+    ${gemstonePanel}
+    margin-block-end: 18px;
 `;
-
-export const AddForm = styled(Base.AddForm)`
-    ${gemPanel}
+export const FormCaption = styled(C.FormCaption)`
+    position: static;
+    transform: none;
+    padding: 0;
+    background: none;
+    color: var(--gem-ink);
+    font-size: .96rem;
+    font-weight: 700;
+    letter-spacing: 0;
 `;
-
-export const IconChoice = styled(Base.IconChoice)`
-    ${gemControl}
-    border-color: ${({ theme, $selected }) => $selected ? theme.colors.primary : theme.colors.border};
-    background: ${({ theme, $selected }) => $selected ? `${theme.colors.primary}12` : 'transparent'};
-    box-shadow: ${({ theme, $selected }) => $selected ? `inset 0 -2px 0 ${theme.colors.primary}` : 'none'};
-    svg { filter: none; }
-`;
-
-export const TitleInput = styled(Base.TitleInput)`
+export const TitleInput = styled(C.TitleInput)`
     ${gemField}
+    min-height: 44px;
+    padding-inline: 14px;
 `;
-
-export const AddButton = styled(Base.AddButton)`
-    ${gemControl}
-    background: ${({ theme }) => theme.colors.primary};
-    color: ${({ theme }) => inkOnFill(theme.colors.primary)};
-    &:hover:not(:disabled), &:active:not(:disabled) { background: ${({ theme }) => theme.colors.primary}; }
+export const IconChoice = styled(C.IconChoice)`
+    ${gemstonePill}
+    ${gemIconSize}
+    svg { filter: none; }
+    &:hover { color: var(--gem-ink); }
+    ${p => p.$selected && css`
+        ${gemstoneSlab}
+        &:hover:not(:disabled) { color: var(--gem-slab-ink); }
+    `}
 `;
-
-export const Card = styled(Base.Card)`
-    ${gemPanel}
-    border-color: ${({ theme, $today }) => $today ? theme.colors.primary : `${theme.colors.accent}52`};
-    background: ${({ theme, $today }) => $today ? `radial-gradient(ellipse at 50% 0%, ${theme.colors.primary}18, transparent 75%), ${theme.colors.surface}` : `linear-gradient(135deg, ${theme.colors.surface}F2, ${theme.colors.background}E8)`};
-    color: ${({ theme }) => theme.colors.text};
+export const IconRow = styled(C.IconRow)`flex-wrap: wrap;`;
+export const AddButton = styled(C.AddButton)`
+    ${gemstonePill}
+    min-height: 44px;
+    justify-content: center;
+    &[type="submit"] { ${gemstoneAction} }
+`;
+export const Card = styled(C.Card)`
+    ${gemstonePanel}
+    padding-block-start: 47px;
     animation: none;
-    box-shadow: ${({ theme, $today }) => $today ? `inset 0 3px 0 ${theme.colors.primary}, 0 8px 28px ${theme.colors.primary}12` : `inset 0 1px 0 ${theme.colors.accent}18, 0 8px 28px ${theme.colors.text}07`};
-    &::before { border-color: ${({ theme }) => theme.colors.accent}20; border-radius: 1px 11px 1px 11px; }
-    &:hover::before { border-color: ${({ theme }) => theme.colors.accent}55; }
-    &:focus-within button { opacity: 1; }
-    @media (hover: none) { button { opacity: 1; } }
+    &::before { content: none; }
+    ${p => p.$today && css`border-color: var(--gem-gold); box-shadow: inset 0 2px var(--gem-gold); `}
 `;
-
-export const CardTitle = styled(Base.CardTitle)`
-    ${gemHeading}
-    font-size: 1.08rem;
+export const CardAction = styled(C.CardAction)`
+    ${gemstonePill}
+    left: auto;
+    right: ${p => p.$edit ? "44px" : "8px"};
+    opacity: 1;
+    width: 30px; height: 30px;
+    ${TOUCH} { width: 44px; height: 44px; right: ${p => p.$edit ? "57px" : "8px"}; }
 `;
-
-export const CardEmblem = styled(Base.CardEmblem)`
-    > svg .dia { display: none; }
-    > svg .orbit { stroke: ${({ theme }) => theme.colors.accent}38; }
-    > svg .orbit-fill { stroke: ${({ theme }) => theme.colors.primary}; stroke-width: 1.5; }
-    .glyph { color: ${({ theme }) => theme.colors.primary}; }
-    .glyph svg { filter: none; }
-`;
-
-export const CardDday = styled(Base.CardDday)`
-    font-family: ${({ theme }) => theme.fonts.body};
-    font-size: .78rem;
-    letter-spacing: .03em;
-    &::after {
-        content: ${({ $today }) => $today ? "''" : 'none'};
-        width: 6px; height: 9px;
-        background: ${({ theme }) => theme.colors.primary};
-        clip-path: polygon(25% 0,75% 0,100% 28%,100% 72%,75% 100%,25% 100%,0 72%,0 28%);
+export const CardEmblem = styled(C.CardEmblem)`
+    &::before {
+        content: "";
+        position: absolute;
+        inset: 12px;
+        border: 1px solid transparent;
+        border-radius: 50%;
+        background: var(--gem-action);
     }
+    svg .dia { display: none; }
+    svg .orbit-fill { stroke: var(--gem-gold); }
+    .glyph { color: var(--gem-action-ink); }
+    .glyph svg { filter: none; width: 20px; height: 20px; }
+`;
+export const CardTitle = styled(C.CardTitle)`
+    color: var(--gem-ink);
+    font-weight: 700;
+    overflow-wrap: anywhere;
+`;
+export const CardDday = styled(C.CardDday)`
+    ${gemstonePill}
+    padding: 2px 8px;
+    letter-spacing: 0;
+    i { display: none; }
 `;

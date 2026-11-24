@@ -78,6 +78,19 @@ assert.equal(occurrences.length, 3);
 assert.deepEqual(occurrences.map(td => td.done), [false, true, false]);
 assert.equal(snapshot.todos[0].color, "#123456");
 
+const navigationSnapshot = buildWidgetSnapshot({
+    todos: [
+        { ...task, id: "previous-year", startAt: "2026-12-31T10:00:00+09:00", endAt: "2026-12-31T11:00:00+09:00" },
+        { ...task, id: "next-day", startAt: "2027-01-02T10:00:00+09:00", endAt: "2027-01-02T11:00:00+09:00" },
+        { ...task, id: "last-cached-day", startAt: "2027-02-01T23:30:00+09:00", endAt: "2027-02-02T00:00:00+09:00" },
+    ],
+    categories: [], challenges: [], anniversaries: [], projects: [], memo: "",
+    t, locale: "ko", theme: themes.celestial, now: new Date("2027-01-01T00:30:00+09:00"),
+});
+assert.equal(navigationSnapshot.date, "2027-01-01");
+assert.deepEqual(navigationSnapshot.todos.map(todo => todo.id), ["previous-year", "next-day", "last-cached-day"],
+    "Daily navigation can show cached tasks in both directions, across year boundaries and through the last day");
+
 const { localDateKey } = sourceModule("src/lib/dateKey.ts");
 const { weeklyTaskStats } = sourceModule("src/lib/widgetStats.ts");
 const weekStats = weeklyTaskStats([task], '2026-09-27');

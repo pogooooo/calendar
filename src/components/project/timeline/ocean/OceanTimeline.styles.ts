@@ -77,8 +77,10 @@ export const TimelineLayout = styled(C.TimelineLayout)`
 `;
 
 export const TimelineGridArea = styled(C.TimelineGridArea)`
-    scrollbar-width: thin;
-    scrollbar-color: ${(p) => ink(p.theme, 0.18)} transparent;
+    @supports not selector(::-webkit-scrollbar) {
+        scrollbar-width: thin;
+        scrollbar-color: ${(p) => ink(p.theme, 0.18)} transparent;
+    }
 `;
 
 /** 날짜 줄 — 판 빛깔의 띠(위로 굴러가는 막대가 비치지 않게), 아래로 머리카락 선 */
@@ -241,8 +243,10 @@ export const Connector = styled(C.Connector)`
 
 export const AgendaList = styled(C.AgendaList)`
     padding: 0 8px 8px;
-    scrollbar-width: thin;
-    scrollbar-color: ${(p) => ink(p.theme, 0.18)} transparent;
+    @supports not selector(::-webkit-scrollbar) {
+        scrollbar-width: thin;
+        scrollbar-color: ${(p) => ink(p.theme, 0.18)} transparent;
+    }
 `;
 
 /** 한 줄 — 아래로 머리카락 선 */

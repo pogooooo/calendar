@@ -22,4 +22,9 @@ const ReadingList = styled.div`
     [data-home-empty] { min-height:76px; }
     [data-home-section-head] { color:${({theme})=>theme.colors.text}; }
     [data-home-quick] { background:${({theme})=>theme.colors.surface}; border-radius:10px; padding-inline:8px; }
+    html[data-theme-family="gem"] & {
+        header { border-color: var(--gem-frame-gold); }
+        .primary { background: var(--gem-record); border: 1px solid var(--gem-line); border-radius: 12px; padding: 12px; }
+        .upcoming, aside > section { border-color: var(--gem-line); }
+    }
 `;

@@ -1,3 +1,4 @@
+import { menuFrame, optionRow, iconButton } from "@/styles/celestial/controls";
 import styled, { css } from "styled-components";
 import { celestialOnly, star4Mark } from "@/styles/celestial/ornaments";
 
@@ -25,6 +26,11 @@ export const SetCategoryButton = styled.button`
     &:hover svg {
         filter: drop-shadow(0 0 3px ${(props) => props.theme.colors.primary});
     }
+    ${celestialOnly(css`
+        && { ${iconButton} svg { width: 18px; height: 18px; } }
+        &:hover svg { filter: none; }
+        @media (pointer: coarse) { min-width: 44px; min-height: 44px; }
+    `)}
 `;
 
 export const SettingsBackdrop = styled.div`
@@ -75,6 +81,8 @@ export const SettingsPopover = styled.div<{ $openUp?: boolean }>`
     ${celestialOnly(css`
         &::after { top: 6px; left: 6px; ${star4Mark("9px")} color: ${(p) => p.theme.colors.primary}; }
     `)}
+    ${menuFrame}
+    ${celestialOnly(css`&::after { content: none; }`)}
 `;
 
 export const PopoverLabel = styled.div`
@@ -118,6 +126,11 @@ export const MenuItem = styled.button<{ $isSelected: boolean }>`
         text-overflow: ellipsis;
         white-space: nowrap;
     }
+    ${optionRow}
+    ${celestialOnly(css`
+        &::after { content: ""; margin-left: auto; flex: none; width: 9px; height: 9px; border: 1px solid currentColor; border-radius: 50%; }
+        &[aria-pressed="true"]::after { background: currentColor; box-shadow: inset 0 0 0 2px var(--ce-night); }
+    `)}
 `;
 
 export const CategoryColorDot = styled.div<{ $color: string, $isSelected: boolean }>`

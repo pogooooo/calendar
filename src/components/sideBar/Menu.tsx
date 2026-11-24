@@ -1,26 +1,29 @@
-import * as GemS from "./gem/GemSideBar.styles";
 import { useEffect, useState } from "react";
 import SidebarMenuButton from "@/components/button/sidebarMenu/SidebarMenuButton";
-import { useRouter, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
+import { useScreenNavigation } from "@/components/navigation/useScreenNavigation";
 import { Layers, Calendar, Kanban, Trophy, Cake, MonitorDown, Search } from "lucide-react";
 import { openQuickNavigation } from "@/components/navigation/QuickNavigation";
 import NavIcon from "@/assets/NavIcon";
 import { useT } from "@/i18n/useT";
 import { isDesktopApp } from "@/lib/apiBase";
-import { usePickTheme, type ThemeImpls } from "@/styles/themed";
+import { usePickTheme, useThemeFamily, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialSideBar.styles";
 import * as MapleS from "./maple/MapleSideBar.styles";
 import * as OceanS from './ocean/OceanSideBar.styles';
+import * as GemS from "./gem/GemSideBar.styles";
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS, gem: GemS };
 
 const ROMAN = ["I", "II", "III", "IV", "V", "VI"];
 
-const Menu = () => {
+const Menu = ({ activePath }: { activePath?: string }) => {
     const S = usePickTheme(STYLES);
-    const router = useRouter();
-    const pathname = usePathname();
+    const gem = useThemeFamily() === "gem";
+    const navigate = useScreenNavigation();
+    const path = usePathname();
+    const pathname = activePath ?? path;
     const t = useT();
 
     // 데스크톱 앱에서는 이미 설치된 상태라 안내가 필요 없다.
@@ -40,7 +43,9 @@ const Menu = () => {
     return(
         <S.MenuWrapper>
             <S.Divider aria-hidden><i /></S.Divider>
-            <SidebarMenuButton label={`${t.interaction.quickFind} · Ctrl K`} onClick={openQuickNavigation}><Search size={24} /></SidebarMenuButton>
+            <SidebarMenuButton label={gem ? t.interaction.quickFind : `${t.interaction.quickFind} · Ctrl K`}
+                title={gem ? `${t.interaction.quickFind} · Ctrl K` : undefined} aria-keyshortcuts="Control+K Meta+K"
+                onClick={openQuickNavigation}><Search size={24} /></SidebarMenuButton>
 
             {items.map((item, i) => (
                 <SidebarMenuButton
@@ -49,7 +54,7 @@ const Menu = () => {
                     $numeral={ROMAN[i] ?? String(i + 1)}
                     $active={pathname?.startsWith(item.path)}
                     aria-current={pathname?.startsWith(item.path) ? "page" : undefined}
-                    onClick={() => { router.push(item.path) }}
+                    onClick={() => { navigate(item.path) }}
                 >
                     {item.icon}
                 </SidebarMenuButton>

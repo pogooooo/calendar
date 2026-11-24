@@ -99,7 +99,9 @@ export const Rail = styled.div`
     overscroll-behavior-x: contain;
     scroll-snap-type: x proximity;
     scroll-padding-inline: 28px;
-    scrollbar-width: thin;
+    @supports not selector(::-webkit-scrollbar) {
+        scrollbar-width: thin;
+    }
     margin: -8px -28px -34px;
     padding: 8px 28px 40px;
 

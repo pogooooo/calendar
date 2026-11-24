@@ -1,12 +1,11 @@
 "use client";
 
-import * as GemS from "./gem/GemWidgetPanels.styles";
 import * as React from "react";
 import { useTheme } from "styled-components";
 import { usePickTheme, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialWidgetPanels.styles";
 import * as MapleS from "./maple/MapleWidgetPanels.styles";
-import { Check } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight } from "lucide-react";
 import useTodoStore from "@/store/useTodoStore";
 import useCategoryStore from "@/store/useCategoryStore";
 import useProjectStore from "@/store/useProjectStore";
@@ -14,9 +13,10 @@ import useChallengeStore from "@/store/useChallengeStore";
 import useDailyStore from "@/store/useDailyStore";
 import useAnniversaryStore from "@/store/useAnniversaryStore";
 import { useAuthFetch } from "@/hooks/useAuthFetch";
+import { WidgetPreviewContext } from "./WidgetPreviewContext";
 import { useT } from "@/i18n/useT";
 import { useCurrentDayKey } from "@/hooks/useCurrentDay";
-import { localDateKey, utcDayKey, activeTimeZone, endDateKey, zonedTime, wallTime } from "@/lib/dateKey";
+import { localDateKey, utcDayKey, activeTimeZone, endDateKey, zonedTime, wallTime, labelDate } from "@/lib/dateKey";
 import { addDaysToKey, zonedDayStart } from "@/lib/timezone";
 import { expandTodos } from "@/hooks/useExpandedTodos";
 import { weeklyTaskStats } from "@/lib/widgetStats";
@@ -25,9 +25,10 @@ import { isOccurrenceDone, toggleOccurrence, type Occurrence } from "@/lib/todoD
 import { challengeExpired, completionTargetFor } from "@/lib/challengeDays";
 import { useSwapMotion } from "@/hooks/useMotion";
 import * as OceanS from './ocean/OceanWidgetPanels.styles';
+import * as GemS from "./gem/GemWidgetPanels.styles";
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS, gem: GemS };
 
 /** 줄 높이는 모양 쪽(styles)이 정한다 — 몇 줄이 들어가는지 셀 때 같은 값을 봐야 한다 */
 const ROW_PX = CelestialS.ROW_PX;
@@ -73,17 +74,17 @@ function useFrame(rowPx = ROW_PX, reserved = 0) {
  */
 function useDayShift() {
     const todayKey = useCurrentDayKey();
-    const [offset, setOffset] = React.useState(0);
-    const key = addDaysToKey(todayKey, offset);
-    const date = React.useMemo(() => {
-        return new Date(`${key}T00:00:00`);
-    }, [key]);
+    const [selected, setSelected] = React.useState<string | null>(null);
+    const key = selected ?? todayKey;
     return {
-        offset,
-        date,
+        isToday: key === todayKey,
+        date: labelDate(key),
         key,
-        shift: (delta: number) => setOffset(o => o + delta),
-        reset: () => setOffset(0),
+        shift: (delta: number) => setSelected(previous => {
+            const next = addDaysToKey(previous ?? todayKey, delta);
+            return next === todayKey ? null : next;
+        }),
+        reset: () => setSelected(null),
     };
 }
 
@@ -135,12 +136,14 @@ export function TodayPanel() {
     const key = day.key;
 
     // 날을 옮기면(‹ ›) 날짜 줄 아래 목록만 오는 쪽에서 아주 짧게 한 번 — 위젯은 투명 창이라 길게·끝없이 움직이면 창 전체를 다시 칠해 깜빡인다
-    const padRef = React.useRef<HTMLDivElement>(null);
-    useSwapMotion(key, () => {
-        const kids = Array.from(padRef.current?.children ?? []);
-        const nav = kids.findIndex((el) => el.matches(`${S.DayNav}`));
-        return nav < 0 ? [] : kids.slice(nav + 1);
-    });
+    const listRef = React.useRef<HTMLDivElement>(null);
+    const bodyRef = React.useRef<HTMLDivElement>(null);
+    useSwapMotion(key, () => Array.from(listRef.current?.children ?? []));
+    React.useLayoutEffect(() => {
+        if (listRef.current) listRef.current.scrollTop = 0;
+        if (bodyRef.current) bodyRef.current.scrollTop = 0;
+    }, [key]);
+    const dateLabel = tr.calendar.dayLabelShort(day.date.getMonth() + 1, day.date.getDate());
 
     // 보는 날부터 이레 뒤까지 — 고른 시간대의 날로 (day.date 는 칸 Date 라 이 기기 0시다. 예전엔 그걸 창·기준으로 써서
     // 시간대가 다르면 그 날 일정이 빠지거나 "다가오는 일정" 이 하루 어긋났다)
@@ -156,8 +159,6 @@ export function TodayPanel() {
 
     const theme = useTheme();
     const color = (id: string) => categories.find(c => c.id === id)?.color || theme.colors.primary;
-    const todayEnter = useEnterSubmit((value) => void submit(value));
-
     const submit = async (value: string = draft) => {
         const v = value.trim();
         if (!v || submitting.current) return;
@@ -167,7 +168,7 @@ export function TodayPanel() {
         if (!cat) { setError(tr.category.selectOrAdd); return; }
 
         // 보고 있는 날에 넣는다 (오늘이면 지금부터 한 시간, 다른 날이면 고른 시간대의 9시 — 예전엔 이 기기의 9시였다)
-        const start = day.offset === 0 ? new Date() : zonedTime(key, 9, 0);
+        const start = day.isToday ? new Date() : zonedTime(key, 9, 0);
         const end = new Date(start.getTime() + 3600000);
 
         submitting.current = true;
@@ -185,67 +186,76 @@ export function TodayPanel() {
         setPending(false);
         if (message) { setError(message); setDraft(cur => cur || v); }
     };
+    const todayEnter = useEnterSubmit((value) => void submit(value));
 
     return (
-        <S.Pad ref={padRef}>
-            {/* 넣는 동안 잠그지 않는다 — 잠그면 초점이 빠져, 하나 넣을 때마다 입력칸을 다시 눌러야 했다 */}
-            <S.QuickRow>
-                <S.QuickInput
-                    value={draft}
-                    aria-label={tr.calendar.addTask}
-                    aria-busy={pending}
-                    maxLength={120}
-                    placeholder={tr.calendar.addTask}
-                    onChange={(e) => { setDraft(e.target.value); if (error) setError(null); }}
-                    {...todayEnter}
-                />
-                <S.AddBtn aria-label={tr.calendar.addTask} disabled={pending || !draft.trim()} onClick={() => void submit()}>+</S.AddBtn>
-            </S.QuickRow>
-            {error && <S.More role="alert">{error}</S.More>}
+        <S.TodayColumn>
             <S.DayNav>
-                <S.NavBtn type="button" onClick={() => day.shift(-1)} aria-label={tr.calendar.prevDay}>‹</S.NavBtn>
-                <button type="button" className="label" onClick={day.reset} disabled={day.offset === 0}>
-                    {day.offset === 0 ? tr.home.today : tr.calendar.dayLabelShort(day.date.getMonth() + 1, day.date.getDate())}
+                <S.NavBtn type="button" onClick={() => day.shift(-1)} aria-label={tr.calendar.prevDay} title={tr.calendar.prevDay}>
+                    <ChevronLeft size={13} strokeWidth={1.6} aria-hidden="true" />
+                </S.NavBtn>
+                <button type="button" className="label" onClick={day.reset} title={day.isToday ? dateLabel : tr.home.today} disabled={day.isToday}>
+                    <span aria-live="polite" aria-atomic="true"><time dateTime={key}>{day.isToday ? tr.home.today : dateLabel}</time></span>
                 </button>
-                <S.NavBtn type="button" onClick={() => day.shift(1)} aria-label={tr.calendar.nextDay}>›</S.NavBtn>
+                <S.NavBtn type="button" onClick={() => day.shift(1)} aria-label={tr.calendar.nextDay} title={tr.calendar.nextDay}>
+                    <ChevronRight size={13} strokeWidth={1.6} aria-hidden="true" />
+                </S.NavBtn>
             </S.DayNav>
-            {/* 날짜는 위의 줄이 말한다 — 여기서 또 "오늘" 이라고 하면 같은 말이 두 번이다 */}
-            <S.SectionHead>{tr.home.tasks}</S.SectionHead>
-            {today.length === 0
-                ? <S.Thin>{day.offset === 0 ? tr.home.noTodayTodos : tr.home.noDayTodos}</S.Thin>
-                : today.map(t => {
-                    const done = doneOn(t);
-                    return (
-                        <S.Row key={t.id}>
-                            <S.Box $done={done} aria-label={t.title} aria-pressed={done} onClick={() => void toggleOccurrence(t, (k) => toggleTodo(authFetch, t.originalTodo?.id ?? t.id, k))}>
-                                {done && <Check size={9} strokeWidth={3} />}
-                            </S.Box>
-                            <S.Mark $c={color(t.categoryId)} />
-                            <S.Name $done={done}>{t.title}</S.Name>
-                        </S.Row>
-                    );
-                })}
-            {hasNext && (
-                <>
-                    <S.SectionHead className="mt">{tr.home.upcoming}</S.SectionHead>
-                    {next.map(t => {
-                        const done = doneOn(t);
-                        // 고른 시간대의 날 (예전엔 이 기기의 날이었다)
-                        const k = localDateKey(t.startAt!);
-                        return (
-                            <S.Row key={t.id}>
-                                <S.Box $done={done} aria-label={t.title} aria-pressed={done} onClick={() => void toggleOccurrence(t, (key) => toggleTodo(authFetch, t.originalTodo?.id ?? t.id, key))}>
-                                    {done && <Check size={9} strokeWidth={3} />}
-                                </S.Box>
-                                <S.Mark $c={color(t.categoryId)} />
-                                <S.Name $done={done}>{t.title}</S.Name>
-                                <S.Meta>{`${Number(k.slice(5, 7))}/${Number(k.slice(8, 10))}`}</S.Meta>
-                            </S.Row>
-                        );
-                    })}
-                </>
-            )}
-        </S.Pad>
+            <S.TodayBody ref={bodyRef}>
+                {/* 넣는 동안 잠그지 않는다 — 잠그면 초점이 빠져, 하나 넣을 때마다 입력칸을 다시 눌러야 했다 */}
+                <S.QuickRow>
+                    <S.QuickInput
+                        value={draft}
+                        aria-label={tr.calendar.addTask}
+                        aria-busy={pending}
+                        maxLength={120}
+                        placeholder={tr.calendar.addTask}
+                        onChange={(e) => { setDraft(e.target.value); if (error) setError(null); }}
+                        {...todayEnter}
+                    />
+                    <S.AddBtn aria-label={tr.calendar.addTask} disabled={pending || !draft.trim()} onClick={() => void submit()}>+</S.AddBtn>
+                </S.QuickRow>
+                {error && <S.More role="alert">{error}</S.More>}
+                <S.Fit ref={listRef}>
+                    {/* 날짜는 위의 줄이 말한다 — 여기서 또 "오늘" 이라고 하면 같은 말이 두 번이다 */}
+                    <S.SectionHead>{tr.home.tasks}</S.SectionHead>
+                    {today.length === 0
+                        ? <S.Thin>{day.isToday ? tr.home.noTodayTodos : tr.home.noDayTodos}</S.Thin>
+                        : today.map(t => {
+                            const done = doneOn(t);
+                            return (
+                                <S.Row key={t.id}>
+                                    <S.Box $done={done} aria-label={t.title} aria-pressed={done} onClick={() => void toggleOccurrence(t, (k) => toggleTodo(authFetch, t.originalTodo?.id ?? t.id, k))}>
+                                        {done && <Check size={9} strokeWidth={3} />}
+                                    </S.Box>
+                                    <S.Mark $c={color(t.categoryId)} />
+                                    <S.Name $done={done}>{t.title}</S.Name>
+                                </S.Row>
+                            );
+                        })}
+                    {hasNext && (
+                        <>
+                            <S.SectionHead className="mt">{tr.home.upcoming}</S.SectionHead>
+                            {next.map(t => {
+                                const done = doneOn(t);
+                                // 고른 시간대의 날 (예전엔 이 기기의 날이었다)
+                                const k = localDateKey(t.startAt!);
+                                return (
+                                    <S.Row key={t.id}>
+                                        <S.Box $done={done} aria-label={t.title} aria-pressed={done} onClick={() => void toggleOccurrence(t, (key) => toggleTodo(authFetch, t.originalTodo?.id ?? t.id, key))}>
+                                            {done && <Check size={9} strokeWidth={3} />}
+                                        </S.Box>
+                                        <S.Mark $c={color(t.categoryId)} />
+                                        <S.Name $done={done}>{t.title}</S.Name>
+                                        <S.Meta>{`${Number(k.slice(5, 7))}/${Number(k.slice(8, 10))}`}</S.Meta>
+                                    </S.Row>
+                                );
+                            })}
+                        </>
+                    )}
+                </S.Fit>
+            </S.TodayBody>
+        </S.TodayColumn>
     );
 }
 
@@ -366,6 +376,7 @@ export function DuePanel() {
 }
 
 export function AnniversaryPanel() {
+    const preview = React.useContext(WidgetPreviewContext);
     const S = usePickTheme(STYLES);
     const { anniversaries, fetchAnniversaries } = useAnniversaryStore();
     const authFetch = useAuthFetch();
@@ -373,6 +384,7 @@ export function AnniversaryPanel() {
     const todayKey = useCurrentDayKey();
 
     React.useEffect(() => {
+        if (preview) return;
         fetchAnniversaries(authFetch);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
@@ -399,12 +411,14 @@ export function AnniversaryPanel() {
 }
 
 export function ProjectsPanel() {
+    const preview = React.useContext(WidgetPreviewContext);
     const S = usePickTheme(STYLES);
     const { projects, fetchProjects } = useProjectStore();
     const authFetch = useAuthFetch();
     const tr = useT();
 
     React.useEffect(() => {
+        if (preview) return;
         fetchProjects(authFetch);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
@@ -492,6 +506,7 @@ export function StatsPanel() {
 }
 
 export function ChallengePanel() {
+    const preview = React.useContext(WidgetPreviewContext);
     useCurrentDayKey();
     const S = usePickTheme(STYLES);
     const { challenges, fetchChallenges, toggleChallengeCompletion } = useChallengeStore();
@@ -500,6 +515,7 @@ export function ChallengePanel() {
     const [ref, box] = useFrame(ROW_PX, 26);
 
     React.useEffect(() => {
+        if (preview) return;
         fetchChallenges(authFetch);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
@@ -561,6 +577,7 @@ export function ChallengePanel() {
 }
 
 export function MemoPanel() {
+    const preview = React.useContext(WidgetPreviewContext);
     const S = usePickTheme(STYLES);
     const { memo, memoDate, error, memoError, fetchDailyData, updateDailyMemo } = useDailyStore();
     const authFetch = useAuthFetch();
@@ -573,6 +590,7 @@ export function MemoPanel() {
     const key = useCurrentDayKey();
 
     React.useEffect(() => {
+        if (preview) return;
         setLoaded(false);
         dirty.current = false;
         let active = true;
@@ -612,22 +630,23 @@ export function MemoPanel() {
     return (
         <S.MemoColumn>
         <S.MemoArea
-            value={draft}
+            value={preview ? (memoDate === key ? memo : "") : draft}
             aria-label={tr.calendar.memoPlaceholder}
-            disabled={!loaded}
+            disabled={!preview && !loaded}
             placeholder={tr.calendar.memoPlaceholder}
             onChange={(e) => { dirty.current = true; setDraft(e.target.value); }}
             onBlur={() => { void save(); }}
         />
         {/* 화면 언어로 — 예전엔 읽기가 끊기면 'Failed to fetch' 가 날것으로, 영어 화면에도 한국어 저장 실패 문구가 떴다 */}
-        {(error || memoError) && <S.More role="alert">{error ? tr.alert.checkConnection : `${tr.alert.saveFailed} · ${tr.alert.checkConnection}`}</S.More>}
+        {!preview && (error || memoError) && <S.More role="alert">{error ? tr.alert.checkConnection : `${tr.alert.saveFailed} · ${tr.alert.checkConnection}`}</S.More>}
         </S.MemoColumn>
     );
 }
 
 export function QuickTaskPanel() {
+    const preview = React.useContext(WidgetPreviewContext);
     const S = usePickTheme(STYLES);
-    const { tasks, fetchDailyData, addDailyTask, toggleDailyTask, deleteDailyTask } = useDailyStore();
+    const { tasks: savedTasks, memoDate, fetchDailyData, addDailyTask, toggleDailyTask, deleteDailyTask } = useDailyStore();
     const authFetch = useAuthFetch();
     const tr = useT();
     const [text, setText] = React.useState("");
@@ -637,10 +656,12 @@ export function QuickTaskPanel() {
     const key = useCurrentDayKey();
 
     React.useEffect(() => {
+        if (preview) return;
         fetchDailyData(authFetch, zonedDayStart(key, activeTimeZone())!);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [key]);
 
+    const tasks = preview && memoDate !== key ? [] : savedTasks;
     const quickEnter = useEnterSubmit((value) => void submit(value));
 
     const submit = async (value: string = text) => {

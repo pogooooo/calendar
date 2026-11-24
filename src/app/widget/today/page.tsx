@@ -1,11 +1,10 @@
 "use client";
 
-import styled from "styled-components";
+import WidgetContent from "@/components/widget/WidgetContent";
 import WidgetShell from "@/components/widget/WidgetShell";
 import WidgetAuthNotice from "@/components/widget/WidgetAuthNotice";
 import { useWidgetTitle } from "@/hooks/useWidgetMeta";
 import { useWidgetInit } from "@/hooks/useWidgetInit";
-import { TodayPanel } from "@/components/widget/WidgetPanels";
 
 export default function TodayWidget() {
     const title = useWidgetTitle("today");
@@ -16,14 +15,7 @@ export default function TodayWidget() {
 
     return (
         <WidgetShell kind="today" title={title}>
-            <Wrap>
-                <TodayPanel />
-            </Wrap>
+            <WidgetContent kind="today" />
         </WidgetShell>
     );
 }
-
-
-const Wrap = styled.div`
-    height: 100%;
-`;

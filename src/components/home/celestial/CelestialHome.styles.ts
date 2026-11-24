@@ -1,3 +1,4 @@
+import { iconButton, moonRing, paperButton } from "@/styles/celestial/controls";
 /**
  * HomeView 의 모양.
  *
@@ -7,7 +8,6 @@
 import styled, { css, keyframes } from "styled-components";
 import { celestialOnly, dotMark, ringMark, star4Mark } from "@/styles/celestial/ornaments";
 import { ornamentStrokes } from "@/components/ornament/celestial/CelestialOrnaments.styles";
-import { hide_scrollbar } from "@/styles/shared";
 
 export const ArchWrap = styled.div`
     flex-shrink: 0;
@@ -87,6 +87,11 @@ export const DayNav = styled.div`
     flex-shrink: 0;
     padding: 12px 30px 0;
 
+    & > button, & > div, & > div > button {
+        align-self: stretch;
+        height: auto;
+    }
+
     @media (max-width: 768px) {
         gap: 6px;
         flex-wrap: wrap;
@@ -109,6 +114,7 @@ export const NavButton = styled.button`
     &:hover { opacity: 1; filter: drop-shadow(0 0 5px ${p => p.theme.colors.primary}66); }
     &:focus-visible { outline: 1px solid ${p => p.theme.colors.primary}; outline-offset: 3px; }
     @media (max-width: 768px) { min-width: 44px; min-height: 44px; padding: 0; flex-shrink: 0; }
+    ${celestialOnly(css`&& { ${iconButton} opacity: 1; &:hover { filter: none; } }`)}
 `;
 
 /** 날짜 줄 가운데의 "달력에서 고르기" — 고르개의 단추를 이 줄에 맞춰 입힌다 */
@@ -185,6 +191,7 @@ export const TodayButton = styled.button`
         min-height: 36px;
         &:disabled { display: none; }
     }
+    ${celestialOnly(css`&& { ${paperButton} }`)}
 `;
 
 export const ListCol = styled.div`
@@ -305,6 +312,11 @@ export const QuickForm = styled.form`
         input { padding: 12px 0; font-size: 0.85rem; }
         button { width: 46px; }
     }
+    ${celestialOnly(css`
+        background: ${p => p.theme.colors.surface}; border-color: ${p => p.theme.colors.border};
+        &:focus-within { border-color: ${p => p.theme.colors.textSecondary}; box-shadow: none; }
+        button { ${paperButton} border-radius: 2px; }
+    `)}
 `;
 
 export const QuickError = styled.div`
@@ -318,7 +330,6 @@ export const Scroll = styled.div`
     flex: 1;
     min-height: 0;
     overflow-y: auto;
-    ${hide_scrollbar}
 
     @media (max-width: 768px) {
         overflow: visible;
@@ -346,9 +357,8 @@ export const Mark = styled.span<{ $on: boolean }>`
         width: 11px;
         height: 11px;
         transform: none;
-        border-radius: 50%;
-        border-color: ${p => (p.$on ? p.theme.colors.primary : `${p.theme.colors.primary}99`)};
-        background: ${p => (p.$on ? `radial-gradient(circle, ${p.theme.colors.primary} 0 3.5px, transparent 4px)` : "transparent")};
+        ${moonRing}
+        &::after { opacity: ${p => p.$on ? 1 : 0}; }
     `)}
 `;
 

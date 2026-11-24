@@ -64,6 +64,8 @@ export default function config(phase: string): NextConfig {
     const nativeDevHost = process.env.TAURI_DEV_HOST;
     return phase === PHASE_DEVELOPMENT_SERVER
         ? { ...nextConfig, distDir: ".next-dev", allowedDevOrigins: ['127.0.0.1', '10.0.2.2', 'tauri.localhost'],
+            // Keep the floating Next.js badge off the app's touch targets during design reviews.
+            ...(process.env.CRONOS_DESIGN_PREVIEW === '1' ? { devIndicators: { position: 'top-right' as const } } : {}),
             // Android's local protocol forwards HTTP, so connect dev assets/HMR to the host directly.
             ...(nativeDevHost ? {
                 assetPrefix: `http://${nativeDevHost}:3000`,

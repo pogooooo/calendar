@@ -11,7 +11,7 @@
  *   size         한 변(px 숫자 또는 CSS 길이). 가로·세로가 다르면 width·height
  *   active       켜면 커서를 올린 것처럼 반응한다(빨리 돌기 등) — 바깥 손잡이에 올렸을 때, 로그인 중일 때
  *   options      오브제마다 다른 값 (예: leaf 의 sprite·still, orb 의 still). 바뀌면 새로 만든다
- *   interaction  손 받기 — 'drag'(끌어서 돌리기)·'hover'(올리기만)·'none'(누름이 뒤로 통과). 기본은 오브제가 정한다
+ *   interaction  손 받기 — 'drag'·'hover'·'none' 또는 배경 위에서 마우스를 읽는 'surface'. 기본은 오브제가 정한다
  *   fallback     WebGL 이 없을 때 대신 보일 것 (없으면 빈자리)
  *   onFail       WebGL 이 없을 때 한 번 불린다 — 둘레 그림을 예전 모습으로 되돌릴 때
  *   label        있으면 그림으로 읽힌다(role="img"), 없으면 장식(aria-hidden)

@@ -21,7 +21,19 @@ export const Shell = styled(C.Shell)`
     border: 1px solid ${(p) => hair(p.theme, dark(p) ? 0.16 : 0.12)};
     border-radius: 16px;
 `;
-export const BackgroundSurface = styled(Shell)`${C.backdropLayer}`;
+export const BackgroundSurface = styled(Shell)`
+    ${C.backdropLayer}
+
+    &[data-widget-background-mode="theme"]::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: url("/themes/maple/widget-paper.webp") center / cover;
+        opacity: ${(p) => dark(p) ? .13 : .88};
+        mix-blend-mode: ${(p) => dark(p) ? "luminosity" : "multiply"};
+        box-shadow: inset 0 0 22px #9c643023;
+    }
+`;
 
 /** 유리 모드의 광택 — 아주 옅은 흰 막 한 겹 */
 export const GlossOverlay = styled(C.GlossOverlay)`
@@ -37,8 +49,7 @@ export const TopBar = styled(C.TopBar)`
 `;
 
 /**
- * 손잡이 — 수채 단풍잎 하나. 위젯의 단풍 표식이다(판 위에는 또렷한 잎을 두지 않으므로 — MapleWidgetDecor).
- * 올리면 바람에 살짝 돌며 커진다. 위젯 화면은 바탕색을 지우지만 그림(background-image)은 남는다
+ * 기본형은 작은 잎, 장식형은 잎 옆에 짧은 점무늬 손잡이를 둔다.
  */
 export const Gem = styled(C.Gem)`
     ${watercolorLeaf("red", "16px")}
@@ -55,6 +66,16 @@ export const Gem = styled(C.Gem)`
         background: url("/themes/maple/leaf-red.webp") center / contain no-repeat;
         rotate: 8deg;
         scale: 1.12;
+    }
+
+    ${Shell}[data-widget-design="ornate"] & {
+        width: 8px;
+        height: 12px;
+        color: ${(p) => withAlpha(p.theme.colors.text, .58)};
+        background: radial-gradient(circle, currentColor 1px, transparent 1.2px) center / 4px 4px;
+        rotate: 0deg;
+
+        &:hover { color: ${(p) => p.theme.colors.text}; }
     }
 `;
 

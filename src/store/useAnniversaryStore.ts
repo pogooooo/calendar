@@ -18,8 +18,11 @@ interface AnniversaryState {
 
     fetchAnniversaries: (authFetch: AuthFetch) => Promise<void>;
     addAnniversary: (authFetch: AuthFetch, data: { title: string; month: number; day: number; icon?: string | null }) => Promise<string | null>;
+    updateAnniversary: (authFetch: AuthFetch, id: string, data: Partial<Omit<AnniversaryType, "id">>) => Promise<boolean>;
     deleteAnniversary: (authFetch: AuthFetch, id: string) => Promise<void>;
 }
+
+let editRevision = 0;
 
 const useAnniversaryStore = create<AnniversaryState>((set, get) => ({
     anniversaries: [],
@@ -28,12 +31,14 @@ const useAnniversaryStore = create<AnniversaryState>((set, get) => ({
     fetchAnniversaries: async (authFetch) => {
         // 같은 읽기가 겹치면 하나만 (src/lib/fetchOnce.ts)
         await coalesce("anniversary", READ_TTL, async () => {
+            const revision = editRevision;
             set({ isLoading: true });
             try {
                 const res = await authFetch('/api/anniversary');
                 if (res.ok) {
                     const data = await res.json();
-                    set({ anniversaries: data, isLoading: false });
+                    // A read started before a successful edit may still hold the old record.
+                    set(revision === editRevision ? { anniversaries: data, isLoading: false } : { isLoading: false });
                 } else {
                     set({ isLoading: false });
                 }
@@ -67,6 +72,28 @@ const useAnniversaryStore = create<AnniversaryState>((set, get) => ({
             console.error("[ANNIVERSARY_ADD_ERROR]", err);
             reportSaveFailure("anniversary");
             return "기념일 등록 중 오류가 발생했습니다.";
+        }
+    },
+
+    updateAnniversary: async (authFetch, id, data) => {
+        try {
+            const res = await authFetch('/api/anniversary', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...data, id }),
+            });
+            if (!res.ok) return false;
+            const updated: AnniversaryType = await res.json();
+            editRevision++;
+            set(state => ({
+                anniversaries: state.anniversaries
+                    .map(item => item.id === id ? updated : item)
+                    .sort((a, b) => a.month - b.month || a.day - b.day),
+            }));
+            return true;
+        } catch (err) {
+            console.error("[ANNIVERSARY_UPDATE_ERROR]", err);
+            return false;
         }
     },
 

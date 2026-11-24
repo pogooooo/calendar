@@ -20,6 +20,7 @@ import java.util.TimeZone
 class Snapshot private constructor(
     val date: String,
     val locale: Locale,
+    val timeZone: TimeZone,
     val theme: ThemeSpec?,
     val todos: List<Todo>,
     val challenges: List<Challenge>,
@@ -38,6 +39,10 @@ class Snapshot private constructor(
         /** 사용자 시간대의 날짜 키(yyyy-MM-dd)로 그날을 지나는가 */
         fun spans(key: String): Boolean = dayKey(start) <= key && key <= dayKey(last)
         fun timeRange(): String = "${hhmm(start)}–${hhmm(end)}"
+        fun timeRange(zone: TimeZone): String {
+            val clock = SimpleDateFormat("HH:mm", Locale.US).apply { timeZone = zone }
+            return "${clock.format(Date(start))}–${clock.format(Date(end))}"
+        }
         /** 그날 이 회차를 끝낸 것으로 그리는가 — 여러 날 일정은 한 번 끝내므로 회차의 모든 날에 done (웹의 src/lib/todoDone.ts).
          *  completedDates 는 1.2 의 스냅숏에만 있다(날마다 따로 셌다) */
         fun doneOn(key: String): Boolean = completedDates?.contains(key) ?: done
@@ -85,7 +90,7 @@ class Snapshot private constructor(
     }
 
     /** 앱 테마 — 갈래·밝기·색, 그리고 결이 다른 벌(variant: "vintage" 면 Maple 의 빛바랜 노트, 없으면 "") */
-    class ThemeSpec(val family: String, val mode: String, val colors: Map<String, Int>, val variant: String = "", val gemColor: Int? = null)
+    class ThemeSpec(val family: String, val mode: String, val colors: Map<String, Int>, val variant: String = "")
 
     fun label(name: String, fallback: String = name): String = labels.optString(name, fallback)
 
@@ -99,9 +104,13 @@ class Snapshot private constructor(
     fun todayKey(now: Long = System.currentTimeMillis()): String = dayKey(now)
 
     /** 스냅샷의 dateFmt(SimpleDateFormat 패턴)로 날짜를 찍는다 */
-    fun formatDate(ms: Long, patternLabel: String = "dateFmt", fallbackPattern: String = "M/d EEE"): String {
+    fun formatDate(ms: Long, patternLabel: String = "dateFmt", fallbackPattern: String = "M/d EEE", zone: TimeZone = TimeZone.getDefault()): String {
         val pattern = labels.optString(patternLabel, fallbackPattern)
-        return try { SimpleDateFormat(pattern, locale).format(Date(ms)) } catch (e: Throwable) { SimpleDateFormat(fallbackPattern, locale).format(Date(ms)) }
+        val format = try { SimpleDateFormat(pattern, locale) } catch (_: IllegalArgumentException) {
+            SimpleDateFormat(fallbackPattern, locale)
+        }
+        format.timeZone = zone
+        return format.format(Date(ms))
     }
 
     companion object {
@@ -111,6 +120,8 @@ class Snapshot private constructor(
         private val HHMM = SimpleDateFormat("HH:mm", Locale.US)
 
         fun dayKey(ms: Long): String = DAY.format(Date(ms))
+        fun dayKey(ms: Long, zone: TimeZone): String =
+            SimpleDateFormat("yyyy-MM-dd", Locale.US).apply { timeZone = zone }.format(Date(ms))
         fun hhmm(ms: Long): String = HHMM.format(Date(ms))
         fun parseDayKey(key: String): Long? = try { DAY.parse(key)?.time } catch (e: Throwable) { null }
         fun startOfDay(ms: Long): Long = Calendar.getInstance().apply {
@@ -135,7 +146,7 @@ class Snapshot private constructor(
                 t.optJSONObject("colors")?.let { c ->
                     for (key in c.keys()) parseColor(c.optString(key))?.let { colors[key] = it }
                 }
-                ThemeSpec(t.optString("family", "celestial"), t.optString("mode", "light"), colors, t.optString("variant", ""), parseColor(t.optString("gemColor", "")))
+                ThemeSpec(t.optString("family", "celestial"), t.optString("mode", "light"), colors, t.optString("variant", ""))
             }
 
             val todos = root.optJSONArray("todos").map { o ->
@@ -163,7 +174,8 @@ class Snapshot private constructor(
                 Project(o.optString("id"), o.getString("title"), o.optInt("done", 0), o.optInt("total", 0),
                     if (o.isNull("endAt")) null else o.optString("endAt"))
             }
-            return Snapshot(root.optString("date", dayKey(System.currentTimeMillis())), locale, theme, todos, challenges, anniversaries, projects, root.optString("memo", ""), root.optJSONObject("labels") ?: JSONObject())
+            val zone = TimeZone.getTimeZone(root.optString("timeZone", TimeZone.getDefault().id))
+            return Snapshot(root.optString("date", dayKey(System.currentTimeMillis(), zone)), locale, zone, theme, todos, challenges, anniversaries, projects, root.optString("memo", ""), root.optJSONObject("labels") ?: JSONObject())
         }
 
         private fun <T> JSONArray?.map(f: (JSONObject) -> T): List<T> {

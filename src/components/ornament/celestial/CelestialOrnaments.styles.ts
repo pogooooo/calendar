@@ -57,3 +57,17 @@ export const RuleMid = styled.svg`
     overflow: visible;
     ${ornamentStrokes}
 `;
+
+/** Only the satellite travels along its engraved rim. The control and its centre stay still. */
+export const SealArt = styled(Svg)`
+    @media (hover: hover) {
+        html[data-theme-motion="full"] & .seal-orbit {
+            transform-origin: 12px 12px;
+            transition: transform 260ms ease-out;
+        }
+        html[data-theme-motion="full"] button:enabled:hover & .seal-orbit { transform: rotate(20deg); }
+        [data-widget-motion="off"] && .seal-orbit, [data-widget-motion="gentle"] && .seal-orbit {
+            transform: none !important; transition: none;
+        }
+    }
+`;

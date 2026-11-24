@@ -1,11 +1,10 @@
 "use client";
 
-import * as GemS from "./gem/GemWeekCalendar.styles";
 import * as React from "react";
 import { useTheme } from "styled-components";
 import { Slot } from "@radix-ui/react-slot";
 import { useSwapMotion } from '@/hooks/useMotion';
-import { Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 
 import { WeekThemeProps } from "./WeekCalendar";
 import { isSameDay, isBetween } from "@/utils/DateUtils";
@@ -13,8 +12,10 @@ import { labelKey, localDateKey, endDateKey } from "@/lib/dateKey";
 import Arrow from "@/assets/Arrow";
 import CategoryFilter from "@/components/calendar/parts/categoryFilter/CategoryFilter";
 import AnimatedDateText from "@/components/calendar/parts/animatedDateText/AnimatedDateText";
+import GemSelectionFrame from "@/components/calendar/parts/GemSelectionFrame";
 import TodoModal from "@/components/modal/todoModal/TodoModal";
 import MoreModal from "@/components/modal/moreModal/MoreModal";
+import { LunarEvent } from "@/components/calendar/parts/LunarEvent";
 import TodoContextMenu from "@/components/calendar/parts/contextMenu/TodoContextMenu";
 import AnniversaryLocket from "@/components/calendar/parts/anniversary/AnniversaryLocket";
 import useAnniversaryStore from "@/store/useAnniversaryStore";
@@ -23,13 +24,14 @@ import { useT } from "@/i18n/useT";
 
 import DayCellDecor from "@/assets/DayCellDecor";
 import CalendarAmbience from "@/assets/celestial/CalendarAmbience";
-import { usePickTheme, type ThemeImpls } from "@/styles/themed";
+import { usePickTheme, useThemeFamily, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialWeekCalendar.styles";
+import * as GemS from "./gem/GemWeekCalendar.styles";
 import * as MapleS from "./maple/MapleWeekCalendar.styles";
 import * as OceanS from './ocean/OceanWeekCalendar.styles';
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS, gem: GemS };
 
 
 const MAX_VISIBLE_LEVELS = 3;
@@ -61,8 +63,18 @@ const WeekCalendarView = React.forwardRef<HTMLDivElement, CelestialWeekProps>(
         const S = usePickTheme(STYLES);
         const Component = asChild ? Slot : 'div';
         const gridRef=React.useRef<HTMLDivElement>(null);
-        useSwapMotion(weekDates[0].getTime(),gridRef);
+        const weekKey = labelKey(weekDates[0]);
+        useSwapMotion(weekKey,gridRef);
         const theme = useTheme();
+        const family = useThemeFamily();
+        const gem = family === "gem";
+        const lunar = family === "celestial";
+        const [selectedOccurrence, setSelectedOccurrence] = React.useState<string>();
+        const editOccurrence: typeof handleQuickEdit = todo => {
+            setSelectedOccurrence(todo.id);
+            return handleQuickEdit(todo);
+        };
+        const [pointedTodoId, setPointedTodoId] = React.useState<string | null>(null);
         const t = useT();
         const anniversaries = useAnniversaryStore(s => s.anniversaries);
 
@@ -81,8 +93,9 @@ const WeekCalendarView = React.forwardRef<HTMLDivElement, CelestialWeekProps>(
             <S.CelestialCalendarWrapper as={Component} ref={ref} {...props}>
                 <S.SliderWrapper>
                     <S.DateRangeDisplay>
-                        <S.ArrowWrapper $side="left" onClick={handlePrevWeek}>
-                            <Arrow width={80} height={30} isRight={false} stroke={theme.colors.primary}/>
+                        <S.ArrowWrapper $side="left" onClick={handlePrevWeek}
+                            {...(gem ? { as: "button", type: "button", "aria-label": t.calendar.prevWeek } as const : {})}>
+                            {gem ? <ChevronLeft size={17} aria-hidden="true" /> : <Arrow width={80} height={30} isRight={false} stroke={theme.colors.primary}/>}
                         </S.ArrowWrapper>
                         <AnimatedDateText text={dateRangeText} direction={direction} />
                         <S.DateLine $direction={direction} />
@@ -95,24 +108,28 @@ const WeekCalendarView = React.forwardRef<HTMLDivElement, CelestialWeekProps>(
                             showChallenges={showChallenges}
                             onToggleChallenges={onToggleChallenges}
                         />
-                        <S.ArrowWrapper $side="right" onClick={handleNextWeek}>
-                            <Arrow width={80} height={30} isRight={true} stroke={theme.colors.primary}/>
+                        <S.ArrowWrapper $side="right" onClick={handleNextWeek}
+                            {...(gem ? { as: "button", type: "button", "aria-label": t.calendar.nextWeek } as const : {})}>
+                            {gem ? <ChevronRight size={17} aria-hidden="true" /> : <Arrow width={80} height={30} isRight={true} stroke={theme.colors.primary}/>}
                         </S.ArrowWrapper>
                     </S.DateRangeDisplay>
 
                     <S.CalendarRow>
                     <S.CalendarWindow>
-                        <CalendarAmbience />
+                        {!gem && <CalendarAmbience />}
                             <div ref={gridRef}
                                 style={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative', zIndex: 1 }}
                             >
                                 <S.Header>
                                     {t.calendar.days.map((d, i) => {
                                         const isToday = weekDates[i].toDateString() === todayStr;
+                                        const picked = gem && !!selectedDate && isSameDay(weekDates[i], selectedDate);
                                         const dayAnniversaries = anniversariesOn(anniversaries, weekDates[i]);
                                         return (
-                                            <S.DayNameBox key={d} $isToday={isToday} $tier={dayTiers[i]}>
-                                                <div className="day-name">{d}</div>
+                                            <S.DayNameBox key={d} $isToday={isToday} $tier={dayTiers[i]} aria-current={gem && isToday ? "date" : undefined}
+                                                data-gem-frame-anchor={picked ? '' : undefined}>
+                                                {gem && isToday && <i className="gem-today-inlay" aria-hidden="true" />}
+                                                <div className="day-name">{d}{gem && ` ${weekDates[i].getDate()}`}</div>
                                                 {dayTiers[i] >= 2 && (
                                                     <span className={dayTiers[i] === 3 ? "day-mark done" : "day-mark"} />
                                                 )}
@@ -122,6 +139,7 @@ const WeekCalendarView = React.forwardRef<HTMLDivElement, CelestialWeekProps>(
                                             </S.DayNameBox>
                                         )
                                     })}
+                                    {gem && <GemSelectionFrame period={weekKey} selected={selectedDate && labelKey(selectedDate)} />}
                                 </S.Header>
 
                                 <S.BarContainer>
@@ -136,8 +154,8 @@ const WeekCalendarView = React.forwardRef<HTMLDivElement, CelestialWeekProps>(
                                         const connectRight = idx < weekDates.length - 1 && dayTiers[idx + 1] === tier && tier >= 1;
 
                                         return (
-                                            <S.DaySlot key={idx} $isToday={isToday} onClick={() => onDateChange && onDateChange(date)}>
-                                                <S.AddTodoButton className="add-btn" onClick={(e) => {
+                                            <S.DaySlot key={idx} $isToday={isToday} onClick={() => { setSelectedOccurrence(undefined); onDateChange?.(date); }}>
+                                                <S.AddTodoButton type="button" className="add-btn" aria-label={`${t.calendar.addTask}: ${labelKey(date)}`} onClick={(e) => {
                                                     e.stopPropagation();
                                                     handleCreateTodo(date);
                                                 }}>
@@ -158,18 +176,35 @@ const WeekCalendarView = React.forwardRef<HTMLDivElement, CelestialWeekProps>(
                                                             const item = todoAtThisLevel as (typeof todoAtThisLevel & { isDone?: boolean; check?: string; status?: string });
                                                             const isActuallyDone = item.isDone === true || item.check === 'done' || item.status === 'done';
 
+                                                            const first = lunar ? weekDates.findIndex(day => isBetween(day, todoAtThisLevel.startAt!, todoAtThisLevel.endAt!)) : idx;
+                                                            const count = lunar ? weekDates.filter(day => isBetween(day, todoAtThisLevel.startAt!, todoAtThisLevel.endAt!)).length : 1;
                                                             return (
                                                                 <S.TodoBarItem key={todoAtThisLevel.id}
                                                                                $isStart={isStart}
                                                                                $isEnd={isEnd}
                                                                                $color={color}
+                                                                               data-lunar-track={lunar ? "" : undefined}
+                                                                               data-track-hover={lunar && pointedTodoId === todoAtThisLevel.id ? "" : undefined}
+                                                                               onPointerEnter={lunar ? e => { if (e.pointerType !== "touch") setPointedTodoId(todoAtThisLevel.id); } : undefined}
+                                                                               onPointerLeave={lunar ? () => setPointedTodoId(null) : undefined}
                                                                                $isDone={isActuallyDone}
-                                                                               onClick={(e) => e.stopPropagation()}
+                                                                               role={lunar ? "button" : undefined}
+                                                                               aria-label={lunar ? todoAtThisLevel.title : undefined}
+                                                                               tabIndex={lunar ? (idx === first ? 0 : -1) : undefined}
+                                                                               onKeyDown={lunar ? e => {
+                                                                                   if (e.key === 'Enter' || e.key === ' ') {
+                                                                                       e.preventDefault(); e.stopPropagation(); void editOccurrence(todoAtThisLevel);
+                                                                                   }
+                                                                               } : undefined}
+                                                                               onClick={e => { e.stopPropagation(); if (lunar) void editOccurrence(todoAtThisLevel); }}
                                                                                onContextMenu={(e) => {
                                                                                    e.stopPropagation();
+                                                                                   setSelectedOccurrence(todoAtThisLevel.id);
                                                                                    handleContextMenu(e, todoAtThisLevel);
                                                                                }}>
-                                                                    {(isStart || idx === 0) && <span className="todo-title">{todoAtThisLevel.title}</span>}
+                                                                    {lunar ? <LunarEvent title={todoAtThisLevel.title} color={color} done={isActuallyDone}
+                                                                        count={count} index={idx - first} selected={(todoContextMenu?.todo.id ?? selectedOccurrence) === todoAtThisLevel.id} />
+                                                                        : (isStart || idx === 0) && <span className="todo-title">{todoAtThisLevel.title}</span>}
                                                                 </S.TodoBarItem>
                                                             );
                                                         }
@@ -210,7 +245,7 @@ const WeekCalendarView = React.forwardRef<HTMLDivElement, CelestialWeekProps>(
                     menuState={todoContextMenu}
                     onClose={() => setTodoContextMenu(null)}
                     onToggle={handleQuickToggle}
-                    onEdit={handleQuickEdit}
+                    onEdit={editOccurrence}
                     onDelete={handleQuickDelete}
                     onDeleteOne={handleQuickDeleteOne}
                 />

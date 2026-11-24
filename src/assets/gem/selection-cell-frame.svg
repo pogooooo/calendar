@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" fill="none">
+  <!-- Selection frame: nine-slice keeps the metal corners undistorted. -->
+  <rect x="2" y="2" width="92" height="92" rx="12" stroke="#ac8056" stroke-width="2"/>
+  <path d="M24 3H14A11 11 0 0 0 3 14V24M72 3H82A11 11 0 0 1 93 14V24M3 72V82A11 11 0 0 0 14 93H24M93 72V82A11 11 0 0 1 82 93H72" stroke="#f2d6a5" stroke-width="1.4"/>
+  <path d="M24 8H17C11 8 8 11 8 17V24M72 8H79C85 8 88 11 88 17V24M8 72V79C8 85 11 88 17 88H24M88 72V79C88 85 85 88 79 88H72" stroke="#c6a576" stroke-width="1.5"/>
+  <path d="M10 14L14 10M82 10L86 14M10 82L14 86M82 86L86 82" stroke="#f2d6a5" stroke-width="2" stroke-linecap="round"/>
+</svg>

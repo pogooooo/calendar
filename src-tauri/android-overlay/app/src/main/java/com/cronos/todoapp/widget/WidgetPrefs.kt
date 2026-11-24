@@ -1,6 +1,7 @@
 package com.cronos.todoapp.widget
 
 import android.content.Context
+import java.util.TimeZone
 
 /**
  * 위젯 하나하나의 설정 — 놓을 때 WidgetConfigActivity 가 묻고, 길게 눌러 다시 열 수 있다.
@@ -24,26 +25,25 @@ object WidgetPrefs {
      * 옮겨 둔 날수. 옮긴 날(base)이 오늘이 아니면 0 — 어제 "내일" 을 보다가 둔 위젯이
      * 오늘도 하루 앞을 가리키고 있으면 무엇을 보고 있는지 알 수 없다.
      */
-    fun offset(context: Context, id: Int): Int {
+    fun offset(context: Context, id: Int, zone: TimeZone): Int {
         val p = prefs(context)
-        if (p.getLong("offbase_$id", 0L) != todayBase()) return 0
+        if (p.getLong("offbase_$id", 0L) != todayBase(zone)) return 0
         return p.getInt("offset_$id", 0).coerceIn(-MAX_OFFSET, MAX_OFFSET)
     }
 
-    fun setOffset(context: Context, id: Int, value: Int) {
+    fun setOffset(context: Context, id: Int, value: Int, zone: TimeZone) {
         prefs(context).edit()
             .putInt("offset_$id", value.coerceIn(-MAX_OFFSET, MAX_OFFSET))
-            .putLong("offbase_$id", todayBase())
+            .putLong("offbase_$id", todayBase(zone))
             .apply()
     }
 
-    /** 스냅샷이 이 달 + 2주까지만 담으므로 그 밖으로는 넘기지 않는다 */
+    /** The widget snapshot includes 31 days on each side of today. */
     const val MAX_OFFSET = 31
 
-    /** 기기 시간대의 날 번호. UTC 로 나누면 한국에서는 아침 9시에 날이 바뀌어, 자정이 지나도 옮긴 날이 그대로 남았다 */
-    private fun todayBase(): Long {
+    private fun todayBase(zone: TimeZone): Long {
         val now = System.currentTimeMillis()
-        return (now + java.util.TimeZone.getDefault().getOffset(now)) / 86_400_000L
+        return (now + zone.getOffset(now)) / 86_400_000L
     }
 
     fun save(context: Context, id: Int, alpha: Int, mode: String, style: String = "simple") {

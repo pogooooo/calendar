@@ -12,11 +12,14 @@ import type { OceanObjetName } from "./ocean";
 
 export type ObjetName =
     | `maple/${MapleObjetName}`
-    | `ocean/${OceanObjetName}`;
+    | `ocean/${OceanObjetName}`
+    | "gem/geode"
+    | "gem/amethyst";
 
 const FAMILIES: Record<string, () => Promise<ObjetRegistry>> = {
     maple: () => import("./maple").then((m) => m.default),
     ocean: () => import("./ocean").then((m) => m.default),
+    gem: () => import("./gem/crystalSurface").then((m) => m.default),
 };
 
 /** 이름으로 오브제를 찾는다. 없으면 null */

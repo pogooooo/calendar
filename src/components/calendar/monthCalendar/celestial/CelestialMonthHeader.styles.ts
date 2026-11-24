@@ -1,5 +1,11 @@
-import styled from 'styled-components';
+import { chartControl, iconButton } from "@/styles/celestial/controls";
+import styled, { keyframes } from 'styled-components';
 import { DateRangeDisplay } from './CelestialMonthCalendar.styles';
+
+const moonlight = keyframes`
+    0%, 60%, 100% { opacity: .68; }
+    78% { opacity: 1; filter: drop-shadow(0 0 1px currentColor); }
+`;
 
 export const SkyHeader = styled.div`
     display:flex; align-items:center; gap:16px; width:100%; flex:none; min-height:48px; margin-bottom:16px;
@@ -8,7 +14,7 @@ export const SkyHeader = styled.div`
     @media(max-width:768px) { gap:4px; .header-star { display:none; } }
 `;
 export const Navigation = styled(DateRangeDisplay)`
-    width:auto; flex:1; margin:0; gap:10px; letter-spacing:.025em; font-size:1.22rem; font-weight:500;
+    width:auto; flex:1 0 max-content; margin:0; gap:10px; letter-spacing:.025em; font-size:1.22rem; font-weight:500;
     .nav-btn { width:32px; height:36px; flex:none; border-radius:3px; }
     .nav-btn:hover { transform:none; background:${p => p.theme.colors.primary}12; }
     & > button:last-child { margin-left:8px; padding:6px 12px; font-family:${p => p.theme.fonts.body}; font-size:.72rem; letter-spacing:.02em; border-radius:3px; }
@@ -23,12 +29,23 @@ export const Navigation = styled(DateRangeDisplay)`
         & > button:last-child { padding:4px 6px; font-size:.62rem; letter-spacing:0; }
     }
     [data-widget] & { margin:0; font-size:.85rem; .nav-btn { width:24px; height:28px; } }
+    && .nav-btn { ${iconButton} }
+    && .nav-btn svg { width: 17px; height: 17px; translate: none; }
+    && > button:last-child { ${chartControl} }
+    && > button:last-child:disabled { box-shadow: none; }
+    @media (pointer: coarse) {
+        &&[data-calendar-navigation] .nav-btn { width: 44px; height: 44px; }
+        &&[data-calendar-navigation] > button:last-child { min-width: 44px; min-height: 44px; }
+    }
 `;
 export const Filters = styled.div`display:flex; align-items:center; flex:none;`;
 
 export const Phases = styled.svg`
-    flex:0 1 170px; width:170px; height:22px; color:${p => p.theme.colors.primary}; opacity:1;
+    flex:0 1 170px; min-width:0; width:170px; height:22px; color:${p => p.theme.colors.primary}; opacity:1;
     .line { fill:none; stroke:currentColor; stroke-width:.8; } .fill { fill:currentColor; stroke:none; }
+    html[data-theme-motion="full"]:not([data-page-hidden]) & [data-moon-phase] .fill {
+        animation: ${moonlight} 7s ease-in-out var(--phase-delay, 0s) infinite;
+    }
     @media(max-width:1000px) { display:none; }
     [data-widget] & { display:none; }
 `;

@@ -14,17 +14,24 @@ import { challengeExpired, completionKey, completionTargetFor, slotIndexOn } fro
 import { useDialog } from "@/components/dialog/DialogProvider";
 import { useT } from "@/i18n/useT";
 import { reconcileCategorySelection } from '@/lib/categorySelection';
+import { useThemeFamily } from '@/styles/themed';
+import useIsMobile from '@/hooks/useIsMobile';
 
 export default function ChallengePage() {
     const authFetch = useAuthFetch();
     const dialog = useDialog();
     const t = useT();
+    const gem = useThemeFamily() === "gem";
+    const narrow = useIsMobile();
+    const todayKey = useCurrentDayKey();
     const { challenges, fetchChallenges, addChallenge, updateChallenge, deleteChallenge, toggleChallengeCompletion } = useChallengeStore();
     const { categories, fetchCategories } = useCategoryStore();
 
     const [selectedCategoryIds, setSelectedCategoryIds] = React.useState<string[]>([]);
     const [selectedChallengeId, setSelectedChallengeId] = React.useState<string | null>(null);
-    const selectedChallenge = challenges.find(c => c.id === selectedChallengeId && selectedCategoryIds.includes(c.categoryId)) ?? null;
+    const selectedChallenge = challenges.find(c => c.id === selectedChallengeId && selectedCategoryIds.includes(c.categoryId))
+        ?? (gem && !narrow ? challenges.find(c => selectedCategoryIds.includes(c.categoryId) && !challengeExpired(c, todayKey)) : undefined)
+        ?? null;
 
     const [editor, setEditor] = React.useState<{ mode: 'create' } | { mode: 'edit'; challenge: ChallengeType } | null>(null);
 
@@ -102,8 +109,6 @@ export default function ChallengePage() {
 
     /* 날 셈은 날짜 키로 (src/lib/challengeDays.ts) — 오늘은 사용자가 고른 시간대의 날이고 자정을 넘기면 바뀐다.
        예전엔 고른 순간의 기기 날짜에 묶여서, 밤을 넘겨 켜 둔 화면에서 "오늘 달성"을 누르면 어제 칸이 찍혔다 */
-    const todayKey = useCurrentDayKey();
-
     const isTodayValidDay = React.useMemo(
         () => !!selectedChallenge && slotIndexOn(selectedChallenge, todayKey) !== null,
         [selectedChallenge, todayKey]

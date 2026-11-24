@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import * as React from "react";
+import { WidgetPreviewContext } from "@/components/widget/WidgetPreviewContext";
 import WeekCalendarView from "./WeekCalendarView";
 import { CategoryType } from "@/store/useCategoryStore";
 import { TodoType } from "@/store/useTodoStore";
@@ -125,10 +126,12 @@ const WeekCalendar = React.forwardRef<HTMLDivElement, WeekProps>(
         const todayStr = React.useMemo(() => new Date(`${todayKey}T00:00:00`).toDateString(), [todayKey]);
 
 
+        const preview = React.useContext(WidgetPreviewContext);
         React.useEffect(() => {
+            if (preview) return;
             fetchProjects(authFetch);
             fetchChallenges(authFetch);
-        }, [fetchProjects, fetchChallenges, authFetch]);
+        }, [fetchProjects, fetchChallenges, authFetch, preview]);
 
         const filteredTodos = React.useMemo(() => {
             const baseTodos = todos.filter(todo => selectedCategoryIds.includes(todo.categoryId));

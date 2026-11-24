@@ -11,10 +11,10 @@
  * 완료 기록은 UTC 날짜(utcDayKey). "지금/다음"·D-day 같은 시각 판정은 Kotlin 이
  * 그릴 때 한다 (자정과 일정 경계에 스스로 다시 그린다). 그래서 시각은 그대로 넘긴다.
  *
- * 창(window): 이 달 첫날부터, 이 달 끝과 오늘+14일 중 늦은 쪽까지.
- * 월간 위젯이 지난 날의 점까지 찍고, "다음" 이 달을 넘겨서도 보이게.
+ * 오늘 위젯에서 월·연도 경계를 넘어도 일정이 보이도록 양쪽 날짜를 함께 보관한다.
  */
 import { localDateKey, utcDayKey, zonedTime, activeTimeZone } from "@/lib/dateKey";
+import { addDaysToKey } from "@/lib/timezone";
 import { doneKeysIn } from './todoDone';
 import { challengeExpired } from "@/lib/challengeDays";
 import { expandTodos } from "@/hooks/useExpandedTodos";
@@ -68,11 +68,10 @@ export interface SnapshotTheme {
     mode: "light" | "dark";
     /** 결이 다른 벌 — "vintage" 면 안드로이드 위젯의 Maple 붓이 잎 그림을 빛바랜 톤으로 그린다 */
     variant?: "vintage";
-    /** Exact gem color survives a widget-specific light/dark override. */
-    gemColor?: string;
     colors: {
         background: string; surface: string; primary: string; accent: string;
         text: string; textSecondary: string; weekend: string;
+        gemStone?: string;
     };
 }
 
@@ -113,7 +112,7 @@ export interface SnapshotInput {
     memo: string;
     t: Translations;
     locale: string;
-    theme: { family?: string; mode?: string; variant?: string; gemColor?: string; colors: SnapshotTheme["colors"] };
+    theme: { family?: string; mode?: string; variant?: string; colors: SnapshotTheme["colors"] };
     /** 위젯 전용 열쇠와 서버 주소. 없으면 편집창에 로그인 안내를 표시한다. */
     quickAdd?: { api: string; token: string } | null;
     now?: Date;
@@ -124,17 +123,14 @@ export function buildWidgetSnapshot(input: SnapshotInput): WidgetSnapshot {
     const now = input.now ?? new Date();
     const todayKey = localDateKey(now);
 
-    // 이번 달 첫날 ~ 끝날(또는 두 주 뒤 중 늦은 쪽) — 고른 시간대의 날로. 예전엔 기기의 달로 잘라 시간대가 다르면 첫날·끝날 일정이 빠졌다
-    const [y, m] = todayKey.split("-").map(Number);
-    const monthStart = zonedTime(`${todayKey.slice(0, 7)}-01`);
-    const monthEnd = zonedTime(new Date(Date.UTC(y, m, 0)).toISOString().slice(0, 10), 23, 59);
-    const twoWeeks = new Date(now.getTime() + 14 * 86_400_000);
-    const windowEnd = monthEnd > twoWeeks ? monthEnd : twoWeeks;
+    // Match WidgetPrefs.MAX_OFFSET and include the entire last day in the user's time zone.
+    const windowStart = zonedTime(addDaysToKey(todayKey, -31));
+    const windowEnd = new Date(zonedTime(addDaysToKey(todayKey, 32)).getTime() - 1);
 
     const fallbackColor = theme.colors.primary;
     const color = (id?: string | null) => categories.find(c => c.id === id)?.color || fallbackColor;
 
-    const snapTodos: SnapshotTodo[] = expandTodos(todos, monthStart, windowEnd)
+    const snapTodos: SnapshotTodo[] = expandTodos(todos, windowStart, windowEnd)
         .map(td => ({
             id: td.id.replace(/-rep-\d+$/, ""),
             title: td.title,
@@ -190,7 +186,6 @@ export function buildWidgetSnapshot(input: SnapshotInput): WidgetSnapshot {
             family: theme.family ?? "celestial",
             mode: theme.mode === "dark" ? "dark" : "light",
             ...(theme.variant === "vintage" ? { variant: "vintage" as const } : {}),
-            ...(theme.gemColor && /^#[\da-f]{6}$/i.test(theme.gemColor) ? { gemColor: theme.gemColor.toUpperCase() } : {}),
             colors: theme.colors,
         },
         todos: snapTodos,

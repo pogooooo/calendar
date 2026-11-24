@@ -1,7 +1,5 @@
 "use client";
 
-import * as GemS from "./gem/GemSettings.styles";
-import * as GemLS from "./gem/GemSettings.layout";
 import * as React from "react";
 import LocaleSelect from "@/components/LocaleSelect";
 import TimezoneSelect from "@/components/TimezoneSelect";
@@ -21,20 +19,23 @@ import * as CelestialLS from "./celestial/CelestialSettings.layout";
 import * as MapleLS from "./maple/MapleSettings.layout";
 import * as OceanS from './ocean/OceanSettings.styles';
 import * as OceanLS from './ocean/OceanSettings.layout';
+import { styles as GemS, layout as GemLS } from "./gem/GemSettings.styles";
+import GemColorSetting from "./gem/GemColorSetting";
 import useSettingStore from '@/store/useSettingStore';
 import { useOsReducedMotion } from '@/hooks/useThemeMotion';
 import { webglAvailable } from '@/lib/webgl';
 
 const noSubscribe = () => () => {};
 import PolicyLink from '@/components/auth/PolicyLink';
+import useMobilePresentation from '@/hooks/useMobilePresentation';
 import useIsMobile from '@/hooks/useIsMobile';
 import { useSwapMotion } from '@/hooks/useMotion';
 import type { Axis } from '@/styles/motion';
 import { Armillary, MoonDisc, Orbit, Star4, Star8, SunMoon } from '@/components/ornament/celestial/CelestialOrnaments';
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
-const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS , gem: GemS };
-const LAYOUTS: ThemeImpls<typeof CelestialLS> = { celestial: CelestialLS, maple: MapleLS, ocean: OceanLS , gem: GemLS };
+const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS, gem: GemS };
+const LAYOUTS: ThemeImpls<typeof CelestialLS> = { celestial: CelestialLS, maple: MapleLS, ocean: OceanLS, gem: GemLS };
 
 /**
  * 설정은 판(pane) 넷으로 나뉜다. 예전에는 여덟 조각이 세로로 이어져 있어
@@ -74,8 +75,12 @@ export default function SettingsView({
 }: SettingsThemeProps) {
     const S = usePickTheme(STYLES);
     const L = usePickTheme(LAYOUTS);
-    const [tab, setTab] = React.useState<TabId>("look");
+    const [requestedTab, setTab] = React.useState<TabId>("look");
+    const tab = requestedTab === "widget" && !showWidgets ? "look" : requestedTab;
     const [editingWidget,setEditingWidget]=React.useState<WidgetKind|null>(null);
+    const nativeMobile = useMobilePresentation();
+    const mobileAppearance = useSettingStore(s => s.mobileAppearance);
+    const setMobileAppearance = useSettingStore(s => s.setMobileAppearance);
     const motion = useSettingStore(s => s.motion);
     const setMotion = useSettingStore(s => s.setMotion);
     // 기기에서 동작 줄이기가 켜져 있으면 위의 고른 값과 상관없이 아무것도 움직이지 않는다 — 고른 값만 보이면 고장으로 읽혔다.
@@ -106,12 +111,6 @@ export default function SettingsView({
         y: MARK_Y0 + i * MARK_DY,
     }));
     const lastMarkY = TAB_MARKS[TAB_MARKS.length - 1].y;
-
-    // 위젯 판이 사라진 뒤에도 그 판이 골라져 있으면 빈 화면이 남는다.
-    React.useEffect(() => {
-        if (!TABS.some((x) => x.id === tab)) setTab("look");
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [showWidgets, tab]);
 
     const active = TABS.find((x) => x.id === tab) ?? TABS[0];
     const activeIndex = TABS.findIndex((x) => x.id === tab);
@@ -226,7 +225,10 @@ export default function SettingsView({
                         </L.Orbit>
                         <L.Eyebrow>{ROMAN[activeIndex]}</L.Eyebrow>
                         <L.PaneTitle>{active.label}</L.PaneTitle>
-                        {active.note && <L.PaneNote>{active.note}</L.PaneNote>}
+                        {tab === "look" && currentTheme === "gem" ? <L.PaneNote>
+                            {locale === "ko" ? "보석 테마와 색상, 밝기, 글꼴, 애니메이션 설정은 이 기기에 저장돼요."
+                                : "The Gem theme, its color, brightness, fonts, and motion preferences are saved on this device."}
+                        </L.PaneNote> : active.note && <L.PaneNote>{active.note}</L.PaneNote>}
                     </L.PaneHeader>
 
                     <L.PaneBody key={tab} ref={paneBodyRef} role="tabpanel" id={`${tabListId}-panel`} aria-labelledby={`${tabListId}-tab-${tab}`}>
@@ -246,11 +248,23 @@ export default function SettingsView({
                                         label={t.settings.theme}
                                         variantLabel={locale === 'ko' ? '밝기' : 'Variant'}
                                     />
+                                    {currentTheme === "gem" && <GemColorSetting english={locale === "en"} />}
                                 </L.Block>
 
                                 <L.Block>
                                     <L.BlockHead><h2>{t.settings.font}</h2></L.BlockHead>
 
+                                    {nativeMobile && <L.SegRow>
+                                        <L.SegLabel>{locale === 'ko' ? '모바일 화면 스타일' : 'Mobile appearance'}</L.SegLabel>
+                                        <L.SegGroup role="group" aria-label={locale === 'ko' ? '모바일 화면 스타일' : 'Mobile appearance'}>
+                                            {(['simple', 'rich'] as const).map(style => (
+                                                <L.Seg key={style} type="button" $selected={mobileAppearance === style}
+                                                    aria-pressed={mobileAppearance === style} onClick={() => setMobileAppearance(style)}>
+                                                    {style === 'rich' ? (locale === 'ko' ? '화려하게' : 'Ornate') : (locale === 'ko' ? '간결하게' : 'Simple')}
+                                                </L.Seg>
+                                            ))}
+                                        </L.SegGroup>
+                                    </L.SegRow>}
                                     <L.SegRow>
                                         <L.SegLabel>{locale === 'ko' ? '테마 애니메이션' : 'Theme animation'}</L.SegLabel>
                                         <L.SegGroup role="group" aria-label={locale === 'ko' ? '테마 애니메이션' : 'Theme animation'}>
@@ -260,10 +274,10 @@ export default function SettingsView({
                                             >{(locale === 'ko' ? ['풍성하게', '잔잔하게', '끄기'] : ['Full', 'Gentle', 'Off'])[i]}</L.Seg>)}
                                         </L.SegGroup>
                                     </L.SegRow>
-                                    {isMobile && <L.RowNote role="note">{locale === 'ko'
-                                        ? '모바일 앱은 짧고 명확한 반응을 중심으로 움직임을 줄입니다. 웹사이트는 화면 크기에 맞춰 테마 효과를 조절합니다. 끄기를 선택하면 두 환경 모두 움직임을 끕니다.'
-                                        : 'The mobile app uses brief, restrained feedback. The website adapts theme effects to the screen size. Off disables motion in both.'}</L.RowNote>}
-                                    {!isMobile && osReducedMotion && motion !== 'off' && (
+                                    {nativeMobile && <L.RowNote role="note">{locale === 'ko'
+                                        ? '화려하게를 고르면 웹의 테마 장식이 보입니다. 움직임은 테마 애니메이션에서 따로 조절할 수 있습니다.'
+                                        : 'Ornate uses the web theme artwork. Adjust its motion separately above.'}</L.RowNote>}
+                                    {osReducedMotion && motion !== 'off' && (
                                         <L.RowNote role="note" style={{ marginTop: -4, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
                                             <span style={{ flex: '1 1 260px' }}>
                                                 {motionOverOs
