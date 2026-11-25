@@ -12,6 +12,8 @@ import { leafShapeOf } from "@/styles/maple/ink";
 import { useSwapMotion } from "@/hooks/useMotion";
 import GemSelectionFrame from "../parts/GemSelectionFrame";
 import * as OceanS from './ocean/OceanWeekStrip.styles';
+import useMobilePresentation from "@/hooks/useMobilePresentation";
+import { useT } from "@/i18n/useT";
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
 const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS, gem: GemS };
@@ -21,7 +23,10 @@ export default function WeekStripView({
     onPrevWeek, onNextWeek, onToday, onSelect, swipe, labels,
 }: WeekStripThemeProps) {
     const S = usePickTheme(STYLES);
-    const gem = useThemeFamily() === "gem";
+    const family = useThemeFamily();
+    const gem = family === "gem";
+    const celestialMobile = useMobilePresentation() && family === "celestial";
+    const t = useT();
     // 주를 넘기면(‹ ›·쓸기·오늘) 일곱 칸이 오는 쪽에서 들어온다 — 다음 주면 오른쪽에서
     const daysRef = React.useRef<HTMLDivElement>(null);
     useSwapMotion(days[0]?.key, daysRef);
@@ -58,14 +63,14 @@ export default function WeekStripView({
                         data-gem-frame-anchor={gem && d.isSelected ? "" : undefined}
                         tabIndex={d.isSelected?0:-1}
                         aria-current={d.isToday ? 'date' : undefined}
-                        aria-label={`${d.date.getMonth() + 1}/${d.date.getDate()} ${dayNames[i]}`}
+                        aria-label={`${d.date.getMonth() + 1}/${d.date.getDate()} ${celestialMobile ? t.form.weekdays[i] : dayNames[i]}`}
                         $selected={d.isSelected}
                         $today={d.isToday}
                         $weekend={d.isWeekend}
                         onClick={(event) => { fx.emit('calendar-pick',{rect:rectOf(event.currentTarget)}); onSelect(d.date); }}
                     >
                         {gem && d.isToday && <i className="gem-today-inlay" aria-hidden="true" />}
-                        <span className="name">{d.isToday && !gem ? labels.today : dayNames[i]}</span>
+                        <span className="name">{d.isToday && !gem ? labels.today : celestialMobile ? t.form.weekdays[i] : dayNames[i]}</span>
                         <span className="num">{d.date.getDate()}</span>
                         <span className="dots" aria-hidden>
                             {d.dots.map((c, j) => <i key={j} style={{ background: c }} data-leaf={leafShapeOf(c)} />)}

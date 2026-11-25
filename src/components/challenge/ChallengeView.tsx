@@ -8,7 +8,7 @@ import { DynamicSticker } from "@/assets/ChallengeStickers";
 import { ChallengeRecords } from "./ChallengeRecords.styles";
 import { useT } from "@/i18n/useT";
 import type { CategoryType, ChallengeType } from "@/types";
-import { usePickTheme, useThemeFamily, type ThemeImpls } from "@/styles/themed";
+import { useThemeFamily, type ThemeImpls } from "@/styles/themed";
 import * as CelestialS from "./celestial/CelestialChallenge.styles";
 import * as MapleS from "./maple/MapleChallenge.styles";
 import * as OceanS from './ocean/OceanChallenge.styles';
@@ -18,6 +18,7 @@ import OceanChallengeLayout from "./ocean/OceanChallengeLayout";
 import type { ChallengeTodayState } from "./ChallengeLayout.types";
 import { challengeExpired, completionKey, slotKey, slotsUntil } from "@/lib/challengeDays";
 import { useListMotion, useSwapMotion } from "@/hooks/useMotion";
+import useMobilePresentation from "@/hooks/useMobilePresentation";
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
 const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS, gem: GemS };
@@ -57,7 +58,9 @@ export default function ChallengeView({
     isModalOpen, closeEditor, editingChallenge, handleSaveChallenge,
 }: CelestialChallengeProps) {
     const family = useThemeFamily();
-    const S = usePickTheme(STYLES);
+    const mobile = useMobilePresentation();
+    const outlineOnly = mobile && family === "celestial";
+    const S = STYLES[family] ?? CelestialS;
     const Layout = LAYOUTS[family];
     const tr = useT().challenge;
 
@@ -83,9 +86,8 @@ export default function ChallengeView({
         axis: "y",
     });
     useListMotion(() => document.querySelector(`${S.TimelineScrollArea}`), { exit: "collapse", filter: (el) => el.matches(`${S.ChallengeRow}, [data-finished-challenge]`) });
-    // 오늘 칸을 채우면 그 스티커가 갈래의 끝냄 몸짓을 한 번 한다(바다: 물결 고리 · Maple: 도장 · Celestial: 톡) — 다른 챌린지로 갈면 빼고
     const stickerGridRef = React.useRef<HTMLDivElement>(null);
-    useListMotion(stickerGridRef, { reset: selectedChallenge?.id, enter: false });
+    useListMotion(() => outlineOnly ? null : stickerGridRef.current, { reset: selectedChallenge?.id, enter: false });
 
     const renderStickerBoard = () => {
         if (!selectedChallenge) return <span className="placeholder">{tr.selectForBoard}</span>;
@@ -112,6 +114,7 @@ export default function ChallengeView({
                                 className="record-slot"
                                 key={dayKey}
                                 data-done={isFilled ? "" : undefined}
+                                data-outline-recordable={outlineOnly && dayKey <= todayKey ? "" : undefined}
                                 data-motion-mark=""
                                 aria-pressed={isFilled}
                                 aria-label={tr.recordAction(dayKey, isFilled)}
@@ -119,7 +122,7 @@ export default function ChallengeView({
                                 disabled={isCompletionSaving || dayKey > todayKey}
                                 onClick={() => handleToggleDate(dayKey)}
                             >
-                                <span aria-hidden="true"><DynamicSticker isFilled={isFilled} idx={idx} /></span>
+                                <span aria-hidden="true"><DynamicSticker key={outlineOnly ? selectedChallenge.id : undefined} isFilled={isFilled} idx={idx} /></span>
                                 <span className="record-date" aria-hidden="true">{dayKey.slice(5).replace('-', '/')}</span>
                             </S.StickerSlot>
                         );

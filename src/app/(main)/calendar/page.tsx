@@ -119,7 +119,7 @@ export default function CalendarPage() {
 
     if (isMobile) {
         return (<>
-            <Mobile.Wrapper data-mobile-calendar>
+            <Mobile.Wrapper data-mobile-calendar data-celestial-mobile-calendar={mobileApp && family === "celestial" || undefined}>
                 <Mobile.Toolbar>
                 <S.ViewSwitch role="tablist" $active={mobileView === 'month' ? 0 : 1} onKeyDown={(event)=>{
                     if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;

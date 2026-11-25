@@ -40,11 +40,12 @@ class Palette(
         fun celestial(dark: Boolean, spec: Snapshot.ThemeSpec?): Palette {
             // 앱 테마의 색은 그 벌(밝음/어두움)일 때만 쓴다 — 위젯 설정으로 다른 벌을 강제하면 기본색으로
             val c = if (spec != null && (spec.mode == "dark") == dark) spec.colors else emptyMap()
-            val gold = c["primary"] ?: (if (dark) 0xFFD9BD78.toInt() else 0xFFD4AF37.toInt())
+            val defaultGold = if (dark) 0xFFD9BD78.toInt() else 0xFFD4AF37.toInt()
+            val gold = c["primary"] ?: defaultGold
             return if (dark) Palette(
                 family = "celestial",
                 dark = true,
-                bg = c["background"] ?: 0xFF121725.toInt(),
+                bg = c["surface"] ?: c["background"] ?: 0xFF1B2233.toInt(),
                 ink = c["text"] ?: 0xFFF0EDE5.toInt(),
                 muted = c["textSecondary"] ?: 0xFFA5AABD.toInt(),
                 gold = gold,
@@ -53,12 +54,12 @@ class Palette(
             ) else Palette(
                 family = "celestial",
                 dark = false,
-                bg = c["background"] ?: 0xFFFAF8F2.toInt(),
+                bg = c["surface"] ?: c["background"] ?: 0xFFF2EEE4.toInt(),
                 ink = c["text"] ?: 0xFF292D3B.toInt(),
-                muted = c["textSecondary"] ?: 0xFF626577.toInt(),
+                muted = c["textSecondary"] ?: 0xFF565A69.toInt(),
                 gold = gold,
-                goldText = blend(gold, Color.BLACK, 0.4f),
-                weekend = c["weekend"] ?: 0xFFC4696E.toInt(),
+                goldText = if (gold == defaultGold) 0xFF796020.toInt() else blend(gold, Color.BLACK, 0.43f),
+                weekend = c["weekend"] ?: 0xFFA04E56.toInt(),
             )
         }
 

@@ -25,6 +25,8 @@ import * as OceanS from './ocean/OceanProjectPage.styles';
 import OceanProjectLayout from './ocean/OceanProjectLayout';
 import * as GemS from "./gem/GemProjectPage.styles";
 import GemProjectLayout from "./gem/GemProjectLayout";
+import useMobilePresentation from "@/hooks/useMobilePresentation";
+import CelestialMobileProject from "@/components/project/celestial/CelestialMobileProject";
 
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
 const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS, gem: GemS };
@@ -33,7 +35,9 @@ const LAYOUTS = { celestial: CelestialProjectLayout, maple: MapleProjectLayout, 
 
 export default function ProjectPage() {
     const S = usePickTheme(STYLES);
-    const gem = useThemeFamily() === "gem";
+    const family = useThemeFamily();
+    const gem = family === "gem";
+    const celestialMobile = useMobilePresentation() && family === "celestial";
     const ProjectLayout = usePickTheme(LAYOUTS);
     const authFetch = useAuthFetch();
     const dialog = useDialog();
@@ -165,22 +169,56 @@ export default function ProjectPage() {
     const openTaskEdit = (task: ProjectTaskType) => {
         if (selectedProjectId) setTaskTarget({ projectId: selectedProjectId, taskId: task.id });
     };
+    const openSettings = () => {
+        if (!selectedProject) return;
+        setProjectModal({isOpen:true,mode:"edit",data:{
+            id:selectedProject.id,title:selectedProject.title,description:selectedProject.description || "",
+            categoryId:selectedProject.categoryId,assignees:selectedProject.assignees || [],
+            startAt:selectedProject.startAt ?? null,endAt:selectedProject.endAt ?? null,
+        }});
+    };
+    const openNewProject = () => setProjectModal({isOpen:true,mode:"add",data:{
+        id:"", title:"", description:"", categoryId:"", assignees:[],
+        startAt:fromLocalInput(todayKey(),"00:00"), endAt:fromLocalInput(todayKey(),"23:59"),
+    }});
+    const openNewTask = (status: string) => {
+        if (selectedProjectId) setTaskTarget({ projectId:selectedProjectId, defaults:{status} });
+    };
+    const board = <ProjectBoard ref={boardRef} flex={boardRatio} tasks={tasks}
+        onAddTask={openNewTask} onEditTask={openTaskEdit} onMoveTask={handleMoveTaskStatus} />;
+    const timeline = <ProjectTimeline
+        ref={timelineRef}
+        flex={100 - boardRatio}
+        tasks={tasks}
+        onEditTask={openTaskEdit}
+        onConnectDependency={async (from, to) => {
+            if (!selectedProjectId) return t.interaction.linkInvalid;
+            const issue = dependencyIssue(tasks, from, to);
+            if (issue) return issue === 'duplicate' ? t.interaction.linkDuplicate : t.interaction.linkInvalid;
+            const target = tasks.find(t => t.id === to)!;
+            const predecessor = tasks.find(t => t.id === from)!;
+            return updateProjectTask(authFetch, selectedProjectId, to, { blockedBy: [...(target.blockedBy ?? []), predecessor] });
+        }}
+        onUpdateTaskDates={async (taskId, startAt, endAt) => {
+            if (selectedProjectId) await updateProjectTask(authFetch, selectedProjectId, taskId, { startAt, endAt });
+        }}
+    />;
 
     return (
         <S.PageContainer>
 
+            {celestialMobile ? <CelestialMobileProject projects={projects} project={selectedProject}
+                category={selectedCategory?.name} board={board} fullTimeline={timeline} onProject={setSelectedProjectId}
+                onSettings={openSettings} onNewProject={openNewProject} onAddTask={()=>openNewTask("todo")}
+                onEditTask={openTaskEdit} /> : <>
             <ProjectHeader
                 selectedProject={selectedProject}
                 selectedCategory={selectedCategory}
                 projects={projects}
                 selectedProjectId={selectedProjectId}
                 onSelectProject={setSelectedProjectId}
-                onOpenSettings={() => setProjectModal({
-                    isOpen: true, mode: 'edit',
-                    data: { id: selectedProject!.id, title: selectedProject!.title, description: selectedProject!.description || '', categoryId: selectedProject!.categoryId, assignees: selectedProject!.assignees || [], startAt: selectedProject!.startAt ?? null, endAt: selectedProject!.endAt ?? null }
-                })}
-                // 새 프로젝트는 오늘 하루짜리로 시작한다 — 기간이 있어야 만들자마자 달력에 선다 (끄거나 늘릴 수 있다)
-                onOpenNewProject={() => setProjectModal({ isOpen: true, mode: 'add', data: { id: '', title: '', description: '', categoryId: '', assignees: [], startAt: fromLocalInput(todayKey(), "00:00"), endAt: fromLocalInput(todayKey(), "23:59") } })}
+                onOpenSettings={openSettings}
+                onOpenNewProject={openNewProject}
             />
 
 
@@ -192,31 +230,8 @@ export default function ProjectPage() {
             )}
 
             {selectedProject && (
-                <ProjectLayout containerRef={layoutRef} board={(<ProjectBoard
-                        ref={boardRef}
-                        flex={boardRatio}
-                        tasks={tasks}
-                        onAddTask={(status) => { if (selectedProjectId) setTaskTarget({ projectId: selectedProjectId, defaults: { status } }); }}
-                        onEditTask={openTaskEdit}
-                        onMoveTask={handleMoveTaskStatus}
-                    />)} timeline={(<ProjectTimeline
-                        ref={timelineRef}
-                        flex={100 - boardRatio}
-                        tasks={tasks}
-                        onEditTask={openTaskEdit}
-                        onConnectDependency={async (from, to) => {
-                            if (!selectedProjectId) return t.interaction.linkInvalid;
-                            const issue = dependencyIssue(tasks, from, to);
-                            if (issue) return issue === 'duplicate' ? t.interaction.linkDuplicate : t.interaction.linkInvalid;
-                            const target = tasks.find(t => t.id === to)!;
-                            const predecessor = tasks.find(t => t.id === from)!;
-                            return updateProjectTask(authFetch, selectedProjectId, to, { blockedBy: [...(target.blockedBy ?? []), predecessor] });
-                        }}
-                        onUpdateTaskDates={async (taskId, newStart, newEnd) => {
-                            if (!selectedProjectId) return;
-                            await updateProjectTask(authFetch, selectedProjectId, taskId, { startAt: newStart, endAt: newEnd });
-                        }}
-                    />)} resizer={(<S.Resizer onMouseDown={handleMouseDownResizer} {...(gem ? {
+                <ProjectLayout containerRef={layoutRef} board={board} timeline={timeline}
+                    resizer={(<S.Resizer onMouseDown={handleMouseDownResizer} {...(gem ? {
                         role: "separator", tabIndex: 0, "aria-orientation": "horizontal" as const,
                         "aria-label": `${t.calendar.timeline} / ${t.calendar.board}`,
                         "aria-valuemin": 20, "aria-valuemax": 80, "aria-valuenow": boardRatio,
@@ -224,6 +239,7 @@ export default function ProjectPage() {
                     } : {})} />)} />
             )}
 
+            </>}
             <ProjectTaskEditor target={taskTarget} onClose={() => setTaskTarget(null)} />
 
             <ProjectModal

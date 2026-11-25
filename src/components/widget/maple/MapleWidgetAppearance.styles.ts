@@ -14,7 +14,6 @@ export const Surface=styled(Base)`
  .sample{border-radius:3px 10px 10px 3px;}
  .preview-caption{padding:10px 0;border-bottom:1px solid ${p=>hair(p.theme,.15)};}
  .preview-scope{padding-left:12px;border-left:2px solid ${p=>p.theme.colors.primary}55;}
- &&[data-compact] .settings-head::before{display:none;}
  && .choices.three button,&& .settings-foot .undo{${stampButton('default')}}
  && .settings-foot .done{${stampButton('primary')}}
  && .quick-looks button,&& .option-cards button{position:relative;border-color:${p=>hair(p.theme,.18)};border-left:3px solid ${p=>hair(p.theme,.2)};background:${p=>p.theme.colors.surface};box-shadow:0 2px 0 ${p=>hair(p.theme,.05)};}

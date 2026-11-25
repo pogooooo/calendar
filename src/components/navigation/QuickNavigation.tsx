@@ -5,7 +5,7 @@ import { useScreenNavigation } from "@/components/navigation/useScreenNavigation
 import { Search, X, ArrowUpRight } from "lucide-react";
 import BaseModal from "@/components/modal/baseModal/BaseModal";
 import { useT } from "@/i18n/useT";
-import { usePickTheme, type ThemeImpls } from "@/styles/themed";
+import { usePickTheme, useThemeFamily, type ThemeImpls } from "@/styles/themed";
 import { fx, rectOf } from "@/lib/fx";
 import * as CelestialS from "./celestial/CelestialQuickNavigation.styles";
 import * as MapleS from "./maple/MapleQuickNavigation.styles";
@@ -19,6 +19,7 @@ export const openQuickNavigation = () => window.dispatchEvent(new Event(OPEN_QUI
 
 export default function QuickNavigation() {
     const S = usePickTheme(STYLES);
+    const celestial = useThemeFamily() === 'celestial';
     const t = useT();
     const navigate = useScreenNavigation();
     const [open, setOpen] = React.useState(false);
@@ -60,7 +61,7 @@ export default function QuickNavigation() {
     return <BaseModal isOpen={open} onClose={() => setOpen(false)} ariaLabel={t.interaction.quickFind} maxWidth="480px">
         <S.SearchRow>
             <Search size={18} aria-hidden />
-            <S.Input ref={input} value={query} onChange={e => { setQuery(e.target.value); setSelected(0); }} placeholder={t.interaction.quickFindPlaceholder} aria-label={t.interaction.quickFind} role="combobox" aria-autocomplete="list" aria-expanded aria-controls="quick-navigation-results" aria-activedescendant={items[selected] ? `quick-navigation-${selected}` : undefined}
+            <S.Input data-celestial-quick-search={celestial || undefined} ref={input} value={query} onChange={e => { setQuery(e.target.value); setSelected(0); }} placeholder={t.interaction.quickFindPlaceholder} aria-label={t.interaction.quickFind} role="combobox" aria-autocomplete="list" aria-expanded aria-controls="quick-navigation-results" aria-activedescendant={items[selected] ? `quick-navigation-${selected}` : undefined}
                 onKeyDown={e => {
                     if (e.nativeEvent.isComposing) return;
                     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {

@@ -27,6 +27,7 @@ export const ChallengeRecords = styled.div`
         box-shadow: 0 0 0 2px ${p => p.theme.colors.primary};
     }
     .record-slot:disabled { opacity: 0.45; cursor: default; }
+    .record-slot[data-outline-recordable]:disabled { opacity: 1; }
     .record-date {
         position: absolute;
         top: calc(100% + 3px);

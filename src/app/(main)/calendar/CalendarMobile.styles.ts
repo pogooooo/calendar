@@ -81,6 +81,33 @@ export const Wrapper = styled.div`
     && [data-calendar-panel='task'] form button { width:44px; min-height:44px; }
     && [data-calendar-panel='memo'] textarea { font-size:16px; }
 
+    &&&[data-celestial-mobile-calendar] {
+        [data-month-weekdays] .day-name,
+        [data-week-strip] [role='tab'] .name {
+            font:600 .72rem/1.2 ${p=>p.theme.fonts.body};
+            letter-spacing:0;
+        }
+        [data-month-cell] .day-number {font-size:.95rem;font-weight:650;}
+        [data-month-cell][data-outside-month]:not([data-selected]) .day-number {color:${p=>p.theme.colors.textSecondary};opacity:.82;}
+        [data-month-cell][aria-current='date'] .day-number {text-underline-offset:3px;}
+        [data-month-more] {color:${p=>p.theme.colors.text};font-size:.68rem;font-weight:650;}
+        [data-month-bar] .todo-title {font-size:.7rem;line-height:1.15;}
+        [data-week-strip] [role='tab'] .num {font-family:${p=>p.theme.fonts.body};font-size:1rem;font-weight:650;}
+        [data-week-strip] [role='tab'] .dots em {font-size:.67rem;color:${p=>p.theme.colors.textSecondary};}
+        [data-day-date-heading] > span {font-family:${p=>p.theme.fonts.body};font-size:.96rem;font-weight:650;letter-spacing:0;}
+        [data-day-peek-row] .name {font-weight:600;}
+        [data-day-todo-row][data-engraved-row] {padding:0;background:none;}
+        [data-engraved-bar] .face::before,
+        [data-engraved-bar] :is(.phase-line, .etch, .end) {display:none;}
+        [data-engraved-bar='agenda'] .face {border:0;padding:6px 4px;gap:7px;}
+        [data-engraved-bar='agenda'] .bookmark {align-self:center;margin:0;}
+        [data-engraved-bar='agenda'] .word {font-size:.88rem;font-weight:600;white-space:normal;overflow-wrap:anywhere;}
+        [data-engraved-bar='agenda'] .clock {color:${p=>p.theme.colors.textSecondary};padding-left:5px;}
+        [data-engraved-bar='timed'] .face {background:${p=>p.theme.colors.surface};border-color:${p=>p.theme.colors.border};}
+        [data-engraved-bar='timed'] .word {font-size:.76rem;font-weight:600;}
+        [data-engraved-bar][data-selected] .face {box-shadow:inset 0 0 0 1px var(--control-ink);}
+    }
+
     :where(html[data-theme-family='gem']) && [data-month-cell] .day-number {
         height: auto;
         line-height: 1.1;

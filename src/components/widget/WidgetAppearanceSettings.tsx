@@ -13,7 +13,7 @@ import * as Celestial from './celestial/CelestialWidgetAppearance.styles';
 import * as Maple from './maple/MapleWidgetAppearance.styles';
 import * as Ocean from './ocean/OceanWidgetAppearance.styles';
 import * as Gem from './gem/GemWidgetAppearance.styles';
-import {DialogLayout} from './WidgetAppearance.styles';
+import type { WidgetPreviewSize } from '@/hooks/useWidgetPreviewDesktop';
 import WidgetAppearancePreview from './WidgetAppearancePreview';
 
 const STYLES={celestial:Celestial,maple:Maple,ocean:Ocean,gem:Gem};
@@ -42,11 +42,10 @@ function RangeControl({label,value,onChange,max=100,unit='%',disabled=false,low,
     </div>;
 }
 
-export default function WidgetAppearanceSettings({kind,compact=false,onDone,title}:{kind:WidgetKind;compact?:boolean;onDone?:()=>void;title?:string}){
+export default function WidgetAppearanceSettings({kind,size,onDone}:{kind:WidgetKind;size?:WidgetPreviewSize;onDone:()=>void}){
     const id=useId(),ko=useSettingStore(state=>state.locale)==='ko';
     const text=(korean:string,english:string)=>ko?korean:english;
-    const S=usePickTheme(STYLES),meta=useWidgetMeta()[kind];
-    const label=title?.replace(/^CRONOS\s*·\s*/,'')??meta.label;
+    const S=usePickTheme(STYLES),{label}=useWidgetMeta()[kind];
     const settings=useWidgetStore(state=>state[kind]);
     const a=normalizeWidgetAppearance(settings.appearance),bg=normalizeWidgetBackground(settings.bg);
     const [initial]=useState(()=>({appearance:normalizeWidgetAppearance(settings.appearance),bg:normalizeWidgetBackground(settings.bg)}));
@@ -86,13 +85,13 @@ export default function WidgetAppearanceSettings({kind,compact=false,onDone,titl
     const motionLabels={inherit:text('앱 설정 따르기','Follow app'),full:text('풍성하게','Full'),gentle:text('잔잔하게','Gentle'),off:text('끄기','Off')};
     const sectionValues={background:`${Math.round(bg.opacity*100)}%`,ornaments:a.design==='simple'?text('숨김','Hidden'):`${Math.round(a.intensity*100)}%`,motion:motionLabels[effectiveMotion]};
 
-    return <><DialogLayout/><S.Surface data-widget-appearance={kind} data-compact={compact?'':undefined}>
+    return <S.Surface data-widget-appearance={kind}>
         <header className="settings-head"><div><span className="eyebrow">{text('위젯 꾸미기','Widget appearance')}</span><h3>{label}</h3></div>
-            {!compact&&<span className="scope" title={text(`이 기기의 ${label} 위젯에 적용됩니다.`,`Applies to ${label} on this device.`)}>{text('이 위젯만','This widget only')}</span>}
-            {onDone&&<button type="button" className="icon-button" aria-label={text('위젯 설정 닫기','Close widget settings')} onClick={onDone}><X size={18}/></button>}
+            <span className="scope" title={text(`이 기기의 ${label} 위젯에 적용됩니다.`,`Applies to ${label} on this device.`)}>{text('이 위젯만','This widget only')}</span>
+            <button type="button" className="icon-button" aria-label={text('위젯 설정 닫기','Close widget settings')} onClick={onDone}><X size={18}/></button>
         </header>
         <div className="settings-workspace">
-            <WidgetAppearancePreview kind={kind} label={label} appearance={a} bg={bg} compact={compact}
+            <WidgetAppearancePreview kind={kind} label={label} appearance={a} bg={bg} size={size}
                 previewMotion={section === 'motion' ? effectiveMotion : undefined}/>
             <div className="settings-editor">
                 <div className="section-tabs" role="tablist" aria-label={text('위젯 설정 항목','Widget settings sections')}>
@@ -150,7 +149,7 @@ export default function WidgetAppearanceSettings({kind,compact=false,onDone,titl
         </div>
         <footer className="settings-foot"><div className="save-status" role={saveError?'alert':'status'}>{saveError?<><Info size={15}/><span>{text('기기에 저장하지 못했습니다.','Could not save on this device.')}</span><button type="button" onClick={()=>{try{retry.current?.();setSaveError(false);retry.current=null;}catch{setSaveError(true);}}}>{text('재시도','Retry')}</button></>:<><Check size={15}/><span>{text('이 기기에 자동 저장','Saved on this device')}</span></>}</div>
             <button type="button" className="undo" disabled={!changed&&!saveError} title={text('배경·장식·움직임을 설정창을 열기 전 상태로 되돌립니다.','Restore backdrop, ornaments and motion from when this panel opened.')} aria-label={text('이번 설정창을 열기 전 상태로 되돌리기','Restore settings from when this panel opened')} onClick={()=>{save(initial);setColorDraft({source:initial.bg.customColor,text:initial.bg.customColor,error:false});}}><RotateCcw size={15}/><span>{text('열기 전으로','Undo changes')}</span></button>
-            {onDone&&<button type="button" className="done" onClick={onDone}>{text('닫기','Close')}</button>}
+            <button type="button" className="done" onClick={onDone}>{text('닫기','Close')}</button>
         </footer>
-    </S.Surface></>;
+    </S.Surface>;
 }

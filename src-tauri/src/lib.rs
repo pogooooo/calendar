@@ -22,6 +22,16 @@ const WIDGET_KINDS: &[&str] = &[
 ];
 
 #[cfg(desktop)]
+const WIDGET_SETTINGS_PREFIX: &str = "widget-settings-";
+
+#[cfg(desktop)]
+fn any_widget_settings_open(app: &tauri::AppHandle, excluding: Option<&str>) -> bool {
+    app.webview_windows().keys().any(|label| {
+        label.starts_with(WIDGET_SETTINGS_PREFIX) && Some(label.as_str()) != excluding
+    })
+}
+
+#[cfg(desktop)]
 fn widget_size(kind: &str) -> (f64, f64) {
     const S: (f64, f64) = (200.0, 200.0);
     const W: (f64, f64) = (416.0, 200.0);
@@ -734,7 +744,7 @@ async fn open_widget(
                                 *k != closed_kind.as_str()
                                     && app_for_exit.get_webview_window(&format!("widget-{k}")).is_some()
                             });
-                            if main_hidden && !others_open {
+                            if main_hidden && !others_open && !any_widget_settings_open(&app_for_exit, None) {
                                 app_for_exit.exit(0);
                             }
                         }
@@ -748,6 +758,50 @@ async fn open_widget(
     }).map_err(|e| e.to_string())?;
 
     rx.await.map_err(|e| e.to_string())?
+}
+
+#[cfg(desktop)]
+#[tauri::command]
+async fn open_widget_settings(app: tauri::AppHandle, kind: String) -> Result<(), String> {
+    if !WIDGET_KINDS.contains(&kind.as_str()) {
+        return Err(format!("알 수 없는 위젯 종류: {kind}"));
+    }
+
+    let label = format!("{WIDGET_SETTINGS_PREFIX}{kind}");
+    let url = WebviewUrl::App(format!("widget-settings/?kind={kind}").into());
+
+    let handle = app.clone();
+    let (tx, rx) = tokio::sync::oneshot::channel::<Result<(), String>>();
+    app.run_on_main_thread(move || {
+        let result = if let Some(window) = handle.get_webview_window(&label) {
+            window.unminimize().and_then(|_| window.set_focus())
+        } else {
+            let (width, height) = handle.primary_monitor().ok().flatten().map_or((1000.0, 680.0), |monitor| {
+                let area = monitor.work_area().size.to_logical::<f64>(monitor.scale_factor());
+                ((area.width * 0.86).min(1000.0), (area.height * 0.86).min(680.0))
+            });
+            WebviewWindowBuilder::new(&handle, &label, url)
+                .title("CRONOS")
+                .inner_size(width, height)
+                .min_inner_size(width.min(360.0), height.min(400.0))
+                .center()
+                .build()
+                .map(|window| {
+                    let app = handle.clone();
+                    window.on_window_event(move |event| {
+                        if !matches!(event, tauri::WindowEvent::Destroyed) { return; }
+                        let main_visible = app.get_webview_window("main")
+                            .and_then(|main| main.is_visible().ok())
+                            .unwrap_or(false);
+                        if !main_visible && !any_widget_open(&app) && !any_widget_settings_open(&app, Some(&label)) {
+                            app.exit(0);
+                        }
+                    });
+                })
+        };
+        let _ = tx.send(result.map_err(|error| error.to_string()));
+    }).map_err(|error| error.to_string())?;
+    rx.await.map_err(|error| error.to_string())?
 }
 
 #[cfg(desktop)]
@@ -981,6 +1035,7 @@ pub fn run() {
             {
                 tauri::generate_handler![
                     open_widget,
+                    open_widget_settings,
                     close_widget,
                     list_open_widgets,
                     set_widget_priority,

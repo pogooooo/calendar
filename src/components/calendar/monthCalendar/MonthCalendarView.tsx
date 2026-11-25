@@ -31,6 +31,7 @@ import AnniversaryCrown from "@/components/calendar/parts/anniversary/Anniversar
 import { useSwapMotion } from '@/hooks/useMotion';
 import { LunarEvent } from "@/components/calendar/parts/LunarEvent";
 import { usePickTheme, useThemeFamily, type ThemeImpls } from "@/styles/themed";
+import useMobilePresentation from "@/hooks/useMobilePresentation";
 import GemMonthHeader from "./gem/GemMonthHeader";
 import * as GemS from "./gem/GemMonthCalendar.styles";
 import CelestialMonthHeader from "./celestial/CelestialMonthHeader";
@@ -226,6 +227,7 @@ const WeekRow = ({
                         ref={idx === 0 ? firstCellRef : undefined}
                         data-calendar-date={cellKey}
                         data-month-cell
+                        data-outside-month={!isCurrentMonth || undefined}
                         data-selected={isSelected ? '' : undefined}
                         data-gem-frame-anchor={gem && isSelected ? '' : undefined}
                         role={!gem && onCellClick ? 'button' : undefined}
@@ -401,6 +403,7 @@ const MonthCalendarView = React.forwardRef<HTMLDivElement, CelestialMonthProps>(
         const Component = asChild ? Slot : 'div';
         const t = useT();
         const family = useThemeFamily();
+        const celestialMobile = useMobilePresentation() && family === "celestial";
         const gem = family === "gem";
         const MonthHeader = HEADERS[family];
         const Etching = ETCHINGS[family];
@@ -460,7 +463,7 @@ const MonthCalendarView = React.forwardRef<HTMLDivElement, CelestialMonthProps>(
                                 style={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative', isolation: 'isolate' }}
                             >
                                 <S.Header data-month-weekdays>
-                                    {t.calendar.days.map((d) => (
+                                    {(celestialMobile ? t.form.weekdays : t.calendar.days).map((d) => (
                                         <S.DayNameBox key={d}>
                                             <div className="day-name">{d}</div>
                                         </S.DayNameBox>

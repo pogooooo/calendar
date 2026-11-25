@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
-import { availableMonitors, currentMonitor, getCurrentWindow, Window } from "@tauri-apps/api/window";
+import { availableMonitors, currentMonitor, Window } from "@tauri-apps/api/window";
 import { isDesktopShell } from "@/lib/platform";
 import type { WidgetKind } from "@/lib/widgetKinds";
 
@@ -15,7 +15,8 @@ const DEFAULT_SIZES: Record<WidgetKind, readonly [number, number]> = {
     memo: WIDE, nownext: WIDE, monthly: [416, 416], weekly: [848, 200],
 };
 
-type Geometry = { width: number; height: number; x: number; y: number; mw: number; mh: number };
+export type WidgetPreviewSize = { width: number; height: number };
+type Geometry = WidgetPreviewSize & { x: number; y: number; mw: number; mh: number };
 type Desktop = Geometry & { url?: string; luminance?: number };
 const initialGeometry = (kind: WidgetKind): Geometry => {
     const [width, height] = DEFAULT_SIZES[kind];
@@ -30,8 +31,10 @@ export function rgbLuminance(r: number, g: number, b: number) {
     return .2126 * linear(r) + .7152 * linear(g) + .0722 * linear(b);
 }
 
-export function useWidgetPreviewDesktop(kind: WidgetKind, compact: boolean) {
+export function useWidgetPreviewDesktop(kind: WidgetKind, browserSize?: WidgetPreviewSize) {
     const [desktop, setDesktop] = useState<Desktop>(() => initialGeometry(kind));
+    const previewWidth = browserSize?.width;
+    const previewHeight = browserSize?.height;
 
     useEffect(() => {
         let active = true;
@@ -45,8 +48,8 @@ export function useWidgetPreviewDesktop(kind: WidgetKind, compact: boolean) {
             let geometry = initialGeometry(kind);
             let saved: { x?: number; y?: number; w?: number; h?: number } | null = null;
             try { saved = JSON.parse(localStorage.getItem(key) ?? "null"); } catch {}
-            const width = compact ? window.innerWidth : saved?.w;
-            const height = compact ? window.innerHeight : saved?.h;
+            const width = previewWidth ?? saved?.w;
+            const height = previewHeight ?? saved?.h;
             if (width && height && Number.isFinite(width) && Number.isFinite(height) && width >= 160 && height >= 120) {
                 geometry = { ...geometry, width, height, mw: width, mh: height };
             }
@@ -58,7 +61,7 @@ export function useWidgetPreviewDesktop(kind: WidgetKind, compact: boolean) {
                     invoke<string>("get_wallpaper_path"),
                     availableMonitors().catch(() => []),
                     currentMonitor().catch(() => null),
-                    readWidgetBounds(kind, compact),
+                    readWidgetBounds(kind),
                 ]);
                 if (!active || request !== revision) return;
                 if (live) geometry = { ...geometry, width: live.w, height: live.h };
@@ -104,21 +107,19 @@ export function useWidgetPreviewDesktop(kind: WidgetKind, compact: boolean) {
         void refresh();
         window.addEventListener("storage", onStorage);
         window.addEventListener("focus", refresh);
-        if (compact) window.addEventListener("resize", refresh);
         return () => {
             active = false;
             window.removeEventListener("storage", onStorage);
             window.removeEventListener("focus", refresh);
-            window.removeEventListener("resize", refresh);
         };
-    }, [kind, compact]);
+    }, [kind, previewWidth, previewHeight]);
 
     return desktop;
 }
 
-async function readWidgetBounds(kind: WidgetKind, compact: boolean) {
+async function readWidgetBounds(kind: WidgetKind) {
     try {
-        const win = compact ? getCurrentWindow() : await Window.getByLabel(`widget-${kind}`);
+        const win = await Window.getByLabel(`widget-${kind}`);
         if (!win) return;
         const [scale, pos, size] = await Promise.all([win.scaleFactor(), win.outerPosition(), win.innerSize()]);
         return { x: pos.x / scale, y: pos.y / scale, w: size.width / scale, h: size.height / scale };

@@ -39,8 +39,9 @@ import * as OceanS from './ocean/OceanHome.styles';
 import OceanHomeLayout from './ocean/OceanHomeLayout';
 import useAnniversaryFx from "@/components/fx/useAnniversaryFx";
 import { useListMotion, useSwapMotion } from "@/hooks/useMotion";
-import { useSimpleMobileAppearance } from '@/hooks/useMobilePresentation';
+import useMobilePresentation, { useSimpleMobileAppearance } from '@/hooks/useMobilePresentation';
 import MobileHomeLayout from './MobileHomeLayout';
+import CelestialMobileHome from './celestial/CelestialMobileHome';
 import * as GemS from "./gem/GemHome.styles";
 import GemHomeLayout from "./gem/GemHomeLayout";
 
@@ -59,6 +60,7 @@ export default function HomeView() {
     const Layout = LAYOUTS[family];
     const TaskPanel = family === "celestial" ? CelestialReadingPanel : S.ListCol;
     const simpleMobile = useSimpleMobileAppearance();
+    const celestialMobile = useMobilePresentation() && family === "celestial";
     const { todos, toggleTodo, addTodo } = useTodoStore();
     const { projects, fetchProjects } = useProjectStore();
     const { challenges, fetchChallenges, toggleChallengeCompletion, addChallenge } = useChallengeStore();
@@ -214,6 +216,14 @@ export default function HomeView() {
         () => homeTodos.filter(t2 => spansDay(t2, focusKey)),
         [homeTodos, focusKey, spansDay]
     );
+    const [clockTime, setClockTime] = React.useState<number>();
+    React.useEffect(() => {
+        if (!celestialMobile) return;
+        const update = () => setClockTime(Date.now());
+        update();
+        const interval = window.setInterval(update, 60_000);
+        return () => window.clearInterval(interval);
+    }, [celestialMobile]);
 
     // 보는 날 다음 날부터 이레 — 고른 시간대의 날로 (예전엔 이 기기 0시에 24시간씩 더해서 시간대가 다르면 하루 어긋났다)
     const upcomingTodos = React.useMemo(() => {
@@ -366,6 +376,39 @@ export default function HomeView() {
         });
     };
 
+    const renderTodoRow = (todo: ExpandedTodoType) => {
+        const done = isDoneOn(todo);
+        const pending = todo.id.startsWith("temp-");
+        const at = !todo.isAllDay && todo.startAt && localDateKey(todo.startAt) === focusKey ? clock.format(new Date(todo.startAt)) : null;
+        return <S.Row as="div" data-home-row key={todo.id} data-done={done ? "" : undefined} $done={done} aria-busy={pending} style={{padding:0,gap:0,cursor:'default'}}>
+            <TaskActions.Check type="button" disabled={pending} aria-label={`${done ? t.interaction.undo : t.menu.done}: ${todo.title}`} aria-pressed={done} onClick={() => handleToggleTodo(todo)}>
+                <S.Mark $on={done} data-motion-mark="" />
+            </TaskActions.Check>
+            <TaskActions.Open type="button" disabled={pending} aria-label={`${t.menu.edit}: ${todo.title}`} onClick={() => {setEditingTodo(todo.originalTodo ?? todo);setDetailOpen(true);}}>
+                <span className="name">{todo.title}</span>
+                {pending ? <em role="status">{t.account.saving}</em> : <>{at && <em>{at}</em>}<Pencil size={14} aria-hidden="true" /></>}
+            </TaskActions.Open>
+        </S.Row>;
+    };
+
+    const quickForm = <>
+        <S.QuickForm data-home-quick onSubmit={handleQuickAdd}>
+            <i className="dot" style={quickCategory ? { background: quickCategory.color } : undefined} />
+            <input value={quick} onChange={(e) => { setQuick(e.target.value); setQuickError(null); }}
+                placeholder={t.calendar.addTask} maxLength={120} aria-label={t.calendar.addTask}
+                onKeyDown={(e) => {
+                    if (e.key === "Enter" && (e.nativeEvent.isComposing || e.keyCode === 229)) e.preventDefault();
+                }} />
+            <button type="button" className="detail" onClick={openDetail} aria-label={t.home.quickDetail} title={t.home.quickDetail}>
+                {gem ? t.home.quickDetailLabel : <SlidersHorizontal size={15} strokeWidth={2} />}
+            </button>
+            <button type="submit" disabled={!quick.trim() || quickPending} aria-label={t.calendar.newTodo}>
+                <Plus size={16} strokeWidth={2.5} />
+            </button>
+        </S.QuickForm>
+        {quickError && <S.QuickError role="alert">{quickError}</S.QuickError>}
+    </>;
+
     const regions = {
         arch: (<S.ArchWrap data-home-arch>
                         <MonthArch daysInMonth={daysInMonth} focusIdx={focusIdx} monthLoad={monthLoad} marks={marks} focus={focus} />
@@ -410,48 +453,13 @@ export default function HomeView() {
                                 <span className="hr" />
                                 <b>{dayTodos.length}</b>
                             </S.SectionHead>
-                            <S.QuickForm data-home-quick onSubmit={handleQuickAdd}>
-                                <i className="dot" style={quickCategory ? { background: quickCategory.color } : undefined} />
-                                <input
-                                    value={quick}
-                                    onChange={(e) => { setQuick(e.target.value); setQuickError(null); }}
-                                    placeholder={t.calendar.addTask}
-                                    maxLength={120}
-                                    aria-label={t.calendar.addTask}
-                                    onKeyDown={(e) => {
-                                        if (e.key === "Enter" && (e.nativeEvent.isComposing || e.keyCode === 229)) e.preventDefault();
-                                    }}
-                                />
-                                <button type="button" className="detail" onClick={openDetail} aria-label={t.home.quickDetail} title={t.home.quickDetail}>
-                                    {gem ? t.home.quickDetailLabel : <SlidersHorizontal size={15} strokeWidth={2} />}
-                                </button>
-                                <button type="submit" disabled={!quick.trim() || quickPending} aria-label={t.calendar.newTodo}>
-                                    <Plus size={16} strokeWidth={2.5} />
-                                </button>
-                            </S.QuickForm>
-                            {quickError && <S.QuickError role="alert">{quickError}</S.QuickError>}
+                            {quickForm}
 
                             <S.Scroll ref={todayListRef}>
                                 {dayTodos.length === 0 ? (
                                     <S.Empty data-home-empty>{isToday ? t.home.noTodayTodos : t.home.noDayTodos}</S.Empty>
                                 ) : (
-                                    dayTodos.map(todo => {
-                                        const done = isDoneOn(todo);
-                                        const pending = todo.id.startsWith("temp-");
-                                        // 그날 시작하는 시각 일정만 (하루 종일·전날부터 이어진 것은 비운다)
-                                        const at = !todo.isAllDay && todo.startAt && localDateKey(todo.startAt) === focusKey ? clock.format(new Date(todo.startAt)) : null;
-                                        return (
-                                            <S.Row as="div" data-home-row key={todo.id} data-done={done ? "" : undefined} $done={done} aria-busy={pending} style={{padding:0,gap:0,cursor:'default'}}>
-                                                <TaskActions.Check type="button" disabled={pending} aria-label={`${done ? t.interaction.undo : t.menu.done}: ${todo.title}`} aria-pressed={done} onClick={() => handleToggleTodo(todo)}>
-                                                    <S.Mark $on={done} data-motion-mark="" />
-                                                </TaskActions.Check>
-                                                <TaskActions.Open type="button" disabled={pending} aria-label={`${t.menu.edit}: ${todo.title}`} onClick={()=>{setEditingTodo(todo.originalTodo ?? todo);setDetailOpen(true);}}>
-                                                    <span className="name">{todo.title}</span>
-                                                    {pending ? <em role="status">{t.account.saving}</em> : <>{at && <em>{at}</em>}<Pencil size={14} aria-hidden="true" /></>}
-                                                </TaskActions.Open>
-                                            </S.Row>
-                                        );
-                                    })
+                                    dayTodos.map(renderTodoRow)
                                 )}
                             </S.Scroll>
                         </TaskPanel>),
@@ -633,5 +641,22 @@ export default function HomeView() {
         </>),
         listProps: daySwipe,
     };
+    if (celestialMobile) {
+        const chronological = [...dayTodos].sort((a, b) => Number(new Date(a.startAt ?? 0)) - Number(new Date(b.startAt ?? 0)));
+        const complete = chronological.filter(isDoneOn);
+        const pending = chronological.filter(todo => !isDoneOn(todo));
+        const active = isToday && clockTime !== undefined
+            ? pending.filter(todo => !todo.isAllDay && todo.startAt && todo.endAt
+                && Number(new Date(todo.startAt)) <= clockTime && clockTime < Number(new Date(todo.endAt))).length
+            : 0;
+        const next = pending.find(todo => !todo.isAllDay && todo.startAt
+            && localDateKey(todo.startAt) === focusKey && (!isToday || Number(new Date(todo.startAt)) > (clockTime ?? 0)));
+        return <CelestialMobileHome {...regions}
+            month={month + 1} isToday={isToday} complete={complete.length} active={active}
+            remaining={pending.length - active}
+            next={next?.startAt ? `${clock.format(new Date(next.startAt))} ${next.title}` : undefined}
+            quick={quickForm} onAdd={openDetail} pendingRows={<div ref={todayListRef}>{pending.map(renderTodoRow)}</div>}
+            completedRows={complete.map(renderTodoRow)} />;
+    }
     return simpleMobile ? <MobileHomeLayout {...regions} /> : <Layout {...regions} />;
 }

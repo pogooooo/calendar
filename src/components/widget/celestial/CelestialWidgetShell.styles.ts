@@ -106,7 +106,6 @@ export const TopBar = styled.div`
     ${Shell}:hover &,
     &:focus-within { opacity: 1; }
 
-    ${Shell}:has(> [data-settings-open]) & { opacity: 1; }
 `;
 
 export const Gem = styled.span<{ $grip?: boolean; $active?: boolean; $danger?: boolean }>`

@@ -145,85 +145,101 @@ object Sky {
  * 옅은 별(작은 점), 겉테·속테, 속테 양옆 가운데의 네 갈래 별, 위 테에 꿴 달의 위상 줄.
  * 표식은 마름모 대신 달 — 끝낸 것은 찬 점(보름), 안 끝낸 것은 빈 고리(삭). 사선은 쓰지 않는다.
  */
-open class CelestialStyle(context: Context, density: Float) : WidgetStyle(context, density) {
-    override val display: Typeface = Fonts.orbit(context)
-    override val numeral: Typeface = display
-    override val titleSpacing = 0.2f
+open class CelestialStyle(context: Context, density: Float, private val ornate: Boolean = true) : WidgetStyle(context, density) {
+    override val display: Typeface = Typeface.create(Fonts.orbit(context), Typeface.BOLD)
+    override val numeral: Typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+    override val titleSpacing = 0.035f
 
     override fun frame(c: Canvas, w: Float, h: Float, pal: Palette, alphaPct: Int) {
         val r = dp(WidgetPainter.RADIUS.toFloat())
         val rect = plate(w, h)
         val a = alphaPct / 100f
         c.drawRoundRect(rect, r, r, fill(Palette.withAlpha(pal.bg, a)))
-        c.save()
-        c.clipPath(rounded(rect, r))
-        starfield(c, w, h, pal, a)
-        c.restore()
-        // 겉테와 4dp 안쪽의 더 옅은 속테 — 타로 카드의 두 겹 테
-        c.drawRoundRect(rect, r, r, stroke(pal.line, 1f))
-        val k = dp(4f)
-        val inner = RectF(rect.left + k, rect.top + k, rect.right - k, rect.bottom - k)
-        c.drawRoundRect(inner, r - k, r - k, stroke(Palette.withAlpha(pal.gold, if (pal.dark) 0.3f else 0.36f), 0.8f))
-        // 속테 양옆 가운데에 꿴 네 갈래 별
-        val star = fill(Palette.withAlpha(pal.gold, 0.9f))
-        if (h >= dp(70f)) {
-            c.drawPath(Sky.star4(inner.left, h / 2f, dp(3.4f)), star)
-            c.drawPath(Sky.star4(inner.right, h / 2f, dp(3.4f)), star)
+        val metal = if (pal.dark) pal.gold else pal.goldText
+        if (ornate && h >= dp(86f) && w >= dp(100f)) {
+            c.save()
+            c.clipPath(rounded(rect, r))
+            starfield(c, w, h, pal, a)
+            c.restore()
         }
-        // 위 테 가운데에 꿴 달의 위상 줄 (★ ○◔◑◕●◕◑◔○ ★). 둥근 귀퉁이를 뺀 곧은 자리에만
-        phaseStrip(c, w / 2f, inner.top, inner.width() - 2f * (r - k) - dp(6f), pal)
+        c.drawRoundRect(rect, r, r, stroke(Palette.withAlpha(metal, 0.54f), 1f))
+
+        val edge = dp(4f)
+        val inner = RectF(rect).apply { inset(edge, edge) }
+        val innerRadius = r - edge
+        if (ornate && inner.width() > 2f * innerRadius && inner.height() > 2f * innerRadius) {
+            c.drawRoundRect(inner, innerRadius, innerRadius, stroke(Palette.withAlpha(metal, 0.29f), 0.7f))
+            if (h >= dp(86f)) {
+                val star = fill(Palette.withAlpha(metal, 0.80f))
+                c.drawPath(Sky.star4(inner.left, h / 2f, dp(2.9f)), star)
+                c.drawPath(Sky.star4(inner.right, h / 2f, dp(2.9f)), star)
+            }
+        }
+        if (h < dp(64f) || w < dp(78f)) return
+        val room = inner.width() - 2f * innerRadius - dp(6f)
+        if (!ornate || !phaseStrip(c, w / 2f, dp(6f), room, pal)) {
+            val cx = w / 2f
+            val cy = dp(6f)
+            val rule = stroke(Palette.withAlpha(metal, 0.48f), 0.75f)
+            c.drawLine(cx - dp(16f), cy, cx - dp(5f), cy, rule)
+            c.drawLine(cx + dp(5f), cy, cx + dp(16f), cy, rule)
+            c.drawPath(Sky.star4(cx, cy, dp(2.8f)), fill(metal))
+        }
     }
 
     /** 옅은 별하늘 — 작은 점만(네 갈래 별을 흩으면 글 사이에서 표식처럼 읽힌다). 위젯 크기로 씨앗을 정해 다시 그려도 제자리 */
     private fun starfield(c: Canvas, w: Float, h: Float, pal: Palette, a: Float) {
         var seed = (w.toInt() * 73856093) xor (h.toInt() * 19349663) xor 0x5bd1e995
         fun rnd(): Float { seed = seed * 1103515245 + 12345; return ((seed ushr 8) and 0xFFFF) / 65535f }
-        val n = ((w / density) * (h / density) / 620f).toInt().coerceIn(10, 110)
-        val dot = fill(Palette.withAlpha(pal.gold, (if (pal.dark) 0.55f else 0.5f) * a))
+        val n = ((w / density) * (h / density) / 1080f).toInt().coerceIn(8, 68)
+        val dot = fill(Palette.withAlpha(if (pal.dark) pal.gold else pal.goldText, (if (pal.dark) 0.36f else 0.24f) * a))
         for (i in 0 until n) {
             val x = dp(7f) + rnd() * (w - dp(14f))
             val y = dp(7f) + rnd() * (h - dp(14f))
             val rr = if (i % 7 == 0) 0.85f + rnd() * 0.35f else 0.3f + rnd() * 0.42f
+            if (y < dp(38f) || (busy && x > dp(12f) && x < w - dp(12f))) continue
             c.drawCircle(x, y, dp(rr), dot)
         }
     }
 
     /** 달의 위상 줄 — 삭에서 보름을 지나 다시 삭으로, 양끝에 네 갈래 별. 자리(room)에 들어가는 만큼(9·7·5개) */
-    private fun phaseStrip(c: Canvas, cx: Float, cy: Float, room: Float, pal: Palette) {
-        val pr = dp(2.6f); val gap = dp(4.2f); val sr = dp(3.2f); val sg = dp(5f)
-        val count = listOf(9, 7, 5).firstOrNull { n -> n * 2 * pr + (n - 1) * gap + 2 * (sg + 2 * sr) <= room } ?: return
+    private fun phaseStrip(c: Canvas, cx: Float, cy: Float, room: Float, pal: Palette): Boolean {
+        val pr = dp(2.2f); val gap = dp(4.2f); val sr = dp(2.8f); val sg = dp(4.5f)
+        val count = listOf(7, 5, 3).firstOrNull { n -> n * 2 * pr + (n - 1) * gap + 2 * (sg + 2 * sr) <= room } ?: return false
         val stripW = count * 2 * pr + (count - 1) * gap
-        val ring = stroke(Palette.withAlpha(pal.gold, 0.85f), 0.8f)
-        val lit = fill(Palette.withAlpha(pal.gold, 0.85f))
+        val metal = if (pal.dark) pal.gold else pal.goldText
+        val ring = stroke(Palette.withAlpha(metal, 0.78f), 0.75f)
+        val lit = fill(Palette.withAlpha(metal, 0.78f))
         for (i in 0 until count) {
             val mx = cx - stripW / 2f + pr + i * (2 * pr + gap)
             c.drawCircle(mx, cy, pr, ring)
             Sky.lit(mx, cy, pr, i / (count - 1f))?.let { c.drawPath(it, lit) }
         }
-        val star = fill(Palette.withAlpha(pal.gold, 0.9f))
+        val star = fill(Palette.withAlpha(metal, 0.9f))
         c.drawPath(Sky.star4(cx - stripW / 2f - sg - sr, cy, sr), star)
         c.drawPath(Sky.star4(cx + stripW / 2f + sg + sr, cy, sr), star)
+        return true
     }
 
     override fun countdownRing(c: Canvas, cx: Float, cy: Float, r: Float, frac: Float, pal: Palette) {
         // 궤도 — 옅은 금선 원에 열두 달 눈금, 지나온 만큼 진한 호, 맨 위(지난 기념일)에 네 갈래 별, 지금 자리에 초승달
-        c.drawCircle(cx, cy, r, stroke(Palette.withAlpha(pal.gold, if (pal.dark) 0.3f else 0.34f), 1f))
-        val tick = stroke(Palette.withAlpha(pal.gold, 0.55f), 0.9f)
+        c.drawCircle(cx, cy, r, stroke(Palette.withAlpha(pal.goldText, 0.28f), 1f))
+        val tick = stroke(Palette.withAlpha(pal.goldText, 0.50f), 0.85f)
         for (i in 1 until 12) {
             val a = -PI / 2 + 2 * PI * i / 12
             val ca = cos(a).toFloat(); val sa = kotlin.math.sin(a).toFloat()
             c.drawLine(cx + ca * (r - dp(2.2f)), cy + sa * (r - dp(2.2f)), cx + ca * (r + dp(2.2f)), cy + sa * (r + dp(2.2f)), tick)
         }
         val f = frac.coerceIn(0f, 1f)
-        if (f > 0f) c.drawArc(RectF(cx - r, cy - r, cx + r, cy + r), -90f, 360f * f, false, stroke(pal.gold, 1.6f))
-        c.drawPath(Sky.star4(cx, cy - r, dp(3.4f)), fill(pal.gold))
+        if (f > 0f) c.drawArc(RectF(cx - r, cy - r, cx + r, cy + r), -90f, 360f * f, false, stroke(pal.goldText, 1.5f))
+        c.drawPath(Sky.star4(cx, cy - r, dp(3.1f)), fill(pal.goldText))
         if (f in 0.02f..0.98f) {
             val a = -PI / 2 + 2 * PI * f
             val mx = cx + cos(a).toFloat() * r; val my = cy + kotlin.math.sin(a).toFloat() * r
             val mr = dp(3.6f)
             c.drawCircle(mx, my, mr + dp(1.2f), fill(pal.bg))
-            c.drawCircle(mx, my, mr, stroke(pal.gold, 0.9f))
-            Sky.lit(mx, my, mr, 0.32f)?.let { c.drawPath(it, fill(pal.gold)) }
+            c.drawCircle(mx, my, mr, stroke(pal.goldText, 0.9f))
+            Sky.lit(mx, my, mr, 0.32f)?.let { c.drawPath(it, fill(pal.goldText)) }
         }
     }
 
@@ -240,12 +256,14 @@ open class CelestialStyle(context: Context, density: Float) : WidgetStyle(contex
     }
 
     override fun todayMark(c: Canvas, cx: Float, cy: Float, rDp: Float, pal: Palette) {
-        // 금 고리와 그 바깥의 옅은 궤도, 궤도 위의 행성 하나 — 혼천의의 고리처럼
-        val r = dp(rDp)
-        val orbit = r + dp(2.4f)
-        c.drawCircle(cx, cy, r, stroke(pal.gold, 1f))
-        c.drawCircle(cx, cy, orbit, stroke(Palette.withAlpha(pal.gold, 0.35f), 0.6f))
-        c.drawCircle(cx + orbit * 0.7071f, cy - orbit * 0.7071f, dp(1.3f), fill(pal.gold))
+        val r = dp(rDp - 1.35f)
+        c.drawCircle(cx, cy, r, stroke(Palette.withAlpha(pal.goldText, 0.85f), 0.95f))
+        if (ornate) {
+            val orbit = r + dp(1.5f)
+            c.drawArc(RectF(cx - orbit, cy - orbit, cx + orbit, cy + orbit), 200f, 140f, false,
+                stroke(Palette.withAlpha(pal.goldText, 0.38f), 0.65f))
+        }
+        c.drawCircle(cx + r * 0.7071f, cy - r * 0.7071f, dp(1.05f), fill(pal.goldText))
     }
 
     override fun dayArrow(c: Canvas, cx: Float, cy: Float, sizeDp: Float, color: Int, right: Boolean) {
@@ -262,10 +280,17 @@ open class CelestialStyle(context: Context, density: Float) : WidgetStyle(contex
 
     override fun gaugeBase(c: Canvas, cx: Float, cy: Float, r: Float, pal: Palette): Int {
         val outer = RectF(cx - r, cy - r, cx + r, cy + r)
-        c.drawArc(outer, 180f, 180f, false, stroke(Palette.withAlpha(pal.gold, if (pal.dark) 0.5f else 0.7f), 1f))
-        val r2 = r * 0.56f
-        c.drawArc(RectF(cx - r2, cy - r2, cx + r2, cy + r2), 180f, 180f, false, stroke(Palette.withAlpha(pal.gold, if (pal.dark) 0.28f else 0.4f), 1f))
-        return pal.gold
+        val celestial = pal.family == "celestial"
+        val metal = if (celestial) pal.goldText else pal.gold
+        val rimAlpha = if (celestial) 0.52f else if (pal.dark) 0.5f else 0.7f
+        c.drawArc(outer, 180f, 180f, false, stroke(Palette.withAlpha(metal, rimAlpha), 1f))
+        if (ornate) {
+            val r2 = r * 0.56f
+            val innerAlpha = if (celestial) 0.27f else if (pal.dark) 0.28f else 0.4f
+            c.drawArc(RectF(cx - r2, cy - r2, cx + r2, cy + r2), 180f, 180f, false,
+                stroke(Palette.withAlpha(metal, innerAlpha), if (celestial) 0.75f else 1f))
+        }
+        return metal
     }
 }
 

@@ -4,9 +4,9 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ThemeProvider, useTheme } from "styled-components";
 import useSettingStore from "@/store/useSettingStore";
 import { usePickTheme, useThemeFamily } from "@/styles/themed";
-import { useWidgetPreviewDesktop, rgbLuminance } from "@/hooks/useWidgetPreviewDesktop";
+import { useWidgetPreviewDesktop, rgbLuminance, type WidgetPreviewSize } from "@/hooks/useWidgetPreviewDesktop";
 import type { WidgetBgSettings } from "@/lib/widgetBackground";
-import type { WidgetAppearance, WidgetEffect } from "@/lib/widgetAppearance";
+import type { WidgetAppearance } from "@/lib/widgetAppearance";
 import type { WidgetKind } from "@/lib/widgetKinds";
 import WidgetContent from "./WidgetContent";
 import WidgetLayers, { WIDGET_SHELLS } from "./WidgetLayers";
@@ -14,6 +14,7 @@ import { GLASS_MARGIN } from "./celestial/CelestialWidgetShell.styles";
 import { WidgetMotionContext } from "./WidgetMotionContext";
 import { WidgetPreviewContext } from "./WidgetPreviewContext";
 import { MotionRules } from "./WidgetAppearance.styles";
+import type { MotionLevel } from "@/lib/presentationMotion";
 
 const SAMPLE_WALLPAPER = "data:image/svg+xml," + encodeURIComponent(`
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" preserveAspectRatio="none">
@@ -31,19 +32,19 @@ const SAMPLE_WALLPAPER = "data:image/svg+xml," + encodeURIComponent(`
 `);
 
 export default function WidgetAppearancePreview({
-    kind, label, appearance, bg, compact, previewMotion,
+    kind, label, appearance, bg, size, previewMotion,
 }: {
     kind: WidgetKind;
     label: string;
     appearance: WidgetAppearance;
     bg: WidgetBgSettings;
-    compact: boolean;
-    previewMotion?: Exclude<WidgetEffect, "inherit">;
+    size?: WidgetPreviewSize;
+    previewMotion?: MotionLevel;
 }) {
     const ko = useSettingStore(state => state.locale) === "ko";
     const theme = useTheme();
     const S = usePickTheme(WIDGET_SHELLS);
-    const desktop = useWidgetPreviewDesktop(kind, compact);
+    const desktop = useWidgetPreviewDesktop(kind, size);
     const stage = useRef<HTMLDivElement>(null);
     const [scale, setScale] = useState(0);
     const [inspect, setInspect] = useState(false);

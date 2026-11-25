@@ -8,6 +8,16 @@ export const Input = styled.input`
     min-width: 0; flex: 1; padding: 6px 0; border: none; background: transparent;
     color: ${p => p.theme.colors.text}; font: inherit;
     &::placeholder { color: ${p => p.theme.colors.textSecondary}; }
+    &[data-celestial-quick-search] {
+        padding-inline:8px;
+        border:1px solid ${p => p.theme.colors.border};
+        border-radius:5px;
+    }
+    &&&[data-celestial-quick-search]:focus {
+        border-color:var(--control-ink);
+        outline:1px solid var(--control-ink);
+        outline-offset:-1px;
+    }
 `;
 export const Close = styled.button`
     display: grid; place-items: center; flex-shrink: 0; width: 36px; height: 36px;

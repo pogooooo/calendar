@@ -61,8 +61,14 @@ class WidgetPainter(
 
     // 그림의 해상도. 너무 크면 런처에 넘길 때 무겁다 — 2x 면 충분히 또렷하다
     private val density: Float = min(context.resources.displayMetrics.density, 2.0f)
-    private val style: WidgetStyle = if (presentationStyle == "ornate") WidgetStyle.of(context, pal.family, density)
-        else SimpleStyle(context, density, pal.family)
+    private val celestial = pal.family == "celestial"
+    private val ornate = presentationStyle == "ornate"
+    private val style: WidgetStyle = when {
+        celestial -> CelestialStyle(context, density, ornate)
+        ornate -> WidgetStyle.of(context, pal.family, density)
+        else -> SimpleStyle(context, density, pal.family)
+    }
+    private val readingAccent = if (celestial) pal.goldText else pal.gold
     /** 제목·머리글 글꼴 — 갈래의 것 */
     private val orbit: Typeface = style.display
     private val sans: Typeface = Typeface.SANS_SERIF
@@ -135,8 +141,8 @@ class WidgetPainter(
             textSize = dp(sizeDp); this.color = color; typeface = tf; letterSpacing = spacingEm
             if (tabular) fontFeatureSettings = "tnum"
         }
-    private fun title() = text(11.5f, if (presentationStyle == "ornate") pal.goldText else pal.ink, orbit, style.titleSpacing)
-    private fun sub() = text(10f, pal.muted, orbit, style.titleSpacing * 0.7f, tabular = true)
+    private fun title() = text(if (celestial) 12f else 11.5f, if (ornate && !celestial) pal.goldText else pal.ink, orbit, style.titleSpacing)
+    private fun sub() = text(10f, pal.muted, if (celestial) sans else orbit, style.titleSpacing * 0.7f, tabular = true)
     private fun kicker() = text(9.5f, pal.goldText, orbit, style.titleSpacing * 1.2f)
     private fun body(color: Int = pal.ink) = text(12.5f, color)
     private fun side(color: Int = pal.muted) = text(11f, color, tabular = true)
@@ -155,13 +161,14 @@ class WidgetPainter(
         style.bullet(c, cx, cy, rDp, color, filled, strokeDp)
 
     /** 진행 실선: 바탕선 + 금빛 채움 + 끝 표식 */
-    private fun rail(c: Canvas, x0: Float, x1: Float, y: Float, frac: Float, mark: Boolean = true) {
+    private fun rail(c: Canvas, x0: Float, x1: Float, y: Float, frac: Float, mark: Boolean = true,
+                     active: Int = readingAccent, widthDp: Float = if (celestial) 1.45f else 1.2f) {
         c.drawLine(x0, y, x1, y, stroke(pal.line, 1f))
         val f = frac.coerceIn(0f, 1f)
         if (f <= 0f) return
         val xe = x0 + (x1 - x0) * f
-        c.drawLine(x0, y, xe, y, stroke(pal.gold, 1.2f))
-        if (mark) bullet(c, xe, y, 3.5f, pal.gold, true)
+        c.drawLine(x0, y, xe, y, stroke(active, widthDp))
+        if (mark) bullet(c, xe, y, 3.5f, active, true)
     }
 
     /** 바탕 — 갈래의 붓이 그린다 */
@@ -174,7 +181,7 @@ class WidgetPainter(
      */
     private fun dayArrows(c: Canvas, w: Float) {
         val cy = dp(PAD_T) + dp(9f)
-        val color = if (steps == 0) Palette.withAlpha(pal.muted, 0.8f) else pal.gold
+        val color = if (steps == 0) Palette.withAlpha(pal.muted, 0.8f) else readingAccent
         style.dayArrow(c, dp(PAD_X) - dp(2f), cy, ARROW_W.toFloat(), color, false)
         style.dayArrow(c, w - dp(PAD_X) + dp(2f), cy, ARROW_W.toFloat(), color, true)
     }
@@ -208,6 +215,7 @@ class WidgetPainter(
         if (divider) {
             val y = top + dp(HDR_H) - dp(4f)
             c.drawLine(dp(PAD_X), y, w - dp(PAD_X), y, stroke(pal.line, 1f))
+            if (celestial) c.drawLine(dp(PAD_X), y, dp(PAD_X + 13), y, stroke(Palette.withAlpha(readingAccent, 0.65f), 1f))
         }
         return top + dp(HDR_H)
     }
@@ -380,9 +388,9 @@ class WidgetPainter(
             if (currentDate && ch.doneToday) style.glyph(c, dp(PAD_X) + bp.measureText(txt) + dp(4f), cy, 10f, pal.gold)
             // 진행선
             val by = top + dp(ROW_H) - dp(4f)
-            c.drawLine(dp(PAD_X), by, w - dp(PAD_X), by, stroke(pal.line, 1f))
             val frac = if (ch.target != null && ch.target > 0) (ch.count.toFloat() / ch.target).coerceIn(0f, 1f) else 1f
-            c.drawLine(dp(PAD_X), by, dp(PAD_X) + (w - dp(2 * PAD_X)) * frac, by, stroke(if (ch.target != null) pal.gold else Palette.withAlpha(pal.gold, 0.35f), 2f))
+            val active = if (ch.target != null) readingAccent else Palette.withAlpha(readingAccent, 0.35f)
+            rail(c, dp(PAD_X), w - dp(PAD_X), by, frac, mark = false, active = active, widthDp = if (celestial) 1.45f else 2f)
             links += "cronos://challenge"
         }
         return Painted(bmp, rowLinks = links, overlay = Overlay.ROWS)
@@ -413,9 +421,9 @@ class WidgetPainter(
         val a = PI - PI * today / days
         val nr = R - dp(18f)
         val nx = cx + (cos(a) * nr).toFloat(); val ny = cy - (sin(a) * nr).toFloat()
-        c.drawLine(cx, cy, nx, ny, stroke(pal.gold, 1.2f))
-        bullet(c, nx, ny, 4f, pal.gold, false, 1.2f)
-        bullet(c, cx, cy, 4f, pal.gold, true)
+        c.drawLine(cx, cy, nx, ny, stroke(readingAccent, 1.2f))
+        bullet(c, nx, ny, 4f, readingAccent, false, 1.2f)
+        bullet(c, cx, cy, 4f, readingAccent, true)
         val ep = text(8f, pal.muted, style.numeral, 0f, tabular = true)
         c.drawText("1", cx - R - dp(2f), cy + dp(3f), ep)
         drawRight(c, "$days", cx + R + dp(3f), cy + dp(3f), ep)
@@ -461,7 +469,8 @@ class WidgetPainter(
             val isToday = dayKeys[i] == todayKey
             val weekend = i == 0 || i == 6
             drawCenter(c, dayNames[i], cx, baseline(names, top + dp(8f)), names)
-            val np = text(13f, if (isToday) pal.goldText else if (weekend) pal.weekend else pal.ink, tabular = true)
+            val np = text(13f, if (isToday) pal.goldText else if (weekend) pal.weekend else pal.ink,
+                if (celestial && isToday) style.numeral else sans, tabular = true)
             val ny = top + dp(8f) + (bottom - dp(12f) - top - dp(8f)) / 2f
             val cal = Calendar.getInstance().apply { timeInMillis = start.timeInMillis + i * Snapshot.DAY_MS }
             if (isToday) style.todayMark(c, cx, ny, 11f, pal)
@@ -508,6 +517,11 @@ class WidgetPainter(
         val cellH = (h - dp(PAD_B) - gridTop) / rowsNeeded
         val todayKey = s.todayKey(now)
         val np = text(11.5f, pal.ink, tabular = true)
+        val todayNumber = TextPaint(np).apply {
+            if (pal.family != "gem") color = pal.goldText
+            if (celestial) typeface = this@WidgetPainter.style.numeral
+        }
+        val weekendNumber = TextPaint(np).apply { color = pal.weekend }
         // 칸이 넉넉하면(크게 놓은 위젯) 점 대신 일정 이름을 줄줄이 적는다. 예전에는 크기와 상관없이 점 세 개뿐이라
         // 위젯을 크게 놓아도 무엇이 있는지 보려면 눌러서 앱을 열어야 했다. 들어가는 만큼 적고 넘치면 "+N".
         val lineH = dp(MONTH_LINE_H)
@@ -527,7 +541,11 @@ class WidgetPainter(
             val key = String.format(java.util.Locale.US, "%04d-%02d-%02d", year, cal.get(Calendar.MONTH) + 1, d)
             val isToday = key == todayKey
             val weekend = col == 0 || col == 6
-            val p = TextPaint(np).apply { color = if (isToday && pal.family != "gem") pal.goldText else if (weekend && !isToday) pal.weekend else pal.ink }
+            val p = when {
+                isToday -> todayNumber
+                weekend -> weekendNumber
+                else -> np
+            }
             if (isToday) style.todayMark(c, cx, cy, 9.5f, pal)
             drawCenter(c, "$d", cx, baseline(p, cy), p)
             val items = monthTodos.filter { it.spans(key) }
@@ -711,12 +729,13 @@ class WidgetPainter(
         val cx = if (wide) dp(PAD_X) + rOut + dp(2f) else w / 2f
         val cy = if (wide) h / 2f else dp(PAD_T) + rOut + dp(2f)
         fun ring(r: Float, widthDp: Float, frac: Float, baseAlpha: Float) {
-            c.drawCircle(cx, cy, r, stroke(Palette.withAlpha(pal.gold, baseAlpha), widthDp))
-            if (frac > 0f) c.drawArc(RectF(cx - r, cy - r, cx + r, cy + r), -90f, 360f * frac, false, stroke(pal.gold, widthDp))
+            c.drawCircle(cx, cy, r, stroke(Palette.withAlpha(readingAccent, baseAlpha), widthDp))
+            if (frac > 0f) c.drawArc(RectF(cx - r, cy - r, cx + r, cy + r), -90f, 360f * frac, false, stroke(readingAccent, widthDp))
         }
         ring(rOut, 1.5f, dayFrac, 0.25f)
         ring(rOut * 0.74f, 3f, doneFrac, 0.2f)
-        bullet(c, cx, cy, 4f, pal.gold, true)
+        if (celestial) style.glyph(c, cx - dp(3.5f), cy, 7f, readingAccent)
+        else bullet(c, cx, cy, 4f, readingAccent, true)
         val kp = text(9f, pal.goldText, orbit, 0.2f)
         val vp = text(16f, pal.ink, sansMedium, tabular = true)
         val mp = text(10f, pal.muted, tabular = true)
@@ -739,6 +758,24 @@ class WidgetPainter(
         val key = s.todayKey(now)
         val left = s.todos.count { it.spans(key) && !it.doneOn(key) }
         val cy = h / 2f
+        if (celestial) {
+            val cx = dp(PAD_X + 9)
+            val line = stroke(readingAccent, 1f).apply { strokeCap = Paint.Cap.ROUND }
+            c.drawCircle(cx, cy, dp(8f), line)
+            c.drawLine(cx - dp(3f), cy, cx + dp(3f), cy, line)
+            c.drawLine(cx, cy - dp(3f), cx, cy + dp(3f), line)
+            val x = cx + dp(17f)
+            var right = w - dp(PAD_X)
+            if (w >= dp(200f)) {
+                val hint = "${s.label("todayLeft")} $left"
+                val hp = sub()
+                drawRight(c, hint, right, baseline(hp, cy), hp)
+                right -= hp.measureText(hint) + dp(12f)
+            }
+            val tp = title()
+            c.drawText(ellipsize(s.label("quickAdd"), tp, right - x), x, baseline(tp, cy), tp)
+            return Painted(bmp)
+        }
         val plus = dp(30f)
         val px = w - dp(PAD_X) - plus
         c.drawRoundRect(RectF(px, cy - plus / 2f, px + plus, cy + plus / 2f), dp(8f), dp(8f), stroke(pal.gold, 1f))
@@ -808,9 +845,8 @@ class WidgetPainter(
             val bp = body()
             c.drawText(ellipsize(p.title, bp, right - dp(PAD_X)), dp(PAD_X), baseline(bp, cy), bp)
             val by = top + dp(ROW_H) - dp(4f)
-            c.drawLine(dp(PAD_X), by, w - dp(PAD_X), by, stroke(pal.line, 1f))
             val frac = if (p.total > 0) (p.done.toFloat() / p.total).coerceIn(0f, 1f) else 0f
-            if (frac > 0f) c.drawLine(dp(PAD_X), by, dp(PAD_X) + (w - dp(2 * PAD_X)) * frac, by, stroke(pal.gold, 2f))
+            rail(c, dp(PAD_X), w - dp(PAD_X), by, frac, mark = false, widthDp = if (celestial) 1.45f else 2f)
             links += "cronos://project/${p.id}"
         }
         return Painted(bmp, rowLinks = links, overlay = Overlay.ROWS)

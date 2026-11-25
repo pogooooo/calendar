@@ -20,7 +20,7 @@ export const WIDGET_SHELLS: ThemeImpls<typeof Celestial> = {
 export type WidgetWallpaper = { url: string; mw: number; mh: number };
 
 export default function WidgetLayers({
-    kind, bg, appearance, wallpaper, wallpaperTransform, monitorRef, locked, hideCharm,
+    kind, bg, appearance, wallpaper, wallpaperTransform, monitorRef, locked,
 }: {
     kind: WidgetKind;
     bg: WidgetBgSettings;
@@ -29,7 +29,6 @@ export default function WidgetLayers({
     wallpaperTransform?: string;
     monitorRef?: Ref<HTMLDivElement>;
     locked: boolean;
-    hideCharm?: boolean;
 }) {
     const S = usePickTheme(WIDGET_SHELLS);
     const theme = useTheme();
@@ -48,9 +47,9 @@ export default function WidgetLayers({
             {bg.mode === "glass" && bg.gloss && <S.GlossOverlay />}
         </S.BackgroundSurface>
         {appearance.design === "ornate" && <>
-            {!hideCharm && <div aria-hidden style={{ position: "absolute", inset: 0, pointerEvents: "none", opacity: appearance.intensity }}>
+            <div aria-hidden style={{ position: "absolute", inset: 0, pointerEvents: "none", opacity: appearance.intensity }}>
                 <WidgetCharm locked={locked} />
-            </div>}
+            </div>
             <WidgetDecor kind={kind} locked={locked} intensity={appearance.intensity} />
         </>}
     </>;

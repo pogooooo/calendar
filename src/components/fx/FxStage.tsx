@@ -19,7 +19,7 @@ import { useEffect, useLayoutEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { useTheme } from "styled-components";
 import { fx, type FxEvent, type FxKind, type FxRect } from "@/lib/fx";
-import { usePickTheme } from "@/styles/themed";
+import { usePickTheme, useThemeFamily } from "@/styles/themed";
 import useThemeMotion from "@/hooks/useThemeMotion";
 import { useSimpleMobileAppearance } from '@/hooks/useMobilePresentation';
 import usePresentation from '@/hooks/usePresentation';
@@ -96,6 +96,8 @@ export default function FxStage() {
     const load = pathname?.startsWith('/calendar') ? calendarLoad : baseLoad;
     const simpleMobile = useSimpleMobileAppearance();
     const presentation = usePresentation();
+    const family = useThemeFamily();
+    const outlineStickers = presentation === "mobile-app" && family === "celestial";
     const suppressFx = isWidgetWindow() || simpleMobile || presentation === "desktop-widget";
 
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -290,6 +292,7 @@ export default function FxStage() {
             if (raw.kind === "theme") { welcome.current = performance.now(); return; }
             if (motionRef.current === "gentle" && raw.kind === "page") return;
             buzz(raw);
+            if (outlineStickers && raw.kind === "sticker") return;
             const e = place(raw);
             // 로그인·가입: 다음 화면이 뜬 뒤에 인사한다 (화면이 안 바뀌면 조금 뒤에 그 자리에서)
             if (e.kind === "welcome") {
@@ -302,7 +305,7 @@ export default function FxStage() {
             void play(e);
         });
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [suppressFx]);
+    }, [suppressFx, outlineStickers]);
 
     // 화면을 옮김 (처음 뜰 때는 빼고). 로그인 직후의 옮김은 효과 대신 인사를 한다
     const firstPath = useRef(true);

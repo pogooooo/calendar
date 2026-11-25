@@ -13,10 +13,10 @@ import { Settings2, Lock, X } from "lucide-react";
 
 import type { WidgetKind } from "@/store/useWidgetStore";
 import { mirrorWidgetStateToFile } from "@/lib/widgetStateFile";
-import WidgetAppearanceSettings from './WidgetAppearanceSettings';
-import {MotionRules,Overlay} from './WidgetAppearance.styles';
+import {MotionRules} from './WidgetAppearance.styles';
 import {WidgetMotionContext} from './WidgetMotionContext';
 import useThemeMotion from '@/hooks/useThemeMotion';
+import useWidgetAppearanceWindow from '@/hooks/useWidgetAppearanceWindow';
 import {normalizeWidgetAppearance,resolveWidgetEffect} from '@/lib/widgetAppearance';
 import {normalizeWidgetBackground} from '@/lib/widgetBackground';
 import WidgetLayers, { WIDGET_SHELLS } from "./WidgetLayers";
@@ -83,10 +83,7 @@ export default function WidgetShell({ kind, title, children, backdropLuminance }
     const appearance=normalizeWidgetAppearance(savedAppearance);
     const appMotion=useThemeMotion();
     const widgetMotion=resolveWidgetEffect(appMotion,appearance.effect);
-    const settingsButton=useRef<HTMLButtonElement>(null);
-    const settingsPane=useRef<HTMLDivElement>(null);
-
-    const [showSettings, setShowSettings] = useState(false);
+    const openAppearance = useWidgetAppearanceWindow();
     const [locked, setLocked] = useState(false);
     const [wallpaper, setWallpaper] = useState({ url: "", mw: 1920, mh: 1080 });
     // 벽지를 읽어 정한 글자색. 아직 못 읽었으면 null 이고, 그때는 아래 baseline 을 쓴다.
@@ -180,7 +177,6 @@ export default function WidgetShell({ kind, title, children, backdropLuminance }
 
     const handleLock = useCallback(() => {
         setLocked(true);
-        setShowSettings(false);
         applyLocked(kind, true);
     }, [kind]);
 
@@ -380,14 +376,6 @@ export default function WidgetShell({ kind, title, children, backdropLuminance }
         }
     }, [locked, handleUnlock]);
 
-    const closeSettings=useCallback(()=>{setShowSettings(false);requestAnimationFrame(()=>settingsButton.current?.focus());},[]);
-    useEffect(()=>{
-        if(!showSettings)return;
-        settingsPane.current?.focus({preventScroll:true});
-        const close=(event:KeyboardEvent)=>{if(event.key==='Escape'){event.preventDefault();closeSettings();}};
-        window.addEventListener('keydown',close);
-        return()=>window.removeEventListener('keydown',close);
-    },[showSettings,closeSettings]);
     return (
         <WidgetMotionContext.Provider value={appearance.effect}><MotionRules><S.Shell
             style={{background:'transparent',borderColor:'transparent',boxShadow:'none'}}
@@ -399,7 +387,7 @@ export default function WidgetShell({ kind, title, children, backdropLuminance }
         >
             <ThemeProvider theme={widgetTheme}>
                 <WidgetLayers kind={kind} bg={bg} appearance={appearance} wallpaper={wallpaper}
-                    monitorRef={monitorRef} locked={locked} hideCharm={showSettings} />
+                    monitorRef={monitorRef} locked={locked} />
 
                 {!locked && (
                     <S.TopBar onMouseDown={startDrag}>
@@ -411,15 +399,11 @@ export default function WidgetShell({ kind, title, children, backdropLuminance }
                         >
                             <S.Control
                                 type="button"
-                                ref={settingsButton}
-                                $active={showSettings}
                                 title={t.widgetShell.appearance}
                                 aria-label={t.widgetShell.appearance}
-                                aria-expanded={showSettings}
-                                onClick={() => setShowSettings((v) => !v)}
+                                onClick={() => void openAppearance(kind, true)}
                             ><Settings2 size={14} /></S.Control>
-                            {!showSettings&&<S.Control type="button" title={t.widgetShell.lock} aria-label={t.widgetShell.lock} onClick={handleLock}><Lock size={14} /></S.Control>}
-                            {!showSettings&&
+                            <S.Control type="button" title={t.widgetShell.lock} aria-label={t.widgetShell.lock} onClick={handleLock}><Lock size={14} /></S.Control>
                             <S.Control
                                 type="button"
                                 $danger
@@ -430,26 +414,12 @@ export default function WidgetShell({ kind, title, children, backdropLuminance }
                                     await mirrorWidgetStateToFile();
                                     closeWindow();
                                 }}
-                            ><X size={14} /></S.Control>}
+                            ><X size={14} /></S.Control>
                         </S.BtnGroup>
                     </S.TopBar>
                 )}
 
-                {!locked && showSettings && (
-                    <ThemeProvider theme={theme}><Overlay ref={settingsPane} data-settings-open role="dialog" aria-modal="true" tabIndex={-1} aria-label={t.widgetShell.appearance} onKeyDown={(event)=>{
-                        if(event.key!=='Tab') return;
-                        const pane=settingsPane.current;
-                        const controls=Array.from(pane?.querySelectorAll<HTMLElement>('button:not(:disabled),input:not(:disabled),[tabindex="0"]')??[]).filter(e=>e.getClientRects().length>0);
-                        const first=controls[0],last=controls[controls.length-1];
-                        if(!first) {event.preventDefault();return;}
-                        if(event.shiftKey && (document.activeElement===first || document.activeElement===pane)) {event.preventDefault();last.focus();}
-                        else if(!event.shiftKey && (document.activeElement===last || document.activeElement===pane)) {event.preventDefault();first.focus();}
-                    }}>
-                        <WidgetAppearanceSettings kind={kind} title={title} compact onDone={closeSettings}/>
-                    </Overlay></ThemeProvider>
-                )}
-
-                <S.Content inert={showSettings} ref={contentRef} $kind={kind} $locked={locked}>
+                <S.Content ref={contentRef} $kind={kind} $locked={locked}>
                     {children}
                 </S.Content>
             </ThemeProvider>

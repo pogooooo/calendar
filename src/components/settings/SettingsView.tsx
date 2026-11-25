@@ -4,9 +4,8 @@ import * as React from "react";
 import LocaleSelect from "@/components/LocaleSelect";
 import TimezoneSelect from "@/components/TimezoneSelect";
 import WidgetPreview from "./celestial/WidgetPreview";
-import WidgetAppearanceSettings from '@/components/widget/WidgetAppearanceSettings';
-import {isWidgetKind,type WidgetKind} from '@/lib/widgetKinds';
-import BaseModal from '@/components/modal/baseModal/BaseModal';
+import useWidgetAppearanceWindow from '@/hooks/useWidgetAppearanceWindow';
+import {isWidgetKind} from '@/lib/widgetKinds';
 import Backdrop from "./parts/Backdrop";
 import ThemePicker from "./parts/ThemePicker";
 import type { SettingsThemeProps } from "./SettingsPage";
@@ -77,7 +76,7 @@ export default function SettingsView({
     const L = usePickTheme(LAYOUTS);
     const [requestedTab, setTab] = React.useState<TabId>("look");
     const tab = requestedTab === "widget" && !showWidgets ? "look" : requestedTab;
-    const [editingWidget,setEditingWidget]=React.useState<WidgetKind|null>(null);
+    const openWidgetAppearance = useWidgetAppearanceWindow();
     const nativeMobile = useMobilePresentation();
     const mobileAppearance = useSettingStore(s => s.mobileAppearance);
     const setMobileAppearance = useSettingStore(s => s.setMobileAppearance);
@@ -382,7 +381,7 @@ export default function SettingsView({
                                                         {t.widget.close}
                                                     </S.FormButton>
                                                 </L.WidgetActions>
-                                                {isWidgetKind(kind)&&<S.FormButton type="button" $variant="default" aria-label={`${label} · ${t.widgetShell.appearance}`} onClick={()=>setEditingWidget(kind)}>{t.widgetShell.appearance}</S.FormButton>}
+                                                {isWidgetKind(kind)&&<S.FormButton type="button" $variant="default" aria-label={`${label} · ${t.widgetShell.appearance}`} onClick={()=>void openWidgetAppearance(kind)}>{t.widgetShell.appearance}</S.FormButton>}
                                             </L.WidgetBody>
                                         </L.WidgetCard>
                                     ))}
@@ -612,9 +611,6 @@ export default function SettingsView({
                     </L.PaneBody>
                 </L.Pane>
             </L.Frame>
-            <BaseModal isOpen={editingWidget!==null} onClose={()=>setEditingWidget(null)} maxWidth="860px" ariaLabel={`${t.widgetShell.appearance} · ${widgetList.find(w=>w.kind===editingWidget)?.label??''}`}>
-                {editingWidget&&<WidgetAppearanceSettings key={editingWidget} kind={editingWidget} title={widgetList.find(w=>w.kind===editingWidget)?.label} onDone={()=>setEditingWidget(null)}/>}
-            </BaseModal>
         </L.Shell>
     );
 }

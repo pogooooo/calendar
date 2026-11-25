@@ -26,6 +26,4 @@ export const Surface=styled(Base)`
  && .context-note{border:1px solid ${p=>p.theme.colors.primary}20;border-radius:10px;background:${p=>p.theme.colors.primary}06;}
  && button[role=switch]{border-color:transparent;background:${p=>p.theme.colors.primary}08;}
  && .motion-summary{border-top:0;border-radius:10px;padding:12px 14px;margin-bottom:12px;background:${p=>p.theme.colors.primary}08;}
- &&[data-compact] .section-tabs{margin:8px 10px 0;padding:3px;}
- &&[data-compact] .section-tabs button{min-height:34px;}
 `;

@@ -1,10 +1,12 @@
 "use client";
 
 import * as React from "react";
-import { useEffect, useRef } from "react";
+import { useLayoutEffect, useRef } from "react";
 import gsap from "gsap";
 import { useTheme } from "styled-components";
+import { controlInk } from "@/styles/celestial/presentation";
 import { withAlpha } from "@/styles/color";
+import useMobilePresentation from "@/hooks/useMobilePresentation";
 import useThemeMotion from '@/hooks/useThemeMotion';
 
 export const CrescentMoonAndLineIndicator = ({ className = "" }: { width?: string; height?: string; className?: string }) => (
@@ -30,61 +32,64 @@ const CIRCLE_PATH = "M48.5 36.6402C46.5499 40.7118 43.5434 44.1857 39.7939 46.69
 
 const DynamicStickerInner = ({ isFilled }: { isFilled: boolean, idx: number }) => {
     const containerRef = useRef<HTMLDivElement>(null);
-    const isFirstRender = useRef(true);
-    // 빛무리도 팔레트를 따른다. 예전에는 금색이 박혀 있어 새 테마에서도 금빛이 났다.
+    const previousFilled = useRef(isFilled);
     const theme = useTheme();
-    const primary = theme.colors.primary;
+    const mobile = useMobilePresentation();
     const motion = useThemeMotion();
+    const primary = theme.colors.primary;
+    const ink = mobile ? controlInk(theme) : primary;
 
-    useEffect(() => {
-        if (!containerRef.current) return;
-        const glow = (a: number) => withAlpha(primary, a);
+    useLayoutEffect(() => {
+        const container = containerRef.current;
+        const starPath = container?.querySelector("path:nth-of-type(1)");
+        const moonPath = container?.querySelector("path:nth-of-type(2)");
+        if (!container || !starPath || !moonPath) return;
 
-        const starPath = containerRef.current.querySelector("path:nth-of-type(1)");
-        const crescentPath = containerRef.current.querySelector("path:nth-of-type(2)");
+        const changed = previousFilled.current !== isFilled;
+        previousFilled.current = isFilled;
+        const star = isFilled ? INNER_STAR_PATH : INNER_LINE_PATH;
+        const moon = isFilled ? CIRCLE_PATH : CRESCENT_PATH;
+        const filter = isFilled
+            ? `drop-shadow(0 0 6px ${withAlpha(primary, 0.8)}) drop-shadow(0 0 2px ${withAlpha(primary, 1)})`
+            : `drop-shadow(0 0 0px ${withAlpha(primary, 0)})`;
 
-        if (!starPath || !crescentPath) return;
-
-        gsap.killTweensOf([starPath,crescentPath,containerRef.current]);
-        if (isFirstRender.current || motion === 'off') {
-            gsap.set(starPath, { attr: { d: isFilled ? INNER_STAR_PATH : INNER_LINE_PATH } });
-            gsap.set(crescentPath, { attr: { d: isFilled ? CIRCLE_PATH : CRESCENT_PATH } });
-            gsap.set(containerRef.current, {
-                filter: isFilled
-                    ? `drop-shadow(0 0 6px ${glow(0.8)}) drop-shadow(0 0 2px ${glow(1)})`
-                    : `drop-shadow(0 0 0px ${glow(0)})`
-            });
-            isFirstRender.current = false;
+        if (mobile) container.style.removeProperty("filter");
+        if (!changed || motion === "off") {
+            starPath.setAttribute("d", star);
+            moonPath.setAttribute("d", moon);
+            if (!mobile) container.style.filter = filter;
             return;
         }
 
-        gsap.to(starPath, {
-            attr: { d: isFilled ? INNER_STAR_PATH : INNER_LINE_PATH },
-            duration: 0.5,
-            ease: "power2.inOut"
-        });
+        const duration = mobile && motion === "gentle" ? 0.34 : 0.5;
+        const timeline = gsap.timeline({ defaults: { duration, ease: "power2.inOut" } });
+        timeline.to(starPath, { attr: { d: star } }, 0);
+        timeline.to(moonPath, { attr: { d: moon } }, 0);
 
-        gsap.to(crescentPath, {
-            attr: { d: isFilled ? CIRCLE_PATH : CRESCENT_PATH },
-            duration: 0.5,
-            ease: "power2.inOut"
-        });
+        const clearHighlight = () => {
+            moonPath.setAttribute("stroke", "currentColor");
+            moonPath.removeAttribute("stroke-width");
+        };
+        if (mobile && isFilled) {
+            const peak = duration * 0.3;
+            timeline.fromTo(moonPath, { attr: { stroke: ink, "stroke-width": 1 } }, {
+                attr: { stroke: primary, "stroke-width": 2.1 }, duration: peak,
+            }, 0);
+            timeline.to(moonPath, {
+                attr: { stroke: ink, "stroke-width": 1 }, duration: duration - peak, onComplete: clearHighlight,
+            }, peak);
+        } else if (!mobile) {
+            timeline.to(container, { filter }, 0);
+        }
 
-        gsap.to(containerRef.current, {
-            filter: isFilled
-                ? `drop-shadow(0 0 6px ${glow(0.8)}) drop-shadow(0 0 2px ${glow(1)})`
-                : `drop-shadow(0 0 0px ${glow(0)})`,
-            duration: 0.5,
-            ease: "power2.inOut"
-        });
-
-        const targets=[starPath,crescentPath,containerRef.current];
-        return ()=>{gsap.killTweensOf(targets);};
-
-    }, [isFilled, primary, motion]);
+        return () => {
+            timeline.kill();
+            if (mobile) clearHighlight();
+        };
+    }, [isFilled, primary, ink, mobile, motion]);
 
     return (
-        <div ref={containerRef} style={{ width: "100%", height: "100%", color: theme.colors.primary }}>
+        <div ref={containerRef} style={{ width: "100%", height: "100%", color: ink }}>
             <CrescentMoonAndLineIndicator width="100%" height="100%" />
         </div>
     );

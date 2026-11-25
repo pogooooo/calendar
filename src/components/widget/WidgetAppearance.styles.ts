@@ -1,16 +1,9 @@
-import styled,{createGlobalStyle} from 'styled-components';
+import styled from 'styled-components';
 import {inkOnFill} from '@/styles/color';
 
-/** Only this settings dialog gets the inspector layout; other app modals are unchanged. */
-export const DialogLayout=createGlobalStyle`
- div:has(> [role=dialog] > [data-widget-appearance]:not([data-compact])){
-    justify-content:center !important;align-items:center !important;padding:16px !important;
- }
- [role=dialog]:has(> [data-widget-appearance]:not([data-compact])){
-    width:min(860px,calc(100vw - 32px)) !important;max-width:860px !important;
-    height:min(680px,calc(100dvh - 100px));max-height:calc(100dvh - 80px);padding:0;overflow:hidden;
- }
- @media(max-height:520px){[role=dialog]:has(> [data-widget-appearance]:not([data-compact])){height:calc(100dvh - 20px);max-height:calc(100dvh - 16px);}}
+export const SettingsWindow=styled.main`
+ display:flex;width:100%;height:100dvh;min-width:0;min-height:0;overflow:hidden;
+ background:${p=>p.theme.colors.surface};
 `;
 
 export const Surface=styled.section`
@@ -84,34 +77,22 @@ export const Surface=styled.section`
  .preview-wallpaper{position:relative;overflow:hidden;background:#263c50;}
  .preview-caption{display:flex;justify-content:space-between;gap:10px;margin-top:7px;font-size:.65rem;font-variant-numeric:tabular-nums;color:${p=>p.theme.colors.textSecondary};}
  .preview-note{font-size:.68rem;margin-top:8px;}
- &[data-compact] .settings-head{padding:10px 12px;min-height:58px;gap:8px;}&[data-compact] h3{font-size:.95rem;}&[data-compact] .eyebrow{font-size:.6rem;}&[data-compact] .scope{font-size:.6rem;padding:3px 6px;}
- &[data-compact] .appearance-preview{padding:8px 12px;}
- &[data-compact] .preview-heading{margin-bottom:5px;}
- &[data-compact] .preview-caption,&[data-compact] .preview-note{display:none;}
- &[data-compact] .sample{height:clamp(76px, 24dvh, 178px);}
- &[data-compact] .settings-controls{padding:14px;}&[data-compact] .section-tabs{padding:0 8px;}&[data-compact] .section-tabs button{min-height:40px;}
- &[data-compact] .section-tabs small{display:none;}&[data-compact] .field-help{font-size:.63rem;}
- &[data-compact] .save-status span{max-width:6em;line-height:1.4;}
- &[data-compact] .quick-looks small{display:none;}&[data-compact] .quick-looks button{min-height:38px;padding:7px 5px;}&[data-compact] fieldset{margin-bottom:16px;}&[data-compact] legend{margin-bottom:8px;}
- &[data-compact] .settings-foot{padding:8px 10px;min-height:54px;gap:6px;}&[data-compact] .settings-foot button{padding:7px 9px;font-size:.72rem;}&[data-compact] .save-status{font-size:.62rem;}
  @container widget-appearance (min-width:680px){
-    .settings-workspace{display:grid;grid-template-columns:minmax(260px,.9fr) minmax(330px,1.1fr);}
-    .appearance-preview{display:flex;flex-direction:column;min-height:0;padding:26px 22px;border-right:1px solid ${p=>p.theme.colors.border};border-bottom:0;}
+    .settings-workspace{display:grid;grid-template-columns:minmax(280px,1fr) minmax(370px,1.05fr);}
+    .appearance-preview{display:flex;flex-direction:column;min-height:0;padding:clamp(18px,3vw,48px);border-right:1px solid ${p=>p.theme.colors.border};border-bottom:0;}
     .appearance-preview>.sample{flex:1;min-height:0;}
     .preview-heading,.preview-caption,.preview-note{flex:none;}
     .preview-heading{margin-bottom:18px;}.preview-caption{margin-top:14px;}
-
+    .settings-controls{padding:24px clamp(20px,3vw,48px);}
  }
- @media(max-height:330px){
-    &[data-compact] .settings-workspace{overflow-y:auto;overscroll-behavior:contain;}
-    &[data-compact] .settings-editor{flex:none;}
-    &[data-compact] .settings-controls{flex:none;overflow:visible;}
+ @container widget-appearance (max-width:679px){
+    .settings-workspace{display:block;overflow-y:auto;overscroll-behavior:contain;}
+    .settings-editor,.settings-controls{display:block;overflow:visible;}
+    .appearance-preview>.sample{height:clamp(132px,35dvh,250px);}
  }
  @container widget-appearance (max-width:340px){.scope{display:none;}.settings-foot{gap:5px;padding-left:8px;padding-right:8px;}.settings-foot button{padding-left:8px;padding-right:8px;}.undo svg{display:none;}.option-cards{gap:6px;}.option-cards button{padding:10px;}.choices button{padding-left:6px;padding-right:6px;}}
- @media(max-height:360px){&[data-compact] .settings-head{min-height:44px;padding-top:6px;padding-bottom:6px;}&[data-compact] .eyebrow{display:none;}&[data-compact] .settings-foot{min-height:46px;padding-top:5px;padding-bottom:5px;}}
 `;
 
-export const Overlay=styled.div`position:absolute;inset:30px 0 0;z-index:5;overflow:hidden;display:flex;flex-direction:column;overscroll-behavior:contain;background:${p=>p.theme.colors.surface};`;
 export const MotionRules=styled.div`
  display:contents;
  [data-widget-motion=off] *,[data-widget-motion=off] *::before,[data-widget-motion=off] *::after{animation:none !important;transition:none !important;}
