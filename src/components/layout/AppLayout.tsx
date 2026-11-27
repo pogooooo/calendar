@@ -29,10 +29,10 @@ export default function MainLayout({ children, activePath }: MainLayoutProps) {
             <AppShell data-app-shell>
                 <MobileUsability />
                 <TitleBar />
-                <LayoutWrapper>
+                <LayoutWrapper data-app-layout>
                     <Sidebar activePath={activePath} />
                     <MainContent data-main-content>
-                        <PageTransition>
+                        <PageTransition activePath={activePath}>
                             {children}
                         </PageTransition>
                     </MainContent>

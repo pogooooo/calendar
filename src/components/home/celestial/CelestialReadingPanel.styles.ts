@@ -132,6 +132,7 @@ export const Frame = styled(ListCol)`
     @media (max-width: 768px) {
         min-height: 0;
         padding: 19px 16px 12px;
+        ${Scroll} { grid-template-columns: minmax(0, 1fr); }
         ${LunarDivider} { width: 9rem; padding-top: .625rem; }
     }
     @media (pointer: coarse) {

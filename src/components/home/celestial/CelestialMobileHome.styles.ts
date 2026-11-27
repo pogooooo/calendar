@@ -100,6 +100,7 @@ export const Empty = styled.p`margin:0; padding:10px 5px; color:${p=>p.theme.col
 
 export const Secondary = styled.div`
     display:grid;
+    grid-template-columns:minmax(0,1fr);
     gap:12px;
     margin-top:16px;
     min-width:0;

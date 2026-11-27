@@ -3,7 +3,6 @@
 import * as React from "react";
 import type { MonthArchProps } from "../parts/MonthArch";
 import { labelKey, localDateKey } from "@/lib/dateKey";
-import { useSwapMotion } from "@/hooks/useMotion";
 import { useT } from "@/i18n/useT";
 import useSettingStore from "@/store/useSettingStore";
 import * as S from "./MapleMonthArch.styles";
@@ -24,14 +23,11 @@ export default function MapleMonthArch({ daysInMonth, focusIdx, monthLoad, marks
     const t = useT();
     const locale = useSettingStore((s) => s.locale) === "en" ? "en" : "ko";
     const fmt = React.useMemo(() => ({
-        date: new Intl.DateTimeFormat(locale, { month: "long", day: "numeric" }),
+        month: new Intl.DateTimeFormat(locale, { year: "numeric", month: "long" }),
         weekday: new Intl.DateTimeFormat(locale, { weekday: "long" }),
     }), [locale]);
     // focus 는 칸 Date(고른 시간대의 날) — 오늘도 고른 시간대로 견준다
     const isToday = !!focus && labelKey(focus) === localDateKey(new Date());
-    // 날을 옮기면 큰 날짜가 오는 쪽에서 들어온다 (다음 날이면 오른쪽에서)
-    const titleRef = React.useRef<HTMLDivElement>(null);
-    useSwapMotion(focus ? labelKey(focus) : null, titleRef, { size: "line" });
 
     const anniversary = new Set(marks.filter((m) => m.kind === "anv").map((m) => m.day - 1));
     const due = new Set(marks.filter((m) => m.kind === "due").map((m) => m.day - 1));
@@ -46,12 +42,13 @@ export default function MapleMonthArch({ daysInMonth, focusIdx, monthLoad, marks
     return (
         <S.Head>
             {focus && (
-                <S.Title ref={titleRef} aria-hidden="true">
+                <S.Title data-maple-cover aria-hidden="true">
+                    <span className="month">{fmt.month.format(focus)}</span>
+                    <span className="date">{focus.getDate()}</span>
                     <span className="eyebrow">{isToday ? `${t.home.today} · ` : ""}{fmt.weekday.format(focus)}</span>
-                    <span className="date">{fmt.date.format(focus)}</span>
                 </S.Title>
             )}
-            <S.Ribbon aria-hidden="true">
+            <S.Ribbon aria-hidden="true" data-maple-ribbon>
                 {Array.from({ length: daysInMonth }, (_, i) => (
                     <i key={i} className={bar(i)} style={{ "--load": Math.min(monthLoad[i] ?? 0, MAX_LOAD) } as React.CSSProperties} />
                 ))}

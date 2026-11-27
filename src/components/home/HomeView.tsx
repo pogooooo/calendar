@@ -137,7 +137,7 @@ export default function HomeView() {
     const todayHeadRef = React.useRef<HTMLDivElement>(null);
     const todayListRef = React.useRef<HTMLDivElement>(null);
     const upcomingListRef = React.useRef<HTMLDivElement>(null);
-    useSwapMotion(focusKey, todayHeadRef, { size: "line" });
+    useSwapMotion(focusKey, todayHeadRef, { size: "line", disabled: family === "maple" });
     useListMotion(todayListRef, { reset: focusKey, exit: "collapse" });
     useListMotion(upcomingListRef, { reset: focusKey, exit: "collapse" });
     // 챌린지 줄의 이레 칸을 채우면 그 칸이 끝냄 몸짓을 한 번 (줄들은 갈래의 칸 안에 놓이므로 줄의 부모를 찾는다)
@@ -249,7 +249,7 @@ export default function HomeView() {
         JSON.stringify(dayTodos.map(todo => [todo.id, todo.title, todo.startAt, todo.completions?.length])),
         JSON.stringify(upcomingGroups.map(([key, entries]) => [key, entries.map(todo => [todo.id, todo.title, todo.startAt, todo.completions?.length])])),
     ];
-    useSwapMotion(focusKey, () => [todayListRef.current, upcomingListRef.current], { contentKeys: listKeys });
+    useSwapMotion(focusKey, () => [todayListRef.current, upcomingListRef.current], { contentKeys: listKeys, disabled: family === "maple" });
 
     const activeProjects = React.useMemo(
         () => projects.filter(p => p.status !== "done").slice(0, 4),
@@ -410,7 +410,8 @@ export default function HomeView() {
     </>;
 
     const regions = {
-        arch: (<S.ArchWrap data-home-arch>
+        dateKey: focusKey,
+        arch: (<S.ArchWrap data-home-arch={family === "maple" ? undefined : true}>
                         <MonthArch daysInMonth={daysInMonth} focusIdx={focusIdx} monthLoad={monthLoad} marks={marks} focus={focus} />
 
                         <S.ArchFoot>
@@ -658,5 +659,5 @@ export default function HomeView() {
             quick={quickForm} onAdd={openDetail} pendingRows={<div ref={todayListRef}>{pending.map(renderTodoRow)}</div>}
             completedRows={complete.map(renderTodoRow)} />;
     }
-    return simpleMobile ? <MobileHomeLayout {...regions} /> : <Layout {...regions} />;
+    return simpleMobile && family !== "maple" ? <MobileHomeLayout {...regions} /> : <Layout {...regions} />;
 }

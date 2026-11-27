@@ -1,5 +1,6 @@
 import { createGlobalStyle, css } from "styled-components";
 import { withAlpha } from "@/styles/color";
+import { MOBILE_BREAKPOINT } from "@/styles/breakpoints";
 
 /**
  * Maple 의 종이 바탕.
@@ -64,6 +65,20 @@ const MapleGround = createGlobalStyle`
     }
     body { background: transparent !important; }
     [data-app-shell] { background: transparent !important; }
+    [data-main-content] {
+        background-image:linear-gradient(90deg,#24141035 0,transparent 20px),
+            linear-gradient(152deg,${p=>withAlpha(p.theme.colors.surface,.35)},transparent 65%);
+    }
+    @media (min-width:${MOBILE_BREAKPOINT + 1}px) {
+        [data-app-layout] {
+            margin:0 clamp(10px,1.15vw,22px) clamp(10px,1.15vw,22px);
+            border:1px solid ${p=>withAlpha(p.theme.colors.primary,.46)};
+            border-radius:5px 9px 9px 5px;
+            box-shadow:inset 0 0 0 3px ${p=>withAlpha(p.theme.colors.background,.70)},
+                inset 0 0 0 4px ${p=>withAlpha(p.theme.colors.accent,.27)},
+                0 2px 0 ${p=>withAlpha(p.theme.colors.primary,.27)}, 0 7px 19px #20100d36;
+        }
+    }
 
     body::after {
         content: "";

@@ -2,6 +2,7 @@ import type { HTMLAttributes, ReactNode } from 'react';
 
 /** Shared content and actions; each theme owns its hierarchy and placement. */
 export interface HomeLayoutProps {
+    dateKey: string;
     arch: ReactNode;
     navigation: ReactNode;
     today: ReactNode;

@@ -1,113 +1,121 @@
-/**
- * Maple 홈의 배치 — 머리는 종이 위에 바로, 목록은 카드에.
- * 머리 격자: [날짜 | 날 옮기기] / [막대 띠] / [요약]. 날짜·띠·요약은 MapleMonthArch·ArchFoot 이 grid-area 로 제자리를 잡는다
- * (ArchWrap·MapleMonthArch 의 칸은 display: contents 라 이 격자의 칸이 된다). 폰에서는 한 줄로 쌓고 날 옮기기가 맨 아래.
- * 카드는 차례로 한 번 떠오른다(끝없는 움직임 없음).
- */
-import styled, { css, keyframes } from 'styled-components';
-import { paperCard } from '@/styles/maple/ink';
+import styled, { css } from 'styled-components';
+import MaplePaperTurn from '@/components/transition/maple/MaplePaperTurn';
 import { MOBILE } from '@/styles/breakpoints';
+import { withAlpha } from '@/styles/color';
 
-const rise = keyframes`
-    from { opacity: 0; transform: translateY(6px); }
-    to   { opacity: 1; transform: none; }
-`;
-const enter = (i: number) => css`
-    animation: ${rise} 0.45s ${(i * 0.06).toFixed(2)}s ease-out both;
-    html[data-theme-motion="off"] & { animation: none; }
-`;
+export const Journal = styled.div<{ $compact:boolean }>`
+    width:min(1280px,100%);
+    min-height:100%;
+    margin-inline:auto;
+    display:grid;
+    grid-template-columns:minmax(238px,.76fr) minmax(0,1.24fr);
+    grid-template-areas:"cover reading" "notes reading";
+    align-content:start;
+    align-items:start;
+    gap:24px clamp(24px,4.1vw,60px);
+    color:${p=>p.theme.colors.text};
 
-export const Journal = styled.div`
-    width: min(1120px, 100%);
-    margin: 0 auto;
-    min-height: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    color: ${(p) => p.theme.colors.text};
-
-    ${MOBILE} { gap: 14px; }
+    ${MOBILE} {
+        grid-template-columns:minmax(0,1fr);
+        grid-template-areas:"cover" "reading" "notes";
+        gap:${p=>p.$compact?'12px':'18px'};
+        ${p=>p.$compact&&css`[data-maple-ribbon] { display:none; }`}
+    }
 `;
 
 export const JournalHeader = styled.header`
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-areas:
-        "title nav"
-        "ribbon ribbon"
-        "foot foot";
-    align-items: end;
-    column-gap: 24px;
-    padding: 8px 2px 4px;
+    grid-area:cover;
+    display:grid;
+    grid-template-columns:minmax(0,1fr);
+    grid-template-areas:"title" "nav" "ribbon" "foot";
+    gap:8px;
+    align-items:center;
+    min-width:0;
+    touch-action:pan-y;
 
     ${MOBILE} {
-        grid-template-columns: minmax(0, 1fr);
-        grid-template-areas: "title" "ribbon" "foot" "nav";
-        padding: 4px 2px 0;
+        &[data-compact] { grid-template-areas:"title" "nav" "foot"; }
     }
 `;
 
-export const MonthPlate = styled.div`
-    display: contents;
-`;
-
-/** 날 옮기기 — 큰 날짜와 같은 줄 오른쪽 */
 export const DateBookmark = styled.div`
-    grid-area: nav;
-    min-width: 0;
-    margin-bottom: 22px;
-
-    & > * { justify-content: flex-end; }
-
-    ${MOBILE} {
-        margin: 14px 0 0;
-        & > * { justify-content: center; }
-    }
+    grid-area:nav;
+    min-width:0;
+    & > * { justify-content:center; flex-wrap:wrap; }
 `;
 
-/** 오늘 · 이번 주 — 카드 두 장 */
+export const Reading = styled(MaplePaperTurn)`
+    grid-area:reading;
+    height:auto;
+    min-width:0;
+`;
+
 export const OpenPages = styled.div`
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 16px;
-
-    & > * {
-        ${paperCard()}
-        min-width: 0;
-        min-height: 260px;
-        padding: 22px 24px 16px 34px;
-        border-radius:3px 10px 10px 3px;
-        background-image:linear-gradient(90deg,transparent 23px,${(p)=>p.theme.colors.primary}22 23px,${(p)=>p.theme.colors.primary}22 24px,transparent 24px);
-        box-shadow:0 2px 3px #0000000a,0 12px 30px -20px #00000055;
+    display:grid;
+    gap:22px;
+    min-width:0;
+    background-color:${p=>withAlpha(p.theme.colors.background,.72)};
+    > * {
+        min-width:0;
+        padding:14px 0 18px;
+        background:transparent;
+        border:0;
+        border-block-start:1px solid ${p=>withAlpha(p.theme.colors.primary,.44)};
+        box-shadow:none;
+        border-radius:0;
     }
-    & > :nth-child(1) { ${enter(0)} }
-    & > :nth-child(2) { ${enter(1)} }
 
-    ${MOBILE} {
-        grid-template-columns: minmax(0, 1fr);
-        gap: 12px;
-        & > * { min-height: 0; padding: 16px 16px 10px; }
-    }
+    ${MOBILE} { gap:13px; > * { padding:10px 0 12px; } }
 `;
 
-/** 프로젝트 · 챌린지 · 기념일 — 카드 세 장 */
 export const FieldNotes = styled.aside`
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 16px;
-    padding: 8px 0 24px;
-    border-top:1px solid ${(p)=>p.theme.colors.border}88;
+    grid-area:notes;
+    display:grid;
+    gap:13px;
+    min-width:0;
+    padding-bottom:14px;
 
     section {
-        ${paperCard()}
-        min-width: 0;
-        padding: 18px 20px 14px;
+        min-width:0;
+        padding-block:10px;
+        border-block-start:1px solid ${p=>withAlpha(p.theme.colors.primary,.30)};
     }
-    section:nth-child(1) { ${enter(2)} }
-    section:nth-child(2) { ${enter(3)} }
-    section:nth-child(3) { ${enter(4)} }
-    .mt { margin-top: 0; }
+    .mt { margin-top:0; }
 
-    @media (max-width: 900px) { grid-template-columns: minmax(0, 1fr); gap: 12px; }
-    ${MOBILE} { section { padding: 16px 16px 10px; } }
+    ${MOBILE} { gap:8px; }
+`;
+
+export const coverMaterial = css`
+    position:relative;
+    isolation:isolate;
+    overflow:hidden;
+    background:
+        repeating-linear-gradient(45deg,transparent 0 3px,${p=>withAlpha(p.theme.colors.accent,.055)} 3px 4px),
+        linear-gradient(156deg,${p=>p.theme.mode==='dark'?'#512925':'#faedda'},${p=>p.theme.mode==='dark'?'#261715':p.theme.colors.surface});
+    border:1px solid ${p=>withAlpha(p.theme.colors.primary,.58)};
+    border-radius:3px 5px 5px 3px;
+    box-shadow:inset 0 0 0 4px ${p=>withAlpha(p.theme.colors.background,.54)},inset 0 0 0 5px ${p=>withAlpha(p.theme.colors.accent,.33)};
+
+    &::before {
+        content:"";
+        position:absolute;
+        inset:8px 8px auto auto;
+        width:12px;
+        height:30px;
+        background:${p=>p.theme.mode==='dark'?'#925347':withAlpha(p.theme.colors.primary,.72)};
+        clip-path:polygon(0 0,100% 0,100% 100%,50% 76%,0 100%);
+        pointer-events:none;
+    }
+    &::after {
+        content:"";
+        position:absolute;
+        inset:0;
+        background:radial-gradient(155px circle at var(--paper-x,50%) var(--paper-y,50%),#f8c99129,transparent);
+        opacity:0;
+        pointer-events:none;
+        transition:opacity .19s ease;
+    }
+    @media (hover:hover) and (pointer:fine) {
+        html[data-theme-motion="full"] &:hover::after { opacity:1; }
+    }
 `;

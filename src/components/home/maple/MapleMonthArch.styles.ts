@@ -6,6 +6,7 @@ import styled from "styled-components";
 import { withAlpha } from "@/styles/color";
 import { hair, watercolorLeaf } from "@/styles/maple/ink";
 import { MOBILE } from "@/styles/breakpoints";
+import { coverMaterial } from "./MapleHomeLayout.styles";
 
 const dark = (p: { theme: { mode: string } }) => p.theme.mode === "dark";
 
@@ -15,22 +16,27 @@ export const Head = styled.div`
 `;
 
 export const Title = styled.div`
+    ${coverMaterial}
     grid-area: title;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    justify-content:center;
+    align-items:center;
+    text-align:center;
+    gap: 8px;
     min-width: 0;
-    margin-bottom: 20px;
+    min-height: clamp(225px, 29vw, 345px);
+    padding:20px;
 
-    .eyebrow {
+    .eyebrow, .month {
         font-size: 0.85rem;
         font-weight: 600;
-        color: ${(p) => p.theme.colors.primary};
+        color: ${(p) => p.theme.mode === "dark" ? "#eac6a0" : p.theme.colors.textSecondary};
     }
 
     .date {
         font-family: ${(p) => p.theme.fonts.display};
-        font-size: 2.25rem;
+        font-size: clamp(4rem, 9.2vw, 8.75rem);
         font-weight: 700;
         line-height: 1.15;
         color: ${(p) => p.theme.colors.text};
@@ -38,8 +44,10 @@ export const Title = styled.div`
     }
 
     ${MOBILE} {
-        margin-bottom: 16px;
-        .date { font-size: 1.75rem; }
+        min-height:132px;
+        padding:12px;
+        gap:3px;
+        .date { font-size:clamp(2.8rem,13vw,4.25rem); }
     }
 `;
 
