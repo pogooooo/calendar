@@ -392,5 +392,6 @@ export const Stamp = styled.button<{ $on: boolean; $today: boolean }>`
     background: transparent;
     color: ${p => p.theme.colors.primary};
     cursor: pointer;
+    &:disabled { opacity: 0.4; cursor: default; }
     i { ${p => leafBullet(p.$on, "11px")} }
 `;

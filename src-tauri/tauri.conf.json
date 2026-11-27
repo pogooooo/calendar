@@ -1,6 +1,6 @@
 {
   "productName": "CRONOS",
-  "version": "1.3.10",
+  "version": "1.3.11",
   "identifier": "com.cronos.todoapp",
   "build": {
     "beforeDevCommand": "npm run next:dev",

@@ -22,7 +22,7 @@ import { expandTodos } from "@/hooks/useExpandedTodos";
 import { weeklyTaskStats } from "@/lib/widgetStats";
 import { nextAnniversary } from "@/lib/anniversary";
 import { isOccurrenceDone, toggleOccurrence, type Occurrence } from "@/lib/todoDone";
-import { challengeExpired, completionTargetFor } from "@/lib/challengeDays";
+import { challengeExpired, completionTargetFor, slotIndexOn } from "@/lib/challengeDays";
 import { useSwapMotion } from "@/hooks/useMotion";
 import * as OceanS from './ocean/OceanWidgetPanels.styles';
 import * as GemS from "./gem/GemWidgetPanels.styles";
@@ -571,7 +571,8 @@ export function ChallengePanel() {
                     </header>
                     <MapleS.SevenDays>{recent.map(dayKey => {
                         const on = completionKeys.has(dayKey);
-                        return <MapleS.Stamp type="button" key={dayKey} $on={on} $today={dayKey === key}
+                        const canRecord = on || slotIndexOn(challenge, dayKey) !== null;
+                        return <MapleS.Stamp type="button" key={dayKey} $on={on} $today={dayKey === key} disabled={!canRecord}
                             aria-label={challenge.title + " " + tr.challenge.recordAction(dayKey, on)} aria-pressed={on}
                             onClick={() => toggle(challenge.id, dayKey)}><i aria-hidden="true" /></MapleS.Stamp>;
                     })}</MapleS.SevenDays>
