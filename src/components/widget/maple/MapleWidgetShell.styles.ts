@@ -6,7 +6,7 @@
  * 닫기만 붉게), 설정은 알약 칩·옅은 선. 위젯 화면은 바탕색을 통째로 지우므로 잎의 색은 inkFill 로 칠한다.
  * 2026-10-15 다시 그리며 먹 하이라인·잎 윤곽 보석을 걷었다.
  */
-import styled from "styled-components";
+import styled, { css, type DefaultTheme } from "styled-components";
 import * as C from "../celestial/CelestialWidgetShell.styles";
 import { withAlpha } from "@/styles/color";
 import { hair, inkChip, stampButton, watercolorLeaf } from "@/styles/maple/ink";
@@ -16,10 +16,25 @@ export * from "../celestial/CelestialWidgetShell.styles";
 const dark = (p: { theme: { mode: string } }) => p.theme.mode === "dark";
 const line = (p: { theme: { mode: string; colors: { text: string } } }) => hair(p.theme, dark(p) ? 0.14 : 0.1);
 
+const book = ({ theme }: { theme: DefaultTheme }) => {
+    const vintage = theme.variant === "vintage";
+    const night = theme.mode === "dark";
+    return css`
+        --folio-paper: ${night ? "#422920" : vintage ? "#e6d2a6" : "#faf0e1"};
+        --folio-edge: ${night ? "#c18c659c" : vintage ? "#966542a0" : "#a56b5399"};
+        --folio-rule: ${night ? "#c99a734f" : vintage ? "#9d704e65" : "#ac765a51"};
+        --folio-cloth: ${night ? "#68342d" : vintage ? "#65472e" : "#80382f"};
+        --folio-wash: ${night ? "linear-gradient(100deg,#21131055,#482b2308 54%,#1c100b60)" : vintage
+            ? "linear-gradient(112deg,#80522635,#f5e6c33d 44%,#9b622332)"
+            : "linear-gradient(130deg,#fff9eeda,#fff3e5c9 64%,#eed6c47a)"};
+    `;
+};
+
 export const Shell = styled(C.Shell)`
-    --widget-pad: 12px;
-    border: 1px solid ${(p) => hair(p.theme, dark(p) ? 0.16 : 0.12)};
-    border-radius: 16px;
+    ${book}
+    --widget-pad: 10px;
+    border: 1px solid var(--folio-edge);
+    border-radius: 7px 9px 9px 7px;
 `;
 export const BackgroundSurface = styled(Shell)`
     ${C.backdropLayer}
@@ -28,10 +43,9 @@ export const BackgroundSurface = styled(Shell)`
         content: "";
         position: absolute;
         inset: 0;
-        background: url("/themes/maple/widget-paper.webp") center / cover;
-        opacity: ${(p) => dark(p) ? .13 : .88};
-        mix-blend-mode: ${(p) => dark(p) ? "luminosity" : "multiply"};
-        box-shadow: inset 0 0 22px #9c643023;
+        background: var(--folio-wash), url("/themes/maple/widget-paper.webp") center / 500px auto, var(--folio-paper);
+        background-blend-mode: normal, multiply, normal;
+        box-shadow: inset 0 0 0 1px var(--folio-rule);
     }
 `;
 
@@ -51,6 +65,12 @@ export const TopBar = styled(C.TopBar)`
 /**
  * 기본형은 작은 잎, 장식형은 잎 옆에 짧은 점무늬 손잡이를 둔다.
  */
+export const Content = styled(C.Content)`
+    padding-inline-start: 5px;
+    [data-month-cell] { border-color: var(--folio-rule); }
+    [data-calendar-navigation] { border-bottom: 1px solid var(--folio-rule); }
+`;
+
 export const Gem = styled(C.Gem)`
     ${watercolorLeaf("red", "16px")}
     border: none;

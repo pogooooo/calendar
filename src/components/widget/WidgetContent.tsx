@@ -7,6 +7,9 @@ import useTodoStore from "@/store/useTodoStore";
 import useCategoryStore from "@/store/useCategoryStore";
 import { wallNow } from "@/lib/dateKey";
 import type { WidgetKind } from "@/lib/widgetKinds";
+import { usePickTheme } from "@/styles/themed";
+import { useWidgetMeta } from "@/hooks/useWidgetMeta";
+import { BookBody, BookHeading, WidgetBook } from "./maple/MapleWidgetPanels.styles";
 import {
     AnniversaryPanel, ChallengePanel, DuePanel, MemoPanel, NowNextPanel,
     ProjectsPanel, QuickTaskPanel, StatsPanel, TodayPanel,
@@ -28,8 +31,14 @@ export function WidgetCalendar({ kind }: { kind: "monthly" | "weekly" }) {
 }
 
 export default function WidgetContent({ kind }: { kind: WidgetKind }) {
+    const book = usePickTheme({ celestial: false, maple: true, ocean: false, gem: false });
+    const meta = useWidgetMeta();
     if (kind === "monthly" || kind === "weekly") return <WidgetCalendar kind={kind} />;
     const Panel = PANELS[kind];
+    if (book) return <WidgetBook data-book-panel={kind}>
+        <BookHeading>{meta[kind].label}</BookHeading>
+        <BookBody><Panel /></BookBody>
+    </WidgetBook>;
     return <PanelWrap><Panel /></PanelWrap>;
 }
 

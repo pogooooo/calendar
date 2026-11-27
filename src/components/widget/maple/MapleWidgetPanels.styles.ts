@@ -11,16 +11,20 @@
 import styled from "styled-components";
 import * as C from "../celestial/CelestialWidgetPanels.styles";
 import { withAlpha } from "@/styles/color";
-import { autumnFill, crest, hair, inkCheckbox, inkFill, leafBullet } from "@/styles/maple/ink";
+import { autumnFill, crest, hair, inkFill, leafBullet } from "@/styles/maple/ink";
 
 export * from "../celestial/CelestialWidgetPanels.styles";
 
 const dark = (p: { theme: { mode: string } }) => p.theme.mode === "dark";
-const onPrimary = (p: { theme: { mode: string } }) => (dark(p) ? "#1A1512" : "#FFFFFF");
 const line = (p: { theme: { mode: string; colors: { text: string } } }) => hair(p.theme, dark(p) ? 0.14 : 0.1);
 
 /** 날짜 줄 — ‹ 오늘 › */
 export const DayNav = styled(C.DayNav)`
+    justify-content: space-between;
+    gap: 5px;
+    margin-bottom: 6px;
+    padding-block: 3px 6px;
+    border-bottom: 1px solid var(--folio-rule);
     .label {
         font-family: ${(p) => p.theme.fonts.body};
         font-size: 0.78rem;
@@ -46,7 +50,12 @@ export const SectionHead = styled(C.SectionHead)`
 `;
 
 export const Row = styled(C.Row)`
-    gap: 10px;
+    gap: 5px;
+    height: auto;
+    min-height: 33px;
+    padding-block: 2px;
+    border-bottom: 1px solid var(--folio-rule);
+    &:hover { background: color-mix(in srgb, currentColor 5%, transparent); }
 `;
 
 export const More = styled(C.More)`
@@ -55,13 +64,17 @@ export const More = styled(C.More)`
     letter-spacing: 0;
 `;
 
-/** 체크 칸 — 둥근 네모, 끝내면 단풍 붉음에 흰 체크 */
 export const Box = styled(C.Box)`
-    width: 18px;
-    height: 18px;
-    ${(p) => inkCheckbox(p.$done)}
-
-    &:hover { box-shadow: none; }
+    width: 23px;
+    height: 26px;
+    border: none;
+    border-radius: 3px;
+    background: transparent;
+    box-shadow: none;
+    color: ${(p) => p.theme.colors.primary};
+    svg { display: none; }
+    &::after { content: ""; ${(p) => leafBullet(p.$done, "14px")} }
+    &:hover { background: color-mix(in srgb, currentColor 10%, transparent); box-shadow: none; }
 `;
 
 /** 카테고리 표식 — 카테고리 색의 작은 잎 */
@@ -79,7 +92,12 @@ export const Star = styled(C.Star)`
 `;
 
 export const Name = styled(C.Name)`
-    font-size: 0.84rem;
+    font-size: 0.78rem;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
 `;
 
 export const Meta = styled(C.Meta)`
@@ -102,6 +120,9 @@ export const NowTitle = styled(C.NowTitle)`
     font-family: ${(p) => p.theme.fonts.display};
     font-size: 1rem;
     font-weight: 700;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 1.35;
 `;
 
 export const NowMeta = styled(C.NowMeta)`
@@ -162,6 +183,7 @@ export const Fill = styled(C.Fill)`
 export const Dashed = styled(C.Dashed)`
     border-top: 1px solid ${line};
     margin: 12px 0 8px;
+    [data-arrangement="spread"] & { display: none; }
 `;
 
 export const CatName = styled(C.CatName)`
@@ -183,38 +205,44 @@ export const CatFill = styled(C.CatFill)`
 `;
 
 export const MemoArea = styled(C.MemoArea)`
-    font-size: 0.92rem;
-    line-height: 1.75;
+    font-size: 0.79rem;
+    line-height: 24px;
+    padding: 5px 7px;
+    border: 1px solid var(--folio-rule);
+    background-image: repeating-linear-gradient(transparent 0 23px, var(--folio-rule) 23px 24px);
+    background-origin: content-box;
+    &::placeholder { opacity: 1; }
     caret-color: ${(p) => p.theme.colors.primary};
     &::placeholder { color: ${(p) => p.theme.colors.textSecondary}; }
 `;
 
 /** 빠른 입력 — 둥근 칸, 34px */
 export const QuickInput = styled(C.QuickInput)`
-    height: 34px;
+    height: 29px;
     padding: 0 12px;
     border: 1px solid ${(p) => hair(p.theme, dark(p) ? 0.16 : 0.14)};
-    border-radius: 10px;
-    font-size: 0.84rem;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    border-radius: 3px;
+    font-size: 0.76rem;
+    transition: border-color 0.15s ease;
 
     && { background-color: ${(p) => (dark(p) ? "rgba(0, 0, 0, 0.18)" : "rgba(255, 255, 255, 0.85)")}; }
     &:focus {
         border-color: ${(p) => withAlpha(p.theme.colors.primary, 0.6)};
-        box-shadow: 0 0 0 3px ${(p) => withAlpha(p.theme.colors.primary, 0.14)};
+        outline: 1px solid ${(p) => p.theme.colors.primary};
+        outline-offset: -1px;
     }
     &::placeholder { color: ${(p) => p.theme.colors.textSecondary}; }
 `;
 
 /** + — 단풍 붉음으로 찬 둥근 네모 단추 */
 export const AddBtn = styled(C.AddBtn)`
-    width: 34px;
-    height: 34px;
+    width: 27px;
+    height: 29px;
     border: none;
-    border-radius: 10px;
+    border-radius: 3px;
     font-size: 1.05rem;
     font-weight: 600;
-    color: ${onPrimary};
+    color: #fff1da;
     transition: background-color 0.15s ease, opacity 0.15s ease;
 
     && { background-color: ${(p) => p.theme.colors.primary}; }
@@ -226,4 +254,143 @@ export const AddBtn = styled(C.AddBtn)`
 export const DelBtn = styled(C.DelBtn)`
     border-radius: 6px;
     transition: color 0.15s ease;
+`;
+
+export const Pad = styled(C.Pad)`
+    scrollbar-width: thin;
+    &[data-arrangement="spread"] {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0;
+        align-items: stretch;
+    }
+    &[data-panel="due"] [data-due-count] {
+        order: -1;
+        min-width: 32px;
+        padding: 3px;
+        border: 1px solid var(--folio-rule);
+        text-align: center;
+    }
+    [data-next-anniversary] {
+        display: grid;
+        justify-items: center;
+        gap: 4px;
+        padding-block: 10px;
+        text-align: center;
+        > [data-dday] {
+            order: -1;
+            font: 700 2rem/1.1 ${p => p.theme.fonts.display};
+            color: ${p => p.theme.colors.primary};
+        }
+    }
+`;
+
+export const BigRow = styled(C.BigRow)`
+    [data-arrangement="spread"] & {
+        justify-content: flex-start;
+        padding: 8px;
+        border: 1px solid var(--folio-rule);
+        min-width: 0;
+    }
+    [data-arrangement="spread"] & + & { border-inline-start: 2px solid var(--folio-edge); }
+`;
+
+export const ProjRow = styled(C.ProjRow)`
+    height: auto;
+    min-height: 52px;
+    padding: 6px;
+    margin-top: 6px;
+    border: 1px solid var(--folio-rule);
+    border-inline-start: 2px solid var(--folio-edge);
+`;
+
+export const MemoColumn = styled(C.MemoColumn)`
+    padding: var(--widget-pad);
+`;
+
+export const BookHeading = styled.h2`
+    font: 700 0.96rem/1.25 ${p => p.theme.fonts.display};
+    color: ${p => p.theme.colors.text};
+    margin: 0;
+    padding: 0 0 6px;
+    border-bottom: 1px solid var(--folio-rule);
+`;
+
+export const BookBody = styled.div`
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+`;
+
+export const WidgetBook = styled.div`
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 0 var(--widget-pad);
+    > ${BookBody} > div { padding-inline: 0; }
+    &[data-book-panel="memo"] > ${BookBody} { padding-top: 8px; }
+`;
+
+export const Summary = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 5px;
+    font-size: 0.66rem;
+    color: ${p => p.theme.colors.textSecondary};
+    border-top: 1px solid var(--folio-rule);
+`;
+
+export const StatsGrid = styled.div`
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    text-align: center;
+    padding: 5px 0;
+    font-size: 0.69rem;
+    span { display: block; }
+    strong { font: 700 1.55rem/1.1 ${p => p.theme.fonts.display}; }
+    > div + div { border-inline-start: 1px solid var(--folio-rule); }
+`;
+
+export const WeekBars = styled.div`
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    align-items: end;
+    gap: 4px;
+    margin-top: auto;
+    min-height: 48px;
+    font-size: 0.63rem;
+    color: ${p => p.theme.colors.textSecondary};
+    > span { display: grid; justify-items: center; gap: 2px; }
+    i { display: block; width: 65%; background: ${p => p.theme.colors.primary}; }
+`;
+
+export const Record = styled.section`
+    border: 1px solid var(--folio-rule);
+    border-inline-start: 2px solid var(--folio-edge);
+    margin-bottom: 6px;
+    padding: 7px 6px;
+    header { display: flex; align-items: start; gap: 4px; justify-content: space-between; }
+`;
+
+export const SevenDays = styled.div`
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 1px;
+    margin-top: 5px;
+`;
+
+export const Stamp = styled.button<{ $on: boolean; $today: boolean }>`
+    min-width: 0;
+    width: 100%;
+    height: 20px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 1px solid ${p => p.$today ? "var(--folio-edge)" : "transparent"};
+    border-radius: 2px;
+    background: transparent;
+    color: ${p => p.theme.colors.primary};
+    cursor: pointer;
+    i { ${p => leafBullet(p.$on, "11px")} }
 `;

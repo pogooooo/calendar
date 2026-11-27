@@ -30,6 +30,8 @@ import * as GemS from "./gem/GemWidgetPanels.styles";
 /** 갈래마다 제 모양. 갈래를 더하면 여기서 컴파일러가 짚는다 */
 const STYLES: ThemeImpls<typeof CelestialS> = { celestial: CelestialS, maple: MapleS, ocean: OceanS, gem: GemS };
 
+const BOOK = { celestial: false, maple: true, ocean: false, gem: false };
+
 /** 줄 높이는 모양 쪽(styles)이 정한다 — 몇 줄이 들어가는지 셀 때 같은 값을 봐야 한다 */
 const ROW_PX = CelestialS.ROW_PX;
 const NARROW_PX = 300;
@@ -123,6 +125,7 @@ function useEnterSubmit(submit: (value: string) => void) {
 
 export function TodayPanel() {
     const S = usePickTheme(STYLES);
+    const book = usePickTheme(BOOK);
     const { todos, toggleTodo, addTodo } = useTodoStore();
     const { categories } = useCategoryStore();
     const authFetch = useAuthFetch();
@@ -188,6 +191,21 @@ export function TodayPanel() {
     };
     const todayEnter = useEnterSubmit((value) => void submit(value));
 
+    const entry = (
+        <S.QuickRow>
+            <S.QuickInput
+                value={draft}
+                aria-label={tr.calendar.addTask}
+                aria-busy={pending}
+                maxLength={120}
+                placeholder={tr.calendar.addTask}
+                onChange={(e) => { setDraft(e.target.value); if (error) setError(null); }}
+                {...todayEnter}
+            />
+            <S.AddBtn aria-label={tr.calendar.addTask} disabled={pending || !draft.trim()} onClick={() => void submit()}>+</S.AddBtn>
+        </S.QuickRow>
+    );
+
     return (
         <S.TodayColumn>
             <S.DayNav>
@@ -195,7 +213,7 @@ export function TodayPanel() {
                     <ChevronLeft size={13} strokeWidth={1.6} aria-hidden="true" />
                 </S.NavBtn>
                 <button type="button" className="label" onClick={day.reset} title={day.isToday ? dateLabel : tr.home.today} disabled={day.isToday}>
-                    <span aria-live="polite" aria-atomic="true"><time dateTime={key}>{day.isToday ? tr.home.today : dateLabel}</time></span>
+                    <span aria-live="polite" aria-atomic="true"><time dateTime={key}>{day.isToday && !book ? tr.home.today : dateLabel}</time></span>
                 </button>
                 <S.NavBtn type="button" onClick={() => day.shift(1)} aria-label={tr.calendar.nextDay} title={tr.calendar.nextDay}>
                     <ChevronRight size={13} strokeWidth={1.6} aria-hidden="true" />
@@ -203,26 +221,16 @@ export function TodayPanel() {
             </S.DayNav>
             <S.TodayBody ref={bodyRef}>
                 {/* 넣는 동안 잠그지 않는다 — 잠그면 초점이 빠져, 하나 넣을 때마다 입력칸을 다시 눌러야 했다 */}
-                <S.QuickRow>
-                    <S.QuickInput
-                        value={draft}
-                        aria-label={tr.calendar.addTask}
-                        aria-busy={pending}
-                        maxLength={120}
-                        placeholder={tr.calendar.addTask}
-                        onChange={(e) => { setDraft(e.target.value); if (error) setError(null); }}
-                        {...todayEnter}
-                    />
-                    <S.AddBtn aria-label={tr.calendar.addTask} disabled={pending || !draft.trim()} onClick={() => void submit()}>+</S.AddBtn>
-                </S.QuickRow>
+                {!book && entry}
                 {error && <S.More role="alert">{error}</S.More>}
                 <S.Fit ref={listRef}>
                     {/* 날짜는 위의 줄이 말한다 — 여기서 또 "오늘" 이라고 하면 같은 말이 두 번이다 */}
-                    <S.SectionHead>{tr.home.tasks}</S.SectionHead>
+                    <S.SectionHead>{tr.home.tasks}{book ? " · " + today.length : ""}</S.SectionHead>
                     {today.length === 0
                         ? <S.Thin>{day.isToday ? tr.home.noTodayTodos : tr.home.noDayTodos}</S.Thin>
                         : today.map(t => {
                             const done = doneOn(t);
+                            const clock = t.startAt && !t.isAllDay ? wallTime(t.startAt) : null;
                             return (
                                 <S.Row key={t.id}>
                                     <S.Box $done={done} aria-label={t.title} aria-pressed={done} onClick={() => void toggleOccurrence(t, (k) => toggleTodo(authFetch, t.originalTodo?.id ?? t.id, k))}>
@@ -230,6 +238,7 @@ export function TodayPanel() {
                                     </S.Box>
                                     <S.Mark $c={color(t.categoryId)} />
                                     <S.Name $done={done}>{t.title}</S.Name>
+                                    {book && clock && <S.Meta>{String(clock.hour).padStart(2, "0")}:{String(clock.minute).padStart(2, "0")}</S.Meta>}
                                 </S.Row>
                             );
                         })}
@@ -254,6 +263,8 @@ export function TodayPanel() {
                         </>
                     )}
                 </S.Fit>
+                {book && entry}
+                {book && today.length > 0 && <MapleS.Summary>{tr.home.doneRatio(today.filter(doneOn).length, today.length)}</MapleS.Summary>}
             </S.TodayBody>
         </S.TodayColumn>
     );
@@ -299,7 +310,7 @@ export function NowNextPanel() {
         : 0;
 
     return (
-        <S.Pad>
+        <S.Pad data-arrangement="spread">
             <S.BigRow>
                 <S.SectionHead>{tr.widget.now}</S.SectionHead>
                 {current ? (
@@ -332,6 +343,7 @@ export function NowNextPanel() {
 
 export function DuePanel() {
     const S = usePickTheme(STYLES);
+    const book = usePickTheme(BOOK);
     const { todos, toggleTodo } = useTodoStore();
     const { categories } = useCategoryStore();
     const authFetch = useAuthFetch();
@@ -357,8 +369,8 @@ export function DuePanel() {
     };
 
     return (
-        <S.Pad>
-            <S.SectionHead>{tr.widget.dueSoon}</S.SectionHead>
+        <S.Pad data-panel="due">
+            {!book && <S.SectionHead>{tr.widget.dueSoon}</S.SectionHead>}
             {list.length === 0
                 ? <S.Thin>{tr.widget.noDue}</S.Thin>
                 : list.map(t => {
@@ -367,7 +379,7 @@ export function DuePanel() {
                             <S.Box $done={false} aria-label={t.title} aria-pressed={false} onClick={() => void toggleOccurrence(t, (k) => toggleTodo(authFetch, t.originalTodo?.id ?? t.id, k))} />
                             <S.Mark $c={color(t.categoryId)} />
                             <S.Name $done={false}>{t.title}</S.Name>
-                            <S.Meta>{left(t.endAt!)}</S.Meta>
+                            <S.Meta data-due-count>{left(t.endAt!)}</S.Meta>
                         </S.Row>
                     );
                 })}
@@ -378,6 +390,7 @@ export function DuePanel() {
 export function AnniversaryPanel() {
     const preview = React.useContext(WidgetPreviewContext);
     const S = usePickTheme(STYLES);
+    const book = usePickTheme(BOOK);
     const { anniversaries, fetchAnniversaries } = useAnniversaryStore();
     const authFetch = useAuthFetch();
     const tr = useT();
@@ -396,14 +409,14 @@ export function AnniversaryPanel() {
 
     return (
         <S.Pad>
-            <S.SectionHead>{tr.sidebar.anniversary}</S.SectionHead>
+            {!book && <S.SectionHead>{tr.sidebar.anniversary}</S.SectionHead>}
             {list.length === 0
                 ? <S.Thin>{tr.home.noAnniversaries}</S.Thin>
-                : list.map(a => (
-                    <S.Row key={a.id}>
-                        <S.Star>✦</S.Star>
+                : list.map((a, index) => (
+                    <S.Row key={a.id} data-next-anniversary={book && index === 0 ? "" : undefined}>
+                        {(!book || index !== 0) && <S.Star>✦</S.Star>}
                         <S.Name $done={false}>{a.title}</S.Name>
-                        <S.Meta className={a.dday === 0 ? "hot" : ""}>{a.dday === 0 ? "D-DAY" : `D-${a.dday}`}</S.Meta>
+                        <S.Meta data-dday className={a.dday === 0 ? "hot" : ""}>{a.dday === 0 ? "D-DAY" : `D-${a.dday}`}</S.Meta>
                     </S.Row>
                 ))}
         </S.Pad>
@@ -413,6 +426,7 @@ export function AnniversaryPanel() {
 export function ProjectsPanel() {
     const preview = React.useContext(WidgetPreviewContext);
     const S = usePickTheme(STYLES);
+    const book = usePickTheme(BOOK);
     const { projects, fetchProjects } = useProjectStore();
     const authFetch = useAuthFetch();
     const tr = useT();
@@ -433,7 +447,7 @@ export function ProjectsPanel() {
 
     return (
         <S.Pad>
-            <S.SectionHead>{tr.home.project}</S.SectionHead>
+            {!book && <S.SectionHead>{tr.home.project}</S.SectionHead>}
             {list.length === 0
                 ? <S.Thin>{tr.home.noProjects}</S.Thin>
                 : list.map(p => {
@@ -447,6 +461,7 @@ export function ProjectsPanel() {
                                 <S.Meta>{`${done}/${tasks.length}`}</S.Meta>
                             </S.ProjTop>
                             <S.Bar><S.Fill $pct={pct} /></S.Bar>
+                            {book && p.endAt && <S.Meta>{localDateKey(p.endAt).slice(5).replace("-", "/")}</S.Meta>}
                         </S.ProjRow>
                     );
                 })}
@@ -457,6 +472,7 @@ export function ProjectsPanel() {
 export function StatsPanel() {
     const todayKey = useCurrentDayKey();
     const S = usePickTheme(STYLES);
+    const book = usePickTheme(BOOK);
     const { todos: sourceTodos } = useTodoStore();
     const { categories } = useCategoryStore();
     const tr = useT();
@@ -466,7 +482,7 @@ export function StatsPanel() {
     const base = zonedDayStart(weekKey, activeTimeZone())!;
     const weekEnd = new Date(zonedDayStart(addDaysToKey(weekKey, 7), activeTimeZone())!.getTime() - 1);
     const todos = expandTodos(sourceTodos, base, weekEnd);
-    const { total, done, categories: categoryCounts } = weeklyTaskStats(todos, weekKey);
+    const { total, done, categories: categoryCounts, dailyDone } = weeklyTaskStats(todos, weekKey);
     const pct = total ? Math.round((done / total) * 100) : 0;
 
     const cats = categories
@@ -481,11 +497,19 @@ export function StatsPanel() {
     const wide = box.width >= NARROW_PX;
     const cap = wide ? Math.max(1, Math.min(6, box.rows)) : 0;
 
+    const peak = Math.max(1, ...dailyDone);
     return (
         <S.Pad ref={ref}>
-            <S.Big>{pct}<span>%</span></S.Big>
+            {book && <MapleS.StatsGrid>
+                <div><strong>{done}</strong><span>{tr.homeWidget.done}</span></div>
+                <div><strong>{total - done}</strong><span>{tr.homeWidget.left}</span></div>
+            </MapleS.StatsGrid>}
+            {book && <MapleS.WeekBars role="img" aria-label={dailyDone.map((count, i) => tr.calendar.days[i] + " " + count).join(", ")}>
+                {dailyDone.map((count, i) => <span key={i} aria-hidden="true"><i style={{ height: Math.max(2, count / peak * 36) }} /><span>{tr.calendar.days[i]}</span></span>)}
+            </MapleS.WeekBars>}
+            {!book && <><S.Big>{pct}<span>%</span></S.Big>
             <S.Caption>{tr.home.doneRatio(done, total)}</S.Caption>
-            <S.Bar><S.Fill $pct={pct} /></S.Bar>
+            <S.Bar><S.Fill $pct={pct} /></S.Bar></>}
             {cap > 0 && (
                 <>
                     <S.Dashed />
@@ -509,6 +533,7 @@ export function ChallengePanel() {
     const preview = React.useContext(WidgetPreviewContext);
     useCurrentDayKey();
     const S = usePickTheme(STYLES);
+    const book = usePickTheme(BOOK);
     const { challenges, fetchChallenges, toggleChallengeCompletion } = useChallengeStore();
     const authFetch = useAuthFetch();
     const tr = useT();
@@ -533,6 +558,26 @@ export function ChallengePanel() {
 
     if (active.length === 0) {
         return <S.Pad ref={ref}><S.SectionHead>{tr.home.challenge}</S.SectionHead><S.Thin>{tr.home.noChallenges}</S.Thin></S.Pad>;
+    }
+
+    if (book) {
+        const recent = Array.from({ length: 7 }, (_, index) => addDaysToKey(key, index - 6));
+        return <S.Pad ref={ref}>
+            {active.map(challenge => {
+                const completionKeys = new Set((challenge.completions ?? []).map(item => utcDayKey(item.targetDate)));
+                return <MapleS.Record key={challenge.id}>
+                    <header><S.Name $done={false}>{challenge.title}</S.Name>
+                        <S.Meta>{completionKeys.size}{challenge.targetCount ? "/" + challenge.targetCount : ""}</S.Meta>
+                    </header>
+                    <MapleS.SevenDays>{recent.map(dayKey => {
+                        const on = completionKeys.has(dayKey);
+                        return <MapleS.Stamp type="button" key={dayKey} $on={on} $today={dayKey === key}
+                            aria-label={challenge.title + " " + tr.challenge.recordAction(dayKey, on)} aria-pressed={on}
+                            onClick={() => toggle(challenge.id, dayKey)}><i aria-hidden="true" /></MapleS.Stamp>;
+                    })}</MapleS.SevenDays>
+                </MapleS.Record>;
+            })}
+        </S.Pad>;
     }
 
     if (box.height < 260) {
@@ -646,6 +691,7 @@ export function MemoPanel() {
 export function QuickTaskPanel() {
     const preview = React.useContext(WidgetPreviewContext);
     const S = usePickTheme(STYLES);
+    const book = usePickTheme(BOOK);
     const { tasks: savedTasks, memoDate, fetchDailyData, addDailyTask, toggleDailyTask, deleteDailyTask } = useDailyStore();
     const authFetch = useAuthFetch();
     const tr = useT();
@@ -678,22 +724,27 @@ export function QuickTaskPanel() {
         if (message) { setError(message); setText(cur => cur || v); }
     };
 
+    const entry = (
+        <S.QuickRow>
+            <S.QuickInput
+                value={text}
+                aria-label={tr.calendar.addTask}
+                aria-busy={pending}
+                maxLength={120}
+                placeholder={tr.calendar.addTask}
+                onChange={(e) => { setText(e.target.value); if (error) setError(null); }}
+                {...quickEnter}
+            />
+            <S.AddBtn aria-label={tr.calendar.addTask} disabled={pending || !text.trim()} onClick={() => void submit()}>+</S.AddBtn>
+        </S.QuickRow>
+    );
+
     return (
         <S.Column>
-            <S.QuickRow>
-                <S.QuickInput
-                    value={text}
-                    aria-label={tr.calendar.addTask}
-                    aria-busy={pending}
-                    maxLength={120}
-                    placeholder={tr.calendar.addTask}
-                    onChange={(e) => { setText(e.target.value); if (error) setError(null); }}
-                    {...quickEnter}
-                />
-                <S.AddBtn aria-label={tr.calendar.addTask} disabled={pending || !text.trim()} onClick={() => void submit()}>+</S.AddBtn>
-            </S.QuickRow>
+            {!book && entry}
             {error && <S.More role="alert">{error}</S.More>}
             <S.Fit>
+                {book && <S.SectionHead>{tr.home.tasks} · {tasks.length}</S.SectionHead>}
                 {tasks.length === 0
                     ? <S.Thin>{tr.home.noTodayTodos}</S.Thin>
                     : tasks.map(task => (
@@ -706,6 +757,8 @@ export function QuickTaskPanel() {
                         </S.Row>
                     ))}
             </S.Fit>
+            {book && entry}
+            {book && tasks.length > 0 && <MapleS.Summary>{tr.home.doneRatio(tasks.filter(task => task.isDone).length, tasks.length)}</MapleS.Summary>}
         </S.Column>
     );
 }

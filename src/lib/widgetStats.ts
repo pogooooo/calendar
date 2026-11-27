@@ -14,6 +14,7 @@ type StatsTodo = {
 export function weeklyTaskStats(todos: StatsTodo[], weekStart: string) {
     let total = 0;
     let done = 0;
+    const dailyDone = Array.from({ length: 7 }, () => 0);
     const categories = new Map<string, { total: number; done: number }>();
     for (const todo of todos) {
         if (!todo.startAt || !todo.endAt) continue;
@@ -27,6 +28,7 @@ export function weeklyTaskStats(todos: StatsTodo[], weekStart: string) {
             const count = finished ? 1 : 0;
             total++;
             done += count;
+            dailyDone[day] += count;
             if (todo.categoryId) {
                 const category = categories.get(todo.categoryId) ?? { total: 0, done: 0 };
                 category.total++;
@@ -35,5 +37,5 @@ export function weeklyTaskStats(todos: StatsTodo[], weekStart: string) {
             }
         }
     }
-    return { total, done, categories };
+    return { total, done, categories, dailyDone };
 }
